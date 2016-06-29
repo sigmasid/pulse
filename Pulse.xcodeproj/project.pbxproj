@@ -13,6 +13,25 @@
 		BA1C48C11D243704008F8A04 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BA1C48BF1D243704008F8A04 /* Main.storyboard */; };
 		BA1C48C31D243704008F8A04 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA1C48C21D243704008F8A04 /* Assets.xcassets */; };
 		BA1C48C61D243704008F8A04 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */; };
+		BA1DE1211D244330004F3ED2 /* QuestionPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1201D244330004F3ED2 /* QuestionPreviewVC.swift */; };
+		BA1DE1231D244393004F3ED2 /* Question.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1221D244393004F3ED2 /* Question.swift */; };
+		BA1DE1251D2443BF004F3ED2 /* Answer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1241D2443BF004F3ED2 /* Answer.swift */; };
+		BA1DE1271D2443FD004F3ED2 /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1261D2443FD004F3ED2 /* Tag.swift */; };
+		BA1DE1291D244440004F3ED2 /* Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1281D244440004F3ED2 /* Icon.swift */; };
+		BA1DE12C1D2444A4004F3ED2 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE12B1D2444A4004F3ED2 /* User.swift */; };
+		BA1DE12E1D2444DE004F3ED2 /* globalRefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE12D1D2444DE004F3ED2 /* globalRefs.swift */; };
+		BA1DE1301D24463B004F3ED2 /* TagDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE12F1D24463B004F3ED2 /* TagDetailVC.swift */; };
+		BA1DE1321D244942004F3ED2 /* processVideoHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */; };
+		BA1DE1341D24497E004F3ED2 /* authHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1331D24497E004F3ED2 /* authHelper.swift */; };
+		BA1DE1371D244A6A004F3ED2 /* CameraVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1361D244A6A004F3ED2 /* CameraVC.swift */; };
+		BA1DE1391D244A9D004F3ED2 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1381D244A9D004F3ED2 /* CameraManager.swift */; };
+		BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE13A1D244AE0004F3ED2 /* CameraOverlayView.swift */; };
+		BA1DE13E1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE13D1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift */; };
+		BA1DE1401D244C51004F3ED2 /* ShowAnswerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE13F1D244C51004F3ED2 /* ShowAnswerVC.swift */; };
+		BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1411D244C9F004F3ED2 /* globalExtensions.swift */; };
+		BA1DE1451D244D6B004F3ED2 /* LoginVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1441D244D6B004F3ED2 /* LoginVC.swift */; };
+		BA1DE1471D244DFA004F3ED2 /* QAManagerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1461D244DFA004F3ED2 /* QAManagerVC.swift */; };
+		BA1DE1491D245484004F3ED2 /* ExploreTagsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1481D245484004F3ED2 /* ExploreTagsVC.swift */; };
 		BA48858C1D24390B007333E0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BA48858B1D24390B007333E0 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
@@ -25,6 +44,25 @@
 		BA1C48C21D243704008F8A04 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BA1C48C51D243704008F8A04 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		BA1C48C71D243704008F8A04 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BA1DE1201D244330004F3ED2 /* QuestionPreviewVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuestionPreviewVC.swift; sourceTree = "<group>"; };
+		BA1DE1221D244393004F3ED2 /* Question.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Question.swift; sourceTree = "<group>"; };
+		BA1DE1241D2443BF004F3ED2 /* Answer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Answer.swift; sourceTree = "<group>"; };
+		BA1DE1261D2443FD004F3ED2 /* Tag.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
+		BA1DE1281D244440004F3ED2 /* Icon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Icon.swift; sourceTree = "<group>"; };
+		BA1DE12B1D2444A4004F3ED2 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		BA1DE12D1D2444DE004F3ED2 /* globalRefs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = globalRefs.swift; sourceTree = "<group>"; };
+		BA1DE12F1D24463B004F3ED2 /* TagDetailVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagDetailVC.swift; sourceTree = "<group>"; };
+		BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = processVideoHelper.swift; sourceTree = "<group>"; };
+		BA1DE1331D24497E004F3ED2 /* authHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = authHelper.swift; sourceTree = "<group>"; };
+		BA1DE1361D244A6A004F3ED2 /* CameraVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraVC.swift; sourceTree = "<group>"; };
+		BA1DE1381D244A9D004F3ED2 /* CameraManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		BA1DE13A1D244AE0004F3ED2 /* CameraOverlayView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraOverlayView.swift; sourceTree = "<group>"; };
+		BA1DE13D1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserRecordedAnswerVC.swift; sourceTree = "<group>"; };
+		BA1DE13F1D244C51004F3ED2 /* ShowAnswerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShowAnswerVC.swift; sourceTree = "<group>"; };
+		BA1DE1411D244C9F004F3ED2 /* globalExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = globalExtensions.swift; sourceTree = "<group>"; };
+		BA1DE1441D244D6B004F3ED2 /* LoginVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginVC.swift; sourceTree = "<group>"; };
+		BA1DE1461D244DFA004F3ED2 /* QAManagerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QAManagerVC.swift; sourceTree = "<group>"; };
+		BA1DE1481D245484004F3ED2 /* ExploreTagsVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagsVC.swift; sourceTree = "<group>"; };
 		BA48858B1D24390B007333E0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		C4B93ACED20027ACF593EDFD /* Pods-Pulse.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pulse.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pulse/Pods-Pulse.release.xcconfig"; sourceTree = "<group>"; };
 		F6E190E94E153F0B7B61227E /* Pods_Pulse.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pulse.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -87,8 +125,59 @@
 				BA1C48C21D243704008F8A04 /* Assets.xcassets */,
 				BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */,
 				BA1C48C71D243704008F8A04 /* Info.plist */,
+				BA1DE1201D244330004F3ED2 /* QuestionPreviewVC.swift */,
+				BA1DE12F1D24463B004F3ED2 /* TagDetailVC.swift */,
+				BA1DE12A1D244486004F3ED2 /* Models */,
+				BA1DE1431D244CBD004F3ED2 /* Global Refs */,
+				BA1DE1351D244A20004F3ED2 /* Helpers */,
+				BA1DE13C1D244AFD004F3ED2 /* Camera */,
+				BA1DE1461D244DFA004F3ED2 /* QAManagerVC.swift */,
+				BA1DE13D1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift */,
+				BA1DE13F1D244C51004F3ED2 /* ShowAnswerVC.swift */,
+				BA1DE1441D244D6B004F3ED2 /* LoginVC.swift */,
+				BA1DE1481D245484004F3ED2 /* ExploreTagsVC.swift */,
 			);
 			path = Pulse;
+			sourceTree = "<group>";
+		};
+		BA1DE12A1D244486004F3ED2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BA1DE1241D2443BF004F3ED2 /* Answer.swift */,
+				BA1DE1261D2443FD004F3ED2 /* Tag.swift */,
+				BA1DE12B1D2444A4004F3ED2 /* User.swift */,
+				BA1DE1221D244393004F3ED2 /* Question.swift */,
+			);
+			name = Models;
+			sourceTree = "<group>";
+		};
+		BA1DE1351D244A20004F3ED2 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */,
+				BA1DE1331D24497E004F3ED2 /* authHelper.swift */,
+			);
+			name = Helpers;
+			sourceTree = "<group>";
+		};
+		BA1DE13C1D244AFD004F3ED2 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				BA1DE1361D244A6A004F3ED2 /* CameraVC.swift */,
+				BA1DE1381D244A9D004F3ED2 /* CameraManager.swift */,
+				BA1DE13A1D244AE0004F3ED2 /* CameraOverlayView.swift */,
+			);
+			name = Camera;
+			sourceTree = "<group>";
+		};
+		BA1DE1431D244CBD004F3ED2 /* Global Refs */ = {
+			isa = PBXGroup;
+			children = (
+				BA1DE1281D244440004F3ED2 /* Icon.swift */,
+				BA1DE1411D244C9F004F3ED2 /* globalExtensions.swift */,
+				BA1DE12D1D2444DE004F3ED2 /* globalRefs.swift */,
+			);
+			name = "Global Refs";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -104,6 +193,7 @@
 				BA1C48B61D243704008F8A04 /* Resources */,
 				BF43D1373F3D02AD3B4E69A6 /* 📦 Embed Pods Frameworks */,
 				6ECC96FFC640D870D37205B1 /* 📦 Copy Pods Resources */,
+				BA48858D1D243C40007333E0 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -193,6 +283,19 @@
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-Pulse/Pods-Pulse-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		BA48858D1D243C40007333E0 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Fabric/run\" 3d7464358b23d220c3038e582cf742675a61aaf3 94e7d9b206d34778ad55d567ed8288ab1a149837ecd1ef94ca2a3e37447b27cb ";
+		};
 		BF43D1373F3D02AD3B4E69A6 /* 📦 Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -215,8 +318,27 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA1DE1271D2443FD004F3ED2 /* Tag.swift in Sources */,
+				BA1DE1491D245484004F3ED2 /* ExploreTagsVC.swift in Sources */,
 				BA1C48BE1D243704008F8A04 /* ViewController.swift in Sources */,
+				BA1DE1301D24463B004F3ED2 /* TagDetailVC.swift in Sources */,
+				BA1DE1451D244D6B004F3ED2 /* LoginVC.swift in Sources */,
+				BA1DE1291D244440004F3ED2 /* Icon.swift in Sources */,
+				BA1DE1231D244393004F3ED2 /* Question.swift in Sources */,
+				BA1DE13E1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift in Sources */,
+				BA1DE12C1D2444A4004F3ED2 /* User.swift in Sources */,
+				BA1DE1251D2443BF004F3ED2 /* Answer.swift in Sources */,
+				BA1DE12E1D2444DE004F3ED2 /* globalRefs.swift in Sources */,
+				BA1DE1391D244A9D004F3ED2 /* CameraManager.swift in Sources */,
+				BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */,
+				BA1DE1321D244942004F3ED2 /* processVideoHelper.swift in Sources */,
+				BA1DE1341D24497E004F3ED2 /* authHelper.swift in Sources */,
+				BA1DE1471D244DFA004F3ED2 /* QAManagerVC.swift in Sources */,
+				BA1DE1371D244A6A004F3ED2 /* CameraVC.swift in Sources */,
+				BA1DE1211D244330004F3ED2 /* QuestionPreviewVC.swift in Sources */,
 				BA1C48BC1D243704008F8A04 /* AppDelegate.swift in Sources */,
+				BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */,
+				BA1DE1401D244C51004F3ED2 /* ShowAnswerVC.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
