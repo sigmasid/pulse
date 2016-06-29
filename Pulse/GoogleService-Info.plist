@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AD_UNIT_ID_FOR_BANNER_TEST</key>
+	<string>ca-app-pub-3940256099942544/2934735716</string>
+	<key>AD_UNIT_ID_FOR_INTERSTITIAL_TEST</key>
+	<string>ca-app-pub-3940256099942544/4411468910</string>
+	<key>CLIENT_ID</key>
+	<string>31468123699-l6brh82hredgu68g9qhj24q9lq8o72fo.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.31468123699-l6brh82hredgu68g9qhj24q9lq8o72fo</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDriLK3NnepBKta0C_Kpb9EiG_Ck26i1mk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>31468123699</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>think-apart.Pulse</string>
+	<key>PROJECT_ID</key>
+	<string>pulse-84022</string>
+	<key>STORAGE_BUCKET</key>
+	<string>pulse-84022.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<true/>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false/>
+	<key>IS_APPINVITE_ENABLED</key>
+	<false/>
+	<key>IS_GCM_ENABLED</key>
+	<true/>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true/>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:31468123699:ios:231f06773b7e7965</string>
+	<key>DATABASE_URL</key>
+	<string>https://pulse-84022.firebaseio.com</string>
+</dict>
+</plist>
