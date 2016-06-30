@@ -11,5 +11,5 @@ import FirebaseDatabase
 import FirebaseStorage
 
 let storage = FIRStorage.storage()
-let storageRef = storage.referenceForURL("gs://beacon-camera.appspot.com")
+let storageRef = storage.referenceForURL("gs://pulse-84022.appspot.com")
 let databaseRef = FIRDatabase.database().reference()

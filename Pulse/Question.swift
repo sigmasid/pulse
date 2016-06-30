@@ -10,7 +10,6 @@ import Foundation
 import Firebase
 
 class Question : NSObject {
-    private var firebaseRef: FIRDatabaseReference!
     var qID : String
     var channelTags : [String]?
     var qTitle : String?
@@ -25,10 +24,9 @@ class Question : NSObject {
     }
     
     init(qID: String, snapshot: FIRDataSnapshot) {
-        firebaseRef = FIRDatabase.database().reference()
         self.qID = qID
         super.init()
-        let questionPath = self.firebaseRef.child("questions").child(qID)
+        let questionPath = databaseRef.child("questions").child(qID)
         questionPath.observeSingleEventOfType(.Value, withBlock: { snapshot in
             self.qTitle = snapshot.childSnapshotForPath("title").value as? String
             for choice in snapshot.childSnapshotForPath("choices").children {

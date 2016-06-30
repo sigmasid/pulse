@@ -19,17 +19,9 @@ extension UIViewController {
     func dismissKeyboard() {
         view.endEditing(true)
     }
-    
-    //    func textFieldShouldReturn(textField: UITextField) -> Bool {
-    //        self.view.endEditing(true)
-    //        return false
-    //    }
 }
 
 class LCTextLayer : CATextLayer {
-    
-    // REF: http://lists.apple.com/archives/quartz-dev/2008/Aug/msg00016.html
-    // CREDIT: David Hoerl - https://github.com/dhoerl
     // USAGE: To fix the vertical alignment issue that currently exists within the CATextLayer class. Change made to the yDiff calculation.
     
     override init() {
@@ -66,4 +58,10 @@ extension NSTimeInterval {
     var time:String {
         return String(format:"%02d:%02d", Int(self/60.0),  Int(ceil(self%60)) )
     }
+}
+
+enum LoadMoreStatus{
+    case Loading
+    case Finished
+    case haveMore
 }

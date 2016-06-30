@@ -108,9 +108,9 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
-    deinit {
-        //        self.qPlayer.currentItem!.removeObserver(self, forKeyPath: "status", context: nil)
-    }
+//    deinit {
+//        //        self.qPlayer.currentItem!.removeObserver(self, forKeyPath: "status", context: nil)
+//    }
     
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         print("player item status is \(qPlayer.currentItem?.status.rawValue)")

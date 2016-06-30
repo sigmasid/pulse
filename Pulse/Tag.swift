@@ -14,6 +14,7 @@ class Tag : NSObject {
     var tagID: String?
     var questions: [String]?
     var tagImage : String?
+    var previewImage : String?
     
     dynamic var tagCreated = false
     
