@@ -144,9 +144,9 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0Xp-xB-99u">
-                                <rect key="frame" x="27" y="215" width="549" height="49"/>
+                                <rect key="frame" x="27" y="228.5" width="549" height="45"/>
                                 <color key="backgroundColor" red="0.22352941179999999" green="0.72549019609999998" blue="0.89019607840000003" alpha="1" colorSpace="calibratedRGB"/>
-                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="18"/>
+                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="16"/>
                                 <state key="normal" title="    Log In with Twitter" image="twitter-icon">
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 </state>
@@ -162,7 +162,7 @@
                                 <constraints>
                                     <constraint firstAttribute="height" constant="30" id="yNL-no-6pd"/>
                                 </constraints>
-                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <state key="normal" title="Forgot Password?">
                                     <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 </state>
@@ -171,7 +171,7 @@
                                 </variation>
                             </button>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="TzC-Cz-gyd">
-                                <rect key="frame" x="260" y="56" width="80" height="80"/>
+                                <rect key="frame" x="260" y="71" width="80" height="80"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="TzC-Cz-gyd" secondAttribute="height" multiplier="1:1" id="Br2-gZ-tNV"/>
                                     <constraint firstAttribute="width" constant="80" id="IaS-gb-S3U"/>
@@ -181,15 +181,15 @@
                                 </variation>
                             </view>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Email" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="tHo-Tn-A2s">
-                                <rect key="frame" x="27" y="328" width="549" height="50"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <rect key="frame" x="27" y="339" width="549" height="46.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" keyboardType="emailAddress"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
                                     <rect key="frame" x="34" y="433" width="520" height="75"/>
                                 </variation>
                             </textField>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalCompressionResistancePriority="751" text="OR" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="buq-um-5go">
-                                <rect key="frame" x="288" y="284" width="24" height="21"/>
+                                <rect key="frame" x="288" y="294.5" width="24" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
@@ -199,8 +199,8 @@
                                 </variation>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1q9-za-yqB">
-                                <rect key="frame" x="26" y="568" width="549" height="34"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="18"/>
+                                <rect key="frame" x="26" y="570" width="549" height="32"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
                                 <state key="normal" title="Create Account">
                                     <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 </state>
@@ -209,17 +209,17 @@
                                 </variation>
                             </button>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Password" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="hKc-3m-q4h">
-                                <rect key="frame" x="27" y="393" width="549" height="49"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="18"/>
+                                <rect key="frame" x="27" y="400.5" width="549" height="45"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
                                     <rect key="frame" x="40" y="528" width="520" height="75"/>
                                 </variation>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QqP-KB-Lfa">
-                                <rect key="frame" x="27" y="460" width="549" height="50"/>
+                                <rect key="frame" x="27" y="464" width="549" height="46"/>
                                 <color key="backgroundColor" red="0.93725490199999995" green="0.050980392159999999" blue="0.28235294119999998" alpha="1" colorSpace="calibratedRGB"/>
-                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="18"/>
+                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="16"/>
                                 <state key="normal" title="Log In with Email">
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 </state>
@@ -233,7 +233,7 @@
                             <button opaque="NO" contentMode="scaleToFill" verticalCompressionResistancePriority="749" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="mwY-hr-A0j">
                                 <rect key="frame" x="28" y="150" width="548" height="50"/>
                                 <color key="backgroundColor" red="0.30588235289999999" green="0.38823529410000002" blue="0.59607843140000005" alpha="1" colorSpace="calibratedRGB"/>
-                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="18"/>
+                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="16"/>
                                 <state key="normal" title="  Log In With Facebook" image="facebook-icon">
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 </state>
@@ -268,7 +268,7 @@
                             <constraint firstItem="1q9-za-yqB" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="Da1-CW-5ss"/>
                             <constraint firstItem="QeW-jp-ris" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="GFd-Ol-O4Z"/>
                             <constraint firstItem="QqP-KB-Lfa" firstAttribute="top" secondItem="hKc-3m-q4h" secondAttribute="bottom" multiplier="1.04" priority="900" id="KGp-MK-Xjk"/>
-                            <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="mwY-hr-A0j" secondAttribute="height" multiplier="12" id="KTu-wC-XiN"/>
+                            <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="mwY-hr-A0j" secondAttribute="height" multiplier="13" id="KTu-wC-XiN"/>
                             <constraint firstItem="tHo-Tn-A2s" firstAttribute="height" secondItem="mwY-hr-A0j" secondAttribute="height" id="MH8-Aa-Dbo"/>
                             <constraint firstItem="QeW-jp-ris" firstAttribute="top" secondItem="Zdn-Wn-aCC" secondAttribute="bottom" constant="-20" id="MgB-Eo-g8Z"/>
                             <constraint firstItem="bX0-JU-Sql" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" priority="900" constant="1" id="NQV-Cq-SrE"/>
