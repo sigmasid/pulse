@@ -11,11 +11,10 @@ import FirebaseDatabase
 
 class ExploreTagsVC: UIViewController {
     var allTags = [Tag]()
-    var tagSelected : Tag?
+    var currentTag : Tag!
     
-    var handle: UInt!
-    var numberOfCells = 10
-    var loadingStatus = false
+    var questionsListener = UInt()
+    var tagsListener = UInt()
 
     private let reuseIdentifier = "tagCell"
     
@@ -26,17 +25,23 @@ class ExploreTagsVC: UIViewController {
         loadTagsFromFirebase()
     }
     
+    override func viewDidDisappear(animated: Bool) {
+        super.viewDidDisappear(animated)
+        databaseRef.removeObserverWithHandle(tagsListener)
+        databaseRef.removeObserverWithHandle(questionsListener)
+    }
+    
     func loadTagsFromFirebase() {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         
-        handle = databaseRef.child("tags").observeEventType(.Value, withBlock: { snapshot in
+        tagsListener = databaseRef.child("tags").observeEventType(.Value, withBlock: { snapshot in
             for item in snapshot.children {
                 let child = item as! FIRDataSnapshot
-                let _previewImage = child.childSnapshotForPath("previewImage").value as? String
-                let currentTag = Tag(tagID: child.key)
-                currentTag.previewImage = _previewImage
-                self.allTags.append(currentTag)
+                self.currentTag = Tag(tagID: child.key, snapshot: child)
+                self.allTags.append(self.currentTag)
             }
+            self.ExploreTags.delegate = self
+            self.ExploreTags.dataSource = self
             self.ExploreTags.reloadData()
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         })
@@ -45,7 +50,6 @@ class ExploreTagsVC: UIViewController {
 
 extension ExploreTagsVC : UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        print(allTags.count)
         return allTags.count
         
     }
@@ -60,21 +64,27 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! ExploreTagCell
-        configureCell(cell, indexPath: indexPath)
+        
+        let _currentTag = allTags[indexPath.row]
+        
+        cell.currentTag = _currentTag
+        cell.backgroundColor = UIColor.whiteColor()
+        configureCell(cell, currentTag: _currentTag, indexPath: indexPath)
         return cell
     }
     
-    func configureCell(cell: ExploreTagCell, indexPath: NSIndexPath) {
-        let currentTag = allTags[indexPath.row]
+    func configureCell(cell: ExploreTagCell, currentTag: Tag, indexPath: NSIndexPath) {
         cell.tagLabel.text = "#"+currentTag.tagID!.uppercaseString
         
-        let downloadRef = storageRef.child("tags/\(currentTag.previewImage!)")
-        let _ = downloadRef.dataWithMaxSize(1200 * 2200) { (data, error) -> Void in
-            if (error != nil) {
-                print(error.debugDescription)
-            } else {
-                cell.tagImage.image = UIImage(data: data!)
-                cell.tagImage.contentMode = UIViewContentMode.ScaleAspectFill
+        if let _tagImage = currentTag.previewImage {
+            let downloadRef = storageRef.child("tags/\(_tagImage)")
+            let _ = downloadRef.dataWithMaxSize(600 * 800) { (data, error) -> Void in //need to image size
+                if (error != nil) {
+                    print(error.debugDescription) //surface error
+                } else {
+                    cell.tagImage.image = UIImage(data: data!)
+                    cell.tagImage.contentMode = UIViewContentMode.ScaleAspectFill
+                }
             }
         }
     }
@@ -82,6 +92,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
 
 extension ExploreTagsVC: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: self.view.frame.width, height: 150)
+        return CGSize(width: self.view.frame.width, height: self.view.frame.height / 3)
+        
     }
 }

@@ -24,7 +24,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         //        cameraview.frame = UIScreen.mainScreen().bounds
         //        self.view.addSubview(cameraview)
         
-        let zoomPinch = UIPinchGestureRecognizer(target: self, action: #selector(self.handlePinch(_:)))
+        _ = UIPinchGestureRecognizer(target: self, action: #selector(self.handlePinch(_:)))
         
         
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(CameraVC.respondToSwipeGesture(_:)))

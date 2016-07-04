@@ -26,21 +26,18 @@ class Question : NSObject {
     init(qID: String, snapshot: FIRDataSnapshot) {
         self.qID = qID
         super.init()
-        let questionPath = databaseRef.child("questions").child(qID)
-        questionPath.observeSingleEventOfType(.Value, withBlock: { snapshot in
-            self.qTitle = snapshot.childSnapshotForPath("title").value as? String
-            for choice in snapshot.childSnapshotForPath("choices").children {
-                if (self.qChoices?.append(choice.key) == nil) {
-                    self.qChoices = [choice.key]
-                }
+        self.qTitle = snapshot.childSnapshotForPath("title").value as? String
+        for choice in snapshot.childSnapshotForPath("choices").children {
+            if (self.qChoices?.append(choice.key) == nil) {
+                self.qChoices = [choice.key]
             }
-            for answer in snapshot.childSnapshotForPath("answers").children {
-                if (self.qAnswers?.append(answer.key) == nil) {
-                    self.qAnswers = [answer.key]
-                }
+        }
+        for answer in snapshot.childSnapshotForPath("answers").children {
+            if (self.qAnswers?.append(answer.key) == nil) {
+                self.qAnswers = [answer.key]
             }
-            self.qCreated = true
-        })
+        }
+        self.qCreated = true
     }
     
     func totalAnswers() -> Int? {

@@ -26,7 +26,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var selectedTag : Tag!
     private var questionCounter = 0
     private var currentQuestion = Question!(nil)
-    var currentUser : user!
+    var currentUser : User!
     
     var _hasMoreAnswers = false
     

@@ -31,24 +31,18 @@ class Tag : NSObject {
     init(tagID: String, snapshot: FIRDataSnapshot) {
         self.tagID = tagID
         super.init()
-        let tagPath = databaseRef.child("tags").child(tagID)
-        tagPath.observeSingleEventOfType(.Value, withBlock: { snapshot in
-            self.tagImage = snapshot.childSnapshotForPath("tagImage").value as? String
-            
-            for choice in snapshot.childSnapshotForPath("questions").children {
-                if (self.questions?.append(choice.key) == nil) {
-                    self.questions = [choice.key]
-                }
+        self.tagImage = snapshot.childSnapshotForPath("tagImage").value as? String
+        self.previewImage = snapshot.childSnapshotForPath("previewImage").value as? String
+
+        for choice in snapshot.childSnapshotForPath("questions").children {
+            if (self.questions?.append(choice.key) == nil) {
+                self.questions = [choice.key]
             }
-            self.tagCreated = true
-        })
+        }
+        self.tagCreated = true
     }
     
     func totalQuestionsForTag() -> Int? {
-        if self.questions?.count > 0 {
-            return self.questions!.count
-        } else {
-            return nil
-        }
+        return self.questions?.count > 0 ? self.questions!.count : nil
     }
 }
