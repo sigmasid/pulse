@@ -55,19 +55,22 @@ class UserRecordedAnswerVC: UIViewController {
         postButton.addTarget(self, action: #selector(self._postVideo(_:)), forControlEvents: UIControlEvents.TouchUpInside)
         
         let saveToDiskButton = UIButton()
-        let saveToDiskImage = UIImage(named: "saveFile.png")
-        saveToDiskButton.setImage(saveToDiskImage, forState: UIControlState.Normal)
-        saveToDiskButton.frame = CGRectMake(20, UIScreen.mainScreen().bounds.height - 100, saveToDiskImage!.size.width, saveToDiskImage!.size.width)
-        saveToDiskButton.addTarget(self, action: #selector(self._saveVideo), forControlEvents: UIControlEvents.TouchUpInside)
+        if let saveToDiskImage = UIImage(named: "saveFile.png") {
+            saveToDiskButton.setImage(saveToDiskImage, forState: UIControlState.Normal)
+            saveToDiskButton.frame = CGRectMake(20, UIScreen.mainScreen().bounds.height - 100, saveToDiskImage.size.width, saveToDiskImage.size.width)
+            saveToDiskButton.addTarget(self, action: #selector(self._saveVideo), forControlEvents: UIControlEvents.TouchUpInside)
+        }
         
         let locationLabel = UILabel(frame: CGRectMake(10,10,100,0))
-        locationLabel.text = aLocation!
-        print("the location is \(aLocation)")
-        locationLabel.textColor = UIColor.blackColor()
+        if let _location = aLocation {
+            locationLabel.text = _location
+            locationLabel.textColor = UIColor.blackColor()
+        }
         
         overlayView.addSubview(postButton)
         overlayView.addSubview(saveToDiskButton)
         overlayView.addSubview(locationLabel)
+        
         return overlayView
     }
     

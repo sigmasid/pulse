@@ -25,7 +25,6 @@ class Question : NSObject {
     
     init(qID: String, snapshot: FIRDataSnapshot) {
         self.qID = qID
-        super.init()
         self.qTitle = snapshot.childSnapshotForPath("title").value as? String
         for choice in snapshot.childSnapshotForPath("choices").children {
             if (self.qChoices?.append(choice.key) == nil) {

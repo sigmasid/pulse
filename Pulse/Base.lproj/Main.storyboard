@@ -61,9 +61,9 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="tNh-O5-HDM">
-                                <rect key="frame" x="0.0" y="60" width="600" height="540"/>
+                                <rect key="frame" x="0.0" y="75" width="600" height="525"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                                <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="0.0" minimumInteritemSpacing="10" id="aw7-nc-mCV">
+                                <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="5" minimumInteritemSpacing="0.0" id="aw7-nc-mCV">
                                     <size key="itemSize" width="600" height="137"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
@@ -87,7 +87,7 @@
                                                     <nil key="highlightedColor"/>
                                                 </label>
                                                 <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" alpha="0.5" contentMode="scaleToFill" indicatorStyle="white" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="lHU-GJ-rD1" userLabel="Explore Questions">
-                                                    <rect key="frame" x="0.0" y="39" width="600" height="114"/>
+                                                    <rect key="frame" x="15" y="39" width="570" height="114"/>
                                                     <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                                     <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" minimumLineSpacing="10" minimumInteritemSpacing="10" id="wMR-fQ-leq">
                                                         <size key="itemSize" width="147" height="107"/>
@@ -105,6 +105,7 @@
                                                                 <subviews>
                                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="8Lu-re-bvS">
                                                                         <rect key="frame" x="12" y="9" width="123" height="89"/>
+                                                                        <gestureRecognizers/>
                                                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                                                         <nil key="highlightedColor"/>
                                                                     </label>
@@ -136,7 +137,7 @@
                                             <constraint firstItem="Yxu-M6-I1o" firstAttribute="leading" secondItem="Ckl-N7-9sG" secondAttribute="leadingMargin" id="UsA-hb-5Nr"/>
                                             <constraint firstItem="Ckl-N7-9sG" firstAttribute="centerY" secondItem="54R-TD-OWh" secondAttribute="centerY" id="a8J-Dx-NWp"/>
                                             <constraint firstItem="lHU-GJ-rD1" firstAttribute="top" secondItem="Yxu-M6-I1o" secondAttribute="bottom" constant="5" id="fJ1-CI-P9H"/>
-                                            <constraint firstItem="lHU-GJ-rD1" firstAttribute="width" secondItem="54R-TD-OWh" secondAttribute="width" id="gSh-79-J16"/>
+                                            <constraint firstItem="lHU-GJ-rD1" firstAttribute="width" secondItem="54R-TD-OWh" secondAttribute="width" multiplier="0.95" id="gSh-79-J16"/>
                                             <constraint firstItem="Ckl-N7-9sG" firstAttribute="centerX" secondItem="54R-TD-OWh" secondAttribute="centerX" id="iuk-Hz-T0P"/>
                                             <constraint firstAttribute="height" secondItem="lHU-GJ-rD1" secondAttribute="height" multiplier="1.2" id="rsb-af-9w8"/>
                                         </constraints>
@@ -153,17 +154,28 @@
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Qs8-8e-NRC">
+                                <rect key="frame" x="20" y="20" width="55" height="55"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="Qs8-8e-NRC" secondAttribute="height" multiplier="1:1" id="j2G-LE-kdx"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstItem="tNh-O5-HDM" firstAttribute="centerX" secondItem="0ul-hL-7Ht" secondAttribute="centerX" id="1rx-lX-GGD"/>
                             <constraint firstItem="tNh-O5-HDM" firstAttribute="width" secondItem="0ul-hL-7Ht" secondAttribute="width" id="IGv-2u-MFT"/>
                             <constraint firstItem="76w-5M-ZU5" firstAttribute="top" secondItem="tNh-O5-HDM" secondAttribute="bottom" id="Inm-Sm-dYr"/>
-                            <constraint firstItem="tNh-O5-HDM" firstAttribute="height" secondItem="0ul-hL-7Ht" secondAttribute="height" multiplier="0.9" id="KzO-Ox-TxR"/>
+                            <constraint firstItem="tNh-O5-HDM" firstAttribute="height" secondItem="0ul-hL-7Ht" secondAttribute="height" multiplier="0.875" id="KzO-Ox-TxR"/>
+                            <constraint firstItem="Qs8-8e-NRC" firstAttribute="leading" secondItem="0ul-hL-7Ht" secondAttribute="leadingMargin" id="PrY-ir-XCo"/>
+                            <constraint firstItem="tNh-O5-HDM" firstAttribute="top" secondItem="Qs8-8e-NRC" secondAttribute="bottom" id="kaO-Ip-XVZ"/>
+                            <constraint firstItem="Qs8-8e-NRC" firstAttribute="top" secondItem="yEA-XP-THM" secondAttribute="bottom" id="oUX-MT-R7u"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="ExploreTags" destination="tNh-O5-HDM" id="DVc-fW-iWu"/>
+                        <outlet property="logoIcon" destination="Qs8-8e-NRC" id="u52-Ff-FG1"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="9Dq-E1-UDT" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -390,7 +402,7 @@
                                             <rect key="frame" x="0.0" y="0.0" width="400" height="69.5"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                         </tableViewCellContentView>
-                                        <color key="backgroundColor" cocoaTouchSystemColor="viewFlipsideBackgroundColor"/>
+                                        <color key="backgroundColor" red="0.1215686275" green="0.12941176469999999" blue="0.14117647059999999" alpha="1" colorSpace="calibratedRGB"/>
                                     </tableViewCell>
                                 </prototypes>
                                 <connections>

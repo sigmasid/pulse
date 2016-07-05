@@ -25,6 +25,8 @@ class ShowAnswerVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("show answers loaded")
+
         
         loadingLabel.text = "Loading..."
         loadingLabel.textColor = UIColor.redColor()
@@ -102,6 +104,7 @@ class ShowAnswerVC: UIViewController {
             })
         }
         else {
+            print("no answers to show fired")
             if (self.delegate != nil) {
                 self.delegate.noAnswersToShow(self)
             }

@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>FacebookDisplayName</key>
+	<string>Pulse</string>
+	<key>FacebookAppID</key>
+	<string>591398344361572</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Add your location to your answers</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

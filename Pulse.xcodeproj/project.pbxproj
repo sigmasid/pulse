@@ -19,7 +19,6 @@
 		BA1DE1271D2443FD004F3ED2 /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1261D2443FD004F3ED2 /* Tag.swift */; };
 		BA1DE1291D244440004F3ED2 /* Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1281D244440004F3ED2 /* Icon.swift */; };
 		BA1DE12C1D2444A4004F3ED2 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE12B1D2444A4004F3ED2 /* User.swift */; };
-		BA1DE12E1D2444DE004F3ED2 /* globalRefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE12D1D2444DE004F3ED2 /* globalRefs.swift */; };
 		BA1DE1301D24463B004F3ED2 /* TagDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE12F1D24463B004F3ED2 /* TagDetailVC.swift */; };
 		BA1DE1321D244942004F3ED2 /* processVideoHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */; };
 		BA1DE1341D24497E004F3ED2 /* authHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1331D24497E004F3ED2 /* authHelper.swift */; };
@@ -53,7 +52,6 @@
 		BA1DE1261D2443FD004F3ED2 /* Tag.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
 		BA1DE1281D244440004F3ED2 /* Icon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Icon.swift; sourceTree = "<group>"; };
 		BA1DE12B1D2444A4004F3ED2 /* User.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		BA1DE12D1D2444DE004F3ED2 /* globalRefs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = globalRefs.swift; sourceTree = "<group>"; };
 		BA1DE12F1D24463B004F3ED2 /* TagDetailVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagDetailVC.swift; sourceTree = "<group>"; };
 		BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = processVideoHelper.swift; sourceTree = "<group>"; };
 		BA1DE1331D24497E004F3ED2 /* authHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = authHelper.swift; sourceTree = "<group>"; };
@@ -124,10 +122,10 @@
 		BA1C48BA1D243704008F8A04 /* Pulse */ = {
 			isa = PBXGroup;
 			children = (
+				BA1C48BF1D243704008F8A04 /* Main.storyboard */,
 				BA48858B1D24390B007333E0 /* GoogleService-Info.plist */,
 				BA1C48BB1D243704008F8A04 /* AppDelegate.swift */,
 				BA1C48BD1D243704008F8A04 /* ViewController.swift */,
-				BA1C48BF1D243704008F8A04 /* Main.storyboard */,
 				BA1C48C21D243704008F8A04 /* Assets.xcassets */,
 				BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */,
 				BA1C48C71D243704008F8A04 /* Info.plist */,
@@ -144,7 +142,6 @@
 				BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */,
 				BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */,
 				BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */,
-				BAD37D611D2640E800BACB04 /* Database.swift */,
 			);
 			path = Pulse;
 			sourceTree = "<group>";
@@ -184,7 +181,7 @@
 			children = (
 				BA1DE1281D244440004F3ED2 /* Icon.swift */,
 				BA1DE1411D244C9F004F3ED2 /* globalExtensions.swift */,
-				BA1DE12D1D2444DE004F3ED2 /* globalRefs.swift */,
+				BAD37D611D2640E800BACB04 /* Database.swift */,
 			);
 			name = "Global Refs";
 			sourceTree = "<group>";
@@ -338,7 +335,6 @@
 				BA1DE12C1D2444A4004F3ED2 /* User.swift in Sources */,
 				BA1DE1251D2443BF004F3ED2 /* Answer.swift in Sources */,
 				BAD37D601D25ED9D00BACB04 /* ExploreQuestionCell.swift in Sources */,
-				BA1DE12E1D2444DE004F3ED2 /* globalRefs.swift in Sources */,
 				BA1DE1391D244A9D004F3ED2 /* CameraManager.swift in Sources */,
 				BAACBF7E1D248C4C009F23D0 /* ExploreTagsVC.swift in Sources */,
 				BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */,

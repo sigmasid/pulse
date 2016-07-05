@@ -15,13 +15,14 @@ class ExploreTagCell: UICollectionViewCell {
     @IBOutlet weak var tagImage: UIImageView!
     
     @IBOutlet weak var ExploreQuestions: UICollectionView!
+    weak var delegate : QuestionDelegate!
     
     var loadingStatus = LoadMoreStatus.haveMore 
     var questionsShown = 5
     let questionsIncrement = 5
     
     var _totalQuestions : Int!
-    var questionsList = [Question?]()
+    var _allQuestions = [Question?]()
     
     var currentTag : Tag! {
         didSet {
@@ -62,15 +63,17 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(questionReuseIdentifier, forIndexPath: indexPath) as! ExploreQuestionCell
 
-        if self.questionsList.count > indexPath.row {
-            let _currentQuestion = self.questionsList[indexPath.row]
+        if self._allQuestions.count > indexPath.row {
+            let _currentQuestion = self._allQuestions[indexPath.row]
             cell.qTitle.text = _currentQuestion?.qTitle
         } else {
             let questionRef = databaseRef.child("questions/\(self.currentTag.questions![indexPath.row])")
+            print(indexPath.row)
             questionRef.observeSingleEventOfType(.Value, withBlock: { snap in
                 let _currentQuestion = Question(qID: snap.key, snapshot: snap)
-                self.questionsList.append(_currentQuestion)
-                cell.qTitle.text = _currentQuestion.qTitle
+                print(_currentQuestion.qTitle)
+                self._allQuestions.append(_currentQuestion)
+                cell.qTitle.text = snap.childSnapshotForPath("title").value as? String
             })
         }
         
@@ -82,7 +85,21 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         return cell
     }
     
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        let _selectedQuestion = self._allQuestions[indexPath.row]
+        delegate.showQuestion(_selectedQuestion, _allQuestions: self._allQuestions, _questionIndex: indexPath.row)
+    }
+    
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
         return 1
     }
 }
+
+//            Database.getQuestion(self.currentTag.questions![indexPath.row]) { (question , error) in
+//                if error != nil {
+//                    print(error!.description)
+//                } else {
+//                    self.questionsList.append(question)
+//                    cell.qTitle.text = question.qTitle
+//                }
+//            }

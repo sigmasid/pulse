@@ -14,6 +14,8 @@ import FirebaseAuth
 class AuthHelper {
     static func checkSocialTokens(completion: (result: Bool) -> Void) {
         if FBSDKAccessToken.currentAccessToken() != nil {
+            print("FB auth returned true")
+
             let token = FBSDKAccessToken.currentAccessToken().tokenString
             let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
@@ -27,6 +29,8 @@ class AuthHelper {
                 }
             }
         } else if let session = Twitter.sharedInstance().sessionStore.session() {
+            print("TWTR auth returned true")
+
             let credential = FIRTwitterAuthProvider.credentialWithToken(session.authToken, secret: session.authTokenSecret)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
                 if let _aUser = aUser {
@@ -35,6 +39,7 @@ class AuthHelper {
                 }
             }
         } else {
+            print("auth returned false")
             completion(result: false)
         }
     }

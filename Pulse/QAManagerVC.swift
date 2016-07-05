@@ -22,22 +22,22 @@ protocol childVCDelegate: class {
 }
 
 class QAManagerVC: UIViewController, childVCDelegate {
-    var questions = [Question]()
-    var selectedTag : Tag!
-    private var questionCounter = 0
-    private var currentQuestion = Question!(nil)
+    var questions = [Question?]()
+//    var selectedTag : Tag!
+    var questionCounter = 0
+    var currentQuestion = Question!(nil)
     var currentUser : User!
     
     var _hasMoreAnswers = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // Do any additional setup after loading the view.
     }
     
     override func viewDidAppear(animated: Bool) {
-        loadAllQuestionIDsForTag(self.selectedTag)
+        print("QA Manager frame is \(self.view.frame)")
+        self.view.backgroundColor = UIColor.yellowColor()   
+        displayQuestion()
     }
     
     override func prefersStatusBarHidden() -> Bool {
@@ -46,14 +46,14 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     func handleSwipe(recognizer:UISwipeGestureRecognizer) {
         
     }
     
-    func displayNewQuestion() {
+    func displayQuestion() {
+        print("display questions fired, current question \(self.currentQuestion)")
         let newVC = ShowAnswerVC()
         newVC.currentQuestion = self.currentQuestion
         newVC.delegate = self
@@ -68,38 +68,9 @@ class QAManagerVC: UIViewController, childVCDelegate {
         })
     }
     
-    
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        if keyPath == "qCreated" {
-            self.displayNewQuestion()
-            self.currentQuestion.removeObserver(self, forKeyPath: "qCreated")
-        }
-    }
-    
     func loadNextQuestion() {
-        let questionsPath = databaseRef.child("questions/\(self.selectedTag.questions![questionCounter])")
-        questionsPath.observeSingleEventOfType(.Value, withBlock: { snapshot in
-            self.currentQuestion = Question(qID: snapshot.key, snapshot: snapshot)
-            
-            self.currentQuestion.addObserver(self, forKeyPath: "qCreated", options: NSKeyValueObservingOptions.New, context: nil)
-            self.questionCounter += 1
-        })
-    }
-    
-    func loadAllQuestionIDsForTag(currentTag : Tag) {
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-        let tagsPath = databaseRef.child("tags/\(self.selectedTag.tagID!)/questions")
-        
-        tagsPath.observeSingleEventOfType(.Value, withBlock: { snapshot in
-            for item in snapshot.children {
-                let child = item as! FIRDataSnapshot
-                let questionID = child.key
-                if self.selectedTag.questions?.append(questionID) == nil {
-                    self.selectedTag.questions = [questionID]
-                }
-            }
-            self.loadNextQuestion()
-        })
+        questionCounter += 1
+        currentQuestion = questions[questionCounter]
     }
     
     /* IMPLEMENT CHILD DISMISSED PROTOCOL */
@@ -119,6 +90,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         if currentQuestion.hasAnswers() && User.currentUser.askedToAnswerCurrentQuestion {
             self.loadNextQuestion()
         } else {
+            print("camera VC fired")
             let cameraVC = CameraVC()
             cameraVC.camDelegate = self
             cameraVC.questionToShow = currentQuestion
@@ -140,11 +112,13 @@ class QAManagerVC: UIViewController, childVCDelegate {
     func askUserToLogin(currentVC : UIViewController) {
         AuthHelper.checkSocialTokens({ result in
             if !result {
-                let showLoginVC = (self.storyboard?.instantiateViewControllerWithIdentifier("LoginVC"))! as! LoginVC
-                showLoginVC.loginDelegate = self
-                
-                self.addNewVC(showLoginVC)
-                showLoginVC.didMoveToParentViewController(self)
+                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                if let showLoginVC = storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC {
+                    self.addNewVC(showLoginVC)
+                    showLoginVC.didMoveToParentViewController(self)
+                } else {
+                    print("could not instantiate")
+                }
             }
         })
     }

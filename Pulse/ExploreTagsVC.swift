@@ -9,7 +9,11 @@
 import UIKit
 import FirebaseDatabase
 
-class ExploreTagsVC: UIViewController {
+protocol QuestionDelegate : class {
+    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int)
+}
+
+class ExploreTagsVC: UIViewController, QuestionDelegate {
     var allTags = [Tag]()
     var currentTag : Tag!
     
@@ -19,10 +23,17 @@ class ExploreTagsVC: UIViewController {
     private let reuseIdentifier = "tagCell"
     
     @IBOutlet weak var ExploreTags: UICollectionView!
+    @IBOutlet weak var logoIcon: UIView!
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
+        
         loadTagsFromFirebase()
+        
+        let iconColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 1.0 )
+        let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoIcon.frame.width, self.logoIcon.frame.height))
+        pulseIcon.drawIcon(iconColor, iconThickness: 3)
+        logoIcon.addSubview(pulseIcon)
     }
     
     override func viewDidDisappear(animated: Bool) {
@@ -34,6 +45,18 @@ class ExploreTagsVC: UIViewController {
     func loadTagsFromFirebase() {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         
+//        Database.getAllTags() { (tags , error) in
+//            if error != nil {
+//                print(error!.description)
+//                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+//            } else {
+//                self.allTags = tags
+//                self.ExploreTags.delegate = self
+//                self.ExploreTags.dataSource = self
+//                self.ExploreTags.reloadData()
+//                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+//            }
+//        }
         tagsListener = databaseRef.child("tags").observeEventType(.Value, withBlock: { snapshot in
             for item in snapshot.children {
                 let child = item as! FIRDataSnapshot
@@ -45,6 +68,23 @@ class ExploreTagsVC: UIViewController {
             self.ExploreTags.reloadData()
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         })
+    }
+    
+    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int) {
+        let QAVC = QAManagerVC()
+        QAVC.questions = _allQuestions
+        QAVC.currentQuestion = _selectedQuestion
+        QAVC.questionCounter = _questionIndex
+        QAVC.view.frame = self.view.frame
+        print(QAVC.view.frame)
+        self.presentViewController(QAVC, animated: true, completion: nil)
+//        addNewVC(QAVC)
+    }
+    
+    func addNewVC(newVC: UIViewController) {
+        self.addChildViewController(newVC)
+        newVC.view.frame = self.view.frame
+        self.view.addSubview(newVC.view)
     }
 }
 
@@ -65,6 +105,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! ExploreTagCell
         
+        cell.delegate = self
         let _currentTag = allTags[indexPath.row]
         
         cell.currentTag = _currentTag
@@ -93,6 +134,5 @@ extension ExploreTagsVC : UICollectionViewDataSource {
 extension ExploreTagsVC: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
         return CGSize(width: self.view.frame.width, height: self.view.frame.height / 3)
-        
     }
 }

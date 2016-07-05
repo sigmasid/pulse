@@ -10,7 +10,7 @@ import UIKit
 import FirebaseDatabase
 
 class CameraVC: UIViewController, UIGestureRecognizerDelegate {
-    let aCamera = CameraManager()
+    let _Camera = CameraManager()
     let cameraOverlay = CameraOverlayView(frame: UIScreen.mainScreen().bounds)
     private let videoDuration : Double = 6
     private var countdownTimer : CALayer!
@@ -20,9 +20,6 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        //        cameraview.frame = UIScreen.mainScreen().bounds
-        //        self.view.addSubview(cameraview)
         
         _ = UIPinchGestureRecognizer(target: self, action: #selector(self.handlePinch(_:)))
         
@@ -35,14 +32,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         //        cameraview.userInteractionEnabled = true
         //        cameraview.multipleTouchEnabled = true
         //        cameraview.addGestureRecognizer(zoomPinch)
-        
-        if (aCamera.currentCameraStatus() == .Ready) {
-            aCamera.shouldRespondToOrientationChanges = false
-            aCamera.cameraDevice = .Back
-            aCamera.cameraOutputQuality = .High
-            
-            showCamera()
-        }
+    
+        showCamera()
     }
     
     override func didReceiveMemoryWarning() {
@@ -61,28 +52,26 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     func startVideoCapture() {
-        print("started recording")
         self.view.layer.addSublayer(cameraOverlay.countdownTimer(videoDuration, size: 20))
         
-        aCamera.startRecordingVideo()
+        _Camera.startRecordingVideo()
     }
     
     func stopVideoCapture() {
-        print("stopped recording")
         cameraOverlay.stopCountdown()
-        aCamera.stopRecordingVideo({ (videoURL, error) -> Void in
+        _Camera.stopRecordingVideo({ (videoURL, error) -> Void in
             if let errorOccured = error {
-                self.aCamera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
+                self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
             } else {
-                self.camDelegate!.doneRecording(videoURL, currentVC: self, qID: self.questionToShow.qID, location: self.aCamera.recordedLocation)
-                self.aCamera.stopAndRemoveCaptureSession()
+                self.camDelegate!.doneRecording(videoURL, currentVC: self, qID: self.questionToShow.qID, location: self._Camera.recordedLocation)
+                self._Camera.stopAndRemoveCaptureSession()
                 // upload the video
             }
         })
     }
     
     func cycleFlash(oldButton : UIButton) {
-        aCamera.changeFlashMode()
+        _Camera.changeFlashMode()
         if (cameraOverlay.flashMode ==  .Off) {
             cameraOverlay.flashMode = .On
             cameraOverlay.updateFlashImage(oldButton, newFlashMode: .On)
@@ -93,19 +82,25 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     func flipCamera() {
-        if aCamera.cameraDevice == .Front {
-            aCamera.cameraDevice = .Back
+        if _Camera.cameraDevice == .Front {
+            _Camera.cameraDevice = .Back
         } else {
-            aCamera.cameraDevice = .Front
+            _Camera.cameraDevice = .Front
         }
     }
     
     func showCamera() {
         
+        _Camera.showAccessPermissionPopupAutomatically = true
+        _Camera.shouldRespondToOrientationChanges = false
+        _Camera.cameraDevice = .Back
+        _Camera.cameraOutputQuality = .High
+        
         let takeButton = cameraOverlay.takeButton
         let flipButton = cameraOverlay.flipCamera
         let flashButton = cameraOverlay.flashCamera(.Off)
         let questionBackground = cameraOverlay.questionBackground
+        
         
         questionBackground.text = self.questionToShow.qTitle
         
@@ -120,9 +115,9 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         flipButton.addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
         flashButton.addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
         
-        self.aCamera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic)
+        self._Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic)
         
-        self.aCamera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
+        self._Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
             
             let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
             alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))
