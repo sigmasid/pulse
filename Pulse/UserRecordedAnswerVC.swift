@@ -21,14 +21,23 @@ class UserRecordedAnswerVC: UIViewController {
     var currentAnswer : Answer!
     weak var answerDelegate : childVCDelegate?
     
+    private var _controlsOverlay : RecordedAnswerOverlay!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(true)
         let aPlayer = AVPlayer()
+        
         let avPlayerLayer = AVPlayerLayer(player: aPlayer)
         self.view.layer.insertSublayer(avPlayerLayer, atIndex: 0)
-        avPlayerLayer.frame = CGRectMake(0, 0, UIScreen.mainScreen().bounds.width, UIScreen.mainScreen().bounds.height)
-        self.view.addSubview(self.setupPlayer())
+        avPlayerLayer.frame = self.view.frame
+
+        _controlsOverlay = RecordedAnswerOverlay(frame: self.view.frame)
+        self.view.addSubview(_controlsOverlay)
+        self.setupOverlayButtons()
         
         let _ = processVideo(fileURL!, aQuestion : currentQuestion) { (result) in
             let currentVideo = AVPlayerItem(URL: result)
@@ -36,42 +45,15 @@ class UserRecordedAnswerVC: UIViewController {
             aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
             aPlayer.play()
         }
-        
-        // Do any additional setup after loading the view.
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
-    private func setupPlayer() -> UIView {
-        let overlayView = UIView()
-        overlayView.frame = CGRectMake(0, 0, UIScreen.mainScreen().bounds.width, UIScreen.mainScreen().bounds.height)
-        
-        let postButton = UIButton()
-        postButton.frame = CGRectMake(UIScreen.mainScreen().bounds.width / 2 - 50, UIScreen.mainScreen().bounds.height - 100, 100, 30)
-        postButton.setTitle("Post", forState: .Normal)
-        postButton.addTarget(self, action: #selector(self._postVideo(_:)), forControlEvents: UIControlEvents.TouchUpInside)
-        
-        let saveToDiskButton = UIButton()
-        if let saveToDiskImage = UIImage(named: "saveFile.png") {
-            saveToDiskButton.setImage(saveToDiskImage, forState: UIControlState.Normal)
-            saveToDiskButton.frame = CGRectMake(20, UIScreen.mainScreen().bounds.height - 100, saveToDiskImage.size.width, saveToDiskImage.size.width)
-            saveToDiskButton.addTarget(self, action: #selector(self._saveVideo), forControlEvents: UIControlEvents.TouchUpInside)
-        }
-        
-        let locationLabel = UILabel(frame: CGRectMake(10,10,100,0))
-        if let _location = aLocation {
-            locationLabel.text = _location
-            locationLabel.textColor = UIColor.blackColor()
-        }
-        
-        overlayView.addSubview(postButton)
-        overlayView.addSubview(saveToDiskButton)
-        overlayView.addSubview(locationLabel)
-        
-        return overlayView
+    private func setupOverlayButtons() {
+        _controlsOverlay.getButton(.Post).addTarget(self, action: #selector(self._postVideo), forControlEvents: UIControlEvents.TouchUpInside)
+        _controlsOverlay.getButton(.Save).addTarget(self, action: #selector(self._saveVideo), forControlEvents: UIControlEvents.TouchUpInside)
     }
     
     ///post video to firebase
@@ -172,10 +154,11 @@ class UserRecordedAnswerVC: UIViewController {
     
     ///User clicked save to album button
     func _saveVideo(sender: UIButton!) {
+        _controlsOverlay.addSavingLabel("Saving...")
         if let videoURL = fileURL {
             _saveVideoToAlbum(videoURL)
         } else {
-            print("sorry there was an error uploading video")
+            _controlsOverlay.hideSavingLabel("Sorry there was an error")
         }
     }
     
@@ -183,7 +166,15 @@ class UserRecordedAnswerVC: UIViewController {
         let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(url)
             }, completionHandler: { success, error in
-                print("Finished saving asset.", (success ? "Success." : error))
+                if success {
+                    dispatch_async(dispatch_get_main_queue()) {
+                        self._controlsOverlay.hideSavingLabel("Saved video!")
+                    }
+                } else {
+                    dispatch_async(dispatch_get_main_queue()) {
+                        self._controlsOverlay.hideSavingLabel("Sorry there was an error")
+                    }
+                }
         })
     }
 }

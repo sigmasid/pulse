@@ -10,11 +10,12 @@ import UIKit
 
 class AnswerOverlay: UIView {
 
-    internal var userBackground : UIView!
-    internal var userName : UILabel?
-    internal var userLocation : UILabel?
-    internal var userImage : UIImageView?
-    internal var bottomPanel : CGFloat = 50
+    internal var _userBackground = UIView()
+    internal var _userNameLabel : UILabel?
+    internal var _userLocationLabel : UILabel?
+    internal var _userImage : UIImageView?
+    internal var _bottomDimension : CGFloat = 50
+    internal var _elementSpacer : CGFloat = 10
     
     internal var videoTimer : UIView!
     internal var videoTimerDimensions : CGFloat = 40
@@ -22,17 +23,10 @@ class AnswerOverlay: UIView {
     internal var bgShapeLayer = CAShapeLayer()
 
     override init(frame: CGRect) {
-        self.userBackground = UIView(frame: CGRectMake(0, frame.size.height - self.bottomPanel, frame.size.width, self.bottomPanel))
-        self.userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
+        self.videoTimer = UIView(frame: CGRectMake(frame.size.width - self.videoTimerDimensions, frame.size.height - self._bottomDimension - self.videoTimerDimensions, self.videoTimerDimensions, self.videoTimerDimensions))
         
-        self.videoTimer = UIView(frame: CGRectMake(frame.size.width - self.videoTimerDimensions, frame.size.height - self.bottomPanel - self.videoTimerDimensions, self.videoTimerDimensions, self.videoTimerDimensions))
-        
-        self.userName = nil
-        self.userLocation = nil
-        self.userImage = nil
-
         super.init(frame: frame)
-        self.addSubview(self.userBackground)
+        self.addUserBackground()
         self.addSubview(self.videoTimer)
     }
     
@@ -40,35 +34,70 @@ class AnswerOverlay: UIView {
         super.init(coder: aDecoder)
     }
     
-    func addUserName(_userName : String) {
-        userName = UILabel(frame: CGRectMake(bottomPanel + 10, userBackground.frame.height / 6, userBackground.frame.width - bottomPanel - 10, userBackground.frame.height / 3))
-    
-        userName?.text = _userName
-        userName?.textColor = UIColor.whiteColor()
+    private func addUserBackground() {
+        self.addSubview(self._userBackground)
         
-        userBackground.addSubview(userName!)
+        _userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
+        _userBackground.translatesAutoresizingMaskIntoConstraints = false
+        
+        _userBackground.bottomAnchor.constraintEqualToAnchor(self.bottomAnchor).active = true
+        _userBackground.widthAnchor.constraintEqualToAnchor(self.widthAnchor).active = true
+        _userBackground.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor).active = true
+        _userBackground.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
+    }
+    
+    func addUserName(_userName : String) {
+//        _userName = UILabel(frame: CGRectMake(bottomPanel + 10, userBackground.frame.height / 6, userBackground.frame.width - bottomPanel - 10, _userBackground.frame.height / 3))
+        _userNameLabel = UILabel()
+        _userNameLabel?.text = _userName
+        _userNameLabel?.textColor = UIColor.whiteColor()
+        _userNameLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        
+        _userBackground.addSubview(_userNameLabel!)
+        
+        _userNameLabel!.translatesAutoresizingMaskIntoConstraints = false
+        
+        _userNameLabel!.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _bottomDimension / 6).active = true
+        _userNameLabel!.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -_elementSpacer - _bottomDimension).active = true
+        _userNameLabel!.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
     }
     
     func addLocation(_userLocation : String) {
-        userLocation = UILabel(frame: CGRectMake(bottomPanel + 10, userBackground.frame.height / 2, userBackground.frame.width - bottomPanel - 10, userBackground.frame.height / 3))
-        
-        userLocation?.text = _userLocation
-        userLocation?.textColor = UIColor.whiteColor()
+//        userLocation = UILabel(frame: CGRectMake(bottomPanel + 10, userBackground.frame.height / 2, userBackground.frame.width - bottomPanel - 10, userBackground.frame.height / 3))
+        _userLocationLabel = UILabel()
+        _userLocationLabel?.text = _userLocation
+        _userLocationLabel?.textColor = UIColor.whiteColor()
+        _userLocationLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
 
-        userBackground.addSubview(userLocation!)
+
+        _userBackground.addSubview(_userLocationLabel!)
+        
+        _userLocationLabel!.translatesAutoresizingMaskIntoConstraints = false
+        
+        _userLocationLabel!.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_bottomDimension / 6).active = true
+        _userLocationLabel!.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -_elementSpacer - _bottomDimension).active = true
+        _userLocationLabel!.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
     }
     
     func addUserImage(_userImageURL : NSURL?) {
-        userImage = UIImageView(frame: CGRectMake(0, 0, bottomPanel, bottomPanel))
+//        _userImage = UIImageView(frame: CGRectMake(0, 0, bottomPanel, bottomPanel))
+        _userImage = UIImageView()
         
         if let _ = _userImageURL {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
                 let _userImage = NSData(contentsOfURL: _userImageURL!)
                 dispatch_async(dispatch_get_main_queue(), {
-                    self.userImage!.image = UIImage(data: _userImage!)
+                    self._userImage!.image = UIImage(data: _userImage!)
                 });
             }
-            userBackground.addSubview(userImage!)
+            _userBackground.addSubview(_userImage!)
+            
+            _userImage!.translatesAutoresizingMaskIntoConstraints = false
+            
+            _userImage!.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor).active = true
+            _userImage!.widthAnchor.constraintEqualToConstant(_bottomDimension).active = true
+            _userImage!.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
+            _userImage!.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor).active = true
         }
     }
     
