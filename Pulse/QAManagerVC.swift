@@ -10,7 +10,7 @@ import UIKit
 import FirebaseDatabase
 
 protocol childVCDelegate: class {
-    func dismissVC(_ : UIViewController)
+//    func dismissVC(_ : UIViewController)
     func noAnswersToShow(_ : UIViewController)
     func doneRecording(_: NSURL?, currentVC : UIViewController, qID: String?, location: String?)
     func askUserToLogin(_: UIViewController)
@@ -22,12 +22,14 @@ protocol childVCDelegate: class {
 }
 
 class QAManagerVC: UIViewController, childVCDelegate {
-    var questions = [Question?]()
-//    var selectedTag : Tag!
+    
+    var selectedTag : Tag!
+    var allQuestions = [Question?]()
     var questionCounter = 0
     var currentQuestion = Question!(nil)
     var currentUser : User!
     
+    let answerVC = ShowAnswerVC()
     var _hasMoreAnswers = false
     
     override func viewDidLoad() {
@@ -35,8 +37,14 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     override func viewDidAppear(animated: Bool) {
-        print("QA Manager frame is \(self.view.frame)")
-        self.view.backgroundColor = UIColor.yellowColor()   
+        self.view.backgroundColor = UIColor.yellowColor()
+        
+        let iconSize : CGFloat = 50
+        let iconColor = UIColor( red: 0/255, green: 0/255, blue: 0/255, alpha: 1.0 )
+        let icon = Icon(frame: CGRectMake(UIScreen.mainScreen().bounds.midX - iconSize / 2, UIScreen.mainScreen().bounds.midY - iconSize / 2, iconSize, iconSize))
+        icon.drawIcon(iconColor, iconThickness: 2)
+        
+        self.view.addSubview(icon)
         displayQuestion()
     }
     
@@ -52,28 +60,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         
     }
     
-    func displayQuestion() {
-        print("display questions fired, current question \(self.currentQuestion)")
-        let newVC = ShowAnswerVC()
-        newVC.currentQuestion = self.currentQuestion
-        newVC.delegate = self
-        self.addNewVC(newVC)
-    }
-    
-    func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController) {
-        
-        self.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.25, options: UIViewAnimationOptions.CurveEaseIn, animations: nil, completion: { (finished) in
-            oldVC.removeFromParentViewController()
-            newVC.didMoveToParentViewController(self)
-        })
-    }
-    
-    func loadNextQuestion() {
-        questionCounter += 1
-        currentQuestion = questions[questionCounter]
-    }
-    
-    /* IMPLEMENT CHILD DISMISSED PROTOCOL */
+    /* General VC related methods */
     func dismissVC(currentVC : UIViewController) {
         currentVC.willMoveToParentViewController(nil)
         currentVC.view.removeFromSuperview()
@@ -84,18 +71,54 @@ class QAManagerVC: UIViewController, childVCDelegate {
         self.addChildViewController(newVC)
         newVC.view.frame = self.view.frame
         self.view.addSubview(newVC.view)
+        newVC.didMoveToParentViewController(self)
+    }
+    
+    func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController) {
+        self.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.25, options: UIViewAnimationOptions.CurveEaseIn, animations: nil, completion: { (finished) in
+            oldVC.removeFromParentViewController()
+            newVC.didMoveToParentViewController(self)
+        })
+    }
+    
+    /* QA Specific Methods */
+    
+    func loadNextQuestion(completion: (question : Question, error : NSError?) -> Void) {
+        questionCounter += 1
+        
+        if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
+            Database.getQuestion(selectedTag.questions![questionCounter], completion: { (question, error) in
+                if error != nil {
+                    print(error.debugDescription)
+                } else {
+                    self.allQuestions.append(question)
+                    self.currentQuestion = question
+                    completion(question: question, error: nil)
+                }
+            })
+        } else {
+            currentQuestion = allQuestions[questionCounter]
+            completion(question: currentQuestion, error: nil)
+        }
+    }
+    
+    func displayQuestion() {
+        answerVC.currentQuestion = self.currentQuestion
+        answerVC.delegate = self
+        self.addNewVC(answerVC)
     }
     
     func noAnswersToShow(currentVC : UIViewController) {
         if currentQuestion.hasAnswers() && User.currentUser.askedToAnswerCurrentQuestion {
-            self.loadNextQuestion()
+            print("question has answers \(currentQuestion.totalAnswers())")
+//            self.loadNextQuestion()
         } else {
-            print("camera VC fired")
+            print("going to show camera")
             let cameraVC = CameraVC()
             cameraVC.camDelegate = self
             cameraVC.questionToShow = currentQuestion
             addNewVC(cameraVC)
-            cycleBetweenVC(currentVC, newVC: cameraVC)
+//          cycleBetweenVC(currentVC, newVC: cameraVC)
         }
     }
     
@@ -115,9 +138,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
                 if let showLoginVC = storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC {
                     self.addNewVC(showLoginVC)
-                    showLoginVC.didMoveToParentViewController(self)
-                } else {
-                    print("could not instantiate")
+                    showLoginVC.loginDelegate = self
                 }
             }
         })
@@ -133,17 +154,25 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     func doneUploadingAnswer(currentVC: UIViewController) {
         if _hasMoreAnswers {
-            let aAnswer = ShowAnswerVC()
-            aAnswer.currentQuestion = self.currentQuestion
+            answerVC.currentQuestion = self.currentQuestion
         } else {
-            self.loadNextQuestion()
+            self.loadNextQuestion({ (question, error) in
+                if error == nil {
+                    self.answerVC.currentQuestion = question
+                }
+            })
             self.dismissVC(currentVC)
         }
     }
     
     func showNextQuestion(currentVC: UIViewController) {
-        self.loadNextQuestion()
-        self.dismissVC(currentVC)
+        self.loadNextQuestion({ (question, error) in
+            if error != nil {
+                print("error getting question")
+            } else {
+                self.answerVC.currentQuestion = question
+            }
+        })
     }
     
     func askUserQuestion() {
@@ -156,7 +185,11 @@ class QAManagerVC: UIViewController, childVCDelegate {
             print("user dismissed camera fired")
             
         } else {
-            self.loadNextQuestion()
+            self.loadNextQuestion({ (question, error) in
+                if error == nil {
+                    self.answerVC.currentQuestion = question
+                }
+            })
             self.dismissVC(currentVC)
         }
     }

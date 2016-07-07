@@ -7,11 +7,11 @@
 //
 
 import Foundation
+import FirebaseDatabase
 
 class User {
     var uID : String?
     var name : String?
-    var screenName : String?
     var answers : [String]?
     var askedToAnswerCurrentQuestion = false
     var profilePic : String?
@@ -26,7 +26,6 @@ class User {
     init() {
         self.uID = nil
         self.name = nil
-        self.screenName = nil
         self.answers = nil
     }
     
@@ -34,14 +33,19 @@ class User {
         self.uID = uID
     }
     
-    init(uID: String, screenName: String) {
-        self.uID = uID
-        self.screenName = screenName
-    }
-    
     init(uID: String, name:String) {
         self.uID = uID
         self.name = name
+    }
+    
+    init(uID: String, snapshot: FIRDataSnapshot) {
+        self.uID = uID
+        if snapshot.hasChild("name") {
+            self.name = snapshot.childSnapshotForPath("name").value as? String
+        }
+        if snapshot.hasChild("profilePic") {
+            self.profilePic = snapshot.childSnapshotForPath("profilePic").value as? String
+        }
     }
     
     func isLoggedIn() -> Bool {
@@ -51,7 +55,6 @@ class User {
     func signOut() {
         self.uID = nil
         self.name = nil
-        self.screenName = nil
         self.answers = nil
     }
 }

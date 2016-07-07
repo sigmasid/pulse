@@ -57,7 +57,7 @@ class ExploreTagCell: UICollectionViewCell {
 
 extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate {
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return questionsShown
+        return _totalQuestions
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
@@ -68,7 +68,6 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
             cell.qTitle.text = _currentQuestion?.qTitle
         } else {
             let questionRef = databaseRef.child("questions/\(self.currentTag.questions![indexPath.row])")
-            print(indexPath.row)
             questionRef.observeSingleEventOfType(.Value, withBlock: { snap in
                 let _currentQuestion = Question(qID: snap.key, snapshot: snap)
                 print(_currentQuestion.qTitle)
@@ -77,11 +76,11 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
             })
         }
         
-        if ( indexPath.row == questionsShown - 1) {
-            if loadingStatus == .haveMore {
-                self.performSelector(#selector(ExploreTagCell.loadMoreQuestions), withObject: indexPath, afterDelay: 0)
-            }
-        }
+//        if ( indexPath.row == questionsShown - 1) {
+//            if loadingStatus == .haveMore {
+//                self.performSelector(#selector(ExploreTagCell.loadMoreQuestions), withObject: indexPath, afterDelay: 0)
+//            }
+//        }
         return cell
     }
     

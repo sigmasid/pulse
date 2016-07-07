@@ -222,7 +222,7 @@
                                 </variation>
                             </button>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="TzC-Cz-gyd">
-                                <rect key="frame" x="260" y="72" width="80" height="80"/>
+                                <rect key="frame" x="260" y="71.5" width="80" height="80"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="TzC-Cz-gyd" secondAttribute="height" multiplier="1:1" id="Br2-gZ-tNV"/>
                                     <constraint firstAttribute="width" constant="80" id="IaS-gb-S3U"/>
@@ -232,7 +232,7 @@
                                 </variation>
                             </view>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Email" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="tHo-Tn-A2s">
-                                <rect key="frame" x="27" y="339" width="549" height="47"/>
+                                <rect key="frame" x="27" y="339" width="549" height="46.5"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" keyboardType="emailAddress"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -260,7 +260,7 @@
                                 </variation>
                             </button>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Password" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="hKc-3m-q4h">
-                                <rect key="frame" x="27" y="400" width="549" height="46"/>
+                                <rect key="frame" x="27" y="400.5" width="549" height="45.5"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -295,12 +295,9 @@
                                     <action selector="fbLogin:" destination="fcE-Nh-5CR" eventType="touchUpInside" id="TYz-ZI-JQS"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalCompressionResistancePriority="751" text="" textAlignment="center" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QeW-jp-ris">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalCompressionResistancePriority="751" misplaced="YES" text="" textAlignment="center" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QeW-jp-ris">
                                 <rect key="frame" x="0.0" y="0.0" width="600" height="61"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="61" id="Xbh-I5-Oco"/>
-                                </constraints>
-                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="17"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -321,7 +318,7 @@
                             <constraint firstItem="QqP-KB-Lfa" firstAttribute="top" secondItem="hKc-3m-q4h" secondAttribute="bottom" multiplier="1.04" priority="900" id="KGp-MK-Xjk"/>
                             <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="mwY-hr-A0j" secondAttribute="height" multiplier="13" id="KTu-wC-XiN"/>
                             <constraint firstItem="tHo-Tn-A2s" firstAttribute="height" secondItem="mwY-hr-A0j" secondAttribute="height" id="MH8-Aa-Dbo"/>
-                            <constraint firstItem="QeW-jp-ris" firstAttribute="top" secondItem="Zdn-Wn-aCC" secondAttribute="bottom" constant="-20" id="MgB-Eo-g8Z"/>
+                            <constraint firstItem="QeW-jp-ris" firstAttribute="top" secondItem="Zdn-Wn-aCC" secondAttribute="bottom" id="MgB-Eo-g8Z"/>
                             <constraint firstItem="bX0-JU-Sql" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" priority="900" constant="1" id="NQV-Cq-SrE"/>
                             <constraint firstItem="mwY-hr-A0j" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" constant="1" id="QBV-5r-0mi"/>
                             <constraint firstItem="0Xp-xB-99u" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="QZO-Yx-kYS"/>

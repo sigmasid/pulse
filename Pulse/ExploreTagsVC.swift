@@ -10,7 +10,7 @@ import UIKit
 import FirebaseDatabase
 
 protocol QuestionDelegate : class {
-    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int)
+    func showQuestion(_selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int)
 }
 
 class ExploreTagsVC: UIViewController, QuestionDelegate {
@@ -72,13 +72,13 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
     
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int) {
         let QAVC = QAManagerVC()
-        QAVC.questions = _allQuestions
+        QAVC.selectedTag = currentTag
+        QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
         QAVC.view.frame = self.view.frame
-        print(QAVC.view.frame)
+        
         self.presentViewController(QAVC, animated: true, completion: nil)
-//        addNewVC(QAVC)
     }
     
     func addNewVC(newVC: UIViewController) {

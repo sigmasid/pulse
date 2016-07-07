@@ -11,7 +11,7 @@ import FirebaseDatabase
 
 class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     let _Camera = CameraManager()
-    let cameraOverlay = CameraOverlayView(frame: UIScreen.mainScreen().bounds)
+    let _cameraOverlay = CameraOverlayView(frame: UIScreen.mainScreen().bounds)
     private let videoDuration : Double = 6
     private var countdownTimer : CALayer!
     
@@ -32,7 +32,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         //        cameraview.userInteractionEnabled = true
         //        cameraview.multipleTouchEnabled = true
         //        cameraview.addGestureRecognizer(zoomPinch)
-    
+        
         showCamera()
     }
     
@@ -52,13 +52,13 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     func startVideoCapture() {
-        self.view.layer.addSublayer(cameraOverlay.countdownTimer(videoDuration, size: 20))
+        self.view.layer.addSublayer(_cameraOverlay.countdownTimer(videoDuration, size: 20))
         
         _Camera.startRecordingVideo()
     }
     
     func stopVideoCapture() {
-        cameraOverlay.stopCountdown()
+        _cameraOverlay.stopCountdown()
         _Camera.stopRecordingVideo({ (videoURL, error) -> Void in
             if let errorOccured = error {
                 self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
@@ -72,12 +72,11 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     
     func cycleFlash(oldButton : UIButton) {
         _Camera.changeFlashMode()
-        if (cameraOverlay.flashMode ==  .Off) {
-            cameraOverlay.flashMode = .On
-            cameraOverlay.updateFlashImage(oldButton, newFlashMode: .On)
-        } else {
-            cameraOverlay.updateFlashImage(oldButton, newFlashMode: .Off)
-            cameraOverlay.flashMode = .Off
+        
+        switch _Camera.flashMode {
+        case .Off: _cameraOverlay._flashMode =  .Off
+        case .On: _cameraOverlay._flashMode = .On
+        case .Auto: _cameraOverlay._flashMode = .Auto
         }
     }
     
@@ -93,29 +92,23 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         
         _Camera.showAccessPermissionPopupAutomatically = true
         _Camera.shouldRespondToOrientationChanges = false
-        _Camera.cameraDevice = .Back
-        _Camera.cameraOutputQuality = .High
-        
-        let takeButton = cameraOverlay.takeButton
-        let flipButton = cameraOverlay.flipCamera
-        let flashButton = cameraOverlay.flashCamera(.Off)
-        let questionBackground = cameraOverlay.questionBackground
-        
-        
-        questionBackground.text = self.questionToShow.qTitle
-        
-        self.view.addSubview(takeButton)
-        self.view.addSubview(flipButton)
-        self.view.addSubview(flashButton)
-        self.view.addSubview(questionBackground)
-        
-        takeButton.addTarget(self, action: #selector(CameraVC.startVideoCapture), forControlEvents: UIControlEvents.TouchDown)
-        takeButton.addTarget(self, action: #selector(CameraVC.stopVideoCapture), forControlEvents: UIControlEvents.TouchUpInside)
-        
-        flipButton.addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
-        flashButton.addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
-        
+        _Camera.cameraDevice = .Front
         self._Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic)
+        
+        self.view.addSubview(_cameraOverlay)
+        _cameraOverlay.updateQuestion(self.questionToShow.qTitle!)
+       
+        switch _Camera.flashMode {
+        case .Off: _cameraOverlay._flashMode =  .Off
+        case .On: _cameraOverlay._flashMode = .On
+        case .Auto: _cameraOverlay._flashMode = .Auto
+        }
+    
+        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(CameraVC.startVideoCapture), forControlEvents: UIControlEvents.TouchDown)
+        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(CameraVC.stopVideoCapture), forControlEvents: UIControlEvents.TouchUpInside)
+        
+        _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
         
         self._Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
             

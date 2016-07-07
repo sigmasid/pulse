@@ -30,7 +30,7 @@ class UserRecordedAnswerVC: UIViewController {
         avPlayerLayer.frame = CGRectMake(0, 0, UIScreen.mainScreen().bounds.width, UIScreen.mainScreen().bounds.height)
         self.view.addSubview(self.setupPlayer())
         
-        let _ = processVideo(fileURL!, location: aLocation, aQuestion : currentQuestion) { (result) in
+        let _ = processVideo(fileURL!, aQuestion : currentQuestion) { (result) in
             let currentVideo = AVPlayerItem(URL: result)
             self.fileURL = result
             aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
@@ -126,8 +126,6 @@ class UserRecordedAnswerVC: UIViewController {
         }
     }
     
-    
-    
     private func createAnswer() -> Answer {
         let answerKey = databaseRef.childByAutoId().key
         return Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser.uID!)
@@ -136,13 +134,32 @@ class UserRecordedAnswerVC: UIViewController {
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if keyPath == "aURL" {
             let answersPath =  databaseRef.child("answers/\(self.currentAnswer!.aID)")
-            let userPath =  databaseRef.child("users/\(self.currentAnswer!.uID)/answers")
+            let userPath =  databaseRef.child("users/\(self.currentAnswer!.uID!)")
             let questionsPath = databaseRef.child("questions/\(self.currentQuestion!.qID)/answers")
-            let answerPost = ["qID": self.currentAnswer.qID, "uID": self.currentAnswer.uID!, "URL" : String(self.currentAnswer.aURL)]
+            
             let questionPost = ["\(self.currentAnswer.aID)": "true"]
-            answersPath.setValue(answerPost)
+            var userPost = [String : String]()
+            
+            if aLocation != nil {
+                let answerPost = ["qID": self.currentAnswer.qID, "uID": self.currentAnswer.uID!, "URL" : String(self.currentAnswer.aURL), "location" : aLocation!]
+                answersPath.setValue(answerPost)
+            } else {
+                let answerPost = ["qID": self.currentAnswer.qID, "uID": self.currentAnswer.uID!, "URL" : String(self.currentAnswer.aURL)]
+                answersPath.setValue(answerPost)
+            }
+            
+            if let _profilePic = User.currentUser.profilePic {
+                userPost["profilePic"] = _profilePic
+            }
+            
+            if let _userName = User.currentUser.name {
+                userPost["name"] = _userName
+            }
+            
             questionsPath.updateChildValues(questionPost)
-            userPath.updateChildValues(questionPost)
+            userPath.updateChildValues(userPost)
+            userPath.child("answers").updateChildValues(questionPost)
+            
             uploadTask.removeAllObservers()
             self.doneCreatingAnswer()
         }

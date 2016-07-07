@@ -23,7 +23,7 @@ class AuthHelper {
                     print(error?.localizedDescription)
                 } else {
                     if let _aUser = aUser {
-                        self.createUser(_aUser.uid, realName: _aUser.displayName!)
+                        self.createUser(_aUser.uid, name: _aUser.displayName!, pic: _aUser.photoURL)
                         completion(result : true)
                     }
                 }
@@ -34,7 +34,7 @@ class AuthHelper {
             let credential = FIRTwitterAuthProvider.credentialWithToken(session.authToken, secret: session.authTokenSecret)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
                 if let _aUser = aUser {
-                    self.createUser(_aUser.uid, uScreenName: _aUser.displayName!)
+                    self.createUser(_aUser.uid, name: _aUser.displayName!)
                     completion(result : true)
                 }
             }
@@ -48,14 +48,17 @@ class AuthHelper {
         User.currentUser.uID = uID
     }
     
-    static func createUser(uID: String, realName: String) {
+    static func createUser(uID: String, name: String) {
         User.currentUser.uID = uID
-        User.currentUser.screenName = realName
+        User.currentUser.name = name
     }
     
-    static func createUser(uID: String, uScreenName: String) {
+    static func createUser(uID: String, name: String, pic: NSURL?) {
         User.currentUser.uID = uID
-        User.currentUser.screenName = uScreenName
+        User.currentUser.name = name
+        if let _pic = pic {
+            User.currentUser.profilePic = String(_pic)
+        }
     }
 }
 

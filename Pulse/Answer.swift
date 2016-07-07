@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Firebase
 
 class Answer : NSObject {
     var aID : String
@@ -37,5 +38,17 @@ class Answer : NSObject {
     init(aID: String, qID:String) {
         self.aID = aID
         self.qID = qID
+    }
+    
+    init(aID: String, snapshot: FIRDataSnapshot) {
+        self.aID = aID
+        self.qID = snapshot.childSnapshotForPath("qID").value as! String
+        if snapshot.hasChild("uID") {
+            self.uID = snapshot.childSnapshotForPath("uID").value as? String
+        }
+        if snapshot.hasChild("location") {
+            self.aLocation = snapshot.childSnapshotForPath("location").value as? String
+        }
+
     }
 }

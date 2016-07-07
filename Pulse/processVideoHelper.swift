@@ -11,7 +11,7 @@ import AVKit
 import AVFoundation
 import Photos
 
-func processVideo(videoURL : NSURL, location: String?, aQuestion : Question?, completion: (result: NSURL) -> Void) {
+func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: NSURL) -> Void) {
     let saveFileName = "/pulse-\(Int(NSDate().timeIntervalSince1970)).mp4"
     
     // Edit video
@@ -55,42 +55,6 @@ func processVideo(videoURL : NSURL, location: String?, aQuestion : Question?, co
     themeVideoComposition.frameDuration = CMTimeMake(1, 30)
     themeVideoComposition.instructions = NSArray(array: [mainInstruction]) as! [AVVideoCompositionInstructionProtocol]
     
-    // Add text
-    let coverAttributeLabel = [ NSFontAttributeName: UIFont(name: "HelveticaNeue-Bold", size: 36)!, NSForegroundColorAttributeName: UIColor.whiteColor()]
-    
-    let userNameLabelLayer = CATextLayer()
-    let userLocationLabelLayer = CATextLayer()
-    
-    if let userScreenName = User.currentUser.screenName  {
-        print("user has username")
-        userNameLabelLayer.string = NSMutableAttributedString(string: userScreenName, attributes: coverAttributeLabel)
-        
-        let size = userScreenName.sizeWithAttributes(coverAttributeLabel)
-        
-        //        userNameLabelLayer.backgroundColor = UIColor.whiteColor().CGColor
-        userNameLabelLayer.opacity = 0.7
-        userNameLabelLayer.frame = CGRectMake(10, 10, ceil(size.width), ceil(size.height))
-    }
-    
-    if let userName = User.currentUser.name {
-        print("user has name")
-        userNameLabelLayer.string = NSMutableAttributedString(string: userName, attributes: coverAttributeLabel)
-        let size = userName.sizeWithAttributes(coverAttributeLabel)
-        userNameLabelLayer.opacity = 0.7
-        userNameLabelLayer.frame = CGRectMake(10, 10, ceil(size.width), ceil(size.height))
-    }
-    
-    if let userLocation = location {
-        print("user has location \(userLocation)")
-        let userLocation = NSMutableAttributedString(string: userLocation, attributes: coverAttributeLabel)
-        let size = userLocation.string.sizeWithAttributes(coverAttributeLabel)
-        
-        userLocationLabelLayer.string = userLocation
-        //        userLocationLabelLayer.backgroundColor = UIColor.whiteColor().CGColor
-        userLocationLabelLayer.opacity = 0.7
-        userLocationLabelLayer.frame = CGRectMake(10, 40, size.width, size.height)
-    }
-    
     // 2. set parent layer and video layer
     
     let parentLayer = CALayer()
@@ -98,8 +62,6 @@ func processVideo(videoURL : NSURL, location: String?, aQuestion : Question?, co
     parentLayer.frame =  CGRect(x: 0, y: 0, width: renderHeight, height: renderWidth)
     videoLayer.frame =  CGRect(x: 0, y: 0, width: renderHeight, height: renderWidth)
     parentLayer.addSublayer(videoLayer)
-    parentLayer.addSublayer(userNameLabelLayer)
-    parentLayer.addSublayer(userLocationLabelLayer)
     
     parentLayer.contentsScale = UIScreen.mainScreen().scale
     
@@ -123,7 +85,7 @@ func processVideo(videoURL : NSURL, location: String?, aQuestion : Question?, co
     }
     
     // Export the video
-    let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality)
+    let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetMediumQuality)
     
     exporter!.outputURL = outputUrl
     exporter!.videoComposition = themeVideoComposition

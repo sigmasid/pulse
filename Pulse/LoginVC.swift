@@ -26,7 +26,6 @@ class LoginVC: UIViewController {
         super.viewDidLoad()
         self.hideKeyboardWhenTappedAround()
         
-        firebaseRef = FIRDatabase.database().reference().child("users")
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.onFBProfileUpdated), name:FBSDKProfileDidChangeNotification, object: nil)
     }
     
@@ -113,7 +112,6 @@ class LoginVC: UIViewController {
     }
     
     func userFBLoggedIn(token : String) {
-        print("has FB credentials")
         let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
         FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
             if error != nil {
@@ -123,7 +121,7 @@ class LoginVC: UIViewController {
                 if let _aUser = aUser {
                     self.showStatus.text = _aUser.displayName
                     print(_aUser.displayName)
-                    AuthHelper.createUser(_aUser.uid, realName: _aUser.displayName!)
+                    AuthHelper.createUser(_aUser.uid, name: _aUser.displayName!)
                     self._loggedInSuccess()
                 }
             }
@@ -148,7 +146,6 @@ class LoginVC: UIViewController {
     }
     
     func onFBProfileUpdated(notification: NSNotification) {
-        print("got notification")
         let credential = FIRFacebookAuthProvider.credentialWithAccessToken(FBSDKAccessToken.currentAccessToken().tokenString)
         FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
             if error != nil {
@@ -157,8 +154,7 @@ class LoginVC: UIViewController {
             else {
                 if let _aUser = aUser {
                     self.showStatus.text = _aUser.displayName
-                    print(_aUser.displayName)
-                    AuthHelper.createUser(_aUser.uid, realName: _aUser.displayName!)
+                    AuthHelper.createUser(_aUser.uid, name: _aUser.displayName!, pic : FIRAuth.auth()?.currentUser?.photoURL)
                     self._loggedInSuccess()
                 }
             }
@@ -172,17 +168,17 @@ class LoginVC: UIViewController {
                 self.currentTWTRSession = session
                 let credential = FIRTwitterAuthProvider.credentialWithToken(session!.authToken, secret: session!.authTokenSecret)
                 FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
-                    AuthHelper.createUser(aUser!.uid, uScreenName: session!.userName)
+                    AuthHelper.createUser(aUser!.uid, name: session!.userName, pic : FIRAuth.auth()?.currentUser?.photoURL)
                     self._loggedInSuccess()
                 }
             } else {
-                self.showStatus.text = "Uh Oh! That Didn't Work: \(error!.localizedDescription)"
+                self.showStatus.text = "Uh oh! That didn't work: \(error!.localizedDescription)"
             }
         }
     }
     
     func _loggedInSuccess() {
-        self.loginDelegate!.dismissVC(self)
+        self.loginDelegate!.loginSuccess(self)
     }
 
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {

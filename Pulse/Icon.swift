@@ -20,7 +20,6 @@ class Icon : UIView {
     }
     
     func drawIcon(color : UIColor, iconThickness : Int) {
-        print("icon frame is \(self.frame)")
         let startX = CGFloat(0)
         let startY = self.frame.height / 2
         

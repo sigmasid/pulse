@@ -9,6 +9,7 @@
 import Foundation
 import FirebaseDatabase
 import FirebaseStorage
+import FirebaseAuth
 
 let storage = FIRStorage.storage()
 let storageRef = storage.referenceForURL("gs://pulse-84022.appspot.com")
@@ -53,4 +54,19 @@ class Database {
             completion(question: _currentQuestion, error: nil)
         })
     }
+    
+    static func getAnswer(aID : String, completion: (answer : Answer, error : NSError?) -> Void) {
+        answersRef.child(aID).observeSingleEventOfType(.Value, withBlock: { snap in
+            let _currentAnswer = Answer(aID: aID, snapshot: snap)
+            completion(answer: _currentAnswer, error: nil)
+        })
+    }
+    
+    static func getUser(uID : String, completion: (user : User, error : NSError?) -> Void) {
+        usersRef.child(uID).observeSingleEventOfType(.Value, withBlock: { snap in
+            let _currentUser = User(uID: uID, snapshot: snap)
+            completion(user: _currentUser, error: nil)
+        })
+    }
+    
 }
