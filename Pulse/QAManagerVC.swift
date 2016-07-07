@@ -124,8 +124,9 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     func doneRecording(assetURL : NSURL?, currentVC : UIViewController, qID : String?, location: String?){
         let userAnswer = UserRecordedAnswerVC()
-        userAnswer.fileURL = assetURL
         userAnswer.answerDelegate = self
+        
+        userAnswer.fileURL = assetURL
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
         addNewVC(userAnswer)
@@ -139,6 +140,10 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 if let showLoginVC = storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC {
                     self.addNewVC(showLoginVC)
                     showLoginVC.loginDelegate = self
+                }
+            } else {
+                if let _userAnswerVC = currentVC as? UserRecordedAnswerVC {
+                    _userAnswerVC._postVideo()
                 }
             }
         })

@@ -100,4 +100,12 @@ class Icon : UIView {
         self.layer.addSublayer(heartLine)
         self.addSubview(pulseDot)
     }
+    
+    func drawIconBackground(color: UIColor) {
+        let circleShape = CAShapeLayer()
+        circleShape.path = UIBezierPath(arcCenter: CGPoint(x: self.frame.midX , y: self.frame.midY), radius: (self.frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
+        circleShape.fillColor = color.CGColor
+        
+        self.layer.addSublayer(circleShape)
+    }
 }

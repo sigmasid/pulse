@@ -13,12 +13,14 @@ import Photos
 
 class UserRecordedAnswerVC: UIViewController {
     
-    var uploadTask : FIRStorageUploadTask!
+    private var uploadTask : FIRStorageUploadTask!
     
+    // set by the delegate
     var fileURL : NSURL?
     var currentQuestion : Question?
     var aLocation : String?
     var currentAnswer : Answer!
+    
     weak var answerDelegate : childVCDelegate?
     
     private var _controlsOverlay : RecordedAnswerOverlay!
@@ -57,14 +59,18 @@ class UserRecordedAnswerVC: UIViewController {
     }
     
     ///post video to firebase
-    func _postVideo(sender: UIButton!) {
+    func _postVideo() {
+        _controlsOverlay.getButton(.Post).enabled = false
+
         if User.currentUser.isLoggedIn() {
+            _controlsOverlay.getButton(.Post).setTitle("Posting...", forState: UIControlState.Disabled)
             self.currentAnswer = createAnswer()
             self.currentAnswer.addObserver(self, forKeyPath: "aURL", options: NSKeyValueObservingOptions.New, context: nil)
             
             self.uploadAnswer(self.currentAnswer.aID)
         } else {
             if (self.answerDelegate != nil) {
+                _controlsOverlay.getButton(.Post).enabled = true
                 self.answerDelegate!.askUserToLogin(self)
             }
         }
@@ -144,7 +150,7 @@ class UserRecordedAnswerVC: UIViewController {
     }
     
     ///Called after user has completed sharing the answer
-    func doneCreatingAnswer() {
+    private func doneCreatingAnswer() {
         self.currentAnswer.removeObserver(self, forKeyPath: "aURL")
         answerDelegate?.doneUploadingAnswer(self)
     }
@@ -160,7 +166,7 @@ class UserRecordedAnswerVC: UIViewController {
     }
     
     ///Save to photoalbum and show saving dialog
-    func _saveVideoToAlbum(url: NSURL) {
+    private func _saveVideoToAlbum(url: NSURL) {
         let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(url)
             }, completionHandler: { success, error in

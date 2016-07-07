@@ -133,8 +133,7 @@
 				BA1C48C21D243704008F8A04 /* Assets.xcassets */,
 				BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */,
 				BA1C48C71D243704008F8A04 /* Info.plist */,
-				BA1DE1201D244330004F3ED2 /* QuestionPreviewVC.swift */,
-				BA1DE12F1D24463B004F3ED2 /* TagDetailVC.swift */,
+				BA6B78B71D2EEBD9003EE992 /* Tag Detail */,
 				BA1DE12A1D244486004F3ED2 /* Models */,
 				BA1DE1431D244CBD004F3ED2 /* Global Refs */,
 				BA1DE13C1D244AFD004F3ED2 /* Camera */,
@@ -197,6 +196,15 @@
 				BA6B78B51D2E2620003EE992 /* RecordedAnswerOverlay.swift */,
 			);
 			name = "User Recorded Answer";
+			sourceTree = "<group>";
+		};
+		BA6B78B71D2EEBD9003EE992 /* Tag Detail */ = {
+			isa = PBXGroup;
+			children = (
+				BA1DE1201D244330004F3ED2 /* QuestionPreviewVC.swift */,
+				BA1DE12F1D24463B004F3ED2 /* TagDetailVC.swift */,
+			);
+			name = "Tag Detail";
 			sourceTree = "<group>";
 		};
 		BAFE7E8B1D2CCC5300DEED6C /* Login */ = {

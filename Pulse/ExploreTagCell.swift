@@ -62,6 +62,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(questionReuseIdentifier, forIndexPath: indexPath) as! ExploreQuestionCell
+        cell.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.3 )
 
         if self._allQuestions.count > indexPath.row {
             let _currentQuestion = self._allQuestions[indexPath.row]
@@ -75,12 +76,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
                 cell.qTitle.text = snap.childSnapshotForPath("title").value as? String
             })
         }
-        
-//        if ( indexPath.row == questionsShown - 1) {
-//            if loadingStatus == .haveMore {
-//                self.performSelector(#selector(ExploreTagCell.loadMoreQuestions), withObject: indexPath, afterDelay: 0)
-//            }
-//        }
+    
         return cell
     }
     
@@ -94,6 +90,14 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     }
 }
 
+extension ExploreTagCell: UICollectionViewDelegateFlowLayout {
+    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+        return CGSize(width: collectionView.frame.width / 3, height: collectionView.frame.height)
+    }
+}
+
+
+
 //            Database.getQuestion(self.currentTag.questions![indexPath.row]) { (question , error) in
 //                if error != nil {
 //                    print(error!.description)
@@ -102,3 +106,9 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
 //                    cell.qTitle.text = question.qTitle
 //                }
 //            }
+
+//        if ( indexPath.row == questionsShown - 1) {
+//            if loadingStatus == .haveMore {
+//                self.performSelector(#selector(ExploreTagCell.loadMoreQuestions), withObject: indexPath, afterDelay: 0)
+//            }
+//        }

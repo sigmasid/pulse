@@ -47,7 +47,7 @@ class ViewController: UIViewController {
     
     
     @IBAction func loadTags(sender: UIButton) {
-        let tags = ["politics", "startups"]
+        let tags = ["relationships", "careers"]
         let topicsPath = databaseRef.child("tags")
         
         for tag in tags {
@@ -60,30 +60,30 @@ class ViewController: UIViewController {
     }
     
     func loadPoliticalQuestions() -> [NSObject] {
-        let q1 = ["title": "I support Brexit ","tags": ["politics" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q2 = ["title": "Can the EU survive ", "tags": ["politics" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q3 = ["title": "Gun control debate ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q4 = ["title": "Obesity epedemic in America ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q5 = ["title": "I support Trump ", "tags": ["politics" : true], "choices": ["support" : true,"against" : true]]
-        let q6 = ["title": "Jerry Brown and gun control ", "tags": ["politics" : true], "choices": ["yes" : true,"no" : true]]
-        let q7 = ["title": "I support EU exit ","tags": ["politics" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q8 = ["title": "Migration crisis ", "tags": ["politics" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q9 = ["title": "I am a refugee ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q10 = ["title": "Driving change through Politics ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q11 = ["title": "I support Hillary ", "tags": ["politics" : true], "choices": ["support" : true,"against" : true]]
-        let q12 = ["title": "Why elections matter ", "tags": ["politics" : true], "choices": ["yes" : true,"no" : true]]
-        let q13 = ["title": "Fourth of July stories ","tags": ["politics" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q14 = ["title": "Should we send trooops to Syria ", "tags": ["politics" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q15 = ["title": "Fighting ISIS ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q16 = ["title": "I am an illegal immigrant ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q17 = ["title": "I support Obama on immigration ", "tags": ["politics" : true], "choices": ["support" : true,"against" : true]]
-        let q18 = ["title": "Should we build a wall ", "tags": ["politics" : true], "choices": ["yes" : true,"no" : true]]
-        let q19 = ["title": "I support NATO ","tags": ["politics" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q20 = ["title": "Meet the chinese entrepreneurs ", "tags": ["politics" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q21 = ["title": "Do you support universal ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q22 = ["title": "Obesity epedemic in America ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q23 = ["title": "I support Trump ", "tags": ["politics" : true], "choices": ["support" : true,"against" : true]]
-        let q24 = ["title": "Jerry Brown and gun control ", "tags": ["politics" : true], "choices": ["yes" : true,"no" : true]]
+        let q1 = ["title": "Worst Tinder date stories ","tags": ["relationships" : true]]
+        let q2 = ["title": "Should ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
+        let q3 = ["title": "Gun control debate ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q4 = ["title": "Obesity epedemic in America ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q5 = ["title": "I support Trump ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
+        let q6 = ["title": "Jerry Brown and gun control ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
+        let q7 = ["title": "I support EU exit ","tags": ["relationships" : true], "choices": ["hillary" : true,"trump" : true]]
+        let q8 = ["title": "Migration crisis ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
+        let q9 = ["title": "I am a refugee ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q10 = ["title": "Driving change through Politics ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q11 = ["title": "I support Hillary ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
+        let q12 = ["title": "Why elections matter ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
+        let q13 = ["title": "Fourth of July stories ","tags": ["relationships" : true], "choices": ["hillary" : true,"trump" : true]]
+        let q14 = ["title": "Should we send trooops to Syria ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
+        let q15 = ["title": "Fighting ISIS ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q16 = ["title": "I am an illegal immigrant ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q17 = ["title": "I support Obama on immigration ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
+        let q18 = ["title": "Should we build a wall ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
+        let q19 = ["title": "I support NATO ","tags": ["relationships" : true], "choices": ["hillary" : true,"trump" : true]]
+        let q20 = ["title": "Meet the chinese entrepreneurs ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
+        let q21 = ["title": "Do you support universal ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q22 = ["title": "Obesity epedemic in America ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
+        let q23 = ["title": "I support Trump ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
+        let q24 = ["title": "Jerry Brown and gun control ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
         
         return [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17, q18, q19, q20, q21, q22, q23, q24]
     }

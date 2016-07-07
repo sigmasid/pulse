@@ -30,9 +30,11 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
         
         loadTagsFromFirebase()
         
-        let iconColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 1.0 )
+        let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
+        let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoIcon.frame.width, self.logoIcon.frame.height))
-        pulseIcon.drawIcon(iconColor, iconThickness: 3)
+        pulseIcon.drawIconBackground(iconBackgroundColor)
+        pulseIcon.drawIcon(iconColor, iconThickness: 2)
         logoIcon.addSubview(pulseIcon)
     }
     
@@ -133,6 +135,6 @@ extension ExploreTagsVC : UICollectionViewDataSource {
 
 extension ExploreTagsVC: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: self.view.frame.width, height: self.view.frame.height / 3)
+        return CGSize(width: self.view.frame.width, height: self.view.frame.height / 3.5)
     }
 }
