@@ -52,7 +52,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     func startVideoCapture() {
-        self.view.layer.addSublayer(_cameraOverlay.countdownTimer(videoDuration, size: 20))
+        _cameraOverlay.countdownTimer(videoDuration)
         
         _Camera.startRecordingVideo()
     }
