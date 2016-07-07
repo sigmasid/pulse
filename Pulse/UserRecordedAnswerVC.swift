@@ -72,16 +72,10 @@ class UserRecordedAnswerVC: UIViewController {
     
     ///upload video to firebase and update current answer with URL upon success
     private func uploadAnswer(uploadName : String) {
-        let progressBar = UIProgressView()
-        progressBar.frame = CGRectMake(10,20,UIScreen.mainScreen().bounds.width - 40,20)
-        progressBar.progressTintColor = UIColor.whiteColor()
-        progressBar.progressViewStyle = .Bar
         
-        self.view.addSubview(progressBar)
         var fileSize = UInt64()
-        
-        // File located on disk
-        
+        _controlsOverlay.addUploadProgressBar()
+       
         if let localFile: NSURL = fileURL! {
             
             do {
@@ -102,7 +96,9 @@ class UserRecordedAnswerVC: UIViewController {
             uploadTask.observeStatus(.Progress) { snapshot in
                 if fileSize > 0 {
                     let percentComplete = Float(snapshot.progress!.completedUnitCount) / Float(fileSize)
-                    progressBar.setProgress(percentComplete, animated: true)
+                    dispatch_async(dispatch_get_main_queue()) {
+                        self._controlsOverlay.updateProgressBar(percentComplete)
+                    }
                 }
             }
         }
@@ -147,6 +143,7 @@ class UserRecordedAnswerVC: UIViewController {
         }
     }
     
+    ///Called after user has completed sharing the answer
     func doneCreatingAnswer() {
         self.currentAnswer.removeObserver(self, forKeyPath: "aURL")
         answerDelegate?.doneUploadingAnswer(self)
@@ -162,6 +159,7 @@ class UserRecordedAnswerVC: UIViewController {
         }
     }
     
+    ///Save to photoalbum and show saving dialog
     func _saveVideoToAlbum(url: NSURL) {
         let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(url)

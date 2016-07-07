@@ -13,17 +13,12 @@ class RecordedAnswerOverlay: UIView {
     private var _postButton = UIButton()
     private var _closeButton = UIButton()
     private var _savingLabel = UILabel()
-    
+    private var _progressBar = UIProgressView()
+   
     private var _iconSize : CGFloat = 20
     private var _postButtonHeight : CGFloat = 50
-    private var _elementSpacer : CGFloat = 30
-    var _didSaveSuccess = false {
-        didSet {
-            if _didSaveSuccess {
-                hideSavingLabel("File Saved")
-            }
-        }
-    }
+    private var _elementSpacer : CGFloat = 20
+    
     
     internal enum ControlButtons: Int {
         case Save, Post, Close
@@ -66,7 +61,7 @@ class RecordedAnswerOverlay: UIView {
     
     private func addPostButton() {
         _postButton.backgroundColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 0.7 )
-        _postButton.setTitle("Add Answer", forState: UIControlState.Normal)
+        _postButton.setTitle("Post Answer", forState: UIControlState.Normal)
         _postButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
         _postButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
         
@@ -90,7 +85,7 @@ class RecordedAnswerOverlay: UIView {
         
         _closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        _closeButton.topAnchor.constraintEqualToAnchor(self.topAnchor, constant: _elementSpacer).active = true
+        _closeButton.topAnchor.constraintEqualToAnchor(self.topAnchor, constant: _elementSpacer + _postButtonHeight / 2).active = true
         _closeButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -_elementSpacer).active = true
         _closeButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _closeButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
@@ -131,5 +126,25 @@ class RecordedAnswerOverlay: UIView {
         UIView.animateWithDuration(1) { () -> Void in
             self.layoutIfNeeded()
         }
+    }
+    
+    func addUploadProgressBar() {
+        _progressBar.progressTintColor = UIColor.whiteColor()
+        _progressBar.trackTintColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
+        _progressBar.progressViewStyle = .Bar
+        
+        self.addSubview(_progressBar)
+        
+        _progressBar.translatesAutoresizingMaskIntoConstraints = false
+
+        _progressBar.centerXAnchor.constraintEqualToAnchor(self.centerXAnchor).active = true
+        _progressBar.topAnchor.constraintEqualToAnchor(self.topAnchor).active = true
+        _progressBar.heightAnchor.constraintEqualToConstant(self._postButtonHeight / 2).active = true
+        _progressBar.widthAnchor.constraintEqualToAnchor(self.widthAnchor).active = true
+    }
+    
+    func updateProgressBar(percentComplete : Float) {
+        _progressBar.setProgress(percentComplete, animated: true)
+
     }
 }

@@ -166,7 +166,7 @@ class ShowAnswerVC: UIViewController {
             
         case UISwipeGestureRecognizerDirection.Left:
             
-            if (!_swipeReady || !_nextItemReady) {
+            if (!_swipeReady || (!_nextItemReady && (_canAdvance(self.answerIndex)))) {
                 print("ignore swipe")
             } else if (_canAdvance(self.answerIndex)) {
                 qPlayer.pause()
@@ -184,10 +184,7 @@ class ShowAnswerVC: UIViewController {
                 }
             } else {
                 if (delegate != nil) {
-                    print("no answers to show fired")
                     delegate.noAnswersToShow(self)
-                } else {
-                    print("delegate nil")
                 }
             }
         case UISwipeGestureRecognizerDirection.Right:
