@@ -181,8 +181,6 @@ class CameraOverlayView: UIView {
         _questionBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
         _questionBackground.textColor = UIColor.whiteColor()
         _questionBackground.textAlignment = .Center
-        
-        print(_questionBackground.frame)
     }
     
     private func drawBgShape() -> CAShapeLayer {

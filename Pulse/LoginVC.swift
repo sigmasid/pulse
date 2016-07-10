@@ -33,7 +33,6 @@ class LoginVC: UIViewController {
         super.viewDidAppear(true)
         self.view.alpha = 0.8
         
-        let iconColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 1.0 )
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
         pulseIcon.drawIcon(iconColor, iconThickness: 3)
         logoView.addSubview(pulseIcon)
@@ -168,8 +167,12 @@ class LoginVC: UIViewController {
                 self.currentTWTRSession = session
                 let credential = FIRTwitterAuthProvider.credentialWithToken(session!.authToken, secret: session!.authTokenSecret)
                 FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
-                    AuthHelper.createUser(aUser!.uid, name: session!.userName, pic : FIRAuth.auth()?.currentUser?.photoURL)
-                    self._loggedInSuccess()
+                    if error != nil {
+                        print(error?.description)
+                    } else {
+                        AuthHelper.createUser(aUser!.uid, name: session!.userName, pic : FIRAuth.auth()?.currentUser?.photoURL)
+                        self._loggedInSuccess()
+                    }
                 }
             } else {
                 self.showStatus.text = "Uh oh! That didn't work: \(error!.localizedDescription)"

@@ -21,7 +21,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         FIRApp.configure()
-        Twitter.sharedInstance().startWithConsumerKey("uiVMTutYMKh5Uovit0xEQ", consumerSecret: "gw9APXx4whnIUlMiQWnH6BTqdpS685M9exsMItEX7pE")
+//        Twitter.sharedInstance().startWithConsumerKey("S47WHcXVqXAqxBBrOo9xsEQk5", consumerSecret: "6NlPv49gfxlLFU7cgjbxzyGVWeoLYWYCsdSxlvpdvpBE4G00we")
         Fabric.with([Twitter.self()])
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
         FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:NSError!) -> Void in
@@ -32,7 +32,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func application(application: UIApplication, openURL url: NSURL, sourceApplication: String?, annotation: AnyObject) -> Bool {
+        print("source application is \(sourceApplication)")
         return FBSDKApplicationDelegate.sharedInstance().application(application, openURL: url, sourceApplication: sourceApplication, annotation: annotation)
+    }
+    
+    func application(app: UIApplication, openURL url: NSURL, options: [String : AnyObject]) -> Bool {
+        if Twitter.sharedInstance().application(app, openURL:url, options: options) {
+            return true
+        }
+        
+        // If you handle other (non Twitter Kit) URLs elsewhere in your app, return true. Otherwise
+        return true
     }
     
     func applicationWillResignActive(application: UIApplication) {

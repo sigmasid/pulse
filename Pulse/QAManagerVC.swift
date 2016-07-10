@@ -30,6 +30,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var currentUser : User!
     
     let answerVC = ShowAnswerVC()
+    var exploreDelegate : QuestionDelegate!
+    
     var _hasMoreAnswers = false
     
     override func viewDidLoad() {
@@ -68,9 +70,9 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func addNewVC(newVC: UIViewController) {
-        self.addChildViewController(newVC)
+        addChildViewController(newVC)
         newVC.view.frame = self.view.frame
-        self.view.addSubview(newVC.view)
+        view.addSubview(newVC.view)
         newVC.didMoveToParentViewController(self)
     }
     
@@ -96,6 +98,9 @@ class QAManagerVC: UIViewController, childVCDelegate {
                     completion(question: question, error: nil)
                 }
             })
+        } else if (questionCounter >= selectedTag.totalQuestionsForTag()) {
+            exploreDelegate.returnToExplore(self)
+            
         } else {
             currentQuestion = allQuestions[questionCounter]
             completion(question: currentQuestion, error: nil)
@@ -103,9 +108,10 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func displayQuestion() {
-        answerVC.currentQuestion = self.currentQuestion
+        answerVC.currentQuestion = currentQuestion
+        answerVC.currentTag = selectedTag
         answerVC.delegate = self
-        self.addNewVC(answerVC)
+        addNewVC(answerVC)
     }
     
     func noAnswersToShow(currentVC : UIViewController) {
@@ -113,7 +119,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
             print("question has answers \(currentQuestion.totalAnswers())")
 //            self.loadNextQuestion()
         } else {
-            print("going to show camera")
+            currentVC.view.hidden = true
+
             let cameraVC = CameraVC()
             cameraVC.camDelegate = self
             cameraVC.questionToShow = currentQuestion
@@ -149,14 +156,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
         })
     }
     
-    func loginSuccess (currentVC : UIViewController) {
-        self.dismissVC(currentVC)
-    }
-    
-    func loginFailed (currentVC : UIViewController) {
-        
-    }
-    
     func doneUploadingAnswer(currentVC: UIViewController) {
         if _hasMoreAnswers {
             answerVC.currentQuestion = self.currentQuestion
@@ -164,9 +163,10 @@ class QAManagerVC: UIViewController, childVCDelegate {
             self.loadNextQuestion({ (question, error) in
                 if error == nil {
                     self.answerVC.currentQuestion = question
+                    self.answerVC.view.hidden = false
+                    self.dismissVC(currentVC)
                 }
             })
-            self.dismissVC(currentVC)
         }
     }
     
@@ -200,7 +200,15 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func goBack() {
-        self.performSegueWithIdentifier("unwindToExplore", sender: self)
+        exploreDelegate.returnToExplore(self)
+    }
+    
+    func loginSuccess (currentVC : UIViewController) {
+        self.dismissVC(currentVC)
+    }
+    
+    func loginFailed (currentVC : UIViewController) {
+        
     }
     
 }

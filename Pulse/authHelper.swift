@@ -14,7 +14,7 @@ import FirebaseAuth
 class AuthHelper {
     static func checkSocialTokens(completion: (result: Bool) -> Void) {
         if FBSDKAccessToken.currentAccessToken() != nil {
-
+            print("have fb token")
             let token = FBSDKAccessToken.currentAccessToken().tokenString
             let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
@@ -24,16 +24,26 @@ class AuthHelper {
                     if let _aUser = aUser {
                         self.createUser(_aUser.uid, name: _aUser.displayName!, pic: _aUser.photoURL)
                         completion(result : true)
+                    } else {
+                        completion(result : false)
                     }
                 }
             }
         } else if let session = Twitter.sharedInstance().sessionStore.session() {
-
+//            try! FIRAuth.auth()!.signOut()
+//            Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
+            print("have twitter token")
             let credential = FIRTwitterAuthProvider.credentialWithToken(session.authToken, secret: session.authTokenSecret)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
-                if let _aUser = aUser {
-                    self.createUser(_aUser.uid, name: _aUser.displayName!)
-                    completion(result : true)
+                if error != nil {
+                    print(error?.code)
+                } else {
+                    if let _aUser = aUser {
+                        self.createUser(_aUser.uid, name: _aUser.displayName!, pic: _aUser.photoURL)
+                        completion(result : true)
+                    } else {
+                        completion(result : false)
+                    }
                 }
             }
         } else {

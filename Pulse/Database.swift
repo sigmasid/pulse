@@ -13,6 +13,8 @@ import FirebaseAuth
 
 let storage = FIRStorage.storage()
 let storageRef = storage.referenceForURL("gs://pulse-84022.appspot.com")
+
+
 let databaseRef = FIRDatabase.database().reference()
 
 class Database {
@@ -21,6 +23,7 @@ class Database {
     static let questionsRef = databaseRef.child("questions")
     static let answersRef = databaseRef.child("answers")
     static let usersRef = databaseRef.child("users")
+    static let answersStorageRef = storageRef.child("answers")
 
     static func getAllTags(completion: (tags : [Tag], error : NSError?) -> Void) {
         var allTags = [Tag]()
@@ -67,6 +70,16 @@ class Database {
             let _currentUser = User(uID: uID, snapshot: snap)
             completion(user: _currentUser, error: nil)
         })
+    }
+    
+    static func getAnswerURL(fileID : String, completion: (URL : NSURL?, error : NSError?) -> Void) {
+        let _ = answersStorageRef.child(fileID).downloadURLWithCompletion { (URL, error) -> Void in
+            if (error != nil) {
+                completion(URL: nil, error: error)
+            } else {
+                completion(URL: URL, error: nil)
+            }
+        }
     }
     
 }

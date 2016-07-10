@@ -9,6 +9,9 @@
 import Foundation
 import UIKit
 
+let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
+let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
+
 // To dismiss keyboard when needed
 extension UIViewController {
     func hideKeyboardWhenTappedAround() {

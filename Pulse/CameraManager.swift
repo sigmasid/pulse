@@ -960,7 +960,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     private func _setupLocation() {
         
         if CLLocationManager.authorizationStatus() != .AuthorizedWhenInUse {
-            print("setup location fired")
             self.locationManager.requestWhenInUseAuthorization()
         }
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -974,7 +973,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     public func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        print("videoLocation update fired")
         CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {(placemarks, error)-> Void in
             if (error != nil) {
                 print("Reverse geocoder failed with error" + error!.localizedDescription)

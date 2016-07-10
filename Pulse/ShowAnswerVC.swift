@@ -21,6 +21,8 @@ class ShowAnswerVC: UIViewController {
     }
     
     var currentAnswer : Answer!
+    var currentTag : Tag!
+    
     var answerIndex = 1
     
     internal var _avPlayerLayer: AVPlayerLayer!
@@ -60,6 +62,7 @@ class ShowAnswerVC: UIViewController {
         view.layer.insertSublayer(_avPlayerLayer, atIndex: 0)
         view.insertSubview(_answerOverlay, atIndex: 1)
         
+        _answerOverlay.addIcon(iconColor, backgroundColor: iconBackgroundColor)
         _avPlayerLayer.frame = _frame
         
         if (currentQuestion != nil){
@@ -87,7 +90,12 @@ class ShowAnswerVC: UIViewController {
                         self._answerOverlay.addUserImage(NSURL(string: _uPic))
                     }
                 })
-                
+                if let _aTag = self.currentTag.tagID {
+                    self._answerOverlay.updateTag(_aTag)
+                }
+                if let _qTitle = self.currentQuestion.qTitle {
+                    self._answerOverlay.updateQuestion(_qTitle)
+                }
                 if let _location = answer.aLocation {
                     self._answerOverlay.addLocation(_location)
                 }
@@ -103,16 +111,28 @@ class ShowAnswerVC: UIViewController {
     }
     
     private func _addFirstVideo(fileID : String) {
-        let downloadRef = storageRef.child("answers/\(fileID)")
-        let _ = downloadRef.downloadURLWithCompletion { (URL, error) -> Void in
-            if (error != nil) {
+        
+        Database.getAnswerURL(fileID, completion: { (URL, error) in
+            if error != nil {
                 print(error.debugDescription)
             } else {
                 self.qPlayer.replaceCurrentItemWithPlayerItem(AVPlayerItem(URL: URL!))
                 self.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
                 self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
             }
-        }
+        })
+        
+        
+//        let downloadRef = storageRef.child("answers/\(fileID)")
+//        let _ = downloadRef.downloadURLWithCompletion { (URL, error) -> Void in
+//            if (error != nil) {
+//                print(error.debugDescription)
+//            } else {
+//                self.qPlayer.replaceCurrentItemWithPlayerItem(AVPlayerItem(URL: URL!))
+//                self.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
+//                self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+//            }
+//        }
     }
     
     func _addNextVideoToQueue(nextAnswerID : String) {
@@ -165,7 +185,7 @@ class ShowAnswerVC: UIViewController {
             }
             
         case UISwipeGestureRecognizerDirection.Left:
-            
+            print("swipe ready: \(_swipeReady) next item ready: \(_nextItemReady) can advance \(_canAdvance(self.answerIndex))")
             if (!_swipeReady || (!_nextItemReady && (_canAdvance(self.answerIndex)))) {
                 print("ignore swipe")
             } else if (_canAdvance(self.answerIndex)) {

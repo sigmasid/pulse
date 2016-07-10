@@ -47,7 +47,7 @@ class ViewController: UIViewController {
     
     
     @IBAction func loadTags(sender: UIButton) {
-        let tags = ["relationships", "careers"]
+        let tags = ["relationships", "finance"]
         let topicsPath = databaseRef.child("tags")
         
         for tag in tags {
@@ -60,49 +60,38 @@ class ViewController: UIViewController {
     }
     
     func loadPoliticalQuestions() -> [NSObject] {
-        let q1 = ["title": "Worst Tinder date stories ","tags": ["relationships" : true]]
-        let q2 = ["title": "Should ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q3 = ["title": "Gun control debate ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q4 = ["title": "Obesity epedemic in America ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q5 = ["title": "I support Trump ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
-        let q6 = ["title": "Jerry Brown and gun control ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
-        let q7 = ["title": "I support EU exit ","tags": ["relationships" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q8 = ["title": "Migration crisis ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q9 = ["title": "I am a refugee ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q10 = ["title": "Driving change through Politics ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q11 = ["title": "I support Hillary ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
-        let q12 = ["title": "Why elections matter ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
-        let q13 = ["title": "Fourth of July stories ","tags": ["relationships" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q14 = ["title": "Should we send trooops to Syria ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q15 = ["title": "Fighting ISIS ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q16 = ["title": "I am an illegal immigrant ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q17 = ["title": "I support Obama on immigration ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
-        let q18 = ["title": "Should we build a wall ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
-        let q19 = ["title": "I support NATO ","tags": ["relationships" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q20 = ["title": "Meet the chinese entrepreneurs ", "tags": ["relationships" : true], "choices": ["national security" : true,"immigration" : true,"economy" : true,"other" : true]]
-        let q21 = ["title": "Do you support universal ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q22 = ["title": "Obesity epedemic in America ", "tags": ["relationships" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q23 = ["title": "I support Trump ", "tags": ["relationships" : true], "choices": ["support" : true,"against" : true]]
-        let q24 = ["title": "Jerry Brown and gun control ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
+        let q1 = ["title": "Worst Tinder dates ","tags": ["relationships" : true]]
+        let q2 = ["title": "Getting through a divorce ", "tags": ["relationships" : true]]
+        let q3 = ["title": "Who should pay on a first date ", "tags": ["relationships" : true], "choices": ["the guy" : true,"split it" : true, "the girl" : true]]
+        let q4 = ["title": "First date ideas ", "tags": ["relationships" : true]]
+        let q5 = ["title": "What's the most important quality in a guy", "tags": ["relationships" : true], "choices": ["funny" : true,"intelligent" : true,"good looking" : true,"rich" : true]]
+        let q6 = ["title": "What I didn't know about moving in together ", "tags": ["relationships" : true]]
+        let q7 = ["title": "Breaking up after a long relationship ","tags": ["relationships" : true], "choices": ["hillary" : true,"trump" : true]]
+        let q8 = ["title": "What she's thinking when she says it's okay ", "tags": ["relationships" : true]]
+        let q9 = ["title": "What do men look for in a tinder profile ", "tags": ["relationships" : true]]
+        let q10 = ["title": "Coming out to my parents ", "tags": ["relationships" : true]]
+        let q11 = ["title": "Being single ", "tags": ["relationships" : true], "choices": ["love it" : true,"hate it" : true]]
+        let q12 = ["title": "Would you take someone back if they cheated on you ", "tags": ["relationships" : true], "choices": ["yes" : true,"no" : true]]
         
-        return [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15, q16, q17, q18, q19, q20, q21, q22, q23, q24]
+        return [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12]
     }
     
     func loadStartupQuestions() -> [NSObject] {
-        let q1 = ["title": "The hardest part of being an entreprenuer is ", "tags": ["politics" : true], "choices": ["hillary" : true,"trump" : true]]
-        let q2 = ["title": "The best advice I ever got was ", "tags": ["politics" : true]]
-        let q3 = ["title": "My favorite question to ask in an interview is ", "tags": ["politics" : true], "choices": ["in favor of" : true,"against" : true]]
-        let q4 = ["title": "Do you need a co-founder ", "tags": ["politics" : true], "choices": ["yes" : true,"maybe" : true,"no" : true]]
-        let q5 = ["title": "What keeps me up at night ", "tags": ["startups" : true]]
-        let q6 = ["title": "Best advice for pitching VCs ", "tags": ["startups" : true]]
-        let q7 = ["title": "What I get really down I ", "tags": ["startups" : true]]
-        return [q1, q2, q3, q4, q5, q6, q7]
+        let q1 = ["title": "What impact will Brexit have on startups ", "tags": ["finance" : true], "choices": ["big" : true,"very little" : true,"too early to tell" : true]]
+        let q2 = ["title": "Who should Yahoo sell to ", "tags": ["finance" : true]]
+        let q3 = ["title": "Where are oil prices headed", "tags": ["finance" : true], "choices": ["higher" : true,"lower" : true,"flat" : true]]
+        let q4 = ["title": "Top investment idea for 2H 2016", "tags": ["finance" : true]]
+        let q5 = ["title": "When will the Fed raise rates", "tags": ["finance" : true], "choices": ["sep" : true,"dec" : true,"next year" : true]]
+        let q6 = ["title": "How is the Tech IPO market doing", "tags": ["finance" : true]]
+        let q7 = ["title": "Can oil prices keep rising", "tags": ["finance" : true]]
+        let q8 = ["title": "Is gold a good investment today", "tags": ["finance" : true], "choices": ["yes" : true,"no" : true]]
+        return [q1, q2, q3, q4, q5, q6, q7, q8]
     }
     
     func loadQuestionIDs(tagName: String) -> [String] {
         switch tagName {
-        case "politics": return politicalQuestionsID
-        case "startups": return startupQuestionsID
+        case "relationships": return politicalQuestionsID
+        case "finance": return startupQuestionsID
         default : return [""]
         }
     }

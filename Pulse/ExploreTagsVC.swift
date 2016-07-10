@@ -11,6 +11,7 @@ import FirebaseDatabase
 
 protocol QuestionDelegate : class {
     func showQuestion(_selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int)
+    func returnToExplore(_:UIViewController)
 }
 
 class ExploreTagsVC: UIViewController, QuestionDelegate {
@@ -80,6 +81,8 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
         QAVC.questionCounter = _questionIndex
         QAVC.view.frame = self.view.frame
         
+        QAVC.exploreDelegate = self
+        
         self.presentViewController(QAVC, animated: true, completion: nil)
     }
     
@@ -87,6 +90,10 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
         self.addChildViewController(newVC)
         newVC.view.frame = self.view.frame
         self.view.addSubview(newVC.view)
+    }
+    
+    func returnToExplore(_: UIViewController) {
+        dismissViewControllerAnimated(true, completion: nil)
     }
 }
 
