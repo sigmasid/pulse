@@ -30,14 +30,10 @@ class LoginVC: UIViewController {
         self.hideKeyboardWhenTappedAround()
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.onFBProfileUpdated), name:FBSDKProfileDidChangeNotification, object: nil)
-    }
-    
-    override func viewDidAppear(animated : Bool) {
-        super.viewDidAppear(true)
         
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
-        pulseIcon.drawIconBackground(iconBackgroundColor)
-        pulseIcon.drawIcon(iconColor, iconThickness: 3)
+        //        pulseIcon.drawIconBackground(iconBackgroundColor)
+        pulseIcon.drawIcon(iconBackgroundColor, iconThickness: 2)
         logoView.addSubview(pulseIcon)
         
         self.userEmail.layer.addSublayer(addBorders(self.userEmail))
@@ -46,10 +42,14 @@ class LoginVC: UIViewController {
         fbButton.layer.cornerRadius = buttonCornerRadius
         twtrButton.layer.cornerRadius = buttonCornerRadius
         emailButton.layer.cornerRadius = buttonCornerRadius
-
+        
         userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        
+    }
+    
+    override func viewDidAppear(animated : Bool) {
+        super.viewDidAppear(true)
+
         if (User.currentUser.uID == nil) {
             self.showStatus.backgroundColor = UIColor.grayColor()
             self.showStatus.textColor = UIColor.whiteColor()
@@ -164,7 +164,7 @@ class LoginVC: UIViewController {
     }
     
     @IBAction func twtrLogin(sender: UIButton) {
-        
+    
         Twitter.sharedInstance().logInWithCompletion { session, error in
             if (session != nil) {
                 self.currentTWTRSession = session
@@ -184,11 +184,17 @@ class LoginVC: UIViewController {
     }
     
     func _loggedInSuccess() {
-        self.loginVCDelegate!.loginSuccess(self)
+        if let _ = self.loginVCDelegate {
+            self.loginVCDelegate!.loginSuccess(self)
+        }
     }
     
     @IBAction func unwindFromCreateAccount(segue: UIStoryboardSegue) {
         print("unwould segue success")
+    }
+    
+    @IBAction func unwindFromLoggedInSuccess(segue: UIStoryboardSegue) {
+        _loggedInSuccess()
     }
 
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {

@@ -16,8 +16,8 @@ class LoginAddNameVC: UIViewController {
     @IBOutlet weak var firstName: UITextField!
     @IBOutlet weak var doneButton: UIButton!
     
-    @IBOutlet weak var firstNameError: UILabel!
-    @IBOutlet weak var lastNameError: UILabel!
+    @IBOutlet weak var _firstNameError: UILabel!
+    @IBOutlet weak var _lastNameError: UILabel!
     
     var loginVCDelegate : childVCDelegate?
     
@@ -30,8 +30,9 @@ class LoginAddNameVC: UIViewController {
         super.viewDidAppear(true)
         
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
-        pulseIcon.drawIcon(iconColor, iconThickness: 3)
         pulseIcon.drawIconBackground(iconBackgroundColor)
+        pulseIcon.drawIcon(iconColor, iconThickness: 2)
+
         
         logoView.addSubview(pulseIcon)
         
@@ -50,20 +51,20 @@ class LoginAddNameVC: UIViewController {
     @IBAction func addName(sender: UIButton) {
         validateName(firstName.text, completion: {(verified, error) in
             if !verified {
-                self.firstNameError.text = error!.localizedDescription
+                self._firstNameError.text = error!.localizedDescription
             } else {
                 self.validateName(self.lastName.text, completion: {(verified, error) in
                     if !verified {
-                        self.lastNameError.text = error!.localizedDescription
+                        self._lastNameError.text = error!.localizedDescription
                     } else {
                         let fullName = self.firstName.text! + " " + self.lastName.text!
                         Database.updateUserDisplayName(fullName, completion: { (success, error) in
                             if !success {
-                                self.firstNameError.text = error!.localizedDescription
+                                self._firstNameError.text = error!.localizedDescription
                             }
                             else {
                                 User.currentUser.name = fullName
-//                                self.performSegueWithIdentifier("addNameSegue", sender: self)
+                                self.performSegueWithIdentifier("unwindFromLoggedInSuccess", sender: self)
                             }
                         })
                     }
@@ -87,6 +88,11 @@ class LoginAddNameVC: UIViewController {
     
     func _loggedInSuccess() {
         self.loginVCDelegate!.loginSuccess(self)
+    }
+    
+    func textFieldDidBeginEditing(textField: UITextField) {
+        _firstNameError.text = ""
+        _lastNameError.text = ""
     }
     
     /*
