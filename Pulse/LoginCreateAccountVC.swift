@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import FirebaseAuth
 
 class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
 
@@ -28,17 +29,15 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     override func viewDidAppear(animated : Bool) {
         super.viewDidAppear(true)
         
+        //add icon
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
         pulseIcon.drawIconBackground(iconBackgroundColor)
         pulseIcon.drawIcon(iconColor, iconThickness: 3)
-
         logoView.addSubview(pulseIcon)
         
         self.userEmail.layer.addSublayer(addBorders(self.userEmail))
         self.userPassword.layer.addSublayer(addBorders(self.userPassword))
-        
-        self.signupButton.layer.cornerRadius = 20
-        
+        self.signupButton.layer.cornerRadius = buttonCornerRadius
     }
 
     override func didReceiveMemoryWarning() {
@@ -56,7 +55,19 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
                     if !verified {
                         self._passwordErrorLabel.text = error!.localizedDescription
                     } else {
-                        self.performSegueWithIdentifier("addNameSegue", sender: self)
+                        Database.createEmailUser(self.userEmail.text!, password: self.userPassword.text!, completion: { (user, error) in
+                            if let _error = error {
+                                switch _error.code {
+                                case FIRAuthErrorCode.ErrorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = error!.localizedDescription
+                                case FIRAuthErrorCode.ErrorCodeEmailAlreadyInUse.rawValue: self._emailErrorLabel.text = "you already have an account! try signing in instead"
+                                case FIRAuthErrorCode.ErrorCodeWeakPassword.rawValue: self._passwordErrorLabel.text = error!.localizedDescription
+                                default: self._emailErrorLabel.text = "error creating your account. please try again!"
+                                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                                }
+                            } else {
+                                self.performSegueWithIdentifier("addNameSegue", sender: self)
+                            }
+                        })
                     }
                 })
             }
@@ -71,8 +82,8 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         if emailPredicate.evaluateWithObject(enteredEmail) {
             completion(verified: true, error: nil)
         } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "Please enter a valid email" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 0, userInfo: userInfo))
+            let userInfo = [ NSLocalizedDescriptionKey : "please enter a valid email" ]
+            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
         }
     }
     
@@ -85,8 +96,8 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
             completion(verified: true, error: nil)
             return
         } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "Password must be 8 characters in length" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 0, userInfo: userInfo))
+            let userInfo = [ NSLocalizedDescriptionKey : "password must be 8 characters in length" ]
+            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
             return
         }
 //        let passwordFormat = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$"

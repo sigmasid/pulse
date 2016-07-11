@@ -7,12 +7,19 @@
 //
 
 import UIKit
+import FirebaseAuth
 
 class LoginAddNameVC: UIViewController {
 
     @IBOutlet weak var logoView: UIView!
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
+    @IBOutlet weak var doneButton: UIButton!
+    
+    @IBOutlet weak var firstNameError: UILabel!
+    @IBOutlet weak var lastNameError: UILabel!
+    
+    var loginVCDelegate : childVCDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,6 +37,8 @@ class LoginAddNameVC: UIViewController {
         
         self.firstName.layer.addSublayer(addBorders(self.firstName))
         self.lastName.layer.addSublayer(addBorders(self.lastName))
+        self.doneButton.layer.cornerRadius = buttonCornerRadius
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -39,7 +48,47 @@ class LoginAddNameVC: UIViewController {
     
 
     @IBAction func addName(sender: UIButton) {
+        validateName(firstName.text, completion: {(verified, error) in
+            if !verified {
+                self.firstNameError.text = error!.localizedDescription
+            } else {
+                self.validateName(self.lastName.text, completion: {(verified, error) in
+                    if !verified {
+                        self.lastNameError.text = error!.localizedDescription
+                    } else {
+                        let fullName = self.firstName.text! + " " + self.lastName.text!
+                        Database.updateUserDisplayName(fullName, completion: { (success, error) in
+                            if !success {
+                                self.firstNameError.text = error!.localizedDescription
+                            }
+                            else {
+                                User.currentUser.name = fullName
+//                                self.performSegueWithIdentifier("addNameSegue", sender: self)
+                            }
+                        })
+                    }
+                })
+            }
+        })
     }
+    
+    ///Validate name
+    private func validateName(enteredName:String?, completion: (verified: Bool, error: NSError?) -> Void) {
+        let nameFormat = "[A-Za-z]{2,64}"
+        let namePredicate = NSPredicate(format:"SELF MATCHES %@", nameFormat)
+        
+        if namePredicate.evaluateWithObject(enteredName) {
+            completion(verified: true, error: nil)
+        } else {
+            let userInfo = [ NSLocalizedDescriptionKey : "this doesn't look right" ]
+            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
+        }
+    }
+    
+    func _loggedInSuccess() {
+        self.loginVCDelegate!.loginSuccess(self)
+    }
+    
     /*
     // MARK: - Navigation
 

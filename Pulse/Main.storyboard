@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="qx1-oO-XfK">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="fcE-Nh-5CR">
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
@@ -216,18 +216,18 @@
                                     <rect key="frame" x="226" y="696" width="148" height="146"/>
                                 </variation>
                             </button>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="TzC-Cz-gyd">
-                                <rect key="frame" x="260" y="75" width="80" height="80"/>
+                            <view contentMode="scaleToFill" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TzC-Cz-gyd">
+                                <rect key="frame" x="260" y="75" width="60" height="60"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="TzC-Cz-gyd" secondAttribute="height" multiplier="1:1" id="Br2-gZ-tNV"/>
-                                    <constraint firstAttribute="width" constant="80" id="IaS-gb-S3U"/>
+                                    <constraint firstAttribute="width" constant="60" id="IaS-gb-S3U"/>
                                 </constraints>
                                 <variation key="heightClass=regular" fixedFrame="YES">
                                     <rect key="frame" x="249" y="20" width="90" height="90"/>
                                 </variation>
                             </view>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Email" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="tHo-Tn-A2s">
-                                <rect key="frame" x="27" y="340" width="549" height="46"/>
+                                <rect key="frame" x="27" y="339.5" width="549" height="46"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" keyboardType="emailAddress"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -235,7 +235,7 @@
                                 </variation>
                             </textField>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalCompressionResistancePriority="751" text="OR" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="buq-um-5go">
-                                <rect key="frame" x="290" y="299" width="20" height="17"/>
+                                <rect key="frame" x="290" y="298.5" width="20" height="17"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleSubhead"/>
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
@@ -258,7 +258,7 @@
                                 </connections>
                             </button>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Password" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="hKc-3m-q4h">
-                                <rect key="frame" x="27" y="401" width="549" height="45"/>
+                                <rect key="frame" x="27" y="400.5" width="549" height="45.5"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -341,8 +341,11 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="emailButton" destination="QqP-KB-Lfa" id="Izb-VS-TgU"/>
+                        <outlet property="fbButton" destination="mwY-hr-A0j" id="1FL-cT-g8d"/>
                         <outlet property="logoView" destination="TzC-Cz-gyd" id="alj-Fu-veb"/>
                         <outlet property="showStatus" destination="QeW-jp-ris" id="5ZM-E4-yB1"/>
+                        <outlet property="twtrButton" destination="0Xp-xB-99u" id="x3N-Ek-7pj"/>
                         <outlet property="userEmail" destination="tHo-Tn-A2s" id="J5c-lW-TrT"/>
                         <outlet property="userPassword" destination="hKc-3m-q4h" id="RtV-hA-te7"/>
                     </connections>
@@ -488,8 +491,8 @@
                                     <rect key="frame" x="249" y="20" width="90" height="90"/>
                                 </variation>
                             </view>
-                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" misplaced="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Email" textAlignment="natural" minimumFontSize="16" translatesAutoresizingMaskIntoConstraints="NO" id="ng1-cT-2tP">
-                                <rect key="frame" x="59" y="217" width="480" height="46"/>
+                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Email" textAlignment="natural" minimumFontSize="16" translatesAutoresizingMaskIntoConstraints="NO" id="ng1-cT-2tP">
+                                <rect key="frame" x="60" y="217" width="480" height="46"/>
                                 <gestureRecognizers/>
                                 <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" keyboardType="emailAddress"/>
@@ -527,6 +530,9 @@
                                     <constraint firstAttribute="width" secondItem="tpD-wo-J8q" secondAttribute="height" multiplier="1:1" id="7hB-0b-xY8"/>
                                     <constraint firstAttribute="height" constant="40" id="ZlS-6S-YPn"/>
                                 </constraints>
+                                <connections>
+                                    <segue destination="vlc-5V-BuX" kind="unwind" unwindAction="unwindFromCreateAccount:" id="vap-DX-MwP"/>
+                                </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XwR-zi-3w9">
                                 <rect key="frame" x="60" y="163" width="480" height="32"/>
@@ -591,6 +597,7 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="5Bs-Tm-Xuf" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <exit id="vlc-5V-BuX" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
             <point key="canvasLocation" x="1146" y="1137"/>
         </scene>
@@ -617,7 +624,7 @@
                                 </variation>
                             </view>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="First Name" textAlignment="natural" minimumFontSize="16" translatesAutoresizingMaskIntoConstraints="NO" id="ZWm-2n-sWa">
-                                <rect key="frame" x="30" y="230" width="540" height="20"/>
+                                <rect key="frame" x="30" y="217" width="540" height="46"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -625,7 +632,7 @@
                                 </variation>
                             </textField>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Last Name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="9lq-NV-uXy">
-                                <rect key="frame" x="31" y="290" width="540" height="20"/>
+                                <rect key="frame" x="31" y="277" width="540" height="46"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -656,19 +663,39 @@
                                     <rect key="frame" x="266" y="757" width="69" height="33"/>
                                 </variation>
                             </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wwY-4U-2tF">
+                                <rect key="frame" x="30" y="263" width="540" height="13.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
+                                <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UDW-hT-FdP">
+                                <rect key="frame" x="30" y="323" width="540" height="13.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
+                                <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstItem="UDW-hT-FdP" firstAttribute="top" secondItem="9lq-NV-uXy" secondAttribute="bottom" id="0kJ-HJ-iyr"/>
                             <constraint firstItem="9lq-NV-uXy" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" constant="1" id="2eT-um-HYS"/>
                             <constraint firstItem="0HN-In-4kA" firstAttribute="top" secondItem="Ems-AX-lPP" secondAttribute="centerY" multiplier="1.15" id="Fsv-9a-47V"/>
                             <constraint firstItem="ZWm-2n-sWa" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="KbU-SU-541"/>
+                            <constraint firstItem="wwY-4U-2tF" firstAttribute="width" secondItem="ZWm-2n-sWa" secondAttribute="width" id="MCD-0q-02W"/>
+                            <constraint firstItem="wwY-4U-2tF" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="QMO-p1-6ek"/>
+                            <constraint firstItem="UDW-hT-FdP" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="VNU-Ic-9Re"/>
                             <constraint firstItem="0HN-In-4kA" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="ZWq-ht-Fe6"/>
+                            <constraint firstItem="UDW-hT-FdP" firstAttribute="width" secondItem="9lq-NV-uXy" secondAttribute="width" id="Zcn-Db-Yzi"/>
                             <constraint firstItem="ZWm-2n-sWa" firstAttribute="width" secondItem="0HN-In-4kA" secondAttribute="width" id="ZdG-Z0-XWj"/>
                             <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="0HN-In-4kA" secondAttribute="height" multiplier="13" id="Zpe-ev-9Ps"/>
                             <constraint firstItem="9lq-NV-uXy" firstAttribute="centerY" secondItem="Ems-AX-lPP" secondAttribute="centerY" id="eGJ-cw-87L"/>
                             <constraint firstItem="9lq-NV-uXy" firstAttribute="width" secondItem="0HN-In-4kA" secondAttribute="width" id="iEm-Au-60o"/>
+                            <constraint firstItem="9lq-NV-uXy" firstAttribute="height" secondItem="0HN-In-4kA" secondAttribute="height" id="jrx-vx-O4T"/>
                             <constraint firstItem="0HN-In-4kA" firstAttribute="width" secondItem="Ems-AX-lPP" secondAttribute="width" multiplier="0.9" id="m70-2B-btu"/>
                             <constraint firstItem="6RI-eG-4Q0" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="n55-IP-UrF"/>
+                            <constraint firstItem="wwY-4U-2tF" firstAttribute="top" secondItem="ZWm-2n-sWa" secondAttribute="bottom" id="pd1-16-EB5"/>
+                            <constraint firstItem="ZWm-2n-sWa" firstAttribute="height" secondItem="0HN-In-4kA" secondAttribute="height" id="pfj-Q5-Ygg"/>
                             <constraint firstItem="JOO-Xx-Hv6" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="q2g-LG-wRS"/>
                             <constraint firstItem="6RI-eG-4Q0" firstAttribute="top" secondItem="JOO-Xx-Hv6" secondAttribute="bottom" constant="20" id="szl-H2-2Xa"/>
                             <constraint firstItem="6RI-eG-4Q0" firstAttribute="bottom" secondItem="Ems-AX-lPP" secondAttribute="centerY" multiplier="0.65" id="vX1-xr-yYB"/>
@@ -677,8 +704,11 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="doneButton" destination="0HN-In-4kA" id="yGc-Oo-1Bg"/>
                         <outlet property="firstName" destination="ZWm-2n-sWa" id="hGF-4s-n3g"/>
+                        <outlet property="firstNameError" destination="wwY-4U-2tF" id="EBZ-eo-rfS"/>
                         <outlet property="lastName" destination="9lq-NV-uXy" id="UW5-iu-iRn"/>
+                        <outlet property="lastNameError" destination="UDW-hT-FdP" id="iFH-Gv-YcR"/>
                         <outlet property="logoView" destination="JOO-Xx-Hv6" id="djs-D0-8Bt"/>
                     </connections>
                 </viewController>

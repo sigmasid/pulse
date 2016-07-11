@@ -10,7 +10,6 @@ import UIKit
 import FirebaseDatabase
 
 protocol childVCDelegate: class {
-//    func dismissVC(_ : UIViewController)
     func noAnswersToShow(_ : UIViewController)
     func doneRecording(_: NSURL?, currentVC : UIViewController, qID: String?, location: String?)
     func askUserToLogin(_: UIViewController)
@@ -115,7 +114,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func noAnswersToShow(currentVC : UIViewController) {
-        if currentQuestion.hasAnswers() && User.currentUser.askedToAnswerCurrentQuestion {
+        if currentQuestion.hasAnswers() {
             print("question has answers \(currentQuestion.totalAnswers())")
 //            self.loadNextQuestion()
         } else {
@@ -146,7 +145,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
                 if let showLoginVC = storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC {
                     self.addNewVC(showLoginVC)
-                    showLoginVC.loginDelegate = self
+                    showLoginVC.loginVCDelegate = self
                 }
             } else {
                 if let _userAnswerVC = currentVC as? UserRecordedAnswerVC {

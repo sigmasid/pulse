@@ -9,6 +9,10 @@
 import Foundation
 import UIKit
 
+let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
+let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
+let buttonCornerRadius : CGFloat = 20
+
 func addBorders(_textField : UITextField) -> CAShapeLayer {
     let _bottomBorder = CAShapeLayer()
     

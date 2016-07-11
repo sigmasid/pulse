@@ -8,12 +8,12 @@
 
 import Foundation
 import FirebaseDatabase
+import FirebaseAuth
 
 class User {
     var uID : String?
     var name : String?
     var answers : [String]?
-    var askedToAnswerCurrentQuestion = false
     var profilePic : String?
     
     class var currentUser: User {
@@ -46,6 +46,10 @@ class User {
         if snapshot.hasChild("profilePic") {
             self.profilePic = snapshot.childSnapshotForPath("profilePic").value as? String
         }
+    }
+    
+    init(user: FIRUser) {
+        self.uID = user.uid
     }
     
     func isLoggedIn() -> Bool {

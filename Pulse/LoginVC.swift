@@ -14,8 +14,11 @@ import FBSDKLoginKit
 
 class LoginVC: UIViewController {
     var firebaseRef = FIRDatabaseReference.init()
-    weak var loginDelegate : childVCDelegate?
+    var loginVCDelegate : childVCDelegate?
     
+    @IBOutlet weak var fbButton: UIButton!
+    @IBOutlet weak var emailButton: UIButton!
+    @IBOutlet weak var twtrButton: UIButton!
     @IBOutlet weak var logoView: UIView!
     @IBOutlet weak var userEmail: UITextField!
     @IBOutlet weak var userPassword: UITextField!
@@ -31,19 +34,19 @@ class LoginVC: UIViewController {
     
     override func viewDidAppear(animated : Bool) {
         super.viewDidAppear(true)
-        self.view.alpha = 0.8
         
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
+        pulseIcon.drawIconBackground(iconBackgroundColor)
         pulseIcon.drawIcon(iconColor, iconThickness: 3)
         logoView.addSubview(pulseIcon)
         
-        let borderColor = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 ).CGColor
-        userEmail.layer.borderWidth = 1
-        userPassword.layer.borderWidth = 1
+        self.userEmail.layer.addSublayer(addBorders(self.userEmail))
+        self.userPassword.layer.addSublayer(addBorders(self.userPassword))
         
-        userEmail.layer.borderColor = borderColor
-        userPassword.layer.borderColor = borderColor
-        
+        fbButton.layer.cornerRadius = buttonCornerRadius
+        twtrButton.layer.cornerRadius = buttonCornerRadius
+        emailButton.layer.cornerRadius = buttonCornerRadius
+
         userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         
@@ -138,7 +141,7 @@ class LoginVC: UIViewController {
             } else if result.isCancelled {
                 FBSDKLoginManager().logOut()
             } else {
-                print("login success")
+                //login sucess - will get handled by FB profile updated notification
             }
         })
         
@@ -168,7 +171,7 @@ class LoginVC: UIViewController {
                 let credential = FIRTwitterAuthProvider.credentialWithToken(session!.authToken, secret: session!.authTokenSecret)
                 FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
                     if error != nil {
-                        print(error?.description)
+                        self.showStatus.text =  error?.description
                     } else {
                         AuthHelper.createUser(aUser!.uid, name: session!.userName, pic : FIRAuth.auth()?.currentUser?.photoURL)
                         self._loggedInSuccess()
@@ -181,7 +184,11 @@ class LoginVC: UIViewController {
     }
     
     func _loggedInSuccess() {
-        self.loginDelegate!.loginSuccess(self)
+        self.loginVCDelegate!.loginSuccess(self)
+    }
+    
+    @IBAction func unwindFromCreateAccount(segue: UIStoryboardSegue) {
+        print("unwould segue success")
     }
 
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {

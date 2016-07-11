@@ -14,7 +14,6 @@ import FirebaseAuth
 let storage = FIRStorage.storage()
 let storageRef = storage.referenceForURL("gs://pulse-84022.appspot.com")
 
-
 let databaseRef = FIRDatabase.database().reference()
 
 class Database {
@@ -82,4 +81,70 @@ class Database {
         }
     }
     
+    static func createEmailUser(email : String, password: String, completion: (user : User?, error : NSError?) -> Void) {
+        FIRAuth.auth()?.createUserWithEmail(email, password: password) { (_user, _error) in
+            if _error != nil {
+                completion(user: nil, error: _error)
+            } else {
+                saveUserToDatabase(_user!, completion: { (success , error) in
+                    if error != nil {
+                        completion(user: nil, error: error)
+                    } else {
+                        completion(user: User(user: _user!), error: nil)
+                    }
+                })
+            }
+        }
+    }
+    
+    static func updateUserDisplayName(name: String, completion: (success : Bool, error : NSError?) -> Void) {
+        let user = FIRAuth.auth()?.currentUser
+        if let user = user {
+            let changeRequest = user.profileChangeRequest()
+            
+            changeRequest.displayName = name
+            changeRequest.commitChangesWithCompletion { error in
+                if let error = error {
+                    completion(success: false, error: error)
+                } else {
+                    saveUserToDatabase(user, completion: { (success , error) in
+                        if error != nil {
+                            completion(success: false, error: error)
+                        } else {
+                            completion(success: true, error: nil)
+                        }
+                    })
+                }
+            }
+        }
+    }
+    
+    static func saveUserToDatabase(user: FIRUser, completion: (success : Bool, error : NSError?) -> Void) {
+        var userPost = [String : String]()
+        if let _uName = user.displayName {
+            userPost["name"] = _uName
+        }
+        if let _uPic = user.photoURL {
+            userPost["profilePic"] = String(_uPic)
+        }
+        usersRef.child(user.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+            if error != nil {
+                completion(success: false, error: error)
+            } else {
+                completion(success: true, error: nil)
+            }
+        })
+    }
+    
+    static func addUserAnswersToDatabase(user: FIRUser, aID: String, completion: (success : Bool, error : NSError?) -> Void) {
+        let post = ["\(aID)": "true"]
+
+        usersRef.child(user.uid).child("answers").updateChildValues(post, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+        if error != nil {
+            completion(success: false, error: error)
+        } else {
+            completion(success: true, error: nil)
+        }
+        })
+    }
 }
