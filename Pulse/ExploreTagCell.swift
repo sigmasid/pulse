@@ -36,23 +36,6 @@ class ExploreTagCell: UICollectionViewCell {
     }
     
     private let questionReuseIdentifier = "questionCell"
-    
-    func loadMoreQuestions(indexPath  : NSIndexPath) {
-        if questionsShown == _totalQuestions {
-            loadingStatus = .Finished
-            return
-        } else if questionsShown + questionsIncrement < _totalQuestions {
-            questionsShown += questionsIncrement
-            ExploreQuestions.scrollToItemAtIndexPath(indexPath, atScrollPosition: .Left, animated: true)
-            ExploreQuestions.reloadData()
-            return
-        } else {
-            questionsShown += _totalQuestions - questionsShown
-            ExploreQuestions.scrollToItemAtIndexPath(indexPath, atScrollPosition: .Left, animated: true)
-            loadingStatus = .Finished
-            return
-        }
-    }
 }
 
 extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate {
@@ -71,12 +54,10 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
             let questionRef = databaseRef.child("questions/\(self.currentTag.questions![indexPath.row])")
             questionRef.observeSingleEventOfType(.Value, withBlock: { snap in
                 let _currentQuestion = Question(qID: snap.key, snapshot: snap)
-                print(_currentQuestion.qTitle)
                 self._allQuestions.append(_currentQuestion)
                 cell.qTitle.text = snap.childSnapshotForPath("title").value as? String
             })
         }
-    
         return cell
     }
     

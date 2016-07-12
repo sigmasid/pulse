@@ -19,7 +19,6 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
     var currentTag : Tag!
     
     var questionsListener = UInt()
-    var tagsListener = UInt()
 
     private let reuseIdentifier = "tagCell"
     
@@ -41,36 +40,24 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
     
     override func viewDidDisappear(animated: Bool) {
         super.viewDidDisappear(animated)
-        databaseRef.removeObserverWithHandle(tagsListener)
         databaseRef.removeObserverWithHandle(questionsListener)
     }
     
     func loadTagsFromFirebase() {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         
-//        Database.getAllTags() { (tags , error) in
-//            if error != nil {
-//                print(error!.description)
-//                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
-//            } else {
-//                self.allTags = tags
-//                self.ExploreTags.delegate = self
-//                self.ExploreTags.dataSource = self
-//                self.ExploreTags.reloadData()
-//                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
-//            }
-//        }
-        tagsListener = databaseRef.child("tags").observeEventType(.Value, withBlock: { snapshot in
-            for item in snapshot.children {
-                let child = item as! FIRDataSnapshot
-                self.currentTag = Tag(tagID: child.key, snapshot: child)
-                self.allTags.append(self.currentTag)
+        Database.getAllTags() { (tags , error) in
+            if error != nil {
+                print(error!.description)
+                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+            } else {
+                self.allTags = tags
+                self.ExploreTags.delegate = self
+                self.ExploreTags.dataSource = self
+                self.ExploreTags.reloadData()
+                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
             }
-            self.ExploreTags.delegate = self
-            self.ExploreTags.dataSource = self
-            self.ExploreTags.reloadData()
-            UIApplication.sharedApplication().networkActivityIndicatorVisible = false
-        })
+        }
     }
     
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int) {
@@ -95,6 +82,13 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
     func returnToExplore(_: UIViewController) {
         dismissViewControllerAnimated(true, completion: nil)
     }
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if (segue.identifier == "showTagDetailSegue") {
+            let tagDetailVC = segue.destinationViewController as! TagDetailVC
+            tagDetailVC.currentTag = currentTag
+        }
+    }
 }
 
 extension ExploreTagsVC : UICollectionViewDataSource {
@@ -115,15 +109,15 @@ extension ExploreTagsVC : UICollectionViewDataSource {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! ExploreTagCell
         
         cell.delegate = self
-        let _currentTag = allTags[indexPath.row]
+        currentTag = allTags[indexPath.row]
         
-        cell.currentTag = _currentTag
+        cell.currentTag = currentTag
         cell.backgroundColor = UIColor.whiteColor()
-        configureCell(cell, currentTag: _currentTag, indexPath: indexPath)
+        configureCell(cell, indexPath: indexPath)
         return cell
     }
     
-    func configureCell(cell: ExploreTagCell, currentTag: Tag, indexPath: NSIndexPath) {
+    func configureCell(cell: ExploreTagCell, indexPath: NSIndexPath) {
         cell.tagLabel.text = "#"+currentTag.tagID!.uppercaseString
         
         if let _tagImage = currentTag.previewImage {
@@ -137,6 +131,11 @@ extension ExploreTagsVC : UICollectionViewDataSource {
                 }
             }
         }
+    }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        currentTag = allTags[indexPath.row]
+        self.performSegueWithIdentifier("showTagDetailSegue", sender: self)
     }
 }
 

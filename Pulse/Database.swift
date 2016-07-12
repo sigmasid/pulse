@@ -23,6 +23,7 @@ class Database {
     static let answersRef = databaseRef.child("answers")
     static let usersRef = databaseRef.child("users")
     static let answersStorageRef = storageRef.child("answers")
+    static let tagsStorageRef = storageRef.child("tags")
 
     static func getAllTags(completion: (tags : [Tag], error : NSError?) -> Void) {
         var allTags = [Tag]()
@@ -48,6 +49,13 @@ class Database {
         } else {
             completion(questions: allQuestions, error: NSError.init(domain: "Empty", code: 1, userInfo: nil))
         }
+    }
+    
+    static func getTag(tagID : String, completion: (tag : Tag, error : NSError?) -> Void) {
+        tagsRef.child(tagID).observeSingleEventOfType(.Value, withBlock: { snap in
+            let _currentTag = Tag(tagID: tagID, snapshot: snap)
+            completion(tag: _currentTag, error: nil)
+        })
     }
     
     static func getQuestion(qID : String, completion: (question : Question, error : NSError?) -> Void) {
@@ -77,6 +85,16 @@ class Database {
                 completion(URL: nil, error: error)
             } else {
                 completion(URL: URL, error: nil)
+            }
+        }
+    }
+    
+    static func getImage(fileID : String, completion: (data : NSData?, error : NSError?) -> Void) {
+        let _ = tagsStorageRef.child(fileID).dataWithMaxSize(1242 * 2208) { (data, error) -> Void in
+            if (error != nil) {
+                completion(data: nil, error: error)
+            } else {
+                completion(data: data, error: nil)
             }
         }
     }

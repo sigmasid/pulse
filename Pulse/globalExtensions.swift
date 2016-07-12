@@ -21,33 +21,6 @@ extension UIViewController {
     }
 }
 
-class LCTextLayer : CATextLayer {
-    // USAGE: To fix the vertical alignment issue that currently exists within the CATextLayer class. Change made to the yDiff calculation.
-    
-    override init() {
-        super.init()
-    }
-    
-    override init(layer: AnyObject) {
-        super.init(layer: layer)
-    }
-    
-    required init(coder aDecoder: NSCoder) {
-        super.init(layer: aDecoder)
-    }
-    
-    override func drawInContext(ctx: CGContext) {
-        let height = self.bounds.size.height
-        let fontSize = self.fontSize
-        let yDiff = (height-fontSize)/2 - fontSize/10
-        
-        CGContextSaveGState(ctx)
-        CGContextTranslateCTM(ctx, 0.0, yDiff)
-        super.drawInContext(ctx)
-        CGContextRestoreGState(ctx)
-    }
-}
-
 extension Double {
     var degreesToRadians : CGFloat {
         return CGFloat(self) * CGFloat(M_PI) / 180.0
@@ -65,3 +38,5 @@ enum LoadMoreStatus{
     case Finished
     case haveMore
 }
+
+/* EXTEND CUSTOM LOADING */

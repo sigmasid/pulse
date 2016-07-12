@@ -13,11 +13,34 @@ let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 
 let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
 let buttonCornerRadius : CGFloat = 20
 
-func addBorders(_textField : UITextField) -> CAShapeLayer {
-    let _bottomBorder = CAShapeLayer()
-    
-    _bottomBorder.frame = CGRectMake(0.0, _textField.frame.size.height - 1, _textField.frame.size.width, 1.0);
-    _bottomBorder.backgroundColor = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 ).CGColor
-    
-    return _bottomBorder
+
+class GlobalFunctions {
+    static func addBorders(_textField : UITextField) -> CAShapeLayer {
+        let _bottomBorder = CAShapeLayer()
+        
+        _bottomBorder.frame = CGRectMake(0.0, _textField.frame.size.height - 1, _textField.frame.size.width, 1.0);
+        _bottomBorder.backgroundColor = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 ).CGColor
+        
+        return _bottomBorder
+    }
+
+    static func addNewVC(newVC: UIViewController, parentVC: UIViewController) {
+        parentVC.addChildViewController(newVC)
+        newVC.view.frame = parentVC.view.bounds
+        parentVC.view.addSubview(newVC.view)
+        newVC.didMoveToParentViewController(parentVC)
+    }
+
+    static func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
+        parentVC.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.25, options: UIViewAnimationOptions.CurveEaseIn, animations: nil, completion: { (finished) in
+            oldVC.removeFromParentViewController()
+            newVC.didMoveToParentViewController(parentVC)
+        })
+    }
+
+    static func dismissVC(currentVC : UIViewController) {
+        currentVC.willMoveToParentViewController(nil)
+        currentVC.view.removeFromSuperview()
+        currentVC.removeFromParentViewController()
+    }
 }

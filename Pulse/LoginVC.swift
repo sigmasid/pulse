@@ -36,8 +36,8 @@ class LoginVC: UIViewController {
         pulseIcon.drawIcon(iconBackgroundColor, iconThickness: 2)
         logoView.addSubview(pulseIcon)
         
-        self.userEmail.layer.addSublayer(addBorders(self.userEmail))
-        self.userPassword.layer.addSublayer(addBorders(self.userPassword))
+        self.userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail))
+        self.userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword))
         
         fbButton.layer.cornerRadius = buttonCornerRadius
         twtrButton.layer.cornerRadius = buttonCornerRadius

@@ -62,27 +62,34 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     /* General VC related methods */
-    func dismissVC(currentVC : UIViewController) {
-        currentVC.willMoveToParentViewController(nil)
-        currentVC.view.removeFromSuperview()
-        currentVC.removeFromParentViewController()
-    }
+//    func dismissVC(currentVC : UIViewController) {
+//        currentVC.willMoveToParentViewController(nil)
+//        currentVC.view.removeFromSuperview()
+//        currentVC.removeFromParentViewController()
+//    }
     
-    func addNewVC(newVC: UIViewController) {
-        addChildViewController(newVC)
-        newVC.view.frame = self.view.frame
-        view.addSubview(newVC.view)
-        newVC.didMoveToParentViewController(self)
-    }
+//    func addNewVC(newVC: UIViewController) {
+//        addChildViewController(newVC)
+//        newVC.view.frame = self.view.bounds
+//        view.addSubview(newVC.view)
+//        newVC.didMoveToParentViewController(self)
+//    }
     
-    func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController) {
-        self.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.25, options: UIViewAnimationOptions.CurveEaseIn, animations: nil, completion: { (finished) in
-            oldVC.removeFromParentViewController()
-            newVC.didMoveToParentViewController(self)
-        })
-    }
+//    func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController) {
+//        transitionFromViewController(oldVC, toViewController: newVC, duration: 0.25, options: UIViewAnimationOptions.CurveEaseIn, animations: nil, completion: { (finished) in
+//            oldVC.removeFromParentViewController()
+//            newVC.didMoveToParentViewController(self)
+//        })
+//    }
     
     /* QA Specific Methods */
+    
+    func displayQuestion() {
+        answerVC.currentQuestion = currentQuestion
+        answerVC.currentTag = selectedTag
+        answerVC.delegate = self
+        GlobalFunctions.addNewVC(answerVC, parentVC: self)
+    }
     
     func loadNextQuestion(completion: (question : Question, error : NSError?) -> Void) {
         questionCounter += 1
@@ -105,13 +112,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
             completion(question: currentQuestion, error: nil)
         }
     }
-    
-    func displayQuestion() {
-        answerVC.currentQuestion = currentQuestion
-        answerVC.currentTag = selectedTag
-        answerVC.delegate = self
-        addNewVC(answerVC)
-    }
+
     
     func noAnswersToShow(currentVC : UIViewController) {
         if currentQuestion.hasAnswers() {
@@ -123,7 +124,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
             let cameraVC = CameraVC()
             cameraVC.camDelegate = self
             cameraVC.questionToShow = currentQuestion
-            addNewVC(cameraVC)
+            GlobalFunctions.addNewVC(cameraVC, parentVC: self)
 //          cycleBetweenVC(currentVC, newVC: cameraVC)
         }
     }
@@ -135,8 +136,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
         userAnswer.fileURL = assetURL
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
-        addNewVC(userAnswer)
-        cycleBetweenVC(currentVC, newVC: userAnswer)
+        GlobalFunctions.addNewVC(userAnswer, parentVC: self)
+        GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
     }
     
     func askUserToLogin(currentVC : UIViewController) {
@@ -144,7 +145,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
             if !result {
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
                 if let showLoginVC = storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC {
-                    self.addNewVC(showLoginVC)
+                    GlobalFunctions.addNewVC(showLoginVC, parentVC: self)
                     showLoginVC.loginVCDelegate = self
                 }
             } else {
@@ -163,7 +164,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 if error == nil {
                     self.answerVC.currentQuestion = question
                     self.answerVC.view.hidden = false
-                    self.dismissVC(currentVC)
+                    GlobalFunctions.dismissVC(currentVC)
                 }
             })
         }
@@ -194,7 +195,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
                     self.answerVC.currentQuestion = question
                 }
             })
-            self.dismissVC(currentVC)
+            GlobalFunctions.dismissVC(currentVC)
         }
     }
     
@@ -203,7 +204,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func loginSuccess (currentVC : UIViewController) {
-        self.dismissVC(currentVC)
+        GlobalFunctions.dismissVC(currentVC)
     }
     
     func loginFailed (currentVC : UIViewController) {

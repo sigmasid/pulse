@@ -51,8 +51,8 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         
         self.userEmail.tag = 100
         self.userPassword.tag = 200
-        self.userEmail.layer.addSublayer(addBorders(self.userEmail))
-        self.userPassword.layer.addSublayer(addBorders(self.userPassword))
+        self.userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail))
+        self.userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword))
         self.userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), forControlEvents: UIControlEvents.EditingChanged)
 
         self.signupButton.layer.cornerRadius = buttonCornerRadius

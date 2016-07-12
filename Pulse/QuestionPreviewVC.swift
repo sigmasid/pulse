@@ -23,7 +23,7 @@ class QuestionPreviewVC: UIViewController {
     @IBOutlet weak var answerPreview: UIView!
     @IBOutlet weak var questionLabel: UILabel!
     weak var qPreviewDelegate : questionPreviewDelegate!
-    var pulseIcon = Icon()
+    var pulseIcon : Icon!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,41 +32,17 @@ class QuestionPreviewVC: UIViewController {
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(true)
         
-        self.view.alpha = 0.7
-        
-        print(answerPreview.frame)
-        let iconColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 1.0 )
-        let iconDimension = min(answerPreview.frame.width, answerPreview.frame.height)
-        print("question label dimensions are \(questionLabel.frame.width) and answer preview dimensions are \(answerPreview.frame.width)")
-        
-        pulseIcon.frame = CGRectMake(0,0,iconDimension,iconDimension)
-        
-        pulseIcon.frame = CGRectMake(0,(1-iconDimension/answerPreview.frame.height)/2*answerPreview.frame.height,iconDimension,iconDimension) //align icon to middle Y since it's a square
-        pulseIcon.drawIcon(iconColor, iconThickness: 4)
-        answerPreview.addSubview(pulseIcon)
-        pulseIcon.setNeedsDisplay()
-        
         let avPlayerLayer = AVPlayerLayer(player: aPlayer)
-        avPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
         answerPreview.layer.insertSublayer(avPlayerLayer, atIndex: 0)
-        avPlayerLayer.frame = answerPreview.frame
+        avPlayerLayer.frame = answerPreview.bounds
+        avPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
     }
     
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        if keyPath == "qCreated" {
-            displayNewQuestion()
-            if currentQuestion.hasAnswers() {
-                setupAnswer(currentQuestion.qAnswers!.first!)
-            }
-            self.currentQuestion.removeObserver(self, forKeyPath: "qCreated")
-        } else if keyPath == "status" {
+        if keyPath == "status" {
             switch aPlayer.status {
             case AVPlayerStatus.ReadyToPlay:
-                aPlayer.prerollAtRate(1, completionHandler: { completed in
-                    if completed {
-                        self.aPlayer.play()
-                    }
-                })
+                self.aPlayer.play()
                 aPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
                 break
             default: break
@@ -75,36 +51,17 @@ class QuestionPreviewVC: UIViewController {
     }
     
     func loadQuestion() {
-        if let _currentQuestionID = currentQuestionID {
-            let questionsPath = databaseRef.child("questions/\(_currentQuestionID)")
-            questionsPath.observeSingleEventOfType(.Value, withBlock: { snapshot in
-                self.currentQuestion = Question(qID: snapshot.key, snapshot: snapshot)
-                self.currentQuestion.addObserver(self, forKeyPath: "qCreated", options: NSKeyValueObservingOptions.New, context: nil)
-            })
-        }
-    }
-    
-    func displayNewQuestion() {
-        questionLabel.text = self.currentQuestion.qTitle!
-        print(self.currentQuestion.qTitle!)
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
-    @IBAction func handleSwipe(recognizer:UISwipeGestureRecognizer) {
-        print("swipe fired")
-        switch recognizer.direction {
-        case UISwipeGestureRecognizerDirection.Right:
-            qPreviewDelegate.updateQuestion()
-        default: print("default case")
-        }
+        Database.getQuestion(currentQuestionID!, completion: {(question, error) in
+            self.currentQuestion = question
+            self.questionLabel.text = question.qTitle!
+            if self.currentQuestion.hasAnswers() {
+                self.setupAnswer(self.currentQuestion.qAnswers!.first!)
+            }
+        })
     }
     
     func setupAnswer(answerID : String) {
-        let downloadRef = storageRef.child("answers/\(answerID)")
-        let _ = downloadRef.downloadURLWithCompletion { (URL, error) -> Void in
+        Database.getAnswerURL(answerID, completion: {(URL, error) in
             if (error != nil) {
                 print(error.debugDescription)
             } else {
@@ -113,6 +70,19 @@ class QuestionPreviewVC: UIViewController {
                 self.aPlayer.replaceCurrentItemWithPlayerItem(aPlayerItem)
                 self.aPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
             }
+        })
+    }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+    }
+    
+    @IBAction func handleSwipe(recognizer:UISwipeGestureRecognizer) {
+        switch recognizer.direction {
+        case UISwipeGestureRecognizerDirection.Right:
+            qPreviewDelegate.updateContainerQuestion()
+        default: print("default case")
         }
     }
+
 }

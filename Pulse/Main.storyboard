@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="qx1-oO-XfK">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10117" systemVersion="15F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="GVK-lS-LNq">
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
@@ -171,6 +171,7 @@
                     <connections>
                         <outlet property="ExploreTags" destination="tNh-O5-HDM" id="DVc-fW-iWu"/>
                         <outlet property="logoIcon" destination="Qs8-8e-NRC" id="u52-Ff-FG1"/>
+                        <segue destination="eN6-t5-ej4" kind="show" identifier="showTagDetailSegue" id="Pfp-nh-Sii"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="9Dq-E1-UDT" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -383,29 +384,57 @@
                                     </mask>
                                 </variation>
                             </label>
-                            <containerView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="jeR-Jq-sIt">
-                                <rect key="frame" x="0.0" y="20" width="600" height="120"/>
+                            <containerView opaque="NO" alpha="0.69999999999999996" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="jeR-Jq-sIt">
+                                <rect key="frame" x="0.0" y="20" width="600" height="133.5"/>
                                 <connections>
                                     <segue destination="0ch-rr-tId" kind="embed" identifier="containerViewSegue" id="QE9-ld-QSV"/>
                                 </connections>
                             </containerView>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="70" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="JCm-V2-zhm">
-                                <rect key="frame" x="200" y="140" width="400" height="460"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="70" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="JCm-V2-zhm">
+                                <rect key="frame" x="180" y="173.5" width="400" height="326.5"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                <color key="sectionIndexBackgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <prototypes>
-                                    <tableViewCell clipsSubviews="YES" alpha="0.69999999999999996" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="questionListCell" rowHeight="70" id="cCF-2S-OFL">
+                                    <tableViewCell clipsSubviews="YES" alpha="0.69999999999999996" contentMode="scaleToFill" selectionStyle="default" indentationLevel="10" indentationWidth="10" reuseIdentifier="questionListCell" rowHeight="70" id="cCF-2S-OFL" customClass="TagDetailQuestionCell" customModule="Pulse" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="28" width="400" height="70"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="cCF-2S-OFL" id="Hs2-U3-ebg">
-                                            <rect key="frame" x="0.0" y="0.0" width="400" height="69.5"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="400" height="70"/>
                                             <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="URr-b3-auL">
+                                                    <rect key="frame" x="0.0" y="-12" width="400" height="14"/>
+                                                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                                </view>
+                                                <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" bounces="NO" scrollEnabled="NO" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" editable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NMB-Bi-qLe">
+                                                    <rect key="frame" x="0.0" y="2" width="400" height="60"/>
+                                                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                                    <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                                    <fontDescription key="fontDescription" style="UICTFontTextStyleFootnote"/>
+                                                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                                                </textView>
+                                            </subviews>
+                                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                            <constraints>
+                                                <constraint firstItem="URr-b3-auL" firstAttribute="height" secondItem="Hs2-U3-ebg" secondAttribute="height" multiplier="0.2" id="5n2-CY-pYU"/>
+                                                <constraint firstItem="URr-b3-auL" firstAttribute="centerX" secondItem="Hs2-U3-ebg" secondAttribute="centerX" id="7hi-Fe-IJI"/>
+                                                <constraint firstItem="URr-b3-auL" firstAttribute="width" secondItem="Hs2-U3-ebg" secondAttribute="width" id="Gpc-mT-XAz"/>
+                                                <constraint firstItem="NMB-Bi-qLe" firstAttribute="top" secondItem="URr-b3-auL" secondAttribute="bottom" id="YVD-js-p2b"/>
+                                                <constraint firstItem="NMB-Bi-qLe" firstAttribute="width" secondItem="Hs2-U3-ebg" secondAttribute="width" id="bRc-om-b19"/>
+                                                <constraint firstAttribute="bottomMargin" secondItem="NMB-Bi-qLe" secondAttribute="bottom" id="jhf-iH-WHT"/>
+                                                <constraint firstAttribute="topMargin" secondItem="URr-b3-auL" secondAttribute="top" constant="20" id="nOj-6s-Rqx"/>
+                                                <constraint firstItem="NMB-Bi-qLe" firstAttribute="centerX" secondItem="Hs2-U3-ebg" secondAttribute="centerX" id="tpF-1b-K1e"/>
+                                            </constraints>
                                         </tableViewCellContentView>
-                                        <color key="backgroundColor" red="0.1215686275" green="0.12941176469999999" blue="0.14117647059999999" alpha="1" colorSpace="calibratedRGB"/>
+                                        <connections>
+                                            <outlet property="questionTextView" destination="NMB-Bi-qLe" id="rtG-Fs-V8w"/>
+                                            <outlet property="separatorView" destination="URr-b3-auL" id="I3X-JU-FPv"/>
+                                        </connections>
                                     </tableViewCell>
                                 </prototypes>
                                 <connections>
-                                    <outlet property="dataSource" destination="eN6-t5-ej4" id="3VN-E3-LIO"/>
-                                    <outlet property="delegate" destination="eN6-t5-ej4" id="vWs-RL-6aW"/>
+                                    <outlet property="dataSource" destination="eN6-t5-ej4" id="I3t-0c-184"/>
+                                    <outlet property="delegate" destination="eN6-t5-ej4" id="Pil-c2-LO7"/>
                                 </connections>
                             </tableView>
                         </subviews>
@@ -413,19 +442,20 @@
                         <constraints>
                             <constraint firstItem="jeR-Jq-sIt" firstAttribute="top" secondItem="oMx-7I-sAg" secondAttribute="bottom" id="6nN-I1-zo7"/>
                             <constraint firstItem="jeR-Jq-sIt" firstAttribute="width" secondItem="phg-dz-X1v" secondAttribute="width" id="6oG-u9-bqX"/>
-                            <constraint firstItem="JCm-V2-zhm" firstAttribute="top" secondItem="jeR-Jq-sIt" secondAttribute="bottom" id="8fL-Ja-Zsh"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="JCm-V2-zhm" secondAttribute="trailing" constant="-20" id="EnE-Wy-Vd0"/>
+                            <constraint firstItem="JCm-V2-zhm" firstAttribute="top" secondItem="jeR-Jq-sIt" secondAttribute="bottom" constant="20" id="8fL-Ja-Zsh"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="JCm-V2-zhm" secondAttribute="trailing" id="EnE-Wy-Vd0"/>
                             <constraint firstItem="nPg-1H-8hr" firstAttribute="height" secondItem="phg-dz-X1v" secondAttribute="height" id="IoM-YL-JCv"/>
                             <constraint firstItem="nPg-1H-8hr" firstAttribute="centerX" secondItem="phg-dz-X1v" secondAttribute="centerX" id="TkG-jy-eRp"/>
                             <constraint firstItem="jeR-Jq-sIt" firstAttribute="centerX" secondItem="phg-dz-X1v" secondAttribute="centerX" id="V6g-7L-zLF"/>
-                            <constraint firstAttribute="width" secondItem="JCm-V2-zhm" secondAttribute="width" multiplier="1.5" id="bKu-Gn-9jD"/>
-                            <constraint firstItem="YuX-gO-lCa" firstAttribute="top" secondItem="JCm-V2-zhm" secondAttribute="bottom" id="gOR-Gw-qjv"/>
+                            <constraint firstItem="JCm-V2-zhm" firstAttribute="width" secondItem="phg-dz-X1v" secondAttribute="width" multiplier="0.666667" id="bKu-Gn-9jD"/>
+                            <constraint firstItem="YuX-gO-lCa" firstAttribute="top" secondItem="JCm-V2-zhm" secondAttribute="bottom" constant="100" id="gOR-Gw-qjv"/>
                             <constraint firstItem="nPg-1H-8hr" firstAttribute="top" secondItem="oMx-7I-sAg" secondAttribute="bottom" id="rw1-Qo-yOQ"/>
-                            <constraint firstAttribute="height" secondItem="jeR-Jq-sIt" secondAttribute="height" multiplier="5" id="vKB-4s-WRa"/>
+                            <constraint firstItem="jeR-Jq-sIt" firstAttribute="height" secondItem="phg-dz-X1v" secondAttribute="height" multiplier="0.222222" id="vKB-4s-WRa"/>
                             <constraint firstItem="nPg-1H-8hr" firstAttribute="width" secondItem="phg-dz-X1v" secondAttribute="width" id="yBc-Cg-IEB"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="QuestionsTableView" destination="JCm-V2-zhm" id="adE-0R-vHL"/>
                         <outlet property="qPreviewContainer" destination="jeR-Jq-sIt" id="zc0-eL-yp8"/>
                         <outlet property="tagImage" destination="nPg-1H-8hr" id="v4K-At-ALC"/>
                         <outlet property="tagTitleLabel" destination="7hZ-ZA-dU6" id="90k-uF-rHx"/>
@@ -444,14 +474,15 @@
                         <viewControllerLayoutGuide type="bottom" id="7qv-sB-PNk"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="VuB-TL-gqa">
-                        <rect key="frame" x="0.0" y="0.0" width="600" height="120"/>
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="133.5"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="G5z-OX-e12">
-                                <rect key="frame" x="455" y="0.0" width="145" height="120"/>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="G5z-OX-e12">
+                                <rect key="frame" x="0.0" y="0.0" width="180" height="133.5"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                             </view>
-                            <label opaque="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RLs-8h-gcQ">
-                                <rect key="frame" x="27" y="0.0" width="420" height="120"/>
+                            <label opaque="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RLs-8h-gcQ">
+                                <rect key="frame" x="200" y="0.0" width="380" height="133.5"/>
                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 <gestureRecognizers/>
                                 <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="22"/>
@@ -459,6 +490,16 @@
                             </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="RLs-8h-gcQ" firstAttribute="leading" secondItem="G5z-OX-e12" secondAttribute="trailing" constant="20" id="C2m-G6-i6c"/>
+                            <constraint firstAttribute="leadingMargin" secondItem="G5z-OX-e12" secondAttribute="leading" constant="20" id="EmK-vV-KPF"/>
+                            <constraint firstItem="G5z-OX-e12" firstAttribute="width" secondItem="VuB-TL-gqa" secondAttribute="width" multiplier="0.3" id="JvB-k4-dgY"/>
+                            <constraint firstItem="G5z-OX-e12" firstAttribute="height" secondItem="VuB-TL-gqa" secondAttribute="height" id="Ofn-RV-KCe"/>
+                            <constraint firstItem="RLs-8h-gcQ" firstAttribute="centerY" secondItem="VuB-TL-gqa" secondAttribute="centerY" id="bYA-F4-Wkb"/>
+                            <constraint firstItem="G5z-OX-e12" firstAttribute="centerY" secondItem="VuB-TL-gqa" secondAttribute="centerY" id="cbv-zK-Zhq"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="RLs-8h-gcQ" secondAttribute="trailing" id="iy0-59-wf2"/>
+                            <constraint firstItem="RLs-8h-gcQ" firstAttribute="height" secondItem="VuB-TL-gqa" secondAttribute="height" id="w0z-Vg-4q8"/>
+                        </constraints>
                     </view>
                     <connections>
                         <outlet property="answerPreview" destination="G5z-OX-e12" id="wwx-DG-IfH"/>

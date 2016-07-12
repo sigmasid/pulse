@@ -8,27 +8,30 @@
 import UIKit
 
 protocol questionPreviewDelegate: class {
-    func updateQuestion()
+    func updateContainerQuestion()
 }
 
 class TagDetailVC: UIViewController, questionPreviewDelegate {
-    var tagID : String?
-    var currentTag : Tag!
-    var questionCount = 1
+    var _allQuestions = [Question?]()
     
+    var questionCount = 1
+    let questionReuseIdentifier = "questionListCell"
+    
+    @IBOutlet var QuestionsTableView: UITableView!
     @IBOutlet weak var qPreviewContainer: QuestionPreviewVC?
     @IBOutlet weak var tagImage: UIImageView!
     @IBOutlet weak var tagTitleLabel: UILabel!
+    @IBOutlet weak var separatorView: UIView!
+    
+    var currentTag : Tag!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let _tagID = self.tagID {
-            let tagsPath = databaseRef.child("tags/\(_tagID)")
-            tagsPath.observeSingleEventOfType(.Value, withBlock: { snapshot in
-                self.currentTag = Tag(tagID: snapshot.key, snapshot: snapshot)
-                
-                self.currentTag.addObserver(self, forKeyPath: "tagCreated", options: NSKeyValueObservingOptions.New, context: nil)
-            })
+        
+        if currentTag != nil {
+            print("set container question")
+            self.qPreviewContainer?.currentQuestionID = currentTag.questions?.first
+            loadTagData()
         }
     }
     
@@ -42,10 +45,8 @@ class TagDetailVC: UIViewController, questionPreviewDelegate {
     }
     
     func loadTagData() {
-        
-        tagTitleLabel.textAlignment = .Left
+        /* FIX THIS WITH NSLAYOUTANCHORS */
         tagTitleLabel.text = "#"+(currentTag.tagID!).uppercaseString
-        tagTitleLabel.textColor = UIColor.whiteColor()
         tagTitleLabel.alignmentRectInsets()
         let newLabelFrame = CGRectMake(0,0,tagTitleLabel.intrinsicContentSize().width,tagTitleLabel.intrinsicContentSize().height)
         tagTitleLabel.frame = newLabelFrame
@@ -56,18 +57,25 @@ class TagDetailVC: UIViewController, questionPreviewDelegate {
         tagTitleLabel.centerXAnchor.constraintEqualToAnchor(view.leftAnchor, constant: newLabelFrame.maxY/2 + 10).active = true
         tagTitleLabel.heightAnchor.constraintEqualToConstant(newLabelFrame.maxY).active = true
         
-        let downloadRef = storageRef.child("tags/\(currentTag.tagImage!)")
-        let _ = downloadRef.dataWithMaxSize(1242 * 2208) { (data, error) -> Void in
-            if (error != nil) {
-                print(error.debugDescription)
-            } else {
-                self.tagImage.image = UIImage(data: data!)
-            }
+        if let _tagImage = currentTag.tagImage {
+            Database.getImage(_tagImage, completion: {(data, error) in
+                if error != nil {
+                    print (error?.localizedDescription)
+                } else {
+                    self.tagImage.image = UIImage(data: data!)
+                }
+            })
         }
+    }
+    
+    func loadQuestion() {
+
+
     }
     
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if keyPath == "tagCreated" {
+            print("tag created success")
             self.loadTagData()
             qPreviewContainer!.currentQuestionID = self.currentTag.questions!.first
             self.currentTag.removeObserver(self, forKeyPath: "tagCreated")
@@ -82,10 +90,71 @@ class TagDetailVC: UIViewController, questionPreviewDelegate {
     }
     
     /* DELEGATE METHODS */
-    func updateQuestion() {
+    func updateContainerQuestion() {
         if questionCount < self.currentTag.totalQuestionsForTag() {
             qPreviewContainer?.currentQuestionID = self.currentTag.questions![questionCount]
             questionCount += 1
         }
+    }
+    
+    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int) {
+        let QAVC = QAManagerVC()
+        QAVC.selectedTag = currentTag
+        QAVC.allQuestions = _allQuestions
+        QAVC.currentQuestion = _selectedQuestion
+        QAVC.questionCounter = _questionIndex
+        QAVC.view.frame = self.view.bounds
+        
+//        QAVC.exploreDelegate = self
+        
+        self.presentViewController(QAVC, animated: true, completion: nil)
+    }
+    
+    //    func loadMoreQuestions(indexPath  : NSIndexPath) {
+    //        if questionsShown == _totalQuestions {
+    //            loadingStatus = .Finished
+    //            return
+    //        } else if questionsShown + questionsIncrement < _totalQuestions {
+    //            questionsShown += questionsIncrement
+    //            ExploreQuestions.scrollToItemAtIndexPath(indexPath, atScrollPosition: .Left, animated: true)
+    //            ExploreQuestions.reloadData()
+    //            return
+    //        } else {
+    //            questionsShown += _totalQuestions - questionsShown
+    //            ExploreQuestions.scrollToItemAtIndexPath(indexPath, atScrollPosition: .Left, animated: true)
+    //            loadingStatus = .Finished
+    //            return
+    //        }
+    //    }
+}
+
+extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return currentTag.totalQuestionsForTag()!
+    }
+    
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier(questionReuseIdentifier) as! TagDetailQuestionCell
+        cell.backgroundColor = UIColor.clearColor()
+        let _cellTextView = cell.questionTextView
+
+        if _allQuestions.count > indexPath.row {
+            let _currentQuestion = self._allQuestions[indexPath.row]
+            _cellTextView.text = _currentQuestion?.qTitle
+        } else {
+            let questionRef = databaseRef.child("questions/\(self.currentTag.questions![indexPath.row])")
+            questionRef.observeSingleEventOfType(.Value, withBlock: { snap in
+                let _currentQuestion = Question(qID: snap.key, snapshot: snap)
+                self._allQuestions.append(_currentQuestion)
+                _cellTextView.text = snap.childSnapshotForPath("title").value as? String
+            })
+        }
+        
+        return cell
+    }
+    
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        let _selectedQuestion = self._allQuestions[indexPath.row]
+//        delegate.showQuestion(_selectedQuestion, _allQuestions: self._allQuestions, _questionIndex: indexPath.row)
     }
 }

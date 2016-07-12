@@ -63,6 +63,7 @@ class ShowAnswerVC: UIViewController {
         view.insertSubview(_answerOverlay, atIndex: 1)
         
         _answerOverlay.addIcon(iconColor, backgroundColor: iconBackgroundColor)
+        _answerOverlay.addVideoTimerCountdown()
         _avPlayerLayer.frame = _frame
         
         if (currentQuestion != nil){
@@ -121,18 +122,6 @@ class ShowAnswerVC: UIViewController {
                 self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
             }
         })
-        
-        
-//        let downloadRef = storageRef.child("answers/\(fileID)")
-//        let _ = downloadRef.downloadURLWithCompletion { (URL, error) -> Void in
-//            if (error != nil) {
-//                print(error.debugDescription)
-//            } else {
-//                self.qPlayer.replaceCurrentItemWithPlayerItem(AVPlayerItem(URL: URL!))
-//                self.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
-//                self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
-//            }
-//        }
     }
     
     func _addNextVideoToQueue(nextAnswerID : String) {

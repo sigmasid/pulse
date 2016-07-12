@@ -36,8 +36,8 @@ class LoginAddNameVC: UIViewController {
         
         logoView.addSubview(pulseIcon)
         
-        self.firstName.layer.addSublayer(addBorders(self.firstName))
-        self.lastName.layer.addSublayer(addBorders(self.lastName))
+        self.firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName))
+        self.lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName))
         self.doneButton.layer.cornerRadius = buttonCornerRadius
 
     }

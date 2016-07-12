@@ -24,7 +24,6 @@ class AnswerOverlay: UIView {
 
     private let _bottomDimension : CGFloat = 50
     private let _elementSpacer : CGFloat = 10
-    private var _countdownTimerRadius : CGFloat = 15
     private var _countdownTimerRadiusStroke : CGFloat = 3
     private var _iconSize : CGFloat = 40
 
@@ -35,7 +34,7 @@ class AnswerOverlay: UIView {
         super.init(frame: frame)
         self.addUserBackground()
         self.addHeaderBackground()
-        self.addVideoTimerCountdown()
+//        self.addVideoTimerCountdown()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -177,13 +176,13 @@ class AnswerOverlay: UIView {
         
         _videoTimer.translatesAutoresizingMaskIntoConstraints = false
 
-        _videoTimer.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: _elementSpacer + _countdownTimerRadius).active = true
-        _videoTimer.widthAnchor.constraintEqualToConstant(_countdownTimerRadius * 2).active = true
-        _videoTimer.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor, constant: _elementSpacer + _countdownTimerRadius).active = true 
-        _videoTimer.heightAnchor.constraintEqualToConstant(_countdownTimerRadius * 2).active = true
+        _videoTimer.centerXAnchor.constraintEqualToAnchor(_pulseIcon.centerXAnchor, constant: _iconSize / 2).active = true
+        _videoTimer.widthAnchor.constraintEqualToConstant(_iconSize).active = true
+        _videoTimer.centerYAnchor.constraintEqualToAnchor(_pulseIcon.centerYAnchor, constant: _iconSize / 2).active = true
+        _videoTimer.heightAnchor.constraintEqualToConstant(_iconSize).active = true
         
         // draw the countdown
-        _bgShapeLayer = drawBgShape(_countdownTimerRadius, _stroke: _countdownTimerRadiusStroke)
+        _bgShapeLayer = drawBgShape(_iconSize / 2, _stroke: _countdownTimerRadiusStroke)
         _timeLeftShapeLayer = drawTimeLeftShape()
         
         _videoTimer.layer.addSublayer(_bgShapeLayer)
@@ -218,8 +217,8 @@ class AnswerOverlay: UIView {
     func drawTimeLeftShape() -> CAShapeLayer {
         let timeLeftShapeLayer = CAShapeLayer()
         timeLeftShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0, y: 0), radius:
-            _countdownTimerRadius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
-        timeLeftShapeLayer.strokeColor = UIColor.darkGrayColor().CGColor
+            _iconSize / 2, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
+        timeLeftShapeLayer.strokeColor = UIColor.lightGrayColor().CGColor
         timeLeftShapeLayer.fillColor = UIColor.clearColor().CGColor
         timeLeftShapeLayer.lineWidth = _countdownTimerRadiusStroke
         timeLeftShapeLayer.opacity = 0.7

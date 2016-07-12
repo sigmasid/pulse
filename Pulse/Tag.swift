@@ -34,9 +34,9 @@ class Tag : NSObject {
         self.tagImage = snapshot.childSnapshotForPath("tagImage").value as? String
         self.previewImage = snapshot.childSnapshotForPath("previewImage").value as? String
 
-        for choice in snapshot.childSnapshotForPath("questions").children {
-            if (self.questions?.append(choice.key) == nil) {
-                self.questions = [choice.key]
+        for question in snapshot.childSnapshotForPath("questions").children {
+            if (self.questions?.append(question.key) == nil) {
+                self.questions = [question.key]
             }
         }
         self.tagCreated = true
