@@ -26,15 +26,17 @@ class GlobalFunctions {
     }
 
     static func addNewVC(newVC: UIViewController, parentVC: UIViewController) {
-        parentVC.addChildViewController(newVC)
-        parentVC.view.addSubview(newVC.view)
-        newVC.didMoveToParentViewController(parentVC)
+        UIView.animateWithDuration(0.35, animations: { newVC.view.alpha = 1.0 } , completion: {(value: Bool) in
+            parentVC.addChildViewController(newVC)
+            parentVC.view.addSubview(newVC.view)
+            newVC.didMoveToParentViewController(parentVC)
+        })
     }
 
     static func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
         parentVC.addChildViewController(newVC)
         
-        parentVC.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.5, options: UIViewAnimationOptions.TransitionFlipFromLeft, animations: nil, completion: { (finished) in
+        parentVC.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.35, options: UIViewAnimationOptions.TransitionFlipFromLeft, animations: nil, completion: { (finished) in
             if finished {
                 oldVC.removeFromParentViewController()
                 newVC.didMoveToParentViewController(parentVC)
@@ -43,8 +45,11 @@ class GlobalFunctions {
     }
 
     static func dismissVC(currentVC : UIViewController) {
-        currentVC.willMoveToParentViewController(nil)
-        currentVC.view.removeFromSuperview()
-        currentVC.removeFromParentViewController()
+        let xForm = CGAffineTransformMakeTranslation(currentVC.view.frame.width, 0)
+        UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
+            currentVC.willMoveToParentViewController(nil)
+            currentVC.view.removeFromSuperview()
+            currentVC.removeFromParentViewController()
+        })
     }
 }

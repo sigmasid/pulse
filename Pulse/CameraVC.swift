@@ -105,7 +105,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
 
         _Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic, completition: {() in
             dispatch_async(dispatch_get_main_queue()) {
-                UIView.animateWithDuration(0.3, animations: { self._loadingOverlay.alpha = 0.0 } ,
+                UIView.animateWithDuration(0.2, animations: { self._loadingOverlay.alpha = 0.0 } ,
                     completion: {(value: Bool) in
                         self._loadingOverlay.removeFromSuperview()
                 })

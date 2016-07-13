@@ -11,7 +11,7 @@ protocol questionPreviewDelegate: class {
     func updateContainerQuestion()
 }
 
-class TagDetailVC: UIViewController, questionPreviewDelegate, QuestionDelegate {
+class TagDetailVC: UIViewController, questionPreviewDelegate, ExploreDelegate {
     var _allQuestions = [Question?]()
     
     var questionCount = 1
@@ -25,23 +25,35 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, QuestionDelegate {
     
     var currentTag : Tag!
     var returningToExplore = false
+    var _exploreDelegate : ExploreDelegate!
+    
+    private var panStartingPointX : CGFloat = 0
+    private var panStartingPointY : CGFloat = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        _panGesture.minimumNumberOfTouches = 1
+        self.view.addGestureRecognizer(_panGesture)
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(true)
+    
         if currentTag != nil && !returningToExplore {
             self.qPreviewContainer?.currentQuestionID = currentTag.questions?.first
             loadTagData()
         }
     }
     
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(true)
-    }
-    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    override func prefersStatusBarHidden() -> Bool {
+        return true
     }
     
     func loadTagData() {
@@ -92,13 +104,37 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, QuestionDelegate {
         
         QAVC.exploreDelegate = self
         
-        self.presentViewController(QAVC, animated: true, completion: nil)
+        GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     
-    func returnToExplore(_: UIViewController) {
+    func returnToExplore(currentVC : UIViewController) {
         returningToExplore = true
-        dismissViewControllerAnimated(true, completion: nil)
+        GlobalFunctions.dismissVC(currentVC)
     }
+    
+    func handlePan(pan : UIPanGestureRecognizer) {
+        
+        if (pan.state == UIGestureRecognizerState.Began) {
+            panStartingPointX = pan.view!.center.x
+            panStartingPointY = pan.view!.center.y
+            
+        } else if (pan.state == UIGestureRecognizerState.Ended) {
+            let panFinishingPointX = pan.view!.center.x
+            let panFinishingPointY = pan.view!.center.y
+            
+            if (panFinishingPointX > self.view.bounds.width) {
+                _exploreDelegate.returnToExplore(self)
+            } else {
+                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
+                pan.setTranslation(CGPointZero, inView: self.view)
+            }
+        } else {
+            let translation = pan.translationInView(self.view)
+            self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
+            pan.setTranslation(CGPointZero, inView: self.view)
+        }
+    }
+
     
     //    func loadMoreQuestions(indexPath  : NSIndexPath) {
     //        if questionsShown == _totalQuestions {

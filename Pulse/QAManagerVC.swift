@@ -30,16 +30,24 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var currentUser : User!
     
     let answerVC = ShowAnswerVC()
-    var exploreDelegate : QuestionDelegate!
+    var exploreDelegate : ExploreDelegate!
     
     var _hasMoreAnswers = false //TEMP - UPDATE IMPLEMENTATION
     
+    private var panStartingPointX : CGFloat = 0
+    private var panStartingPointY : CGFloat = 0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        _panGesture.minimumNumberOfTouches = 1
+        self.view.addGestureRecognizer(_panGesture)
+
     }
     
     override func viewDidAppear(animated: Bool) {
-        self.view.backgroundColor = UIColor.yellowColor()
+        self.view.backgroundColor = UIColor.whiteColor()
         
         let iconSize : CGFloat = 50
         let iconColor = UIColor( red: 0/255, green: 0/255, blue: 0/255, alpha: 1.0 )
@@ -114,7 +122,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
         userAnswer.fileURL = assetURL
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
-//        GlobalFunctions.addNewVC(userAnswer, parentVC: self)
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
     }
     
@@ -194,8 +201,26 @@ class QAManagerVC: UIViewController, childVCDelegate {
         GlobalFunctions.dismissVC(currentVC)
     }
     
-    func loginFailed (currentVC : UIViewController) {
+    func handlePan(pan : UIPanGestureRecognizer) {
         
+        if (pan.state == UIGestureRecognizerState.Began) {
+            panStartingPointX = pan.view!.center.x
+            panStartingPointY = pan.view!.center.y
+
+        } else if (pan.state == UIGestureRecognizerState.Ended) {
+            let panFinishingPointX = pan.view!.center.x
+            let panFinishingPointY = pan.view!.center.y
+
+            if (panFinishingPointX > self.view.bounds.width) {
+                goBack(self)
+            } else {
+                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
+                pan.setTranslation(CGPointZero, inView: self.view)
+            }
+        } else {
+            let translation = pan.translationInView(self.view)
+            self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
+            pan.setTranslation(CGPointZero, inView: self.view)
+        }
     }
-    
 }

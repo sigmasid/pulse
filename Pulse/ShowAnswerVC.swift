@@ -30,25 +30,28 @@ class ShowAnswerVC: UIViewController {
     private var allAnswersForQuestion = [Answer]()
     private var qPlayer = AVQueuePlayer()
     
-    private var _swipeReady = false
-    private var _nextItemReady = false
+    private var _TapReady = false
+    private var _NextItemReady = false
     
     var delegate : childVCDelegate!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-        swipeLeft.direction = UISwipeGestureRecognizerDirection.Left
-        self.view.addGestureRecognizer(swipeLeft)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
+        self.view.addGestureRecognizer(tap)
         
-        let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-        swipeUp.direction = UISwipeGestureRecognizerDirection.Up
-        self.view.addGestureRecognizer(swipeUp)
-        
-        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-        swipeRight.direction = UISwipeGestureRecognizerDirection.Right
-        self.view.addGestureRecognizer(swipeRight)
+//        let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
+//        swipeUp.direction = UISwipeGestureRecognizerDirection.Up
+//        self.view.addGestureRecognizer(swipeUp)
+//        
+//        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
+//        swipeDown.direction = UISwipeGestureRecognizerDirection.Down
+//        self.view.addGestureRecognizer(swipeDown)
+//        
+//        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
+//        swipeRight.direction = UISwipeGestureRecognizerDirection.Right
+//        self.view.addGestureRecognizer(swipeRight)
         
         if (currentQuestion != nil){
             _loadFirstAnswer(currentQuestion)
@@ -131,7 +134,7 @@ class ShowAnswerVC: UIViewController {
     }
     
     private func _addNextVideoToQueue(nextAnswerID : String) {
-        _nextItemReady = false
+        _NextItemReady = false
         
         Database.getAnswer(nextAnswerID, completion: { (answer, error) in
             self.nextAnswer = answer
@@ -142,7 +145,7 @@ class ShowAnswerVC: UIViewController {
                     let nextPlayerItem = AVPlayerItem(URL: URL!)
                     if self.qPlayer.canInsertItem(nextPlayerItem, afterItem: nil) {
                         self.qPlayer.insertItem(nextPlayerItem, afterItem: nil)
-                        self._nextItemReady = true
+                        self._NextItemReady = true
                     }
                 }
             })
@@ -157,8 +160,8 @@ class ShowAnswerVC: UIViewController {
                 _answerOverlay.startTimer(duration!.seconds)
                 qPlayer.play()
                 qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
-                if !_swipeReady {
-                    _swipeReady = true
+                if !_TapReady {
+                    _TapReady = true
                 }
                 break
             default: break
@@ -171,6 +174,7 @@ class ShowAnswerVC: UIViewController {
     }
     
     /* HANDLE GESTURES */
+    
     func handleSwipe(recognizer:UISwipeGestureRecognizer) {
         
         switch recognizer.direction {
@@ -178,37 +182,32 @@ class ShowAnswerVC: UIViewController {
             if (delegate != nil) {
                 delegate.showNextQuestion()
             }
-            
-        case UISwipeGestureRecognizerDirection.Left:
-            print("swipe ready: \(_swipeReady) next item ready: \(_nextItemReady) can advance \(_canAdvance(self.answerIndex))")
-            if (!_swipeReady || (!_nextItemReady && (_canAdvance(self.answerIndex)))) {
-                print("ignore swipe")
-            } else if (_canAdvance(self.answerIndex)) {
-                qPlayer.pause()
-                _swipeReady = false
-
-                _answerOverlay.resetTimer()
-                _updateOverlayData(nextAnswer!)
-                qPlayer.advanceToNextItem()
-                qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
-                
-                qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
-                answerIndex += 1
-                
-                if _canAdvance(self.answerIndex) {
-                    _addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex])
-                }
-            } else {
-                print("no answers to show")
-                if (delegate != nil) {
-                    delegate.noAnswersToShow(self)
-                }
-            }
-        case UISwipeGestureRecognizerDirection.Right:
-            if (delegate != nil) {
-                delegate.goBack(self)
-            }
         default: print("unhandled swipe")
+        }
+    }
+    
+    func handleTap(recognizer:UITapGestureRecognizer) {
+        if (!_TapReady || (!_NextItemReady && (_canAdvance(self.answerIndex)))) {
+            //ignore swipe
+        } else if (_canAdvance(self.answerIndex)) {
+            qPlayer.pause()
+            _TapReady = false
+            
+            _answerOverlay.resetTimer()
+            _updateOverlayData(nextAnswer!)
+            qPlayer.advanceToNextItem()
+            qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
+            
+            qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+            answerIndex += 1
+            
+            if _canAdvance(self.answerIndex) {
+                _addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex])
+            }
+        } else {
+            if (delegate != nil) {
+                delegate.noAnswersToShow(self)
+            }
         }
     }
     

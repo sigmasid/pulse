@@ -9,12 +9,12 @@
 import UIKit
 import FirebaseDatabase
 
-protocol QuestionDelegate : class {
+protocol ExploreDelegate : class {
     func showQuestion(_selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int, _selectedTag : Tag)
     func returnToExplore(_:UIViewController)
 }
 
-class ExploreTagsVC: UIViewController, QuestionDelegate {
+class ExploreTagsVC: UIViewController, ExploreDelegate {
     var allTags = [Tag]()
     var currentTag : Tag!
     var returningToExplore = false
@@ -75,21 +75,30 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
         QAVC.view.frame = self.view.bounds
         
         QAVC.exploreDelegate = self
+        GlobalFunctions.addNewVC(QAVC, parentVC: self)
+    }
+    
+    func showTagDetail(_selectedTag : Tag) {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        if let tagDetailVC = storyboard.instantiateViewControllerWithIdentifier("tagDetailVC") as? TagDetailVC {
+            tagDetailVC.currentTag = _selectedTag
+            tagDetailVC.view.frame = self.view.bounds
         
-        self.presentViewController(QAVC, animated: true, completion: nil)
-    }
-    
-    func returnToExplore(_: UIViewController) {
-        returningToExplore = true
-        dismissViewControllerAnimated(true, completion: nil)
-    }
-    
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        if (segue.identifier == "showTagDetailSegue") {
-            let tagDetailVC = segue.destinationViewController as! TagDetailVC
-            tagDetailVC.currentTag = currentTag
+            tagDetailVC._exploreDelegate = self
+            GlobalFunctions.addNewVC(tagDetailVC, parentVC: self)
         }
     }
+    
+    func returnToExplore(currentVC : UIViewController) {
+        returningToExplore = true
+        GlobalFunctions.dismissVC(currentVC)
+    }
+//    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+//        if (segue.identifier == "showTagDetailSegue") {
+//            let tagDetailVC = segue.destinationViewController as! TagDetailVC
+//            tagDetailVC.currentTag = currentTag
+//        }
+//    }
 }
 
 extension ExploreTagsVC : UICollectionViewDataSource {
@@ -113,7 +122,6 @@ extension ExploreTagsVC : UICollectionViewDataSource {
         currentTag = allTags[indexPath.row]
         
         cell.currentTag = currentTag
-        cell.backgroundColor = UIColor.whiteColor()
         configureCell(cell, indexPath: indexPath)
         return cell
     }
@@ -135,7 +143,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         currentTag = allTags[indexPath.row]
-        self.performSegueWithIdentifier("showTagDetailSegue", sender: self)
+        showTagDetail(currentTag)
     }
 }
 

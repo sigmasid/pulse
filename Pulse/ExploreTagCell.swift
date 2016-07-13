@@ -15,7 +15,7 @@ class ExploreTagCell: UICollectionViewCell {
     @IBOutlet weak var tagImage: UIImageView!
     
     @IBOutlet weak var ExploreQuestions: UICollectionView!
-    weak var delegate : QuestionDelegate!
+    weak var delegate : ExploreDelegate!
     
     var loadingStatus = LoadMoreStatus.haveMore 
     var questionsShown = 5

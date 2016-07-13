@@ -64,6 +64,7 @@ class UserRecordedAnswerVC: UIViewController {
 
         if User.currentUser.isLoggedIn() {
             _controlsOverlay.getButton(.Post).setTitle("Posting...", forState: UIControlState.Disabled)
+            _controlsOverlay.getButton(.Post).backgroundColor = UIColor.darkGrayColor().colorWithAlphaComponent(1)
             self.currentAnswer = createAnswer()
             self.currentAnswer.addObserver(self, forKeyPath: "aURL", options: NSKeyValueObservingOptions.New, context: nil)
             
@@ -84,6 +85,9 @@ class UserRecordedAnswerVC: UIViewController {
        
         if let localFile: NSURL = fileURL! {
             
+            let _metadata = FIRStorageMetadata()
+            _metadata.contentType = "video/mp4"
+            
             do {
                 let attr:NSDictionary? = try NSFileManager.defaultManager().attributesOfItemAtPath(localFile.path!)
                 if let _attr = attr {
@@ -93,10 +97,15 @@ class UserRecordedAnswerVC: UIViewController {
                 print("error getting file size")
             }
             
-            uploadTask = storageRef.child("answers/\(uploadName)").putFile(localFile)
+            uploadTask = storageRef.child("answers/\(uploadName)").putFile(localFile, metadata: _metadata)
             
             uploadTask.observeStatus(.Success) { snapshot in
                 self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
+            }
+            
+            uploadTask.observeStatus(.Failure) { snapshot in
+                print("current user \(FIRAuth.auth()!.currentUser)")
+                print("error is \(snapshot.error?.localizedDescription)")
             }
             
             uploadTask.observeStatus(.Progress) { snapshot in
@@ -116,6 +125,7 @@ class UserRecordedAnswerVC: UIViewController {
     }
     
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+        print("observer fired")
         if keyPath == "aURL" {
             let answersPath =  databaseRef.child("answers/\(self.currentAnswer!.aID)")
             var userPost = [String : String]()
@@ -138,8 +148,9 @@ class UserRecordedAnswerVC: UIViewController {
             
             Database.addUserAnswersToDatabase(currentAnswer!.aID, qID: currentQuestion!.qID, completion: {(success, error) in
                 if !success {
-
+                    print(error)
                 } else {
+                    print("success creating answer")
                     self.uploadTask.removeAllObservers()
                     self.doneCreatingAnswer()
                 }
