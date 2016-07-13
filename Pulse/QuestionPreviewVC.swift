@@ -65,7 +65,6 @@ class QuestionPreviewVC: UIViewController {
             if (error != nil) {
                 print(error.debugDescription)
             } else {
-                self.pulseIcon.removeFromSuperview()
                 let aPlayerItem = AVPlayerItem(URL: URL!)
                 self.aPlayer.replaceCurrentItemWithPlayerItem(aPlayerItem)
                 self.aPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)

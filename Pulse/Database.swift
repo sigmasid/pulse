@@ -13,7 +13,6 @@ import FirebaseAuth
 
 let storage = FIRStorage.storage()
 let storageRef = storage.referenceForURL("gs://pulse-84022.appspot.com")
-
 let databaseRef = FIRDatabase.database().reference()
 
 class Database {
@@ -79,26 +78,7 @@ class Database {
         })
     }
     
-    static func getAnswerURL(fileID : String, completion: (URL : NSURL?, error : NSError?) -> Void) {
-        let _ = answersStorageRef.child(fileID).downloadURLWithCompletion { (URL, error) -> Void in
-            if (error != nil) {
-                completion(URL: nil, error: error)
-            } else {
-                completion(URL: URL, error: nil)
-            }
-        }
-    }
-    
-    static func getImage(fileID : String, completion: (data : NSData?, error : NSError?) -> Void) {
-        let _ = tagsStorageRef.child(fileID).dataWithMaxSize(1242 * 2208) { (data, error) -> Void in
-            if (error != nil) {
-                completion(data: nil, error: error)
-            } else {
-                completion(data: data, error: nil)
-            }
-        }
-    }
-    
+    /* AUTH METHODS */
     static func createEmailUser(email : String, password: String, completion: (user : User?, error : NSError?) -> Void) {
         FIRAuth.auth()?.createUserWithEmail(email, password: password) { (_user, _error) in
             if _error != nil {
@@ -137,6 +117,7 @@ class Database {
         }
     }
     
+    //Save user to Pulse database after Auth
     static func saveUserToDatabase(user: FIRUser, completion: (success : Bool, error : NSError?) -> Void) {
         var userPost = [String : String]()
         if let _uName = user.displayName {
@@ -154,15 +135,43 @@ class Database {
         })
     }
     
-    static func addUserAnswersToDatabase(user: FIRUser, aID: String, completion: (success : Bool, error : NSError?) -> Void) {
-        let post = ["\(aID)": "true"]
-
-        usersRef.child(user.uid).child("answers").updateChildValues(post, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
-        if error != nil {
-            completion(success: false, error: error)
+    //Save user answers to Pulse database after Auth
+    static func addUserAnswersToDatabase( aID: String, qID: String, completion: (success : Bool, error : NSError?) -> Void) {
+        let _user = FIRAuth.auth()?.currentUser
+        let post = ["users/\(_user!.uid)/answers/\(aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(qID)" : "true","questions/\(qID)/answers/\(aID)" : true]
+        
+        if _user != nil {
+            databaseRef.updateChildValues(post, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+            if error != nil {
+                completion(success: false, error: error)
+            } else {
+                completion(success: true, error: nil)
+            }
+            })
         } else {
-            completion(success: true, error: nil)
+            let userInfo = [ NSLocalizedDescriptionKey : "please enter a valid email" ]
+            completion(success: false, error: NSError.init(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
         }
-        })
+    }
+    
+    /* STORAGE METHODS */
+    static func getAnswerURL(fileID : String, completion: (URL : NSURL?, error : NSError?) -> Void) {
+        let _ = answersStorageRef.child(fileID).downloadURLWithCompletion { (URL, error) -> Void in
+            if (error != nil) {
+                completion(URL: nil, error: error)
+            } else {
+                completion(URL: URL, error: nil)
+            }
+        }
+    }
+    
+    static func getTagImage(fileID : String, maxImgSize : Int64, completion: (data : NSData?, error : NSError?) -> Void) {
+        let _ = tagsStorageRef.child(fileID).dataWithMaxSize(maxImgSize) { (data, error) -> Void in
+            if (error != nil) {
+                completion(data: nil, error: error)
+            } else {
+                completion(data: data, error: nil)
+            }
+        }
     }
 }

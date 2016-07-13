@@ -523,7 +523,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     public func gestureRecognizerShouldBegin(gestureRecognizer: UIGestureRecognizer) -> Bool {
         if gestureRecognizer.isKindOfClass(UIPinchGestureRecognizer) {
             beginZoomScale = zoomScale
-            print(beginZoomScale)
         }
         
         return true
@@ -604,7 +603,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(url!)
             }, completionHandler: { success, error in
-                print("Finished creating asset.", (success ? "Success." : error))
         })
     }
     
@@ -975,7 +973,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     public func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {(placemarks, error)-> Void in
             if (error != nil) {
-                print("Reverse geocoder failed with error" + error!.localizedDescription)
                 return
             }
             

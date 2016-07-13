@@ -118,10 +118,6 @@ class UserRecordedAnswerVC: UIViewController {
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if keyPath == "aURL" {
             let answersPath =  databaseRef.child("answers/\(self.currentAnswer!.aID)")
-            let userPath =  databaseRef.child("users/\(self.currentAnswer!.uID!)")
-            let questionsPath = databaseRef.child("questions/\(self.currentQuestion!.qID)/answers")
-            
-            let questionPost = ["\(self.currentAnswer.aID)": "true"]
             var userPost = [String : String]()
             
             if aLocation != nil {
@@ -140,12 +136,14 @@ class UserRecordedAnswerVC: UIViewController {
                 userPost["name"] = _userName
             }
             
-            questionsPath.updateChildValues(questionPost)
-            userPath.updateChildValues(userPost)
-            userPath.child("answers").updateChildValues(questionPost)
-            
-            uploadTask.removeAllObservers()
-            self.doneCreatingAnswer()
+            Database.addUserAnswersToDatabase(currentAnswer!.aID, qID: currentQuestion!.qID, completion: {(success, error) in
+                if !success {
+
+                } else {
+                    self.uploadTask.removeAllObservers()
+                    self.doneCreatingAnswer()
+                }
+            })
         }
     }
     

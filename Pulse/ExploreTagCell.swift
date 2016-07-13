@@ -51,11 +51,11 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
             let _currentQuestion = self._allQuestions[indexPath.row]
             cell.qTitle.text = _currentQuestion?.qTitle
         } else {
-            let questionRef = databaseRef.child("questions/\(self.currentTag.questions![indexPath.row])")
-            questionRef.observeSingleEventOfType(.Value, withBlock: { snap in
-                let _currentQuestion = Question(qID: snap.key, snapshot: snap)
-                self._allQuestions.append(_currentQuestion)
-                cell.qTitle.text = snap.childSnapshotForPath("title").value as? String
+            Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+                if error == nil {
+                    self._allQuestions.append(question)
+                    cell.qTitle.text = question.qTitle
+                }
             })
         }
         return cell
@@ -63,7 +63,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         let _selectedQuestion = self._allQuestions[indexPath.row]
-        delegate.showQuestion(_selectedQuestion, _allQuestions: self._allQuestions, _questionIndex: indexPath.row)
+        delegate.showQuestion(_selectedQuestion, _allQuestions: self._allQuestions, _questionIndex: indexPath.row, _selectedTag : currentTag)
     }
     
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
@@ -76,17 +76,6 @@ extension ExploreTagCell: UICollectionViewDelegateFlowLayout {
         return CGSize(width: collectionView.frame.width / 3, height: collectionView.frame.height)
     }
 }
-
-
-
-//            Database.getQuestion(self.currentTag.questions![indexPath.row]) { (question , error) in
-//                if error != nil {
-//                    print(error!.description)
-//                } else {
-//                    self.questionsList.append(question)
-//                    cell.qTitle.text = question.qTitle
-//                }
-//            }
 
 //        if ( indexPath.row == questionsShown - 1) {
 //            if loadingStatus == .haveMore {

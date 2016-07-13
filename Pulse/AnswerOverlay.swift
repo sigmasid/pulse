@@ -151,8 +151,7 @@ class AnswerOverlay: UIView {
     }
     
     func addUserImage(_userImageURL : NSURL?) {
-        if let test = _userImageURL {
-            print(test)
+        if let _ = _userImageURL {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
                 let _userImageData = NSData(contentsOfURL: _userImageURL!)
                 dispatch_async(dispatch_get_main_queue(), {

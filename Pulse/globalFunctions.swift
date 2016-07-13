@@ -13,6 +13,7 @@ let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 
 let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
 let buttonCornerRadius : CGFloat = 20
 
+let maxImgSize : Int64 = 1242 * 2208
 
 class GlobalFunctions {
     static func addBorders(_textField : UITextField) -> CAShapeLayer {
@@ -26,15 +27,18 @@ class GlobalFunctions {
 
     static func addNewVC(newVC: UIViewController, parentVC: UIViewController) {
         parentVC.addChildViewController(newVC)
-        newVC.view.frame = parentVC.view.bounds
         parentVC.view.addSubview(newVC.view)
         newVC.didMoveToParentViewController(parentVC)
     }
 
     static func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
-        parentVC.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.25, options: UIViewAnimationOptions.CurveEaseIn, animations: nil, completion: { (finished) in
-            oldVC.removeFromParentViewController()
-            newVC.didMoveToParentViewController(parentVC)
+        parentVC.addChildViewController(newVC)
+        
+        parentVC.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.5, options: UIViewAnimationOptions.TransitionFlipFromLeft, animations: nil, completion: { (finished) in
+            if finished {
+                oldVC.removeFromParentViewController()
+                newVC.didMoveToParentViewController(parentVC)
+            }
         })
     }
 

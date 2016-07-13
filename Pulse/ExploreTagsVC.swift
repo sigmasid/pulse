@@ -10,13 +10,14 @@ import UIKit
 import FirebaseDatabase
 
 protocol QuestionDelegate : class {
-    func showQuestion(_selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int)
+    func showQuestion(_selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int, _selectedTag : Tag)
     func returnToExplore(_:UIViewController)
 }
 
 class ExploreTagsVC: UIViewController, QuestionDelegate {
     var allTags = [Tag]()
     var currentTag : Tag!
+    var returningToExplore = false
     
     var questionsListener = UInt()
 
@@ -27,20 +28,25 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
-        
-        loadTagsFromFirebase()
-        
-        let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
-        let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
-        let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoIcon.frame.width, self.logoIcon.frame.height))
-        pulseIcon.drawIconBackground(iconBackgroundColor)
-        pulseIcon.drawIcon(iconColor, iconThickness: 2)
-        logoIcon.addSubview(pulseIcon)
+        if !returningToExplore {
+            loadTagsFromFirebase()
+            
+            let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoIcon.frame.width, self.logoIcon.frame.height))
+            pulseIcon.drawIconBackground(iconBackgroundColor)
+            pulseIcon.drawIcon(iconColor, iconThickness: 2)
+            logoIcon.addSubview(pulseIcon)
+        } else {
+            UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+        }
     }
     
     override func viewDidDisappear(animated: Bool) {
         super.viewDidDisappear(animated)
         databaseRef.removeObserverWithHandle(questionsListener)
+    }
+    
+    override func prefersStatusBarHidden() -> Bool {
+        return true
     }
     
     func loadTagsFromFirebase() {
@@ -60,26 +66,21 @@ class ExploreTagsVC: UIViewController, QuestionDelegate {
         }
     }
     
-    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int) {
+    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
         let QAVC = QAManagerVC()
-        QAVC.selectedTag = currentTag
+        QAVC.selectedTag = _selectedTag
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-        QAVC.view.frame = self.view.frame
+        QAVC.view.frame = self.view.bounds
         
         QAVC.exploreDelegate = self
         
         self.presentViewController(QAVC, animated: true, completion: nil)
     }
     
-    func addNewVC(newVC: UIViewController) {
-        self.addChildViewController(newVC)
-        newVC.view.frame = self.view.frame
-        self.view.addSubview(newVC.view)
-    }
-    
     func returnToExplore(_: UIViewController) {
+        returningToExplore = true
         dismissViewControllerAnimated(true, completion: nil)
     }
     
@@ -121,15 +122,14 @@ extension ExploreTagsVC : UICollectionViewDataSource {
         cell.tagLabel.text = "#"+currentTag.tagID!.uppercaseString
         
         if let _tagImage = currentTag.previewImage {
-            let downloadRef = storageRef.child("tags/\(_tagImage)")
-            let _ = downloadRef.dataWithMaxSize(600 * 800) { (data, error) -> Void in //need to image size
-                if (error != nil) {
-                    print(error.debugDescription) //surface error
+            Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
+                if error != nil {
+                    print (error?.localizedDescription)
                 } else {
                     cell.tagImage.image = UIImage(data: data!)
                     cell.tagImage.contentMode = UIViewContentMode.ScaleAspectFill
                 }
-            }
+            })
         }
     }
     

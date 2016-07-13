@@ -20,18 +20,18 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
-    var currentAnswer : Answer!
+    var nextAnswer : Answer?
     var currentTag : Tag!
     
     var answerIndex = 1
     
-    internal var _avPlayerLayer: AVPlayerLayer!
-    internal var _answerOverlay : AnswerOverlay!
-    var allAnswersForQuestion = [Answer]()
-    internal var qPlayer = AVQueuePlayer()
+    private var _avPlayerLayer: AVPlayerLayer!
+    private var _answerOverlay : AnswerOverlay!
+    private var allAnswersForQuestion = [Answer]()
+    private var qPlayer = AVQueuePlayer()
     
-    internal var _swipeReady = false
-    internal var _nextItemReady = false
+    private var _swipeReady = false
+    private var _nextItemReady = false
     
     var delegate : childVCDelegate!
     
@@ -49,6 +49,10 @@ class ShowAnswerVC: UIViewController {
         let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
         swipeRight.direction = UISwipeGestureRecognizerDirection.Right
         self.view.addGestureRecognizer(swipeRight)
+        
+        if (currentQuestion != nil){
+            _loadFirstAnswer(currentQuestion)
+        }
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -65,10 +69,6 @@ class ShowAnswerVC: UIViewController {
         _answerOverlay.addIcon(iconColor, backgroundColor: iconBackgroundColor)
         _answerOverlay.addVideoTimerCountdown()
         _avPlayerLayer.frame = _frame
-        
-        if (currentQuestion != nil){
-            _loadFirstAnswer(currentQuestion)
-        }
     }
     
     override func viewDidDisappear(animated: Bool) {
@@ -82,24 +82,9 @@ class ShowAnswerVC: UIViewController {
             Database.getAnswer(_firstAnswerID, completion: { (answer, error) in
                 self.allAnswersForQuestion.append(answer)
                 self._addFirstVideo(answer.aID)
+                self._updateOverlayData(answer)
                 self._answerOverlay.addVideoTimerCountdown()
-                Database.getUser(answer.uID!, completion: { (user, error) in
-                    if let _uName = user.name {
-                        self._answerOverlay.addUserName(_uName)
-                    }
-                    if let _uPic = user.profilePic {
-                        self._answerOverlay.addUserImage(NSURL(string: _uPic))
-                    }
-                })
-                if let _aTag = self.currentTag.tagID {
-                    self._answerOverlay.updateTag(_aTag)
-                }
-                if let _qTitle = self.currentQuestion.qTitle {
-                    self._answerOverlay.updateQuestion(_qTitle)
-                }
-                if let _location = answer.aLocation {
-                    self._answerOverlay.addLocation(_location)
-                }
+
                 if self._canAdvance(self.answerIndex) {
                     self._addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex])
                 }
@@ -111,25 +96,46 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
-    private func _addFirstVideo(fileID : String) {
-        
-        Database.getAnswerURL(fileID, completion: { (URL, error) in
+    private func _updateOverlayData(answer : Answer) {
+        Database.getUser(answer.uID!, completion: { (user, error) in
+            if let _uName = user.name {
+                self._answerOverlay.addUserName(_uName)
+            }
+            if let _uPic = user.profilePic {
+                self._answerOverlay.addUserImage(NSURL(string: _uPic))
+            }
+        })
+        if let _aTag = currentTag.tagID {
+            self._answerOverlay.updateTag(_aTag)
+        }
+        if let _qTitle = currentQuestion.qTitle {
+            self._answerOverlay.updateQuestion(_qTitle)
+        }
+        if let _location = answer.aLocation {
+            self._answerOverlay.addLocation(_location)
+        }
+    }
+    
+    private func _addFirstVideo(answerID : String) {
+        Database.getAnswerURL(answerID, completion: { (URL, error) in
             if error != nil {
                 print(error.debugDescription)
             } else {
                 self.qPlayer.replaceCurrentItemWithPlayerItem(AVPlayerItem(URL: URL!))
+                self.delegate.hasAnswersToShow()
+
                 self.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
                 self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
             }
         })
     }
     
-    func _addNextVideoToQueue(nextAnswerID : String) {
-        let downloadRef = storageRef.child("answers/\(nextAnswerID)")
+    private func _addNextVideoToQueue(nextAnswerID : String) {
         _nextItemReady = false
         
         Database.getAnswer(nextAnswerID, completion: { (answer, error) in
-            let _ = downloadRef.downloadURLWithCompletion { (URL, error) -> Void in
+            self.nextAnswer = answer
+            Database.getAnswerURL(nextAnswerID, completion: { (URL, error) in
                 if (error != nil) {
                     print(error.debugDescription)
                 } else {
@@ -139,7 +145,7 @@ class ShowAnswerVC: UIViewController {
                         self._nextItemReady = true
                     }
                 }
-            }
+            })
         })
     }
     
@@ -160,7 +166,7 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
-    func _canAdvance(index: Int) -> Bool{
+    private func _canAdvance(index: Int) -> Bool{
         return index < self.currentQuestion.totalAnswers() ? true : false
     }
     
@@ -170,7 +176,7 @@ class ShowAnswerVC: UIViewController {
         switch recognizer.direction {
         case UISwipeGestureRecognizerDirection.Up:
             if (delegate != nil) {
-                delegate.showNextQuestion(self)
+                delegate.showNextQuestion()
             }
             
         case UISwipeGestureRecognizerDirection.Left:
@@ -182,6 +188,7 @@ class ShowAnswerVC: UIViewController {
                 _swipeReady = false
 
                 _answerOverlay.resetTimer()
+                _updateOverlayData(nextAnswer!)
                 qPlayer.advanceToNextItem()
                 qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
                 
@@ -192,13 +199,14 @@ class ShowAnswerVC: UIViewController {
                     _addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex])
                 }
             } else {
+                print("no answers to show")
                 if (delegate != nil) {
                     delegate.noAnswersToShow(self)
                 }
             }
         case UISwipeGestureRecognizerDirection.Right:
             if (delegate != nil) {
-                delegate.goBack()
+                delegate.goBack(self)
             }
         default: print("unhandled swipe")
         }

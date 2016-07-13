@@ -11,13 +11,14 @@ import FirebaseDatabase
 
 protocol childVCDelegate: class {
     func noAnswersToShow(_ : UIViewController)
+    func hasAnswersToShow()
     func doneRecording(_: NSURL?, currentVC : UIViewController, qID: String?, location: String?)
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
-    func showNextQuestion(_: UIViewController)
+    func showNextQuestion()
     func userDismissedCamera(_:UIViewController)
-    func goBack()
+    func goBack(_ : UIViewController)
 }
 
 class QAManagerVC: UIViewController, childVCDelegate {
@@ -31,7 +32,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     let answerVC = ShowAnswerVC()
     var exploreDelegate : QuestionDelegate!
     
-    var _hasMoreAnswers = false
+    var _hasMoreAnswers = false //TEMP - UPDATE IMPLEMENTATION
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,27 +62,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
         
     }
     
-    /* General VC related methods */
-//    func dismissVC(currentVC : UIViewController) {
-//        currentVC.willMoveToParentViewController(nil)
-//        currentVC.view.removeFromSuperview()
-//        currentVC.removeFromParentViewController()
-//    }
-    
-//    func addNewVC(newVC: UIViewController) {
-//        addChildViewController(newVC)
-//        newVC.view.frame = self.view.bounds
-//        view.addSubview(newVC.view)
-//        newVC.didMoveToParentViewController(self)
-//    }
-    
-//    func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController) {
-//        transitionFromViewController(oldVC, toViewController: newVC, duration: 0.25, options: UIViewAnimationOptions.CurveEaseIn, animations: nil, completion: { (finished) in
-//            oldVC.removeFromParentViewController()
-//            newVC.didMoveToParentViewController(self)
-//        })
-//    }
-    
     /* QA Specific Methods */
     
     func displayQuestion() {
@@ -91,13 +71,13 @@ class QAManagerVC: UIViewController, childVCDelegate {
         GlobalFunctions.addNewVC(answerVC, parentVC: self)
     }
     
-    func loadNextQuestion(completion: (question : Question, error : NSError?) -> Void) {
+    func loadNextQuestion(completion: (question : Question?, error : NSError?) -> Void) {
         questionCounter += 1
         
         if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
             Database.getQuestion(selectedTag.questions![questionCounter], completion: { (question, error) in
                 if error != nil {
-                    print(error.debugDescription)
+                    completion(question: nil, error: error)
                 } else {
                     self.allQuestions.append(question)
                     self.currentQuestion = question
@@ -105,8 +85,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 }
             })
         } else if (questionCounter >= selectedTag.totalQuestionsForTag()) {
-            exploreDelegate.returnToExplore(self)
-            
+            let userInfo = [ NSLocalizedDescriptionKey : "browsed all questions for tag" ]
+            completion(question: nil, error: NSError.init(domain: "ReachedEnd", code: 200, userInfo: userInfo))
         } else {
             currentQuestion = allQuestions[questionCounter]
             completion(question: currentQuestion, error: nil)
@@ -115,9 +95,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
 
     
     func noAnswersToShow(currentVC : UIViewController) {
-        if currentQuestion.hasAnswers() {
-            print("question has answers \(currentQuestion.totalAnswers())")
-//            self.loadNextQuestion()
+        if _hasMoreAnswers {
+            showNextQuestion()
         } else {
             currentVC.view.hidden = true
 
@@ -125,7 +104,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
             cameraVC.camDelegate = self
             cameraVC.questionToShow = currentQuestion
             GlobalFunctions.addNewVC(cameraVC, parentVC: self)
-//          cycleBetweenVC(currentVC, newVC: cameraVC)
         }
     }
     
@@ -136,7 +114,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         userAnswer.fileURL = assetURL
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
-        GlobalFunctions.addNewVC(userAnswer, parentVC: self)
+//        GlobalFunctions.addNewVC(userAnswer, parentVC: self)
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
     }
     
@@ -161,37 +139,44 @@ class QAManagerVC: UIViewController, childVCDelegate {
             answerVC.currentQuestion = self.currentQuestion
         } else {
             self.loadNextQuestion({ (question, error) in
-                if error == nil {
+                if error != nil {
+                    if error?.domain == "ReachedEnd" {
+                        self.exploreDelegate.returnToExplore(self)
+                    }
+                } else {
                     self.answerVC.currentQuestion = question
-                    self.answerVC.view.hidden = false
                     GlobalFunctions.dismissVC(currentVC)
                 }
             })
         }
     }
     
-    func showNextQuestion(currentVC: UIViewController) {
+    func showNextQuestion() {
         self.loadNextQuestion({ (question, error) in
             if error != nil {
-                print("error getting question")
+                if error?.domain == "ReachedEnd" {
+                    self.exploreDelegate.returnToExplore(self)
+                }
             } else {
                 self.answerVC.currentQuestion = question
             }
         })
     }
     
-    func askUserQuestion() {
-        
+    func hasAnswersToShow() {
+        self.answerVC.view.hidden = false
     }
     
     func userDismissedCamera(currentVC: UIViewController) {
-        
         if _hasMoreAnswers {
             print("user dismissed camera fired")
-            
         } else {
             self.loadNextQuestion({ (question, error) in
-                if error == nil {
+                if error != nil {
+                    if error?.domain == "ReachedEnd" {
+                        self.exploreDelegate.returnToExplore(self)
+                    }
+                } else {
                     self.answerVC.currentQuestion = question
                 }
             })
@@ -199,8 +184,10 @@ class QAManagerVC: UIViewController, childVCDelegate {
         }
     }
     
-    func goBack() {
-        exploreDelegate.returnToExplore(self)
+    func goBack(currentVC : UIViewController) {
+        if let _exploreDelegate = exploreDelegate {
+            _exploreDelegate.returnToExplore(self)
+        }
     }
     
     func loginSuccess (currentVC : UIViewController) {

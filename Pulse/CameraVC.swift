@@ -15,6 +15,13 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     
     private let videoDuration : Double = 6
     private var countdownTimer : CALayer!
+    private var _cameraReady  : CameraState! {
+        didSet {
+            if _cameraReady == CameraState.Ready {
+                self.view.hidden = false
+            }
+        }
+    }
     
     var questionToShow : Question!
     var camDelegate : childVCDelegate?
@@ -22,16 +29,17 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-//        _ = UIPinchGestureRecognizer(target: self, action: #selector(self.handlePinch(_:)))
+        let zoomPinch = UIPinchGestureRecognizer()
+        zoomPinch.delegate = self
         
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(CameraVC.respondToSwipeGesture(_:)))
         swipeDown.direction = UISwipeGestureRecognizerDirection.Down
         self.view.addGestureRecognizer(swipeDown)
         
-        //        zoomPinch.delegate = self
-        //        cameraview.userInteractionEnabled = true
-        //        cameraview.multipleTouchEnabled = true
-        //        cameraview.addGestureRecognizer(zoomPinch)
+        self.view.userInteractionEnabled = true
+        self.view.multipleTouchEnabled = true
+        self.view.addGestureRecognizer(zoomPinch)
+        self.view.hidden = true
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -45,10 +53,6 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
-    
-//    func handlePinch(sender: UITapGestureRecognizer? = nil) {
-//        print("handle pinch fired")
-//    }
     
     func respondToSwipeGesture(gesture: UIGestureRecognizer) {
         if (self.camDelegate != nil) {
@@ -96,9 +100,9 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         _Camera.showAccessPermissionPopupAutomatically = true
         _Camera.shouldRespondToOrientationChanges = false
         _Camera.cameraDevice = .Front
-        self._Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic)
-        
-        self._Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
+
+        _cameraReady = _Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic)
+        _Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
             
             let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
             alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))

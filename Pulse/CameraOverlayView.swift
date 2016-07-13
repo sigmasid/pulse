@@ -70,9 +70,6 @@ class CameraOverlayView: UIView {
     
     // Add Video Countdown Animation
     func countdownTimer(videoDuration : Double) {
-//        let cameraOverlay = CALayer()
-//        cameraOverlay.frame = CGRectMake(_elementSpacing, _questionBackgroundHeight + _elementSpacing, size, size)
-        
         // draw the countdown
         let bgShapeLayer = drawBgShape()
         timeLeftShapeLayer = drawTimeLeftShape()
@@ -181,6 +178,8 @@ class CameraOverlayView: UIView {
         _questionBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
         _questionBackground.textColor = UIColor.whiteColor()
         _questionBackground.textAlignment = .Center
+        _questionBackground.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _questionBackground.sizeToFit()
     }
     
     private func drawBgShape() -> CAShapeLayer {

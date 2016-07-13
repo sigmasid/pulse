@@ -14,7 +14,9 @@ class User {
     var uID : String?
     var name : String?
     var answers : [String]?
+    var answeredQuestions : [String]?
     var profilePic : String?
+    var shownCameraForQuestion = [ String : String ]()
     
     class var currentUser: User {
         struct Static {
@@ -60,5 +62,13 @@ class User {
         self.uID = nil
         self.name = nil
         self.answers = nil
+    }
+    
+    func hasAnsweredQuestion(qID : String) -> Bool {
+        if let _answeredQuestions = answeredQuestions {
+            return _answeredQuestions.contains(qID) ? true : false
+        } else {
+            return false
+        }
     }
 }

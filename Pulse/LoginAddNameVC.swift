@@ -32,7 +32,6 @@ class LoginAddNameVC: UIViewController {
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
         pulseIcon.drawIconBackground(iconBackgroundColor)
         pulseIcon.drawIcon(iconColor, iconThickness: 2)
-
         
         logoView.addSubview(pulseIcon)
         
