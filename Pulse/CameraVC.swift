@@ -12,16 +12,10 @@ import FirebaseDatabase
 class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     let _Camera = CameraManager()
     var _cameraOverlay : CameraOverlayView!
+    var _loadingOverlay : UIView!
     
     private let videoDuration : Double = 6
     private var countdownTimer : CALayer!
-    private var _cameraReady  : CameraState! {
-        didSet {
-            if _cameraReady == CameraState.Ready {
-                self.view.hidden = false
-            }
-        }
-    }
     
     var questionToShow : Question!
     var camDelegate : childVCDelegate?
@@ -39,7 +33,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         self.view.userInteractionEnabled = true
         self.view.multipleTouchEnabled = true
         self.view.addGestureRecognizer(zoomPinch)
-        self.view.hidden = true
+
+//        self.view.hidden = true
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -47,6 +42,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         _cameraOverlay = CameraOverlayView(frame: UIScreen.mainScreen().bounds)
         
         setupCamera()
+        setupLoading()
         setupCameraOverlay()
     }
     
@@ -96,12 +92,27 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
+    func setupLoading() {
+        _loadingOverlay = UIView(frame: self.view.bounds)
+        _loadingOverlay.backgroundColor = UIColor.blackColor()
+        view.addSubview(_loadingOverlay)
+    }
+    
     func setupCamera() {
         _Camera.showAccessPermissionPopupAutomatically = true
         _Camera.shouldRespondToOrientationChanges = false
         _Camera.cameraDevice = .Front
 
-        _cameraReady = _Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic)
+        _Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic, completition: {() in
+            dispatch_async(dispatch_get_main_queue()) {
+                UIView.animateWithDuration(0.3, animations: { self._loadingOverlay.alpha = 0.0 } ,
+                    completion: {(value: Bool) in
+                        self._loadingOverlay.removeFromSuperview()
+                })
+                self._cameraOverlay.getButton(.Shutter).enabled = true
+            }
+        })
+        
         _Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
             
             let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
@@ -122,6 +133,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         }
         
         _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(CameraVC.startVideoCapture), forControlEvents: UIControlEvents.TouchDown)
+        _cameraOverlay.getButton(.Shutter).enabled = false
         _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(CameraVC.stopVideoCapture), forControlEvents: UIControlEvents.TouchUpInside)
         
         _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
