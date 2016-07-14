@@ -256,7 +256,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
             }
         }
     }
-    
+}
+
 //    func handleSwipe(recognizer:UISwipeGestureRecognizer) {
 //
 //        switch recognizer.direction {
@@ -278,5 +279,3 @@ class QAManagerVC: UIViewController, childVCDelegate {
 //        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
 //        swipeRight.direction = UISwipeGestureRecognizerDirection.Right
 //        self.view.addGestureRecognizer(swipeRight)
-
-}

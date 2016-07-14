@@ -617,6 +617,7 @@
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tpD-wo-J8q">
                                 <rect key="frame" x="60" y="40" width="40" height="40"/>
+                                <color key="backgroundColor" red="0.93725490199999995" green="0.050980392159999999" blue="0.28235294119999998" alpha="1" colorSpace="calibratedRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="width" secondItem="tpD-wo-J8q" secondAttribute="height" multiplier="1:1" id="7hB-0b-xY8"/>
                                     <constraint firstAttribute="height" constant="40" id="ZlS-6S-YPn"/>
@@ -788,10 +789,113 @@
             </objects>
             <point key="canvasLocation" x="1834" y="1137"/>
         </scene>
+        <!--Account PageVC-->
+        <scene sceneID="BPJ-jT-fGu">
+            <objects>
+                <viewController id="LE9-nb-woB" customClass="AccountPageVC" customModule="Pulse" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="rX0-Og-eC7"/>
+                        <viewControllerLayoutGuide type="bottom" id="NWs-bx-mUA"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="1om-Nh-Zgp">
+                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Hug-Q0-Kzs">
+                                <rect key="frame" x="250" y="114" width="100" height="100"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="Hug-Q0-Kzs" secondAttribute="height" multiplier="1:1" id="7l3-JH-vk2"/>
+                                    <constraint firstAttribute="width" constant="100" id="S83-G2-OuQ"/>
+                                </constraints>
+                            </imageView>
+                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Your Name" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="V9l-dU-bre">
+                                <rect key="frame" x="225" y="233" width="151" height="30"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                            </textField>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="s8K-6d-YN2">
+                                <rect key="frame" x="96" y="502" width="50" height="50"/>
+                                <color key="backgroundColor" red="0.30588235294117649" green="0.38823529411764707" blue="0.59607843137254901" alpha="1" colorSpace="calibratedRGB"/>
+                                <state key="normal" image="facebook-icon"/>
+                                <connections>
+                                    <action selector="LinkAccount:" destination="LE9-nb-woB" eventType="touchUpInside" id="QmT-ak-GeC"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6RX-EZ-zRL">
+                                <rect key="frame" x="275" y="502" width="50" height="50"/>
+                                <color key="backgroundColor" red="0.22745098039215686" green="0.72549019607843135" blue="0.89411764705882346" alpha="1" colorSpace="calibratedRGB"/>
+                                <state key="normal" image="twitter-icon"/>
+                                <connections>
+                                    <action selector="LinkAccount:" destination="LE9-nb-woB" eventType="touchUpInside" id="9jF-LI-ZVT"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DN1-mo-X2c">
+                                <rect key="frame" x="462" y="502" width="50" height="50"/>
+                                <color key="backgroundColor" red="0.0078431372549019607" green="0.45490196078431372" blue="0.70196078431372544" alpha="1" colorSpace="calibratedRGB"/>
+                                <state key="normal" image="linkedin-icon"/>
+                                <connections>
+                                    <action selector="LinkAccount:" destination="LE9-nb-woB" eventType="touchUpInside" id="mWx-vg-rgj"/>
+                                </connections>
+                            </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="answers" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pAC-Un-EK5">
+                                <rect key="frame" x="134" y="320" width="102" height="21"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="18"/>
+                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="tags" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9jY-kC-7e6">
+                                <rect key="frame" x="159" y="372" width="77" height="21"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="18"/>
+                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iHz-5M-Quu">
+                                <rect key="frame" x="390" y="320" width="0.0" height="0.0"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" editable="NO" textAlignment="natural" selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1sn-mf-tRu">
+                                <rect key="frame" x="340" y="372" width="193" height="93"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                            </textView>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rJa-nl-GhV">
+                                <rect key="frame" x="530" y="50" width="40" height="40"/>
+                                <color key="backgroundColor" red="0.93725490199999995" green="0.050980392159999999" blue="0.28235294119999998" alpha="1" colorSpace="calibratedRGB"/>
+                                <state key="normal" image="settings"/>
+                                <connections>
+                                    <action selector="ClickedSettings:" destination="LE9-nb-woB" eventType="touchUpInside" id="EIX-JO-XI2"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        <constraints>
+                            <constraint firstItem="Hug-Q0-Kzs" firstAttribute="top" secondItem="rX0-Og-eC7" secondAttribute="bottom" constant="94" id="aXn-mY-te4"/>
+                            <constraint firstItem="Hug-Q0-Kzs" firstAttribute="centerX" secondItem="1om-Nh-Zgp" secondAttribute="centerX" id="cb1-hO-pkk"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="fbButton" destination="s8K-6d-YN2" id="enN-JM-fq8"/>
+                        <outlet property="inButton" destination="DN1-mo-X2c" id="45t-u3-P78"/>
+                        <outlet property="numAnswersLabel" destination="iHz-5M-Quu" id="dwM-9l-Ld1"/>
+                        <outlet property="subscribedTagsLabel" destination="1sn-mf-tRu" id="EgK-37-8Kt"/>
+                        <outlet property="twtrButton" destination="6RX-EZ-zRL" id="Sf0-1d-YzD"/>
+                        <outlet property="uNameLabel" destination="V9l-dU-bre" id="xb5-kE-GF5"/>
+                        <outlet property="uProfilePic" destination="Hug-Q0-Kzs" id="ZMg-vs-bNL"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="l4P-21-AEe" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2461" y="1137"/>
+        </scene>
     </scenes>
     <resources>
         <image name="back" width="32" height="32"/>
         <image name="facebook-icon" width="24" height="24"/>
+        <image name="linkedin-icon" width="32" height="32"/>
+        <image name="settings" width="32" height="32"/>
         <image name="twitter-icon" width="24" height="24"/>
     </resources>
 </document>
