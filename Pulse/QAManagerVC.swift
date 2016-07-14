@@ -30,7 +30,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var currentUser : User!
     
     let answerVC = ShowAnswerVC()
-    var exploreDelegate : ExploreDelegate!
+//    var exploreDelegate : ExploreDelegate!
+    var returnToParentDelegate : ParentDelegate!
     
     var _hasMoreAnswers = false //TEMP - UPDATE IMPLEMENTATION
     
@@ -148,7 +149,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
             self.loadNextQuestion({ (question, error) in
                 if error != nil {
                     if error?.domain == "ReachedEnd" {
-                        self.exploreDelegate.returnToExplore(self)
+                        self.returnToParentDelegate.returnToParent(self)
                     }
                 } else {
                     self.answerVC.currentQuestion = question
@@ -162,7 +163,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         self.loadNextQuestion({ (question, error) in
             if error != nil {
                 if error?.domain == "ReachedEnd" {
-                    self.exploreDelegate.returnToExplore(self)
+                    self.returnToParentDelegate.returnToParent(self)
                 }
             } else {
                 self.answerVC.currentQuestion = question
@@ -181,7 +182,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
             self.loadNextQuestion({ (question, error) in
                 if error != nil {
                     if error?.domain == "ReachedEnd" {
-                        self.exploreDelegate.returnToExplore(self)
+                        self.returnToParentDelegate.returnToParent(self)
                     }
                 } else {
                     self.answerVC.currentQuestion = question
@@ -192,8 +193,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func goBack(currentVC : UIViewController) {
-        if let _exploreDelegate = exploreDelegate {
-            _exploreDelegate.returnToExplore(self)
+        if let _returnToParent = returnToParentDelegate {
+            _returnToParent.returnToParent(self)
         }
     }
     

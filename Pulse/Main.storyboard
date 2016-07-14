@@ -86,13 +86,13 @@
                                                     <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                                     <nil key="highlightedColor"/>
                                                 </label>
-                                                <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" indicatorStyle="white" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="lHU-GJ-rD1" userLabel="Explore Questions">
+                                                <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" pagingEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" indicatorStyle="white" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="lHU-GJ-rD1" userLabel="Explore Questions">
                                                     <rect key="frame" x="15" y="44" width="570" height="75"/>
                                                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                                     <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" minimumLineSpacing="7.5" minimumInteritemSpacing="10" id="wMR-fQ-leq">
                                                         <size key="itemSize" width="100" height="70"/>
                                                         <size key="headerReferenceSize" width="0.0" height="0.0"/>
-                                                        <size key="footerReferenceSize" width="0.0" height="0.0"/>
+                                                        <size key="footerReferenceSize" width="40" height="50"/>
                                                         <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                                     </collectionViewFlowLayout>
                                                     <cells>
@@ -125,6 +125,28 @@
                                                             </connections>
                                                         </collectionViewCell>
                                                     </cells>
+                                                    <collectionReusableView key="sectionFooterView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="questionCellFooter" id="9fB-uc-aM3" customClass="QuestionFooterCellView" customModule="Pulse" customModuleProvider="target">
+                                                        <rect key="frame" x="100" y="0.0" width="40" height="75"/>
+                                                        <autoresizingMask key="autoresizingMask"/>
+                                                        <subviews>
+                                                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" animating="YES" style="white" translatesAutoresizingMaskIntoConstraints="NO" id="M9s-BE-rU5">
+                                                                <rect key="frame" x="10" y="27" width="20" height="20"/>
+                                                                <constraints>
+                                                                    <constraint firstAttribute="width" secondItem="M9s-BE-rU5" secondAttribute="height" multiplier="1:1" id="EWy-wj-YeE"/>
+                                                                </constraints>
+                                                            </activityIndicatorView>
+                                                        </subviews>
+                                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                                        <rect key="contentStretch" x="0.84999999999999998" y="0.84999999999999998" width="0.84999999999999998" height="0.84999999999999998"/>
+                                                        <constraints>
+                                                            <constraint firstItem="M9s-BE-rU5" firstAttribute="width" secondItem="9fB-uc-aM3" secondAttribute="width" multiplier="0.5" id="akw-bP-Xfl"/>
+                                                            <constraint firstItem="M9s-BE-rU5" firstAttribute="centerX" secondItem="9fB-uc-aM3" secondAttribute="centerX" id="zWr-qb-Nwg"/>
+                                                            <constraint firstItem="M9s-BE-rU5" firstAttribute="centerY" secondItem="9fB-uc-aM3" secondAttribute="centerY" id="zyL-Wz-SRa"/>
+                                                        </constraints>
+                                                        <connections>
+                                                            <outlet property="activityIndicaorView" destination="M9s-BE-rU5" id="ASN-9G-lq1"/>
+                                                        </connections>
+                                                    </collectionReusableView>
                                                 </collectionView>
                                             </subviews>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
@@ -515,7 +537,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="R7j-d2-tdm" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2691" y="160"/>
+            <point key="canvasLocation" x="2725" y="160"/>
         </scene>
         <!--Login Create AccountVC-->
         <scene sceneID="qjE-Wu-3Nx">

@@ -11,7 +11,7 @@ protocol questionPreviewDelegate: class {
     func updateContainerQuestion()
 }
 
-class TagDetailVC: UIViewController, questionPreviewDelegate, ExploreDelegate {
+class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     var _allQuestions = [Question?]()
     
     var questionCount = 1
@@ -25,7 +25,7 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ExploreDelegate {
     
     var currentTag : Tag!
     var returningToExplore = false
-    var _exploreDelegate : ExploreDelegate!
+    var returnToParentDelegate : ParentDelegate!
     
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
@@ -102,12 +102,12 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ExploreDelegate {
         QAVC.questionCounter = _questionIndex
         QAVC.view.frame = self.view.bounds
         
-        QAVC.exploreDelegate = self
+        QAVC.returnToParentDelegate = self
         
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     
-    func returnToExplore(currentVC : UIViewController) {
+    func returnToParent(currentVC : UIViewController) {
         returningToExplore = true
         GlobalFunctions.dismissVC(currentVC)
     }
@@ -123,7 +123,7 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ExploreDelegate {
             let panFinishingPointY = pan.view!.center.y
             
             if (panFinishingPointX > self.view.bounds.width) {
-                _exploreDelegate.returnToExplore(self)
+                returnToParentDelegate.returnToParent(self)
             } else {
                 self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
                 pan.setTranslation(CGPointZero, inView: self.view)

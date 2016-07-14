@@ -16,10 +16,9 @@ class ExploreTagCell: UICollectionViewCell {
     
     @IBOutlet weak var ExploreQuestions: UICollectionView!
     weak var delegate : ExploreDelegate!
-    
-    var loadingStatus = LoadMoreStatus.haveMore 
-    var questionsShown = 5
-    let questionsIncrement = 5
+    weak var footerView : QuestionFooterCellView!
+
+    var questionToShow = 6
     
     var _totalQuestions : Int!
     var _allQuestions = [Question?]()
@@ -36,11 +35,13 @@ class ExploreTagCell: UICollectionViewCell {
     }
     
     private let questionReuseIdentifier = "questionCell"
+    private let questionFooterReuseIdentifier = "questionCellFooter"
+
 }
 
 extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate {
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return _totalQuestions
+        return min(_totalQuestions, questionToShow)
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
@@ -66,8 +67,29 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         delegate.showQuestion(_selectedQuestion, _allQuestions: self._allQuestions, _questionIndex: indexPath.row, _selectedTag : currentTag)
     }
     
+    func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView   {
+        if (kind ==  UICollectionElementKindSectionFooter) {
+            footerView = collectionView.dequeueReusableSupplementaryViewOfKind(kind, withReuseIdentifier: questionFooterReuseIdentifier, forIndexPath: indexPath) as! QuestionFooterCellView
+            footerView.hidden = false
+        }
+        return footerView
+    }
+    
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
         return 1
+    }
+    
+    func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        let currentOffset = scrollView.contentOffset.x
+        let maximumOffset = scrollView.contentSize.width - scrollView.frame.size.width
+        
+        if (maximumOffset - currentOffset <= -75 ) {
+            delegate.showTagDetail(currentTag)
+            footerView.hidden = true
+        } else if (maximumOffset - currentOffset <= 0 ){
+            footerView.hidden = true
+            ExploreQuestions.scrollToItemAtIndexPath(ExploreQuestions.indexPathsForVisibleItems().first!, atScrollPosition: UICollectionViewScrollPosition.Left, animated: true)
+        }
     }
 }
 
@@ -76,9 +98,3 @@ extension ExploreTagCell: UICollectionViewDelegateFlowLayout {
         return CGSize(width: collectionView.frame.width / 3, height: collectionView.frame.height)
     }
 }
-
-//        if ( indexPath.row == questionsShown - 1) {
-//            if loadingStatus == .haveMore {
-//                self.performSelector(#selector(ExploreTagCell.loadMoreQuestions), withObject: indexPath, afterDelay: 0)
-//            }
-//        }

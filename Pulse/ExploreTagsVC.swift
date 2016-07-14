@@ -11,10 +11,14 @@ import FirebaseDatabase
 
 protocol ExploreDelegate : class {
     func showQuestion(_selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int, _selectedTag : Tag)
-    func returnToExplore(_:UIViewController)
+    func showTagDetail(_selectedTag : Tag)
 }
 
-class ExploreTagsVC: UIViewController, ExploreDelegate {
+protocol ParentDelegate : class {
+    func returnToParent(_:UIViewController)
+}
+
+class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     var allTags = [Tag]()
     var currentTag : Tag!
     var returningToExplore = false
@@ -74,7 +78,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate {
         QAVC.questionCounter = _questionIndex
         QAVC.view.frame = self.view.bounds
         
-        QAVC.exploreDelegate = self
+        QAVC.returnToParentDelegate = self
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     
@@ -84,21 +88,15 @@ class ExploreTagsVC: UIViewController, ExploreDelegate {
             tagDetailVC.currentTag = _selectedTag
             tagDetailVC.view.frame = self.view.bounds
         
-            tagDetailVC._exploreDelegate = self
+            tagDetailVC.returnToParentDelegate = self
             GlobalFunctions.addNewVC(tagDetailVC, parentVC: self)
         }
     }
     
-    func returnToExplore(currentVC : UIViewController) {
+    func returnToParent(currentVC : UIViewController) {
         returningToExplore = true
         GlobalFunctions.dismissVC(currentVC)
     }
-//    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-//        if (segue.identifier == "showTagDetailSegue") {
-//            let tagDetailVC = segue.destinationViewController as! TagDetailVC
-//            tagDetailVC.currentTag = currentTag
-//        }
-//    }
 }
 
 extension ExploreTagsVC : UICollectionViewDataSource {
@@ -149,6 +147,6 @@ extension ExploreTagsVC : UICollectionViewDataSource {
 
 extension ExploreTagsVC: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: self.view.frame.width, height: self.view.frame.height / 3.5)
+        return CGSize(width: self.view.frame.width, height: self.view.frame.height / 3)
     }
 }
