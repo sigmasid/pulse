@@ -93,6 +93,11 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         }
     }
     
+    func showTagDetailTap(sender : UITapGestureRecognizer) {
+        let _tagToShow = allTags[sender.view!.tag]
+        showTagDetail(_tagToShow)
+    }
+    
     func returnToParent(currentVC : UIViewController) {
         returningToExplore = true
         GlobalFunctions.dismissVC(currentVC)
@@ -127,6 +132,11 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     func configureCell(cell: ExploreTagCell, indexPath: NSIndexPath) {
         cell.tagLabel.text = "#"+currentTag.tagID!.uppercaseString
         
+        let tapLabel = UITapGestureRecognizer(target: self, action: #selector(ExploreTagsVC.showTagDetailTap(_:)))
+        cell.tagLabel.userInteractionEnabled = true
+        cell.tagLabel.tag = indexPath.row
+        cell.tagLabel.addGestureRecognizer(tapLabel)
+        
         if let _tagImage = currentTag.previewImage {
             Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
                 if error != nil {
@@ -140,8 +150,9 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        currentTag = allTags[indexPath.row]
-        showTagDetail(currentTag)
+
+//        currentTag = allTags[indexPath.row]
+//        showTagDetail(currentTag)
     }
 }
 

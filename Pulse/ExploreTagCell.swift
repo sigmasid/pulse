@@ -23,6 +23,19 @@ class ExploreTagCell: UICollectionViewCell {
     var _totalQuestions : Int!
     var _allQuestions = [Question?]()
     
+    var _reachedEnd : CGFloat! {
+        didSet {
+            print(_reachedEnd)
+            if (_reachedEnd <= 0 ) {
+                footerView.hidden = true
+                delegate.showTagDetail(currentTag)
+            } else if (_reachedEnd <= 20 ){
+                footerView.hidden = true
+                ExploreQuestions.scrollToItemAtIndexPath(ExploreQuestions.indexPathsForVisibleItems().first!, atScrollPosition: UICollectionViewScrollPosition.Left, animated: true)
+            }
+        }
+    }
+    
     var currentTag : Tag! {
         didSet {
             if currentTag.totalQuestionsForTag() != nil {
@@ -36,6 +49,10 @@ class ExploreTagCell: UICollectionViewCell {
     
     private let questionReuseIdentifier = "questionCell"
     private let questionFooterReuseIdentifier = "questionCellFooter"
+    
+    func refreshFired() {
+        print("refresh fired")
+    }
 
 }
 
@@ -83,13 +100,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         let currentOffset = scrollView.contentOffset.x
         let maximumOffset = scrollView.contentSize.width - scrollView.frame.size.width
         
-        if (maximumOffset - currentOffset <= -75 ) {
-            delegate.showTagDetail(currentTag)
-            footerView.hidden = true
-        } else if (maximumOffset - currentOffset <= 0 ){
-            footerView.hidden = true
-            ExploreQuestions.scrollToItemAtIndexPath(ExploreQuestions.indexPathsForVisibleItems().first!, atScrollPosition: UICollectionViewScrollPosition.Left, animated: true)
-        }
+        _reachedEnd = maximumOffset - currentOffset
     }
 }
 

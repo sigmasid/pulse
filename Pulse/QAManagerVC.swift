@@ -30,7 +30,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var currentUser : User!
     
     let answerVC = ShowAnswerVC()
-//    var exploreDelegate : ExploreDelegate!
     var returnToParentDelegate : ParentDelegate!
     
     var _hasMoreAnswers = false //TEMP - UPDATE IMPLEMENTATION
@@ -44,7 +43,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
         let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         _panGesture.minimumNumberOfTouches = 1
         self.view.addGestureRecognizer(_panGesture)
-
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -65,10 +63,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-    }
-    
-    func handleSwipe(recognizer:UISwipeGestureRecognizer) {
-        
     }
     
     /* QA Specific Methods */
@@ -101,18 +95,17 @@ class QAManagerVC: UIViewController, childVCDelegate {
             completion(question: currentQuestion, error: nil)
         }
     }
-
     
-    func noAnswersToShow(currentVC : UIViewController) {
-        if _hasMoreAnswers {
-            showNextQuestion()
-        } else {
-            currentVC.view.hidden = true
-
-            let cameraVC = CameraVC()
-            cameraVC.camDelegate = self
-            cameraVC.questionToShow = currentQuestion
-            GlobalFunctions.addNewVC(cameraVC, parentVC: self)
+    func loadPriorQuestion(completion: (question : Question?, error : NSError?) -> Void) {
+        questionCounter -= 1
+        
+        if (questionCounter >= 0) {
+            currentQuestion = allQuestions[questionCounter]
+            completion(question: currentQuestion, error: nil)
+        } else if (questionCounter < 0) {
+            questionCounter += 1
+            let userInfo = [ NSLocalizedDescriptionKey : "reached beginning" ]
+            completion(question: nil, error: NSError.init(domain: "ReachedBeginning", code: 200, userInfo: userInfo))
         }
     }
     
@@ -171,6 +164,31 @@ class QAManagerVC: UIViewController, childVCDelegate {
         })
     }
     
+    func showPriorQuestion() {
+        self.loadPriorQuestion({ (question, error) in
+            if error != nil {
+                if error?.domain == "ReachedBeginning" {
+                    self.returnToParentDelegate.returnToParent(self)
+                }
+            } else {
+                self.answerVC.currentQuestion = question
+            }
+        })
+    }
+    
+    func noAnswersToShow(currentVC : UIViewController) {
+        if _hasMoreAnswers {
+            showNextQuestion()
+        } else {
+            currentVC.view.hidden = true
+            
+            let cameraVC = CameraVC()
+            cameraVC.camDelegate = self
+            cameraVC.questionToShow = currentQuestion
+            GlobalFunctions.addNewVC(cameraVC, parentVC: self)
+        }
+    }
+    
     func hasAnswersToShow() {
         self.answerVC.view.hidden = false
     }
@@ -203,25 +221,62 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func handlePan(pan : UIPanGestureRecognizer) {
+        let panCurrentPointX = pan.view!.center.x
+        let panCurrentPointY = pan.view!.center.y
         
         if (pan.state == UIGestureRecognizerState.Began) {
             panStartingPointX = pan.view!.center.x
             panStartingPointY = pan.view!.center.y
 
-        } else if (pan.state == UIGestureRecognizerState.Ended) {
-            let panFinishingPointX = pan.view!.center.x
-            let panFinishingPointY = pan.view!.center.y
-
-            if (panFinishingPointX > self.view.bounds.width) {
+        }
+        else if (pan.state == UIGestureRecognizerState.Ended) {
+            let translation = pan.translationInView(self.view)
+            
+            switch translation {
+            case _ where translation.y < -150:
+                showNextQuestion()
+                pan.setTranslation(CGPointZero, inView: self.view)
+            case _ where translation.y > 150:
+                showPriorQuestion()
+                pan.setTranslation(CGPointZero, inView: self.view)
+            case _ where panCurrentPointX > self.view.bounds.width:
                 goBack(self)
-            } else {
+            default:
                 self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
                 pan.setTranslation(CGPointZero, inView: self.view)
             }
         } else {
             let translation = pan.translationInView(self.view)
-            self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-            pan.setTranslation(CGPointZero, inView: self.view)
+            if (translation.y < -20 || translation.y > 20) {
+                //ignore if user was trying to move up / down
+            }
+            else if (translation.x > 0) { //only go back but not go forward
+                self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
+                pan.setTranslation(CGPointZero, inView: self.view)
+            }
         }
     }
+    
+//    func handleSwipe(recognizer:UISwipeGestureRecognizer) {
+//
+//        switch recognizer.direction {
+//        case UISwipeGestureRecognizerDirection.Up:
+//            if (delegate != nil) {
+//                delegate.showNextQuestion()
+//            }
+//        default: print("unhandled swipe")
+//        }
+//    }
+//        let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
+//        swipeUp.direction = UISwipeGestureRecognizerDirection.Up
+//        self.view.addGestureRecognizer(swipeUp)
+//
+//        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
+//        swipeDown.direction = UISwipeGestureRecognizerDirection.Down
+//        self.view.addGestureRecognizer(swipeDown)
+//
+//        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
+//        swipeRight.direction = UISwipeGestureRecognizerDirection.Right
+//        self.view.addGestureRecognizer(swipeRight)
+
 }

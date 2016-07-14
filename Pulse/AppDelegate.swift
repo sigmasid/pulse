@@ -24,7 +24,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Fabric.with([Twitter.self()])
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
         FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:NSError!) -> Void in
-            //
         }
         FBSDKProfile.enableUpdatesOnAccessTokenChange(true)
         return true

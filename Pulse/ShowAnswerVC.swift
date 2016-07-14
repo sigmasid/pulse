@@ -24,6 +24,7 @@ class ShowAnswerVC: UIViewController {
     var currentTag : Tag!
     
     var answerIndex = 1
+    var minAnswersToShow = 5
     
     private var _avPlayerLayer: AVPlayerLayer!
     private var _answerOverlay : AnswerOverlay!
@@ -40,18 +41,6 @@ class ShowAnswerVC: UIViewController {
         
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
         self.view.addGestureRecognizer(tap)
-        
-//        let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-//        swipeUp.direction = UISwipeGestureRecognizerDirection.Up
-//        self.view.addGestureRecognizer(swipeUp)
-//        
-//        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-//        swipeDown.direction = UISwipeGestureRecognizerDirection.Down
-//        self.view.addGestureRecognizer(swipeDown)
-//        
-//        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-//        swipeRight.direction = UISwipeGestureRecognizerDirection.Right
-//        self.view.addGestureRecognizer(swipeRight)
         
         if (currentQuestion != nil){
             _loadFirstAnswer(currentQuestion)
@@ -175,16 +164,6 @@ class ShowAnswerVC: UIViewController {
     
     /* HANDLE GESTURES */
     
-    func handleSwipe(recognizer:UISwipeGestureRecognizer) {
-        
-        switch recognizer.direction {
-        case UISwipeGestureRecognizerDirection.Up:
-            if (delegate != nil) {
-                delegate.showNextQuestion()
-            }
-        default: print("unhandled swipe")
-        }
-    }
     
     func handleTap(recognizer:UITapGestureRecognizer) {
         if (!_TapReady || (!_NextItemReady && (_canAdvance(self.answerIndex)))) {
