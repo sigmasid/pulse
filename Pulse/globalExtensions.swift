@@ -39,4 +39,10 @@ enum LoadMoreStatus{
     case haveMore
 }
 
+enum AnimationStyle {
+    case VerticalUp
+    case VerticalDown
+    case Horizontal
+}
+
 /* EXTEND CUSTOM LOADING */

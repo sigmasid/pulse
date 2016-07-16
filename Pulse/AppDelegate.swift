@@ -26,18 +26,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:NSError!) -> Void in
         }
         FBSDKProfile.enableUpdatesOnAccessTokenChange(true)
+        Database.checkCurrentUser()
         return true
     }
     
-    func application(application: UIApplication, openURL url: NSURL, sourceApplication: String?, annotation: AnyObject) -> Bool {
-        return FBSDKApplicationDelegate.sharedInstance().application(application, openURL: url, sourceApplication: sourceApplication, annotation: annotation)
-    }
-    
+//    func application(application: UIApplication, openURL url: NSURL, sourceApplication: String?, annotation: AnyObject) -> Bool {
+//        return FBSDKApplicationDelegate.sharedInstance().application(application, openURL: url, sourceApplication: sourceApplication, annotation: annotation)
+//    }
+//
     func application(app: UIApplication, openURL url: NSURL, options: [String : AnyObject]) -> Bool {
         if Twitter.sharedInstance().application(app, openURL:url, options: options) {
             return true
         }
-        return true
+        let sourceApplication: String? = options[UIApplicationOpenURLOptionsSourceApplicationKey] as? String
+        return FBSDKApplicationDelegate.sharedInstance().application(app, openURL: url, sourceApplication: sourceApplication, annotation: nil)
     }
     
     func applicationWillResignActive(application: UIApplication) {

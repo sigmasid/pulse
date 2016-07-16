@@ -32,6 +32,17 @@ class GlobalFunctions {
             newVC.didMoveToParentViewController(parentVC)
         })
     }
+    
+    static func addNewVC(newVC: UIViewController, parentVC: UIViewController, animationStyle : AnimationStyle) {
+        if animationStyle == .VerticalDown {
+            let xForm = CGAffineTransformMakeTranslation(0, newVC.view.frame.height)
+            UIView.animateWithDuration(0.35, animations: { newVC.view.transform = xForm } , completion: {(value: Bool) in
+                parentVC.addChildViewController(newVC)
+                parentVC.view.addSubview(newVC.view)
+                newVC.didMoveToParentViewController(parentVC)
+            })
+        }
+    }
 
     static func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
         parentVC.addChildViewController(newVC)
@@ -51,5 +62,37 @@ class GlobalFunctions {
             currentVC.view.removeFromSuperview()
             currentVC.removeFromParentViewController()
         })
+    }
+    
+    static func moveView(newView : UIView, animationStyle : AnimationStyle, parentView : UIView) {
+        switch animationStyle {
+        case .VerticalUp:
+            UIView.animateWithDuration(0.25) {
+                newView.frame.origin.y = -parentView.frame.height
+            }
+        case .VerticalDown:
+            UIView.animateWithDuration(0.25) {
+                newView.frame.origin.y = parentView.frame.origin.y
+            }
+        default: print("unhandled move")
+        }
+    }
+    
+    static func dismissVC(currentVC : UIViewController, animationStyle : AnimationStyle) {
+        if animationStyle == .VerticalUp {
+            let xForm = CGAffineTransformMakeTranslation(0, -currentVC.view.frame.height)
+            UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
+                currentVC.willMoveToParentViewController(nil)
+                currentVC.view.removeFromSuperview()
+                currentVC.removeFromParentViewController()
+            })
+        } else if animationStyle == .Horizontal {
+            let xForm = CGAffineTransformMakeTranslation(currentVC.view.frame.width, 0)
+            UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
+                currentVC.willMoveToParentViewController(nil)
+                currentVC.view.removeFromSuperview()
+                currentVC.removeFromParentViewController()
+            })
+        }
     }
 }

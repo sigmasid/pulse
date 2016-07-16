@@ -32,7 +32,6 @@ class LoginVC: UIViewController {
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.onFBProfileUpdated), name:FBSDKProfileDidChangeNotification, object: nil)
         
         let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
-        //        pulseIcon.drawIconBackground(iconBackgroundColor)
         pulseIcon.drawIcon(iconBackgroundColor, iconThickness: 2)
         logoView.addSubview(pulseIcon)
         
@@ -50,7 +49,7 @@ class LoginVC: UIViewController {
     override func viewDidAppear(animated : Bool) {
         super.viewDidAppear(true)
 
-        if (User.currentUser.uID == nil) {
+        if (!User.isLoggedIn()) {
             self.showStatus.backgroundColor = UIColor.grayColor()
             self.showStatus.textColor = UIColor.whiteColor()
             self.showStatus.text = "You need to be logged in to post"
@@ -85,7 +84,6 @@ class LoginVC: UIViewController {
             }
             else {
                 self.showStatus.text = "Welcome!"
-                AuthHelper.createUser(aUser!.uid)
                 self.view.endEditing(true)
                 self._loggedInSuccess()
                 UIApplication.sharedApplication().networkActivityIndicatorVisible = false
@@ -103,8 +101,15 @@ class LoginVC: UIViewController {
                 if let _ = Twitter.sharedInstance().sessionStore.sessionForUserID(userID) {
                     print(currentTWTRSession?.userID)
                 } else {
-                    User.currentUser.signOut()
-                    self.showStatus.text = "signed off successfully"
+                    Database.signOut{ (success) in
+                        if success {
+                            self.showStatus.text = "signed off successfully"
+                        }
+                        else {
+                            self.showStatus.text = "error signing out"
+                        }
+                    }
+                    
                 }
             }
         }
@@ -113,27 +118,9 @@ class LoginVC: UIViewController {
         }
     }
     
-    func userFBLoggedIn(token : String) {
-        let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
-        FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
-            if error != nil {
-                print(error?.localizedDescription)
-            }
-            else {
-                if let _aUser = aUser {
-                    self.showStatus.text = _aUser.displayName
-                    print(_aUser.displayName)
-                    AuthHelper.createUser(_aUser.uid, name: _aUser.displayName!)
-                    self._loggedInSuccess()
-                }
-            }
-        }
-    }
-    
     @IBAction func fbLogin(sender: UIButton) {
         
         let facebookReadPermissions = ["public_profile", "email", "user_friends"]
-        
         let loginButton = FBSDKLoginManager()
         loginButton.logInWithReadPermissions(facebookReadPermissions, fromViewController: self, handler: { (result:FBSDKLoginManagerLoginResult!, error:NSError!) -> Void in
             if error != nil {
@@ -141,6 +128,7 @@ class LoginVC: UIViewController {
             } else if result.isCancelled {
                 FBSDKLoginManager().logOut()
             } else {
+                print("fb login done - success")
                 //login sucess - will get handled by FB profile updated notification
             }
         })
@@ -154,11 +142,8 @@ class LoginVC: UIViewController {
                 print(error?.localizedDescription)
             }
             else {
-                if let _aUser = aUser {
-                    self.showStatus.text = _aUser.displayName
-                    AuthHelper.createUser(_aUser.uid, name: _aUser.displayName!, pic : FIRAuth.auth()?.currentUser?.photoURL)
-                    self._loggedInSuccess()
-                }
+                self.showStatus.text = aUser!.displayName
+                self._loggedInSuccess()
             }
         }
     }
@@ -173,7 +158,6 @@ class LoginVC: UIViewController {
                     if error != nil {
                         self.showStatus.text =  error?.description
                     } else {
-                        AuthHelper.createUser(aUser!.uid, name: session!.userName, pic : FIRAuth.auth()?.currentUser?.photoURL)
                         self._loggedInSuccess()
                     }
                 }

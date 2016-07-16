@@ -62,7 +62,6 @@ class LoginAddNameVC: UIViewController {
                                 self._firstNameError.text = error!.localizedDescription
                             }
                             else {
-                                User.currentUser.name = fullName
                                 self.performSegueWithIdentifier("unwindFromLoggedInSuccess", sender: self)
                             }
                         })

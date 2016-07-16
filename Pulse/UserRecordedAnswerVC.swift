@@ -62,7 +62,7 @@ class UserRecordedAnswerVC: UIViewController {
     func _postVideo() {
         _controlsOverlay.getButton(.Post).enabled = false
 
-        if User.currentUser.isLoggedIn() {
+        if User.isLoggedIn() {
             _controlsOverlay.getButton(.Post).setTitle("Posting...", forState: UIControlState.Disabled)
             _controlsOverlay.getButton(.Post).backgroundColor = UIColor.darkGrayColor().colorWithAlphaComponent(1)
             self.currentAnswer = createAnswer()
@@ -70,6 +70,7 @@ class UserRecordedAnswerVC: UIViewController {
             
             self.uploadAnswer(self.currentAnswer.aID)
         } else {
+            print("user is not logged in")
             if (self.answerDelegate != nil) {
                 _controlsOverlay.getButton(.Post).enabled = true
                 self.answerDelegate!.askUserToLogin(self)
@@ -121,11 +122,10 @@ class UserRecordedAnswerVC: UIViewController {
     
     private func createAnswer() -> Answer {
         let answerKey = databaseRef.childByAutoId().key
-        return Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser.uID!)
+        return Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser!.uID!)
     }
     
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        print("observer fired")
         if keyPath == "aURL" {
             let answersPath =  databaseRef.child("answers/\(self.currentAnswer!.aID)")
             var userPost = [String : String]()
@@ -138,11 +138,11 @@ class UserRecordedAnswerVC: UIViewController {
                 answersPath.setValue(answerPost)
             }
             
-            if let _profilePic = User.currentUser.profilePic {
+            if let _profilePic = User.currentUser!.profilePic {
                 userPost["profilePic"] = _profilePic
             }
             
-            if let _userName = User.currentUser.name {
+            if let _userName = User.currentUser!.name {
                 userPost["name"] = _userName
             }
             

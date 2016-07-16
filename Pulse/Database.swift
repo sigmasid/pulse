@@ -10,6 +10,8 @@ import Foundation
 import FirebaseDatabase
 import FirebaseStorage
 import FirebaseAuth
+import TwitterKit
+import FBSDKLoginKit
 
 let storage = FIRStorage.storage()
 let storageRef = storage.referenceForURL("gs://pulse-84022.appspot.com")
@@ -73,8 +75,8 @@ class Database {
     
     static func getUser(uID : String, completion: (user : User, error : NSError?) -> Void) {
         usersRef.child(uID).observeSingleEventOfType(.Value, withBlock: { snap in
-            let _currentUser = User(uID: uID, snapshot: snap)
-            completion(user: _currentUser, error: nil)
+            let _returnUser = User(uID: uID, snapshot: snap)
+            completion(user: _returnUser, error: nil)
         })
     }
     
@@ -117,7 +119,102 @@ class Database {
         }
     }
     
-    //Save user to Pulse database after Auth
+    static func signOut( completion: (success: Bool) -> Void ) {
+        if let user = FIRAuth.auth() {
+            do {
+                try user.signOut()
+                completion(success: true)
+            } catch {
+                print(error)
+                completion(success: false)
+            }
+        }
+    }
+    
+    static func checkSocialTokens(completion: (result: Bool) -> Void) {
+        if FBSDKAccessToken.currentAccessToken() != nil {
+            let token = FBSDKAccessToken.currentAccessToken().tokenString
+            let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
+            FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
+                if error != nil {
+                    print(error?.localizedDescription)
+                } else {
+                    completion(result : true)
+                }
+            }
+        } else if let session = Twitter.sharedInstance().sessionStore.session() {
+            try! FIRAuth.auth()!.signOut()
+            Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
+            let credential = FIRTwitterAuthProvider.credentialWithToken(session.authToken, secret: session.authTokenSecret)
+            FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
+                if error != nil {
+                    completion(result : false)
+                } else {
+                    completion(result : true)
+                }
+            }
+        } else {
+            completion(result: false)
+        }
+    }
+    
+    ///Check if user is logged in
+    static func checkCurrentUser() {
+        FIRAuth.auth()?.addAuthStateDidChangeListener { auth, user in
+            if let _user = user {
+                Database.populateCurrentUser(_user)
+            } else {
+                Database.removeCurrentUser()
+//                if let session = Twitter.sharedInstance().sessionStore.session() {
+//                    Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
+//                }
+                return
+            }
+        }
+    }
+    
+    ///Remove current user
+    static func removeCurrentUser() {
+        User.currentUser!.uID = nil
+        User.currentUser!.name = nil
+        User.currentUser!.answers = nil
+        User.currentUser!.answeredQuestions = nil
+        User.currentUser!.profilePic = nil
+    }
+    
+    ///Populate current user
+    static func populateCurrentUser(user: FIRUser!) {
+        User.currentUser!.uID = user.uid
+        usersRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
+            print("populating user")
+            if snap.hasChild("name") {
+                
+                User.currentUser!.name = snap.childSnapshotForPath("name").value as? String
+                print("user name is \(User.currentUser!.name)")
+            }
+            if snap.hasChild("profilePic") {
+                User.currentUser!.profilePic = snap.childSnapshotForPath("profilePic").value as? String
+            }
+            if snap.hasChild("answeredQuestions") {
+                for _answeredQuestion in snap.childSnapshotForPath("answeredQuestions").children {
+                    if (User.currentUser!.answeredQuestions?.append(_answeredQuestion.key) == nil) {
+                        User.currentUser!.answeredQuestions = [_answeredQuestion.key]
+                    }
+                }
+            }
+            if snap.hasChild("answers") {
+                User.currentUser?._totalAnswers = Int(snap.childSnapshotForPath("answers").childrenCount)
+                for _answer in snap.childSnapshotForPath("answers").children {
+                    if (User.currentUser!.answers?.append(_answer.key) == nil) {
+                        User.currentUser!.answers = [_answer.key]
+                    }
+                }
+            }
+        NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
+        })
+    }
+    
+    ///Save user to Pulse database after Auth
     static func saveUserToDatabase(user: FIRUser, completion: (success : Bool, error : NSError?) -> Void) {
         var userPost = [String : String]()
         if let _uName = user.displayName {

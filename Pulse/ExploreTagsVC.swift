@@ -22,6 +22,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     var allTags = [Tag]()
     var currentTag : Tag!
     var returningToExplore = false
+    var showAccountVC : AccountPageVC!
     
     var questionsListener = UInt()
 
@@ -29,6 +30,17 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     
     @IBOutlet weak var ExploreTags: UICollectionView!
     @IBOutlet weak var logoIcon: UIView!
+    
+    private var panCurrentPointY : CGFloat = 0
+    private var isAccountPageVisible = false
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        _panGesture.minimumNumberOfTouches = 1
+        self.view.addGestureRecognizer(_panGesture)
+    }
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
@@ -39,6 +51,11 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             pulseIcon.drawIconBackground(iconBackgroundColor)
             pulseIcon.drawIcon(iconColor, iconThickness: 2)
             logoIcon.addSubview(pulseIcon)
+
+            let _bounds = self.view.bounds
+            showAccountVC = storyboard!.instantiateViewControllerWithIdentifier("AccountPageVC") as? AccountPageVC
+            showAccountVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
+            self.view.addSubview(showAccountVC.view)
         } else {
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         }
@@ -83,8 +100,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func showTagDetail(_selectedTag : Tag) {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        if let tagDetailVC = storyboard.instantiateViewControllerWithIdentifier("tagDetailVC") as? TagDetailVC {
+        if let tagDetailVC = storyboard!.instantiateViewControllerWithIdentifier("tagDetailVC") as? TagDetailVC {
             tagDetailVC.currentTag = _selectedTag
             tagDetailVC.view.frame = self.view.bounds
         
@@ -98,9 +114,54 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         showTagDetail(_tagToShow)
     }
     
+    func moveAccountPage(_directionToMove: AnimationStyle) {
+        if showAccountVC != nil {
+            GlobalFunctions.moveView(showAccountVC.view, animationStyle: _directionToMove, parentView: self.view)
+        }
+    }
+    
     func returnToParent(currentVC : UIViewController) {
         returningToExplore = true
         GlobalFunctions.dismissVC(currentVC)
+    }
+    
+    func handlePan(pan : UIPanGestureRecognizer) {
+        let _ = pan.view!.center.x
+        if (pan.state == UIGestureRecognizerState.Began) {
+            let translation = pan.translationInView(self.view)
+            panCurrentPointY = pan.view!.frame.origin.y + translation.y
+        }
+        else if (pan.state == UIGestureRecognizerState.Ended) {
+            let translation = pan.translationInView(self.view)
+
+            switch translation {
+            case _ where panCurrentPointY > showAccountVC.view.bounds.height / 3:
+                moveAccountPage(.VerticalDown)
+                isAccountPageVisible = true
+                panCurrentPointY = 0
+            case _ where panCurrentPointY < -(showAccountVC.view.bounds.height / 3):
+                moveAccountPage(.VerticalUp)
+                isAccountPageVisible = false
+                panCurrentPointY = 0
+            default:
+                if !isAccountPageVisible {
+                    moveAccountPage(.VerticalUp)
+                    panCurrentPointY = 0
+                } else {
+                    moveAccountPage(.VerticalDown)
+                    panCurrentPointY = 0
+                }
+
+            }
+        } else {
+            let translation = pan.translationInView(showAccountVC.view)
+
+            if (translation.y > 0 || translation.y < 0) {
+                showAccountVC.view.center = CGPoint(x: showAccountVC.view.center.x, y: showAccountVC.view.center.y + translation.y)
+                panCurrentPointY = panCurrentPointY + translation.y
+                pan.setTranslation(CGPointZero, inView: showAccountVC.view)
+            }
+        }
     }
 }
 
@@ -150,7 +211,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-
+//        UNCOMMENT TO MAKE FULL TAG ROW CLICKABLE
 //        currentTag = allTags[indexPath.row]
 //        showTagDetail(currentTag)
     }

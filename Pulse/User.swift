@@ -17,8 +17,9 @@ class User {
     var answeredQuestions : [String]?
     var profilePic : String?
     var shownCameraForQuestion = [ String : String ]()
+    var _totalAnswers : Int?
     
-    class var currentUser: User {
+    class var currentUser: User? {
         struct Static {
             static let instance: User = User()
         }
@@ -31,7 +32,7 @@ class User {
         self.answers = nil
     }
     
-    init(uID: String) {
+    init(uID: String?) {
         self.uID = uID
     }
     
@@ -54,14 +55,8 @@ class User {
         self.uID = user.uid
     }
     
-    func isLoggedIn() -> Bool {
-        return (self.uID != nil ? true : false)
-    }
-    
-    func signOut() {
-        self.uID = nil
-        self.name = nil
-        self.answers = nil
+    static func isLoggedIn() -> Bool {
+        return (User.currentUser?.uID != nil ? true : false)
     }
     
     func hasAnsweredQuestion(qID : String) -> Bool {
@@ -70,5 +65,9 @@ class User {
         } else {
             return false
         }
+    }
+    
+    func totalAnswers() -> Int {
+        return _totalAnswers ?? 0
     }
 }

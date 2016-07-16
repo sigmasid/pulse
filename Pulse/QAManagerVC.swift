@@ -120,7 +120,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func askUserToLogin(currentVC : UIViewController) {
-        AuthHelper.checkSocialTokens({ result in
+        Database.checkSocialTokens({ result in
             if !result {
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
                 if let showLoginVC = storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC {
@@ -231,7 +231,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         }
         else if (pan.state == UIGestureRecognizerState.Ended) {
             let translation = pan.translationInView(self.view)
-            
+
             switch translation {
             case _ where translation.y < -150:
                 showNextQuestion()
