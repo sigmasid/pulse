@@ -73,7 +73,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         GlobalFunctions.addNewVC(answerVC, parentVC: self)
     }
     
-    func loadNextQuestion(completion: (question : Question?, error : NSError?) -> Void) {
+    private func loadNextQuestion(completion: (question : Question?, error : NSError?) -> Void) {
         questionCounter += 1
         
         if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
@@ -95,7 +95,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         }
     }
     
-    func loadPriorQuestion(completion: (question : Question?, error : NSError?) -> Void) {
+    private func loadPriorQuestion(completion: (question : Question?, error : NSError?) -> Void) {
         questionCounter -= 1
         
         if (questionCounter >= 0) {
@@ -182,7 +182,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
             currentVC.view.hidden = true
             
             let cameraVC = CameraVC()
-            cameraVC.camDelegate = self
+            cameraVC.childDelegate = self
             cameraVC.questionToShow = currentQuestion
             GlobalFunctions.addNewVC(cameraVC, parentVC: self)
         }
@@ -221,7 +221,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     func handlePan(pan : UIPanGestureRecognizer) {
         let panCurrentPointX = pan.view!.center.x
-        let panCurrentPointY = pan.view!.center.y
+        _ = pan.view!.center.y
         
         if (pan.state == UIGestureRecognizerState.Began) {
             panStartingPointX = pan.view!.center.x

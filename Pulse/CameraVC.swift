@@ -9,7 +9,11 @@
 import UIKit
 import FirebaseDatabase
 
-class CameraVC: UIViewController, UIGestureRecognizerDelegate {
+protocol CameraManagerProtocol: class {
+    func didReachMaxRecording(fileURL : NSURL?, error : NSError?)
+}
+
+class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProtocol {
     private let _Camera = CameraManager()
     private var _cameraOverlay : CameraOverlayView!
     private var _loadingOverlay : UIView!
@@ -18,13 +22,14 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     private var countdownTimer : CALayer!
     
     var questionToShow : Question!
-    weak var camDelegate : childVCDelegate?
+    weak var childDelegate : childVCDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         let zoomPinch = UIPinchGestureRecognizer()
         zoomPinch.delegate = self
+        _Camera.maxRecordingDelegate = self
         
         let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(CameraVC.respondToSwipeGesture(_:)))
         swipeDown.direction = UISwipeGestureRecognizerDirection.Down
@@ -51,8 +56,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     func respondToSwipeGesture(gesture: UIGestureRecognizer) {
-        if (self.camDelegate != nil) {
-            self.camDelegate!.userDismissedCamera(self)
+        if (self.childDelegate != nil) {
+            self.childDelegate!.userDismissedCamera(self)
         }
     }
     
@@ -67,11 +72,21 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
             if let errorOccured = error {
                 self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
             } else {
-                self.camDelegate!.doneRecording(videoURL, currentVC: self, qID: self.questionToShow.qID, location: self._Camera.recordedLocation)
+                self.childDelegate!.doneRecording(videoURL, currentVC: self, qID: self.questionToShow.qID, location: self._Camera.recordedLocation)
                 self._Camera.stopAndRemoveCaptureSession()
-                // upload the video
             }
         })
+    }
+    
+    func didReachMaxRecording(fileURL : NSURL?, error : NSError?) {
+        _cameraOverlay.stopCountdown()
+        
+        if let errorOccured = error {
+            self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
+        } else {
+            self.childDelegate!.doneRecording(fileURL, currentVC: self, qID: self.questionToShow.qID, location: self._Camera.recordedLocation)
+            self._Camera.stopAndRemoveCaptureSession()
+        }
     }
     
     func cycleFlash(oldButton : UIButton) {
@@ -102,6 +117,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate {
         _Camera.showAccessPermissionPopupAutomatically = true
         _Camera.shouldRespondToOrientationChanges = false
         _Camera.cameraDevice = .Front
+        _Camera.cameraVideoDuration = videoDuration
+        
 
         _Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic, completition: {() in
             dispatch_async(dispatch_get_main_queue()) {

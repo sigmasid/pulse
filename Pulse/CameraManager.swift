@@ -36,6 +36,8 @@ public enum CameraOutputQuality: Int {
 /// Class for handling iDevices custom camera usage
 public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGestureRecognizerDelegate, CLLocationManagerDelegate {
     
+    
+    var maxRecordingDelegate : CameraManagerProtocol!
     // MARK: - Public properties
     
     /// Capture session to customize camera settings.
@@ -58,7 +60,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         //        }
     }
     
-    /// Property to determine if manager should write the resources to the phone library. Default value is true.
+    /// Property to determine if manager should write the resources to the phone library. Default value is false.
     public var writeFilesToPhoneLibrary = false
     
     /// Property to determine if manager should follow device orientation. Default value is true.
@@ -193,7 +195,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     private var stillImageOutput: AVCaptureStillImageOutput?
     private var movieOutput: AVCaptureMovieFileOutput?
     private var previewLayer: AVCaptureVideoPreviewLayer?
-    private var library: ALAssetsLibrary?
+    private var library: PHPhotoLibrary?
     
     private var cameraIsSetup = false
     private var cameraIsObservingDeviceOrientation = false
@@ -344,18 +346,18 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
                 return
             }
             
-            if self.writeFilesToPhoneLibrary == true, let library = self.library  {
+            if self.writeFilesToPhoneLibrary == true  {
                 
-                library.writeImageDataToSavedPhotosAlbum(imageData, metadata:nil, completionBlock: { picUrl, error in
-                    
-                    guard error != nil else {
-                        return
-                    }
-                    
-                    dispatch_async(dispatch_get_main_queue(), {
-                        self._show(NSLocalizedString("Error", comment:""), message: error.localizedDescription)
-                    })
-                    
+                let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
+                    let _ = PHAssetChangeRequest.creationRequestForAssetFromImage(UIImage(data: imageData)!)
+                    }, completionHandler: { success, error in
+                        guard error != nil else {
+                            return
+                        }
+                        
+                        dispatch_async(dispatch_get_main_queue(), {
+                            self._show(NSLocalizedString("Error", comment:""), message: error!.localizedDescription)
+                        })
                 })
                 
             }
@@ -471,30 +473,12 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         _updateTorch(.Off)
         if (error != nil) {
             if (error.code == AVError.MaximumDurationReached.rawValue) {
-                _show(NSLocalizedString("Maximum Time Limit Reached", comment:""), message: error.localizedDescription)
-                if let validLibrary = library {
-                    if writeFilesToPhoneLibrary {
-                        validLibrary.writeVideoAtPathToSavedPhotosAlbum(outputFileURL, completionBlock: { (assetURL: NSURL?, error: NSError?) -> Void in
-                            if (error != nil) {
-                                self._show(NSLocalizedString("Unable to save video to the iPhone.", comment:""), message: error!.localizedDescription)
-                                self._executeVideoCompletitionWithURL(nil, error: error)
-                            } else {
-                                if let validAssetURL = assetURL {
-                                    self._executeVideoCompletitionWithURL(validAssetURL, error: error)
-                                }
-                            }
-                        })
-                    } else {
-                        _executeVideoCompletitionWithURL(outputFileURL, error: error)
-                    }
-                }
-            } else {
-                _show(NSLocalizedString("Unable to save video to the iPhone", comment:""), message: error.localizedDescription)
-            }
-        } else {
-            if let validLibrary = library {
+//                _show(NSLocalizedString("Maximum Time Limit Reached", comment:""), message: error.localizedDescription)
+                maxRecordingDelegate.didReachMaxRecording(outputFileURL, error: nil)
+                _executeVideoCompletitionWithURL(outputFileURL, error: error)
+
                 if writeFilesToPhoneLibrary {
-                    validLibrary.writeVideoAtPathToSavedPhotosAlbum(outputFileURL, completionBlock: { (assetURL: NSURL?, error: NSError?) -> Void in
+                    _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: NSURL?, error: NSError?) -> Void in
                         if (error != nil) {
                             self._show(NSLocalizedString("Unable to save video to the iPhone.", comment:""), message: error!.localizedDescription)
                             self._executeVideoCompletitionWithURL(nil, error: error)
@@ -506,8 +490,26 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
                     })
                 } else {
                     _executeVideoCompletitionWithURL(outputFileURL, error: error)
-                    _saveVideoToAlbum(outputFileURL, error: error)
                 }
+
+            } else {
+                _show(NSLocalizedString("Unable to save video to the iPhone", comment:""), message: error.localizedDescription)
+            }
+        } else {
+            if writeFilesToPhoneLibrary {
+                _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: NSURL?, error: NSError?) -> Void in
+                    if (error != nil) {
+                        self._show(NSLocalizedString("Unable to save video to the iPhone.", comment:""), message: error!.localizedDescription)
+                        self._executeVideoCompletitionWithURL(nil, error: error)
+                    } else {
+                        if let validAssetURL = assetURL {
+                            self._executeVideoCompletitionWithURL(validAssetURL, error: error)
+                        }
+                    }
+                })
+            } else {
+                _executeVideoCompletitionWithURL(outputFileURL, error: error)
+//                    _saveVideoToAlbum(outputFileURL, error: error)
             }
         }
     }
@@ -594,15 +596,21 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     
     private func _executeVideoCompletitionWithURL(url: NSURL?, error: NSError?) {
         if let validCompletition = videoCompletition {
+            print("has valid compilation")
             validCompletition(videoURL: url, error: error)
             videoCompletition = nil
         }
     }
     
-    private func _saveVideoToAlbum(url: NSURL?, error: NSError?) {
+    private func _saveVideoToAlbum(url: NSURL?, completionBlock: (assetURL: NSURL?, error: NSError?) -> Void) {
         let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(url!)
             }, completionHandler: { success, error in
+                if success {
+                    completionBlock(assetURL: url, error: nil)
+                } else {
+                    completionBlock(assetURL: nil, error: error)
+                }
         })
     }
     
@@ -826,9 +834,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
             movieOutput = AVCaptureMovieFileOutput()
             movieOutput?.maxRecordedDuration = CMTimeMakeWithSeconds(6, 1)
             movieOutput!.movieFragmentInterval = kCMTimeInvalid
-        }
-        if library == nil {
-            library = ALAssetsLibrary()
         }
     }
     

@@ -120,7 +120,7 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
             
         } else if (pan.state == UIGestureRecognizerState.Ended) {
             let panFinishingPointX = pan.view!.center.x
-            let panFinishingPointY = pan.view!.center.y
+            _ = pan.view!.center.y
             
             if (panFinishingPointX > self.view.bounds.width) {
                 returnToParentDelegate.returnToParent(self)
@@ -181,7 +181,8 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        let _selectedQuestion = _allQuestions[indexPath.row]
-        showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+        if let _selectedQuestion = _allQuestions[indexPath.row] {
+            showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+        }
     }
 }

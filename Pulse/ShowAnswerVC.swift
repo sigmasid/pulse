@@ -100,8 +100,10 @@ class ShowAnswerVC: UIViewController {
     }
     
     internal func _startCountdownTimer() {
-        let duration = qPlayer.currentItem?.duration
-        _answerOverlay.startTimer(duration!.seconds)
+        if let _currentItem = qPlayer.currentItem {
+            let duration = _currentItem.duration
+            _answerOverlay.startTimer(duration.seconds)
+        }
     }
     
     private func _updateOverlayData(answer : Answer) {
@@ -188,8 +190,6 @@ class ShowAnswerVC: UIViewController {
     }
     
     /* HANDLE GESTURES */
-    
-    
     func handleTap(recognizer:UITapGestureRecognizer) {
         if (!_TapReady || (!_NextItemReady && (_canAdvance(self.answerIndex)))) {
             //ignore swipe
