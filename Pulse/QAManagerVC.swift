@@ -27,10 +27,9 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var allQuestions = [Question?]()
     var questionCounter = 0
     var currentQuestion = Question!(nil)
-    var currentUser : User!
     
-    let answerVC = ShowAnswerVC()
-    var returnToParentDelegate : ParentDelegate!
+    private let answerVC = ShowAnswerVC()
+    weak var returnToParentDelegate : ParentDelegate!
     
     var _hasMoreAnswers = false //TEMP - UPDATE IMPLEMENTATION
     

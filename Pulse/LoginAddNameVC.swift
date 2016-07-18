@@ -19,7 +19,7 @@ class LoginAddNameVC: UIViewController {
     @IBOutlet weak var _firstNameError: UILabel!
     @IBOutlet weak var _lastNameError: UILabel!
     
-    var loginVCDelegate : childVCDelegate?
+    weak var loginVCDelegate : childVCDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()

@@ -10,15 +10,15 @@ import UIKit
 import FirebaseDatabase
 
 class CameraVC: UIViewController, UIGestureRecognizerDelegate {
-    let _Camera = CameraManager()
-    var _cameraOverlay : CameraOverlayView!
-    var _loadingOverlay : UIView!
+    private let _Camera = CameraManager()
+    private var _cameraOverlay : CameraOverlayView!
+    private var _loadingOverlay : UIView!
     
     private let videoDuration : Double = 6
     private var countdownTimer : CALayer!
     
     var questionToShow : Question!
-    var camDelegate : childVCDelegate?
+    weak var camDelegate : childVCDelegate?
     
     override func viewDidLoad() {
         super.viewDidLoad()

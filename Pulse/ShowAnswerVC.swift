@@ -20,7 +20,7 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
-    var nextAnswer : Answer?
+    private var nextAnswer : Answer?
     var currentTag : Tag!
     
     var answerIndex = 1
@@ -30,11 +30,14 @@ class ShowAnswerVC: UIViewController {
     private var _answerOverlay : AnswerOverlay!
     private var allAnswersForQuestion = [Answer]()
     private var qPlayer = AVQueuePlayer()
+    private var currentPlayerItem : AVPlayerItem?
     
     private var _TapReady = false
     private var _NextItemReady = false
+    private var isObserving = false
+    private var startObserver : AnyObject!
     
-    var delegate : childVCDelegate!
+    weak var delegate : childVCDelegate!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,6 +48,9 @@ class ShowAnswerVC: UIViewController {
         if (currentQuestion != nil){
             _loadFirstAnswer(currentQuestion)
         }
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self._startCountdownTimer), name: "PlaybackStartedNotification", object: self.currentPlayerItem)
+
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -61,10 +67,15 @@ class ShowAnswerVC: UIViewController {
         _answerOverlay.addIcon(iconColor, backgroundColor: iconBackgroundColor)
         _answerOverlay.addVideoTimerCountdown()
         _avPlayerLayer.frame = _frame
+        
+        startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
+            NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
+        })
     }
     
     override func viewDidDisappear(animated: Bool) {
         super.viewDidDisappear(animated)
+        self.qPlayer.removeTimeObserver(self.startObserver)
     }
     
     private func _loadFirstAnswer(currentQuestion : Question) {
@@ -86,6 +97,11 @@ class ShowAnswerVC: UIViewController {
                 delegate.noAnswersToShow(self)
             }
         }
+    }
+    
+    internal func _startCountdownTimer() {
+        let duration = qPlayer.currentItem?.duration
+        _answerOverlay.startTimer(duration!.seconds)
     }
     
     private func _updateOverlayData(answer : Answer) {
@@ -113,11 +129,15 @@ class ShowAnswerVC: UIViewController {
             if error != nil {
                 print(error.debugDescription)
             } else {
-                self.qPlayer.replaceCurrentItemWithPlayerItem(AVPlayerItem(URL: URL!))
-                self.delegate.hasAnswersToShow()
-
-                self.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
-                self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+                self.currentPlayerItem = AVPlayerItem(URL: URL!)
+                if let _currentPlayerItem = self.currentPlayerItem {
+                    self.qPlayer.replaceCurrentItemWithPlayerItem(_currentPlayerItem)
+                    self.delegate.hasAnswersToShow()
+                    
+                    self.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
+                    self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+                    self.isObserving = true
+                }
             }
         })
     }
@@ -145,16 +165,21 @@ class ShowAnswerVC: UIViewController {
         if keyPath == "status" {
             switch self.qPlayer.status {
             case AVPlayerStatus.ReadyToPlay:
-                let duration = self.qPlayer.currentItem?.duration
-                _answerOverlay.startTimer(duration!.seconds)
                 qPlayer.play()
                 qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
+                isObserving = false
                 if !_TapReady {
                     _TapReady = true
                 }
                 break
             default: break
             }
+        }
+    }
+    
+    deinit {
+        if isObserving {
+            qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
         }
     }
     

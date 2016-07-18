@@ -152,7 +152,6 @@
 				BA6B78B31D2D7D43003EE992 /* Show Answer */,
 				BA6B78B41D2D7D56003EE992 /* User Recorded Answer */,
 				BAA2C15D1D2F932900169A13 /* Explore */,
-				BA8E83021D38540C002345D2 /* AccountPageVC.swift */,
 			);
 			path = Pulse;
 			sourceTree = "<group>";
@@ -235,6 +234,7 @@
 				BA1DE1441D244D6B004F3ED2 /* LoginVC.swift */,
 				BA7D677C1D30D07400883B88 /* LoginCreateAccountVC.swift */,
 				BA7D677E1D30D0B100883B88 /* LoginAddNameVC.swift */,
+				BA8E83021D38540C002345D2 /* AccountPageVC.swift */,
 			);
 			name = Login;
 			sourceTree = "<group>";

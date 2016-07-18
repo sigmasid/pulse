@@ -25,7 +25,7 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     
     var currentTag : Tag!
     var returningToExplore = false
-    var returnToParentDelegate : ParentDelegate!
+    weak var returnToParentDelegate : ParentDelegate!
     
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0

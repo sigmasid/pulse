@@ -18,10 +18,11 @@ class AccountPageVC: UIViewController {
     @IBOutlet weak var twtrButton: UIButton!
     @IBOutlet weak var fbButton: UIButton!
     
-    var returnToParentDelegate : ParentDelegate!
+    weak var returnToParentDelegate : ParentDelegate!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.hideKeyboardWhenTappedAround()
         
         fbButton.layer.cornerRadius = fbButton.frame.width / 2
         twtrButton.layer.cornerRadius = twtrButton.frame.width / 2
@@ -37,9 +38,9 @@ class AccountPageVC: UIViewController {
     @IBAction func ClickedSettings(sender: UIButton) {
         Database.signOut({ success in
             if success {
-                print("signed out")
+                //switch to sign in screen
             } else {
-                print("error signing out")
+                //show error that could not sign out - try again later
             }
         })
     }
@@ -51,14 +52,16 @@ class AccountPageVC: UIViewController {
     func updateLabels(notification: NSNotification) {
         if let _userName = User.currentUser!.name {
             uNameLabel.text = _userName
+            uNameLabel.userInteractionEnabled = false
         } else {
-            uNameLabel.text = "Add Name"
+            uNameLabel.text = "tap to edit name"
+            uNameLabel.userInteractionEnabled = true
         }
         
         if let _uPic = User.currentUser!.profilePic {
             addUserProfilePic(NSURL(string: _uPic))
         } else {
-            //put in generic user image
+            self.uProfilePic.image = UIImage(named: "default-profile")
         }
         
         numAnswersLabel.text = String(User.currentUser!.totalAnswers())

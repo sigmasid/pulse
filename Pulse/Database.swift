@@ -123,6 +123,12 @@ class Database {
         if let user = FIRAuth.auth() {
             do {
                 try user.signOut()
+                if let session = Twitter.sharedInstance().sessionStore.session() {
+                    Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
+                }
+                if FBSDKAccessToken.currentAccessToken() != nil {
+                    FBSDKLoginManager().logOut()
+                }
                 completion(success: true)
             } catch {
                 print(error)
@@ -133,6 +139,8 @@ class Database {
     
     static func checkSocialTokens(completion: (result: Bool) -> Void) {
         if FBSDKAccessToken.currentAccessToken() != nil {
+            print(FBSDKProfile.currentProfile())
+
             let token = FBSDKAccessToken.currentAccessToken().tokenString
             let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
@@ -165,9 +173,6 @@ class Database {
                 Database.populateCurrentUser(_user)
             } else {
                 Database.removeCurrentUser()
-//                if let session = Twitter.sharedInstance().sessionStore.session() {
-//                    Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
-//                }
                 return
             }
         }
@@ -180,13 +185,15 @@ class Database {
         User.currentUser!.answers = nil
         User.currentUser!.answeredQuestions = nil
         User.currentUser!.profilePic = nil
+        User.currentUser!._totalAnswers = nil
+        NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
+
     }
     
     ///Populate current user
     static func populateCurrentUser(user: FIRUser!) {
         User.currentUser!.uID = user.uid
         usersRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
-            print("populating user")
             if snap.hasChild("name") {
                 
                 User.currentUser!.name = snap.childSnapshotForPath("name").value as? String
@@ -210,7 +217,9 @@ class Database {
                     }
                 }
             }
-        NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
+            
+            NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
+
         })
     }
     
@@ -232,7 +241,7 @@ class Database {
         })
     }
     
-    //Save user answers to Pulse database after Auth
+    ///Save user answers to Pulse database after Auth
     static func addUserAnswersToDatabase( aID: String, qID: String, completion: (success : Bool, error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         let post = ["users/\(_user!.uid)/answers/\(aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(qID)" : "true","questions/\(qID)/answers/\(aID)" : true]

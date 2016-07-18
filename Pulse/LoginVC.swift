@@ -13,8 +13,7 @@ import TwitterKit
 import FBSDKLoginKit
 
 class LoginVC: UIViewController {
-    var firebaseRef = FIRDatabaseReference.init()
-    var loginVCDelegate : childVCDelegate?
+    weak var loginVCDelegate : childVCDelegate?
     
     @IBOutlet weak var fbButton: UIButton!
     @IBOutlet weak var emailButton: UIButton!

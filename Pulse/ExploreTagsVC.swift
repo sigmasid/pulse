@@ -22,10 +22,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     var allTags = [Tag]()
     var currentTag : Tag!
     var returningToExplore = false
-    var showAccountVC : AccountPageVC!
-    
-    var questionsListener = UInt()
-
+    private var showAccountVC : AccountPageVC!
     private let reuseIdentifier = "tagCell"
     
     @IBOutlet weak var ExploreTags: UICollectionView!
@@ -63,7 +60,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     
     override func viewDidDisappear(animated: Bool) {
         super.viewDidDisappear(animated)
-        databaseRef.removeObserverWithHandle(questionsListener)
     }
     
     override func prefersStatusBarHidden() -> Bool {
