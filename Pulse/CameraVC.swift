@@ -24,6 +24,9 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     var questionToShow : Question!
     weak var childDelegate : childVCDelegate?
     
+    private var panStartingPointX : CGFloat = 0
+    private var panStartingPointY : CGFloat = 0
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -31,15 +34,14 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         zoomPinch.delegate = self
         _Camera.maxRecordingDelegate = self
         
-        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(CameraVC.respondToSwipeGesture(_:)))
-        swipeDown.direction = UISwipeGestureRecognizerDirection.Down
-        self.view.addGestureRecognizer(swipeDown)
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(CameraVC.respondToPanGesture(_:)))
+        panGesture.minimumNumberOfTouches = 1
+
+        self.view.addGestureRecognizer(panGesture)
         
         self.view.userInteractionEnabled = true
         self.view.multipleTouchEnabled = true
         self.view.addGestureRecognizer(zoomPinch)
-
-//        self.view.hidden = true
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -54,12 +56,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
-    
-    func respondToSwipeGesture(gesture: UIGestureRecognizer) {
-        if (self.childDelegate != nil) {
-            self.childDelegate!.userDismissedCamera(self)
-        }
-    }
+
     
     func startVideoCapture() {
         _cameraOverlay.countdownTimer(videoDuration)
@@ -155,6 +152,36 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         
         _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
         _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
+    }
+    
+    func respondToPanGesture(pan: UIPanGestureRecognizer) {
+        let panCurrentPointX = pan.view!.center.x
+        let panCurrentPointY = pan.view!.center.y
+        
+        if (pan.state == UIGestureRecognizerState.Began) {
+            panStartingPointX = pan.view!.center.x
+            panStartingPointY = pan.view!.center.y
+        }
+        else if (pan.state == UIGestureRecognizerState.Ended) {
+            print("current pan point y is \(panCurrentPointY)")
+            switch panCurrentPointY {
+            case _ where panCurrentPointY > panStartingPointY + (self.view.bounds.height / 3) :
+                if (self.childDelegate != nil) {
+                    self.childDelegate!.userDismissedCamera(self)
+                }
+                pan.setTranslation(CGPointZero, inView: self.view)
+                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: self.view.bounds.height / 2)
+            default:
+                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: self.view.bounds.height / 2)
+                pan.setTranslation(CGPointZero, inView: self.view)
+            }
+        } else {
+            let translation = pan.translationInView(self.view)
+            if translation.y > 20 { ///only allow vertical pulldown
+                self.view.center = CGPoint(x: pan.view!.center.x, y: pan.view!.center.y + translation.y)
+                pan.setTranslation(CGPointZero, inView: self.view)
+            }
+        }
     }
 }
 

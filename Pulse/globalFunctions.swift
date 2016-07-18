@@ -53,6 +53,19 @@ class GlobalFunctions {
         })
     }
     
+    static func dismissVC(currentVC : UIViewController, _animationStyle : AnimationStyle) {
+        switch _animationStyle {
+        case .VerticalDown:
+            let xForm = CGAffineTransformMakeTranslation(0, currentVC.view.frame.height)
+            UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
+                currentVC.willMoveToParentViewController(nil)
+                currentVC.view.removeFromSuperview()
+                currentVC.removeFromParentViewController()
+            })
+        default: dismissVC(currentVC)
+        }
+    }
+    
     static func moveView(newView : UIView, animationStyle : AnimationStyle, parentView : UIView) {
         switch animationStyle {
         case .VerticalUp:

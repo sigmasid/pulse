@@ -24,7 +24,7 @@ class ShowAnswerVC: UIViewController {
     var currentTag : Tag!
     
     var answerIndex = 1
-    var minAnswersToShow = 5
+    var minAnswersToShow = 3
     
     private var _avPlayerLayer: AVPlayerLayer!
     private var _answerOverlay : AnswerOverlay!
@@ -42,7 +42,7 @@ class ShowAnswerVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.handleTap))
         self.view.addGestureRecognizer(tap)
         
         if (currentQuestion != nil){
@@ -110,9 +110,13 @@ class ShowAnswerVC: UIViewController {
         Database.getUser(answer.uID!, completion: { (user, error) in
             if let _uName = user.name {
                 self._answerOverlay.addUserName(_uName)
+            } else {
+                self._answerOverlay.addUserName("")
             }
             if let _uPic = user.profilePic {
                 self._answerOverlay.addUserImage(NSURL(string: _uPic))
+            } else {
+                self._answerOverlay.addDefaultUserImage(UIImage(named: "default-profile"))
             }
         })
         if let _aTag = currentTag.tagID {
@@ -190,8 +194,14 @@ class ShowAnswerVC: UIViewController {
     }
     
     /* HANDLE GESTURES */
-    func handleTap(recognizer:UITapGestureRecognizer) {
-        if (!_TapReady || (!_NextItemReady && (_canAdvance(self.answerIndex)))) {
+    func handleTap() {
+        if (answerIndex == minAnswersToShow && (_canAdvance(self.answerIndex))) { //ask user to answer the question
+            if (delegate != nil) {
+                qPlayer.pause()
+                delegate.minAnswersShown()
+            }
+        }
+        else if (!_TapReady || (!_NextItemReady && (_canAdvance(self.answerIndex)))) {
             //ignore swipe
         } else if (_canAdvance(self.answerIndex)) {
             qPlayer.pause()

@@ -195,9 +195,7 @@ class Database {
         User.currentUser!.uID = user.uid
         usersRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
             if snap.hasChild("name") {
-                
                 User.currentUser!.name = snap.childSnapshotForPath("name").value as? String
-                print("user name is \(User.currentUser!.name)")
             }
             if snap.hasChild("profilePic") {
                 User.currentUser!.profilePic = snap.childSnapshotForPath("profilePic").value as? String
@@ -245,7 +243,7 @@ class Database {
     static func addUserAnswersToDatabase( aID: String, qID: String, completion: (success : Bool, error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         let post = ["users/\(_user!.uid)/answers/\(aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(qID)" : "true","questions/\(qID)/answers/\(aID)" : true]
-        
+        print("current user is \(_user?.uid)")
         if _user != nil {
             databaseRef.updateChildValues(post, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
             if error != nil {

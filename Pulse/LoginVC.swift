@@ -12,7 +12,7 @@ import FirebaseDatabase
 import TwitterKit
 import FBSDKLoginKit
 
-class LoginVC: UIViewController {
+class LoginVC: UIViewController, UITextFieldDelegate {
     weak var loginVCDelegate : childVCDelegate?
     
     @IBOutlet weak var fbButton: UIButton!
@@ -24,34 +24,37 @@ class LoginVC: UIViewController {
     @IBOutlet weak var showStatus: UILabel!
     var currentTWTRSession : TWTRSession?
     
+    private var _hasMovedUp = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.hideKeyboardWhenTappedAround()
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.onFBProfileUpdated), name:FBSDKProfileDidChangeNotification, object: nil)
         
-        let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
+        let pulseIcon = Icon(frame: CGRectMake(0,0,logoView.frame.width, logoView.frame.height))
         pulseIcon.drawIcon(iconBackgroundColor, iconThickness: 2)
         logoView.addSubview(pulseIcon)
         
-        self.userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail))
-        self.userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword))
+        userEmail.delegate = self
+        userPassword.delegate = self
+        userEmail.layer.addSublayer(GlobalFunctions.addBorders(userEmail))
+        userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
+        userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         
         fbButton.layer.cornerRadius = buttonCornerRadius
         twtrButton.layer.cornerRadius = buttonCornerRadius
         emailButton.layer.cornerRadius = buttonCornerRadius
-        
-        userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
     }
     
     override func viewDidAppear(animated : Bool) {
         super.viewDidAppear(true)
 
         if (!User.isLoggedIn()) {
-            self.showStatus.backgroundColor = UIColor.grayColor()
-            self.showStatus.textColor = UIColor.whiteColor()
-            self.showStatus.text = "You need to be logged in to post"
+            showStatus.backgroundColor = UIColor.grayColor()
+            showStatus.textColor = UIColor.whiteColor()
+            showStatus.text = "please log in first"
         }
     }
     
@@ -60,14 +63,31 @@ class LoginVC: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    func textFieldDidBeginEditing(textField: UITextField) {
+        if !_hasMovedUp {
+            UIView.animateWithDuration(0.25) {
+                self.view.frame.origin.y -= 200
+            }
+            _hasMovedUp = true
+        }
+    }
+    
+    func textFieldDidEndEditing(textField: UITextField) {
+        if _hasMovedUp {
+            UIView.animateWithDuration(0.25) {
+                self.view.frame.origin.y += 200
+            }
+            _hasMovedUp = false
+        }
+    }
     
     @IBAction func emailLogin(sender: UIButton) {
         guard let email = userEmail.text else {
-            self.showStatus.text = "Please Enter a Valid Email"
+            showStatus.text = "Please Enter a Valid Email"
             return
         }
         guard let password = userPassword.text else {
-            self.showStatus.text = "Please Enter Your Password"
+            showStatus.text = "Please Enter Your Password"
             return
         }
         

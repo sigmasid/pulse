@@ -101,6 +101,7 @@ class UserRecordedAnswerVC: UIViewController {
             uploadTask = storageRef.child("answers/\(uploadName)").putFile(localFile, metadata: _metadata)
             
             uploadTask.observeStatus(.Success) { snapshot in
+                print("succesfully uploaded file")
                 self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
             }
             

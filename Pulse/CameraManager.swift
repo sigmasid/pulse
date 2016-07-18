@@ -596,7 +596,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     
     private func _executeVideoCompletitionWithURL(url: NSURL?, error: NSError?) {
         if let validCompletition = videoCompletition {
-            print("has valid compilation")
             validCompletition(videoURL: url, error: error)
             videoCompletition = nil
         }

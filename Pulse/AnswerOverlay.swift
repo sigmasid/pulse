@@ -169,6 +169,20 @@ class AnswerOverlay: UIView {
         }
     }
     
+    func addDefaultUserImage(_userImageData : UIImage?) {
+        if let _ = _userImageData {
+            self._userImage.image = _userImageData
+            _userBackground.addSubview(_userImage)
+            
+            _userImage.translatesAutoresizingMaskIntoConstraints = false
+            
+            _userImage.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor).active = true
+            _userImage.widthAnchor.constraintEqualToConstant(_bottomDimension).active = true
+            _userImage.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
+            _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor).active = true
+        }
+    }
+    
     /// Add video countdown
     func addVideoTimerCountdown() {
         self.addSubview(_videoTimer)

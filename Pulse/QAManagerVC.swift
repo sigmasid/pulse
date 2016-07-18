@@ -16,8 +16,9 @@ protocol childVCDelegate: class {
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
+    func userDismissedCamera(_: UIViewController)
+    func minAnswersShown()
     func showNextQuestion()
-    func userDismissedCamera(_:UIViewController)
     func goBack(_ : UIViewController)
 }
 
@@ -29,10 +30,12 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var currentQuestion = Question!(nil)
     
     private let answerVC = ShowAnswerVC()
+
     weak var returnToParentDelegate : ParentDelegate!
     
     var _hasMoreAnswers = false //TEMP - UPDATE IMPLEMENTATION
-    
+    private var _isShowingCamera = false
+
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
     
@@ -109,6 +112,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func doneRecording(assetURL : NSURL?, currentVC : UIViewController, qID : String?, location: String?){
+        _isShowingCamera = false
+
         let userAnswer = UserRecordedAnswerVC()
         userAnswer.answerDelegate = self
         
@@ -136,7 +141,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     func doneUploadingAnswer(currentVC: UIViewController) {
         if _hasMoreAnswers {
-            answerVC.currentQuestion = self.currentQuestion
+            returnToAnswers()
         } else {
             self.loadNextQuestion({ (question, error) in
                 if error != nil {
@@ -178,21 +183,56 @@ class QAManagerVC: UIViewController, childVCDelegate {
     func noAnswersToShow(currentVC : UIViewController) {
         if _hasMoreAnswers {
             showNextQuestion()
+        } else if User.isLoggedIn() {
+            if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
+                showNextQuestion()
+            } else {
+                currentVC.view.hidden = true
+                showCamera()
+            }
         } else {
             currentVC.view.hidden = true
-            
-            let cameraVC = CameraVC()
-            cameraVC.childDelegate = self
-            cameraVC.questionToShow = currentQuestion
-            GlobalFunctions.addNewVC(cameraVC, parentVC: self)
+            showCamera()
         }
+    }
+    
+    func minAnswersShown() {
+        if User.isLoggedIn() {
+            if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
+                print("user has answered question in minAnswersShown")
+                returnToAnswers()
+                
+            } else {
+                print("user has NOT answered question in minAnswersShown")
+
+                answerVC.view.hidden = true
+                _hasMoreAnswers = true
+                showCamera()
+            }
+        } else {
+            print("user is NOT logged in minAnswersShown")
+
+            answerVC.view.hidden = true
+            _hasMoreAnswers = true
+            showCamera()
+        }
+    }
+    
+    func showCamera() {
+        let _cameraVC = CameraVC()
+        _cameraVC.childDelegate = self
+        _cameraVC.questionToShow = currentQuestion
+        _isShowingCamera = true
+        GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
     }
     
     func hasAnswersToShow() {
         self.answerVC.view.hidden = false
     }
     
-    func userDismissedCamera(currentVC: UIViewController) {
+    func userDismissedCamera(currentVC : UIViewController) {
+        _isShowingCamera = false
+
         if _hasMoreAnswers {
             print("user dismissed camera fired")
         } else {
@@ -203,10 +243,16 @@ class QAManagerVC: UIViewController, childVCDelegate {
                     }
                 } else {
                     self.answerVC.currentQuestion = question
+                    GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
                 }
             })
-            GlobalFunctions.dismissVC(currentVC)
         }
+    }
+    
+    func returnToAnswers() {
+        answerVC.answerIndex += 1
+        answerVC.view.hidden = false
+        answerVC.handleTap()
     }
     
     func goBack(currentVC : UIViewController) {
@@ -221,60 +267,45 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     func handlePan(pan : UIPanGestureRecognizer) {
         let panCurrentPointX = pan.view!.center.x
-        _ = pan.view!.center.y
+        let panCurrentPointY = pan.view!.center.y
         
         if (pan.state == UIGestureRecognizerState.Began) {
             panStartingPointX = pan.view!.center.x
             panStartingPointY = pan.view!.center.y
-
         }
+            
         else if (pan.state == UIGestureRecognizerState.Ended) {
             let translation = pan.translationInView(self.view)
-
-            switch translation {
-            case _ where translation.y < -150:
-                showNextQuestion()
-                pan.setTranslation(CGPointZero, inView: self.view)
-            case _ where translation.y > 150:
-                showPriorQuestion()
-                pan.setTranslation(CGPointZero, inView: self.view)
-            case _ where panCurrentPointX > self.view.bounds.width:
-                goBack(self)
-            default:
-                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
-                pan.setTranslation(CGPointZero, inView: self.view)
+            
+            if _isShowingCamera {
+                //cameraVC will handle
+            } else {
+                switch translation {
+                case _ where translation.y < -150:
+                    showNextQuestion()
+                    pan.setTranslation(CGPointZero, inView: self.view)
+                case _ where translation.y > 150:
+                    showPriorQuestion()
+                    pan.setTranslation(CGPointZero, inView: self.view)
+                case _ where panCurrentPointX > self.view.bounds.width:
+                    goBack(self)
+                default:
+                    self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
+                    pan.setTranslation(CGPointZero, inView: self.view)
+                }
             }
         } else {
             let translation = pan.translationInView(self.view)
-            if (translation.y < -20 || translation.y > 20) {
-                //ignore if user was trying to move up / down
+
+            if _isShowingCamera {
+                //cameraVC will handle
+            } else if (translation.y < -20 || translation.y > 20) {
+                //ignore moving the screen if user was trying to move up / down - ha
             }
-            else if (translation.x > 0) { //only go back but not go forward
+            else if (translation.x > 0) { //only go back but not go forward - animates as dragging the view off
                 self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
                 pan.setTranslation(CGPointZero, inView: self.view)
             }
         }
     }
 }
-
-//    func handleSwipe(recognizer:UISwipeGestureRecognizer) {
-//
-//        switch recognizer.direction {
-//        case UISwipeGestureRecognizerDirection.Up:
-//            if (delegate != nil) {
-//                delegate.showNextQuestion()
-//            }
-//        default: print("unhandled swipe")
-//        }
-//    }
-//        let swipeUp = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-//        swipeUp.direction = UISwipeGestureRecognizerDirection.Up
-//        self.view.addGestureRecognizer(swipeUp)
-//
-//        let swipeDown = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-//        swipeDown.direction = UISwipeGestureRecognizerDirection.Down
-//        self.view.addGestureRecognizer(swipeDown)
-//
-//        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(self.handleSwipe(_:)))
-//        swipeRight.direction = UISwipeGestureRecognizerDirection.Right
-//        self.view.addGestureRecognizer(swipeRight)
