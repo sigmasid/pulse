@@ -23,9 +23,11 @@ class AnswerOverlay: UIView {
     private var _pulseIcon = Icon()
 
     private let _bottomDimension : CGFloat = 50
-    private let _elementSpacer : CGFloat = 10
     private var _countdownTimerRadiusStroke : CGFloat = 3
     private var _iconSize : CGFloat = 40
+    
+    private lazy var upvote = UIImageView(image: UIImage(named: "upvote"))
+    private lazy var downvote = UIImageView(image: UIImage(named: "downvote"))
 
     private var _timeLeftShapeLayer = CAShapeLayer()
     private var _bgShapeLayer = CAShapeLayer()
@@ -56,7 +58,7 @@ class AnswerOverlay: UIView {
         _questionLabel.bottomAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: -_headerBackground.frame.height / 6).active = true
         _questionLabel.widthAnchor.constraintEqualToAnchor(_headerBackground.widthAnchor, multiplier: 0.8).active = true
         _questionLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
-        _questionLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: _elementSpacer).active = true
+        _questionLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
     }
     
     ///Update Tag in header
@@ -74,7 +76,7 @@ class AnswerOverlay: UIView {
         _tagLabel.widthAnchor.constraintEqualToAnchor(_headerBackground.widthAnchor, multiplier: 0.8).active = true
         _tagLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
 
-        _tagLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: _elementSpacer).active = true
+        _tagLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
     }
     
     ///Add Icon in header
@@ -92,7 +94,7 @@ class AnswerOverlay: UIView {
         _pulseIcon.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _pulseIcon.heightAnchor.constraintEqualToAnchor(_pulseIcon.widthAnchor).active = true
         
-        _pulseIcon.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -_elementSpacer).active = true
+        _pulseIcon.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
     }
     
     private func addHeaderBackground() {
@@ -129,7 +131,7 @@ class AnswerOverlay: UIView {
         _userNameLabel.translatesAutoresizingMaskIntoConstraints = false
         
         _userNameLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _bottomDimension / 6).active = true
-        _userNameLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -_elementSpacer - _bottomDimension).active = true
+        _userNameLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -Spacing.xs.rawValue - _bottomDimension).active = true
         _userNameLabel.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
     }
     
@@ -144,7 +146,7 @@ class AnswerOverlay: UIView {
         _userLocationLabel.translatesAutoresizingMaskIntoConstraints = false
         
         _userLocationLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_bottomDimension / 6).active = true
-        _userLocationLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -_elementSpacer - _bottomDimension).active = true
+        _userLocationLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -Spacing.xs.rawValue - _bottomDimension).active = true
         _userLocationLabel.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
     }
     
@@ -236,6 +238,42 @@ class AnswerOverlay: UIView {
         
         return timeLeftShapeLayer
     }
+    
+    /* ADD VOTES */
+    func addUpvote() {
+        self.addSubview(upvote)
+        self.upvote.alpha = 1.0
 
+        upvote.translatesAutoresizingMaskIntoConstraints = false
+        
+        upvote.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
+        upvote.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
+        upvote.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
+        upvote.heightAnchor.constraintEqualToAnchor(upvote.widthAnchor).active = true
+        
+        let xForm = CGAffineTransformScale(CGAffineTransformIdentity, 3.0, 3.0)
+        UIView.animateWithDuration(0.5, animations: { self.upvote.transform = xForm; self.upvote.alpha = 0 } , completion: {(value: Bool) in
+            self.upvote.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1.0, 1.0)
+            self.upvote.removeFromSuperview()
+        })
+    }
+    
+    func addDownvote() {
+        self.addSubview(downvote)
+        self.downvote.alpha = 1.0
+        
+        downvote.translatesAutoresizingMaskIntoConstraints = false
+        
+        downvote.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
+        downvote.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
+        downvote.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        downvote.heightAnchor.constraintEqualToAnchor(downvote.widthAnchor).active = true
+        
+        let xForm = CGAffineTransformScale(CGAffineTransformIdentity, 3.0, 3.0)
+
+        UIView.animateWithDuration(0.5, animations: { self.upvote.transform = xForm; self.upvote.alpha = 0 } , completion: {(value: Bool) in
+            self.downvote.removeFromSuperview()
+        })
+    }
     
 }

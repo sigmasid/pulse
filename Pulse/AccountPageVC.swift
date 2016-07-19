@@ -198,13 +198,14 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         
         _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
         _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.updateQuestion("smile!")
     }
     
     func gotImage() {
         _cameraOverlay.getButton(.Shutter).enabled = false
         setupLoading()
         _loadingOverlay.addIcon(IconSizes.Medium, _iconColor: UIColor.whiteColor(), _iconBackgroundColor: nil)
-        _loadingOverlay.addMessage("Updating... Just a sec", _color: UIColor.whiteColor())
+        _loadingOverlay.addMessage("saving! just a sec...", _color: UIColor.whiteColor())
         
         _Camera.capturePictureDataWithCompletition({ (imageData, error) -> Void in
             if let errorOccured = error {
@@ -213,6 +214,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
             } else {
                 Database.uploadProfileImage(imageData!, completion: {(URL, error) in
                     if error != nil {
+                        self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: error!.localizedDescription)
                         self._cameraOverlay.getButton(.Shutter).enabled = true
                         self._loadingOverlay.removeFromSuperview()
                     } else {

@@ -260,6 +260,41 @@ class Database {
         }
     }
     
+    static func addAnswerVote(_vote : AnswerVoteType, aID : String, completion: (success : Bool, error : NSError?) -> Void) {
+        answersRef.child(aID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+            if var answer = currentData.value as? [String : AnyObject], let uid = FIRAuth.auth()?.currentUser?.uid {
+                var votes : Dictionary<String, Bool>
+                votes = answer["votes"] as? [String : Bool] ?? [:]
+                var voteCount = answer["voteCount"] as? Int ?? 0
+                if let _ = votes[uid] {
+                    //already voted for answer
+                }
+                else {
+                    if _vote == AnswerVoteType.Downvote {
+                        voteCount -= 1
+                        votes[uid] = true
+                    } else {
+                        voteCount += 1
+                        votes[uid] = true
+                    }
+                }
+                answer["voteCount"] = voteCount
+                answer["votes"] = votes
+                
+                currentData.value = answer
+                return FIRTransactionResult.successWithValue(currentData)
+            }
+            return FIRTransactionResult.successWithValue(currentData)
+        }) { (error, committed, snapshot) in
+            if let error = error {
+                print(error.localizedDescription)
+                completion(success: false, error: error)
+            } else if committed == true {
+                completion(success: true, error: nil)
+            }
+        }
+    }
+    
     /* STORAGE METHODS */
     static func getAnswerURL(fileID : String, completion: (URL : NSURL?, error : NSError?) -> Void) {
         let _ = answersStorageRef.child(fileID).downloadURLWithCompletion { (URL, error) -> Void in

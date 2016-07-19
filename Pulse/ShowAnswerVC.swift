@@ -12,7 +12,7 @@ import FirebaseStorage
 import AVFoundation
 
 class ShowAnswerVC: UIViewController {
-    var currentQuestion : Question! {
+    internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded() {
                 _loadFirstAnswer(currentQuestion)
@@ -20,15 +20,15 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
+    internal var currentTag : Tag!
+    internal var answerIndex = 1
+    internal var minAnswersToShow = 3
+    internal var currentAnswer : Answer?
+    
     private var nextAnswer : Answer?
-    var currentTag : Tag!
-    
-    var answerIndex = 1
-    var minAnswersToShow = 3
-    
+    private var allAnswersForQuestion = [Answer]()
     private var _avPlayerLayer: AVPlayerLayer!
     private var _answerOverlay : AnswerOverlay!
-    private var allAnswersForQuestion = [Answer]()
     private var qPlayer = AVQueuePlayer()
     private var currentPlayerItem : AVPlayerItem?
     
@@ -83,6 +83,7 @@ class ShowAnswerVC: UIViewController {
         
         if let _firstAnswerID = self.currentQuestion.qAnswers?.first {
             Database.getAnswer(_firstAnswerID, completion: { (answer, error) in
+                self.currentAnswer = answer
                 self.allAnswersForQuestion.append(answer)
                 self._addFirstVideo(answer.aID)
                 self._updateOverlayData(answer)
@@ -183,6 +184,32 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
+    func upvoteAnswer() {
+        _answerOverlay.addUpvote()
+        if let _currentAnswer = currentAnswer {
+            Database.addAnswerVote(AnswerVoteType.Upvote, aID: _currentAnswer.aID, completion: { (success, error) in
+                if success {
+                    print("upvote registered")
+                } else {
+                    print(error!.localizedDescription)
+                }
+            })
+        }
+    }
+    
+    func downvoteAnswer() {
+        _answerOverlay.addDownvote()
+        if let _currentAnswer = currentAnswer {
+            Database.addAnswerVote(AnswerVoteType.Downvote, aID: _currentAnswer.aID, completion: { (success, error) in
+                if success {
+                    print("downvote registered")
+                } else {
+                    print(error!.localizedDescription)
+                }
+            })
+        }
+    }
+    
     deinit {
         if isObserving {
             qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
@@ -211,12 +238,13 @@ class ShowAnswerVC: UIViewController {
             _updateOverlayData(nextAnswer!)
             qPlayer.advanceToNextItem()
             qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
+            currentAnswer = nextAnswer
             
             qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
             answerIndex += 1
             
-            if _canAdvance(self.answerIndex) {
-                _addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex])
+            if _canAdvance(answerIndex) {
+                _addNextVideoToQueue(currentQuestion.qAnswers![answerIndex])
             }
         } else {
             if (delegate != nil) {

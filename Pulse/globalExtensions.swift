@@ -51,9 +51,28 @@ enum IconSizes: CGFloat {
     case Large = 75
 }
 
+enum IconThickness: CGFloat {
+    case Thin = 1.0
+    case Medium = 2.0
+    case Thick = 3.0
+}
+
 enum UserProfileUpdateType {
     case displayName
     case photoURL
+}
+
+enum AnswerVoteType {
+    case Upvote
+    case Downvote
+}
+
+enum Spacing: CGFloat {
+    case xs = 10
+    case s = 20
+    case m = 30
+    case l = 40
+    case xl = 50
 }
 
 /* EXTEND CUSTOM LOADING */

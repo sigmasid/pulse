@@ -27,7 +27,7 @@ class CameraOverlayView: UIView {
     private var _questionBackgroundHeight : CGFloat = 40
     private var _shutterButtonRadius : CGFloat!
     private var _iconSize : CGFloat = 20
-    private var _elementSpacing : CGFloat = 20
+    private var _elementSpacing : CGFloat = Spacing.s.rawValue
     private var _elementOpacity : Float = 0.7
     private var _countdownTimerRadius : CGFloat = 10
     private var _countdownTimerRadiusStroke : CGFloat = 3
@@ -170,9 +170,9 @@ class CameraOverlayView: UIView {
         self.addSubview(_questionBackground)
         _questionBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        _questionBackground.topAnchor.constraintEqualToAnchor(self.topAnchor, constant: 0.0).active = true
+        _questionBackground.topAnchor.constraintEqualToAnchor(self.topAnchor).active = true
         _questionBackground.widthAnchor.constraintEqualToAnchor(self.widthAnchor, multiplier: 1.0).active = true
-        _questionBackground.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor, constant: 0.0).active = true
+        _questionBackground.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor).active = true
         _questionBackground.heightAnchor.constraintEqualToConstant(_questionBackgroundHeight).active = true
         
         _questionBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
