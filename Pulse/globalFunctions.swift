@@ -14,6 +14,7 @@ let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alp
 let buttonCornerRadius : CGFloat = 20
 
 let maxImgSize : Int64 = 1242 * 2208
+let iconThickness : Int = 2
 
 class GlobalFunctions {
     static func addBorders(_textField : UITextField) -> CAShapeLayer {
@@ -113,7 +114,7 @@ class GlobalFunctions {
     
     ///Validate name
     static func validateName(enteredName:String?, completion: (verified: Bool, error: NSError?) -> Void) {
-        let nameFormat = "[A-Za-z]{2,64}"
+        let nameFormat = "[A-Za-z\\s]{2,64}"
         let namePredicate = NSPredicate(format:"SELF MATCHES %@", nameFormat)
         
         if namePredicate.evaluateWithObject(enteredName) {

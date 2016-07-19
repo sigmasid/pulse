@@ -275,9 +275,4 @@ class LoginVC: UIViewController, UITextFieldDelegate {
     @IBAction func unwindFromLoggedInSuccess(segue: UIStoryboardSegue) {
         _loggedInSuccess()
     }
-
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        
-    }
-
 }

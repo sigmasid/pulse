@@ -34,7 +34,6 @@ class AnswerOverlay: UIView {
         super.init(frame: frame)
         self.addUserBackground()
         self.addHeaderBackground()
-//        self.addVideoTimerCountdown()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -57,7 +56,6 @@ class AnswerOverlay: UIView {
         _questionLabel.bottomAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: -_headerBackground.frame.height / 6).active = true
         _questionLabel.widthAnchor.constraintEqualToAnchor(_headerBackground.widthAnchor, multiplier: 0.8).active = true
         _questionLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
-
         _questionLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: _elementSpacer).active = true
     }
     

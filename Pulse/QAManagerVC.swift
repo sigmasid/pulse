@@ -24,6 +24,7 @@ protocol childVCDelegate: class {
 
 class QAManagerVC: UIViewController, childVCDelegate {
     
+    // delegate vars
     var selectedTag : Tag!
     var allQuestions = [Question?]()
     var questionCounter = 0
@@ -32,8 +33,9 @@ class QAManagerVC: UIViewController, childVCDelegate {
     private var savedRecordedVideoVC : UserRecordedAnswerVC?
     private let answerVC = ShowAnswerVC()
     weak var returnToParentDelegate : ParentDelegate!
+    private var loadingView : LoadingView?
     
-    var _hasMoreAnswers = false
+    private var _hasMoreAnswers = false
     private var _isShowingCamera = false
 
     private var panStartingPointX : CGFloat = 0
@@ -48,14 +50,12 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     override func viewDidAppear(animated: Bool) {
-        self.view.backgroundColor = UIColor.whiteColor()
         
-        let iconSize : CGFloat = 50
-        let iconColor = UIColor( red: 0/255, green: 0/255, blue: 0/255, alpha: 1.0 )
-        let icon = Icon(frame: CGRectMake(UIScreen.mainScreen().bounds.midX - iconSize / 2, UIScreen.mainScreen().bounds.midY - iconSize / 2, iconSize, iconSize))
-        icon.drawIcon(iconColor, iconThickness: 2)
+        loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
+        loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
+        loadingView?.addMessage("Loading...")
+        self.view.addSubview(loadingView!)
         
-        self.view.addSubview(icon)
         displayQuestion()
     }
     
@@ -74,6 +74,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         answerVC.currentTag = selectedTag
         answerVC.delegate = self
         GlobalFunctions.addNewVC(answerVC, parentVC: self)
+        answerVC.view.hidden = true
     }
     
     private func loadNextQuestion(completion: (question : Question?, error : NSError?) -> Void) {

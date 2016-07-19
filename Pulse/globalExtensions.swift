@@ -45,4 +45,10 @@ enum AnimationStyle {
     case Horizontal
 }
 
+enum IconSizes: CGFloat {
+    case Small = 25
+    case Medium = 50
+    case Large = 75
+}
+
 /* EXTEND CUSTOM LOADING */

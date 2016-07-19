@@ -16,7 +16,7 @@ protocol CameraManagerProtocol: class {
 class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProtocol {
     private let _Camera = CameraManager()
     private var _cameraOverlay : CameraOverlayView!
-    private var _loadingOverlay : UIView!
+    private var _loadingOverlay : LoadingView!
     
     private let videoDuration : Double = 6
     private var countdownTimer : CALayer!
@@ -105,8 +105,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     func setupLoading() {
-        _loadingOverlay = UIView(frame: self.view.bounds)
-        _loadingOverlay.backgroundColor = UIColor.blackColor()
+        _loadingOverlay = LoadingView(frame: self.view.bounds, backgroundColor : UIColor.blackColor())
         view.addSubview(_loadingOverlay)
     }
     

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AccountPageVC: UIViewController {
+class AccountPageVC: UIViewController, UITextFieldDelegate {
 
     @IBOutlet weak var uProfilePic: UIImageView!
     @IBOutlet weak var uNameLabel: UITextField!
@@ -19,6 +19,8 @@ class AccountPageVC: UIViewController {
     @IBOutlet weak var fbButton: UIButton!
     
     weak var returnToParentDelegate : ParentDelegate!
+    private var _nameErrorLabel = UILabel()
+    private var _Camera : CameraManager?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,11 +30,42 @@ class AccountPageVC: UIViewController {
         twtrButton.layer.cornerRadius = twtrButton.frame.width / 2
         inButton.layer.cornerRadius = inButton.frame.width / 2
         
+        uNameLabel.delegate = self
+        uNameLabel.clearsOnBeginEditing = true
+        
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.updateLabels), name: "UserUpdated", object: nil)
+        
+        let _tapGesture = UIPanGestureRecognizer(target: self, action: #selector(handleImageTap))
+        _tapGesture.minimumNumberOfTouches = 1
+        uProfilePic.addGestureRecognizer(_tapGesture)
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    
+    func textFieldDidBeginEditing(textField: UITextField) {
+        _nameErrorLabel.text = ""
+    }
+    
+    func textFieldShouldReturn(textField: UITextField) -> Bool {
+        self.dismissKeyboard()
+        GlobalFunctions.validateName(uNameLabel.text, completion: {(verified, error) in
+            if verified {
+                Database.updateUserDisplayName(self.uNameLabel.text!, completion: { (success, error) in
+                    if success {
+                        //print("updated name in DB")
+                    } else {
+                        self.setupErrorLabel()
+                        self.updateErrorLabelText(error!.localizedDescription)
+                    }
+                })
+            } else {
+                self.setupErrorLabel()
+                self.updateErrorLabelText(error!.localizedDescription)
+            }
+        })
+        return true
     }
     
     @IBAction func ClickedSettings(sender: UIButton) {
@@ -47,6 +80,26 @@ class AccountPageVC: UIViewController {
 
     @IBAction func LinkAccount(sender: UIButton) {
         //check w/ social source and connect to user profile on firebase
+    }
+    
+    func setupErrorLabel() {
+        self.view.addSubview(_nameErrorLabel)
+        
+        _nameErrorLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        _nameErrorLabel.topAnchor.constraintEqualToAnchor(uNameLabel.topAnchor).active = true
+        _nameErrorLabel.trailingAnchor.constraintEqualToAnchor(self.view.trailingAnchor).active = true
+        _nameErrorLabel.heightAnchor.constraintEqualToAnchor(uNameLabel.heightAnchor).active = true
+        _nameErrorLabel.leadingAnchor.constraintEqualToAnchor(uNameLabel.trailingAnchor, constant: 10).active = true
+        
+        _nameErrorLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+        _nameErrorLabel.backgroundColor = UIColor.grayColor()
+        _nameErrorLabel.textColor = UIColor.blackColor()
+        _nameErrorLabel.textAlignment = .Left
+    }
+    
+    func updateErrorLabelText(_errorText : String) {
+        _nameErrorLabel.text = _errorText
     }
     
     func updateLabels(notification: NSNotification) {
@@ -77,6 +130,10 @@ class AccountPageVC: UIViewController {
                 })
             }
         }
+    }
+    
+    func handleImageTap() {
+        _Camera = CameraManager()
     }
     
     func highlightConnectedSocialSources() {
