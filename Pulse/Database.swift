@@ -25,6 +25,7 @@ class Database {
     static let usersRef = databaseRef.child("users")
     static let answersStorageRef = storageRef.child("answers")
     static let tagsStorageRef = storageRef.child("tags")
+    static let usersStorageRef = storageRef.child("users")
 
     static func getAllTags(completion: (tags : [Tag], error : NSError?) -> Void) {
         var allTags = [Tag]()
@@ -97,12 +98,16 @@ class Database {
         }
     }
     
-    static func updateUserDisplayName(name: String, completion: (success : Bool, error : NSError?) -> Void) {
+    static func updateUserData(updateType: UserProfileUpdateType, value: String, completion: (success : Bool, error : NSError?) -> Void) {
         let user = FIRAuth.auth()?.currentUser
         if let user = user {
             let changeRequest = user.profileChangeRequest()
             
-            changeRequest.displayName = name
+            switch updateType {
+            case .displayName: changeRequest.displayName = value
+            case .photoURL: changeRequest.photoURL = NSURL(string: value)
+            }
+            
             changeRequest.commitChangesWithCompletion { error in
                 if let error = error {
                     completion(success: false, error: error)
@@ -139,8 +144,6 @@ class Database {
     
     static func checkSocialTokens(completion: (result: Bool) -> Void) {
         if FBSDKAccessToken.currentAccessToken() != nil {
-            print(FBSDKProfile.currentProfile())
-
             let token = FBSDKAccessToken.currentAccessToken().tokenString
             let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
@@ -243,7 +246,6 @@ class Database {
     static func addUserAnswersToDatabase( aID: String, qID: String, completion: (success : Bool, error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         let post = ["users/\(_user!.uid)/answers/\(aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(qID)" : "true","questions/\(qID)/answers/\(aID)" : true]
-        print("current user is \(_user?.uid)")
         if _user != nil {
             databaseRef.updateChildValues(post, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
             if error != nil {
@@ -275,6 +277,32 @@ class Database {
                 completion(data: nil, error: error)
             } else {
                 completion(data: data, error: nil)
+            }
+        }
+    }
+    
+    /* UPLOAD IMAGE TO STORAGE */
+    ///upload image to firebase and update current user with photoURL upon success
+    static func uploadProfileImage(imgData : NSData, completion: (URL : NSURL?, error : NSError?) -> Void) {
+        var _downloadURL : NSURL?
+        let _metadata = FIRStorageMetadata()
+        _metadata.contentType = "image/"
+        
+        if let _currentUserID = User.currentUser?.uID {
+            usersStorageRef.child(_currentUserID).child("profilePic").putData(imgData, metadata: nil) { (metadata, error) in
+                if (error != nil) {
+                    completion(URL: nil, error: error)
+                } else {
+                    _downloadURL = metadata!.downloadURL()
+                    updateUserData(.photoURL, value: String(_downloadURL!)) { success, error in
+                        if success {
+                            completion(URL: _downloadURL, error: nil)
+                        }
+                        else {
+                            completion(URL: nil, error: error)
+                        }
+                    }
+                }
             }
         }
     }

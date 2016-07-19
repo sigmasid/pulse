@@ -48,8 +48,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         super.viewDidAppear(true)
         _cameraOverlay = CameraOverlayView(frame: UIScreen.mainScreen().bounds)
         
-        setupCamera()
         setupLoading()
+        setupCamera()
         setupCameraOverlay()
     }
     

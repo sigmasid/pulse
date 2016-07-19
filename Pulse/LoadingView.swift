@@ -30,8 +30,6 @@ class LoadingView: UIView {
         self.addSubview(_messageLabel)
         _messageLabel.text = _text
         _messageLabel.adjustsFontSizeToFitWidth = true
-        
-        _messageLabel.textColor = UIColor.blackColor()
         _messageLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
         _messageLabel.textAlignment = .Center
         
@@ -39,6 +37,11 @@ class LoadingView: UIView {
         
         _messageLabel.topAnchor.constraintEqualToAnchor(_iconManager.bottomAnchor, constant: 5).active = true
         _messageLabel.centerXAnchor.constraintEqualToAnchor(self.centerXAnchor).active = true
+    }
+    
+    func addMessage(_text : String, _color : UIColor) {
+        _messageLabel.textColor = _color
+        addMessage(_text)
     }
     
     func addIcon(iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {

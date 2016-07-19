@@ -56,7 +56,7 @@ class LoginAddNameVC: UIViewController {
                         self._lastNameError.text = error!.localizedDescription
                     } else {
                         let fullName = self.firstName.text! + " " + self.lastName.text!
-                        Database.updateUserDisplayName(fullName, completion: { (success, error) in
+                        Database.updateUserData(UserProfileUpdateType.displayName, value: fullName, completion: { (success, error) in
                             if !success {
                                 self._firstNameError.text = error!.localizedDescription
                             }

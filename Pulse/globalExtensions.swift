@@ -51,4 +51,9 @@ enum IconSizes: CGFloat {
     case Large = 75
 }
 
+enum UserProfileUpdateType {
+    case displayName
+    case photoURL
+}
+
 /* EXTEND CUSTOM LOADING */

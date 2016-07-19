@@ -39,6 +39,7 @@
 		BAA815911D2C710D00507E02 /* AnswerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA815901D2C710D00507E02 /* AnswerOverlay.swift */; };
 		BAACBF7C1D248C3A009F23D0 /* ExploreTagCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */; };
 		BAACBF7E1D248C4C009F23D0 /* ExploreTagsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */; };
+		BACE78FB1D3EA878002E472C /* CameraHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BACE78FA1D3EA878002E472C /* CameraHelpers.swift */; };
 		BAD37D601D25ED9D00BACB04 /* ExploreQuestionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */; };
 		BAD37D621D2640E800BACB04 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD37D611D2640E800BACB04 /* Database.swift */; };
 		BAF220C51D31F0DB00C5B611 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BAF220C41D31F0DB00C5B611 /* Main.storyboard */; };
@@ -80,6 +81,7 @@
 		BAA815901D2C710D00507E02 /* AnswerOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnswerOverlay.swift; sourceTree = "<group>"; };
 		BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagCell.swift; sourceTree = "<group>"; };
 		BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagsVC.swift; sourceTree = "<group>"; };
+		BACE78FA1D3EA878002E472C /* CameraHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraHelpers.swift; sourceTree = "<group>"; };
 		BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreQuestionCell.swift; sourceTree = "<group>"; };
 		BAD37D611D2640E800BACB04 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		BAF220C41D31F0DB00C5B611 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
@@ -176,6 +178,7 @@
 				BA1DE1361D244A6A004F3ED2 /* CameraVC.swift */,
 				BA1DE1381D244A9D004F3ED2 /* CameraManager.swift */,
 				BA1DE13A1D244AE0004F3ED2 /* CameraOverlayView.swift */,
+				BACE78FA1D3EA878002E472C /* CameraHelpers.swift */,
 			);
 			name = Camera;
 			sourceTree = "<group>";
@@ -390,6 +393,7 @@
 				BAD37D621D2640E800BACB04 /* Database.swift in Sources */,
 				BA1DE13E1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift in Sources */,
 				BAA815911D2C710D00507E02 /* AnswerOverlay.swift in Sources */,
+				BACE78FB1D3EA878002E472C /* CameraHelpers.swift in Sources */,
 				BA1DE12C1D2444A4004F3ED2 /* User.swift in Sources */,
 				BA7D67811D30DEA100883B88 /* globalFunctions.swift in Sources */,
 				BA1DE1251D2443BF004F3ED2 /* Answer.swift in Sources */,

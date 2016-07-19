@@ -20,7 +20,12 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     
     weak var returnToParentDelegate : ParentDelegate!
     private var _nameErrorLabel = UILabel()
-    private var _Camera : CameraManager?
+    
+    private lazy var _cameraView = UIView()
+    private lazy var _Camera = CameraManager()
+    private var _cameraOverlay : CameraOverlayView!
+    private var _loadingOverlay : LoadingView!
+    private var _tapGesture : UITapGestureRecognizer?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,9 +40,11 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.updateLabels), name: "UserUpdated", object: nil)
         
-        let _tapGesture = UIPanGestureRecognizer(target: self, action: #selector(handleImageTap))
-        _tapGesture.minimumNumberOfTouches = 1
-        uProfilePic.addGestureRecognizer(_tapGesture)
+        _tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.handleImageTap))
+        uProfilePic.addGestureRecognizer(self._tapGesture!)
+        uProfilePic.userInteractionEnabled = true
+        uProfilePic.contentMode = UIViewContentMode.ScaleAspectFill
+
     }
     
     override func didReceiveMemoryWarning() {
@@ -52,7 +59,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         self.dismissKeyboard()
         GlobalFunctions.validateName(uNameLabel.text, completion: {(verified, error) in
             if verified {
-                Database.updateUserDisplayName(self.uNameLabel.text!, completion: { (success, error) in
+                Database.updateUserData(UserProfileUpdateType.displayName, value: self.uNameLabel.text!, completion: { (success, error) in
                     if success {
                         //print("updated name in DB")
                     } else {
@@ -114,7 +121,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         if let _uPic = User.currentUser!.profilePic {
             addUserProfilePic(NSURL(string: _uPic))
         } else {
-            self.uProfilePic.image = UIImage(named: "default-profile")
+            uProfilePic.image = UIImage(named: "default-profile")
         }
         
         numAnswersLabel.text = String(User.currentUser!.totalAnswers())
@@ -133,10 +140,91 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     }
     
     func handleImageTap() {
-        _Camera = CameraManager()
+        setupCamera()
+        setupCameraOverlay()
+        setupLoading()
+
     }
     
     func highlightConnectedSocialSources() {
         
+    }
+    
+    func setupLoading() {
+        _loadingOverlay = LoadingView(frame: self.view.bounds, backgroundColor : UIColor.blackColor().colorWithAlphaComponent(0.7))
+        view.addSubview(_loadingOverlay)
+    }
+    
+    func setupCamera() {
+        _cameraView = UIView(frame: self.view.bounds)
+        _cameraView.backgroundColor = UIColor.whiteColor()
+        view.addSubview(_cameraView)
+        
+        _Camera.showAccessPermissionPopupAutomatically = true
+        _Camera.shouldRespondToOrientationChanges = false
+        _Camera.cameraDevice = .Front
+        
+        _Camera.addPreviewLayerToView(_cameraView, newCameraOutputMode: .StillImage, completition: {() in
+            dispatch_async(dispatch_get_main_queue()) {
+                UIView.animateWithDuration(0.2, animations: { self._loadingOverlay.alpha = 0.0 } ,
+                    completion: {(value: Bool) in
+                        self._loadingOverlay.removeFromSuperview()
+                })
+                self._cameraOverlay.getButton(.Shutter).enabled = true
+            }
+        })
+        
+        _Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
+            
+            let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))
+            
+            self?.presentViewController(alertController, animated: true, completion: nil)
+        }
+    }
+    
+    func setupCameraOverlay() {
+        _cameraOverlay = CameraOverlayView(frame: self.view.bounds)
+        _cameraView.addSubview(_cameraOverlay)
+        
+        switch _Camera.flashMode {
+        case .Off: _cameraOverlay._flashMode =  .Off
+        case .On: _cameraOverlay._flashMode = .On
+        case .Auto: _cameraOverlay._flashMode = .Auto
+        }
+        
+        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(self.gotImage), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Shutter).enabled = false
+        
+        _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
+    }
+    
+    func gotImage() {
+        _cameraOverlay.getButton(.Shutter).enabled = false
+        setupLoading()
+        _loadingOverlay.addIcon(IconSizes.Medium, _iconColor: UIColor.whiteColor(), _iconBackgroundColor: nil)
+        _loadingOverlay.addMessage("Updating... Just a sec", _color: UIColor.whiteColor())
+        
+        _Camera.capturePictureDataWithCompletition({ (imageData, error) -> Void in
+            if let errorOccured = error {
+                self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
+                self._cameraOverlay.getButton(.Shutter).enabled = true
+            } else {
+                Database.uploadProfileImage(imageData!, completion: {(URL, error) in
+                    if error != nil {
+                        self._cameraOverlay.getButton(.Shutter).enabled = true
+                        self._loadingOverlay.removeFromSuperview()
+                    } else {
+                        self._Camera.stopAndRemoveCaptureSession()
+                        UIView.animateWithDuration(0.2, animations: { self._cameraView.alpha = 0.0 } ,
+                            completion: {(value: Bool) in
+                                self._loadingOverlay.removeFromSuperview()
+                                self._cameraView.removeFromSuperview()
+                        })
+                    }
+                })
+            }
+        })
     }
 }
