@@ -155,7 +155,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     func respondToPanGesture(pan: UIPanGestureRecognizer) {
-        let panCurrentPointX = pan.view!.center.x
+        let _ = pan.view!.center.x
         let panCurrentPointY = pan.view!.center.y
         
         if (pan.state == UIGestureRecognizerState.Began) {
@@ -163,7 +163,6 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             panStartingPointY = pan.view!.center.y
         }
         else if (pan.state == UIGestureRecognizerState.Ended) {
-            print("current pan point y is \(panCurrentPointY)")
             switch panCurrentPointY {
             case _ where panCurrentPointY > panStartingPointY + (self.view.bounds.height / 3) :
                 if (self.childDelegate != nil) {

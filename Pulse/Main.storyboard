@@ -212,7 +212,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0Xp-xB-99u">
-                                <rect key="frame" x="61" y="197.5" width="480" height="40"/>
+                                <rect key="frame" x="61" y="198" width="480" height="40"/>
                                 <color key="backgroundColor" red="0.22352941179999999" green="0.72549019609999998" blue="0.89019607840000003" alpha="1" colorSpace="calibratedRGB"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                                 <state key="normal" title="    twitter login" image="twitter-icon">
@@ -249,7 +249,7 @@
                                 </variation>
                             </view>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="email" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="tHo-Tn-A2s">
-                                <rect key="frame" x="61" y="319.5" width="480" height="40"/>
+                                <rect key="frame" x="61" y="320" width="480" height="40"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleBody"/>
                                 <textInputTraits key="textInputTraits" keyboardType="emailAddress"/>
                                 <variation key="heightClass=regular" fixedFrame="YES">
@@ -257,7 +257,7 @@
                                 </variation>
                             </textField>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalCompressionResistancePriority="751" text="OR" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="buq-um-5go">
-                                <rect key="frame" x="290" y="267.5" width="20" height="17"/>
+                                <rect key="frame" x="290" y="267" width="20" height="17"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleSubhead"/>
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
@@ -315,41 +315,45 @@
                                     <action selector="fbLogin:" destination="fcE-Nh-5CR" eventType="touchUpInside" id="TYz-ZI-JQS"/>
                                 </connections>
                             </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalCompressionResistancePriority="751" text="" textAlignment="center" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QeW-jp-ris">
-                                <rect key="frame" x="0.0" y="20" width="600" height="0.0"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
-                                <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N7o-0T-LlE">
+                                <rect key="frame" x="70" y="360" width="460" height="0.0"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
+                                <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
-                                <variation key="heightClass=regular" fixedFrame="YES">
-                                    <rect key="frame" x="34" y="340" width="520" height="51"/>
-                                </variation>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="k76-YB-W2D">
+                                <rect key="frame" x="70" y="427" width="460" height="0.0"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
+                                <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
                             </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstItem="QeW-jp-ris" firstAttribute="width" secondItem="apg-L9-FEx" secondAttribute="width" id="0oD-8g-X3T"/>
                             <constraint firstItem="buq-um-5go" firstAttribute="top" secondItem="0Xp-xB-99u" secondAttribute="bottom" multiplier="1.125" id="2v9-ZF-7I7"/>
+                            <constraint firstItem="N7o-0T-LlE" firstAttribute="top" secondItem="tHo-Tn-A2s" secondAttribute="bottom" id="3Jf-Ng-7A7"/>
                             <constraint firstItem="TzC-Cz-gyd" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="6Yk-gU-dLU"/>
                             <constraint firstItem="0Xp-xB-99u" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" constant="1" id="6eb-hs-VgB"/>
                             <constraint firstItem="bX0-JU-Sql" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="9NW-8y-nuf"/>
                             <constraint firstItem="0Xp-xB-99u" firstAttribute="height" secondItem="mwY-hr-A0j" secondAttribute="height" id="CX4-28-nKb"/>
                             <constraint firstItem="1q9-za-yqB" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="Da1-CW-5ss"/>
-                            <constraint firstItem="QeW-jp-ris" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="GFd-Ol-O4Z"/>
                             <constraint firstItem="mwY-hr-A0j" firstAttribute="width" secondItem="apg-L9-FEx" secondAttribute="width" multiplier="0.8" id="H8A-Vl-DD1"/>
                             <constraint firstItem="QqP-KB-Lfa" firstAttribute="top" secondItem="hKc-3m-q4h" secondAttribute="bottom" multiplier="1.075" priority="900" id="KGp-MK-Xjk"/>
                             <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="mwY-hr-A0j" secondAttribute="height" multiplier="15" id="KTu-wC-XiN"/>
                             <constraint firstItem="tHo-Tn-A2s" firstAttribute="height" secondItem="mwY-hr-A0j" secondAttribute="height" id="MH8-Aa-Dbo"/>
-                            <constraint firstItem="QeW-jp-ris" firstAttribute="top" secondItem="Zdn-Wn-aCC" secondAttribute="bottom" id="MgB-Eo-g8Z"/>
                             <constraint firstItem="bX0-JU-Sql" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" priority="900" constant="1" id="NQV-Cq-SrE"/>
+                            <constraint firstItem="k76-YB-W2D" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="ONf-eC-y8z"/>
                             <constraint firstItem="mwY-hr-A0j" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" constant="1" id="QBV-5r-0mi"/>
                             <constraint firstItem="0Xp-xB-99u" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="QZO-Yx-kYS"/>
                             <constraint firstItem="hKc-3m-q4h" firstAttribute="height" secondItem="mwY-hr-A0j" secondAttribute="height" id="Qv3-z2-ili"/>
                             <constraint firstItem="tHo-Tn-A2s" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="Vj6-YF-RHn"/>
                             <constraint firstItem="hKc-3m-q4h" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" constant="1" id="bYm-kV-dlW"/>
                             <constraint firstItem="QqP-KB-Lfa" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="dXd-ya-K2m"/>
+                            <constraint firstItem="k76-YB-W2D" firstAttribute="width" secondItem="hKc-3m-q4h" secondAttribute="width" constant="-20" id="dsZ-t5-od0"/>
                             <constraint firstItem="QqP-KB-Lfa" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" constant="1" id="fFd-8O-7pc"/>
                             <constraint firstItem="buq-um-5go" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="g36-Fa-vBB"/>
                             <constraint firstItem="hKc-3m-q4h" firstAttribute="width" secondItem="mwY-hr-A0j" secondAttribute="width" id="g9C-ph-qQf"/>
+                            <constraint firstItem="N7o-0T-LlE" firstAttribute="width" secondItem="tHo-Tn-A2s" secondAttribute="width" constant="-20" id="hz1-Sh-Yy1"/>
                             <constraint firstItem="tHo-Tn-A2s" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" constant="1" id="iUO-4w-cok"/>
                             <constraint firstItem="QqP-KB-Lfa" firstAttribute="height" secondItem="mwY-hr-A0j" secondAttribute="height" id="ijY-9M-F5n"/>
                             <constraint firstItem="tHo-Tn-A2s" firstAttribute="top" secondItem="buq-um-5go" secondAttribute="bottom" multiplier="1.125" id="kJj-u4-UOv"/>
@@ -358,15 +362,18 @@
                             <constraint firstItem="1q9-za-yqB" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="rb1-Rk-qYi"/>
                             <constraint firstItem="1q9-za-yqB" firstAttribute="bottomMargin" secondItem="GBb-x9-hpX" secondAttribute="top" multiplier="0.990099" id="sab-fK-mKy"/>
                             <constraint firstItem="hKc-3m-q4h" firstAttribute="top" secondItem="tHo-Tn-A2s" secondAttribute="bottom" multiplier="1.075" id="sel-9J-oO1"/>
+                            <constraint firstItem="N7o-0T-LlE" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="w3n-dc-I31"/>
                             <constraint firstItem="0Xp-xB-99u" firstAttribute="top" secondItem="mwY-hr-A0j" secondAttribute="bottom" multiplier="1.1" id="wVX-eM-yxF"/>
+                            <constraint firstItem="k76-YB-W2D" firstAttribute="top" secondItem="hKc-3m-q4h" secondAttribute="bottom" id="yaB-hZ-LA2"/>
                             <constraint firstItem="bX0-JU-Sql" firstAttribute="top" secondItem="QqP-KB-Lfa" secondAttribute="bottom" constant="5" id="ygT-em-gX4"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="_emailErrorLabel" destination="N7o-0T-LlE" id="S6D-Fh-T8f"/>
+                        <outlet property="_passwordErrorLabel" destination="k76-YB-W2D" id="vhd-uo-I9c"/>
                         <outlet property="emailButton" destination="QqP-KB-Lfa" id="Izb-VS-TgU"/>
                         <outlet property="fbButton" destination="mwY-hr-A0j" id="1FL-cT-g8d"/>
                         <outlet property="logoView" destination="TzC-Cz-gyd" id="alj-Fu-veb"/>
-                        <outlet property="showStatus" destination="QeW-jp-ris" id="5ZM-E4-yB1"/>
                         <outlet property="twtrButton" destination="0Xp-xB-99u" id="x3N-Ek-7pj"/>
                         <outlet property="userEmail" destination="tHo-Tn-A2s" id="J5c-lW-TrT"/>
                         <outlet property="userPassword" destination="hKc-3m-q4h" id="RtV-hA-te7"/>

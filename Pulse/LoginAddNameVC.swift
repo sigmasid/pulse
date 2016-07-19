@@ -43,16 +43,15 @@ class LoginAddNameVC: UIViewController {
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
 
     @IBAction func addName(sender: UIButton) {
-        validateName(firstName.text, completion: {(verified, error) in
+        GlobalFunctions.validateName(firstName.text, completion: {(verified, error) in
             if !verified {
                 self._firstNameError.text = error!.localizedDescription
             } else {
-                self.validateName(self.lastName.text, completion: {(verified, error) in
+                GlobalFunctions.validateName(self.lastName.text, completion: {(verified, error) in
                     if !verified {
                         self._lastNameError.text = error!.localizedDescription
                     } else {
@@ -69,19 +68,6 @@ class LoginAddNameVC: UIViewController {
                 })
             }
         })
-    }
-    
-    ///Validate name
-    private func validateName(enteredName:String?, completion: (verified: Bool, error: NSError?) -> Void) {
-        let nameFormat = "[A-Za-z]{2,64}"
-        let namePredicate = NSPredicate(format:"SELF MATCHES %@", nameFormat)
-        
-        if namePredicate.evaluateWithObject(enteredName) {
-            completion(verified: true, error: nil)
-        } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "this doesn't look right" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
-        }
     }
     
     func _loggedInSuccess() {

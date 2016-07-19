@@ -29,11 +29,11 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var questionCounter = 0
     var currentQuestion = Question!(nil)
     
+    private var savedRecordedVideoVC : UserRecordedAnswerVC?
     private let answerVC = ShowAnswerVC()
-
     weak var returnToParentDelegate : ParentDelegate!
     
-    var _hasMoreAnswers = false //TEMP - UPDATE IMPLEMENTATION
+    var _hasMoreAnswers = false
     private var _isShowingCamera = false
 
     private var panStartingPointX : CGFloat = 0
@@ -130,6 +130,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 if let showLoginVC = storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC {
                     GlobalFunctions.addNewVC(showLoginVC, parentVC: self)
                     showLoginVC.loginVCDelegate = self
+                    self.savedRecordedVideoVC = currentVC as? UserRecordedAnswerVC
                 }
             } else {
                 if let _userAnswerVC = currentVC as? UserRecordedAnswerVC {
@@ -142,6 +143,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     func doneUploadingAnswer(currentVC: UIViewController) {
         if _hasMoreAnswers {
             returnToAnswers()
+            GlobalFunctions.dismissVC(currentVC)
         } else {
             self.loadNextQuestion({ (question, error) in
                 if error != nil {
@@ -199,19 +201,14 @@ class QAManagerVC: UIViewController, childVCDelegate {
     func minAnswersShown() {
         if User.isLoggedIn() {
             if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
-                print("user has answered question in minAnswersShown")
                 returnToAnswers()
                 
             } else {
-                print("user has NOT answered question in minAnswersShown")
-
                 answerVC.view.hidden = true
                 _hasMoreAnswers = true
                 showCamera()
             }
         } else {
-            print("user is NOT logged in minAnswersShown")
-
             answerVC.view.hidden = true
             _hasMoreAnswers = true
             showCamera()
@@ -234,7 +231,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
         _isShowingCamera = false
 
         if _hasMoreAnswers {
-            print("user dismissed camera fired")
+            returnToAnswers()
+            GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
         } else {
             self.loadNextQuestion({ (question, error) in
                 if error != nil {
@@ -262,12 +260,16 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func loginSuccess (currentVC : UIViewController) {
+        if let _userAnswerVC = savedRecordedVideoVC {
+            print("login success")
+            _userAnswerVC._postVideo()
+        }
         GlobalFunctions.dismissVC(currentVC)
     }
     
     func handlePan(pan : UIPanGestureRecognizer) {
         let panCurrentPointX = pan.view!.center.x
-        let panCurrentPointY = pan.view!.center.y
+        let _ = pan.view!.center.y
         
         if (pan.state == UIGestureRecognizerState.Began) {
             panStartingPointX = pan.view!.center.x

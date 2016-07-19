@@ -61,7 +61,7 @@ class UserRecordedAnswerVC: UIViewController {
     ///post video to firebase
     func _postVideo() {
         _controlsOverlay.getButton(.Post).enabled = false
-
+        print("trying to post video")
         if User.isLoggedIn() {
             _controlsOverlay.getButton(.Post).setTitle("Posting...", forState: UIControlState.Disabled)
             _controlsOverlay.getButton(.Post).backgroundColor = UIColor.darkGrayColor().colorWithAlphaComponent(1)
@@ -70,7 +70,6 @@ class UserRecordedAnswerVC: UIViewController {
             
             self.uploadAnswer(self.currentAnswer.aID)
         } else {
-            print("user is not logged in")
             if (self.answerDelegate != nil) {
                 _controlsOverlay.getButton(.Post).enabled = true
                 self.answerDelegate!.askUserToLogin(self)

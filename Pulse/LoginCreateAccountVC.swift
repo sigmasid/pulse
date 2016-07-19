@@ -92,36 +92,6 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         })
     }
     
-    ///Validate email
-    private func validateEmail(enteredEmail:String?, completion: (verified: Bool, error: NSError?) -> Void) {
-        let emailFormat = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailFormat)
-        
-        if emailPredicate.evaluateWithObject(enteredEmail) {
-            completion(verified: true, error: nil)
-        } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please enter a valid email" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
-        }
-    }
-    
-    ///Validate password returns true if validated, error otherwise
-    private func validatePassword(enteredPassword:String?, completion: (verified: Bool, error: NSError?) -> Void) {
-        let passwordFormat = "^(?=.*?[a-z]).{8,}$"
-        let passwordPredicate = NSPredicate(format:"SELF MATCHES %@", passwordFormat)
-        
-        if passwordPredicate.evaluateWithObject(enteredPassword) {
-            completion(verified: true, error: nil)
-            return
-        } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "password must be 8 characters in length" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
-            return
-        }
-//        let passwordFormat = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$"
-//        let passwordPredicate = NSPredicate(format:"SELF MATCHES %@", passwordFormat)
-    }
-    
     func textFieldDidBeginEditing(textField: UITextField) {
         _passwordErrorLabel.text = ""
         _emailErrorLabel.text = ""
@@ -129,7 +99,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     
     func textFieldDidEndEditing(textField: UITextField) {
         if textField.tag == userEmail.tag {
-            validateEmail(userEmail.text, completion: {(verified, error) in
+            GlobalFunctions.validateEmail(userEmail.text, completion: {(verified, error) in
                 if !verified {
                     self.emailValidated = false
                     dispatch_async(dispatch_get_main_queue()) {
@@ -145,7 +115,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     
     func textFieldDidChange(textField: UITextField) {
         if textField.tag == userPassword.tag {
-            validatePassword(self.userPassword.text, completion: {(verified, error) in
+            GlobalFunctions.validatePassword(userPassword.text, completion: {(verified, error) in
                 if !verified {
                     self.passwordValidated = false
                     dispatch_async(dispatch_get_main_queue()) {
