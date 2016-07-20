@@ -279,25 +279,22 @@ class QAManagerVC: UIViewController, childVCDelegate {
             
         else if (pan.state == UIGestureRecognizerState.Ended) {
             let translation = pan.translationInView(self.view)
-            print("translation values are \(translation)")
+            print("translation values are \(translation), screen bounds are \(self.view.bounds)")
             if _isShowingCamera {
                 //cameraVC will handle
             } else {
                 switch translation {
-                case _ where translation.y < -200:
-                    print("next question fired")
+                case _ where translation.y < -self.view.bounds.maxY / 3:
                     showNextQuestion()
                     pan.setTranslation(CGPointZero, inView: self.view)
-                case _ where translation.y < -20 && translation.y > -150:
+                case _ where translation.y < -20 && translation.y > -self.view.bounds.maxY / 4:
                     print("upvote fired")
-                    answerVC.upvoteAnswer()
-                case _ where translation.y > 200:
-                    print("prior question fired")
+                    answerVC.votedAnswer(.Upvote)
+                case _ where translation.y > self.view.bounds.maxY / 3:
                     showPriorQuestion()
                     pan.setTranslation(CGPointZero, inView: self.view)
-                case _ where translation.y > 20 && translation.y < 150:
-                    print("downvote fired")
-                    answerVC.downvoteAnswer()
+                case _ where translation.y > 20 && translation.y < self.view.bounds.maxY / 4:
+                    answerVC.votedAnswer(.Downvote)
                 case _ where panCurrentPointX > self.view.bounds.width:
                     goBack(self)
                 default:

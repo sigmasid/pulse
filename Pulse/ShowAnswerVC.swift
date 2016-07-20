@@ -15,6 +15,9 @@ class ShowAnswerVC: UIViewController {
     internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded() {
+                if isObserving {
+                    qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
+                }
                 _loadFirstAnswer(currentQuestion)
             }
         }
@@ -115,11 +118,12 @@ class ShowAnswerVC: UIViewController {
                 self._answerOverlay.addUserName("")
             }
             if let _uPic = user.profilePic {
-                self._answerOverlay.addUserImage(NSURL(string: _uPic))
+                self._answerOverlay.addUserImage(NSURL(string: _uPic), _userImageData: nil)
             } else {
-                self._answerOverlay.addDefaultUserImage(UIImage(named: "default-profile"))
+                self._answerOverlay.addUserImage(nil, _userImageData: UIImage(named: "default-profile"))
             }
         })
+        
         if let _aTag = currentTag.tagID {
             self._answerOverlay.updateTag(_aTag)
         }
@@ -184,25 +188,13 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
-    func upvoteAnswer() {
-        _answerOverlay.addUpvote()
+    func votedAnswer(_vote : AnswerVoteType) {
+        _answerOverlay.addVote(_vote)
+        
         if let _currentAnswer = currentAnswer {
-            Database.addAnswerVote(AnswerVoteType.Upvote, aID: _currentAnswer.aID, completion: { (success, error) in
+            Database.addAnswerVote( _vote, aID: _currentAnswer.aID, completion: { (success, error) in
                 if success {
-                    print("upvote registered")
-                } else {
-                    print(error!.localizedDescription)
-                }
-            })
-        }
-    }
-    
-    func downvoteAnswer() {
-        _answerOverlay.addDownvote()
-        if let _currentAnswer = currentAnswer {
-            Database.addAnswerVote(AnswerVoteType.Downvote, aID: _currentAnswer.aID, completion: { (success, error) in
-                if success {
-                    print("downvote registered")
+                    print("vote registered")
                 } else {
                     print(error!.localizedDescription)
                 }

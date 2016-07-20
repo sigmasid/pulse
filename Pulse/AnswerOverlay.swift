@@ -150,7 +150,16 @@ class AnswerOverlay: UIView {
         _userLocationLabel.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
     }
     
-    func addUserImage(_userImageURL : NSURL?) {
+    func addUserImage(_userImageURL : NSURL?, _userImageData : UIImage?) {
+        _userBackground.addSubview(_userImage)
+        _userImage.translatesAutoresizingMaskIntoConstraints = false
+        _userImage.contentMode = UIViewContentMode.ScaleAspectFill
+        
+        _userImage.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor).active = true
+        _userImage.widthAnchor.constraintEqualToConstant(_bottomDimension).active = true
+        _userImage.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
+        _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor).active = true
+        
         if let _ = _userImageURL {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
                 let _userImageData = NSData(contentsOfURL: _userImageURL!)
@@ -158,28 +167,8 @@ class AnswerOverlay: UIView {
                     self._userImage.image = UIImage(data: _userImageData!)
                 })
             }
-            _userBackground.addSubview(_userImage)
-            
-            _userImage.translatesAutoresizingMaskIntoConstraints = false
-            
-            _userImage.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor).active = true
-            _userImage.widthAnchor.constraintEqualToConstant(_bottomDimension).active = true
-            _userImage.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
-            _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor).active = true
-        }
-    }
-    
-    func addDefaultUserImage(_userImageData : UIImage?) {
-        if let _ = _userImageData {
-            self._userImage.image = _userImageData
-            _userBackground.addSubview(_userImage)
-            
-            _userImage.translatesAutoresizingMaskIntoConstraints = false
-            
-            _userImage.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor).active = true
-            _userImage.widthAnchor.constraintEqualToConstant(_bottomDimension).active = true
-            _userImage.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
-            _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor).active = true
+        } else if let _ = _userImageData {
+            _userImage.image = _userImageData
         }
     }
     
@@ -239,41 +228,29 @@ class AnswerOverlay: UIView {
         return timeLeftShapeLayer
     }
     
-    /* ADD VOTES */
-    func addUpvote() {
-        self.addSubview(upvote)
-        self.upvote.alpha = 1.0
-
-        upvote.translatesAutoresizingMaskIntoConstraints = false
+    /* ADD VOTE ANIMATION */
+    func addVote(_vote : AnswerVoteType) {
+        let _voteImage : UIImageView!
         
-        upvote.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
-        upvote.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
-        upvote.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
-        upvote.heightAnchor.constraintEqualToAnchor(upvote.widthAnchor).active = true
+        switch _vote {
+        case .Upvote: _voteImage = UIImageView(image: UIImage(named: "upvote"))
+        case .Downvote: _voteImage = UIImageView(image: UIImage(named: "downvote"))
+        }
+        
+        self.addSubview(_voteImage)
+        _voteImage.alpha = 1.0
+
+        _voteImage.translatesAutoresizingMaskIntoConstraints = false
+        
+        _voteImage.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
+        _voteImage.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
+        _voteImage.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
+        _voteImage.heightAnchor.constraintEqualToAnchor(_voteImage.widthAnchor).active = true
         
         let xForm = CGAffineTransformScale(CGAffineTransformIdentity, 3.0, 3.0)
-        UIView.animateWithDuration(0.5, animations: { self.upvote.transform = xForm; self.upvote.alpha = 0 } , completion: {(value: Bool) in
-            self.upvote.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1.0, 1.0)
-            self.upvote.removeFromSuperview()
+        UIView.animateWithDuration(0.5, animations: { _voteImage.transform = xForm; _voteImage.alpha = 0 } , completion: {(value: Bool) in
+            _voteImage.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1.0, 1.0)
+            _voteImage.removeFromSuperview()
         })
     }
-    
-    func addDownvote() {
-        self.addSubview(downvote)
-        self.downvote.alpha = 1.0
-        
-        downvote.translatesAutoresizingMaskIntoConstraints = false
-        
-        downvote.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
-        downvote.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
-        downvote.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-        downvote.heightAnchor.constraintEqualToAnchor(downvote.widthAnchor).active = true
-        
-        let xForm = CGAffineTransformScale(CGAffineTransformIdentity, 3.0, 3.0)
-
-        UIView.animateWithDuration(0.5, animations: { self.upvote.transform = xForm; self.upvote.alpha = 0 } , completion: {(value: Bool) in
-            self.downvote.removeFromSuperview()
-        })
-    }
-    
 }
