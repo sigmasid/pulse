@@ -16,7 +16,7 @@ class Question : NSObject {
     
     dynamic var qCreated = false
     
-    var qChoices : [String]?
+    var qFilters : [String]?
     var qAnswers : [String]?
     
     init(qID: String) {
@@ -27,8 +27,8 @@ class Question : NSObject {
         self.qID = qID
         self.qTitle = snapshot.childSnapshotForPath("title").value as? String
         for choice in snapshot.childSnapshotForPath("choices").children {
-            if (self.qChoices?.append(choice.key) == nil) {
-                self.qChoices = [choice.key]
+            if (self.qFilters?.append(choice.key) == nil) {
+                self.qFilters = [choice.key]
             }
         }
         for answer in snapshot.childSnapshotForPath("answers").children {
@@ -49,5 +49,9 @@ class Question : NSObject {
     
     func hasAnswers() -> Bool {
         return self.qAnswers?.count > 0 ? true : false
+    }
+    
+    func hasFilters() -> Bool {
+        return self.qFilters?.count > 0 ? true : false
     }
 }

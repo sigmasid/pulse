@@ -15,9 +15,7 @@ class ShowAnswerVC: UIViewController {
     internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded() {
-                if isObserving {
-                    qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
-                }
+                removeObserverIfNeeded()
                 _loadFirstAnswer(currentQuestion)
             }
         }
@@ -70,6 +68,8 @@ class ShowAnswerVC: UIViewController {
         _answerOverlay.addIcon(iconColor, backgroundColor: iconBackgroundColor)
         _answerOverlay.addVideoTimerCountdown()
         _avPlayerLayer.frame = _frame
+        qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
+
         
         startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
             NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
@@ -78,7 +78,6 @@ class ShowAnswerVC: UIViewController {
     
     override func viewDidDisappear(animated: Bool) {
         super.viewDidDisappear(animated)
-        self.qPlayer.removeTimeObserver(self.startObserver)
     }
     
     private func _loadFirstAnswer(currentQuestion : Question) {
@@ -101,6 +100,21 @@ class ShowAnswerVC: UIViewController {
                 delegate.noAnswersToShow(self)
             }
         }
+    }
+    
+    private func _addFirstVideo(answerID : String) {
+        Database.getAnswerURL(answerID, completion: { (URL, error) in
+            if error != nil {
+                print(error.debugDescription)
+            } else {
+                self.currentPlayerItem = AVPlayerItem(URL: URL!)
+                if let _currentPlayerItem = self.currentPlayerItem {
+                    self.qPlayer.replaceCurrentItemWithPlayerItem(_currentPlayerItem)
+                    self.delegate.hasAnswersToShow()
+                    self.addObserverForStatusReady()
+                }
+            }
+        })
     }
     
     internal func _startCountdownTimer() {
@@ -135,24 +149,6 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
-    private func _addFirstVideo(answerID : String) {
-        Database.getAnswerURL(answerID, completion: { (URL, error) in
-            if error != nil {
-                print(error.debugDescription)
-            } else {
-                self.currentPlayerItem = AVPlayerItem(URL: URL!)
-                if let _currentPlayerItem = self.currentPlayerItem {
-                    self.qPlayer.replaceCurrentItemWithPlayerItem(_currentPlayerItem)
-                    self.delegate.hasAnswersToShow()
-                    
-                    self.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
-                    self.qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
-                    self.isObserving = true
-                }
-            }
-        })
-    }
-    
     private func _addNextVideoToQueue(nextAnswerID : String) {
         _NextItemReady = false
         
@@ -177,8 +173,6 @@ class ShowAnswerVC: UIViewController {
             switch self.qPlayer.status {
             case AVPlayerStatus.ReadyToPlay:
                 qPlayer.play()
-                qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
-                isObserving = false
                 if !_TapReady {
                     _TapReady = true
                 }
@@ -203,8 +197,20 @@ class ShowAnswerVC: UIViewController {
     }
     
     deinit {
+        removeObserverIfNeeded()
+    }
+    
+    private func removeObserverIfNeeded() {
         if isObserving {
             qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
+            isObserving = false
+        }
+    }
+    
+    private func addObserverForStatusReady() {
+        if qPlayer.currentItem != nil {
+            qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+            isObserving = true
         }
     }
     
@@ -223,16 +229,16 @@ class ShowAnswerVC: UIViewController {
         else if (!_TapReady || (!_NextItemReady && (_canAdvance(self.answerIndex)))) {
             //ignore swipe
         } else if (_canAdvance(self.answerIndex)) {
-            qPlayer.pause()
             _TapReady = false
-            
             _answerOverlay.resetTimer()
+            qPlayer.pause()
+            
+            removeObserverIfNeeded()
             _updateOverlayData(nextAnswer!)
             qPlayer.advanceToNextItem()
-            qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
-            currentAnswer = nextAnswer
+            addObserverForStatusReady()
             
-            qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+            currentAnswer = nextAnswer
             answerIndex += 1
             
             if _canAdvance(answerIndex) {

@@ -11,7 +11,7 @@ import Firebase
 import AVFoundation
 import Photos
 
-class UserRecordedAnswerVC: UIViewController {
+class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     private var uploadTask : FIRStorageUploadTask!
     
@@ -24,6 +24,7 @@ class UserRecordedAnswerVC: UIViewController {
     weak var answerDelegate : childVCDelegate?
     
     private var _controlsOverlay : RecordedAnswerOverlay!
+    private var _answersFilters : FiltersOverlay?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,19 +35,32 @@ class UserRecordedAnswerVC: UIViewController {
         let aPlayer = AVPlayer()
         
         let avPlayerLayer = AVPlayerLayer(player: aPlayer)
-        self.view.layer.insertSublayer(avPlayerLayer, atIndex: 0)
+        view.layer.insertSublayer(avPlayerLayer, atIndex: 0)
         avPlayerLayer.frame = self.view.frame
-
-        _controlsOverlay = RecordedAnswerOverlay(frame: self.view.frame)
-        self.view.addSubview(_controlsOverlay)
-        self.setupOverlayButtons()
         
-        let _ = processVideo(fileURL!, aQuestion : currentQuestion) { (result) in
-            let currentVideo = AVPlayerItem(URL: result)
-            self.fileURL = result
-            aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
-            aPlayer.play()
+        if let _currentQuestion = currentQuestion {
+            let _ = processVideo(fileURL!, aQuestion : _currentQuestion) { (resultURL) in
+                let currentVideo = AVPlayerItem(URL: resultURL)
+                self.fileURL = resultURL
+                aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                aPlayer.play()
+            }
+            
+            _controlsOverlay = RecordedAnswerOverlay(frame: self.view.frame)
+            
+            if _currentQuestion.hasFilters() {
+                _answersFilters = FiltersOverlay(frame: self.view.frame)
+                self.view.addSubview(_answersFilters!)
+                self.view.addSubview(_controlsOverlay)
+            } else {
+                view.addSubview(_controlsOverlay)
+            }
+            setupOverlayButtons()
         }
+    }
+    
+    func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
+        return true
     }
     
     override func didReceiveMemoryWarning() {
@@ -56,6 +70,12 @@ class UserRecordedAnswerVC: UIViewController {
     private func setupOverlayButtons() {
         _controlsOverlay.getButton(.Post).addTarget(self, action: #selector(self._postVideo), forControlEvents: UIControlEvents.TouchUpInside)
         _controlsOverlay.getButton(.Save).addTarget(self, action: #selector(self._saveVideo), forControlEvents: UIControlEvents.TouchUpInside)
+        _controlsOverlay.getButton(.Close).addTarget(self, action: #selector(self._closeRecording), forControlEvents: UIControlEvents.TouchUpInside)
+    }
+    
+    ///close window and go back to camera
+    func _closeRecording() {
+        answerDelegate?.userDismissedRecording(self)
     }
     
     ///post video to firebase
@@ -65,14 +85,14 @@ class UserRecordedAnswerVC: UIViewController {
         if User.isLoggedIn() {
             _controlsOverlay.getButton(.Post).setTitle("Posting...", forState: UIControlState.Disabled)
             _controlsOverlay.getButton(.Post).backgroundColor = UIColor.darkGrayColor().colorWithAlphaComponent(1)
-            self.currentAnswer = createAnswer()
-            self.currentAnswer.addObserver(self, forKeyPath: "aURL", options: NSKeyValueObservingOptions.New, context: nil)
+            currentAnswer = createAnswer()
+            currentAnswer.addObserver(self, forKeyPath: "aURL", options: NSKeyValueObservingOptions.New, context: nil)
             
-            self.uploadAnswer(self.currentAnswer.aID)
+            uploadAnswer(self.currentAnswer.aID)
         } else {
-            if (self.answerDelegate != nil) {
+            if (answerDelegate != nil) {
                 _controlsOverlay.getButton(.Post).enabled = true
-                self.answerDelegate!.askUserToLogin(self)
+                answerDelegate!.askUserToLogin(self)
             }
         }
     }
@@ -93,14 +113,12 @@ class UserRecordedAnswerVC: UIViewController {
                 if let _attr = attr {
                     fileSize = _attr.fileSize()
                 }
-            } catch {
-                print("error getting file size")
-            }
+            } catch {}
             
-            uploadTask = storageRef.child("answers/\(uploadName)").putFile(localFile, metadata: _metadata)
+            let path = Database.getStoragePath(.Answers, itemID: uploadName)
+            uploadTask = path.putFile(localFile, metadata: _metadata)
             
             uploadTask.observeStatus(.Success) { snapshot in
-                print("succesfully uploaded file")
                 self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
             }
             

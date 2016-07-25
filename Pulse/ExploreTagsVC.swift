@@ -19,9 +19,10 @@ protocol ParentDelegate : class {
 }
 
 class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
-    var allTags = [Tag]()
-    var currentTag : Tag!
+    private var allTags = [Tag]()
+    private var currentTag : Tag?
     var returningToExplore = false
+    
     private var showAccountVC : AccountPageVC!
     private let reuseIdentifier = "tagCell"
     
@@ -180,30 +181,32 @@ extension ExploreTagsVC : UICollectionViewDataSource {
         
         cell.delegate = self
         currentTag = allTags[indexPath.row]
-        
-        cell.currentTag = currentTag
+        cell.currentTag = allTags[indexPath.row]
         configureCell(cell, indexPath: indexPath)
         return cell
     }
     
     func configureCell(cell: ExploreTagCell, indexPath: NSIndexPath) {
-        cell.tagLabel.text = "#"+currentTag.tagID!.uppercaseString
-        
-        let tapLabel = UITapGestureRecognizer(target: self, action: #selector(ExploreTagsVC.showTagDetailTap(_:)))
-        cell.tagLabel.userInteractionEnabled = true
-        cell.tagLabel.tag = indexPath.row
-        cell.tagLabel.addGestureRecognizer(tapLabel)
-        
-        if let _tagImage = currentTag.previewImage {
-            Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-                if error != nil {
-                    print (error?.localizedDescription)
-                } else {
-                    cell.tagImage.image = UIImage(data: data!)
-                    cell.tagImage.contentMode = UIViewContentMode.ScaleAspectFill
-                }
-            })
+        if let _currentTag = currentTag {
+            cell.tagLabel.text = "#"+_currentTag.tagID!.uppercaseString
+            
+            let tapLabel = UITapGestureRecognizer(target: self, action: #selector(ExploreTagsVC.showTagDetailTap(_:)))
+            cell.tagLabel.userInteractionEnabled = true
+            cell.tagLabel.tag = indexPath.row
+            cell.tagLabel.addGestureRecognizer(tapLabel)
+            
+            if let _tagImage = _currentTag.previewImage {
+                Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
+                    if error != nil {
+                        print (error?.localizedDescription)
+                    } else {
+                        cell.tagImage.image = UIImage(data: data!)
+                        cell.tagImage.contentMode = UIViewContentMode.ScaleAspectFill
+                    }
+                })
+            }
         }
+
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {

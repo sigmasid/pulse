@@ -19,6 +19,7 @@ class RecordedAnswerOverlay: UIView {
     private var _postButtonHeight : CGFloat = 50
     private var _elementSpacer : CGFloat = 20
     
+    var tap : UITapGestureRecognizer!
     
     internal enum ControlButtons: Int {
         case Save, Post, Close
@@ -26,14 +27,27 @@ class RecordedAnswerOverlay: UIView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
+
         self.addPostButton()
         self.addCloseButton()
         self.addSaveButton()
     }
     
+    func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
+        return true
+    }
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    override func pointInside(point : CGPoint, withEvent event : UIEvent?) -> Bool {
+        for _view in self.subviews {
+            if (_view.userInteractionEnabled == true && _view.pointInside(self.convertPoint(point, toView: _view) , withEvent: event)) {
+                return true
+            }
+        }
+        return false
     }
     
     func getButton(buttonName : ControlButtons) -> UIButton {
@@ -60,7 +74,7 @@ class RecordedAnswerOverlay: UIView {
     }
     
     private func addPostButton() {
-        _postButton.backgroundColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 0.7 )
+        _postButton.backgroundColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 1.0 )
         _postButton.setTitle("Post Answer", forState: UIControlState.Normal)
         _postButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
         _postButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
@@ -145,6 +159,5 @@ class RecordedAnswerOverlay: UIView {
     
     func updateProgressBar(percentComplete : Float) {
         _progressBar.setProgress(percentComplete, animated: true)
-
     }
 }

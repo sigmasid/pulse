@@ -17,6 +17,7 @@ protocol childVCDelegate: class {
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
     func userDismissedCamera(_: UIViewController)
+    func userDismissedRecording(_: UIViewController)
     func minAnswersShown()
     func showNextQuestion()
     func goBack(_ : UIViewController)
@@ -37,6 +38,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     private var _hasMoreAnswers = false
     private var _isShowingCamera = false
+    private var _isShowingUserRecordedVideo = false
 
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
@@ -121,6 +123,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
         userAnswer.fileURL = assetURL
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
+        
+        _isShowingUserRecordedVideo = true
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
     }
     
@@ -142,6 +146,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func doneUploadingAnswer(currentVC: UIViewController) {
+        _isShowingUserRecordedVideo = false
         if _hasMoreAnswers {
             returnToAnswers()
             GlobalFunctions.dismissVC(currentVC)
@@ -228,6 +233,11 @@ class QAManagerVC: UIViewController, childVCDelegate {
         self.answerVC.view.hidden = false
     }
     
+    func userDismissedRecording(currentVC : UIViewController) {
+        GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
+        showCamera()
+    }
+    
     func userDismissedCamera(currentVC : UIViewController) {
         _isShowingCamera = false
 
@@ -282,6 +292,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
             print("translation values are \(translation), screen bounds are \(self.view.bounds)")
             if _isShowingCamera {
                 //cameraVC will handle
+            } else if _isShowingUserRecordedVideo {
+                //userRecordedVC will handle
             } else {
                 switch translation {
                 case _ where translation.y < -self.view.bounds.maxY / 3:
@@ -307,7 +319,9 @@ class QAManagerVC: UIViewController, childVCDelegate {
 
             if _isShowingCamera {
                 //cameraVC will handle
-            } else if (translation.y < -20 || translation.y > 20) {
+            } else if _isShowingUserRecordedVideo {
+                //userRecordedVC will handle
+            }else if (translation.y < -20 || translation.y > 20) {
                 //ignore moving the screen if user was trying to move up / down - ha
             }
             else if (translation.x > 0) { //only go back but not go forward - animates as dragging the view off

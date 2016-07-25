@@ -75,4 +75,17 @@ enum Spacing: CGFloat {
     case xl = 50
 }
 
+enum Item : String {
+    case Tags = "tags"
+    case Questions = "questions"
+    case Answers = "answers"
+    case Users = "users"
+    case Filters = "filters"
+}
+
+enum Source {
+    case Storage    
+    case Database
+}
+
 /* EXTEND CUSTOM LOADING */

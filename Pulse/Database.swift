@@ -19,14 +19,31 @@ let databaseRef = FIRDatabase.database().reference()
 
 class Database {
 
-    static let tagsRef = databaseRef.child("tags")
-    static let questionsRef = databaseRef.child("questions")
-    static let answersRef = databaseRef.child("answers")
-    static let usersRef = databaseRef.child("users")
-    static let answersStorageRef = storageRef.child("answers")
-    static let tagsStorageRef = storageRef.child("tags")
-    static let usersStorageRef = storageRef.child("users")
+    static let tagsRef = databaseRef.child(Item.Tags.rawValue)
+    static let questionsRef = databaseRef.child(Item.Questions.rawValue)
+    static let answersRef = databaseRef.child(Item.Answers.rawValue)
+    static let usersRef = databaseRef.child(Item.Users.rawValue)
+    static let filtersRef = databaseRef.child(Item.Filters.rawValue)
 
+    static let answersStorageRef = storageRef.child(Item.Answers.rawValue)
+    static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
+    static let usersStorageRef = storageRef.child(Item.Users.rawValue)
+
+
+//    static func getPath(from : Source, type : Item, itemID : String) -> FIRDatabaseReference? {
+//        if from == .Storage {
+//            return storageRef.child(type.rawValue).child(itemID)
+//        }
+//    }
+    
+    static func getDatabasePath(type : Item, itemID : String) -> FIRDatabaseReference {
+        return databaseRef.child(type.rawValue).child(itemID)
+    }
+    
+    static func getStoragePath(type : Item, itemID : String) -> FIRStorageReference {
+        return storageRef.child(type.rawValue).child(itemID)
+    }
+    
     static func getAllTags(completion: (tags : [Tag], error : NSError?) -> Void) {
         var allTags = [Tag]()
         
@@ -38,21 +55,7 @@ class Database {
             completion(tags: allTags, error: nil)
         })
     }
-    
-    static func getQuestionsForTag(tag : Tag, completion: (questions : [Question], error : NSError?) -> Void) {
-        var allQuestions = [Question]()
-        if tag.totalQuestionsForTag() > 0 {
-            for aQuestion in tag.questions! {
-                questionsRef.child("\(aQuestion)").observeSingleEventOfType(.Value, withBlock: { snapshot in
-                    allQuestions.append(Question(qID: snapshot.key, snapshot: snapshot))
-                })
-            }
-            completion(questions: allQuestions, error: nil)
-        } else {
-            completion(questions: allQuestions, error: NSError.init(domain: "Empty", code: 1, userInfo: nil))
-        }
-    }
-    
+ 
     static func getTag(tagID : String, completion: (tag : Tag, error : NSError?) -> Void) {
         tagsRef.child(tagID).observeSingleEventOfType(.Value, withBlock: { snap in
             let _currentTag = Tag(tagID: tagID, snapshot: snap)
@@ -308,6 +311,17 @@ class Database {
     
     static func getTagImage(fileID : String, maxImgSize : Int64, completion: (data : NSData?, error : NSError?) -> Void) {
         let _ = tagsStorageRef.child(fileID).dataWithMaxSize(maxImgSize) { (data, error) -> Void in
+            if (error != nil) {
+                completion(data: nil, error: error)
+            } else {
+                completion(data: data, error: nil)
+            }
+        }
+    }
+    
+    static func getImage(type : Item, fileID : String, maxImgSize : Int64, completion: (data : NSData?, error : NSError?) -> Void) {
+        let path = getStoragePath(type, itemID: fileID)
+        path.dataWithMaxSize(maxImgSize) { (data, error) -> Void in
             if (error != nil) {
                 completion(data: nil, error: error)
             } else {

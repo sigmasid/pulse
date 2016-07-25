@@ -49,11 +49,6 @@ class ExploreTagCell: UICollectionViewCell {
     
     private let questionReuseIdentifier = "questionCell"
     private let questionFooterReuseIdentifier = "questionCellFooter"
-    
-    func refreshFired() {
-        print("refresh fired")
-    }
-
 }
 
 extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate {
