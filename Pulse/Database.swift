@@ -258,8 +258,8 @@ class Database {
             }
             })
         } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please enter a valid email" ]
-            completion(success: false, error: NSError.init(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(success: false, error: NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
         }
     }
     
@@ -327,6 +327,40 @@ class Database {
             } else {
                 completion(data: data, error: nil)
             }
+        }
+    }
+    
+    static func pinQuestionForUser(question : Question, completion: (success : Bool, error : NSError?) -> Void) {
+        if User.isLoggedIn() {
+            let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("pinnedQuestions")
+            
+            _path.updateChildValues([question.qID: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                if error != nil {
+                    completion(success: false, error: error)
+                } else {
+                    completion(success: true, error: nil)
+                }
+            })
+        } else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to pin questions" ]
+            completion(success: false, error: NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
+        }
+    }
+    
+    static func pinTagForUser(tag : Tag, completion: (success : Bool, error : NSError?) -> Void) {
+        if User.isLoggedIn() {
+            let _path = getDatabasePath(Item.Tags, itemID: User.currentUser!.uID!).child("pinnedTags")
+            
+            _path.updateChildValues([tag.tagID!: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                if error != nil {
+                    completion(success: false, error: error)
+                } else {
+                    completion(success: true, error: nil)
+                }
+            })
+        } else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to pin tags" ]
+            completion(success: false, error: NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
         }
     }
     

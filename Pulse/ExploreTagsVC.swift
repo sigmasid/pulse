@@ -19,18 +19,18 @@ protocol ParentDelegate : class {
 }
 
 class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
-    private var allTags = [Tag]()
-    private var currentTag : Tag?
+    private var _allTags = [Tag]()
+    private var _currentTag : Tag?
     var returningToExplore = false
     
-    private var showAccountVC : AccountPageVC!
-    private let reuseIdentifier = "tagCell"
+    private var _showAccountVC : AccountPageVC!
+    private let _reuseIdentifier = "tagCell"
     
     @IBOutlet weak var ExploreTags: UICollectionView!
     @IBOutlet weak var logoIcon: UIView!
     
-    private var panCurrentPointY : CGFloat = 0
-    private var isAccountPageVisible = false
+    private var _panCurrentPointY : CGFloat = 0
+    private var _isAccountPageVisible = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -51,9 +51,9 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             logoIcon.addSubview(pulseIcon)
 
             let _bounds = self.view.bounds
-            showAccountVC = storyboard!.instantiateViewControllerWithIdentifier("AccountPageVC") as? AccountPageVC
-            showAccountVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
-            self.view.addSubview(showAccountVC.view)
+            _showAccountVC = storyboard!.instantiateViewControllerWithIdentifier("AccountPageVC") as? AccountPageVC
+            _showAccountVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
+            self.view.addSubview(_showAccountVC.view)
         } else {
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         }
@@ -75,7 +75,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
                 print(error!.description)
                 UIApplication.sharedApplication().networkActivityIndicatorVisible = false
             } else {
-                self.allTags = tags
+                self._allTags = tags
                 self.ExploreTags.delegate = self
                 self.ExploreTags.dataSource = self
                 self.ExploreTags.reloadData()
@@ -107,13 +107,13 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func showTagDetailTap(sender : UITapGestureRecognizer) {
-        let _tagToShow = allTags[sender.view!.tag]
+        let _tagToShow = _allTags[sender.view!.tag]
         showTagDetail(_tagToShow)
     }
     
     func moveAccountPage(_directionToMove: AnimationStyle) {
-        if showAccountVC != nil {
-            GlobalFunctions.moveView(showAccountVC.view, animationStyle: _directionToMove, parentView: self.view)
+        if _showAccountVC != nil {
+            GlobalFunctions.moveView(_showAccountVC.view, animationStyle: _directionToMove, parentView: self.view)
         }
     }
     
@@ -122,41 +122,56 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         GlobalFunctions.dismissVC(currentVC)
     }
     
+    func handleLongPress(longPress : UIPanGestureRecognizer) {
+        if longPress.state == UIGestureRecognizerState.Began {
+            let point = longPress.locationInView(ExploreTags)
+            let index = ExploreTags.indexPathForItemAtPoint(point)
+            
+            if let _index = index {
+                Database.pinTagForUser(_allTags[_index.row], completion: {(success, error) in
+                    if !success {
+                        GlobalFunctions.showErrorBlock("Error Pinning Tag", erMessage: error!.localizedDescription)
+                    }
+                })
+            }
+        }
+    }
+    
     func handlePan(pan : UIPanGestureRecognizer) {
         let _ = pan.view!.center.x
         if (pan.state == UIGestureRecognizerState.Began) {
             let translation = pan.translationInView(self.view)
-            panCurrentPointY = pan.view!.frame.origin.y + translation.y
+            _panCurrentPointY = pan.view!.frame.origin.y + translation.y
         }
         else if (pan.state == UIGestureRecognizerState.Ended) {
             let translation = pan.translationInView(self.view)
 
             switch translation {
-            case _ where panCurrentPointY > showAccountVC.view.bounds.height / 3:
+            case _ where _panCurrentPointY > _showAccountVC.view.bounds.height / 3:
                 moveAccountPage(.VerticalDown)
-                isAccountPageVisible = true
-                panCurrentPointY = 0
-            case _ where panCurrentPointY < -(showAccountVC.view.bounds.height / 3):
+                _isAccountPageVisible = true
+                _panCurrentPointY = 0
+            case _ where _panCurrentPointY < -(_showAccountVC.view.bounds.height / 3):
                 moveAccountPage(.VerticalUp)
-                isAccountPageVisible = false
-                panCurrentPointY = 0
+                _isAccountPageVisible = false
+                _panCurrentPointY = 0
             default:
-                if !isAccountPageVisible {
+                if !_isAccountPageVisible {
                     moveAccountPage(.VerticalUp)
-                    panCurrentPointY = 0
+                    _panCurrentPointY = 0
                 } else {
                     moveAccountPage(.VerticalDown)
-                    panCurrentPointY = 0
+                    _panCurrentPointY = 0
                 }
 
             }
         } else {
-            let translation = pan.translationInView(showAccountVC.view)
+            let translation = pan.translationInView(_showAccountVC.view)
 
             if (translation.y > 0 || translation.y < 0) {
-                showAccountVC.view.center = CGPoint(x: showAccountVC.view.center.x, y: showAccountVC.view.center.y + translation.y)
-                panCurrentPointY = panCurrentPointY + translation.y
-                pan.setTranslation(CGPointZero, inView: showAccountVC.view)
+                _showAccountVC.view.center = CGPoint(x: _showAccountVC.view.center.x, y: _showAccountVC.view.center.y + translation.y)
+                _panCurrentPointY = _panCurrentPointY + translation.y
+                pan.setTranslation(CGPointZero, inView: _showAccountVC.view)
             }
         }
     }
@@ -164,7 +179,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
 
 extension ExploreTagsVC : UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return allTags.count
+        return _allTags.count
         
     }
     
@@ -177,23 +192,27 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! ExploreTagCell
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(_reuseIdentifier, forIndexPath: indexPath) as! ExploreTagCell
         
         cell.delegate = self
-        currentTag = allTags[indexPath.row]
-        cell.currentTag = allTags[indexPath.row]
+        _currentTag = _allTags[indexPath.row]
+        cell.currentTag = _allTags[indexPath.row]
         configureCell(cell, indexPath: indexPath)
         return cell
     }
     
     func configureCell(cell: ExploreTagCell, indexPath: NSIndexPath) {
-        if let _currentTag = currentTag {
+        if let _currentTag = _currentTag {
             cell.tagLabel.text = "#"+_currentTag.tagID!.uppercaseString
             
             let tapLabel = UITapGestureRecognizer(target: self, action: #selector(ExploreTagsVC.showTagDetailTap(_:)))
             cell.tagLabel.userInteractionEnabled = true
             cell.tagLabel.tag = indexPath.row
             cell.tagLabel.addGestureRecognizer(tapLabel)
+            
+            let _longPress = UILongPressGestureRecognizer(target: self, action: #selector(ExploreTagsVC.handleLongPress(_:)))
+            _longPress.minimumPressDuration = 0.5
+            cell.tagLabel.addGestureRecognizer(_longPress)
             
             if let _tagImage = _currentTag.previewImage {
                 Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in

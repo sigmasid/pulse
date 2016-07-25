@@ -25,7 +25,6 @@ class ExploreTagCell: UICollectionViewCell {
     
     var _reachedEnd : CGFloat! {
         didSet {
-            print(_reachedEnd)
             if (_reachedEnd <= 0 ) {
                 footerView.hidden = true
                 delegate.showTagDetail(currentTag)
@@ -43,12 +42,33 @@ class ExploreTagCell: UICollectionViewCell {
                 ExploreQuestions.dataSource = self
                 ExploreQuestions.delegate = self
                 ExploreQuestions.backgroundColor = UIColor.clearColor()
+                
+                let _longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+                _longPress.minimumPressDuration = 0.5
+                ExploreQuestions.addGestureRecognizer(_longPress)
             }
         }
     }
     
     private let questionReuseIdentifier = "questionCell"
     private let questionFooterReuseIdentifier = "questionCellFooter"
+    
+    func handleLongPress(longPress : UIPanGestureRecognizer) {
+        if longPress.state == UIGestureRecognizerState.Began {
+            let point = longPress.locationInView(ExploreQuestions)
+            let index = ExploreQuestions.indexPathForItemAtPoint(point)
+            
+            if let _index = index {
+                if let question = _allQuestions[_index.row] {
+                    Database.pinQuestionForUser(question, completion: {(success, error) in
+                        if !success {
+                            GlobalFunctions.showErrorBlock("Error Pinning Question", erMessage: error!.localizedDescription)
+                        }
+                    })
+                }
+            }
+        }
+    }
 }
 
 extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate {
@@ -60,8 +80,8 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(questionReuseIdentifier, forIndexPath: indexPath) as! ExploreQuestionCell
         cell.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.3 )
 
-        if self._allQuestions.count > indexPath.row {
-            let _currentQuestion = self._allQuestions[indexPath.row]
+        if _allQuestions.count > indexPath.row {
+            let _currentQuestion = _allQuestions[indexPath.row]
             cell.qTitle.text = _currentQuestion?.qTitle
         } else {
             Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
@@ -75,8 +95,8 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        let _selectedQuestion = self._allQuestions[indexPath.row]
-        delegate.showQuestion(_selectedQuestion, _allQuestions: self._allQuestions, _questionIndex: indexPath.row, _selectedTag : currentTag)
+        let _selectedQuestion = _allQuestions[indexPath.row]
+        delegate.showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag : currentTag)
     }
     
     func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView   {

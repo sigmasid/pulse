@@ -124,4 +124,14 @@ class GlobalFunctions {
             completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
         }
     }
+    
+    static func showErrorBlock(erTitle: String, erMessage: String) {
+        
+        let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))
+
+        if let topController = UIApplication.sharedApplication().keyWindow?.rootViewController {
+            topController.presentViewController(alertController, animated: true, completion:nil)
+        }
+    }
 }

@@ -89,4 +89,9 @@ enum Source {
     case Database
 }
 
+enum UserErrors: ErrorType {
+    case NotLoggedIn
+    case InvalidData
+}
+
 /* EXTEND CUSTOM LOADING */
