@@ -26,11 +26,11 @@ class CameraOverlayView: UIView {
     private var timeLeftShapeLayer : CAShapeLayer!
     private var _questionBackgroundHeight : CGFloat = 40
     private var _shutterButtonRadius : CGFloat!
-    private var _iconSize : CGFloat = 20
+    private var _iconSize : CGFloat = IconSizes.XSmall.rawValue
     private var _elementSpacing : CGFloat = Spacing.s.rawValue
     private var _elementOpacity : Float = 0.7
     private var _countdownTimerRadius : CGFloat = 10
-    private var _countdownTimerRadiusStroke : CGFloat = 3
+    private var _countdownTimerRadiusStroke : CGFloat = IconThickness.Thick.rawValue
     
     /// Property to change camera flash mode.
     internal enum CameraFlashMode: Int {

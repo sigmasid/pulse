@@ -50,6 +50,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             
             if _currentQuestion.hasFilters() {
                 _answersFilters = FiltersOverlay(frame: self.view.frame)
+                _answersFilters!.currentQuestion = currentQuestion
                 self.view.addSubview(_answersFilters!)
                 self.view.addSubview(_controlsOverlay)
             } else {

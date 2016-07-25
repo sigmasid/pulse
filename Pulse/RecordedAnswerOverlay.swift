@@ -15,9 +15,8 @@ class RecordedAnswerOverlay: UIView {
     private var _savingLabel = UILabel()
     private var _progressBar = UIProgressView()
    
-    private var _iconSize : CGFloat = 20
-    private var _postButtonHeight : CGFloat = 50
-    private var _elementSpacer : CGFloat = 20
+    private var _iconSize : CGFloat = IconSizes.XSmall.rawValue
+    private var _postButtonHeight : CGFloat = IconSizes.Medium.rawValue
     
     var tap : UITapGestureRecognizer!
     
@@ -61,14 +60,14 @@ class RecordedAnswerOverlay: UIView {
     private func addSaveButton() {
         if let saveToDiskImage = UIImage(named: "download-to-disk") {
             _saveToDiskButton.setImage(saveToDiskImage, forState: UIControlState.Normal)
-            _saveToDiskButton.frame = CGRectMake(20, UIScreen.mainScreen().bounds.height - 100, saveToDiskImage.size.width, saveToDiskImage.size.width)
+//            _saveToDiskButton.frame = CGRectMake(-_elementSpacer, UIScreen.mainScreen().bounds.height - (_postButtonHeight * 2), saveToDiskImage.size.width, saveToDiskImage.size.width)
         }
         self.addSubview(_saveToDiskButton)
         
         _saveToDiskButton.translatesAutoresizingMaskIntoConstraints = false
         
-        _saveToDiskButton.topAnchor.constraintEqualToAnchor(_closeButton.bottomAnchor, constant: _elementSpacer).active = true
-        _saveToDiskButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -_elementSpacer).active = true
+        _saveToDiskButton.topAnchor.constraintEqualToAnchor(_closeButton.bottomAnchor, constant: Spacing.m.rawValue).active = true
+        _saveToDiskButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -Spacing.m.rawValue).active = true
         _saveToDiskButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _saveToDiskButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
     }
@@ -99,8 +98,8 @@ class RecordedAnswerOverlay: UIView {
         
         _closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        _closeButton.topAnchor.constraintEqualToAnchor(self.topAnchor, constant: _elementSpacer + _postButtonHeight / 2).active = true
-        _closeButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -_elementSpacer).active = true
+        _closeButton.topAnchor.constraintEqualToAnchor(self.topAnchor, constant: _postButtonHeight).active = true
+        _closeButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -Spacing.m.rawValue).active = true
         _closeButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _closeButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
     }

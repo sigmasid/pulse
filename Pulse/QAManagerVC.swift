@@ -234,6 +234,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func userDismissedRecording(currentVC : UIViewController) {
+        _isShowingUserRecordedVideo = false
         GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
         showCamera()
     }
@@ -272,7 +273,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
     
     func loginSuccess (currentVC : UIViewController) {
         if let _userAnswerVC = savedRecordedVideoVC {
-            print("login success")
             _userAnswerVC._postVideo()
         }
         GlobalFunctions.dismissVC(currentVC)

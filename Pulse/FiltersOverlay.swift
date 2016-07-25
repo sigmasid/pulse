@@ -13,61 +13,40 @@ class FiltersOverlay: UIView, UIGestureRecognizerDelegate {
     var reuseIdentifier = "FiltersCell"
     var FilterChoices = [Int : UIImage?]()
     
-    var currentQuestion : Question?
-//    var controlsOverlay : RecordedAnswerOverlay?
+    var currentQuestion : Question? {
+        didSet {
+            setupFilters()
+        }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
-        Database.getQuestion("-KLSfdkJklIi-rflTtN9", completion: { (question, error) in
-            if error == nil {
-                self.currentQuestion = question
-                
-                let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-                layout.itemSize = CGSize(width: self.bounds.width, height: self.bounds.height)
-                layout.scrollDirection = UICollectionViewScrollDirection.Horizontal
-                layout.minimumLineSpacing = 0.0
-                layout.minimumInteritemSpacing = 0.0
-                layout.itemSize = CGSize(width: self.frame.width, height: self.frame.height)
-                
-                self.Filters = UICollectionView(frame: self.frame, collectionViewLayout: layout)
-                self.Filters.registerClass(FiltersCell.self, forCellWithReuseIdentifier: self.reuseIdentifier)
-                self.Filters.backgroundColor = UIColor.clearColor()
-                self.Filters.delegate = self
-                self.Filters.dataSource = self
-                self.Filters.pagingEnabled = true
-                self.Filters.showsHorizontalScrollIndicator = false
-                self.Filters.canCancelContentTouches = true
-                
-                self.Filters.contentInset = UIEdgeInsetsMake(0, 0, 0, 0)
-                self.addSubview(self.Filters)
-            }
-        })
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
-//    func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
-//        return true
-//    }
-    
-//    override func hitTest(point: CGPoint, withEvent event: UIEvent?) -> UIView? {
-//        if let _controlsOverlay = controlsOverlay {
-//            print("hit test fired in filters")
-//            let _test = _controlsOverlay.hitTest(point, withEvent: event)
-//            if _test != nil {
-//                print("we found a view")
-//            } else {
-//                print("returning self")
-//            }
-//            return _test ?? self
-//        } else {
-//            print("hit test returned self")
-//            return self
-//        }
-//    }
+    func setupFilters() {
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.itemSize = CGSize(width: self.bounds.width, height: self.bounds.height)
+        layout.scrollDirection = UICollectionViewScrollDirection.Horizontal
+        layout.minimumLineSpacing = 0.0
+        layout.minimumInteritemSpacing = 0.0
+        layout.itemSize = CGSize(width: self.frame.width, height: self.frame.height)
+        
+        self.Filters = UICollectionView(frame: self.frame, collectionViewLayout: layout)
+        self.Filters.registerClass(FiltersCell.self, forCellWithReuseIdentifier: self.reuseIdentifier)
+        self.Filters.backgroundColor = UIColor.clearColor()
+        self.Filters.delegate = self
+        self.Filters.dataSource = self
+        self.Filters.pagingEnabled = true
+        self.Filters.showsHorizontalScrollIndicator = false
+        self.Filters.canCancelContentTouches = true
+        
+        self.Filters.contentInset = UIEdgeInsetsMake(0, 0, 0, 0)
+        self.addSubview(self.Filters)
+    }
 }
 
 extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
@@ -104,4 +83,25 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
         return CGSize(width: collectionView.frame.width, height: collectionView.frame.height)
     }
 }
+
+
+//    func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
+//        return true
+//    }
+
+//    override func hitTest(point: CGPoint, withEvent event: UIEvent?) -> UIView? {
+//        if let _controlsOverlay = controlsOverlay {
+//            print("hit test fired in filters")
+//            let _test = _controlsOverlay.hitTest(point, withEvent: event)
+//            if _test != nil {
+//                print("we found a view")
+//            } else {
+//                print("returning self")
+//            }
+//            return _test ?? self
+//        } else {
+//            print("hit test returned self")
+//            return self
+//        }
+//    }
 
