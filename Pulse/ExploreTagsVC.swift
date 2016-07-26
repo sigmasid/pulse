@@ -23,21 +23,21 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     private var _currentTag : Tag?
     var returningToExplore = false
     
-    private var _showAccountVC : AccountPageVC!
+    private var _backgroundVC : AccountLoginManagerVC!
     private let _reuseIdentifier = "tagCell"
     
     @IBOutlet weak var ExploreTags: UICollectionView!
     @IBOutlet weak var logoIcon: UIView!
     
     private var _panCurrentPointY : CGFloat = 0
-    private var _isAccountPageVisible = false
-    
+    private var _isBackgroundVCVisible = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
         let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         _panGesture.minimumNumberOfTouches = 1
-        self.view.addGestureRecognizer(_panGesture)
+        view.addGestureRecognizer(_panGesture)
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -45,15 +45,15 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         if !returningToExplore {
             loadTagsFromFirebase()
             
-            let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoIcon.frame.width, self.logoIcon.frame.height))
+            let pulseIcon = Icon(frame: CGRectMake(0,0,logoIcon.frame.width, logoIcon.frame.height))
             pulseIcon.drawIconBackground(iconBackgroundColor)
             pulseIcon.drawIcon(iconColor, iconThickness: 2)
             logoIcon.addSubview(pulseIcon)
-
+            
             let _bounds = self.view.bounds
-            _showAccountVC = storyboard!.instantiateViewControllerWithIdentifier("AccountPageVC") as? AccountPageVC
-            _showAccountVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
-            self.view.addSubview(_showAccountVC.view)
+            _backgroundVC = AccountLoginManagerVC()
+            _backgroundVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
+            GlobalFunctions.addNewVC(_backgroundVC, parentVC: self)
         } else {
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         }
@@ -90,7 +90,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-        QAVC.view.frame = self.view.bounds
+        QAVC.view.frame = view.bounds
         
         QAVC.returnToParentDelegate = self
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
@@ -99,7 +99,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     func showTagDetail(_selectedTag : Tag) {
         if let tagDetailVC = storyboard!.instantiateViewControllerWithIdentifier("tagDetailVC") as? TagDetailVC {
             tagDetailVC.currentTag = _selectedTag
-            tagDetailVC.view.frame = self.view.bounds
+            tagDetailVC.view.frame = view.bounds
         
             tagDetailVC.returnToParentDelegate = self
             GlobalFunctions.addNewVC(tagDetailVC, parentVC: self)
@@ -112,9 +112,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func moveAccountPage(_directionToMove: AnimationStyle) {
-        if _showAccountVC != nil {
-            GlobalFunctions.moveView(_showAccountVC.view, animationStyle: _directionToMove, parentView: self.view)
-        }
+        GlobalFunctions.moveView(_backgroundVC.view, animationStyle: _directionToMove, parentView: view)
     }
     
     func returnToParent(currentVC : UIViewController) {
@@ -140,23 +138,23 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     func handlePan(pan : UIPanGestureRecognizer) {
         let _ = pan.view!.center.x
         if (pan.state == UIGestureRecognizerState.Began) {
-            let translation = pan.translationInView(self.view)
+            let translation = pan.translationInView(view)
             _panCurrentPointY = pan.view!.frame.origin.y + translation.y
         }
         else if (pan.state == UIGestureRecognizerState.Ended) {
-            let translation = pan.translationInView(self.view)
+            let translation = pan.translationInView(view)
 
             switch translation {
-            case _ where _panCurrentPointY > _showAccountVC.view.bounds.height / 3:
+            case _ where _panCurrentPointY > _backgroundVC.view.bounds.height / 3:
                 moveAccountPage(.VerticalDown)
-                _isAccountPageVisible = true
+                _isBackgroundVCVisible = true
                 _panCurrentPointY = 0
-            case _ where _panCurrentPointY < -(_showAccountVC.view.bounds.height / 3):
+            case _ where _panCurrentPointY < -(_backgroundVC.view.bounds.height / 3):
                 moveAccountPage(.VerticalUp)
-                _isAccountPageVisible = false
+                _isBackgroundVCVisible = false
                 _panCurrentPointY = 0
             default:
-                if !_isAccountPageVisible {
+                if !_isBackgroundVCVisible {
                     moveAccountPage(.VerticalUp)
                     _panCurrentPointY = 0
                 } else {
@@ -166,12 +164,21 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
 
             }
         } else {
-            let translation = pan.translationInView(_showAccountVC.view)
-
-            if (translation.y > 0 || translation.y < 0) {
-                _showAccountVC.view.center = CGPoint(x: _showAccountVC.view.center.x, y: _showAccountVC.view.center.y + translation.y)
+            let translation = pan.translationInView(_backgroundVC.view)
+            print(translation.y)
+            if _isBackgroundVCVisible {
+                if translation.y < 0 {
+                    _backgroundVC.view.center = CGPoint(x: _backgroundVC.view.center.x, y: _backgroundVC.view.center.y + translation.y)
+                    _panCurrentPointY = _panCurrentPointY + translation.y
+                    pan.setTranslation(CGPointZero, inView: _backgroundVC.view)
+                } else {
+                    //don't allow pan up when account page is showing
+                }
+            }
+            else if (translation.y > 0 || translation.y < 0) {
+                _backgroundVC.view.center = CGPoint(x: _backgroundVC.view.center.x, y: _backgroundVC.view.center.y + translation.y)
                 _panCurrentPointY = _panCurrentPointY + translation.y
-                pan.setTranslation(CGPointZero, inView: _showAccountVC.view)
+                pan.setTranslation(CGPointZero, inView: _backgroundVC.view)
             }
         }
     }
@@ -188,7 +195,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
     }
 
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
-        return CGSize(width: self.view.frame.width, height: 150)
+        return CGSize(width: view.frame.width, height: 150)
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
@@ -237,6 +244,6 @@ extension ExploreTagsVC : UICollectionViewDataSource {
 
 extension ExploreTagsVC: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: self.view.frame.width, height: self.view.frame.height / 3)
+        return CGSize(width: view.frame.width, height: view.frame.height / 3)
     }
 }

@@ -38,8 +38,9 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         uNameLabel.delegate = self
         uNameLabel.clearsOnBeginEditing = true
         
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.updateLabels), name: "UserUpdated", object: nil)
-        
+//        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.updateLabels), name: "UserUpdated", object: nil)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.updateLabels), name: "AccountPageLoaded", object: nil)
+
         _tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.handleImageTap))
         uProfilePic.addGestureRecognizer(self._tapGesture!)
         uProfilePic.userInteractionEnabled = true

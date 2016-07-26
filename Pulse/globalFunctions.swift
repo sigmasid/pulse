@@ -46,12 +46,12 @@ class GlobalFunctions {
     }
 
     static func dismissVC(currentVC : UIViewController) {
-        let xForm = CGAffineTransformMakeTranslation(currentVC.view.frame.width, 0)
-        UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
+//        let xForm = CGAffineTransformMakeTranslation(currentVC.view.frame.width, 0)
+//        UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
             currentVC.willMoveToParentViewController(nil)
             currentVC.view.removeFromSuperview()
             currentVC.removeFromParentViewController()
-        })
+//        })
     }
     
     static func dismissVC(currentVC : UIViewController, _animationStyle : AnimationStyle) {

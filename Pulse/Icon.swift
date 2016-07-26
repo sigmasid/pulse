@@ -18,12 +18,21 @@ class Icon : UIView {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
+    func drawLongIcon(color : UIColor, iconThickness : Int) {
+        let _flatLine = self.frame.width - self.frame.height
+        print("starting flatline is \(_flatLine)")
+        _drawIcon(color, iconThickness: iconThickness, flatLine: _flatLine)
+    }
     
     func drawIcon(color : UIColor, iconThickness : Int) {
+        _drawIcon(color, iconThickness: iconThickness, flatLine: 0)
+    }
+    
+    private func _drawIcon(color : UIColor, iconThickness : Int, flatLine : CGFloat) {
         let startX = CGFloat(0)
         let startY = self.frame.height / 2
         
-        let firstXStep = self.frame.width / 4  //25
+        let firstXStep = flatLine + (self.frame.height / 4)  //25
         let restXStep = self.frame.height / 12 //8.25
         
         let yStep = startY / 5
@@ -97,16 +106,20 @@ class Icon : UIView {
         pulseDot.layer.addAnimation(dotMotion, forKey: nil)
         pulseDot.layer.addAnimation(dotOpacity, forKey: nil)
         
-        self.layer.addSublayer(heartLine)
-        self.addSubview(pulseDot)
+        layer.addSublayer(heartLine)
+        addSubview(pulseDot)
     }
     
     ///Draw background circle behind logo with parameter color - should be contrasting color
     func drawIconBackground(color: UIColor) {
         let circleShape = CAShapeLayer()
-        circleShape.path = UIBezierPath(arcCenter: CGPoint(x: self.frame.midX , y: self.frame.midY), radius: (self.frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
-        circleShape.fillColor = color.CGColor
         
-        self.layer.addSublayer(circleShape)
+        if frame.height == frame.width {
+            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.midX , y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
+        } else {
+            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.maxX - (frame.height / 2), y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
+        }
+        circleShape.fillColor = color.CGColor
+        layer.addSublayer(circleShape)
     }
 }
