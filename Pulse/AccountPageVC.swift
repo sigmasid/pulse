@@ -13,10 +13,11 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var uProfilePic: UIImageView!
     @IBOutlet weak var uNameLabel: UITextField!
     @IBOutlet weak var numAnswersLabel: UILabel!
-    @IBOutlet weak var subscribedTagsLabel: UITextView!
     @IBOutlet weak var inButton: UIButton!
     @IBOutlet weak var twtrButton: UIButton!
     @IBOutlet weak var fbButton: UIButton!
+    @IBOutlet weak var savedTags: UITextView!
+    private lazy var settingsButton = UIButton()
     
     weak var returnToParentDelegate : ParentDelegate!
     private var _nameErrorLabel = UILabel()
@@ -24,27 +25,41 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     private lazy var _cameraView = UIView()
     private lazy var _Camera = CameraManager()
     private var _cameraOverlay : CameraOverlayView!
+    
     private var _loadingOverlay : LoadingView!
     private var _tapGesture : UITapGestureRecognizer?
     
+    private lazy var _headerView = UIView()
+    private var _loginHeader : LoginHeaderView?
+    private var _loaded = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.hideKeyboardWhenTappedAround()
+        hideKeyboardWhenTappedAround()
         
-        fbButton.layer.cornerRadius = fbButton.frame.width / 2
-        twtrButton.layer.cornerRadius = twtrButton.frame.width / 2
-        inButton.layer.cornerRadius = inButton.frame.width / 2
-        
-        uNameLabel.delegate = self
-        uNameLabel.clearsOnBeginEditing = true
-        
-//        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.updateLabels), name: "UserUpdated", object: nil)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.updateLabels), name: "AccountPageLoaded", object: nil)
+        if !_loaded {
+            setDarkBackground()
+            addHeader()
+            
+            fbButton.makeRound()
+            twtrButton.makeRound()
+            inButton.makeRound()
+            
+            uNameLabel.delegate = self
+            uNameLabel.clearsOnBeginEditing = true
+            
+            _loginHeader = GlobalFunctions.addHeader(view, appTitle: "PULSE", screenTitle: "PROFILE")
+            
+            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateLabels), name: "UserUpdated", object: nil)
+            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateLabels), name: "AccountPageLoaded", object: nil)
 
-        _tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.handleImageTap))
-        uProfilePic.addGestureRecognizer(self._tapGesture!)
-        uProfilePic.userInteractionEnabled = true
-        uProfilePic.contentMode = UIViewContentMode.ScaleAspectFill
+            _tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleImageTap))
+            uProfilePic.addGestureRecognizer(_tapGesture!)
+            uProfilePic.userInteractionEnabled = true
+            uProfilePic.contentMode = UIViewContentMode.ScaleAspectFill
+            
+            _loaded = true
+        }
 
     }
     
@@ -57,7 +72,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     }
     
     func textFieldShouldReturn(textField: UITextField) -> Bool {
-        self.dismissKeyboard()
+        dismissKeyboard()
         GlobalFunctions.validateName(uNameLabel.text, completion: {(verified, error) in
             if verified {
                 Database.updateUserData(UserProfileUpdateType.displayName, value: self.uNameLabel.text!, completion: { (success, error) in
@@ -76,10 +91,11 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         return true
     }
     
-    @IBAction func ClickedSettings(sender: UIButton) {
+    
+    func ClickedSettings() {
         Database.signOut({ success in
             if success {
-                //switch to sign in screen
+                NSNotificationCenter.defaultCenter().postNotificationName("LogoutSuccess", object: self)
             } else {
                 //show error that could not sign out - try again later
             }
@@ -90,13 +106,13 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         //check w/ social source and connect to user profile on firebase
     }
     
-    func setupErrorLabel() {
-        self.view.addSubview(_nameErrorLabel)
+    private func setupErrorLabel() {
+        view.addSubview(_nameErrorLabel)
         
         _nameErrorLabel.translatesAutoresizingMaskIntoConstraints = false
         
         _nameErrorLabel.topAnchor.constraintEqualToAnchor(uNameLabel.topAnchor).active = true
-        _nameErrorLabel.trailingAnchor.constraintEqualToAnchor(self.view.trailingAnchor).active = true
+        _nameErrorLabel.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
         _nameErrorLabel.heightAnchor.constraintEqualToAnchor(uNameLabel.heightAnchor).active = true
         _nameErrorLabel.leadingAnchor.constraintEqualToAnchor(uNameLabel.trailingAnchor, constant: 10).active = true
         
@@ -106,15 +122,17 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         _nameErrorLabel.textAlignment = .Left
     }
     
-    func updateErrorLabelText(_errorText : String) {
+    private func updateErrorLabelText(_errorText : String) {
         _nameErrorLabel.text = _errorText
     }
     
     func updateLabels(notification: NSNotification) {
         if let _userName = User.currentUser!.name {
+            _loginHeader?.updateStatusMessage("welcome \(_userName)!")
             uNameLabel.text = _userName
             uNameLabel.userInteractionEnabled = false
         } else {
+            _loginHeader?.updateStatusMessage("please login")
             uNameLabel.text = "tap to edit name"
             uNameLabel.userInteractionEnabled = true
         }
@@ -125,11 +143,20 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
             uProfilePic.image = UIImage(named: "default-profile")
         }
         
+        if User.currentUser!.hasSavedTags() {
+            addSavedTags(User.currentUser!.savedTags!)
+        }
+        
         numAnswersLabel.text = String(User.currentUser!.totalAnswers())
-        self.view.setNeedsLayout()
+        view.setNeedsLayout()
     }
     
-    func addUserProfilePic(_userImageURL : NSURL?) {
+    private func addSavedTags(tagList : [String]) {
+        let _msg = tagList.joinWithSeparator("\u{0085}")
+        savedTags.text = _msg
+    }
+    
+    private func addUserProfilePic(_userImageURL : NSURL?) {
         if let _ = _userImageURL {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
                 let _userImageData = NSData(contentsOfURL: _userImageURL!)
@@ -144,20 +171,19 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         setupCamera()
         setupCameraOverlay()
         setupLoading()
-
     }
     
-    func highlightConnectedSocialSources() {
+    private func highlightConnectedSocialSources() {
         
     }
     
-    func setupLoading() {
-        _loadingOverlay = LoadingView(frame: self.view.bounds, backgroundColor : UIColor.blackColor().colorWithAlphaComponent(0.7))
+    private func setupLoading() {
+        _loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.blackColor().colorWithAlphaComponent(0.7))
         view.addSubview(_loadingOverlay)
     }
     
-    func setupCamera() {
-        _cameraView = UIView(frame: self.view.bounds)
+    private func setupCamera() {
+        _cameraView = UIView(frame: view.bounds)
         _cameraView.backgroundColor = UIColor.whiteColor()
         view.addSubview(_cameraView)
         
@@ -184,8 +210,8 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         }
     }
     
-    func setupCameraOverlay() {
-        _cameraOverlay = CameraOverlayView(frame: self.view.bounds)
+    private func setupCameraOverlay() {
+        _cameraOverlay = CameraOverlayView(frame: view.bounds)
         _cameraView.addSubview(_cameraOverlay)
         
         switch _Camera.flashMode {
@@ -194,12 +220,33 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         case .Auto: _cameraOverlay._flashMode = .Auto
         }
         
-        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(self.gotImage), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(gotImage), forControlEvents: UIControlEvents.TouchUpInside)
         _cameraOverlay.getButton(.Shutter).enabled = false
         
         _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
         _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
         _cameraOverlay.updateQuestion("smile!")
+    }
+    
+    private func addHeader() {
+        view.addSubview(_headerView)
+        
+        _headerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .TopMargin , multiplier: 2, constant: 0))
+        view.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX , multiplier: 1, constant: 0))
+        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
+        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/view.frame.width)).active = true
+        _headerView.layoutIfNeeded()
+        
+        _loginHeader = LoginHeaderView(frame: _headerView.frame)
+        if let _loginHeader = _loginHeader {
+            _loginHeader.setAppTitleLabel("PULSE")
+            _loginHeader.setScreenTitleLabel("PROFILE")
+            _loginHeader.addSettingsButton()
+            _loginHeader._settings.addTarget(self, action: #selector(ClickedSettings), forControlEvents: UIControlEvents.TouchUpInside)
+
+            _headerView.addSubview(_loginHeader)
+        }
     }
     
     func gotImage() {

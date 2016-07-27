@@ -18,22 +18,21 @@ class Icon : UIView {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
-    func drawLongIcon(color : UIColor, iconThickness : Int) {
+    func drawLongIcon(color : UIColor, iconThickness : CGFloat) {
         let _flatLine = self.frame.width - self.frame.height
-        print("starting flatline is \(_flatLine)")
         _drawIcon(color, iconThickness: iconThickness, flatLine: _flatLine)
     }
     
-    func drawIcon(color : UIColor, iconThickness : Int) {
+    func drawIcon(color : UIColor, iconThickness : CGFloat) {
         _drawIcon(color, iconThickness: iconThickness, flatLine: 0)
     }
     
-    private func _drawIcon(color : UIColor, iconThickness : Int, flatLine : CGFloat) {
+    private func _drawIcon(color : UIColor, iconThickness : CGFloat, flatLine : CGFloat) {
         let startX = CGFloat(0)
         let startY = self.frame.height / 2
         
-        let firstXStep = flatLine + (self.frame.height / 4)  //25
-        let restXStep = self.frame.height / 12 //8.25
+        let firstXStep = flatLine + (self.frame.height / 4)  //15, 20,
+        let restXStep = self.frame.height / 12 //12.9
         
         let yStep = startY / 5
         
@@ -41,17 +40,17 @@ class Icon : UIView {
         heartLine.strokeColor = color.CGColor
         
         let heartLineBezier = UIBezierPath()
-        heartLineBezier.moveToPoint(CGPoint(x: startX, y: startY))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep, y: startY))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 1 * restXStep, y: startY - yStep))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 2 * restXStep, y: startY))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 3 * restXStep, y: startY - yStep * 3))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 4 * restXStep, y: startY + yStep * 2))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 5 * restXStep, y: startY - yStep * 2))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 6 * restXStep, y: startY))
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + (firstXStep * 2) + 6 * restXStep, y: startY))
+        heartLineBezier.moveToPoint(CGPoint(x: startX, y: startY)) // 0
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep, y: startY)) //15
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 1 * restXStep, y: startY - yStep)) //20
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 2 * restXStep, y: startY)) // 25
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 3 * restXStep, y: startY - yStep * 3)) //30
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 4 * restXStep, y: startY + yStep * 2)) //35
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 5 * restXStep, y: startY - yStep * 2)) //40
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 6 * restXStep, y: startY)) //45
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + (firstXStep * 2) + 6 * restXStep, y: startY)) //60
         
-        heartLine.lineWidth = CGFloat(iconThickness)
+        heartLine.lineWidth = iconThickness
         heartLine.fillColor = UIColor.clearColor().CGColor
         heartLine.path = heartLineBezier.CGPath
         
@@ -91,6 +90,7 @@ class Icon : UIView {
         dotOpacity.toValue = 1.0
         dotOpacity.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
         dotOpacity.repeatCount = FLT_MAX
+        dotOpacity.removedOnCompletion = false
         dotOpacity.duration = Double(0.5)
         
         let dotMotion = CAKeyframeAnimation(keyPath: "position")

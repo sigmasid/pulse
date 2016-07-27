@@ -17,15 +17,17 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     @IBOutlet weak var signupButton: UIButton!
+    weak var returnToParentDelegate : ParentDelegate!
     
+    private var _headerView : UIView!
+    private var _loginHeader : LoginHeaderView?
+
     private var emailValidated = false {
         didSet {
             if emailValidated && passwordValidated {
-                self.signupButton.enabled = true
-                self.signupButton.alpha = 1.0
+                signupButton.setEnabled()
             } else {
-                self.signupButton.enabled = false
-                self.signupButton.alpha = 0.5
+                signupButton.setDisabled()
             }
         }
     }
@@ -33,61 +35,90 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     private var passwordValidated = false {
         didSet {
             if emailValidated && passwordValidated {
-                self.signupButton.enabled = true
-                self.signupButton.alpha = 1.0
+                signupButton.setEnabled()
             } else {
-                self.signupButton.enabled = false
-                self.signupButton.alpha = 0.5
+                signupButton.setDisabled()
             }
         }
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.hideKeyboardWhenTappedAround()
-        
-        self.userEmail.delegate = self
-        self.userPassword.delegate = self
-        
-        self.userEmail.tag = 100
-        self.userPassword.tag = 200
-        self.userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail))
-        self.userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword))
-        self.userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), forControlEvents: UIControlEvents.EditingChanged)
+        hideKeyboardWhenTappedAround()
+        setDarkBackground()
 
-        self.signupButton.layer.cornerRadius = buttonCornerRadius
-        self.signupButton.enabled = false
-        self.signupButton.alpha = 0.5
+        userEmail.delegate = self
+        userPassword.delegate = self
         
-        //add icon
-        let pulseIcon = Icon(frame: CGRectMake(0,0,self.logoView.frame.width, self.logoView.frame.height))
-        pulseIcon.drawIconBackground(iconBackgroundColor)
-        pulseIcon.drawIcon(iconColor, iconThickness: 3)
-        logoView.addSubview(pulseIcon)
+        userEmail.tag = 100
+        userPassword.tag = 200
+        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.whiteColor()))
+        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.whiteColor()))
+        userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), forControlEvents: UIControlEvents.EditingChanged)
+        
+        userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
+        userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
+
+        signupButton.layer.cornerRadius = buttonCornerRadius
+        signupButton.setDisabled()
+        
+
     }
     
     override func viewDidAppear(animated : Bool) {
         super.viewDidAppear(true)
+        addHeader()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
+    func addHeader() {
+        _headerView = UIView()
+        view.addSubview(_headerView)
 
+        _headerView.translatesAutoresizingMaskIntoConstraints = false
+        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
+        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
+        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/view.frame.width)).active = true
+        
+        _headerView.layoutIfNeeded()
+        
+        _loginHeader = LoginHeaderView(frame: _headerView.frame)
+        if let _loginHeader = _loginHeader {
+            _loginHeader.setAppTitleLabel("PULSE")
+            _loginHeader.setScreenTitleLabel("CREATE ACCOUNT")
+            _loginHeader.addGoBack()
+            _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
+            _headerView.addSubview(_loginHeader)
+        }
+    }
+    
     @IBAction func createEmailAccount(sender: UIButton) {
+        sender.setDisabled()
+        let _loading = sender.addLoadingIndicator()
+        
         Database.createEmailUser(self.userEmail.text!, password: self.userPassword.text!, completion: { (user, error) in
             if let _error = error {
+                sender.setEnabled()
+                sender.removeLoadingIndicator(_loading)
+                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+
                 switch _error.code {
                 case FIRAuthErrorCode.ErrorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = error!.localizedDescription
-                case FIRAuthErrorCode.ErrorCodeEmailAlreadyInUse.rawValue: self._emailErrorLabel.text = "you already have an account! try signing in instead"
+                case FIRAuthErrorCode.ErrorCodeEmailAlreadyInUse.rawValue: self._emailErrorLabel.text = "you already have an account! try signing in"
                 case FIRAuthErrorCode.ErrorCodeWeakPassword.rawValue: self._passwordErrorLabel.text = error!.localizedDescription
                 default: self._emailErrorLabel.text = "error creating your account. please try again!"
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
                 }
             } else {
-                self.performSegueWithIdentifier("addNameSegue", sender: self)
+                sender.setEnabled()
+                sender.removeLoadingIndicator(_loading)
+
+                if let AddNameVC = self.storyboard?.instantiateViewControllerWithIdentifier("LoginAddNameVC") as? LoginAddNameVC {
+                    GlobalFunctions.addNewVC(AddNameVC, parentVC: self)
+                }
             }
         })
     }
@@ -129,14 +160,9 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         }
     }
     
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    func goBack(sender: UIButton) {
+        if returnToParentDelegate != nil {
+            returnToParentDelegate.returnToParent(self)
+        }
     }
-    */
-
 }

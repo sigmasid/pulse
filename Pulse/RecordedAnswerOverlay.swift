@@ -60,7 +60,6 @@ class RecordedAnswerOverlay: UIView {
     private func addSaveButton() {
         if let saveToDiskImage = UIImage(named: "download-to-disk") {
             _saveToDiskButton.setImage(saveToDiskImage, forState: UIControlState.Normal)
-//            _saveToDiskButton.frame = CGRectMake(-_elementSpacer, UIScreen.mainScreen().bounds.height - (_postButtonHeight * 2), saveToDiskImage.size.width, saveToDiskImage.size.width)
         }
         self.addSubview(_saveToDiskButton)
         

@@ -21,6 +21,7 @@ protocol ParentDelegate : class {
 class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     private var _allTags = [Tag]()
     private var _currentTag : Tag?
+    private var _loadedBackgroundView = false
     var returningToExplore = false
     
     private var _backgroundVC : AccountLoginManagerVC!
@@ -50,10 +51,14 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             pulseIcon.drawIcon(iconColor, iconThickness: 2)
             logoIcon.addSubview(pulseIcon)
             
-            let _bounds = self.view.bounds
-            _backgroundVC = AccountLoginManagerVC()
-            _backgroundVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
-            GlobalFunctions.addNewVC(_backgroundVC, parentVC: self)
+            if !_loadedBackgroundView {
+                let _bounds = self.view.bounds
+                _backgroundVC = AccountLoginManagerVC()
+                _backgroundVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
+                _backgroundVC.setupInitialView()
+                _loadedBackgroundView = true
+                GlobalFunctions.addNewVC(_backgroundVC, parentVC: self)
+            }
         } else {
             UIApplication.sharedApplication().networkActivityIndicatorVisible = false
         }
@@ -148,10 +153,14 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             case _ where _panCurrentPointY > _backgroundVC.view.bounds.height / 3:
                 moveAccountPage(.VerticalDown)
                 _isBackgroundVCVisible = true
+                print("vertical down: \(_isBackgroundVCVisible)")
+
                 _panCurrentPointY = 0
             case _ where _panCurrentPointY < -(_backgroundVC.view.bounds.height / 3):
                 moveAccountPage(.VerticalUp)
                 _isBackgroundVCVisible = false
+                print("vertical up: \(_isBackgroundVCVisible)")
+
                 _panCurrentPointY = 0
             default:
                 if !_isBackgroundVCVisible {
@@ -165,7 +174,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             }
         } else {
             let translation = pan.translationInView(_backgroundVC.view)
-            print(translation.y)
             if _isBackgroundVCVisible {
                 if translation.y < 0 {
                     _backgroundVC.view.center = CGPoint(x: _backgroundVC.view.center.x, y: _backgroundVC.view.center.y + translation.y)
@@ -187,7 +195,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
 extension ExploreTagsVC : UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return _allTags.count
-        
     }
     
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{

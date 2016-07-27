@@ -14,14 +14,18 @@ let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alp
 let buttonCornerRadius : CGFloat = 20
 
 let maxImgSize : Int64 = 1242 * 2208
-let iconThickness : Int = 2
 
 class GlobalFunctions {
     static func addBorders(_textField : UITextField) -> CAShapeLayer {
+        let color = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 )
+        return addBorders(_textField, _color: color)
+    }
+    
+    static func addBorders(_textField : UITextField, _color : UIColor) -> CAShapeLayer {
         let _bottomBorder = CAShapeLayer()
         
         _bottomBorder.frame = CGRectMake(0.0, _textField.frame.size.height - 1, _textField.frame.size.width, 1.0);
-        _bottomBorder.backgroundColor = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 ).CGColor
+        _bottomBorder.backgroundColor = _color.CGColor
         
         return _bottomBorder
     }
@@ -46,12 +50,9 @@ class GlobalFunctions {
     }
 
     static func dismissVC(currentVC : UIViewController) {
-//        let xForm = CGAffineTransformMakeTranslation(currentVC.view.frame.width, 0)
-//        UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
-            currentVC.willMoveToParentViewController(nil)
-            currentVC.view.removeFromSuperview()
-            currentVC.removeFromParentViewController()
-//        })
+        currentVC.willMoveToParentViewController(nil)
+        currentVC.view.removeFromSuperview()
+        currentVC.removeFromParentViewController()
     }
     
     static func dismissVC(currentVC : UIViewController, _animationStyle : AnimationStyle) {
@@ -133,5 +134,25 @@ class GlobalFunctions {
         if let topController = UIApplication.sharedApplication().keyWindow?.rootViewController {
             topController.presentViewController(alertController, animated: true, completion:nil)
         }
+    }
+    
+    /* NEED TO FIX */
+    static func addHeader(parent : UIView, appTitle : String?, screenTitle : String?) -> LoginHeaderView {
+        let _headerView = UIView()
+        parent.addSubview(_headerView)
+        
+        _headerView.translatesAutoresizingMaskIntoConstraints = false
+        parent.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .Top, relatedBy: .Equal, toItem: parent, attribute: .TopMargin , multiplier: 2, constant: 0))
+        _headerView.centerXAnchor.constraintEqualToAnchor(parent.centerXAnchor).active = true
+        _headerView.heightAnchor.constraintEqualToAnchor(parent.heightAnchor, multiplier: 1/13).active = true
+        _headerView.widthAnchor.constraintEqualToAnchor(parent.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/parent.frame.width)).active = true
+        _headerView.layoutIfNeeded()
+        
+        let _LoginHeader = LoginHeaderView(frame: _headerView.frame)
+        appTitle != nil ? _LoginHeader.setAppTitleLabel(appTitle!) :
+        screenTitle != nil ? _LoginHeader.setScreenTitleLabel(screenTitle!) :
+        parent.addSubview(_LoginHeader)
+
+        return _LoginHeader
     }
 }

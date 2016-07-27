@@ -18,6 +18,7 @@ class User {
     var profilePic : String?
     var shownCameraForQuestion = [ String : String ]()
     var _totalAnswers : Int?
+    var savedTags : [String]?
     
     class var currentUser: User? {
         struct Static {
@@ -65,6 +66,10 @@ class User {
         } else {
             return false
         }
+    }
+    
+    func hasSavedTags() -> Bool {
+        return self.savedTags != nil ? true : false
     }
     
     func totalAnswers() -> Int {

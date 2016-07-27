@@ -29,7 +29,6 @@ class Database {
     static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
     static let usersStorageRef = storageRef.child(Item.Users.rawValue)
 
-
 //    static func getPath(from : Source, type : Item, itemID : String) -> FIRDatabaseReference? {
 //        if from == .Storage {
 //            return storageRef.child(type.rawValue).child(itemID)
@@ -131,6 +130,7 @@ class Database {
         if let user = FIRAuth.auth() {
             do {
                 try user.signOut()
+                //might not want to remove the tokens - but need to check its working first
                 if let session = Twitter.sharedInstance().sessionStore.session() {
                     Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
                 }
@@ -213,6 +213,15 @@ class Database {
                     }
                 }
             }
+            if snap.hasChild("answers") {
+                User.currentUser?._totalAnswers = Int(snap.childSnapshotForPath("answers").childrenCount)
+                for _answer in snap.childSnapshotForPath("answers").children {
+                    if (User.currentUser!.answers?.append(_answer.key) == nil) {
+                        User.currentUser!.answers = [_answer.key]
+                    }
+                }
+            }
+            
             if snap.hasChild("answers") {
                 User.currentUser?._totalAnswers = Int(snap.childSnapshotForPath("answers").childrenCount)
                 for _answer in snap.childSnapshotForPath("answers").children {
@@ -332,7 +341,7 @@ class Database {
     
     static func pinQuestionForUser(question : Question, completion: (success : Bool, error : NSError?) -> Void) {
         if User.isLoggedIn() {
-            let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("pinnedQuestions")
+            let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
             
             _path.updateChildValues([question.qID: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                 if error != nil {
@@ -349,7 +358,7 @@ class Database {
     
     static func pinTagForUser(tag : Tag, completion: (success : Bool, error : NSError?) -> Void) {
         if User.isLoggedIn() {
-            let _path = getDatabasePath(Item.Tags, itemID: User.currentUser!.uID!).child("pinnedTags")
+            let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
             
             _path.updateChildValues([tag.tagID!: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                 if error != nil {

@@ -134,24 +134,6 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
             pan.setTranslation(CGPointZero, inView: self.view)
         }
     }
-
-    
-    //    func loadMoreQuestions(indexPath  : NSIndexPath) {
-    //        if questionsShown == _totalQuestions {
-    //            loadingStatus = .Finished
-    //            return
-    //        } else if questionsShown + questionsIncrement < _totalQuestions {
-    //            questionsShown += questionsIncrement
-    //            ExploreQuestions.scrollToItemAtIndexPath(indexPath, atScrollPosition: .Left, animated: true)
-    //            ExploreQuestions.reloadData()
-    //            return
-    //        } else {
-    //            questionsShown += _totalQuestions - questionsShown
-    //            ExploreQuestions.scrollToItemAtIndexPath(indexPath, atScrollPosition: .Left, animated: true)
-    //            loadingStatus = .Finished
-    //            return
-    //        }
-    //    }
 }
 
 extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {

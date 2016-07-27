@@ -44,11 +44,11 @@ class CameraOverlayView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self._shutterButtonRadius = frame.size.width / 11
-        self.drawShutterButton()
-        self.drawQuestionBackground()
-        self.drawFlashCamera()
-        self.drawFlipCamera()
+        _shutterButtonRadius = frame.size.width / 11
+        drawShutterButton()
+        drawQuestionBackground()
+        drawFlashCamera()
+        drawFlipCamera()
 
     }
     
@@ -96,9 +96,9 @@ class CameraOverlayView: UIView {
     
     func getButton(buttonName : CameraButtonSelector) -> UIButton {
         switch buttonName {
-        case .Flash: return _flashModeButton
-        case .Flip: return _flipCameraButton
-        case .Shutter: return _shutterButton
+            case .Flash: return _flashModeButton
+            case .Flip: return _flipCameraButton
+            case .Shutter: return _shutterButton
         }
     }
     

@@ -19,6 +19,39 @@ extension UIViewController {
     func dismissKeyboard() {
         view.endEditing(true)
     }
+    
+    func setDarkBackground() {
+        view.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.95)
+    }
+}
+
+extension UIButton {
+    func setEnabled() {
+        self.enabled = true
+        self.alpha = 1.0
+        self.backgroundColor = UIColor(red: 245/255, green: 44/255, blue: 90/255, alpha: 1.0 )
+    }
+    
+    func setDisabled() {
+        self.enabled = false
+        self.alpha = 0.5
+        self.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
+    }
+    
+    func addLoadingIndicator() -> UIView {
+        let _loadingIndicatorFrame = CGRectMake(5, 0, self.frame.height, self.frame.height)
+        let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.whiteColor())
+        self.addSubview(_loadingIndicator)
+        return _loadingIndicator
+    }
+    
+    func removeLoadingIndicator(indicator : UIView) {
+        indicator.removeFromSuperview()
+    }
+    
+    func makeRound() {
+        self.layer.cornerRadius = self.frame.width / 2
+    }
 }
 
 extension Double {
@@ -82,11 +115,6 @@ enum Item : String {
     case Answers = "answers"
     case Users = "users"
     case Filters = "filters"
-}
-
-enum Source {
-    case Storage    
-    case Database
 }
 
 enum UserErrors: ErrorType {

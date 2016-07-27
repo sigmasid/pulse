@@ -154,6 +154,7 @@ class AnswerOverlay: UIView {
         _userBackground.addSubview(_userImage)
         _userImage.translatesAutoresizingMaskIntoConstraints = false
         _userImage.contentMode = UIViewContentMode.ScaleAspectFill
+        _userImage.clipsToBounds = true
         
         _userImage.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor).active = true
         _userImage.widthAnchor.constraintEqualToConstant(_bottomDimension).active = true
