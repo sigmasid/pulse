@@ -115,6 +115,7 @@ enum Item : String {
     case Answers = "answers"
     case Users = "users"
     case Filters = "filters"
+    case Settings = "settings"
 }
 
 enum UserErrors: ErrorType {

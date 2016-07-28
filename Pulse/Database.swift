@@ -24,6 +24,7 @@ class Database {
     static let answersRef = databaseRef.child(Item.Answers.rawValue)
     static let usersRef = databaseRef.child(Item.Users.rawValue)
     static let filtersRef = databaseRef.child(Item.Filters.rawValue)
+    static let settingsRef = databaseRef.child(Item.Settings.rawValue)
 
     static let answersStorageRef = storageRef.child(Item.Answers.rawValue)
     static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
@@ -52,6 +53,14 @@ class Database {
                 allTags.append(Tag(tagID: child.key, snapshot: child))
             }
             completion(tags: allTags, error: nil)
+        })
+    }
+    
+    static func getSettings(completion: (settings : Settings, error : NSError?) -> Void) {
+        
+        settingsRef.observeSingleEventOfType(.Value, withBlock: { snapshot in
+            let _settings = Settings(snapshot: snapshot)
+            completion(settings: _settings, error: nil)
         })
     }
  
