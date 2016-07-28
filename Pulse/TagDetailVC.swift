@@ -130,8 +130,10 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
             }
         } else {
             let translation = pan.translationInView(self.view)
-            self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-            pan.setTranslation(CGPointZero, inView: self.view)
+            if translation.x > 0 {
+                self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
+                pan.setTranslation(CGPointZero, inView: self.view)
+            }
         }
     }
 }
@@ -144,17 +146,17 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier(questionReuseIdentifier) as! TagDetailQuestionCell
         cell.backgroundColor = UIColor.clearColor()
-        let _cellTextView = cell.questionTextView
-        _cellTextView.userInteractionEnabled = false
+        let _cellLabel = cell.questionLabel
+        _cellLabel.userInteractionEnabled = false
 
         if _allQuestions.count > indexPath.row {
             let _currentQuestion = self._allQuestions[indexPath.row]
-            _cellTextView.text = _currentQuestion?.qTitle
+            _cellLabel.text = _currentQuestion?.qTitle
         } else {
             Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
                 if error == nil {
                     self._allQuestions.append(question)
-                    _cellTextView.text = question.qTitle
+                    _cellLabel.text = question.qTitle
                 }
             })
         }

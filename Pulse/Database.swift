@@ -146,7 +146,10 @@ class Database {
     }
     
     static func checkSocialTokens(completion: (result: Bool) -> Void) {
+        print("checking social tokens")
         if FBSDKAccessToken.currentAccessToken() != nil {
+            print("found fb token")
+
             let token = FBSDKAccessToken.currentAccessToken().tokenString
             let credential = FIRFacebookAuthProvider.credentialWithAccessToken(token)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
@@ -157,23 +160,28 @@ class Database {
                 }
             }
         } else if let session = Twitter.sharedInstance().sessionStore.session() {
-            try! FIRAuth.auth()!.signOut()
-            Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
+            print("found twtr token")
+
             let credential = FIRTwitterAuthProvider.credentialWithToken(session.authToken, secret: session.authTokenSecret)
             FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
                 if error != nil {
                     completion(result : false)
                 } else {
+                    print("logged in with twtr")
                     completion(result : true)
                 }
             }
         } else {
+            print("no token found")
+
             completion(result: false)
         }
     }
     
     ///Check if user is logged in
     static func checkCurrentUser() {
+        Database.checkSocialTokens({(result) in print(result)})
+
         FIRAuth.auth()?.addAuthStateDidChangeListener { auth, user in
             if let _user = user {
                 Database.populateCurrentUser(_user)
@@ -190,6 +198,7 @@ class Database {
         User.currentUser!.name = nil
         User.currentUser!.answers = nil
         User.currentUser!.answeredQuestions = nil
+        User.currentUser!.savedTags = nil
         User.currentUser!.profilePic = nil
         User.currentUser!._totalAnswers = nil
         NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
@@ -222,11 +231,11 @@ class Database {
                 }
             }
             
-            if snap.hasChild("answers") {
-                User.currentUser?._totalAnswers = Int(snap.childSnapshotForPath("answers").childrenCount)
-                for _answer in snap.childSnapshotForPath("answers").children {
-                    if (User.currentUser!.answers?.append(_answer.key) == nil) {
-                        User.currentUser!.answers = [_answer.key]
+            if snap.hasChild("savedTags") {
+                for _tag in snap.childSnapshotForPath("savedTags").children {
+                    if (User.currentUser!.savedTags?.append(_tag.key) == nil) {
+                        User.currentUser!.savedTags = [_tag.key]
+                        print(User.currentUser!.savedTags)
                     }
                 }
             }
@@ -348,6 +357,7 @@ class Database {
                     completion(success: false, error: error)
                 } else {
                     completion(success: true, error: nil)
+                    NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
                 }
             })
         } else {
@@ -364,7 +374,11 @@ class Database {
                 if error != nil {
                     completion(success: false, error: error)
                 } else {
+                    if (User.currentUser?.savedTags?.append(tag.tagID!) == nil) {
+                        User.currentUser?.savedTags = [tag.tagID!]
+                    }
                     completion(success: true, error: nil)
+                    NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
                 }
             })
         } else {

@@ -413,7 +413,7 @@
                                     <segue destination="0ch-rr-tId" kind="embed" identifier="containerViewSegue" id="QE9-ld-QSV"/>
                                 </connections>
                             </containerView>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="70" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="JCm-V2-zhm">
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" pagingEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="70" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="JCm-V2-zhm">
                                 <rect key="frame" x="120" y="174" width="450" height="326"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <color key="sectionIndexBackgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
@@ -429,28 +429,39 @@
                                                     <rect key="frame" x="0.0" y="-12" width="450" height="14"/>
                                                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                                 </view>
-                                                <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" bounces="NO" scrollEnabled="NO" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" editable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NMB-Bi-qLe">
-                                                    <rect key="frame" x="0.0" y="2" width="450" height="60"/>
-                                                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="x4F-Mx-kJK">
+                                                    <rect key="frame" x="8" y="12" width="10" height="50"/>
+                                                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="width" constant="10" id="jD0-ZM-E7Q"/>
+                                                    </constraints>
+                                                </view>
+                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jjP-WJ-y3W">
+                                                    <rect key="frame" x="18" y="12" width="424" height="50"/>
+                                                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                                    <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
                                                     <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                                    <fontDescription key="fontDescription" style="UICTFontTextStyleFootnote"/>
-                                                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                                                </textView>
+                                                    <nil key="highlightedColor"/>
+                                                </label>
                                             </subviews>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                             <constraints>
                                                 <constraint firstItem="URr-b3-auL" firstAttribute="height" secondItem="Hs2-U3-ebg" secondAttribute="height" multiplier="0.2" id="5n2-CY-pYU"/>
                                                 <constraint firstItem="URr-b3-auL" firstAttribute="centerX" secondItem="Hs2-U3-ebg" secondAttribute="centerX" id="7hi-Fe-IJI"/>
                                                 <constraint firstItem="URr-b3-auL" firstAttribute="width" secondItem="Hs2-U3-ebg" secondAttribute="width" id="Gpc-mT-XAz"/>
-                                                <constraint firstItem="NMB-Bi-qLe" firstAttribute="top" secondItem="URr-b3-auL" secondAttribute="bottom" id="YVD-js-p2b"/>
-                                                <constraint firstItem="NMB-Bi-qLe" firstAttribute="width" secondItem="Hs2-U3-ebg" secondAttribute="width" id="bRc-om-b19"/>
-                                                <constraint firstAttribute="bottomMargin" secondItem="NMB-Bi-qLe" secondAttribute="bottom" id="jhf-iH-WHT"/>
+                                                <constraint firstItem="x4F-Mx-kJK" firstAttribute="trailing" secondItem="jjP-WJ-y3W" secondAttribute="leading" id="NTK-xS-1zg"/>
+                                                <constraint firstAttribute="trailingMargin" secondItem="jjP-WJ-y3W" secondAttribute="trailing" id="Tw0-yC-beP"/>
+                                                <constraint firstItem="jjP-WJ-y3W" firstAttribute="top" secondItem="URr-b3-auL" secondAttribute="bottom" constant="10" id="UfE-8m-Ybw"/>
+                                                <constraint firstItem="x4F-Mx-kJK" firstAttribute="leading" secondItem="Hs2-U3-ebg" secondAttribute="leadingMargin" id="ehQ-Xz-8kv"/>
                                                 <constraint firstAttribute="topMargin" secondItem="URr-b3-auL" secondAttribute="top" constant="20" id="nOj-6s-Rqx"/>
-                                                <constraint firstItem="NMB-Bi-qLe" firstAttribute="centerX" secondItem="Hs2-U3-ebg" secondAttribute="centerX" id="tpF-1b-K1e"/>
+                                                <constraint firstItem="x4F-Mx-kJK" firstAttribute="bottom" secondItem="Hs2-U3-ebg" secondAttribute="bottomMargin" id="pCc-ud-5To"/>
+                                                <constraint firstAttribute="bottomMargin" secondItem="jjP-WJ-y3W" secondAttribute="bottom" id="vQ0-2V-fX2"/>
+                                                <constraint firstItem="x4F-Mx-kJK" firstAttribute="top" secondItem="URr-b3-auL" secondAttribute="bottom" constant="10" id="zqL-Ql-hbk"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <connections>
-                                            <outlet property="questionTextView" destination="NMB-Bi-qLe" id="rtG-Fs-V8w"/>
+                                            <outlet property="leftSeparatorView" destination="x4F-Mx-kJK" id="rpN-B9-hFz"/>
+                                            <outlet property="questionLabel" destination="jjP-WJ-y3W" id="gN9-SC-fM0"/>
                                             <outlet property="separatorView" destination="URr-b3-auL" id="I3X-JU-FPv"/>
                                         </connections>
                                     </tableViewCell>
@@ -799,7 +810,7 @@
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" editable="NO" textAlignment="natural" selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1sn-mf-tRu">
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" showsHorizontalScrollIndicator="NO" editable="NO" text="hello" selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1sn-mf-tRu">
                                 <rect key="frame" x="350" y="349" width="180" height="100"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <constraints>

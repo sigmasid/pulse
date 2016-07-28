@@ -10,13 +10,19 @@ import UIKit
 
 class AccountLoginManagerVC: UIViewController {
     
-    private var loginVC : LoginVC?
-    private var accountVC : AccountPageVC?
-    static private var _loaded = false
+    private weak var loginVC : LoginVC?
+    private weak var accountVC : AccountPageVC?
     let _storyboard = UIStoryboard(name: "Main", bundle: nil)
+    private var _currentLoadedView : currentLoadedView!
+    
+    enum currentLoadedView {
+        case login
+        case account
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateLoginOrAccount), name: "UserUpdated", object: nil)
     }
 
     override func didReceiveMemoryWarning() {
@@ -31,27 +37,32 @@ class AccountLoginManagerVC: UIViewController {
         if User.isLoggedIn() {
             accountVC = _storyboard.instantiateViewControllerWithIdentifier("AccountPageVC") as? AccountPageVC
             GlobalFunctions.addNewVC(accountVC!, parentVC: self)
-            AccountLoginManagerVC._loaded = true
+            
             NSNotificationCenter.defaultCenter().postNotificationName("AccountPageLoaded", object: self)
             NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(logoutSuccess), name: "LogoutSuccess", object: nil)
+            
+            _currentLoadedView = .account
         } else {
             loginVC = _storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC
             GlobalFunctions.addNewVC(loginVC!, parentVC: self)
-            AccountLoginManagerVC._loaded = true
 
             NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(loginSuccess), name: "LoginSuccess", object: nil)
+            _currentLoadedView = .login
 
         }
     }
     
     func updateLoginOrAccount() {
-        if User.isLoggedIn() {
+        if User.isLoggedIn() && accountVC != nil && _currentLoadedView != .account {
+            GlobalFunctions.addNewVC(accountVC!, parentVC: self)
+            NSNotificationCenter.defaultCenter().postNotificationName("AccountPageLoaded", object: self)
+            _currentLoadedView = .account
+        } else if User.isLoggedIn() && _currentLoadedView != .account {
             accountVC = _storyboard.instantiateViewControllerWithIdentifier("AccountPageVC") as? AccountPageVC
             GlobalFunctions.addNewVC(accountVC!, parentVC: self)
             NSNotificationCenter.defaultCenter().postNotificationName("AccountPageLoaded", object: self)
-        } else {
-            loginVC = _storyboard.instantiateViewControllerWithIdentifier("LoginVC") as? LoginVC
-            GlobalFunctions.addNewVC(loginVC!, parentVC: self)
+            _currentLoadedView = .account
+
         }
     }
     
@@ -66,7 +77,6 @@ class AccountLoginManagerVC: UIViewController {
         } else if User.isLoggedIn() && loginVC != nil {
             accountVC = _storyboard.instantiateViewControllerWithIdentifier("AccountPageVC") as? AccountPageVC
             GlobalFunctions.cycleBetweenVC(loginVC!, newVC: accountVC!, parentVC: self)
-//            GlobalFunctions.addNewVC(accountVC!, parentVC: self)
             NSNotificationCenter.defaultCenter().postNotificationName("AccountPageLoaded", object: self)
         }
     }

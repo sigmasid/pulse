@@ -153,13 +153,11 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             case _ where _panCurrentPointY > _backgroundVC.view.bounds.height / 3:
                 moveAccountPage(.VerticalDown)
                 _isBackgroundVCVisible = true
-                print("vertical down: \(_isBackgroundVCVisible)")
 
                 _panCurrentPointY = 0
             case _ where _panCurrentPointY < -(_backgroundVC.view.bounds.height / 3):
                 moveAccountPage(.VerticalUp)
                 _isBackgroundVCVisible = false
-                print("vertical up: \(_isBackgroundVCVisible)")
 
                 _panCurrentPointY = 0
             default:

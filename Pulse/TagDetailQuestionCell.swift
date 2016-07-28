@@ -10,16 +10,16 @@ import UIKit
 
 class TagDetailQuestionCell: UITableViewCell {
     
-    @IBOutlet weak var questionTextView: UITextView!
     @IBOutlet weak var separatorView: UIView!
+    @IBOutlet weak var questionLabel: UILabel!
+    @IBOutlet weak var leftSeparatorView: UIView!
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        self.questionTextView.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.3 )
-        self.questionTextView.textContainerInset = UIEdgeInsetsMake(10, 10, 0, 0)
-//        self.questionTextView.textColor = UIColor.whiteColor()
-//        self.questionTextView.font = UIFont.preferredFontForTextStyle(UIFontTextStyleBody)
+        let _color = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.3 )
+        leftSeparatorView.backgroundColor = _color
+        questionLabel.backgroundColor = _color
+        questionLabel.numberOfLines = 0
     }
 
     override func setSelected(selected: Bool, animated: Bool) {

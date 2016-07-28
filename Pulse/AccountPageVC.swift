@@ -144,6 +144,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         }
         
         if User.currentUser!.hasSavedTags() {
+//            savedTags.text = "new hello"
             addSavedTags(User.currentUser!.savedTags!)
         }
         
@@ -153,6 +154,8 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     
     private func addSavedTags(tagList : [String]) {
         let _msg = tagList.joinWithSeparator("\u{0085}")
+        savedTags.textColor = UIColor.whiteColor()
+        savedTags.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCallout)
         savedTags.text = _msg
     }
     
