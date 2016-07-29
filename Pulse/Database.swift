@@ -25,6 +25,7 @@ class Database {
     static let usersRef = databaseRef.child(Item.Users.rawValue)
     static let filtersRef = databaseRef.child(Item.Filters.rawValue)
     static let settingsRef = databaseRef.child(Item.Settings.rawValue)
+    static let settingSectionsRef = databaseRef.child(Item.SettingSections.rawValue)
 
     static let answersStorageRef = storageRef.child(Item.Answers.rawValue)
     static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
@@ -56,13 +57,29 @@ class Database {
         })
     }
     
-    static func getSettings(completion: (settings : Settings, error : NSError?) -> Void) {
+    static func getSections(completion: (sections : [SettingSection], error : NSError?) -> Void) {
+        var _sections = [SettingSection]()
         
-        settingsRef.observeSingleEventOfType(.Value, withBlock: { snapshot in
-            let _settings = Settings(snapshot: snapshot)
-            completion(settings: _settings, error: nil)
+        settingSectionsRef.observeSingleEventOfType(.Value, withBlock: { snapshot in
+            for section in snapshot.children {
+                let _section = section as! FIRDataSnapshot
+                _sections.append(SettingSection(sectionID: _section.key, snapshot: _section))
+            }
+            completion(sections: _sections, error: nil)
         })
     }
+    
+    static func getSetting(settingID : String, completion: (setting : Setting, error : NSError?) -> Void) {
+        settingsRef.child(settingID).observeSingleEventOfType(.Value, withBlock: { snapshot in
+            let _setting = Setting(snap: snapshot)
+            completion(setting: _setting, error: nil)
+        })
+    }
+    
+//    static func getSettings(sectionID: String, completion: (settings : [Setting], error : NSError?) -> Void) {
+//        let _settings = (ref.child("user-posts").child(getUid())).queryOrderedByChild("starCount")
+//
+//    }
  
     static func getTag(tagID : String, completion: (tag : Tag, error : NSError?) -> Void) {
         tagsRef.child(tagID).observeSingleEventOfType(.Value, withBlock: { snap in

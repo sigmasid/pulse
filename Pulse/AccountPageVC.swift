@@ -48,8 +48,6 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
             uNameLabel.delegate = self
             uNameLabel.clearsOnBeginEditing = true
             
-            _loginHeader = GlobalFunctions.addHeader(view, appTitle: "PULSE", screenTitle: "PROFILE")
-            
             NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateLabels), name: "UserUpdated", object: nil)
             NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateLabels), name: "AccountPageLoaded", object: nil)
 

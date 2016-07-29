@@ -160,7 +160,6 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
                 }
             })
         }
-        
         return cell
     }
     

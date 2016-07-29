@@ -9,50 +9,79 @@
 import Foundation
 import Firebase
 
-class Settings : NSObject {
-    var activity : [String]?
-    var personalInfo : [String]?
-    var sections = [Int : String]()
-    var sectionCount : Int?
+class SettingSection {
+    var sectionID : String
+    var settings : [String]?
+    var sectionSettingsCount : Int
     
-    override init() {
-        super.init()
-        self.activity = nil
-        self.personalInfo = nil
+    struct _setting {
+        let id : String
+        let orderWeight : Int
     }
     
-    init(activity: [String], personalInfo: [String]) {
-        super.init()
-        self.activity = activity
-        self.personalInfo = personalInfo
+    init(_sectionID : String, _settings: [String]) {
+        self.sectionID = _sectionID
+        self.settings = _settings
+        self.sectionSettingsCount = _settings.count
     }
     
-    init(snapshot: FIRDataSnapshot) {
-        super.init()
-        self.sectionCount = Int(snapshot.childrenCount)
+    init(sectionID : String, snapshot: FIRDataSnapshot) {
+        self.sectionID = sectionID
+        self.sectionSettingsCount = Int(snapshot.childrenCount)
         
         if snapshot.childrenCount > 0 {
-            var index = 0
-            for section in snapshot.children {
-                self.sections[index] = section.key
-                index += 1
-            }
-        }
-    
-        if snapshot.hasChild("activity") {
-            for activity in snapshot.childSnapshotForPath("activity").children {
-                if (self.activity?.append(activity.key) == nil) {
-                    self.activity = [activity.key]
+            for settingID in snapshot.children {
+                if (self.settings?.append(settingID.key) == nil) {
+                    self.settings = [settingID.key]
                 }
             }
+        }
+    }
+}
+
+class Setting {
+    let settingID : String
+    let display : String?
+    let type : SettingTypes?
+    let editable : Bool?
+    let section : SectionTypes?
+    
+    init(_settingID : String, _display: String, _type: SettingTypes, _editable : Bool, _section : SectionTypes) {
+        self.settingID = _settingID
+        self.display = _display
+        self.type = _type
+        self.editable = _editable
+        self.section = _section
+    }
+    
+    init(snap : FIRDataSnapshot) {
+        self.settingID = snap.key
+        
+        if snap.hasChild("display") {
+            self.display = snap.childSnapshotForPath("display").value as? String
+        } else {
+            self.display = nil
         }
         
-        if snapshot.hasChild("personalInfo") {
-            for info in snapshot.childSnapshotForPath("personalInfo").children {
-                if (self.personalInfo?.append(info.key) == nil) {
-                    self.personalInfo = [info.key]
-                }
+        if snap.hasChild("editable") {
+            switch snap.childSnapshotForPath("editable").value as! Bool {
+            case true: self.editable = true
+            case false: self.editable = false
             }
+        } else {
+            self.editable = nil
+        }
+        
+        if snap.hasChild("type") {
+            self.type = SettingTypes.getSettingType(snap.childSnapshotForPath("type").value as! String)
+        } else {
+            self.type = nil
+        }
+        
+        if snap.hasChild("section") {
+            self.section = SectionTypes.getSectionType(snap.childSnapshotForPath("section").value as! String)
+        } else {
+            self.section = nil
         }
     }
 }

@@ -116,11 +116,50 @@ enum Item : String {
     case Users = "users"
     case Filters = "filters"
     case Settings = "settings"
+    case SettingSections = "settingsSections"
 }
 
 enum UserErrors: ErrorType {
     case NotLoggedIn
     case InvalidData
+}
+
+enum SectionTypes : String {
+    case activity = "activity"
+    case personalInfo = "personalInfo"
+    
+    static func getSectionType(index : Int) -> SectionTypes? {
+        switch index {
+        case 0: return .activity
+        case 1: return .personalInfo
+        default: return nil
+        }
+    }
+    
+    static func getSectionType(index : String) -> SectionTypes? {
+        switch index {
+        case "activity": return .activity
+        case "personalInfo": return .personalInfo
+        default: return nil
+        }
+    }
+}
+
+enum SettingTypes {
+    case string
+    case password
+    case array
+    case choices
+    
+    static func getSettingType(index : String) -> SettingTypes? {
+        switch index {
+        case "string": return .string
+        case "password": return .password
+        case "array": return .array
+        case "choices": return .choices
+        default: return nil
+        }
+    }
 }
 
 /* EXTEND CUSTOM LOADING */

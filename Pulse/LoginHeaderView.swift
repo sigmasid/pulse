@@ -105,7 +105,7 @@ class LoginHeaderView: UIView {
         _screenTitleLabel.text = _message
     }
     
-    private func addIcon() {        
+    private func addIcon() {
         _logoView = Icon(frame: CGRectMake(0,0, frame.width, frame.height))
         _logoView.drawLongIcon(UIColor.whiteColor(), iconThickness: IconThickness.Medium.rawValue)
         addSubview(_logoView)

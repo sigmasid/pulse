@@ -13,12 +13,20 @@ import FirebaseAuth
 class User {
     var uID : String?
     var name : String?
+    var bio : String?
+    var gender : String?
+    var birthday : String?
     var answers : [String]?
     var answeredQuestions : [String]?
     var profilePic : String?
     var shownCameraForQuestion = [ String : String ]()
     var _totalAnswers : Int?
     var savedTags : [String]?
+    
+    enum Gender {
+        case Male
+        case Female
+    }
     
     class var currentUser: User? {
         struct Static {
@@ -74,5 +82,21 @@ class User {
     
     func totalAnswers() -> Int {
         return _totalAnswers ?? 0
+    }
+    
+    func getEmail() -> String? {
+        return FIRAuth.auth()?.currentUser?.email
+    }
+    
+    func getValueForStringProperty(property : String) -> String? {
+        switch property {
+        case "name": return User.currentUser!.name
+        case "bio": return User.currentUser!.bio
+        case "birthday": return User.currentUser!.birthday
+        case "gender": return User.currentUser!.gender
+        case "email": return getEmail()
+        case "password": return nil
+        default: return nil
+        }
     }
 }
