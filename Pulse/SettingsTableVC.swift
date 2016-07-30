@@ -8,8 +8,9 @@
 
 import UIKit
 
-class SettingsTableVC: UIViewController {
-    
+class SettingsTableVC: UIViewController, ParentDelegate {
+    weak var returnToParentDelegate : ParentDelegate!
+
     private var _sections : [SettingSection]?
     private var _settings = [[Setting]]()
     
@@ -63,7 +64,6 @@ class SettingsTableVC: UIViewController {
         settingsTable.delegate = self
         settingsTable.dataSource = self
         settingsTable.reloadData()
-        
     }
     
     private func addHeader(appTitle appTitle : String, screenTitle : String) {
@@ -88,13 +88,24 @@ class SettingsTableVC: UIViewController {
     }
     
     func goBack() {
-        
+        if returnToParentDelegate != nil {
+            returnToParentDelegate.returnToParent(self)
+        }
     }
-
+    
+    func showSettingDetail(selectedSetting : Setting) {
+        let updateSetting = UpdateProfileVC()
+        updateSetting.returnToParentDelegate = self
+        updateSetting._currentSetting = selectedSetting 
+        GlobalFunctions.addNewVC(updateSetting, parentVC: self)
+    }
+    
+    func returnToParent(currentVC : UIViewController) {
+        GlobalFunctions.dismissVC(currentVC)
+    }
 }
 
 extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
-
     // MARK: - Table view data source
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         return _sections?.count ?? 0
@@ -112,7 +123,6 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.backgroundView?.backgroundColor = UIColor.clearColor()
-
             header.textLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
             header.textLabel!.textColor = UIColor.orangeColor()
         }
@@ -125,15 +135,26 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
         if _settings[indexPath.section].count > indexPath.row {
             let _setting = _settings[indexPath.section][indexPath.row]
             cell.textLabel!.text = _setting.display!
-            cell.detailTextLabel?.text = User.currentUser?.getValueForStringProperty(_setting.settingID)
+            cell.detailTextLabel?.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+            if _setting.editable {
+                cell.accessoryType = .DetailButton
+            }
         } else {
-            Database.getSetting(_settingID, completion: {(setting, error) in
-                cell.textLabel!.text = setting.display!
-                cell.detailTextLabel?.text = User.currentUser?.getValueForStringProperty(setting.settingID)
-                self._settings[indexPath.section].append(setting)
+            Database.getSetting(_settingID, completion: {(_setting, error) in
+                cell.textLabel!.text = _setting.display!
+                cell.detailTextLabel?.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                self._settings[indexPath.section].append(_setting)
+                if _setting.editable {
+                    cell.accessoryType = .DisclosureIndicator
+                }
             })
         }
         return cell
+    }
+    
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        let _setting = _settings[indexPath.section][indexPath.row]
+        showSettingDetail(_setting)
     }
 }
 

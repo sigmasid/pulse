@@ -61,6 +61,7 @@ class Database {
         var _sections = [SettingSection]()
         
         settingSectionsRef.observeSingleEventOfType(.Value, withBlock: { snapshot in
+
             for section in snapshot.children {
                 let _section = section as! FIRDataSnapshot
                 _sections.append(SettingSection(sectionID: _section.key, snapshot: _section))
@@ -242,6 +243,7 @@ class Database {
                 User.currentUser!.profilePic = snap.childSnapshotForPath("profilePic").value as? String
             }
             if snap.hasChild("answeredQuestions") {
+                User.currentUser!.answeredQuestions = nil
                 for _answeredQuestion in snap.childSnapshotForPath("answeredQuestions").children {
                     if (User.currentUser!.answeredQuestions?.append(_answeredQuestion.key) == nil) {
                         User.currentUser!.answeredQuestions = [_answeredQuestion.key]
@@ -249,6 +251,7 @@ class Database {
                 }
             }
             if snap.hasChild("answers") {
+                User.currentUser!.answers = nil
                 User.currentUser?._totalAnswers = Int(snap.childSnapshotForPath("answers").childrenCount)
                 for _answer in snap.childSnapshotForPath("answers").children {
                     if (User.currentUser!.answers?.append(_answer.key) == nil) {
@@ -258,10 +261,19 @@ class Database {
             }
             
             if snap.hasChild("savedTags") {
+                User.currentUser!.savedTags = nil
                 for _tag in snap.childSnapshotForPath("savedTags").children {
                     if (User.currentUser!.savedTags?.append(_tag.key) == nil) {
                         User.currentUser!.savedTags = [_tag.key]
-                        print(User.currentUser!.savedTags)
+                    }
+                }
+            }
+            
+            if snap.hasChild("savedQuestions") {
+                User.currentUser!.savedQuestions = nil
+                for _tag in snap.childSnapshotForPath("savedQuestions").children {
+                    if (User.currentUser!.savedQuestions?.append(_tag.key) == nil) {
+                        User.currentUser!.savedQuestions = [_tag.key]
                     }
                 }
             }

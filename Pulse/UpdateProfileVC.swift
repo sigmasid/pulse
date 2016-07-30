@@ -11,17 +11,35 @@ import UIKit
 class UpdateProfileVC: UIViewController {
     
     var _currentSetting : Setting!
-    var _loaded = false
-    var _headerView = UIView()
-    var _loginHeaderView : LoginHeaderView?
+    private var _loaded = false
+    private var _reuseIdentifier = "activityCell"
+    
+    weak var returnToParentDelegate : ParentDelegate!
+    
+    private var _headerView = UIView()
+    private var _loginHeader : LoginHeaderView?
+    private var _settingDescription = UILabel()
+    private var _settingSection = UIView()
+    
+    private lazy var _shortTextField = UITextField()
+    private lazy var _longTextField = UITextView()
+    private lazy var _birthdayPicker = UIDatePicker()
+    private lazy var settingsTable = UITableView()
+    private lazy var _entries = [String]()
+    
+    private var updateButton = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        hideKeyboardWhenTappedAround()
-        
+        settingsTable.registerClass(UITableViewCell.self, forCellReuseIdentifier: _reuseIdentifier)
+
         if !_loaded {
             setDarkBackground()
-//            self.view.addHeader(_headerView, appTitle: "PULSE", screenTitle: "UPDATE \(_currentSetting.display!.uppercaseString)")
+            hideKeyboardWhenTappedAround()
+            addHeader(appTitle: "PULSE", screenTitle: "UPDATE PROFILE")
+            addSettingDescription()
+            addSettingSection()
+
             _loaded = true
         }
     }
@@ -29,5 +47,223 @@ class UpdateProfileVC: UIViewController {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    private func addHeader(appTitle appTitle : String, screenTitle : String) {
+        view.addSubview(_headerView)
+        
+        _headerView.translatesAutoresizingMaskIntoConstraints = false
+        _headerView.topAnchor.constraintEqualToAnchor(topLayoutGuide.topAnchor, constant: Spacing.xs.rawValue).active = true
+        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
+        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/view.frame.width)).active = true
+        _headerView.layoutIfNeeded()
+        
+        _loginHeader = LoginHeaderView(frame: _headerView.frame)
+        if let _loginHeader = _loginHeader {
+            _loginHeader.setAppTitleLabel(appTitle)
+            _loginHeader.setScreenTitleLabel(screenTitle)
+            _loginHeader.updateStatusMessage(_currentSetting.display?.uppercaseString)
+            _loginHeader.addGoBack()
+            _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
+            
+            _headerView.addSubview(_loginHeader)
+        }
+    }
+    
+    func addSettingDescription() {
+        view.addSubview(_settingDescription)
+        
+        _settingDescription.translatesAutoresizingMaskIntoConstraints = false
+        _settingDescription.topAnchor.constraintEqualToAnchor(_headerView.bottomAnchor, constant: Spacing.l.rawValue).active = true
+        _settingDescription.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        _settingDescription.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
+        _settingDescription.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
+        
+        _settingDescription.text = _currentSetting.longDescription
+        _settingDescription.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _settingDescription.numberOfLines = 0
+        _settingDescription.textColor = .whiteColor()
+        _settingDescription.textAlignment = .Center
+    }
+    
+    func addSettingSection() {
+        view.addSubview(_settingSection)
+        
+        _settingSection.translatesAutoresizingMaskIntoConstraints = false
+        _settingSection.topAnchor.constraintEqualToAnchor(_settingDescription.bottomAnchor, constant: Spacing.l.rawValue).active = true
+        _settingSection.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        _settingSection.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.7).active = true
+        
+        switch _currentSetting.type! {
+        case .array:
+            _settingSection.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
+            _settingSection.layoutIfNeeded()
+            addTableView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+        case .bio:
+            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/8).active = true
+            _settingSection.layoutIfNeeded()
+            showBioUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+            addUpdateButton()
+        case .email, .gender, .name, .password:
+            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
+            _settingSection.layoutIfNeeded()
+            showNameUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+            addUpdateButton()
+        case .birthday:
+            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
+            _settingSection.layoutIfNeeded()
+            showBirthdayUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+            addUpdateButton()
+        }
+    }
+    
+    func addTableView(_frame: CGRect) {
+        settingsTable.frame = _frame
+        _settingSection.addSubview(settingsTable)
+        
+        settingsTable.backgroundView = nil
+        settingsTable.backgroundColor = UIColor.clearColor()
+        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
+        settingsTable.separatorColor = UIColor.grayColor().colorWithAlphaComponent(0.7)
+        
+        settingsTable.showsVerticalScrollIndicator = false
+        settingsTable.layoutIfNeeded()
+        settingsTable.tableFooterView = UIView()
+        
+        settingsTable.delegate = self
+        settingsTable.dataSource = self
+        settingsTable.reloadData()
+    }
+    
+    func showNameUpdateView(_frame: CGRect) {
+        _shortTextField = UITextField(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+        _settingSection.addSubview(_shortTextField)
+        
+        _shortTextField.borderStyle = .None
+        _shortTextField.backgroundColor = UIColor.clearColor()
+        _shortTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _shortTextField.textColor = .whiteColor()
+        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
+        _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        _shortTextField.placeholder = getValueOrPlaceholder()
+    }
+    
+    func showBioUpdateView(_frame: CGRect) {
+        _longTextField = UITextView(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+        _settingSection.addSubview(_longTextField)
+        
+        _longTextField.backgroundColor = UIColor.clearColor()
+        _longTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _longTextField.textColor = .whiteColor()
+        _longTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        _longTextField.text = getValueOrPlaceholder()
+    }
+    
+    func showBirthdayUpdateView(_frame: CGRect) {
+        _shortTextField = UITextField(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+        _settingSection.addSubview(_shortTextField)
+        _birthdayPicker.datePickerMode = .Date
+        _birthdayPicker.addTarget(self, action: #selector(onDatePickerValueChanged), forControlEvents: UIControlEvents.ValueChanged)
+        
+        _shortTextField.borderStyle = .None
+        _shortTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _shortTextField.textColor = .whiteColor()
+        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
+        _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        _shortTextField.placeholder = getValueOrPlaceholder()
+        _shortTextField.inputView = _birthdayPicker
+    }
+    
+    func addUpdateButton() {
+        view.addSubview(updateButton)
+        
+        updateButton.translatesAutoresizingMaskIntoConstraints = false
+        updateButton.topAnchor.constraintEqualToAnchor(_settingSection.bottomAnchor, constant: Spacing.l.rawValue).active = true
+        updateButton.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        updateButton.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
+        updateButton.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.7).active = true
+        
+        updateButton.layer.cornerRadius = buttonCornerRadius
+        updateButton.setTitle("Save", forState: UIControlState.Normal)
+        updateButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        updateButton.setEnabled()
+    }
+    
+    func goBack() {
+        if returnToParentDelegate != nil {
+            returnToParentDelegate.returnToParent(self)
+        }
+    }
+    
+    func getValueOrPlaceholder() -> String? {
+        if let _existingValue = User.currentUser?.getValueForStringProperty(_currentSetting.type!.rawValue) {
+            return _existingValue
+        } else if let _placeholder = _currentSetting.placeholder {
+            return _placeholder
+        } else {
+            return nil
+        }
+    }
+    
+    func getValueOrPlaceholder(indexRow : Int) -> String? {
+        print(_currentSetting.settingID)
+        switch _currentSetting.settingID {
+        case "answers":
+            return User.currentUser!.answers![indexRow] ?? nil
+        case "savedQuestions":
+            return User.currentUser!.savedQuestions![indexRow] ?? nil
+        case "savedTags":
+            print(User.currentUser!.savedTags![indexRow])
+            return User.currentUser!.savedTags![indexRow] ?? nil
+        default: return nil
+        }
+    }
+    
+    func onDatePickerValueChanged(datePicker : UIDatePicker) {
+        let formatter = NSDateFormatter()
+        formatter.dateStyle = NSDateFormatterStyle.MediumStyle
+        formatter.timeStyle = .MediumStyle
+        
+        _shortTextField.text = formatter.stringFromDate(datePicker.date)
+    }
+}
+
+extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
+    
+    // MARK: - Table view data source
+    
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        switch _currentSetting.settingID {
+        case "answers":
+            return User.currentUser!.answers?.count ?? 0
+        case "savedQuestions":
+            return User.currentUser!.savedQuestions?.count ?? 0
+        case "savedTags":
+            print("count is \(User.currentUser!.savedTags?.count)")
+            return User.currentUser!.savedTags?.count ?? 0
+        default: return 0
+        }
+    }
+    
+    
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        print("current row is \(indexPath.row)")
+        let cell = tableView.dequeueReusableCellWithIdentifier(_reuseIdentifier)! as UITableViewCell
+        
+        cell.backgroundColor = UIColor.clearColor()
+        cell.textLabel?.textColor = UIColor.whiteColor()
+        cell.textLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        cell.textLabel!.text = getValueOrPlaceholder(indexPath.row)
+        
+        return cell
+    }
+    
+    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+        if _currentSetting.editable {
+            return true
+        } else {
+            return false
+        }
     }
 }

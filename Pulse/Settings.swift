@@ -43,8 +43,10 @@ class Setting {
     let settingID : String
     let display : String?
     let type : SettingTypes?
-    let editable : Bool?
+    let editable : Bool
     let section : SectionTypes?
+    let longDescription : String?
+    let placeholder : String?
     
     init(_settingID : String, _display: String, _type: SettingTypes, _editable : Bool, _section : SectionTypes) {
         self.settingID = _settingID
@@ -52,6 +54,8 @@ class Setting {
         self.type = _type
         self.editable = _editable
         self.section = _section
+        self.longDescription = nil
+        self.placeholder = nil
     }
     
     init(snap : FIRDataSnapshot) {
@@ -69,7 +73,7 @@ class Setting {
             case false: self.editable = false
             }
         } else {
-            self.editable = nil
+            self.editable = false
         }
         
         if snap.hasChild("type") {
@@ -82,6 +86,18 @@ class Setting {
             self.section = SectionTypes.getSectionType(snap.childSnapshotForPath("section").value as! String)
         } else {
             self.section = nil
+        }
+        
+        if snap.hasChild("longDescription") {
+            self.longDescription = snap.childSnapshotForPath("longDescription").value as? String
+        } else {
+            self.longDescription = nil
+        }
+        
+        if snap.hasChild("placeholder") {
+            self.placeholder = snap.childSnapshotForPath("placeholder").value as? String
+        } else {
+            self.placeholder = nil
         }
     }
 }

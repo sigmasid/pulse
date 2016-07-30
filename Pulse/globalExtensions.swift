@@ -145,18 +145,24 @@ enum SectionTypes : String {
     }
 }
 
-enum SettingTypes {
-    case string
-    case password
-    case array
-    case choices
+enum SettingTypes : String{
+    case bio = "bio"
+    case email = "email"
+    case name = "name"
+    case birthday = "birthday"
+    case password = "password"
+    case gender = "gender"
+    case array = "array"
     
     static func getSettingType(index : String) -> SettingTypes? {
         switch index {
-        case "string": return .string
+        case "bio": return .bio
+        case "email": return .email
+        case "name": return .name
+        case "birthday": return .birthday
         case "password": return .password
         case "array": return .array
-        case "choices": return .choices
+        case "gender": return .array
         default: return nil
         }
     }

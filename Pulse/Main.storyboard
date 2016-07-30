@@ -667,7 +667,7 @@
                                 </variation>
                             </textField>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="last name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="9lq-NV-uXy">
-                                <rect key="frame" x="91" y="214" width="420" height="37.5"/>
+                                <rect key="frame" x="90" y="214" width="420" height="37.5"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES"/>
@@ -706,7 +706,7 @@
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstItem="UDW-hT-FdP" firstAttribute="top" secondItem="9lq-NV-uXy" secondAttribute="bottom" id="0kJ-HJ-iyr"/>
-                            <constraint firstItem="9lq-NV-uXy" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" constant="1" id="2eT-um-HYS"/>
+                            <constraint firstItem="9lq-NV-uXy" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="2eT-um-HYS"/>
                             <constraint firstItem="0HN-In-4kA" firstAttribute="top" secondItem="Ems-AX-lPP" secondAttribute="centerY" id="Fsv-9a-47V"/>
                             <constraint firstItem="ZWm-2n-sWa" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="KbU-SU-541"/>
                             <constraint firstItem="wwY-4U-2tF" firstAttribute="width" secondItem="ZWm-2n-sWa" secondAttribute="width" id="MCD-0q-02W"/>

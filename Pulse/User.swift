@@ -22,7 +22,8 @@ class User {
     var shownCameraForQuestion = [ String : String ]()
     var _totalAnswers : Int?
     var savedTags : [String]?
-    
+    var savedQuestions : [String]?
+
     enum Gender {
         case Male
         case Female
