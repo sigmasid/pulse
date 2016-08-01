@@ -44,11 +44,11 @@ class Setting {
     let display : String?
     let type : SettingTypes?
     let editable : Bool
-    let section : SectionTypes?
+    let section : String?
     let longDescription : String?
     let placeholder : String?
     
-    init(_settingID : String, _display: String, _type: SettingTypes, _editable : Bool, _section : SectionTypes) {
+    init(_settingID : String, _display: String, _type: SettingTypes, _editable : Bool, _section : String) {
         self.settingID = _settingID
         self.display = _display
         self.type = _type
@@ -83,7 +83,7 @@ class Setting {
         }
         
         if snap.hasChild("section") {
-            self.section = SectionTypes.getSectionType(snap.childSnapshotForPath("section").value as! String)
+            self.section = snap.childSnapshotForPath("section").value as? String
         } else {
             self.section = nil
         }

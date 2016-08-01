@@ -82,6 +82,7 @@ class AccountLoginManagerVC: UIViewController {
     }
     
     func logoutSuccess() {
+        print("received logout notification")
         if loginVC != nil  && accountVC != nil {
             GlobalFunctions.cycleBetweenVC(accountVC!, newVC: loginVC!, parentVC: self)
             NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(loginSuccess), name: "LoginSuccess", object: nil)

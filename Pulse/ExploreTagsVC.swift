@@ -112,6 +112,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func showTagDetailTap(sender : UITapGestureRecognizer) {
+        print("tap fired")
         let _tagToShow = _allTags[sender.view!.tag]
         showTagDetail(_tagToShow)
     }
@@ -126,6 +127,8 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func handleLongPress(longPress : UIPanGestureRecognizer) {
+        print("long press fired")
+
         if longPress.state == UIGestureRecognizerState.Began {
             let point = longPress.locationInView(ExploreTags)
             let index = ExploreTags.indexPathForItemAtPoint(point)

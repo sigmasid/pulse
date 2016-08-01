@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AccountPageVC: UIViewController, UITextFieldDelegate {
+class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
 
     @IBOutlet weak var uProfilePic: UIImageView!
     @IBOutlet weak var uNameLabel: UITextField!
@@ -91,13 +91,13 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     
     
     func ClickedSettings() {
-        Database.signOut({ success in
-            if success {
-                NSNotificationCenter.defaultCenter().postNotificationName("LogoutSuccess", object: self)
-            } else {
-                //show error that could not sign out - try again later
-            }
-        })
+        let settingsVC = SettingsTableVC()
+        settingsVC.returnToParentDelegate = self
+        GlobalFunctions.addNewVC(settingsVC, parentVC: self)
+    }
+    
+    func returnToParent(currentVC : UIViewController) {
+        GlobalFunctions.dismissVC(currentVC)
     }
 
     @IBAction func LinkAccount(sender: UIButton) {
@@ -126,7 +126,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
     
     func updateLabels(notification: NSNotification) {
         if let _userName = User.currentUser!.name {
-            _loginHeader?.updateStatusMessage("welcome \(_userName)!")
+            _loginHeader?.updateStatusMessage("Welcome \(_userName)!")
             uNameLabel.text = _userName
             uNameLabel.userInteractionEnabled = false
         } else {
@@ -142,7 +142,6 @@ class AccountPageVC: UIViewController, UITextFieldDelegate {
         }
         
         if User.currentUser!.hasSavedTags() {
-//            savedTags.text = "new hello"
             addSavedTags(User.currentUser!.savedTags!)
         }
         

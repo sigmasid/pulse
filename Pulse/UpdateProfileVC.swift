@@ -26,11 +26,14 @@ class UpdateProfileVC: UIViewController {
     private lazy var _birthdayPicker = UIDatePicker()
     private lazy var settingsTable = UITableView()
     private lazy var _entries = [String]()
+    private lazy var _statusLabel = UILabel()
     
     private var updateButton = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("loaded update profile VC")
+
         settingsTable.registerClass(UITableViewCell.self, forCellReuseIdentifier: _reuseIdentifier)
 
         if !_loaded {
@@ -71,7 +74,7 @@ class UpdateProfileVC: UIViewController {
         }
     }
     
-    func addSettingDescription() {
+    private func addSettingDescription() {
         view.addSubview(_settingDescription)
         
         _settingDescription.translatesAutoresizingMaskIntoConstraints = false
@@ -87,7 +90,7 @@ class UpdateProfileVC: UIViewController {
         _settingDescription.textAlignment = .Center
     }
     
-    func addSettingSection() {
+    private func addSettingSection() {
         view.addSubview(_settingSection)
         
         _settingSection.translatesAutoresizingMaskIntoConstraints = false
@@ -105,20 +108,26 @@ class UpdateProfileVC: UIViewController {
             _settingSection.layoutIfNeeded()
             showBioUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
             addUpdateButton()
+            updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+
         case .email, .gender, .name, .password:
             _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
             _settingSection.layoutIfNeeded()
             showNameUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
             addUpdateButton()
+            updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
         case .birthday:
             _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
             _settingSection.layoutIfNeeded()
             showBirthdayUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
             addUpdateButton()
+            updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+        default:
+            return
         }
     }
     
-    func addTableView(_frame: CGRect) {
+    private func addTableView(_frame: CGRect) {
         settingsTable.frame = _frame
         _settingSection.addSubview(settingsTable)
         
@@ -136,7 +145,7 @@ class UpdateProfileVC: UIViewController {
         settingsTable.reloadData()
     }
     
-    func showNameUpdateView(_frame: CGRect) {
+    private func showNameUpdateView(_frame: CGRect) {
         _shortTextField = UITextField(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
         _settingSection.addSubview(_shortTextField)
         
@@ -146,24 +155,34 @@ class UpdateProfileVC: UIViewController {
         _shortTextField.textColor = .whiteColor()
         _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
         _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        _shortTextField.placeholder = getValueOrPlaceholder()
+        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
+        
+        if _currentSetting.type == .password {
+            _shortTextField.secureTextEntry = true
+        } else if _currentSetting.type == .email {
+            _shortTextField.keyboardType = UIKeyboardType.EmailAddress
+        }
     }
     
-    func showBioUpdateView(_frame: CGRect) {
+    private func showBioUpdateView(_frame: CGRect) {
         _longTextField = UITextView(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
         _settingSection.addSubview(_longTextField)
         
         _longTextField.backgroundColor = UIColor.clearColor()
         _longTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
         _longTextField.textColor = .whiteColor()
-        _longTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        _longTextField.layer.borderColor = UIColor.whiteColor().CGColor
+        _longTextField.layer.borderWidth = 1.0
         _longTextField.text = getValueOrPlaceholder()
     }
     
-    func showBirthdayUpdateView(_frame: CGRect) {
+    private func showBirthdayUpdateView(_frame: CGRect) {
         _shortTextField = UITextField(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
         _settingSection.addSubview(_shortTextField)
+        
         _birthdayPicker.datePickerMode = .Date
+        _birthdayPicker.minimumDate = NSCalendar.currentCalendar().dateByAddingUnit(.Year, value: -100, toDate: NSDate(), options: [])
+        _birthdayPicker.maximumDate = NSDate()
         _birthdayPicker.addTarget(self, action: #selector(onDatePickerValueChanged), forControlEvents: UIControlEvents.ValueChanged)
         
         _shortTextField.borderStyle = .None
@@ -171,11 +190,12 @@ class UpdateProfileVC: UIViewController {
         _shortTextField.textColor = .whiteColor()
         _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
         _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        _shortTextField.placeholder = getValueOrPlaceholder()
+        
+        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
         _shortTextField.inputView = _birthdayPicker
     }
     
-    func addUpdateButton() {
+    private func addUpdateButton() {
         view.addSubview(updateButton)
         
         updateButton.translatesAutoresizingMaskIntoConstraints = false
@@ -190,24 +210,32 @@ class UpdateProfileVC: UIViewController {
         updateButton.setEnabled()
     }
     
-    func goBack() {
-        if returnToParentDelegate != nil {
-            returnToParentDelegate.returnToParent(self)
-        }
+    private func addStatusLabel() {
+        view.addSubview(_statusLabel)
+        
+        _statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        _statusLabel.topAnchor.constraintEqualToAnchor(updateButton.bottomAnchor, constant: Spacing.xs.rawValue).active = true
+        _statusLabel.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        _statusLabel.widthAnchor.constraintEqualToAnchor(updateButton.widthAnchor, multiplier: 0.7).active = true
+        
+        _statusLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _statusLabel.textAlignment = .Center
+        _statusLabel.textColor = UIColor.whiteColor()
+        _statusLabel.numberOfLines = 0
     }
-    
-    func getValueOrPlaceholder() -> String? {
+
+    private func getValueOrPlaceholder() -> String {
         if let _existingValue = User.currentUser?.getValueForStringProperty(_currentSetting.type!.rawValue) {
             return _existingValue
         } else if let _placeholder = _currentSetting.placeholder {
+            print(_placeholder)
             return _placeholder
         } else {
-            return nil
+            return ""
         }
     }
     
-    func getValueOrPlaceholder(indexRow : Int) -> String? {
-        print(_currentSetting.settingID)
+    private func getValueOrPlaceholder(indexRow : Int) -> String? {
         switch _currentSetting.settingID {
         case "answers":
             return User.currentUser!.answers![indexRow] ?? nil
@@ -219,18 +247,117 @@ class UpdateProfileVC: UIViewController {
         default: return nil
         }
     }
+
+    func updateProfile() {
+        updateButton.setDisabled()
+        let _loading = updateButton.addLoadingIndicator()
+        
+        switch _currentSetting.type! {
+        case .birthday:
+            let _birthday = String(_birthdayPicker.date)
+            addStatusLabel()
+            Database.updateUserProfile(_currentSetting, newValue: _birthday, completion: {(success, error) in
+                if success {
+                    self._statusLabel.text = "Profile Updated!"
+                } else {
+                    self._statusLabel.text = error?.localizedDescription
+                }
+                self.updateButton.setEnabled()
+                self.updateButton.removeLoadingIndicator(_loading)
+            })
+        case .bio:
+            let _bio = _longTextField.text
+            addStatusLabel()
+            Database.updateUserProfile(_currentSetting, newValue: _bio, completion: {(success, error) in
+                if success {
+                    self._statusLabel.text = "Profile Updated!"
+                } else {
+                    self._statusLabel.text = error?.localizedDescription
+                }
+                self.updateButton.setEnabled()
+                self.updateButton.removeLoadingIndicator(_loading)
+            })
+        case .name:
+            let _name = _shortTextField.text
+            addStatusLabel()
+
+            GlobalFunctions.validateName(_name, completion: {(verified, error) in
+                if !verified {
+                    self._statusLabel.text = error?.localizedDescription
+                } else {
+                    Database.updateUserData(UserProfileUpdateType.displayName, value: _name!, completion: { (success, error) in
+                        if success {
+                            self._statusLabel.text = "Profile Updated!"
+                        } else {
+                            self._statusLabel.text = error?.localizedDescription
+                        }
+                    })
+                }
+                self.updateButton.setEnabled()
+                self.updateButton.removeLoadingIndicator(_loading)
+            })
+        case .email:
+            let _email = _shortTextField.text
+            addStatusLabel()
+            
+            GlobalFunctions.validateEmail(_email, completion: {(verified, error) in
+                if !verified {
+                    self._statusLabel.text = error?.localizedDescription
+                } else {
+                    Database.updateUserProfile(self._currentSetting, newValue: _email!, completion: {(success, error) in
+                        if success {
+                            self._statusLabel.text = "Profile Updated!"
+                        } else {
+                            self._statusLabel.text = error?.localizedDescription
+                        }
+                    })
+                }
+                self.updateButton.setEnabled()
+                self.updateButton.removeLoadingIndicator(_loading)
+            })
+        case .password:
+            let _password = _shortTextField.text
+            addStatusLabel()
+            
+            GlobalFunctions.validatePassword(_password, completion: {(verified, error) in
+                if !verified {
+                    self._statusLabel.text = error?.localizedDescription
+                } else {
+                    Database.updateUserProfile(self._currentSetting, newValue: _password!, completion: {(success, error) in
+                        if success {
+                            self._statusLabel.text = "Profile Updated!"
+                        } else {
+                            self._statusLabel.text = error?.localizedDescription
+                        }
+                    })
+                }
+                self.updateButton.setEnabled()
+                self.updateButton.removeLoadingIndicator(_loading)
+            })
+        default:
+            updateButton.setEnabled()
+            updateButton.removeLoadingIndicator(_loading)
+            return
+        }
+    }
     
     func onDatePickerValueChanged(datePicker : UIDatePicker) {
         let formatter = NSDateFormatter()
         formatter.dateStyle = NSDateFormatterStyle.MediumStyle
-        formatter.timeStyle = .MediumStyle
         
         _shortTextField.text = formatter.stringFromDate(datePicker.date)
     }
+    
+    func goBack() {
+        if returnToParentDelegate != nil {
+            returnToParentDelegate.returnToParent(self)
+        }
+    }
+    
 }
 
 extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
-    
+
     // MARK: - Table view data source
     
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -248,7 +375,6 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
     
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        print("current row is \(indexPath.row)")
         let cell = tableView.dequeueReusableCellWithIdentifier(_reuseIdentifier)! as UITableViewCell
         
         cell.backgroundColor = UIColor.clearColor()
@@ -257,13 +383,5 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
         cell.textLabel!.text = getValueOrPlaceholder(indexPath.row)
         
         return cell
-    }
-    
-    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
-        if _currentSetting.editable {
-            return true
-        } else {
-            return false
-        }
     }
 }

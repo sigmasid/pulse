@@ -127,6 +127,7 @@ class Database {
         }
     }
     
+    // Update FIR auth profile - name, profilepic
     static func updateUserData(updateType: UserProfileUpdateType, value: String, completion: (success : Bool, error : NSError?) -> Void) {
         let user = FIRAuth.auth()?.currentUser
         if let user = user {
@@ -164,6 +165,7 @@ class Database {
                 if FBSDKAccessToken.currentAccessToken() != nil {
                     FBSDKLoginManager().logOut()
                 }
+                NSNotificationCenter.defaultCenter().postNotificationName("LogoutSuccess", object: self)
                 completion(success: true)
             } catch {
                 print(error)
@@ -236,11 +238,20 @@ class Database {
     static func populateCurrentUser(user: FIRUser!) {
         User.currentUser!.uID = user.uid
         usersRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
-            if snap.hasChild("name") {
-                User.currentUser!.name = snap.childSnapshotForPath("name").value as? String
+            if snap.hasChild(SettingTypes.name.rawValue) {
+                User.currentUser!.name = snap.childSnapshotForPath(SettingTypes.name.rawValue).value as? String
             }
-            if snap.hasChild("profilePic") {
-                User.currentUser!.profilePic = snap.childSnapshotForPath("profilePic").value as? String
+            if snap.hasChild(SettingTypes.profilePic.rawValue) {
+                User.currentUser!.profilePic = snap.childSnapshotForPath(SettingTypes.profilePic.rawValue).value as? String
+            }
+            if snap.hasChild(SettingTypes.birthday.rawValue) {
+                User.currentUser!.birthday = snap.childSnapshotForPath(SettingTypes.birthday.rawValue).value as? String
+            }
+            if snap.hasChild(SettingTypes.bio.rawValue) {
+                User.currentUser!.bio = snap.childSnapshotForPath(SettingTypes.bio.rawValue).value as? String
+            }
+            if snap.hasChild(SettingTypes.gender.rawValue) {
+                User.currentUser!.gender = snap.childSnapshotForPath(SettingTypes.gender.rawValue).value as? String
             }
             if snap.hasChild("answeredQuestions") {
                 User.currentUser!.answeredQuestions = nil
@@ -281,6 +292,42 @@ class Database {
             NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
 
         })
+    }
+    
+    ///Update user profile to Pulse database from settings
+    static func updateUserProfile(setting : Setting, newValue : String, completion: (success : Bool, error : NSError?) -> Void) {
+        let _user = FIRAuth.auth()?.currentUser
+        
+        var userPost = [String : String]()
+        if User.isLoggedIn() {
+            switch setting.type! {
+            case .email:
+                _user?.updateEmail(newValue) { error in
+                    if let error = error {
+                        completion(success: false, error: error)
+                    } else {
+                        completion(success: true, error: nil)
+                    }
+                }
+            case .password:
+                _user?.updatePassword(newValue) { error in
+                    if let error = error {
+                        completion(success: false, error: error)
+                    } else {
+                        completion(success: true, error: nil)
+                    }
+                }
+            default:
+                userPost[setting.settingID] = newValue
+                usersRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                    if error != nil {
+                        completion(success: false, error: error)
+                    } else {
+                        completion(success: true, error: nil)
+                    }
+                })
+            }
+        }
     }
     
     ///Save user to Pulse database after Auth

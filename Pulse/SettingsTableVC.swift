@@ -57,10 +57,9 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         settingsTable.backgroundColor = UIColor.clearColor()
         settingsTable.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
         settingsTable.separatorColor = UIColor.grayColor().colorWithAlphaComponent(0.7)
-        
+        settingsTable.tableFooterView = UIView()
         settingsTable.showsVerticalScrollIndicator = false
-        settingsTable.layoutIfNeeded()
-        
+
         settingsTable.delegate = self
         settingsTable.dataSource = self
         settingsTable.reloadData()
@@ -80,6 +79,8 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         if let _loginHeader = _loginHeader {
             _loginHeader.setAppTitleLabel(appTitle)
             _loginHeader.setScreenTitleLabel(screenTitle)
+            _loginHeader.updateStatusMessage("PROFILE SETTINGS")
+
             _loginHeader.addGoBack()
             _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
             
@@ -94,10 +95,21 @@ class SettingsTableVC: UIViewController, ParentDelegate {
     }
     
     func showSettingDetail(selectedSetting : Setting) {
-        let updateSetting = UpdateProfileVC()
-        updateSetting.returnToParentDelegate = self
-        updateSetting._currentSetting = selectedSetting 
-        GlobalFunctions.addNewVC(updateSetting, parentVC: self)
+        if selectedSetting.settingID == "logout" {
+            Database.signOut({ success in
+                if success {
+                    NSNotificationCenter.defaultCenter().postNotificationName("LogoutSuccess", object: self)
+                } else {
+                    GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
+                }
+            })
+        } else {
+            print("trying to load settings detail")
+            let updateSetting = UpdateProfileVC()
+            updateSetting.returnToParentDelegate = self
+            updateSetting._currentSetting = selectedSetting 
+            GlobalFunctions.addNewVC(updateSetting, parentVC: self)
+        }
     }
     
     func returnToParent(currentVC : UIViewController) {
@@ -117,7 +129,8 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     
     func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         let _sectionID = _sections![section].sectionID
-        return _sectionID
+        return SectionTypes.getSectionDisplayName(_sectionID)
+//        return _sectionID
     }
     
     func tableView(tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
@@ -155,44 +168,9 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         let _setting = _settings[indexPath.section][indexPath.row]
         showSettingDetail(_setting)
+        tableView.deselectRowAtIndexPath(indexPath, animated: true)
     }
 }
-
-
-    /*
-    // Override to support conditional editing of the table view.
-    override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
-    }
-    */
-
-    /*
-    // Override to support editing the table view.
-    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
-        if editingStyle == .Delete {
-            // Delete the row from the data source
-            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
-        } else if editingStyle == .Insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }    
-    }
-    */
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(tableView: UITableView, moveRowAtIndexPath fromIndexPath: NSIndexPath, toIndexPath: NSIndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(tableView: UITableView, canMoveRowAtIndexPath indexPath: NSIndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
 
     /*
     // MARK: - Navigation

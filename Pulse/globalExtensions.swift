@@ -13,6 +13,7 @@ import UIKit
 extension UIViewController {
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
+        tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
     }
     
@@ -64,12 +65,6 @@ extension NSTimeInterval {
     var time:String {
         return String(format:"%02d:%02d", Int(self/60.0),  Int(ceil(self%60)) )
     }
-}
-
-enum LoadMoreStatus{
-    case Loading
-    case Finished
-    case haveMore
 }
 
 enum AnimationStyle {
@@ -127,17 +122,20 @@ enum UserErrors: ErrorType {
 enum SectionTypes : String {
     case activity = "activity"
     case personalInfo = "personalInfo"
+    case account = "account"
     
-    static func getSectionType(index : Int) -> SectionTypes? {
+    static func getSectionDisplayName(index : String) -> String? {
         switch index {
-        case 0: return .activity
-        case 1: return .personalInfo
-        default: return nil
+        case "activity": return "Activity"
+        case "personalInfo": return "Personal Info"
+        case "account": return "Account"
+        default: return index
         }
     }
     
     static func getSectionType(index : String) -> SectionTypes? {
         switch index {
+        case "account": return .account
         case "activity": return .activity
         case "personalInfo": return .personalInfo
         default: return nil
@@ -152,6 +150,7 @@ enum SettingTypes : String{
     case birthday = "birthday"
     case password = "password"
     case gender = "gender"
+    case profilePic = "profilePic"
     case array = "array"
     
     static func getSettingType(index : String) -> SettingTypes? {
@@ -163,6 +162,8 @@ enum SettingTypes : String{
         case "password": return .password
         case "array": return .array
         case "gender": return .array
+        case "profilePic": return .profilePic
+
         default: return nil
         }
     }

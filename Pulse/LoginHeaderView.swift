@@ -71,7 +71,7 @@ class LoginHeaderView: UIView {
             
             _statusLabel.translatesAutoresizingMaskIntoConstraints = false
             _statusLabel.centerYAnchor.constraintEqualToAnchor(_logoView.centerYAnchor).active = true
-            _statusLabel.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+            _statusLabel.widthAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
             _statusLabel.heightAnchor.constraintEqualToAnchor(_statusLabel.widthAnchor).active = true
             _statusLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
             
@@ -79,9 +79,11 @@ class LoginHeaderView: UIView {
             _statusLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
             _statusLabel.backgroundColor = UIColor.whiteColor()
             _statusLabel.textColor = UIColor.blackColor()
+            
             _statusLabel.lineBreakMode = .ByWordWrapping
+            _statusLabel.minimumScaleFactor = 0.1
             _statusLabel.numberOfLines = 0
-//            _statusLabel.layer.cornerRadius = _statusLabel.frame.width / 2
+            
             _statusLabel.textAlignment = .Center
             _statusLabel.layer.masksToBounds = true
         }
