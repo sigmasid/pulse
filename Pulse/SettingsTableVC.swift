@@ -97,14 +97,11 @@ class SettingsTableVC: UIViewController, ParentDelegate {
     func showSettingDetail(selectedSetting : Setting) {
         if selectedSetting.settingID == "logout" {
             Database.signOut({ success in
-                if success {
-                    NSNotificationCenter.defaultCenter().postNotificationName("LogoutSuccess", object: self)
-                } else {
+                if !success {
                     GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
                 }
             })
         } else {
-            print("trying to load settings detail")
             let updateSetting = UpdateProfileVC()
             updateSetting.returnToParentDelegate = self
             updateSetting._currentSetting = selectedSetting 

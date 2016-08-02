@@ -19,9 +19,14 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     @IBOutlet weak var savedTags: UITextView!
     private lazy var settingsButton = UIButton()
     
+    @IBOutlet weak var linkLinkedin: UILabel!
+    @IBOutlet weak var linkTwitter: UILabel!
+    @IBOutlet weak var linkFacebook: UILabel!
+    
     weak var returnToParentDelegate : ParentDelegate!
     private var _nameErrorLabel = UILabel()
     
+    private lazy var _defaultProfileOverlay = UILabel()
     private lazy var _cameraView = UIView()
     private lazy var _Camera = CameraManager()
     private var _cameraOverlay : CameraOverlayView!
@@ -139,12 +144,18 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             addUserProfilePic(NSURL(string: _uPic))
         } else {
             uProfilePic.image = UIImage(named: "default-profile")
+            _defaultProfileOverlay = UILabel(frame: CGRectMake(0, 0, uProfilePic.frame.width, uProfilePic.frame.height))
+            _defaultProfileOverlay.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.5)
+            _defaultProfileOverlay.text = "tap to add image"
+            _defaultProfileOverlay.setPreferredFont()
+            uProfilePic.addSubview(_defaultProfileOverlay)
         }
         
         if User.currentUser!.hasSavedTags() {
             addSavedTags(User.currentUser!.savedTags!)
         }
         
+        highlightConnectedSocialSources()
         numAnswersLabel.text = String(User.currentUser!.totalAnswers())
         view.setNeedsLayout()
     }
@@ -162,6 +173,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 let _userImageData = NSData(contentsOfURL: _userImageURL!)
                 dispatch_async(dispatch_get_main_queue(), {
                     self.uProfilePic.image = UIImage(data: _userImageData!)
+                    self.uProfilePic.clipsToBounds = true
                 })
             }
         }
@@ -174,7 +186,37 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     }
     
     private func highlightConnectedSocialSources() {
+        if User.currentUser?.socialSources[.facebook] != true {
+            fbButton.alpha = 0.5
+            fbButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
+            linkFacebook.hidden = false
+        } else if User.currentUser?.socialSources[.facebook] == true {
+            fbButton.alpha = 1.0
+            fbButton.backgroundColor = UIColor(red: 78/255, green: 99/255, blue: 152/255, alpha: 1.0 )
+            linkFacebook.hidden = true
+        }
         
+        if User.currentUser?.socialSources[.twitter] != true {
+            twtrButton.alpha = 0.5
+            twtrButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
+            linkTwitter.hidden = false
+
+        }  else if User.currentUser?.socialSources[.twitter] == true {
+            twtrButton.alpha = 1.0
+            twtrButton.backgroundColor = UIColor(red: 58/255, green: 185/255, blue: 228/255, alpha: 1.0 )
+            linkTwitter.hidden = true
+        }
+        
+        if User.currentUser?.socialSources[.linkedin] != true {
+            inButton.alpha = 0.5
+            inButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
+            linkLinkedin.hidden = false
+
+        }  else if User.currentUser?.socialSources[.linkedin] == true {
+            inButton.alpha = 1.0
+            inButton.backgroundColor = UIColor(red: 2/255, green: 116/255, blue: 179/255, alpha: 1.0 )
+            linkLinkedin.hidden = true
+        }
     }
     
     private func setupLoading() {
@@ -269,7 +311,8 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                         self._Camera.stopAndRemoveCaptureSession()
                         UIView.animateWithDuration(0.2, animations: { self._cameraView.alpha = 0.0 } ,
                             completion: {(value: Bool) in
-                                self._loadingOverlay.removeFromSuperview()
+                                self._defaultProfileOverlay.hidden = true
+                                self._loadingOverlay.hidden = true
                                 self._cameraView.removeFromSuperview()
                         })
                     }

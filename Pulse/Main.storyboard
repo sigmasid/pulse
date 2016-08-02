@@ -810,7 +810,7 @@
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" showsHorizontalScrollIndicator="NO" editable="NO" text="hello" selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1sn-mf-tRu">
+                            <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" showsHorizontalScrollIndicator="NO" editable="NO" selectable="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1sn-mf-tRu">
                                 <rect key="frame" x="350" y="349" width="180" height="100"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <constraints>
@@ -826,6 +826,24 @@
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Link" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="6b1-yu-SPO">
+                                <rect key="frame" x="364" y="552" width="22" height="13.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Link" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="uzi-MY-FAJ">
+                                <rect key="frame" x="289" y="552" width="22" height="13.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Link" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="IKm-5q-7Hf">
+                                <rect key="frame" x="214" y="552" width="22" height="13.5"/>
+                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
@@ -837,15 +855,20 @@
                             <constraint firstItem="DN1-mo-X2c" firstAttribute="width" secondItem="s8K-6d-YN2" secondAttribute="width" id="HXu-VF-6Mr"/>
                             <constraint firstAttribute="trailingMargin" secondItem="1sn-mf-tRu" secondAttribute="trailing" constant="50" id="Igv-bD-6nf"/>
                             <constraint firstItem="6RX-EZ-zRL" firstAttribute="centerX" secondItem="1om-Nh-Zgp" secondAttribute="centerX" id="KEm-LG-I3G"/>
+                            <constraint firstItem="uzi-MY-FAJ" firstAttribute="centerX" secondItem="6RX-EZ-zRL" secondAttribute="centerX" id="Kpo-qK-4rP"/>
                             <constraint firstItem="V9l-dU-bre" firstAttribute="centerX" secondItem="Hug-Q0-Kzs" secondAttribute="centerX" id="Mld-aG-tf7"/>
                             <constraint firstAttribute="centerY" secondItem="Hug-Q0-Kzs" secondAttribute="centerY" multiplier="2" id="NAv-Bc-Iy7"/>
                             <constraint firstItem="9jY-kC-7e6" firstAttribute="trailing" secondItem="pAC-Un-EK5" secondAttribute="trailing" id="Nwj-Aq-cvp"/>
+                            <constraint firstItem="IKm-5q-7Hf" firstAttribute="centerX" secondItem="s8K-6d-YN2" secondAttribute="centerX" id="RWf-5D-O6v"/>
                             <constraint firstItem="pAC-Un-EK5" firstAttribute="centerY" secondItem="1om-Nh-Zgp" secondAttribute="centerY" id="S0k-Wa-WHE"/>
                             <constraint firstItem="DN1-mo-X2c" firstAttribute="leading" secondItem="Hug-Q0-Kzs" secondAttribute="trailing" id="Tk0-02-or4"/>
+                            <constraint firstItem="6b1-yu-SPO" firstAttribute="top" secondItem="DN1-mo-X2c" secondAttribute="bottom" constant="2" id="WiO-XN-fay"/>
+                            <constraint firstItem="IKm-5q-7Hf" firstAttribute="top" secondItem="s8K-6d-YN2" secondAttribute="bottom" constant="2" id="bAl-mw-pLF"/>
                             <constraint firstItem="iHz-5M-Quu" firstAttribute="centerY" secondItem="pAC-Un-EK5" secondAttribute="centerY" id="cIB-7w-yK0"/>
                             <constraint firstItem="Hug-Q0-Kzs" firstAttribute="centerX" secondItem="1om-Nh-Zgp" secondAttribute="centerX" id="cb1-hO-pkk"/>
                             <constraint firstItem="9jY-kC-7e6" firstAttribute="centerY" secondItem="1om-Nh-Zgp" secondAttribute="centerY" multiplier="1.2" id="dmB-2I-yP3"/>
                             <constraint firstItem="NWs-bx-mUA" firstAttribute="top" secondItem="6RX-EZ-zRL" secondAttribute="bottom" constant="50" id="ebt-kW-uyV"/>
+                            <constraint firstItem="uzi-MY-FAJ" firstAttribute="top" secondItem="6RX-EZ-zRL" secondAttribute="bottom" constant="2" id="fcI-yr-JW5"/>
                             <constraint firstItem="9jY-kC-7e6" firstAttribute="height" secondItem="pAC-Un-EK5" secondAttribute="height" id="kVD-xa-f3a"/>
                             <constraint firstItem="1sn-mf-tRu" firstAttribute="leading" secondItem="iHz-5M-Quu" secondAttribute="leading" id="ooq-db-F55"/>
                             <constraint firstItem="6RX-EZ-zRL" firstAttribute="width" secondItem="s8K-6d-YN2" secondAttribute="width" id="sVK-MM-VQe"/>
@@ -853,11 +876,15 @@
                             <constraint firstItem="1sn-mf-tRu" firstAttribute="top" secondItem="9jY-kC-7e6" secondAttribute="top" id="syp-l5-Ffd"/>
                             <constraint firstItem="V9l-dU-bre" firstAttribute="top" secondItem="Hug-Q0-Kzs" secondAttribute="bottom" constant="20" id="tAm-IU-VlK"/>
                             <constraint firstItem="iHz-5M-Quu" firstAttribute="width" secondItem="1sn-mf-tRu" secondAttribute="width" id="tQR-KS-1Qk"/>
+                            <constraint firstItem="6b1-yu-SPO" firstAttribute="centerX" secondItem="DN1-mo-X2c" secondAttribute="centerX" id="xTn-kf-eyP"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="fbButton" destination="s8K-6d-YN2" id="enN-JM-fq8"/>
                         <outlet property="inButton" destination="DN1-mo-X2c" id="45t-u3-P78"/>
+                        <outlet property="linkFacebook" destination="IKm-5q-7Hf" id="msn-VX-F9M"/>
+                        <outlet property="linkLinkedin" destination="6b1-yu-SPO" id="aQ2-xn-61g"/>
+                        <outlet property="linkTwitter" destination="uzi-MY-FAJ" id="xbm-PE-V0c"/>
                         <outlet property="numAnswersLabel" destination="iHz-5M-Quu" id="dwM-9l-Ld1"/>
                         <outlet property="savedTags" destination="1sn-mf-tRu" id="PWl-PW-Xp5"/>
                         <outlet property="twtrButton" destination="6RX-EZ-zRL" id="Sf0-1d-YzD"/>

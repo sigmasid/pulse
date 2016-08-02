@@ -55,7 +55,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
                 let _bounds = self.view.bounds
                 _backgroundVC = AccountLoginManagerVC()
                 _backgroundVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
-                _backgroundVC.setupInitialView()
+//                _backgroundVC.setupInitialView()
                 _loadedBackgroundView = true
                 GlobalFunctions.addNewVC(_backgroundVC, parentVC: self)
             }

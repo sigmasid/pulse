@@ -26,6 +26,14 @@ extension UIViewController {
     }
 }
 
+extension UILabel {
+    func setPreferredFont() {
+        self.textAlignment = .Center
+        self.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+        self.textColor = .whiteColor()
+    }
+}
+
 extension UIButton {
     func setEnabled() {
         self.enabled = true
@@ -71,6 +79,7 @@ enum AnimationStyle {
     case VerticalUp
     case VerticalDown
     case Horizontal
+    case HorizontalFlip
 }
 
 enum IconSizes: CGFloat {

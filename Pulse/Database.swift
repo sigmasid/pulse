@@ -215,6 +215,7 @@ class Database {
             if let _user = user {
                 Database.populateCurrentUser(_user)
             } else {
+                print("auth state changed")
                 Database.removeCurrentUser()
                 return
             }
@@ -230,6 +231,12 @@ class Database {
         User.currentUser!.savedTags = nil
         User.currentUser!.profilePic = nil
         User.currentUser!._totalAnswers = nil
+        User.currentUser!.birthday = nil
+        User.currentUser!.bio = nil
+        User.currentUser!.gender = nil
+        User.currentUser!.savedQuestions = nil
+        User.currentUser!.socialSources = [ : ]
+        
         NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
 
     }
@@ -237,6 +244,7 @@ class Database {
     ///Populate current user
     static func populateCurrentUser(user: FIRUser!) {
         User.currentUser!.uID = user.uid
+
         usersRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
             if snap.hasChild(SettingTypes.name.rawValue) {
                 User.currentUser!.name = snap.childSnapshotForPath(SettingTypes.name.rawValue).value as? String
@@ -289,6 +297,14 @@ class Database {
                 }
             }
             
+            for profile in user.providerData {
+                let providerID = profile.providerID
+                if providerID == "facebook.com" {
+                    User.currentUser!.socialSources[.facebook] = true
+                } else if providerID == "twitter.com" {
+                    User.currentUser!.socialSources[.twitter] = true
+                }
+            }
             NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
 
         })

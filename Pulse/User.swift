@@ -23,10 +23,17 @@ class User {
     var _totalAnswers : Int?
     var savedTags : [String]?
     var savedQuestions : [String]?
+    var socialSources = [ Social : Bool ]()
 
     enum Gender {
         case Male
         case Female
+    }
+    
+    enum Social {
+        case facebook
+        case twitter
+        case linkedin
     }
     
     class var currentUser: User? {

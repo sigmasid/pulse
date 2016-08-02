@@ -30,7 +30,13 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     private var _headerView : UIView?
     private var _loginHeader : LoginHeaderView?
     private var _loaded = false
+    var _currentLoadedView : currentLoadedView?
 
+    enum currentLoadedView {
+        case login
+        case createAccount
+    }
+    
     var currentTWTRSession : TWTRSession?
     
     private var loadingView : LoadingView?
@@ -68,8 +74,10 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             setupView()
             emailButton.setDisabled()
             addHeader()
-            
-            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self.onFBProfileUpdated), name:FBSDKProfileDidChangeNotification, object: nil)
+            _currentLoadedView = .login
+
+            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(onFBProfileUpdated), name:FBSDKAccessTokenDidChangeNotification, object: nil)
+
             _loaded = true
         } else {
             view.layoutIfNeeded()
@@ -220,6 +228,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     @IBAction func createAccount(sender: UIButton) {
         if let CreateAccountVC = storyboard?.instantiateViewControllerWithIdentifier("LoginCreateAccountVC") as? LoginCreateAccountVC {
             CreateAccountVC.returnToParentDelegate = self
+            _currentLoadedView = .createAccount
             GlobalFunctions.addNewVC(CreateAccountVC, parentVC: self)
         }
     }
@@ -243,9 +252,19 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     }
     
     func onFBProfileUpdated(notification: NSNotification) {
+
         guard let _accessToken = FBSDKAccessToken.currentAccessToken() else {
             return
         }
+        var dict : NSDictionary!
+
+        FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, first_name, last_name, picture.type(large), email"]).startWithCompletionHandler({ (connection, result, error) -> Void in
+            if (error == nil){
+                dict = result as! NSDictionary
+                print(dict)
+                NSLog(dict.objectForKey("picture")?.objectForKey("data")?.objectForKey("url") as! String)
+            }
+        })
         
         let credential = FIRFacebookAuthProvider.credentialWithAccessToken(_accessToken.tokenString)
         FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
@@ -257,6 +276,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 self.removeLoading()
                 self._loginHeader!.updateStatusMessage(aUser!.displayName)
                 self._loggedInSuccess()
+                print("posted facebook login success update")
             }
         }
         NSNotificationCenter.defaultCenter().removeObserver(self, name: FBSDKProfileDidChangeNotification, object: nil)

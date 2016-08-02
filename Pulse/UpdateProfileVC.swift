@@ -32,7 +32,6 @@ class UpdateProfileVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("loaded update profile VC")
 
         settingsTable.registerClass(UITableViewCell.self, forCellReuseIdentifier: _reuseIdentifier)
 
@@ -109,7 +108,6 @@ class UpdateProfileVC: UIViewController {
             showBioUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
             addUpdateButton()
             updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
-
         case .email, .gender, .name, .password:
             _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
             _settingSection.layoutIfNeeded()
@@ -226,9 +224,15 @@ class UpdateProfileVC: UIViewController {
 
     private func getValueOrPlaceholder() -> String {
         if let _existingValue = User.currentUser?.getValueForStringProperty(_currentSetting.type!.rawValue) {
+            if _currentSetting.type == .birthday {
+                let formatter = NSDateFormatter()
+                formatter.dateStyle = NSDateFormatterStyle.MediumStyle
+                if let _placeholderDate = formatter.dateFromString(_existingValue) {
+                    _birthdayPicker.date = _placeholderDate
+                }
+            }
             return _existingValue
         } else if let _placeholder = _currentSetting.placeholder {
-            print(_placeholder)
             return _placeholder
         } else {
             return ""
@@ -242,7 +246,6 @@ class UpdateProfileVC: UIViewController {
         case "savedQuestions":
             return User.currentUser!.savedQuestions![indexRow] ?? nil
         case "savedTags":
-            print(User.currentUser!.savedTags![indexRow])
             return User.currentUser!.savedTags![indexRow] ?? nil
         default: return nil
         }
@@ -254,9 +257,9 @@ class UpdateProfileVC: UIViewController {
         
         switch _currentSetting.type! {
         case .birthday:
-            let _birthday = String(_birthdayPicker.date)
+            let _birthday = _shortTextField.text
             addStatusLabel()
-            Database.updateUserProfile(_currentSetting, newValue: _birthday, completion: {(success, error) in
+            Database.updateUserProfile(_currentSetting, newValue: _birthday!, completion: {(success, error) in
                 if success {
                     self._statusLabel.text = "Profile Updated!"
                 } else {
@@ -367,7 +370,6 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
         case "savedQuestions":
             return User.currentUser!.savedQuestions?.count ?? 0
         case "savedTags":
-            print("count is \(User.currentUser!.savedTags?.count)")
             return User.currentUser!.savedTags?.count ?? 0
         default: return 0
         }
