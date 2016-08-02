@@ -475,8 +475,12 @@ class Database {
                 if error != nil {
                     completion(success: false, error: error)
                 } else {
-                    if (User.currentUser?.savedTags?.append(tag.tagID!) == nil) {
-                        User.currentUser?.savedTags = [tag.tagID!]
+                    if (User.currentUser!.savedTags == nil) {
+                        User.currentUser!.savedTags = [tag.tagID!]
+                    } else if User.currentUser!.savedTags!.contains(tag.tagID!) {
+                        //ignore if tag already in list
+                    } else {
+                        User.currentUser!.savedTags!.append(tag.tagID!)
                     }
                     completion(success: true, error: nil)
                     NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)

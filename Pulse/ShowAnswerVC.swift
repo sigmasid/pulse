@@ -16,6 +16,7 @@ class ShowAnswerVC: UIViewController {
         didSet {
             if self.isViewLoaded() {
                 removeObserverIfNeeded()
+                delegate.showQuestionPreviewOverlay()
                 _loadFirstAnswer(currentQuestion)
             }
         }
@@ -69,7 +70,6 @@ class ShowAnswerVC: UIViewController {
         _answerOverlay.addVideoTimerCountdown()
         _avPlayerLayer.frame = _frame
         qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
-
         
         startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
             NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
@@ -105,7 +105,7 @@ class ShowAnswerVC: UIViewController {
     private func _addFirstVideo(answerID : String) {
         Database.getAnswerURL(answerID, completion: { (URL, error) in
             if error != nil {
-                print(error.debugDescription)
+                GlobalFunctions.showErrorBlock("Error Getting Answers", erMessage: error!.localizedDescription)
             } else {
                 self.currentPlayerItem = AVPlayerItem(URL: URL!)
                 if let _currentPlayerItem = self.currentPlayerItem {

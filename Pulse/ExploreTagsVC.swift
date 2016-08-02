@@ -55,7 +55,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
                 let _bounds = self.view.bounds
                 _backgroundVC = AccountLoginManagerVC()
                 _backgroundVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
-//                _backgroundVC.setupInitialView()
                 _loadedBackgroundView = true
                 GlobalFunctions.addNewVC(_backgroundVC, parentVC: self)
             }
@@ -112,7 +111,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func showTagDetailTap(sender : UITapGestureRecognizer) {
-        print("tap fired")
         let _tagToShow = _allTags[sender.view!.tag]
         showTagDetail(_tagToShow)
     }
@@ -127,8 +125,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func handleLongPress(longPress : UIPanGestureRecognizer) {
-        print("long press fired")
-
         if longPress.state == UIGestureRecognizerState.Began {
             let point = longPress.locationInView(ExploreTags)
             let index = ExploreTags.indexPathForItemAtPoint(point)

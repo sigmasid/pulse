@@ -27,10 +27,10 @@ extension UIViewController {
 }
 
 extension UILabel {
-    func setPreferredFont() {
+    func setPreferredFont(color : UIColor) {
         self.textAlignment = .Center
         self.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
-        self.textColor = .whiteColor()
+        self.textColor = color
     }
 }
 

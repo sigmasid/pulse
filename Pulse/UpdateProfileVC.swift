@@ -79,7 +79,7 @@ class UpdateProfileVC: UIViewController {
         _settingDescription.translatesAutoresizingMaskIntoConstraints = false
         _settingDescription.topAnchor.constraintEqualToAnchor(_headerView.bottomAnchor, constant: Spacing.l.rawValue).active = true
         _settingDescription.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _settingDescription.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
+        _settingDescription.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/10).active = true
         _settingDescription.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
         
         _settingDescription.text = _currentSetting.longDescription
@@ -95,10 +95,13 @@ class UpdateProfileVC: UIViewController {
         _settingSection.translatesAutoresizingMaskIntoConstraints = false
         _settingSection.topAnchor.constraintEqualToAnchor(_settingDescription.bottomAnchor, constant: Spacing.l.rawValue).active = true
         _settingSection.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _settingSection.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.7).active = true
+        let widthConstraint = _settingSection.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.7)
+        widthConstraint.active = true
         
         switch _currentSetting.type! {
         case .array:
+            widthConstraint.active = false
+            _settingSection.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.9).active = true
             _settingSection.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
             _settingSection.layoutIfNeeded()
             addTableView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
@@ -239,15 +242,27 @@ class UpdateProfileVC: UIViewController {
         }
     }
     
-    private func getValueOrPlaceholder(indexRow : Int) -> String? {
+    private func getValueOrPlaceholder(indexRow : Int, cell : UITableViewCell) {
         switch _currentSetting.settingID {
         case "answers":
-            return User.currentUser!.answers![indexRow] ?? nil
+            cell.textLabel!.text = nil
         case "savedQuestions":
-            return User.currentUser!.savedQuestions![indexRow] ?? nil
+            Database.getQuestion(User.currentUser!.savedQuestions![indexRow], completion: {(question, error) in
+                if error != nil {
+                    cell.textLabel!.text = nil
+                } else {
+                    cell.textLabel!.text = question.qTitle
+                }
+            })
         case "savedTags":
-            return User.currentUser!.savedTags![indexRow] ?? nil
-        default: return nil
+            Database.getTag(User.currentUser!.savedTags![indexRow], completion: {(tag, error) in
+                if error != nil {
+                    cell.textLabel!.text = nil
+                } else {
+                    cell.textLabel!.text = tag.tagID
+                }
+            })
+        default: return
         }
     }
 
@@ -382,7 +397,7 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
         cell.backgroundColor = UIColor.clearColor()
         cell.textLabel?.textColor = UIColor.whiteColor()
         cell.textLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        cell.textLabel!.text = getValueOrPlaceholder(indexPath.row)
+        getValueOrPlaceholder(indexPath.row, cell : cell)
         
         return cell
     }

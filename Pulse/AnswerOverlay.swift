@@ -34,8 +34,8 @@ class AnswerOverlay: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        self.addUserBackground()
-        self.addHeaderBackground()
+        addUserBackground()
+        addHeaderBackground()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -98,26 +98,26 @@ class AnswerOverlay: UIView {
     }
     
     private func addHeaderBackground() {
-        self.addSubview(_headerBackground)
+        addSubview(_headerBackground)
         _headerBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        _headerBackground.topAnchor.constraintEqualToAnchor(self.topAnchor, constant: 0.0).active = true
-        _headerBackground.widthAnchor.constraintEqualToAnchor(self.widthAnchor, multiplier: 1.0).active = true
-        _headerBackground.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor, constant: 0.0).active = true
-        _headerBackground.heightAnchor.constraintEqualToAnchor(self.heightAnchor, multiplier: 0.1).active = true
+        _headerBackground.topAnchor.constraintEqualToAnchor(topAnchor, constant: 0.0).active = true
+        _headerBackground.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 1.0).active = true
+        _headerBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: 0.0).active = true
+        _headerBackground.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.1).active = true
         
         _headerBackground.backgroundColor = UIColor.whiteColor().colorWithAlphaComponent(1.0)
     }
     
     private func addUserBackground() {
-        self.addSubview(self._userBackground)
+        addSubview(_userBackground)
         
         _userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
         _userBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        _userBackground.bottomAnchor.constraintEqualToAnchor(self.bottomAnchor).active = true
-        _userBackground.widthAnchor.constraintEqualToAnchor(self.widthAnchor).active = true
-        _userBackground.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor).active = true
+        _userBackground.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
+        _userBackground.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        _userBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
         _userBackground.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
     }
     
@@ -175,7 +175,7 @@ class AnswerOverlay: UIView {
     
     /// Add video countdown
     func addVideoTimerCountdown() {
-        self.addSubview(_videoTimer)
+        addSubview(_videoTimer)
         
         _videoTimer.translatesAutoresizingMaskIntoConstraints = false
 
@@ -238,7 +238,7 @@ class AnswerOverlay: UIView {
         case .Downvote: _voteImage = UIImageView(image: UIImage(named: "downvote"))
         }
         
-        self.addSubview(_voteImage)
+        addSubview(_voteImage)
         _voteImage.alpha = 1.0
 
         _voteImage.translatesAutoresizingMaskIntoConstraints = false

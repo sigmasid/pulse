@@ -141,13 +141,15 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
         
         if let _uPic = User.currentUser!.profilePic {
+            _defaultProfileOverlay.hidden = true
             addUserProfilePic(NSURL(string: _uPic))
         } else {
             uProfilePic.image = UIImage(named: "default-profile")
+            _defaultProfileOverlay.hidden = false
             _defaultProfileOverlay = UILabel(frame: CGRectMake(0, 0, uProfilePic.frame.width, uProfilePic.frame.height))
             _defaultProfileOverlay.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.5)
             _defaultProfileOverlay.text = "tap to add image"
-            _defaultProfileOverlay.setPreferredFont()
+            _defaultProfileOverlay.setPreferredFont(UIColor.whiteColor())
             uProfilePic.addSubview(_defaultProfileOverlay)
         }
         
@@ -161,10 +163,13 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     }
     
     private func addSavedTags(tagList : [String]) {
-        let _msg = tagList.joinWithSeparator("\u{0085}")
-        savedTags.textColor = UIColor.whiteColor()
-        savedTags.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCallout)
+        let _msg = tagList.map {"#"+$0 }.joinWithSeparator("\u{0085}")
+        
+        savedTags.textAlignment = .Left
         savedTags.text = _msg
+        savedTags.textColor = UIColor.whiteColor()
+        savedTags.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+
     }
     
     private func addUserProfilePic(_userImageURL : NSURL?) {

@@ -39,12 +39,8 @@ class Question : NSObject {
         self.qCreated = true
     }
     
-    func totalAnswers() -> Int? {
-        if self.qAnswers?.count > 0 {
-            return self.qAnswers!.count
-        } else {
-            return nil
-        }
+    func totalAnswers() -> Int {
+        return self.qAnswers?.count ?? 0
     }
     
     func hasAnswers() -> Bool {

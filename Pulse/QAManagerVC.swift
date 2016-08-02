@@ -21,6 +21,7 @@ protocol childVCDelegate: class {
     func minAnswersShown()
     func showNextQuestion()
     func goBack(_ : UIViewController)
+    func showQuestionPreviewOverlay()
 }
 
 class QAManagerVC: UIViewController, childVCDelegate {
@@ -32,6 +33,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     var currentQuestion = Question!(nil)
     
     private var savedRecordedVideoVC : UserRecordedAnswerVC?
+    private var questionPreviewOverlay : QuestionPreviewOverlay?
     private let answerVC = ShowAnswerVC()
     weak var returnToParentDelegate : ParentDelegate!
     private var loadingView : LoadingView?
@@ -56,6 +58,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
         loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
         loadingView?.addMessage("Loading...")
+        
         self.view.addSubview(loadingView!)
         
         displayQuestion()
@@ -72,6 +75,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     /* QA Specific Methods */
     
     func displayQuestion() {
+        showQuestionPreviewOverlay()
         answerVC.currentQuestion = currentQuestion
         answerVC.currentTag = selectedTag
         answerVC.delegate = self
@@ -165,7 +169,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func showNextQuestion() {
-        self.loadNextQuestion({ (question, error) in
+        loadNextQuestion({ (question, error) in
             if error != nil {
                 if error?.domain == "ReachedEnd" {
                     self.returnToParentDelegate.returnToParent(self)
@@ -177,7 +181,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func showPriorQuestion() {
-        self.loadPriorQuestion({ (question, error) in
+        loadPriorQuestion({ (question, error) in
             if error != nil {
                 if error?.domain == "ReachedBeginning" {
                     self.returnToParentDelegate.returnToParent(self)
@@ -189,6 +193,8 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func noAnswersToShow(currentVC : UIViewController) {
+        removeQuestionPreviewOverlay()
+
         if _hasMoreAnswers {
             showNextQuestion()
         } else if User.isLoggedIn() {
@@ -229,8 +235,22 @@ class QAManagerVC: UIViewController, childVCDelegate {
         GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
     }
     
+    func showQuestionPreviewOverlay() {
+        questionPreviewOverlay = QuestionPreviewOverlay(frame: view.frame)
+        questionPreviewOverlay!.setQuestionLabel(currentQuestion.qTitle)
+        questionPreviewOverlay!.setNumAnswersLabel(currentQuestion.totalAnswers())
+        view.addSubview(questionPreviewOverlay!)
+    }
+    
+    private func removeQuestionPreviewOverlay() {
+        UIView.animateWithDuration(1, animations: { self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
+            self.questionPreviewOverlay?.removeFromSuperview()
+        })
+    }
+    
     func hasAnswersToShow() {
-        self.answerVC.view.hidden = false
+        answerVC.view.hidden = false
+        removeQuestionPreviewOverlay()
     }
     
     func userDismissedRecording(currentVC : UIViewController) {
@@ -289,7 +309,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
             
         else if (pan.state == UIGestureRecognizerState.Ended) {
             let translation = pan.translationInView(self.view)
-            print("translation values are \(translation), screen bounds are \(self.view.bounds)")
             if _isShowingCamera {
                 //cameraVC will handle
             } else if _isShowingUserRecordedVideo {
@@ -299,12 +318,14 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 case _ where translation.y < -self.view.bounds.maxY / 3:
                     showNextQuestion()
                     pan.setTranslation(CGPointZero, inView: self.view)
+                    self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y) /*ADDED*/
                 case _ where translation.y < -20 && translation.y > -self.view.bounds.maxY / 4:
-                    print("upvote fired")
                     answerVC.votedAnswer(.Upvote)
                 case _ where translation.y > self.view.bounds.maxY / 3:
                     showPriorQuestion()
                     pan.setTranslation(CGPointZero, inView: self.view)
+                    self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y) /*ADDED*/
+
                 case _ where translation.y > 20 && translation.y < self.view.bounds.maxY / 4:
                     answerVC.votedAnswer(.Downvote)
                 case _ where panCurrentPointX > self.view.bounds.width:
@@ -322,6 +343,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
             } else if _isShowingUserRecordedVideo {
                 //userRecordedVC will handle
             }else if (translation.y < -20 || translation.y > 20) {
+                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y) /*ADDED*/
                 //ignore moving the screen if user was trying to move up / down - ha
             }
             else if (translation.x > 0) { //only go back but not go forward - animates as dragging the view off
