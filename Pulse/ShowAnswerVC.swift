@@ -17,13 +17,15 @@ class ShowAnswerVC: UIViewController {
             if self.isViewLoaded() {
                 removeObserverIfNeeded()
                 delegate.showQuestionPreviewOverlay()
+                answerIndex = 0
+                _CameraShown = false
                 _loadFirstAnswer(currentQuestion)
             }
         }
     }
     
     internal var currentTag : Tag!
-    internal var answerIndex = 1
+    internal var answerIndex = 0
     internal var minAnswersToShow = 3
     internal var currentAnswer : Answer?
     
@@ -36,6 +38,9 @@ class ShowAnswerVC: UIViewController {
     
     private var _TapReady = false
     private var _NextItemReady = false
+    private var _CanAdvanceReady = false
+    private var _CameraShown = false
+    
     private var isObserving = false
     private var startObserver : AnyObject!
     
@@ -91,8 +96,10 @@ class ShowAnswerVC: UIViewController {
                 self._updateOverlayData(answer)
                 self._answerOverlay.addVideoTimerCountdown()
 
-                if self._canAdvance(self.answerIndex) {
-                    self._addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex])
+                if self._canAdvance(self.answerIndex + 1) {
+                    self._addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex + 1])
+                    self.answerIndex += 1
+                    self._CanAdvanceReady = true
                 }
             })
         } else {
@@ -220,15 +227,20 @@ class ShowAnswerVC: UIViewController {
     
     /* HANDLE GESTURES */
     func handleTap() {
-        if (answerIndex == minAnswersToShow && (_canAdvance(self.answerIndex))) { //ask user to answer the question
+//        print("current index is \(answerIndex)")
+//        print("tap ready \(_TapReady), next item ready \(_NextItemReady), can advance \(_CanAdvanceReady)")
+        if (answerIndex == minAnswersToShow && !_CameraShown && _CanAdvanceReady) { //ask user to answer the question
             if (delegate != nil) {
                 qPlayer.pause()
+                _CameraShown = true
                 delegate.minAnswersShown()
             }
         }
-        else if (!_TapReady || (!_NextItemReady && (_canAdvance(self.answerIndex)))) {
+        else if (!_TapReady || (!_NextItemReady && _CanAdvanceReady)) {
             //ignore swipe
-        } else if (_canAdvance(self.answerIndex)) {
+        }
+        else if _CanAdvanceReady {
+//            print("trying to advance to next answer")
             _TapReady = false
             _answerOverlay.resetTimer()
             qPlayer.pause()
@@ -243,8 +255,14 @@ class ShowAnswerVC: UIViewController {
             
             if _canAdvance(answerIndex) {
                 _addNextVideoToQueue(currentQuestion.qAnswers![answerIndex])
+                _CanAdvanceReady = true
+//                print("added next item to queue")
+            } else {
+                _CanAdvanceReady = false
+//                print("already added last item to queue")
             }
         } else {
+//            print("no more answers")
             if (delegate != nil) {
                 delegate.noAnswersToShow(self)
             }

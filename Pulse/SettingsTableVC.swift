@@ -127,7 +127,6 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         let _sectionID = _sections![section].sectionID
         return SectionTypes.getSectionDisplayName(_sectionID)
-//        return _sectionID
     }
     
     func tableView(tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
@@ -141,18 +140,23 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let _settingID = _sections![indexPath.section].settings![indexPath.row]
         let cell = tableView.dequeueReusableCellWithIdentifier(_reuseIdentifier) as! SettingsTableCell
+        
 
         if _settings[indexPath.section].count > indexPath.row {
             let _setting = _settings[indexPath.section][indexPath.row]
             cell.textLabel!.text = _setting.display!
-            cell.detailTextLabel?.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+            if _setting.type != nil {
+                cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+            }
             if _setting.editable {
                 cell.accessoryType = .DetailButton
             }
         } else {
             Database.getSetting(_settingID, completion: {(_setting, error) in
                 cell.textLabel!.text = _setting.display!
-                cell.detailTextLabel?.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                if _setting.type != nil {
+                    cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                }
                 self._settings[indexPath.section].append(_setting)
                 if _setting.editable {
                     cell.accessoryType = .DisclosureIndicator

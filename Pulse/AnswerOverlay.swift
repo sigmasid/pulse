@@ -165,7 +165,9 @@ class AnswerOverlay: UIView {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
                 let _userImageData = NSData(contentsOfURL: _userImageURL!)
                 dispatch_async(dispatch_get_main_queue(), {
-                    self._userImage.image = UIImage(data: _userImageData!)
+                    if _userImageData != nil {
+                        self._userImage.image = UIImage(data: _userImageData!)
+                    }
                 })
             }
         } else if let _ = _userImageData {

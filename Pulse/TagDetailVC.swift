@@ -16,12 +16,15 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     
     var questionCount = 1
     let questionReuseIdentifier = "questionListCell"
+    let collectionReuseIdentifier = "collectionQuestionCell"
     
     @IBOutlet var QuestionsTableView: UITableView!
     @IBOutlet weak var qPreviewContainer: QuestionPreviewVC?
     @IBOutlet weak var tagImage: UIImageView!
     @IBOutlet weak var tagTitleLabel: UILabel!
     @IBOutlet weak var separatorView: UIView!
+    
+    var QuestionsCollectionView : UICollectionView!
     
     var currentTag : Tag!
     var returningToExplore = false
@@ -167,5 +170,45 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
         if let _selectedQuestion = _allQuestions[indexPath.row] {
             showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
         }
+    }
+}
+
+extension TagDetailVC : UICollectionViewDataSource {
+    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return currentTag.totalQuestionsForTag()!
+    }
+    
+    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
+        return 1
+    }
+    
+    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(collectionReuseIdentifier, forIndexPath: indexPath) as! TagDetailCollectionCell
+        cell.backgroundColor = UIColor.redColor()
+        
+        if _allQuestions.count > indexPath.row {
+            let _currentQuestion = self._allQuestions[indexPath.row]
+            cell.questionLabel.text = _currentQuestion?.qTitle
+        } else {
+            Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+                if error == nil {
+                    self._allQuestions.append(question)
+                    cell.questionLabel.text = question.qTitle
+                }
+            })
+        }
+        return cell
+    }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        if let _selectedQuestion = _allQuestions[indexPath.row] {
+            showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+        }
+    }
+}
+
+extension TagDetailVC: UICollectionViewDelegateFlowLayout {
+    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+        return CGSize(width: QuestionsCollectionView.frame.width / 2, height: QuestionsCollectionView.frame.height / 3)
     }
 }

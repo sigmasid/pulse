@@ -42,8 +42,8 @@ class QuestionPreviewOverlay: UIView {
         _questionLabel.numberOfLines = 0
         _questionLabel.textAlignment = .Center
         _questionLabel.lineBreakMode = .ByWordWrapping
-        _questionLabel.translatesAutoresizingMaskIntoConstraints = false
         
+        _questionLabel.translatesAutoresizingMaskIntoConstraints = false
         _questionLabel.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
         _questionLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
         _questionLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true

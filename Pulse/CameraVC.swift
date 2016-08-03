@@ -44,13 +44,17 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         self.view.addGestureRecognizer(zoomPinch)
     }
     
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(true)
+    override func viewWillAppear(animated: Bool) {
         _cameraOverlay = CameraOverlayView(frame: UIScreen.mainScreen().bounds)
         
         setupLoading()
         setupCamera()
         setupCameraOverlay()
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(true)
+
     }
     
     override func didReceiveMemoryWarning() {

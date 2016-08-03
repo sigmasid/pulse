@@ -193,13 +193,13 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func noAnswersToShow(currentVC : UIViewController) {
-        removeQuestionPreviewOverlay()
-
         if _hasMoreAnswers {
             showNextQuestion()
+            _hasMoreAnswers = false
         } else if User.isLoggedIn() {
             if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
                 showNextQuestion()
+                _hasMoreAnswers = false
             } else {
                 currentVC.view.hidden = true
                 showCamera()
@@ -232,10 +232,18 @@ class QAManagerVC: UIViewController, childVCDelegate {
         _cameraVC.childDelegate = self
         _cameraVC.questionToShow = currentQuestion
         _isShowingCamera = true
-        GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
+        _cameraVC.view.alpha = 0
+        
+        UIView.animateWithDuration(1, animations: { _cameraVC.view.alpha = 1.0; self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
+            GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
+            self.removeQuestionPreviewOverlay()
+        })
+
+
     }
     
     func showQuestionPreviewOverlay() {
+//        print("adding question preview overlay")
         questionPreviewOverlay = QuestionPreviewOverlay(frame: view.frame)
         questionPreviewOverlay!.setQuestionLabel(currentQuestion.qTitle)
         questionPreviewOverlay!.setNumAnswersLabel(currentQuestion.totalAnswers())
@@ -243,6 +251,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     private func removeQuestionPreviewOverlay() {
+//        print("removing question preview overlay")
         UIView.animateWithDuration(1, animations: { self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
             self.questionPreviewOverlay?.removeFromSuperview()
         })
@@ -263,6 +272,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         _isShowingCamera = false
 
         if _hasMoreAnswers {
+//            print("returning to answers")
             returnToAnswers()
             GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
         } else {
@@ -280,7 +290,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
     }
     
     func returnToAnswers() {
-        answerVC.answerIndex += 1
         answerVC.view.hidden = false
         answerVC.handleTap()
     }

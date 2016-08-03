@@ -9,16 +9,24 @@
 import UIKit
 
 class SettingsTableCell: UITableViewCell {
+    let _detailTextLabel = UILabel()
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
+        addSubview(_detailTextLabel)
+        
+        _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
+        _detailTextLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.4).active = true
+        _detailTextLabel.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        _detailTextLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
+        _detailTextLabel.setPreferredFont(UIColor.whiteColor())
+
         backgroundColor = UIColor.clearColor()
         textLabel?.textColor = UIColor.whiteColor()
         textLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
         
-        detailTextLabel?.textColor = UIColor.whiteColor()
-        detailTextLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+
         
     }
     
