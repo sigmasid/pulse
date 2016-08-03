@@ -31,6 +31,8 @@ extension UILabel {
         self.textAlignment = .Center
         self.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
         self.textColor = color
+        self.numberOfLines = 0
+        self.lineBreakMode = .ByWordWrapping
     }
 }
 

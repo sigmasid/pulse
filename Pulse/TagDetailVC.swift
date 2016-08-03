@@ -22,9 +22,10 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     @IBOutlet weak var qPreviewContainer: QuestionPreviewVC?
     @IBOutlet weak var tagImage: UIImageView!
     @IBOutlet weak var tagTitleLabel: UILabel!
-    @IBOutlet weak var separatorView: UIView!
+//    @IBOutlet weak var separatorView: UIView!
+    @IBOutlet weak var toggleButtonView: UIButton!
     
-    var QuestionsCollectionView : UICollectionView!
+    private var QuestionsCollectionView : UICollectionView?
     
     var currentTag : Tag!
     var returningToExplore = false
@@ -32,6 +33,12 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
+    private var _currentView : currentLoadedView?
+    
+    private enum currentLoadedView : String {
+        case tableview = "tableView"
+        case collectionview = "collectionView"
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,8 +50,10 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(true)
-    
+        
         if currentTag != nil && !returningToExplore {
+            toggleButtonView.makeRound()
+            _currentView = .tableview
             self.qPreviewContainer?.currentQuestionID = currentTag.questions?.first
             loadTagData()
         }
@@ -59,7 +68,7 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
         return true
     }
     
-    func loadTagData() {
+    private func loadTagData() {
         tagTitleLabel.text = "#"+(currentTag.tagID!).uppercaseString
         tagTitleLabel.alignmentRectInsets()
         let newLabelFrame = CGRectMake(0,0,tagTitleLabel.intrinsicContentSize().width,tagTitleLabel.intrinsicContentSize().height)
@@ -80,6 +89,52 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
                 }
             })
         }
+    }
+    
+    @IBAction func toggleView(sender: UIButton) {
+        if _currentView == .tableview {
+            QuestionsTableView.hidden = true
+            toggleButtonView.setImage(UIImage(named: "table-list"), forState: .Normal)
+            if QuestionsCollectionView == nil {
+                setupCollectionView()
+            } else {
+                QuestionsCollectionView?.hidden = false
+            }
+            _currentView = .collectionview
+        } else {
+            QuestionsTableView.hidden = false
+            QuestionsCollectionView?.hidden = true
+            toggleButtonView.setImage(UIImage(named: "collection-list"), forState: .Normal)
+            _currentView = .tableview
+        }
+
+    }
+    
+    private func setupCollectionView() {
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.scrollDirection = UICollectionViewScrollDirection.Vertical
+        layout.minimumLineSpacing = Spacing.xs.rawValue
+        layout.minimumInteritemSpacing = Spacing.xs.rawValue
+        
+        QuestionsCollectionView = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
+        QuestionsCollectionView?.registerClass(TagDetailCollectionCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+
+        view.addSubview(QuestionsCollectionView!)
+        
+        QuestionsCollectionView?.translatesAutoresizingMaskIntoConstraints = false
+        QuestionsCollectionView?.topAnchor.constraintEqualToAnchor(qPreviewContainer!.view.bottomAnchor, constant: Spacing.m.rawValue).active = true
+        QuestionsCollectionView?.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.m.rawValue).active = true
+        QuestionsCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor, constant: 100).active = true
+        QuestionsCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        QuestionsCollectionView?.layoutIfNeeded()
+        
+        QuestionsCollectionView?.backgroundView = nil
+        QuestionsCollectionView?.backgroundColor = UIColor.clearColor()
+        QuestionsCollectionView?.showsVerticalScrollIndicator = false
+        
+        QuestionsCollectionView?.delegate = self
+        QuestionsCollectionView?.dataSource = self
+        QuestionsCollectionView?.reloadData()
     }
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
@@ -173,6 +228,7 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
     }
 }
 
+/* COLLECTION VIEW */
 extension TagDetailVC : UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return currentTag.totalQuestionsForTag()!
@@ -184,16 +240,17 @@ extension TagDetailVC : UICollectionViewDataSource {
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(collectionReuseIdentifier, forIndexPath: indexPath) as! TagDetailCollectionCell
-        cell.backgroundColor = UIColor.redColor()
+        let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
+        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
         
         if _allQuestions.count > indexPath.row {
             let _currentQuestion = self._allQuestions[indexPath.row]
-            cell.questionLabel.text = _currentQuestion?.qTitle
+            cell.questionLabel!.text = _currentQuestion?.qTitle
         } else {
             Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
                 if error == nil {
                     self._allQuestions.append(question)
-                    cell.questionLabel.text = question.qTitle
+                    cell.questionLabel!.text = question.qTitle
                 }
             })
         }
@@ -209,6 +266,6 @@ extension TagDetailVC : UICollectionViewDataSource {
 
 extension TagDetailVC: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: QuestionsCollectionView.frame.width / 2, height: QuestionsCollectionView.frame.height / 3)
+        return CGSize(width: (QuestionsCollectionView!.frame.width - (Spacing.xs.rawValue * 2)) / 2, height: QuestionsCollectionView!.frame.height / 3)
     }
 }

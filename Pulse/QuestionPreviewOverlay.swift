@@ -12,7 +12,6 @@ class QuestionPreviewOverlay: UIView {
     
     private let _questionLabel = UILabel()
     private lazy var _numAnswers = UILabel()
-    private let _backgroundColors = [UIColor.cyanColor(), UIColor.yellowColor(), UIColor.blueColor(), UIColor.greenColor(), UIColor.orangeColor(), UIColor.magentaColor()]
     
     private let _iconSize = IconSizes.Medium.rawValue
     private var _pulseIcon : Icon?

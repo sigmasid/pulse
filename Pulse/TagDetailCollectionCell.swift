@@ -9,14 +9,24 @@
 import UIKit
 
 class TagDetailCollectionCell: UICollectionViewCell {
-    weak var questionLabel: UILabel!
+    var questionLabel: UILabel?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        questionLabel = UILabel(frame: CGRectMake(0, 0, self.bounds.width, self.bounds.width))
-        self.addSubview(questionLabel)
-        contentView.backgroundColor = UIColor.redColor()
+        questionLabel = UILabel()
+        questionLabel?.setPreferredFont(UIColor.whiteColor())
+        
+        self.addSubview(questionLabel!)
+        
+        questionLabel!.translatesAutoresizingMaskIntoConstraints = false
+        questionLabel?.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        questionLabel?.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
+        questionLabel?.heightAnchor.constraintEqualToAnchor(heightAnchor).active = true
+        questionLabel?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        questionLabel?.layoutIfNeeded()
+        
+        contentView.backgroundColor = UIColor.redColor().colorWithAlphaComponent(0.5)
     }
     
     required init?(coder aDecoder: NSCoder) {

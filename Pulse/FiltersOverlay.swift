@@ -29,23 +29,23 @@ class FiltersOverlay: UIView, UIGestureRecognizerDelegate {
     
     func setupFilters() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.itemSize = CGSize(width: self.bounds.width, height: self.bounds.height)
+//        layout.itemSize = CGSize(width: self.bounds.width, height: self.bounds.height)
         layout.scrollDirection = UICollectionViewScrollDirection.Horizontal
         layout.minimumLineSpacing = 0.0
         layout.minimumInteritemSpacing = 0.0
         layout.itemSize = CGSize(width: self.frame.width, height: self.frame.height)
         
-        self.Filters = UICollectionView(frame: self.frame, collectionViewLayout: layout)
-        self.Filters.registerClass(FiltersCell.self, forCellWithReuseIdentifier: self.reuseIdentifier)
-        self.Filters.backgroundColor = UIColor.clearColor()
-        self.Filters.delegate = self
-        self.Filters.dataSource = self
-        self.Filters.pagingEnabled = true
-        self.Filters.showsHorizontalScrollIndicator = false
-        self.Filters.canCancelContentTouches = true
+        Filters = UICollectionView(frame: self.frame, collectionViewLayout: layout)
+        Filters.registerClass(FiltersCell.self, forCellWithReuseIdentifier: self.reuseIdentifier)
+        Filters.backgroundColor = UIColor.clearColor()
+        Filters.delegate = self
+        Filters.dataSource = self
+        Filters.pagingEnabled = true
+        Filters.showsHorizontalScrollIndicator = false
+        Filters.canCancelContentTouches = true
         
-        self.Filters.contentInset = UIEdgeInsetsMake(0, 0, 0, 0)
-        self.addSubview(self.Filters)
+        Filters.contentInset = UIEdgeInsetsMake(0, 0, 0, 0)
+        addSubview(self.Filters)
     }
 }
 

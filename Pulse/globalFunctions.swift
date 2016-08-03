@@ -14,6 +14,7 @@ let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alp
 let buttonCornerRadius : CGFloat = 20
 
 let maxImgSize : Int64 = 1242 * 2208
+let _backgroundColors = [UIColor.cyanColor(), UIColor.yellowColor(), UIColor.blueColor(), UIColor.greenColor(), UIColor.orangeColor(), UIColor.magentaColor()]
 
 class GlobalFunctions {
     static func addBorders(_textField : UITextField) -> CAShapeLayer {
