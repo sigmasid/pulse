@@ -32,11 +32,9 @@ class GlobalFunctions {
     }
 
     static func addNewVC(newVC: UIViewController, parentVC: UIViewController) {
-        UIView.animateWithDuration(0.35, animations: { newVC.view.alpha = 1.0 } , completion: {(value: Bool) in
-            parentVC.addChildViewController(newVC)
-            parentVC.view.addSubview(newVC.view)
-            newVC.didMoveToParentViewController(parentVC)
-        })
+        parentVC.addChildViewController(newVC)
+        parentVC.view.addSubview(newVC.view)
+        newVC.didMoveToParentViewController(parentVC)
     }
 
     static func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {

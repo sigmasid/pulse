@@ -13,21 +13,7 @@ class SettingsTableCell: UITableViewCell {
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        
-        addSubview(_detailTextLabel)
-        
-        _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
-        _detailTextLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.4).active = true
-        _detailTextLabel.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        _detailTextLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
-        _detailTextLabel.setPreferredFont(UIColor.whiteColor())
-
-        backgroundColor = UIColor.clearColor()
-        textLabel?.textColor = UIColor.whiteColor()
-        textLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        
-
-        
+        setupCellLayout()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -36,6 +22,20 @@ class SettingsTableCell: UITableViewCell {
     
     override func setSelected(selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
+    }
+    
+    private func setupCellLayout() {
+        addSubview(_detailTextLabel)
+        
+        _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
+        _detailTextLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.4).active = true
+        _detailTextLabel.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        _detailTextLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
+        _detailTextLabel.setPreferredFont(UIColor.whiteColor())
+        
+        backgroundColor = UIColor.clearColor()
+        textLabel?.textColor = UIColor.whiteColor()
+        textLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
     }
 
 }

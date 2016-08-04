@@ -18,12 +18,11 @@ class TagDetailVC: UIViewController, ParentDelegate {
     let questionReuseIdentifier = "questionListCell"
     let collectionReuseIdentifier = "collectionQuestionCell"
     
-    @IBOutlet var QuestionsTableView: UITableView!
+    private var tagTitleLabel = UILabel()
+    private var tagImage = UIImageView()
+    private var toggleButton = UIButton()
     
-    @IBOutlet weak var tagImage: UIImageView!
-    @IBOutlet weak var tagTitleLabel: UILabel!
-    @IBOutlet weak var toggleButtonView: UIButton!
-    
+    private var QuestionsTableView: UITableView?
     private var QuestionsCollectionView : UICollectionView?
     private var selectedIndex : NSIndexPath? {
         didSet {
@@ -62,10 +61,9 @@ class TagDetailVC: UIViewController, ParentDelegate {
         super.viewDidAppear(true)
         
         if currentTag != nil && !returningToExplore {
-            toggleButtonView.makeRound()
             _currentView = .tableview
-//            self.qPreviewContainer?.currentQuestionID = currentTag.questions?.first
-            loadTagData()
+            setupScreenLayout()
+//            loadTagData()
         }
     }
     
@@ -79,12 +77,70 @@ class TagDetailVC: UIViewController, ParentDelegate {
     }
     
     private func loadTagData() {
+        
+    }
+    
+    func toggleView(sender: UIButton) {
+        if _currentView == .tableview {
+            QuestionsTableView?.hidden = true
+            toggleButton.setImage(UIImage(named: "table-list"), forState: .Normal)
+            if QuestionsCollectionView == nil {
+                setupCollectionView()
+            } else {
+                QuestionsCollectionView?.hidden = false
+            }
+            _currentView = .collectionview
+        } else {
+            QuestionsTableView?.hidden = false
+            QuestionsCollectionView?.hidden = true
+            toggleButton.setImage(UIImage(named: "collection-list"), forState: .Normal)
+            _currentView = .tableview
+        }
+    }
+    
+    func showInitialView() {
+        if _currentView == .tableview {
+            setupTableView()
+        } else {
+            setupCollectionView()
+        }
+    }
+    private func setupScreenLayout() {
+        tagImage = UIImageView()
+        view.addSubview(tagImage)
+        
+        tagImage.translatesAutoresizingMaskIntoConstraints = false
+        tagImage.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        tagImage.centerYAnchor.constraintEqualToAnchor(view.centerYAnchor).active = true
+        tagImage.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
+        tagImage.heightAnchor.constraintEqualToAnchor(view.heightAnchor).active = true
+        
+        view.addSubview(toggleButton)
+        toggleButton.setImage(UIImage(named: "collection-list"), forState: .Normal)
+        toggleButton.addTarget(self, action: #selector(toggleView), forControlEvents: UIControlEvents.TouchDown)
+        toggleButton.backgroundColor = UIColor.darkGrayColor()
+        
+        toggleButton.translatesAutoresizingMaskIntoConstraints = false
+        toggleButton.bottomAnchor.constraintEqualToAnchor(tagImage.bottomAnchor, constant: -Spacing.s.rawValue).active = true
+        toggleButton.trailingAnchor.constraintEqualToAnchor(tagImage.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        toggleButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        toggleButton.widthAnchor.constraintEqualToAnchor(toggleButton.heightAnchor).active = true
+        toggleButton.contentEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15)
+
+        toggleButton.layoutIfNeeded()
+        toggleButton.makeRound()
+        
+        view.addSubview(tagTitleLabel)
+        tagTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
         tagTitleLabel.text = "#"+(currentTag.tagID!).uppercaseString
+        tagTitleLabel.font = UIFont.systemFontOfSize(40, weight: UIFontWeightHeavy)
+        tagTitleLabel.textColor = UIColor.whiteColor()
         let newLabelFrame = CGRectMake(0,0,tagTitleLabel.intrinsicContentSize().width,tagTitleLabel.intrinsicContentSize().height)
         tagTitleLabel.frame = newLabelFrame
         tagTitleLabel.transform = CGAffineTransformMakeRotation(CGFloat(-M_PI_2))
         
-        tagTitleLabel.bottomAnchor.constraintEqualToAnchor(toggleButtonView.topAnchor, constant: -newLabelFrame.maxX/2).active = true
+        tagTitleLabel.bottomAnchor.constraintEqualToAnchor(toggleButton.topAnchor, constant: -newLabelFrame.maxX/2).active = true
         tagTitleLabel.centerXAnchor.constraintEqualToAnchor(view.leftAnchor, constant: newLabelFrame.maxY/2 + 10).active = true
         tagTitleLabel.heightAnchor.constraintEqualToConstant(newLabelFrame.maxY).active = true
         
@@ -97,24 +153,8 @@ class TagDetailVC: UIViewController, ParentDelegate {
                 }
             })
         }
-    }
-    
-    @IBAction func toggleView(sender: UIButton) {
-        if _currentView == .tableview {
-            QuestionsTableView.hidden = true
-            toggleButtonView.setImage(UIImage(named: "table-list"), forState: .Normal)
-            if QuestionsCollectionView == nil {
-                setupCollectionView()
-            } else {
-                QuestionsCollectionView?.hidden = false
-            }
-            _currentView = .collectionview
-        } else {
-            QuestionsTableView.hidden = false
-            QuestionsCollectionView?.hidden = true
-            toggleButtonView.setImage(UIImage(named: "collection-list"), forState: .Normal)
-            _currentView = .tableview
-        }
+        
+        showInitialView()
 
     }
     
@@ -125,13 +165,13 @@ class TagDetailVC: UIViewController, ParentDelegate {
         layout.minimumInteritemSpacing = Spacing.xs.rawValue
         
         QuestionsCollectionView = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
-        QuestionsCollectionView!.registerClass(TagDetailCollectionCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        QuestionsCollectionView?.registerClass(TagDetailCollectionCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
         view.addSubview(QuestionsCollectionView!)
         
         QuestionsCollectionView?.translatesAutoresizingMaskIntoConstraints = false
         QuestionsCollectionView?.topAnchor.constraintEqualToAnchor(tagImage.topAnchor, constant: Spacing.s.rawValue).active = true
-        QuestionsCollectionView?.bottomAnchor.constraintEqualToAnchor(toggleButtonView.topAnchor, constant: -Spacing.s.rawValue).active = true
+        QuestionsCollectionView?.bottomAnchor.constraintEqualToAnchor(toggleButton.topAnchor, constant: -Spacing.s.rawValue).active = true
         QuestionsCollectionView?.widthAnchor.constraintEqualToAnchor(tagImage.widthAnchor, multiplier: 0.75).active = true
         QuestionsCollectionView?.trailingAnchor.constraintEqualToAnchor(tagImage.trailingAnchor, constant: -Spacing.s.rawValue).active = true
         QuestionsCollectionView?.layoutIfNeeded()
@@ -146,31 +186,38 @@ class TagDetailVC: UIViewController, ParentDelegate {
         QuestionsCollectionView?.reloadData()
     }
     
-//    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-//        if segue.identifier == "containerViewSegue" {
-//            qPreviewContainer = segue.destinationViewController as? QuestionPreviewVC
-//            qPreviewContainer?.qPreviewDelegate = self
-//        }
-//    }
+    private func setupTableView() {
+        QuestionsTableView = UITableView()
+        QuestionsTableView?.registerClass(TagDetailQuestionCell.self, forCellReuseIdentifier: questionReuseIdentifier)
+        
+        view.addSubview(QuestionsTableView!)
+
+        QuestionsTableView?.translatesAutoresizingMaskIntoConstraints = false
+        QuestionsTableView?.topAnchor.constraintEqualToAnchor(tagImage.topAnchor, constant: Spacing.s.rawValue).active = true
+        QuestionsTableView?.bottomAnchor.constraintEqualToAnchor(toggleButton.topAnchor, constant: -Spacing.s.rawValue).active = true
+        QuestionsTableView?.widthAnchor.constraintEqualToAnchor(tagImage.widthAnchor, multiplier: 0.75).active = true
+        QuestionsTableView?.trailingAnchor.constraintEqualToAnchor(tagImage.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        
+        QuestionsTableView?.backgroundView = nil
+        QuestionsTableView?.backgroundColor = UIColor.clearColor()
+        QuestionsTableView?.separatorStyle = .None
+        QuestionsTableView?.tableFooterView = UIView()
+        QuestionsTableView?.showsVerticalScrollIndicator = false
+        QuestionsTableView?.pagingEnabled = true
+        
+        QuestionsTableView?.delegate = self
+        QuestionsTableView?.dataSource = self
+        QuestionsTableView?.reloadData()
+    }
     
-    /* DELEGATE METHODS */
-//    func updateContainerQuestion() {
-//        if questionCount < self.currentTag.totalQuestionsForTag() {
-//            qPreviewContainer?.currentQuestionID = self.currentTag.questions![questionCount]
-//            questionCount += 1
-//        }
-//    }
-    
-    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
+    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag, _frame : CGRect?) {
         let QAVC = QAManagerVC()
         QAVC.selectedTag = _selectedTag
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-        QAVC.view.frame = self.view.bounds
-        
         QAVC.returnToParentDelegate = self
-        
+        QAVC.view.frame = view.frame
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     
@@ -189,22 +236,23 @@ class TagDetailVC: UIViewController, ParentDelegate {
             let panFinishingPointX = pan.view!.center.x
             _ = pan.view!.center.y
             
-            if (panFinishingPointX > self.view.bounds.width) {
+            if (panFinishingPointX > view.bounds.width) {
                 returnToParentDelegate.returnToParent(self)
             } else {
-                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
-                pan.setTranslation(CGPointZero, inView: self.view)
+                view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
+                pan.setTranslation(CGPointZero, inView: view)
             }
         } else {
-            let translation = pan.translationInView(self.view)
+            let translation = pan.translationInView(view)
             if translation.x > 0 {
-                self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-                pan.setTranslation(CGPointZero, inView: self.view)
+                view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
+                pan.setTranslation(CGPointZero, inView: view)
             }
         }
     }
 }
 
+/* SETUP TABLEVIEW */
 extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return currentTag.totalQuestionsForTag()!
@@ -213,8 +261,9 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier(questionReuseIdentifier) as! TagDetailQuestionCell
         cell.backgroundColor = UIColor.clearColor()
+        
         let _cellLabel = cell.questionLabel
-        _cellLabel.userInteractionEnabled = false
+//        _cellLabel.userInteractionEnabled = false
 
         if _allQuestions.count > indexPath.row {
             let _currentQuestion = self._allQuestions[indexPath.row]
@@ -232,8 +281,12 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         if let _selectedQuestion = _allQuestions[indexPath.row] {
-            showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+            showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame: nil)
         }
+    }
+    
+    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+        return Spacing.l.rawValue * 2
     }
 }
 
@@ -266,7 +319,8 @@ extension TagDetailVC : UICollectionViewDataSource {
         
         if indexPath == selectedIndex && indexPath == deselectedIndex {
             if let _selectedQuestion = _allQuestions[indexPath.row] {
-                showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+                let _translatedFrame = cell.convertRect(cell.frame, toView: self.view)
+                showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
             }
         } else if indexPath == selectedIndex {
             if let _selectedQuestion = _allQuestions[indexPath.row] {

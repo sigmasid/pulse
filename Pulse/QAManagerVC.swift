@@ -272,7 +272,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
         _isShowingCamera = false
 
         if _hasMoreAnswers {
-//            print("returning to answers")
             returnToAnswers()
             GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
         } else {

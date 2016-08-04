@@ -140,7 +140,6 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let _settingID = _sections![indexPath.section].settings![indexPath.row]
         let cell = tableView.dequeueReusableCellWithIdentifier(_reuseIdentifier) as! SettingsTableCell
-        
 
         if _settings[indexPath.section].count > indexPath.row {
             let _setting = _settings[indexPath.section][indexPath.row]

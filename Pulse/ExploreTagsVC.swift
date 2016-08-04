@@ -101,13 +101,12 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func showTagDetail(_selectedTag : Tag) {
-        if let tagDetailVC = storyboard!.instantiateViewControllerWithIdentifier("tagDetailVC") as? TagDetailVC {
-            tagDetailVC.currentTag = _selectedTag
-            tagDetailVC.view.frame = view.bounds
-        
-            tagDetailVC.returnToParentDelegate = self
-            GlobalFunctions.addNewVC(tagDetailVC, parentVC: self)
-        }
+        let tagDetailVC = TagDetailVC()
+        tagDetailVC.currentTag = _selectedTag
+        tagDetailVC.view.frame = view.bounds
+    
+        tagDetailVC.returnToParentDelegate = self
+        GlobalFunctions.addNewVC(tagDetailVC, parentVC: self)
     }
     
     func showTagDetailTap(sender : UITapGestureRecognizer) {

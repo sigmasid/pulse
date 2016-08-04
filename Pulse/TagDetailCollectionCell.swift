@@ -37,7 +37,7 @@ class TagDetailCollectionCell: UICollectionViewCell {
         answerPreview = QuestionPreviewVC(frame: CGRectMake(0, 0, contentView.bounds.width, contentView.bounds.height))
         answerPreview?.currentQuestion = _question
         questionLabel?.hidden = true
-        contentView.addSubview(answerPreview!)
+        UIView.transitionWithView( contentView, duration: 0.5, options: .TransitionFlipFromLeft, animations: { _ in self.contentView.addSubview(self.answerPreview!) }, completion: nil)
         answerPreviewAdded = true
     }
     
