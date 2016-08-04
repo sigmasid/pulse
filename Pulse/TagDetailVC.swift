@@ -27,7 +27,6 @@ class TagDetailVC: UIViewController, ParentDelegate {
     private var QuestionsCollectionView : UICollectionView?
     private var selectedIndex : NSIndexPath? {
         didSet {
-            print("set index path \(selectedIndex!.row) \(deselectedIndex?.row)")
             QuestionsCollectionView?.reloadData()
         }
         willSet {
