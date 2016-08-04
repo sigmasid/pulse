@@ -9,79 +9,99 @@
 import UIKit
 import AVFoundation
 
-class QuestionPreviewVC: UIViewController {
-    
-    var currentQuestionID : String? {
+class QuestionPreviewVC: UIView, PreviewPlayerItemDelegate {
+    private var _loadingIndicator : LoadingIndicatorView?
+    private var aPlayer = AVPlayer()
+    var currentQuestion : Question! {
         didSet {
-            self.loadQuestion()
+            loadQuestion()
+            addLoadingIndicator()
         }
     }
     
-    var aPlayer = AVPlayer()
-    var currentQuestion : Question!
-    
-    @IBOutlet weak var answerPreview: UIView!
-    @IBOutlet weak var questionLabel: UILabel!
-    weak var qPreviewDelegate : questionPreviewDelegate!
-    var pulseIcon : Icon!
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-    }
-    
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(true)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         
+        self.backgroundColor = UIColor.blackColor()
         let avPlayerLayer = AVPlayerLayer(player: aPlayer)
-        answerPreview.layer.insertSublayer(avPlayerLayer, atIndex: 0)
-        avPlayerLayer.frame = answerPreview.bounds
+        layer.addSublayer(avPlayerLayer)
+        avPlayerLayer.frame = CGRectMake(0, 0, bounds.width, bounds.height)
+
         avPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
     }
     
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
-        if keyPath == "status" {
-            switch aPlayer.status {
-            case AVPlayerStatus.ReadyToPlay:
-                self.aPlayer.play()
-                aPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
-                break
-            default: break
-            }
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
+    private func loadQuestion() {
+        if currentQuestion.hasAnswers() {
+            setupAnswer(currentQuestion.qAnswers!.first!)
         }
     }
     
-    func loadQuestion() {
-        Database.getQuestion(currentQuestionID!, completion: {(question, error) in
-            self.currentQuestion = question
-            self.questionLabel.text = question.qTitle!
-            if self.currentQuestion.hasAnswers() {
-                self.setupAnswer(self.currentQuestion.qAnswers!.first!)
-            }
-        })
+    func itemStatusReady() {
+        switch aPlayer.status {
+        case AVPlayerStatus.ReadyToPlay:
+            removeLoadingIndicator()
+            aPlayer.play()
+            break
+        default: break
+        }
     }
     
-    func setupAnswer(answerID : String) {
+    private func setupAnswer(answerID : String) {
         Database.getAnswerURL(answerID, completion: {(URL, error) in
             if (error != nil) {
                 print(error.debugDescription)
             } else {
-                let aPlayerItem = AVPlayerItem(URL: URL!)
+                let aPlayerItem = PreviewPlayerItem(URL: URL!)
+                aPlayerItem.delegate = self
                 self.aPlayer.replaceCurrentItemWithPlayerItem(aPlayerItem)
-                self.aPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
             }
         })
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
+    func addLoadingIndicator() {
+        let _loadingIndicatorFrame = CGRectMake(bounds.midX - (IconSizes.Medium.rawValue / 2), bounds.midY - (IconSizes.Medium.rawValue / 2), IconSizes.Medium.rawValue, IconSizes.Medium.rawValue)
+        _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.whiteColor())
+        addSubview(_loadingIndicator!)
     }
     
-    @IBAction func handleSwipe(recognizer:UISwipeGestureRecognizer) {
-        switch recognizer.direction {
-        case UISwipeGestureRecognizerDirection.Right:
-            qPreviewDelegate.updateContainerQuestion()
-        default: print("default case")
+    func removeLoadingIndicator() {
+        _loadingIndicator!.removeFromSuperview()
+    }
+}
+
+protocol PreviewPlayerItemDelegate {
+    func itemStatusReady()
+}
+
+class PreviewPlayerItem: AVPlayerItem {
+    
+    var delegate : PreviewPlayerItemDelegate?
+    
+    init(URL: NSURL) {
+        super.init(asset: AVAsset(URL: URL) , automaticallyLoadedAssetKeys:[])
+        self.addMyObservers()
+    }
+    
+    deinit {
+        self.removeMyObservers()
+    }
+    
+    func addMyObservers() {
+        self.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+    }
+    
+    func removeMyObservers() {
+        self.removeObserver(self, forKeyPath: "status", context: nil)
+    }
+    
+    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+        if keyPath == "status" {
+            self.delegate?.itemStatusReady()
         }
     }
-
+    
 }

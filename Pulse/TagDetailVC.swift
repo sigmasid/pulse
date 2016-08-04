@@ -11,7 +11,7 @@ protocol questionPreviewDelegate: class {
     func updateContainerQuestion()
 }
 
-class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
+class TagDetailVC: UIViewController, ParentDelegate {
     var _allQuestions = [Question?]()
     
     var questionCount = 1
@@ -19,13 +19,24 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     let collectionReuseIdentifier = "collectionQuestionCell"
     
     @IBOutlet var QuestionsTableView: UITableView!
-    @IBOutlet weak var qPreviewContainer: QuestionPreviewVC?
+    
     @IBOutlet weak var tagImage: UIImageView!
     @IBOutlet weak var tagTitleLabel: UILabel!
-//    @IBOutlet weak var separatorView: UIView!
     @IBOutlet weak var toggleButtonView: UIButton!
     
     private var QuestionsCollectionView : UICollectionView?
+    private var selectedIndex : NSIndexPath? {
+        didSet {
+            print("set index path \(selectedIndex!.row) \(deselectedIndex?.row)")
+            QuestionsCollectionView?.reloadData()
+        }
+        willSet {
+            if selectedIndex != nil {
+                deselectedIndex = selectedIndex
+            }
+        }
+    }
+    private var deselectedIndex : NSIndexPath?
     
     var currentTag : Tag!
     var returningToExplore = false
@@ -54,7 +65,7 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
         if currentTag != nil && !returningToExplore {
             toggleButtonView.makeRound()
             _currentView = .tableview
-            self.qPreviewContainer?.currentQuestionID = currentTag.questions?.first
+//            self.qPreviewContainer?.currentQuestionID = currentTag.questions?.first
             loadTagData()
         }
     }
@@ -70,13 +81,11 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
     
     private func loadTagData() {
         tagTitleLabel.text = "#"+(currentTag.tagID!).uppercaseString
-        tagTitleLabel.alignmentRectInsets()
         let newLabelFrame = CGRectMake(0,0,tagTitleLabel.intrinsicContentSize().width,tagTitleLabel.intrinsicContentSize().height)
         tagTitleLabel.frame = newLabelFrame
-        
         tagTitleLabel.transform = CGAffineTransformMakeRotation(CGFloat(-M_PI_2))
         
-        tagTitleLabel.bottomAnchor.constraintEqualToAnchor(tagImage.bottomAnchor, constant: -newLabelFrame.maxX/2 - 10).active = true
+        tagTitleLabel.bottomAnchor.constraintEqualToAnchor(toggleButtonView.topAnchor, constant: -newLabelFrame.maxX/2).active = true
         tagTitleLabel.centerXAnchor.constraintEqualToAnchor(view.leftAnchor, constant: newLabelFrame.maxY/2 + 10).active = true
         tagTitleLabel.heightAnchor.constraintEqualToConstant(newLabelFrame.maxY).active = true
         
@@ -117,40 +126,41 @@ class TagDetailVC: UIViewController, questionPreviewDelegate, ParentDelegate {
         layout.minimumInteritemSpacing = Spacing.xs.rawValue
         
         QuestionsCollectionView = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
-        QuestionsCollectionView?.registerClass(TagDetailCollectionCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        QuestionsCollectionView!.registerClass(TagDetailCollectionCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
         view.addSubview(QuestionsCollectionView!)
         
         QuestionsCollectionView?.translatesAutoresizingMaskIntoConstraints = false
-        QuestionsCollectionView?.topAnchor.constraintEqualToAnchor(qPreviewContainer!.view.bottomAnchor, constant: Spacing.m.rawValue).active = true
-        QuestionsCollectionView?.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.m.rawValue).active = true
-        QuestionsCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor, constant: 100).active = true
-        QuestionsCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        QuestionsCollectionView?.topAnchor.constraintEqualToAnchor(tagImage.topAnchor, constant: Spacing.s.rawValue).active = true
+        QuestionsCollectionView?.bottomAnchor.constraintEqualToAnchor(toggleButtonView.topAnchor, constant: -Spacing.s.rawValue).active = true
+        QuestionsCollectionView?.widthAnchor.constraintEqualToAnchor(tagImage.widthAnchor, multiplier: 0.75).active = true
+        QuestionsCollectionView?.trailingAnchor.constraintEqualToAnchor(tagImage.trailingAnchor, constant: -Spacing.s.rawValue).active = true
         QuestionsCollectionView?.layoutIfNeeded()
         
         QuestionsCollectionView?.backgroundView = nil
         QuestionsCollectionView?.backgroundColor = UIColor.clearColor()
         QuestionsCollectionView?.showsVerticalScrollIndicator = false
+        QuestionsCollectionView?.pagingEnabled = true
         
         QuestionsCollectionView?.delegate = self
         QuestionsCollectionView?.dataSource = self
         QuestionsCollectionView?.reloadData()
     }
     
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        if segue.identifier == "containerViewSegue" {
-            qPreviewContainer = segue.destinationViewController as? QuestionPreviewVC
-            qPreviewContainer?.qPreviewDelegate = self
-        }
-    }
+//    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+//        if segue.identifier == "containerViewSegue" {
+//            qPreviewContainer = segue.destinationViewController as? QuestionPreviewVC
+//            qPreviewContainer?.qPreviewDelegate = self
+//        }
+//    }
     
     /* DELEGATE METHODS */
-    func updateContainerQuestion() {
-        if questionCount < self.currentTag.totalQuestionsForTag() {
-            qPreviewContainer?.currentQuestionID = self.currentTag.questions![questionCount]
-            questionCount += 1
-        }
-    }
+//    func updateContainerQuestion() {
+//        if questionCount < self.currentTag.totalQuestionsForTag() {
+//            qPreviewContainer?.currentQuestionID = self.currentTag.questions![questionCount]
+//            questionCount += 1
+//        }
+//    }
     
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
         let QAVC = QAManagerVC()
@@ -244,7 +254,7 @@ extension TagDetailVC : UICollectionViewDataSource {
         cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
         
         if _allQuestions.count > indexPath.row {
-            let _currentQuestion = self._allQuestions[indexPath.row]
+            let _currentQuestion = _allQuestions[indexPath.row]
             cell.questionLabel!.text = _currentQuestion?.qTitle
         } else {
             Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
@@ -254,13 +264,30 @@ extension TagDetailVC : UICollectionViewDataSource {
                 }
             })
         }
+        
+        if indexPath == selectedIndex && indexPath == deselectedIndex {
+            if let _selectedQuestion = _allQuestions[indexPath.row] {
+                showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+            }
+        } else if indexPath == selectedIndex {
+            if let _selectedQuestion = _allQuestions[indexPath.row] {
+                if _selectedQuestion.hasAnswers() {
+                    cell.showAnswer(_selectedQuestion)
+                }
+            }
+        } else if indexPath == deselectedIndex {
+            cell.removeAnswer()
+        }
+        
         return cell
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        if let _selectedQuestion = _allQuestions[indexPath.row] {
-            showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
-        }
+        selectedIndex = indexPath
+    }
+    
+    func collectionView(collectionView: UICollectionView, shouldSelectItemAtIndexPath indexPath: NSIndexPath) -> Bool {
+        return true
     }
 }
 
