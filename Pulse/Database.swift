@@ -117,11 +117,7 @@ class Database {
                 completion(user: nil, error: _error)
             } else {
                 saveUserToDatabase(_user!, completion: { (success , error) in
-                    if error != nil {
-                        completion(user: nil, error: error)
-                    } else {
-                        completion(user: User(user: _user!), error: nil)
-                    }
+                    error != nil ? completion(user: nil, error: error) : completion(user: User(user: _user!), error: nil)
                 })
             }
         }
@@ -143,11 +139,7 @@ class Database {
                     completion(success: false, error: error)
                 } else {
                     saveUserToDatabase(user, completion: { (success , error) in
-                        if error != nil {
-                            completion(success: false, error: error)
-                        } else {
-                            completion(success: true, error: nil)
-                        }
+                        error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                     })
                 }
             }
@@ -202,7 +194,6 @@ class Database {
             }
         } else {
             print("no token found")
-
             completion(result: false)
         }
     }
@@ -319,28 +310,16 @@ class Database {
             switch setting.type! {
             case .email:
                 _user?.updateEmail(newValue) { error in
-                    if let error = error {
-                        completion(success: false, error: error)
-                    } else {
-                        completion(success: true, error: nil)
-                    }
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 }
             case .password:
                 _user?.updatePassword(newValue) { error in
-                    if let error = error {
-                        completion(success: false, error: error)
-                    } else {
-                        completion(success: true, error: nil)
-                    }
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 }
             default:
                 userPost[setting.settingID] = newValue
                 usersRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
-                    if error != nil {
-                        completion(success: false, error: error)
-                    } else {
-                        completion(success: true, error: nil)
-                    }
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 })
             }
         }
@@ -356,11 +335,7 @@ class Database {
             userPost["profilePic"] = String(_uPic)
         }
         usersRef.child(user.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
-            if error != nil {
-                completion(success: false, error: error)
-            } else {
-                completion(success: true, error: nil)
-            }
+            error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
         })
     }
     
@@ -370,11 +345,7 @@ class Database {
         let post = ["users/\(_user!.uid)/answers/\(aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(qID)" : "true","questions/\(qID)/answers/\(aID)" : true]
         if _user != nil {
             databaseRef.updateChildValues(post, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
-            if error != nil {
-                completion(success: false, error: error)
-            } else {
-                completion(success: true, error: nil)
-            }
+                error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
             })
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
@@ -409,7 +380,6 @@ class Database {
             return FIRTransactionResult.successWithValue(currentData)
         }) { (error, committed, snapshot) in
             if let error = error {
-                print(error.localizedDescription)
                 completion(success: false, error: error)
             } else if committed == true {
                 completion(success: true, error: nil)
@@ -420,74 +390,58 @@ class Database {
     /* STORAGE METHODS */
     static func getAnswerURL(fileID : String, completion: (URL : NSURL?, error : NSError?) -> Void) {
         let _ = answersStorageRef.child(fileID).downloadURLWithCompletion { (URL, error) -> Void in
-            if (error != nil) {
-                completion(URL: nil, error: error)
-            } else {
-                completion(URL: URL, error: nil)
-            }
+            error != nil ? completion(URL: nil, error: error) : completion(URL: URL, error: nil)
         }
     }
     
     static func getTagImage(fileID : String, maxImgSize : Int64, completion: (data : NSData?, error : NSError?) -> Void) {
         let _ = tagsStorageRef.child(fileID).dataWithMaxSize(maxImgSize) { (data, error) -> Void in
-            if (error != nil) {
-                completion(data: nil, error: error)
-            } else {
-                completion(data: data, error: nil)
-            }
+            error != nil ? completion(data: nil, error: error) : completion(data: data, error: nil)
         }
     }
     
     static func getImage(type : Item, fileID : String, maxImgSize : Int64, completion: (data : NSData?, error : NSError?) -> Void) {
         let path = getStoragePath(type, itemID: fileID)
         path.dataWithMaxSize(maxImgSize) { (data, error) -> Void in
-            if (error != nil) {
-                completion(data: nil, error: error)
-            } else {
-                completion(data: data, error: nil)
-            }
+            error != nil ? completion(data: nil, error: error) : completion(data: data, error: nil)
         }
     }
     
     static func pinQuestionForUser(question : Question, completion: (success : Bool, error : NSError?) -> Void) {
         if User.isLoggedIn() {
-            let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
-            
-            _path.updateChildValues([question.qID: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
-                if error != nil {
-                    completion(success: false, error: error)
-                } else {
-                    completion(success: true, error: nil)
-                    NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
-                }
-            })
+            if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) { //remove question
+                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions/\(question.qID)")
+                _path.setValue(nil, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
+                })
+            } else { //pin question
+                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
+                _path.updateChildValues([question.qID: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
+                })
+            }
         } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please login to pin questions" ]
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to save questions" ]
             completion(success: false, error: NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
         }
     }
     
     static func pinTagForUser(tag : Tag, completion: (success : Bool, error : NSError?) -> Void) {
         if User.isLoggedIn() {
-            let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
-            
-            _path.updateChildValues([tag.tagID!: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
-                if error != nil {
-                    completion(success: false, error: error)
-                } else {
-                    if (User.currentUser!.savedTags == nil) {
-                        User.currentUser!.savedTags = [tag.tagID!]
-                    } else if User.currentUser!.savedTags!.contains(tag.tagID!) {
-                        //ignore if tag already in list
-                    } else {
-                        User.currentUser!.savedTags!.append(tag.tagID!)
-                    }
-                    completion(success: true, error: nil)
-                    NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
-                }
-            })
+            if User.currentUser?.savedTags != nil && User.currentUser!.savedTags!.contains(tag.tagID!) { //remove tag
+                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
+                _path.setValue(nil, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
+                })
+            }
+            else { //save tag
+                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
+                _path.updateChildValues([tag.tagID!: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
+                })
+            }
         } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please login to pin tags" ]
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to save tags" ]
             completion(success: false, error: NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
         }
     }

@@ -378,40 +378,6 @@
             </objects>
             <point key="canvasLocation" x="436" y="1137"/>
         </scene>
-        <!--Tag DetailVC-->
-        <scene sceneID="fPd-0a-aso">
-            <objects>
-                <viewController storyboardIdentifier="tagDetailVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="eN6-t5-ej4" customClass="TagDetailVC" customModule="Pulse" customModuleProvider="target" sceneMemberID="viewController">
-                    <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="oMx-7I-sAg"/>
-                        <viewControllerLayoutGuide type="bottom" id="YuX-gO-lCa"/>
-                    </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="phg-dz-X1v">
-                        <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" misplaced="YES" text="" lineBreakMode="clip" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7hZ-ZA-dU6">
-                                <rect key="frame" x="0.0" y="28" width="50" height="572"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="50" id="wmb-3B-QNj"/>
-                                </constraints>
-                                <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="40"/>
-                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
-                                <nil key="highlightedColor"/>
-                                <variation key="default">
-                                    <mask key="constraints">
-                                        <exclude reference="wmb-3B-QNj"/>
-                                    </mask>
-                                </variation>
-                            </label>
-                        </subviews>
-                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                    </view>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="gw5-0N-DxQ" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="2010" y="393"/>
-        </scene>
         <!--Login Create AccountVC-->
         <scene sceneID="qjE-Wu-3Nx">
             <objects>

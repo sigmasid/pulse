@@ -26,7 +26,10 @@ class TagDetailVC: UIViewController, ParentDelegate {
     private var QuestionsCollectionView : UICollectionView?
     private var selectedIndex : NSIndexPath? {
         didSet {
-            QuestionsCollectionView?.reloadData()
+            QuestionsCollectionView?.reloadItemsAtIndexPaths([selectedIndex!])
+            if deselectedIndex != nil {
+                QuestionsCollectionView?.reloadItemsAtIndexPaths([deselectedIndex!])
+            }
         }
         willSet {
             if selectedIndex != nil {
@@ -262,17 +265,14 @@ extension TagDetailVC : UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCellWithIdentifier(questionReuseIdentifier) as! TagDetailQuestionCell
         cell.backgroundColor = UIColor.clearColor()
         
-        let _cellLabel = cell.questionLabel
-//        _cellLabel.userInteractionEnabled = false
-
         if _allQuestions.count > indexPath.row {
             let _currentQuestion = self._allQuestions[indexPath.row]
-            _cellLabel.text = _currentQuestion?.qTitle
+            cell.questionLabel.text = _currentQuestion?.qTitle
         } else {
             Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
                 if error == nil {
                     self._allQuestions.append(question)
-                    _cellLabel.text = question.qTitle
+                    cell.questionLabel.text = question.qTitle
                 }
             })
         }

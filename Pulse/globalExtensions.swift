@@ -107,6 +107,11 @@ enum AnswerVoteType {
     case Downvote
 }
 
+enum SaveType {
+    case Save
+    case Unsave
+}
+
 enum Spacing: CGFloat {
     case xs = 10
     case s = 20

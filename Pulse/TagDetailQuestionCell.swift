@@ -17,6 +17,7 @@ class TagDetailQuestionCell: UITableViewCell {
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupCellLayout()
+        selectionStyle = .None
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -69,7 +70,5 @@ class TagDetailQuestionCell: UITableViewCell {
         leftSeparatorView.backgroundColor = _color
         questionLabel.backgroundColor = _color
         questionLabel.numberOfLines = 0
-        
-        
     }
 }

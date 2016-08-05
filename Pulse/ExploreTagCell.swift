@@ -13,7 +13,8 @@ class ExploreTagCell: UICollectionViewCell {
     
     @IBOutlet weak var tagLabel: UILabel!
     @IBOutlet weak var tagImage: UIImageView!
-    
+    private var saveIcon : Save?
+
     @IBOutlet weak var ExploreQuestions: UICollectionView!
     weak var delegate : ExploreDelegate!
     weak var footerView : QuestionFooterCellView!
@@ -50,6 +51,25 @@ class ExploreTagCell: UICollectionViewCell {
         }
     }
     
+    private var currentSavedQuestionIndex : NSIndexPath? {
+        didSet {
+            if (savedQuestions?.append(currentSavedQuestionIndex!) == nil) {
+                savedQuestions = [currentSavedQuestionIndex!]
+            }
+            ExploreQuestions.reloadItemsAtIndexPaths([currentSavedQuestionIndex!])
+        }
+    }
+    
+    private var currentRemovedQuestionIndex : NSIndexPath? {
+        didSet {
+            if let _removalIndex = savedQuestions?.indexOf(currentRemovedQuestionIndex!) {
+                savedQuestions?.removeAtIndex(_removalIndex)
+            }
+            ExploreQuestions.reloadItemsAtIndexPaths([currentRemovedQuestionIndex!])
+        }
+    }
+    
+    private var savedQuestions : [NSIndexPath]?
     private let questionReuseIdentifier = "questionCell"
     private let questionFooterReuseIdentifier = "questionCellFooter"
     
@@ -60,13 +80,43 @@ class ExploreTagCell: UICollectionViewCell {
             
             if let _index = index {
                 if let question = _allQuestions[_index.row] {
-                    Database.pinQuestionForUser(question, completion: {(success, error) in
-                        if !success {
-                            GlobalFunctions.showErrorBlock("Error Pinning Question", erMessage: error!.localizedDescription)
-                        }
-                    })
+                    if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) {
+                        Database.pinQuestionForUser(question, completion: {(success, error) in
+                            if !success {
+                                GlobalFunctions.showErrorBlock("Error Saving Question", erMessage: error!.localizedDescription)
+                            } else {
+                                self.currentRemovedQuestionIndex = _index
+                            }
+                        })
+                    } else {
+                        Database.pinQuestionForUser(question, completion: {(success, error) in
+                            if !success {
+                                GlobalFunctions.showErrorBlock("Error Removing Question", erMessage: error!.localizedDescription)
+                            } else {
+                                self.currentSavedQuestionIndex = _index
+                            }
+                        })
+                    }
                 }
             }
+        }
+    }
+    
+    func toggleSaveTagIcon(mode : SaveType) {
+        saveIcon = Save(frame: CGRectMake(0, 0, IconSizes.XSmall.rawValue / 2, IconSizes.XSmall.rawValue / 2))
+        saveIcon?.toggle(mode)
+        addSubview(saveIcon!)
+        
+        saveIcon!.translatesAutoresizingMaskIntoConstraints = false
+        saveIcon!.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        saveIcon!.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.xs.rawValue).active = true
+        saveIcon?.layoutIfNeeded()
+    }
+    
+    
+    func keepSaveTagHidden() {
+        if saveIcon != nil {
+            saveIcon!.removeFromSuperview()
         }
     }
 }
@@ -83,11 +133,27 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         if _allQuestions.count > indexPath.row {
             let _currentQuestion = _allQuestions[indexPath.row]
             cell.qTitle.text = _currentQuestion?.qTitle
+            if savedQuestions != nil && savedQuestions!.contains(indexPath) {
+                cell.toggleSaveIcon(.Save)
+            } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(_currentQuestion!.qID) {
+                cell.toggleSaveIcon(.Save)
+            }
+            else {
+                cell.keepSaveHidden()
+            }
         } else {
             Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
                 if error == nil {
                     self._allQuestions.append(question)
                     cell.qTitle.text = question.qTitle
+                    if self.savedQuestions != nil && self.savedQuestions!.contains(indexPath) {
+                        cell.toggleSaveIcon(.Save)
+                    } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) {
+                        cell.toggleSaveIcon(.Save)
+                    }
+                    else {
+                        cell.keepSaveHidden()
+                    }
                 }
             })
         }

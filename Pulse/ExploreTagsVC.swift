@@ -32,6 +32,26 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     
     private var _panCurrentPointY : CGFloat = 0
     private var _isBackgroundVCVisible = false
+    
+    private var currentSavedTagIndex : NSIndexPath? {
+        didSet {
+            if (savedTags?.append(currentSavedTagIndex!) == nil) {
+                savedTags = [currentSavedTagIndex!]
+            }
+            ExploreTags.reloadItemsAtIndexPaths([currentSavedTagIndex!])
+        }
+    }
+    
+    private var currentRemovedTagIndex : NSIndexPath? {
+        didSet {
+            if let _removalIndex = savedTags?.indexOf(currentRemovedTagIndex!) {
+                savedTags?.removeAtIndex(_removalIndex)
+            }
+            ExploreTags.reloadItemsAtIndexPaths([currentRemovedTagIndex!])
+        }
+    }
+    
+    private var savedTags : [NSIndexPath]?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -123,17 +143,32 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         GlobalFunctions.dismissVC(currentVC)
     }
     
+    ///Save / Unsave tag and update user profile
     func handleLongPress(longPress : UIPanGestureRecognizer) {
         if longPress.state == UIGestureRecognizerState.Began {
             let point = longPress.locationInView(ExploreTags)
             let index = ExploreTags.indexPathForItemAtPoint(point)
             
             if let _index = index {
-                Database.pinTagForUser(_allTags[_index.row], completion: {(success, error) in
-                    if !success {
-                        GlobalFunctions.showErrorBlock("Error Pinning Tag", erMessage: error!.localizedDescription)
-                    }
-                })
+                let _tag = _allTags[_index.row]
+
+                if User.currentUser?.savedTags != nil && User.currentUser!.savedTags!.contains(_tag.tagID!) {
+                    Database.pinTagForUser(_allTags[_index.row], completion: {(success, error) in
+                        if !success {
+                            GlobalFunctions.showErrorBlock("Error Pinning Tag", erMessage: error!.localizedDescription)
+                        }  else {
+                            self.currentRemovedTagIndex = _index
+                        }
+                    })
+                } else {
+                    Database.pinTagForUser(_allTags[_index.row], completion: {(success, error) in
+                        if !success {
+                            GlobalFunctions.showErrorBlock("Error Pinning Tag", erMessage: error!.localizedDescription)
+                        }  else {
+                            self.currentSavedTagIndex = _index
+                        }
+                    })
+                }
             }
         }
     }
@@ -233,6 +268,15 @@ extension ExploreTagsVC : UICollectionViewDataSource {
                         cell.tagImage.contentMode = UIViewContentMode.ScaleAspectFill
                     }
                 })
+            }
+            
+            if savedTags != nil && savedTags!.contains(indexPath) {
+                cell.toggleSaveTagIcon(.Save)
+            } else if User.currentUser?.savedTags != nil && User.currentUser!.savedTags!.contains(_currentTag.tagID!) {
+                cell.toggleSaveTagIcon(.Save)
+            }
+            else {
+                cell.keepSaveTagHidden()
             }
         }
 
