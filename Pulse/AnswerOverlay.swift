@@ -31,6 +31,8 @@ class AnswerOverlay: UIView {
 
     private var _timeLeftShapeLayer = CAShapeLayer()
     private var _bgShapeLayer = CAShapeLayer()
+    
+    var delegate : showProfileDelegate!
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -42,11 +44,46 @@ class AnswerOverlay: UIView {
         super.init(coder: aDecoder)
     }
     
+    private func addHeaderBackground() {
+        addSubview(_headerBackground)
+        _headerBackground.translatesAutoresizingMaskIntoConstraints = false
+        
+        _headerBackground.topAnchor.constraintEqualToAnchor(topAnchor, constant: 0.0).active = true
+        _headerBackground.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 1.0).active = true
+        _headerBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: 0.0).active = true
+        _headerBackground.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.1).active = true
+        _headerBackground.layoutIfNeeded()
+        
+        _headerBackground.backgroundColor = UIColor.whiteColor().colorWithAlphaComponent(1.0)
+        
+        addTag()
+        addQuestion()
+    }
+    
+    private func addUserBackground() {
+        addSubview(_userBackground)
+        
+        _userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
+        _userBackground.translatesAutoresizingMaskIntoConstraints = false
+        
+        _userBackground.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
+        _userBackground.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        _userBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+        _userBackground.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
+        _userBackground.layoutIfNeeded()
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
+        _userBackground.addGestureRecognizer(tap)
+        
+        addUserName()
+        addUserImage()
+        addLocation()
+        
+    }
+    
     ///Update question text
-    func updateQuestion(question : String) {
-
+    private func addQuestion() {
         _headerBackground.addSubview(_questionLabel)
-        _questionLabel.text = question
         _questionLabel.adjustsFontSizeToFitWidth = true
         
         _questionLabel.textColor = UIColor.blackColor()
@@ -62,9 +99,8 @@ class AnswerOverlay: UIView {
     }
     
     ///Update Tag in header
-    func updateTag(tag : String) {
+    private func addTag() {
         _headerBackground.addSubview(_tagLabel)
-        _tagLabel.text = "#" + tag.uppercaseString
         
         _tagLabel.textColor = UIColor.blackColor()
         _tagLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleHeadline)
@@ -75,7 +111,6 @@ class AnswerOverlay: UIView {
         _tagLabel.topAnchor.constraintEqualToAnchor(_headerBackground.topAnchor, constant: _headerBackground.frame.height / 6).active = true
         _tagLabel.widthAnchor.constraintEqualToAnchor(_headerBackground.widthAnchor, multiplier: 0.8).active = true
         _tagLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
-
         _tagLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
     }
     
@@ -97,60 +132,36 @@ class AnswerOverlay: UIView {
         _pulseIcon.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
     }
     
-    private func addHeaderBackground() {
-        addSubview(_headerBackground)
-        _headerBackground.translatesAutoresizingMaskIntoConstraints = false
-        
-        _headerBackground.topAnchor.constraintEqualToAnchor(topAnchor, constant: 0.0).active = true
-        _headerBackground.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 1.0).active = true
-        _headerBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: 0.0).active = true
-        _headerBackground.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.1).active = true
-        
-        _headerBackground.backgroundColor = UIColor.whiteColor().colorWithAlphaComponent(1.0)
+    func handleProfileTap() {
+        if delegate != nil {
+            delegate.userClickedProfile()
+        }
     }
     
-    private func addUserBackground() {
-        addSubview(_userBackground)
-        
-        _userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
-        _userBackground.translatesAutoresizingMaskIntoConstraints = false
-        
-        _userBackground.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
-        _userBackground.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        _userBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
-        _userBackground.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
-    }
-    
-    func addUserName(_userName : String) {
-        _userNameLabel.text = _userName
+    private func addUserName() {
+        _userBackground.addSubview(_userNameLabel)
+
         _userNameLabel.textColor = UIColor.whiteColor()
         _userNameLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
         
-        _userBackground.addSubview(_userNameLabel)
-        
         _userNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        
         _userNameLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _bottomDimension / 6).active = true
         _userNameLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -Spacing.xs.rawValue - _bottomDimension).active = true
         _userNameLabel.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
     }
     
-    func addLocation(_userLocation : String) {
-        _userLocationLabel.text = _userLocation
+    private func addLocation() {
         _userLocationLabel.textColor = UIColor.whiteColor()
         _userLocationLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-
-
         _userBackground.addSubview(_userLocationLabel)
-        
+
         _userLocationLabel.translatesAutoresizingMaskIntoConstraints = false
-        
         _userLocationLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_bottomDimension / 6).active = true
         _userLocationLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -Spacing.xs.rawValue - _bottomDimension).active = true
         _userLocationLabel.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
     }
     
-    func addUserImage(_userImageURL : NSURL?, _userImageData : UIImage?) {
+    private func addUserImage() {
         _userBackground.addSubview(_userImage)
         _userImage.translatesAutoresizingMaskIntoConstraints = false
         _userImage.contentMode = UIViewContentMode.ScaleAspectFill
@@ -161,18 +172,32 @@ class AnswerOverlay: UIView {
         _userImage.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
         _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor).active = true
         
-        if let _ = _userImageURL {
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-                let _userImageData = NSData(contentsOfURL: _userImageURL!)
-                dispatch_async(dispatch_get_main_queue(), {
-                    if _userImageData != nil {
-                        self._userImage.image = UIImage(data: _userImageData!)
-                    }
-                })
-            }
-        } else if let _ = _userImageData {
-            _userImage.image = _userImageData
-        }
+    }
+    
+    
+    /* PUBLIC SETTER FUNCTIONS */
+    func setUserName(_userName : String?) {
+        _userNameLabel.text = _userName
+    }
+    
+    func setUserLocation(_userLocation : String?) {
+        _userLocationLabel.text = _userLocation
+    }
+    
+    func setUserImage(image : UIImage?) {
+         _userImage.image = image
+    }
+    
+    func getUserBackground() -> UIView {
+        return _userBackground
+    }
+    
+    func setQuestion(question : String) {
+        _questionLabel.text = question
+    }
+    
+    func setTagName(tagName : String) {
+        _tagLabel.text = "#" + tagName.uppercaseString
     }
     
     /// Add video countdown

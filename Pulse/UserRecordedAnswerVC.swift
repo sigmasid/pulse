@@ -36,7 +36,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         
         let avPlayerLayer = AVPlayerLayer(player: aPlayer)
         view.layer.insertSublayer(avPlayerLayer, atIndex: 0)
-        avPlayerLayer.frame = self.view.frame
+        avPlayerLayer.frame = view.frame
         
         if let _currentQuestion = currentQuestion {
             let _ = processVideo(fileURL!, aQuestion : _currentQuestion) { (resultURL) in
@@ -46,13 +46,13 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 aPlayer.play()
             }
             
-            _controlsOverlay = RecordedAnswerOverlay(frame: self.view.frame)
+            _controlsOverlay = RecordedAnswerOverlay(frame: view.frame)
             
             if _currentQuestion.hasFilters() {
-                _answersFilters = FiltersOverlay(frame: self.view.frame)
+                _answersFilters = FiltersOverlay(frame: view.frame)
                 _answersFilters!.currentQuestion = currentQuestion
-                self.view.addSubview(_answersFilters!)
-                self.view.addSubview(_controlsOverlay)
+                view.addSubview(_answersFilters!)
+                view.addSubview(_controlsOverlay)
             } else {
                 view.addSubview(_controlsOverlay)
             }
@@ -69,9 +69,9 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     private func setupOverlayButtons() {
-        _controlsOverlay.getButton(.Post).addTarget(self, action: #selector(self._postVideo), forControlEvents: UIControlEvents.TouchUpInside)
-        _controlsOverlay.getButton(.Save).addTarget(self, action: #selector(self._saveVideo), forControlEvents: UIControlEvents.TouchUpInside)
-        _controlsOverlay.getButton(.Close).addTarget(self, action: #selector(self._closeRecording), forControlEvents: UIControlEvents.TouchUpInside)
+        _controlsOverlay.getButton(.Post).addTarget(self, action: #selector(_postVideo), forControlEvents: UIControlEvents.TouchUpInside)
+        _controlsOverlay.getButton(.Save).addTarget(self, action: #selector(_saveVideo), forControlEvents: UIControlEvents.TouchUpInside)
+        _controlsOverlay.getButton(.Close).addTarget(self, action: #selector(_closeRecording), forControlEvents: UIControlEvents.TouchUpInside)
     }
     
     ///close window and go back to camera

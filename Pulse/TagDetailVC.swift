@@ -27,7 +27,7 @@ class TagDetailVC: UIViewController, ParentDelegate {
     private var selectedIndex : NSIndexPath? {
         didSet {
             QuestionsCollectionView?.reloadItemsAtIndexPaths([selectedIndex!])
-            if deselectedIndex != nil {
+            if deselectedIndex != nil && deselectedIndex != selectedIndex {
                 QuestionsCollectionView?.reloadItemsAtIndexPaths([deselectedIndex!])
             }
         }
@@ -220,7 +220,7 @@ class TagDetailVC: UIViewController, ParentDelegate {
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
         QAVC.returnToParentDelegate = self
-        QAVC.view.frame = view.frame
+        QAVC.view.frame = view.bounds
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     

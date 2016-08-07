@@ -130,6 +130,29 @@ enum Item : String {
     case SettingSections = "settingsSections"
 }
 
+enum buttonCornerRadius : CGFloat {
+    case regular = 20
+    case small = 10
+    case round = 0
+    
+    static func radius(type : buttonCornerRadius, width: Int) -> CGFloat {
+        switch type {
+        case .regular: return buttonCornerRadius.regular.rawValue
+        case .small: return buttonCornerRadius.small.rawValue
+        case .round: return CGFloat(width / 2)
+        }
+    }
+    
+    static func radius(type : buttonCornerRadius) -> CGFloat {
+        switch type {
+        case .regular: return buttonCornerRadius.regular.rawValue
+        case .small: return buttonCornerRadius.small.rawValue
+        case .round: return buttonCornerRadius.small.rawValue
+        }
+    }
+}
+
+
 enum UserErrors: ErrorType {
     case NotLoggedIn
     case InvalidData

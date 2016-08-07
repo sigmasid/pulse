@@ -116,7 +116,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         twtrButton.makeRound()
         emailLabelButton.makeRound()
         
-        emailButton.layer.cornerRadius = buttonCornerRadius
+        emailButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         
         let _footerDividerLine = UIView(frame:CGRectMake(forgotPassword.frame.width - 1, 0 , 1 , forgotPassword.frame.height))
         _footerDividerLine.backgroundColor = UIColor.whiteColor()

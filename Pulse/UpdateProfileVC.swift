@@ -10,7 +10,7 @@ import UIKit
 
 class UpdateProfileVC: UIViewController {
     
-    var _currentSetting : Setting!
+    var _currentSetting : Setting! //set by delegate
     private var _loaded = false
     private var _reuseIdentifier = "activityCell"
     
@@ -205,7 +205,7 @@ class UpdateProfileVC: UIViewController {
         updateButton.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
         updateButton.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.7).active = true
         
-        updateButton.layer.cornerRadius = buttonCornerRadius
+        updateButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         updateButton.setTitle("Save", forState: UIControlState.Normal)
         updateButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
         updateButton.setEnabled()

@@ -37,7 +37,7 @@ class LoginAddNameVC: UIViewController {
         firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
         lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
         
-        doneButton.layer.cornerRadius = buttonCornerRadius
+        doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         doneButton.setEnabled()
         addHeader()
     }

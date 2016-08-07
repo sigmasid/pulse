@@ -11,7 +11,7 @@ import UIKit
 class ExploreQuestionCell: UICollectionViewCell {
     
     @IBOutlet weak var qTitle: UILabel!
-    private var saveIcon : Save?
+    var saveIcon : Save?
     
     func toggleSaveIcon(mode : SaveType) {
         saveIcon = Save(frame: CGRectMake(0, 0, IconSizes.XSmall.rawValue / 2, IconSizes.XSmall.rawValue / 2))

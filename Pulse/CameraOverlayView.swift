@@ -117,7 +117,7 @@ class CameraOverlayView: UIView {
         
         _shutterButton.layer.insertSublayer(circleLayer, atIndex: 0)
         _shutterButton.alpha = CGFloat(_elementOpacity)
-        self.addSubview(_shutterButton)
+        addSubview(_shutterButton)
         
         _shutterButton.translatesAutoresizingMaskIntoConstraints = false
         
@@ -130,7 +130,7 @@ class CameraOverlayView: UIView {
     
     ///Draws the camera flash icon frame
     private func drawFlashCamera() {
-       self.addSubview(_flashModeButton)
+        addSubview(_flashModeButton)
         _flashModeButton.alpha = 0.7
         
         _flashModeButton.translatesAutoresizingMaskIntoConstraints = false

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5C25B58D8611991E7B2DFBA2 /* Pods_Pulse.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E190E94E153F0B7B61227E /* Pods_Pulse.framework */; };
+		BA1550C51D5554C4000EF1AA /* MiniProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1550C41D5554C4000EF1AA /* MiniProfile.swift */; };
 		BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA17FC051D3E0AEC00DC952D /* LoadingView.swift */; };
 		BA1C48BC1D243704008F8A04 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1C48BB1D243704008F8A04 /* AppDelegate.swift */; };
 		BA1C48BE1D243704008F8A04 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1C48BD1D243704008F8A04 /* ViewController.swift */; };
@@ -58,6 +59,7 @@
 
 /* Begin PBXFileReference section */
 		37C2C90EEEB2CE21BC7828B6 /* Pods-Pulse.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pulse.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pulse/Pods-Pulse.debug.xcconfig"; sourceTree = "<group>"; };
+		BA1550C41D5554C4000EF1AA /* MiniProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MiniProfile.swift; sourceTree = "<group>"; };
 		BA17FC051D3E0AEC00DC952D /* LoadingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
 		BA1C48B81D243704008F8A04 /* Pulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA1C48BB1D243704008F8A04 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */,
 				BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */,
 				BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */,
+				BA1550C41D5554C4000EF1AA /* MiniProfile.swift */,
 			);
 			name = Profile;
 			sourceTree = "<group>";
@@ -462,6 +465,7 @@
 				BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */,
 				BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */,
 				BA1DE1401D244C51004F3ED2 /* ShowAnswerVC.swift in Sources */,
+				BA1550C51D5554C4000EF1AA /* MiniProfile.swift in Sources */,
 				BAFA8F331D42984F00C1BB14 /* FiltersOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

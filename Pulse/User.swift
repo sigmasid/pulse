@@ -66,6 +66,9 @@ class User {
         if snapshot.hasChild("profilePic") {
             self.profilePic = snapshot.childSnapshotForPath("profilePic").value as? String
         }
+        if snapshot.hasChild("bio") {
+            self.bio = snapshot.childSnapshotForPath("bio").value as? String
+        }
     }
     
     init(user: FIRUser) {

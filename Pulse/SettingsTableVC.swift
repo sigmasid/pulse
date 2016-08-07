@@ -66,7 +66,7 @@ class SettingsTableVC: UIViewController, ParentDelegate {
     }
     
     private func addHeader(appTitle appTitle : String, screenTitle : String) {
-        view.addSubview(_headerView)
+         view.addSubview(_headerView)
         
         _headerView.translatesAutoresizingMaskIntoConstraints = false
         _headerView.topAnchor.constraintEqualToAnchor(topLayoutGuide.topAnchor, constant: Spacing.xs.rawValue).active = true

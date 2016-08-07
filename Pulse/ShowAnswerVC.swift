@@ -11,7 +11,12 @@ import FirebaseDatabase
 import FirebaseStorage
 import AVFoundation
 
-class ShowAnswerVC: UIViewController {
+protocol showProfileDelegate : class {
+    func userClickedProfile()
+    func userClosedMiniProfile(_ : UIView)
+}
+
+class ShowAnswerVC: UIViewController, showProfileDelegate, UIGestureRecognizerDelegate {
     internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded() {
@@ -28,6 +33,8 @@ class ShowAnswerVC: UIViewController {
     internal var answerIndex = 0
     internal var minAnswersToShow = 3
     internal var currentAnswer : Answer?
+    private var userForCurrentAnswer : User?
+    private var currentUserImage : UIImage?
     
     private var nextAnswer : Answer?
     private var allAnswersForQuestion = [Answer]()
@@ -43,29 +50,29 @@ class ShowAnswerVC: UIViewController {
     
     private var isObserving = false
     private var startObserver : AnyObject!
+    private var miniProfile : MiniProfile!
+    private var _isMiniProfileShown = false
     
     weak var delegate : childVCDelegate!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.handleTap))
-        self.view.addGestureRecognizer(tap)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        view.addGestureRecognizer(tap)
         
         if (currentQuestion != nil){
             _loadFirstAnswer(currentQuestion)
         }
         
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(self._startCountdownTimer), name: "PlaybackStartedNotification", object: self.currentPlayerItem)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(_startCountdownTimer), name: "PlaybackStartedNotification", object: currentPlayerItem)
 
     }
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(true)
         
-        let _frame = CGRectMake(0, 0, UIScreen.mainScreen().bounds.width, UIScreen.mainScreen().bounds.height)
-        
-        _answerOverlay = AnswerOverlay(frame: _frame)
+        _answerOverlay = AnswerOverlay(frame: view.bounds)
         _avPlayerLayer = AVPlayerLayer(player: qPlayer)
         
         view.layer.insertSublayer(_avPlayerLayer, atIndex: 0)
@@ -73,7 +80,8 @@ class ShowAnswerVC: UIViewController {
         
         _answerOverlay.addIcon(iconColor, backgroundColor: iconBackgroundColor)
         _answerOverlay.addVideoTimerCountdown()
-        _avPlayerLayer.frame = _frame
+        _answerOverlay.delegate = self
+        _avPlayerLayer.frame = view.bounds
         qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
         
         startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
@@ -88,7 +96,7 @@ class ShowAnswerVC: UIViewController {
     private func _loadFirstAnswer(currentQuestion : Question) {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         
-        if let _firstAnswerID = self.currentQuestion.qAnswers?.first {
+        if let _firstAnswerID = currentQuestion.qAnswers?.first {
             Database.getAnswer(_firstAnswerID, completion: { (answer, error) in
                 self.currentAnswer = answer
                 self.allAnswersForQuestion.append(answer)
@@ -133,26 +141,37 @@ class ShowAnswerVC: UIViewController {
     
     private func _updateOverlayData(answer : Answer) {
         Database.getUser(answer.uID!, completion: { (user, error) in
-            if let _uName = user.name {
-                self._answerOverlay.addUserName(_uName)
-            } else {
-                self._answerOverlay.addUserName("")
-            }
-            if let _uPic = user.profilePic {
-                self._answerOverlay.addUserImage(NSURL(string: _uPic), _userImageData: nil)
-            } else {
-                self._answerOverlay.addUserImage(nil, _userImageData: UIImage(named: "default-profile"))
+            if error == nil {
+                self.userForCurrentAnswer = user
+                
+                if let _uName = user.name {
+                    self._answerOverlay.setUserName(_uName)
+                }
+                if let _uPic = user.profilePic {
+                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
+                        let _userImageData = NSData(contentsOfURL: NSURL(string: _uPic)!)
+                        dispatch_async(dispatch_get_main_queue(), {
+                            if _userImageData != nil {
+                                self.currentUserImage = UIImage(data: _userImageData!)
+                                self._answerOverlay.setUserImage(self.currentUserImage)
+                            }
+                        })
+                    }
+                } else {
+                    self.currentUserImage = UIImage(named: "default-profile")
+                    self._answerOverlay.setUserImage(self.currentUserImage)
+                }
             }
         })
         
         if let _aTag = currentTag.tagID {
-            self._answerOverlay.updateTag(_aTag)
+            self._answerOverlay.setTagName(_aTag)
         }
         if let _qTitle = currentQuestion.qTitle {
-            self._answerOverlay.updateQuestion(_qTitle)
+            self._answerOverlay.setQuestion(_qTitle)
         }
         if let _location = answer.aLocation {
-            self._answerOverlay.addLocation(_location)
+            self._answerOverlay.setUserLocation(_location)
         }
     }
     
@@ -203,6 +222,28 @@ class ShowAnswerVC: UIViewController {
         }
     }
     
+    func userClickedProfile() {
+        let _profileFrame = CGRectMake(view.bounds.width * (1/6), view.bounds.height * (1/4), view.bounds.width * (2/3), view.bounds.height * (1/2))
+        
+        if let _userForCurrentAnswer = userForCurrentAnswer {
+            miniProfile = MiniProfile(frame: _profileFrame)
+            miniProfile.delegate = self
+            miniProfile.setNameLabel(_userForCurrentAnswer.name)
+            miniProfile.setTagline(_userForCurrentAnswer.bio)
+            
+            if let currentUserImage = currentUserImage {
+                miniProfile.setProfileImage(currentUserImage)
+            }
+            view.addSubview(miniProfile)
+            _isMiniProfileShown = true
+        }
+    }
+    
+    func userClosedMiniProfile(_profileView : UIView) {
+        _profileView.removeFromSuperview()
+        _isMiniProfileShown = false
+    }
+    
     deinit {
         removeObserverIfNeeded()
     }
@@ -225,10 +266,21 @@ class ShowAnswerVC: UIViewController {
         return index < self.currentQuestion.totalAnswers() ? true : false
     }
     
+    func gestureRecognizerShouldBegin(gestureRecognizer: UIGestureRecognizer) -> Bool {
+        print("gesture recognizer should begin fired")
+        if _isMiniProfileShown { //ignore tap
+            return false
+        } else {
+            return true
+        }
+    }
+    
     /* HANDLE GESTURES */
     func handleTap() {
-//        print("current index is \(answerIndex)")
-//        print("tap ready \(_TapReady), next item ready \(_NextItemReady), can advance \(_CanAdvanceReady)")
+        if _isMiniProfileShown { //ignore tap
+            return
+        }
+
         if (answerIndex == minAnswersToShow && !_CameraShown && _CanAdvanceReady) { //ask user to answer the question
             if (delegate != nil) {
                 qPlayer.pause()
@@ -240,7 +292,6 @@ class ShowAnswerVC: UIViewController {
             //ignore swipe
         }
         else if _CanAdvanceReady {
-//            print("trying to advance to next answer")
             _TapReady = false
             _answerOverlay.resetTimer()
             qPlayer.pause()

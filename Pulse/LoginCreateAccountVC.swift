@@ -59,7 +59,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
         userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
 
-        signupButton.layer.cornerRadius = buttonCornerRadius
+        signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         signupButton.setDisabled()
         
 
