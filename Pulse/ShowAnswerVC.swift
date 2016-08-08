@@ -16,7 +16,7 @@ protocol showProfileDelegate : class {
     func userClosedMiniProfile(_ : UIView)
 }
 
-class ShowAnswerVC: UIViewController, showProfileDelegate, UIGestureRecognizerDelegate {
+class ShowAnswerVC: UIViewController, showProfileDelegate {
     internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded() {
@@ -50,7 +50,7 @@ class ShowAnswerVC: UIViewController, showProfileDelegate, UIGestureRecognizerDe
     
     private var isObserving = false
     private var startObserver : AnyObject!
-    private var miniProfile : MiniProfile!
+    private var miniProfile : MiniProfile?
     private var _isMiniProfileShown = false
     
     weak var delegate : childVCDelegate!
@@ -227,14 +227,14 @@ class ShowAnswerVC: UIViewController, showProfileDelegate, UIGestureRecognizerDe
         
         if let _userForCurrentAnswer = userForCurrentAnswer {
             miniProfile = MiniProfile(frame: _profileFrame)
-            miniProfile.delegate = self
-            miniProfile.setNameLabel(_userForCurrentAnswer.name)
-            miniProfile.setTagline(_userForCurrentAnswer.bio)
+            miniProfile!.delegate = self
+            miniProfile!.setNameLabel(_userForCurrentAnswer.name)
+            miniProfile!.setTagline(_userForCurrentAnswer.bio)
             
             if let currentUserImage = currentUserImage {
-                miniProfile.setProfileImage(currentUserImage)
+                miniProfile!.setProfileImage(currentUserImage)
             }
-            view.addSubview(miniProfile)
+            view.addSubview(miniProfile!)
             _isMiniProfileShown = true
         }
     }
@@ -264,15 +264,6 @@ class ShowAnswerVC: UIViewController, showProfileDelegate, UIGestureRecognizerDe
     
     private func _canAdvance(index: Int) -> Bool{
         return index < self.currentQuestion.totalAnswers() ? true : false
-    }
-    
-    func gestureRecognizerShouldBegin(gestureRecognizer: UIGestureRecognizer) -> Bool {
-        print("gesture recognizer should begin fired")
-        if _isMiniProfileShown { //ignore tap
-            return false
-        } else {
-            return true
-        }
     }
     
     /* HANDLE GESTURES */
