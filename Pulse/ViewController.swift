@@ -17,8 +17,8 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let _answersFilters = FiltersOverlay(frame: self.view.frame)
-        self.view.addSubview(_answersFilters)
+//        let _answersFilters = FiltersOverlay(frame: self.view.frame)
+//        self.view.addSubview(_answersFilters)
         
         // Do any additional setup after loading the view.
     }
@@ -30,10 +30,38 @@ class ViewController: UIViewController {
     
     
     @IBAction func loadQuestions(sender: UIButton) {
-        for _ in 0...5 {
-            let questionPost = databaseRef.child("filters").childByAutoId()
-            questionPost.setValue("true")
-        }
+        // get all answers from database
+        // for each answer get answer key -> use that as child value for answerUserSummary
+        // get uID -> add child
+        // get uName -> add child
+        // get location -> add child
+        // get uTag -> add child
+        let summaryAnswerPath = databaseRef.child("userPublicSummary")
+
+        databaseRef.child("users").observeSingleEventOfType(.Value, withBlock: { snapshot in
+
+            for user in snapshot.children {
+                let child = user as! FIRDataSnapshot
+                let _uID = child.key
+                
+                let _uName = child.childSnapshotForPath("name").value as! String
+                let _uBio = child.childSnapshotForPath("shortBio").value as! String
+                
+                if child.hasChild("profilePic") {
+                    let _uProfilePic = child.childSnapshotForPath("profilePic").value as! String
+                    let post = ["name": _uName, "shortBio" : _uBio, "profilePic" : _uProfilePic]
+                    
+                    summaryAnswerPath.child(_uID).updateChildValues(post)
+                } else {
+                    let post = ["name": _uName, "shortBio" : _uBio]
+                    
+                    summaryAnswerPath.child(_uID).updateChildValues(post)
+                }
+                
+
+            }
+        })
+
 //        let politicalQuestions = loadPoliticalQuestions()
 //        let startupQuestions = loadStartupQuestions()
 //        let questionPath = databaseRef.child("questions")

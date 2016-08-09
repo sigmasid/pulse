@@ -147,22 +147,13 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if keyPath == "aURL" {
             let answersPath =  databaseRef.child("answers/\(self.currentAnswer!.aID)")
-            var userPost = [String : String]()
             
             if aLocation != nil {
-                let answerPost = ["qID": self.currentAnswer.qID, "uID": self.currentAnswer.uID!, "URL" : String(self.currentAnswer.aURL), "location" : aLocation!]
+                let answerPost = ["qID": currentAnswer.qID, "uID": currentAnswer.uID!, "URL" : String(self.currentAnswer.aURL), "location" : aLocation!]
                 answersPath.setValue(answerPost)
             } else {
-                let answerPost = ["qID": self.currentAnswer.qID, "uID": self.currentAnswer.uID!, "URL" : String(self.currentAnswer.aURL)]
+                let answerPost = ["qID": currentAnswer.qID, "uID": currentAnswer.uID!, "URL" : String(self.currentAnswer.aURL)]
                 answersPath.setValue(answerPost)
-            }
-            
-            if let _profilePic = User.currentUser!.profilePic {
-                userPost["profilePic"] = _profilePic
-            }
-            
-            if let _userName = User.currentUser!.name {
-                userPost["name"] = _userName
             }
             
             Database.addUserAnswersToDatabase(currentAnswer!.aID, qID: currentQuestion!.qID, completion: {(success, error) in

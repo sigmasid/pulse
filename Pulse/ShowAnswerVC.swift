@@ -11,12 +11,14 @@ import FirebaseDatabase
 import FirebaseStorage
 import AVFoundation
 
-protocol showProfileDelegate : class {
+protocol answerDetailDelegate : class {
     func userClickedProfile()
     func userClosedMiniProfile(_ : UIView)
+    func userClickedExploreAnswers()
+    func userSelectedFromExploreQuestions(index : NSIndexPath)
 }
 
-class ShowAnswerVC: UIViewController, showProfileDelegate {
+class ShowAnswerVC: UIViewController, answerDetailDelegate {
     internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded() {
@@ -30,7 +32,11 @@ class ShowAnswerVC: UIViewController, showProfileDelegate {
     }
     
     internal var currentTag : Tag!
-    internal var answerIndex = 0
+    internal var answerIndex = 0 {
+        didSet {
+            
+        }
+    }
     internal var minAnswersToShow = 3
     internal var currentAnswer : Answer?
     private var userForCurrentAnswer : User?
@@ -53,13 +59,15 @@ class ShowAnswerVC: UIViewController, showProfileDelegate {
     private var miniProfile : MiniProfile?
     private var _isMiniProfileShown = false
     
+    private var exploreAnswers : BrowseAnswersView?
+    
     weak var delegate : childVCDelegate!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
-        view.addGestureRecognizer(tap)
+//        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+//        view.addGestureRecognizer(tap)
         
         if (currentQuestion != nil){
             _loadFirstAnswer(currentQuestion)
@@ -242,6 +250,19 @@ class ShowAnswerVC: UIViewController, showProfileDelegate {
     func userClosedMiniProfile(_profileView : UIView) {
         _profileView.removeFromSuperview()
         _isMiniProfileShown = false
+    }
+    
+    func userClickedExploreAnswers() {
+        let _topHeaderHeight = _answerOverlay.getHeaderHeight()
+        let exploreAnswersFrame = CGRectMake(0, _topHeaderHeight, view.bounds.width, view.bounds.height - _topHeaderHeight)
+        exploreAnswers = BrowseAnswersView(frame: exploreAnswersFrame, _currentQuestion: currentQuestion)
+        exploreAnswers!.delegate = self
+        view.addSubview(exploreAnswers!)
+        //add browse answers view and set question
+    }
+    
+    func userSelectedFromExploreQuestions(index : NSIndexPath) {
+        
     }
     
     deinit {

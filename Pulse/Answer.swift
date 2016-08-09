@@ -14,7 +14,7 @@ class Answer : NSObject {
     var qID : String
     var uID : String?
     var aLocation : String?
-    dynamic var aURL : NSURL!
+    var aURL : NSURL!
     
     init(aID: String, qID:String, uID : String, aURL : NSURL) {
         self.aID = aID
@@ -46,6 +46,7 @@ class Answer : NSObject {
         if snapshot.hasChild("uID") {
             self.uID = snapshot.childSnapshotForPath("uID").value as? String
         }
+        
         if snapshot.hasChild("location") {
             self.aLocation = snapshot.childSnapshotForPath("location").value as? String
         }

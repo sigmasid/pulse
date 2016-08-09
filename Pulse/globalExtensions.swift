@@ -128,6 +128,8 @@ enum Item : String {
     case Filters = "filters"
     case Settings = "settings"
     case SettingSections = "settingsSections"
+    case AnswerThumbs = "answerThumbnails"
+    case UserSummary = "userPublicSummary"
 }
 
 enum buttonCornerRadius : CGFloat {
@@ -184,6 +186,7 @@ enum SectionTypes : String {
 
 enum SettingTypes : String{
     case bio = "bio"
+    case shortBio = "shortBio"
     case email = "email"
     case name = "name"
     case birthday = "birthday"
@@ -195,6 +198,7 @@ enum SettingTypes : String{
     static func getSettingType(index : String) -> SettingTypes? {
         switch index {
         case "bio": return .bio
+        case "shortBio": return .shortBio
         case "email": return .email
         case "name": return .name
         case "birthday": return .birthday

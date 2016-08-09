@@ -17,7 +17,7 @@ class MiniProfile: UIView {
     private var closeButton : UIButton!
     private var selectedUser : User!
     
-    var delegate : showProfileDelegate!
+    var delegate : answerDetailDelegate!
 
     override init(frame: CGRect) {
         super.init(frame: frame)

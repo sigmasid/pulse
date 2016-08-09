@@ -14,6 +14,7 @@ class User {
     var uID : String?
     var name : String?
     var bio : String?
+    var shortBio : String?
     var gender : String?
     var birthday : String?
     var answers : [String]?
@@ -66,8 +67,8 @@ class User {
         if snapshot.hasChild("profilePic") {
             self.profilePic = snapshot.childSnapshotForPath("profilePic").value as? String
         }
-        if snapshot.hasChild("bio") {
-            self.bio = snapshot.childSnapshotForPath("bio").value as? String
+        if snapshot.hasChild("shortBio") {
+            self.shortBio = snapshot.childSnapshotForPath("shortBio").value as? String
         }
     }
     
@@ -102,7 +103,8 @@ class User {
     func getValueForStringProperty(property : String) -> String? {
         switch property {
         case "name": return User.currentUser!.name
-        case "bio": return User.currentUser!.bio
+        case "shortBio": return User.currentUser!.bio
+        case "bio": return User.currentUser!.shortBio
         case "birthday": return User.currentUser!.birthday
         case "gender": return User.currentUser!.gender
         case "email": return getEmail()

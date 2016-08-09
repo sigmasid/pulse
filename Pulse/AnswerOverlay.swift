@@ -32,7 +32,7 @@ class AnswerOverlay: UIView {
     private var _timeLeftShapeLayer = CAShapeLayer()
     private var _bgShapeLayer = CAShapeLayer()
     
-    var delegate : showProfileDelegate!
+    var delegate : answerDetailDelegate!
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -72,8 +72,8 @@ class AnswerOverlay: UIView {
         _userBackground.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
         _userBackground.layoutIfNeeded()
         
-        let tap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
-        _userBackground.addGestureRecognizer(tap)
+        let userBackgroundTap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
+        _userBackground.addGestureRecognizer(userBackgroundTap)
         
         addUserName()
         addUserImage()
@@ -130,12 +130,25 @@ class AnswerOverlay: UIView {
         _pulseIcon.heightAnchor.constraintEqualToAnchor(_pulseIcon.widthAnchor).active = true
         
         _pulseIcon.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
+        
+        let exploreAnswersTap = UITapGestureRecognizer(target: self, action: #selector(handleExploreTap))
+        _pulseIcon.addGestureRecognizer(exploreAnswersTap)
     }
     
     func handleProfileTap() {
         if delegate != nil {
             delegate.userClickedProfile()
         }
+    }
+    
+    func handleExploreTap() {
+        if delegate != nil {
+            delegate.userClickedExploreAnswers()
+        }
+    }
+    
+    func getHeaderHeight() -> CGFloat {
+        return _headerBackground.bounds.height  
     }
     
     private func addUserName() {

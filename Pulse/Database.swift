@@ -22,7 +22,10 @@ class Database {
     static let tagsRef = databaseRef.child(Item.Tags.rawValue)
     static let questionsRef = databaseRef.child(Item.Questions.rawValue)
     static let answersRef = databaseRef.child(Item.Answers.rawValue)
+
     static let usersRef = databaseRef.child(Item.Users.rawValue)
+    static let usersPublicSummaryRef = databaseRef.child(Item.UserSummary.rawValue)
+
     static let filtersRef = databaseRef.child(Item.Filters.rawValue)
     static let settingsRef = databaseRef.child(Item.Settings.rawValue)
     static let settingSectionsRef = databaseRef.child(Item.SettingSections.rawValue)
@@ -104,9 +107,23 @@ class Database {
     }
     
     static func getUser(uID : String, completion: (user : User, error : NSError?) -> Void) {
-        usersRef.child(uID).observeSingleEventOfType(.Value, withBlock: { snap in
+        usersPublicSummaryRef.child(uID).observeSingleEventOfType(.Value, withBlock: { snap in
             let _returnUser = User(uID: uID, snapshot: snap)
             completion(user: _returnUser, error: nil)
+        })
+    }
+    
+    static func getUserSummaryForAnswer(aID : String, completion: (user : User?, error : NSError?) -> Void) {
+        answersRef.child(aID).observeSingleEventOfType(.Value, withBlock: { snap in
+            if snap.hasChild("uID") {
+                let _uID = snap.childSnapshotForPath("uID").value as! String
+                getUser(_uID, completion: {(_user, error) in
+                    error != nil ? completion(user: nil, error: error) : completion(user: _user, error: nil)
+                })
+            } else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
+                completion(user: nil, error: NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
+            }
         })
     }
     
@@ -235,14 +252,21 @@ class Database {
     ///Populate current user
     static func populateCurrentUser(user: FIRUser!) {
         User.currentUser!.uID = user.uid
-
-        usersRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
+        
+        usersPublicSummaryRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
             if snap.hasChild(SettingTypes.name.rawValue) {
                 User.currentUser!.name = snap.childSnapshotForPath(SettingTypes.name.rawValue).value as? String
             }
             if snap.hasChild(SettingTypes.profilePic.rawValue) {
                 User.currentUser!.profilePic = snap.childSnapshotForPath(SettingTypes.profilePic.rawValue).value as? String
             }
+            if snap.hasChild(SettingTypes.shortBio.rawValue) {
+                User.currentUser!.shortBio = snap.childSnapshotForPath(SettingTypes.shortBio.rawValue).value as? String
+            }
+        })
+
+        usersRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
+
             if snap.hasChild(SettingTypes.birthday.rawValue) {
                 User.currentUser!.birthday = snap.childSnapshotForPath(SettingTypes.birthday.rawValue).value as? String
             }
@@ -316,6 +340,10 @@ class Database {
                 _user?.updatePassword(newValue) { error in
                     error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 }
+            case .shortBio, .name, .profilePic:
+                usersPublicSummaryRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
+                })
             default:
                 userPost[setting.settingID] = newValue
                 usersRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
@@ -334,7 +362,7 @@ class Database {
         if let _uPic = user.photoURL {
             userPost["profilePic"] = String(_uPic)
         }
-        usersRef.child(user.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+        usersPublicSummaryRef.child(user.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
             error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
         })
     }
@@ -390,20 +418,20 @@ class Database {
     /* STORAGE METHODS */
     static func getAnswerURL(fileID : String, completion: (URL : NSURL?, error : NSError?) -> Void) {
         let _ = answersStorageRef.child(fileID).downloadURLWithCompletion { (URL, error) -> Void in
-            error != nil ? completion(URL: nil, error: error) : completion(URL: URL, error: nil)
+            error != nil ? completion(URL: nil, error: error!) : completion(URL: URL, error: nil)
         }
     }
     
     static func getTagImage(fileID : String, maxImgSize : Int64, completion: (data : NSData?, error : NSError?) -> Void) {
         let _ = tagsStorageRef.child(fileID).dataWithMaxSize(maxImgSize) { (data, error) -> Void in
-            error != nil ? completion(data: nil, error: error) : completion(data: data, error: nil)
+            error != nil ? completion(data: nil, error: error!) : completion(data: data, error: nil)
         }
     }
     
     static func getImage(type : Item, fileID : String, maxImgSize : Int64, completion: (data : NSData?, error : NSError?) -> Void) {
         let path = getStoragePath(type, itemID: fileID)
         path.dataWithMaxSize(maxImgSize) { (data, error) -> Void in
-            error != nil ? completion(data: nil, error: error) : completion(data: data, error: nil)
+            error != nil ? completion(data: nil, error: error!) : completion(data: data, error: nil)
         }
     }
     
@@ -412,7 +440,7 @@ class Database {
             if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) { //remove question
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions/\(question.qID)")
                 _path.setValue(nil, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
-                    error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
+                    error != nil ? completion(success: false, error: error!) : completion(success: true, error: nil)
                 })
             } else { //pin question
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
