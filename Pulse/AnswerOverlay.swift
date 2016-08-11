@@ -32,7 +32,7 @@ class AnswerOverlay: UIView {
     private var _timeLeftShapeLayer = CAShapeLayer()
     private var _bgShapeLayer = CAShapeLayer()
     
-    var delegate : answerDetailDelegate!
+    weak var delegate : answerDetailDelegate!
 
     override init(frame: CGRect) {
         super.init(frame: frame)

@@ -26,24 +26,20 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
                 delegate.showQuestionPreviewOverlay()
                 answerIndex = 0
                 _CameraShown = false
-                _loadFirstAnswer(currentQuestion)
+                _loadAnswer(currentQuestion, index: answerIndex)
             }
         }
     }
     
     internal var currentTag : Tag!
-    internal var answerIndex = 0 {
-        didSet {
-            
-        }
-    }
+    internal var answerIndex = 0
+    
     internal var minAnswersToShow = 3
     internal var currentAnswer : Answer?
     private var userForCurrentAnswer : User?
     private var currentUserImage : UIImage?
     
     private var nextAnswer : Answer?
-    private var allAnswersForQuestion = [Answer]()
     private var _avPlayerLayer: AVPlayerLayer!
     private var _answerOverlay : AnswerOverlay!
     private var qPlayer = AVQueuePlayer()
@@ -70,7 +66,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
 //        view.addGestureRecognizer(tap)
         
         if (currentQuestion != nil){
-            _loadFirstAnswer(currentQuestion)
+            _loadAnswer(currentQuestion, index: answerIndex)
         }
         
         NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(_startCountdownTimer), name: "PlaybackStartedNotification", object: currentPlayerItem)
@@ -101,16 +97,16 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         super.viewDidDisappear(animated)
     }
     
-    private func _loadFirstAnswer(currentQuestion : Question) {
+    private func _loadAnswer(currentQuestion : Question, index: Int) {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         
-        if let _firstAnswerID = currentQuestion.qAnswers?.first {
-            Database.getAnswer(_firstAnswerID, completion: { (answer, error) in
+        if let _answerID = currentQuestion.qAnswers?[index] {
+            Database.getAnswer(_answerID, completion: { (answer, error) in
                 self.currentAnswer = answer
-                self.allAnswersForQuestion.append(answer)
-                self._addFirstVideo(answer.aID)
+                self._addVideo(answer.aID)
                 self._updateOverlayData(answer)
                 self._answerOverlay.addVideoTimerCountdown()
+                self.answerIndex = index
 
                 if self._canAdvance(self.answerIndex + 1) {
                     self._addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex + 1])
@@ -125,7 +121,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         }
     }
     
-    private func _addFirstVideo(answerID : String) {
+    private func _addVideo(answerID : String) {
         Database.getAnswerURL(answerID, completion: { (URL, error) in
             if error != nil {
                 GlobalFunctions.showErrorBlock("Error Getting Answers", erMessage: error!.localizedDescription)
@@ -253,8 +249,11 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     }
     
     func userClickedExploreAnswers() {
+        removeObserverIfNeeded()
+        
         let _topHeaderHeight = _answerOverlay.getHeaderHeight()
         let exploreAnswersFrame = CGRectMake(0, _topHeaderHeight, view.bounds.width, view.bounds.height - _topHeaderHeight)
+        
         exploreAnswers = BrowseAnswersView(frame: exploreAnswersFrame, _currentQuestion: currentQuestion)
         exploreAnswers!.delegate = self
         view.addSubview(exploreAnswers!)
@@ -262,7 +261,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     }
     
     func userSelectedFromExploreQuestions(index : NSIndexPath) {
-        
+        exploreAnswers?.removeFromSuperview()
+        _loadAnswer(currentQuestion, index: index.row)
     }
     
     deinit {

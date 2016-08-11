@@ -17,10 +17,9 @@ class BrowseAnswersView: UIView {
     private var gettingImageForCell : [Bool]!
     private var gettingInfoForCell : [Bool]!
     
-    var delegate : answerDetailDelegate!
+    weak var delegate : answerDetailDelegate!
     
     /* set by parent */
-    var currentAnswerIndex = 0
     var currentQuestion : Question?
     
     override init(frame: CGRect) {
