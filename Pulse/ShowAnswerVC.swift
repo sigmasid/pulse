@@ -25,7 +25,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
                 removeObserverIfNeeded()
                 delegate.showQuestionPreviewOverlay()
                 answerIndex = 0
-                _CameraShown = false
+                _hasUserBeenAskedQuestion = false
                 _loadAnswer(currentQuestion, index: answerIndex)
             }
         }
@@ -48,9 +48,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     private var _TapReady = false
     private var _NextItemReady = false
     private var _CanAdvanceReady = false
-    private var _CameraShown = false
+    private var _hasUserBeenAskedQuestion = false
     
     private var isObserving = false
+    private var isLoaded = false
     private var startObserver : AnyObject!
     private var miniProfile : MiniProfile?
     private var _isMiniProfileShown = false
@@ -62,36 +63,37 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
-        view.addGestureRecognizer(tap)
-        
-        if (currentQuestion != nil){
-            _loadAnswer(currentQuestion, index: answerIndex)
-        }
-        
-        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(_startCountdownTimer), name: "PlaybackStartedNotification", object: currentPlayerItem)
-
     }
     
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(true)
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(true)
         
-        _answerOverlay = AnswerOverlay(frame: view.bounds)
-        _avPlayerLayer = AVPlayerLayer(player: qPlayer)
+        if !isLoaded {
+            tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+            view.addGestureRecognizer(tap)
         
-        view.layer.insertSublayer(_avPlayerLayer, atIndex: 0)
-        view.insertSubview(_answerOverlay, atIndex: 1)
+            if (currentQuestion != nil){
+                _loadAnswer(currentQuestion, index: answerIndex)
+                _answerOverlay = AnswerOverlay(frame: view.bounds, iconColor: UIColor.blackColor(), iconBackground: UIColor.whiteColor())
+                _answerOverlay.addVideoTimerCountdown()
+                _answerOverlay.delegate = self
+                
+                _avPlayerLayer = AVPlayerLayer(player: qPlayer)
+                view.layer.insertSublayer(_avPlayerLayer, atIndex: 0)
+                view.insertSubview(_answerOverlay, atIndex: 1)
+                
+                _avPlayerLayer.frame = view.bounds
+                qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
+            }
+            
+            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(_startCountdownTimer), name: "PlaybackStartedNotification", object: currentPlayerItem)
         
-        _answerOverlay.addIcon(iconColor, backgroundColor: iconBackgroundColor)
-        _answerOverlay.addVideoTimerCountdown()
-        _answerOverlay.delegate = self
-        _avPlayerLayer.frame = view.bounds
-        qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
-        
-        startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
-            NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
-        })
+            startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
+                NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
+            })
+            
+            isLoaded = true
+        }
     }
     
     override func viewDidDisappear(animated: Bool) {
@@ -114,6 +116,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
                     self.answerIndex += 1
                     self._CanAdvanceReady = true
                 }
+                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+
             })
         } else {
             if (delegate != nil) {
@@ -295,11 +299,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         if _isMiniProfileShown { //ignore tap
             return
         }
-
-        if (answerIndex == minAnswersToShow && !_CameraShown && _CanAdvanceReady) { //ask user to answer the question
+        
+        print("answer index is \(answerIndex), camera shown \(_hasUserBeenAskedQuestion) and can advance \(_CanAdvanceReady)")
+        
+        if (answerIndex == minAnswersToShow && !_hasUserBeenAskedQuestion && _CanAdvanceReady) { //ask user to answer the question
             if (delegate != nil) {
                 qPlayer.pause()
-                _CameraShown = true
+                _hasUserBeenAskedQuestion = true
                 delegate.minAnswersShown()
             }
         }

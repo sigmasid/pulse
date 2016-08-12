@@ -14,7 +14,7 @@ class Answer : NSObject {
     var qID : String
     var uID : String?
     var aLocation : String?
-    var aURL : NSURL!
+    dynamic var aURL : NSURL! //used to indicate when upload is completed - do not remove dynamic keyword to allow notification observers
     
     init(aID: String, qID:String, uID : String, aURL : NSURL) {
         self.aID = aID

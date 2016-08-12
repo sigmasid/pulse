@@ -11,17 +11,15 @@ import UIKit
 class QuestionPreviewOverlay: UIView {
     
     private let _questionLabel = UILabel()
-    private lazy var _numAnswers = UILabel()
     
-    private let _iconSize = IconSizes.Medium.rawValue
-    private var _pulseIcon : Icon?
-    private let _iconFrame = UIView()
+    private let _iconSize = IconSizes.Large.rawValue
+    private let _answerCount = UIButton()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         addBackgroundColor()
         addQuestionLabel()
-        addIconAndAnswerCount(UIColor.blackColor(), backgroundColor : UIColor.whiteColor().colorWithAlphaComponent(0.7))
+        addAnswerCount()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -49,29 +47,23 @@ class QuestionPreviewOverlay: UIView {
     }
     
     ///Add icon in top left
-    private func addIconAndAnswerCount(iconColor: UIColor, backgroundColor : UIColor) {
-        addSubview(_iconFrame)
+    private func addAnswerCount() {
+        addSubview(_answerCount)
         
-        _iconFrame.translatesAutoresizingMaskIntoConstraints = false
-        _iconFrame.widthAnchor.constraintEqualToConstant(_iconSize).active = true
-        _iconFrame.heightAnchor.constraintEqualToAnchor(_iconFrame.widthAnchor).active = true
-        _iconFrame.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.m.rawValue).active = true
-        _iconFrame.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.m.rawValue).active = true
-        _iconFrame.layoutIfNeeded()
+        _answerCount.translatesAutoresizingMaskIntoConstraints = false
+        _answerCount.widthAnchor.constraintEqualToConstant(_iconSize).active = true
+        _answerCount.heightAnchor.constraintEqualToAnchor(_answerCount.widthAnchor).active = true
+        _answerCount.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.m.rawValue).active = true
+        _answerCount.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.m.rawValue).active = true
+        _answerCount.layoutIfNeeded()
         
-        _pulseIcon = Icon(frame: CGRectMake(0,0, _iconFrame.frame.width, _iconFrame.frame.height))
-        _pulseIcon!.drawIconBackground(backgroundColor)
-        _pulseIcon!.drawIcon(iconColor, iconThickness: IconThickness.Medium.rawValue)
-        
-        _iconFrame.addSubview(_pulseIcon!)
-        
-        addSubview(_numAnswers)
-        
-        _numAnswers.font = UIFont.systemFontOfSize(14, weight: UIFontWeightSemibold)
-        _numAnswers.textAlignment = .Center
-        _numAnswers.translatesAutoresizingMaskIntoConstraints = false
-        _numAnswers.topAnchor.constraintEqualToAnchor(_iconFrame.bottomAnchor, constant: Spacing.xs.rawValue).active = true
-        _numAnswers.centerXAnchor.constraintEqualToAnchor(_iconFrame.centerXAnchor).active = true
+        _answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
+        _answerCount.titleLabel!.font = UIFont.systemFontOfSize(25, weight: UIFontWeightBold)
+        _answerCount.titleLabel!.textColor = UIColor.whiteColor()
+        _answerCount.titleLabel!.textAlignment = .Center
+        _answerCount.setBackgroundImage(UIImage(named: "count-label"), forState: .Normal)
+        _answerCount.imageView?.contentMode = .ScaleAspectFit
+
     }
     
     func setQuestionLabel(qTitle : String?) {
@@ -79,10 +71,6 @@ class QuestionPreviewOverlay: UIView {
     }
     
     func setNumAnswersLabel(numAnswers : Int) {
-        if numAnswers > 1 {
-            _numAnswers.text = String("\(numAnswers) Answers")
-        } else {
-            _numAnswers.text = String("\(numAnswers) Answer")
-        }
+        _answerCount.setTitle(String(numAnswers), forState: .Normal)
     }
 }

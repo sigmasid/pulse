@@ -9,6 +9,32 @@
 import Foundation
 import UIKit
 
+class PaddingLabel: UILabel {
+    
+    let padding = UIEdgeInsets(top: 2.5, left: 5, bottom: 2.5, right: 5)
+    
+    override func drawTextInRect(rect: CGRect) {
+        super.drawTextInRect(UIEdgeInsetsInsetRect(rect, padding))
+    }
+    
+    // Override -intrinsicContentSize: for Auto layout code
+    override func intrinsicContentSize() -> CGSize {
+        let superContentSize = super.intrinsicContentSize()
+        let width = superContentSize.width + padding.left + padding.right
+        let heigth = superContentSize.height + padding.top + padding.bottom
+        return CGSize(width: width, height: heigth)
+    }
+    
+    // Override -sizeThatFits: for Springs & Struts code
+    override func sizeThatFits(size: CGSize) -> CGSize {
+        let superSizeThatFits = super.sizeThatFits(size)
+        let width = superSizeThatFits.width + padding.left + padding.right
+        let heigth = superSizeThatFits.height + padding.top + padding.bottom
+        return CGSize(width: width, height: heigth)
+    }
+    
+}
+
 // To dismiss keyboard when needed
 extension UIViewController {
     func hideKeyboardWhenTappedAround() {
@@ -154,6 +180,12 @@ enum buttonCornerRadius : CGFloat {
     }
 }
 
+
+enum FontSizes: CGFloat {
+    case Caption = 10
+    case Body = 14
+    case Headline = 20
+}
 
 enum UserErrors: ErrorType {
     case NotLoggedIn

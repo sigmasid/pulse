@@ -13,18 +13,19 @@ class AnswerOverlay: UIView {
     private var _headerBackground = UIView()
     private var _userBackground = UIView()
     
-    private let _questionLabel = UILabel()
+    private let _tagLabel = PaddingLabel()
+    private let _questionLabel = PaddingLabel()
+    
     private let _userNameLabel = UILabel()
     private let _userLocationLabel = UILabel()
+    private lazy var _userShortBioLabel = UILabel()
     private var _userImage = UIImageView()
     private let _videoTimer = UIView()
-
-    private let _tagLabel = UILabel()
     private var _pulseIcon = Icon()
 
-    private let _bottomDimension : CGFloat = 50
+    private let _footerHeight : CGFloat = Spacing.l.rawValue
     private var _countdownTimerRadiusStroke : CGFloat = 3
-    private var _iconSize : CGFloat = 40
+    private var _iconSize : CGFloat = Spacing.l.rawValue
     
     private lazy var upvote = UIImageView(image: UIImage(named: "upvote"))
     private lazy var downvote = UIImageView(image: UIImage(named: "downvote"))
@@ -36,6 +37,11 @@ class AnswerOverlay: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+    }
+    
+    convenience init(frame: CGRect, iconColor: UIColor, iconBackground: UIColor) {
+        self.init(frame: frame)
+        addIcon(iconColor, backgroundColor: iconBackground)
         addUserBackground()
         addHeaderBackground()
     }
@@ -54,31 +60,29 @@ class AnswerOverlay: UIView {
         _headerBackground.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.1).active = true
         _headerBackground.layoutIfNeeded()
         
-        _headerBackground.backgroundColor = UIColor.whiteColor().colorWithAlphaComponent(1.0)
-        
-        addTag()
         addQuestion()
+        addTag()
+
     }
     
     private func addUserBackground() {
         addSubview(_userBackground)
         
-        _userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
+//        _userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
         _userBackground.translatesAutoresizingMaskIntoConstraints = false
         
         _userBackground.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
         _userBackground.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
         _userBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
-        _userBackground.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
+        _userBackground.heightAnchor.constraintEqualToConstant(_footerHeight).active = true
         _userBackground.layoutIfNeeded()
         
         let userBackgroundTap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
         _userBackground.addGestureRecognizer(userBackgroundTap)
         
-        addUserName()
         addUserImage()
+        addUserName()
         addLocation()
-        
     }
     
     ///Update question text
@@ -86,50 +90,50 @@ class AnswerOverlay: UIView {
         _headerBackground.addSubview(_questionLabel)
         _questionLabel.adjustsFontSizeToFitWidth = true
         
-        _questionLabel.textColor = UIColor.blackColor()
-        _questionLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _questionLabel.textColor = UIColor.whiteColor()
+        _questionLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
+        _questionLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
         _questionLabel.textAlignment = .Left
+        _questionLabel.numberOfLines = 0
+        _questionLabel.lineBreakMode = .ByWordWrapping
         
         _questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        _questionLabel.bottomAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: -_headerBackground.frame.height / 6).active = true
-        _questionLabel.widthAnchor.constraintEqualToAnchor(_headerBackground.widthAnchor, multiplier: 0.8).active = true
-        _questionLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
-        _questionLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
+        _questionLabel.topAnchor.constraintEqualToAnchor(_headerBackground.topAnchor, constant: _headerBackground.frame.height / 6).active = true
+        _questionLabel.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
+//        _questionLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
+        _questionLabel.leadingAnchor.constraintEqualToAnchor(_pulseIcon.trailingAnchor, constant: Spacing.xs.rawValue).active = true
+    
     }
     
     ///Update Tag in header
     private func addTag() {
         _headerBackground.addSubview(_tagLabel)
         
-        _tagLabel.textColor = UIColor.blackColor()
-        _tagLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleHeadline)
+        _tagLabel.textColor = UIColor.whiteColor()
+        _tagLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
+        _tagLabel.font = UIFont.boldSystemFontOfSize(FontSizes.Caption.rawValue)
         _tagLabel.textAlignment = .Left
         
         _tagLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        _tagLabel.topAnchor.constraintEqualToAnchor(_headerBackground.topAnchor, constant: _headerBackground.frame.height / 6).active = true
-        _tagLabel.widthAnchor.constraintEqualToAnchor(_headerBackground.widthAnchor, multiplier: 0.8).active = true
+        _tagLabel.topAnchor.constraintEqualToAnchor(_questionLabel.bottomAnchor, constant: 1.0).active = true
         _tagLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
-        _tagLabel.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
+        _tagLabel.leadingAnchor.constraintEqualToAnchor(_pulseIcon.trailingAnchor, constant: Spacing.xs.rawValue).active = true
     }
     
     ///Add Icon in header
     func addIcon(iconColor: UIColor, backgroundColor : UIColor) {
         _pulseIcon = Icon(frame: CGRectMake(0,0, _iconSize, _iconSize))
 
-        _pulseIcon.drawIconBackground(backgroundColor)
-        _pulseIcon.drawIcon(iconColor, iconThickness: 2)
+        _pulseIcon.drawIconBackground(backgroundColor.colorWithAlphaComponent(0.7))
+        _pulseIcon.drawIcon(iconColor, iconThickness: IconThickness.Medium.rawValue)
 
         _headerBackground.addSubview(_pulseIcon)
         
         _pulseIcon.translatesAutoresizingMaskIntoConstraints = false
-        
-        _pulseIcon.centerYAnchor.constraintEqualToAnchor(_headerBackground.centerYAnchor, constant: 0).active = true
+        _pulseIcon.centerYAnchor.constraintEqualToAnchor(_headerBackground.centerYAnchor).active = true
         _pulseIcon.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _pulseIcon.heightAnchor.constraintEqualToAnchor(_pulseIcon.widthAnchor).active = true
-        
-        _pulseIcon.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
+        _pulseIcon.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
         
         let exploreAnswersTap = UITapGestureRecognizer(target: self, action: #selector(handleExploreTap))
         _pulseIcon.addGestureRecognizer(exploreAnswersTap)
@@ -155,36 +159,55 @@ class AnswerOverlay: UIView {
         _userBackground.addSubview(_userNameLabel)
 
         _userNameLabel.textColor = UIColor.whiteColor()
-        _userNameLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _userNameLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        _userNameLabel.shadowOffset = CGSizeMake(1, 1)
+        _userNameLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightBlack)
         
         _userNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        _userNameLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _bottomDimension / 6).active = true
-        _userNameLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -Spacing.xs.rawValue - _bottomDimension).active = true
-        _userNameLabel.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
+        _userNameLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _footerHeight / 6).active = true
+        _userNameLabel.leadingAnchor.constraintEqualToAnchor(_userImage.trailingAnchor, constant: Spacing.xs.rawValue).active = true
     }
     
     private func addLocation() {
         _userLocationLabel.textColor = UIColor.whiteColor()
-        _userLocationLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _userLocationLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue)
+        _userLocationLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        _userLocationLabel.shadowOffset = CGSizeMake(1, 1)
         _userBackground.addSubview(_userLocationLabel)
 
         _userLocationLabel.translatesAutoresizingMaskIntoConstraints = false
-        _userLocationLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_bottomDimension / 6).active = true
-        _userLocationLabel.widthAnchor.constraintEqualToAnchor(_userBackground.widthAnchor, constant: -Spacing.xs.rawValue - _bottomDimension).active = true
-        _userLocationLabel.trailingAnchor.constraintEqualToAnchor(_userBackground.trailingAnchor).active = true
+        _userLocationLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_footerHeight / 6).active = true
+        _userLocationLabel.leadingAnchor.constraintEqualToAnchor(_userNameLabel.leadingAnchor).active = true
+    }
+    
+    private func addBio() {
+        _userShortBioLabel.textColor = UIColor.whiteColor()
+        _userShortBioLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        _userBackground.addSubview(_userShortBioLabel)
+        
+        _userShortBioLabel.translatesAutoresizingMaskIntoConstraints = false
+        _userShortBioLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_footerHeight / 6).active = true
+        _userShortBioLabel.leadingAnchor.constraintEqualToAnchor(_userNameLabel.leadingAnchor).active = true
     }
     
     private func addUserImage() {
         _userBackground.addSubview(_userImage)
+
         _userImage.translatesAutoresizingMaskIntoConstraints = false
         _userImage.contentMode = UIViewContentMode.ScaleAspectFill
         _userImage.clipsToBounds = true
+        _userImage.image = nil
         
-        _userImage.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor).active = true
-        _userImage.widthAnchor.constraintEqualToConstant(_bottomDimension).active = true
-        _userImage.heightAnchor.constraintEqualToConstant(_bottomDimension).active = true
-        _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor).active = true
+        _userImage.centerYAnchor.constraintEqualToAnchor(_userBackground.centerYAnchor).active = true
+        _userImage.heightAnchor.constraintEqualToAnchor(_userBackground.heightAnchor, multiplier: 0.8).active = true
+        _userImage.widthAnchor.constraintEqualToAnchor(_userImage.heightAnchor).active = true
+        _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
+        _userImage.layoutIfNeeded()
         
+        _userImage.layer.cornerRadius = _userImage.bounds.height / 2
+        _userImage.layer.masksToBounds = true
+        _userImage.layer.shouldRasterize = true
+        _userImage.layer.rasterizationScale = UIScreen.mainScreen().scale
     }
     
     
@@ -198,7 +221,7 @@ class AnswerOverlay: UIView {
     }
     
     func setUserImage(image : UIImage?) {
-         _userImage.image = image
+        _userImage.image = image
     }
     
     func getUserBackground() -> UIView {
@@ -218,14 +241,13 @@ class AnswerOverlay: UIView {
         addSubview(_videoTimer)
         
         _videoTimer.translatesAutoresizingMaskIntoConstraints = false
-
         _videoTimer.centerXAnchor.constraintEqualToAnchor(_pulseIcon.centerXAnchor, constant: _iconSize / 2).active = true
         _videoTimer.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _videoTimer.centerYAnchor.constraintEqualToAnchor(_pulseIcon.centerYAnchor, constant: _iconSize / 2).active = true
         _videoTimer.heightAnchor.constraintEqualToConstant(_iconSize).active = true
         
         // draw the countdown
-        _bgShapeLayer = drawBgShape(_iconSize / 2, _stroke: _countdownTimerRadiusStroke)
+        _bgShapeLayer = drawBgShape((_iconSize * 1.02) / 2, _stroke: _countdownTimerRadiusStroke)
         _timeLeftShapeLayer = drawTimeLeftShape()
         
         _videoTimer.layer.addSublayer(_bgShapeLayer)

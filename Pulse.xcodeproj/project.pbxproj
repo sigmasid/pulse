@@ -54,7 +54,6 @@
 		BAF2940F1D46E6DA0046B073 /* AccountLoginManagerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */; };
 		BAFA88711D59240B00854B12 /* BrowseAnswersCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFA88701D59240B00854B12 /* BrowseAnswersCell.swift */; };
 		BAFA88751D59245000854B12 /* BrowseAnswersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFA88741D59245000854B12 /* BrowseAnswersView.swift */; };
-		BAFA88771D59248400854B12 /* BrowseAnswersLayoutAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFA88761D59248400854B12 /* BrowseAnswersLayoutAttributes.swift */; };
 		BAFA8F331D42984F00C1BB14 /* FiltersOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFA8F321D42984F00C1BB14 /* FiltersOverlay.swift */; };
 		BAFA8F351D42987000C1BB14 /* FiltersCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFA8F341D42987000C1BB14 /* FiltersCell.swift */; };
 		BAFAC6F91D3436B30073651F /* TagDetailQuestionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFAC6F81D3436B30073651F /* TagDetailQuestionCell.swift */; };
@@ -110,7 +109,6 @@
 		BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountLoginManagerVC.swift; sourceTree = "<group>"; };
 		BAFA88701D59240B00854B12 /* BrowseAnswersCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowseAnswersCell.swift; sourceTree = "<group>"; };
 		BAFA88741D59245000854B12 /* BrowseAnswersView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowseAnswersView.swift; sourceTree = "<group>"; };
-		BAFA88761D59248400854B12 /* BrowseAnswersLayoutAttributes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BrowseAnswersLayoutAttributes.swift; sourceTree = "<group>"; };
 		BAFA8F321D42984F00C1BB14 /* FiltersOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FiltersOverlay.swift; sourceTree = "<group>"; };
 		BAFA8F341D42987000C1BB14 /* FiltersCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FiltersCell.swift; sourceTree = "<group>"; };
 		BAFAC6F81D3436B30073651F /* TagDetailQuestionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagDetailQuestionCell.swift; sourceTree = "<group>"; };
@@ -286,7 +284,6 @@
 			children = (
 				BAFA88741D59245000854B12 /* BrowseAnswersView.swift */,
 				BAFA88701D59240B00854B12 /* BrowseAnswersCell.swift */,
-				BAFA88761D59248400854B12 /* BrowseAnswersLayoutAttributes.swift */,
 			);
 			name = "Browse Answers";
 			sourceTree = "<group>";
@@ -480,7 +477,6 @@
 				BA1C48BC1D243704008F8A04 /* AppDelegate.swift in Sources */,
 				BAD363AA1D51646E00560EB5 /* TagDetailCollectionCell.swift in Sources */,
 				BAD363A81D51319600560EB5 /* QuestionPreviewOverlay.swift in Sources */,
-				BAFA88771D59248400854B12 /* BrowseAnswersLayoutAttributes.swift in Sources */,
 				BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */,
 				BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */,
 				BAFA88751D59245000854B12 /* BrowseAnswersView.swift in Sources */,

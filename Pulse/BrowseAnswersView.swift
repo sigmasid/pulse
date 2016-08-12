@@ -11,7 +11,6 @@ import UIKit
 class BrowseAnswersView: UIView {
     private var browseAnswers: UICollectionView!
     private var reuseIdentifier = "BrowseAnswersCell"
-    private var headerReuseIdentifier = "BrowseAnswersHeader"
     private var browseAnswerPreviewImages : [UIImage?]!
     private var usersForAnswerPreviews : [User?]!
 
@@ -19,14 +18,12 @@ class BrowseAnswersView: UIView {
     private var gettingInfoForCell : [Bool]!
     private var isfirstTimeTransform = true
     
-    weak var delegate : answerDetailDelegate!
-    private var reusableSupplementaryView : UICollectionReusableView?
-    
     private var cellWidth : CGFloat = 0
     private var spacerBetweenCells : CGFloat = 0
     
     /* set by parent */
     var currentQuestion : Question?
+    weak var delegate : answerDetailDelegate!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -41,7 +38,7 @@ class BrowseAnswersView: UIView {
         browseAnswerPreviewImages = [UIImage?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
         usersForAnswerPreviews = [User?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
         
-        backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.8)
+        backgroundColor = UIColor.init(red: 35 / 255, green: 31 / 255, blue: 32 / 255, alpha: 0.9)
         
         setupCollectionView()
     }
@@ -57,7 +54,6 @@ class BrowseAnswersView: UIView {
         
         browseAnswers = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
         browseAnswers?.registerClass(BrowseAnswersCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-//        browseAnswers?.registerClass(UICollectionReusableView.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
         
         addSubview(browseAnswers!)
         
@@ -71,10 +67,8 @@ class BrowseAnswersView: UIView {
         
         cellWidth = browseAnswers.bounds.width * 0.6
         spacerBetweenCells = browseAnswers.bounds.width * 0.05
-        print("cell width is \(cellWidth) and spacer width is \(spacerBetweenCells)")
         
-        browseAnswers?.backgroundView = nil
-        browseAnswers?.showsVerticalScrollIndicator = false
+        browseAnswers?.backgroundColor = UIColor.clearColor()
         browseAnswers?.showsHorizontalScrollIndicator = false
         
         browseAnswers?.delegate = self
@@ -92,10 +86,6 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
         return 1
     }
-    
-//    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-//        return CGSize(width: collectionView.bounds.width * 0.2, height: collectionView.bounds.height)
-//    }
 
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! BrowseAnswersCell
@@ -169,16 +159,6 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         return UIEdgeInsetsMake(0, collectionView.bounds.width * 0.2, 0, collectionView.bounds.width * 0.2)
     }
     
-//    func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView   {
-//        
-//        if (kind ==  UICollectionElementKindSectionHeader) {
-//            reusableSupplementaryView = collectionView.dequeueReusableSupplementaryViewOfKind(UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier, forIndexPath: indexPath)
-//            reusableSupplementaryView?.backgroundColor = UIColor.clearColor()
-//        }
-//        return reusableSupplementaryView!
-//    }
-//    
-    
     //center the incoming cell -- doesn't work w/ paging enabled
     func scrollViewWillEndDragging(scrollView: UIScrollView,
                                    withVelocity velocity: CGPoint,
@@ -188,8 +168,6 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         let currentOffset = Float(scrollView.contentOffset.x)
         let targetOffset = Float(targetContentOffset.memory.x)
         var newTargetOffset : Float = 0
-        
-        print("current offset is \(currentOffset), target offset is \(targetOffset), new target offset \(newTargetOffset)")
         
         if (targetOffset > currentOffset) {
             newTargetOffset = ceilf(currentOffset / pageWidth) * pageWidth
@@ -207,10 +185,8 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         scrollView.setContentOffset(CGPointMake(CGFloat(newTargetOffset), scrollView.contentOffset.y), animated: true)
         
         let index : Int = Int(newTargetOffset / pageWidth)
-        print("target offset is \(newTargetOffset), pagewidth is \(pageWidth) and index is \(index)")
         
         if (index == 0) { // If first index
-            print("first index")
             let cell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index, inSection: 0))
             UIView.animateWithDuration(0.2) {
                 cell!.transform = CGAffineTransformIdentity
@@ -222,23 +198,18 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
             }
         } else {
             if let cell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index, inSection: 0)) {
-                print("making center cell big")
                 UIView.animateWithDuration(0.2) {
                     cell.transform = CGAffineTransformIdentity
                 }
             }
 
             if let priorCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index - 1, inSection: 0)) {
-                print("making left cell small")
-
                 UIView.animateWithDuration(0.2) {
                     priorCell.transform = CGAffineTransformMakeScale(0.8, 0.8)
                 }
             }
             
             if let nextCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index + 1, inSection: 0)) {
-                print("making right cell small")
-                
                 UIView.animateWithDuration(0.2) {
                     nextCell.transform = CGAffineTransformMakeScale(0.8, 0.8)
                 }
@@ -246,3 +217,17 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         }
     }
 }
+
+//    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+//        return CGSize(width: collectionView.bounds.width * 0.2, height: collectionView.bounds.height)
+//    }
+
+//    func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView   {
+//
+//        if (kind ==  UICollectionElementKindSectionHeader) {
+//            reusableSupplementaryView = collectionView.dequeueReusableSupplementaryViewOfKind(UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier, forIndexPath: indexPath)
+//            reusableSupplementaryView?.backgroundColor = UIColor.clearColor()
+//        }
+//        return reusableSupplementaryView!
+//    }
+//

@@ -82,14 +82,13 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     ///post video to firebase
     func _postVideo() {
         _controlsOverlay.getButton(.Post).enabled = false
-        print("trying to post video")
         if User.isLoggedIn() {
             _controlsOverlay.getButton(.Post).setTitle("Posting...", forState: UIControlState.Disabled)
             _controlsOverlay.getButton(.Post).backgroundColor = UIColor.darkGrayColor().colorWithAlphaComponent(1)
             currentAnswer = createAnswer()
             currentAnswer.addObserver(self, forKeyPath: "aURL", options: NSKeyValueObservingOptions.New, context: nil)
             
-            uploadAnswer(self.currentAnswer.aID)
+            uploadAnswer(currentAnswer.aID)
         } else {
             if (answerDelegate != nil) {
                 _controlsOverlay.getButton(.Post).enabled = true
@@ -124,8 +123,9 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             }
             
             uploadTask.observeStatus(.Failure) { snapshot in
-                print("current user \(FIRAuth.auth()!.currentUser)")
-                print("error is \(snapshot.error?.localizedDescription)")
+                if let _error = snapshot.error {
+                    GlobalFunctions.showErrorBlock("Error Posting Video", erMessage: _error.localizedDescription)
+                }
             }
             
             uploadTask.observeStatus(.Progress) { snapshot in
@@ -160,7 +160,6 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 if !success {
                     print(error)
                 } else {
-                    print("success creating answer")
                     self.uploadTask.removeAllObservers()
                     self.doneCreatingAnswer()
                 }
