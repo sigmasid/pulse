@@ -11,13 +11,19 @@ import UIKit
 class BrowseAnswersView: UIView {
     private var browseAnswers: UICollectionView!
     private var reuseIdentifier = "BrowseAnswersCell"
+    private var headerReuseIdentifier = "BrowseAnswersHeader"
     private var browseAnswerPreviewImages : [UIImage?]!
     private var usersForAnswerPreviews : [User?]!
 
     private var gettingImageForCell : [Bool]!
     private var gettingInfoForCell : [Bool]!
+    private var isfirstTimeTransform = true
     
     weak var delegate : answerDetailDelegate!
+    private var reusableSupplementaryView : UICollectionReusableView?
+    
+    private var cellWidth : CGFloat = 0
+    private var spacerBetweenCells : CGFloat = 0
     
     /* set by parent */
     var currentQuestion : Question?
@@ -35,22 +41,45 @@ class BrowseAnswersView: UIView {
         browseAnswerPreviewImages = [UIImage?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
         usersForAnswerPreviews = [User?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
         
-        let _layout = BrowseAnswersLayout()
-        _layout.radius = bounds.height
-        let itemSize = CGSize(width: bounds.width / 1.75, height: bounds.height * (2/3))
-        _layout.itemSize = itemSize
+        backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.8)
         
-        browseAnswers = UICollectionView(frame: bounds, collectionViewLayout: _layout)
-        browseAnswers.registerClass(BrowseAnswersCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-        browseAnswers.delegate = self
-        browseAnswers.dataSource = self
-        browseAnswers.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.8)
-        
-        addSubview(browseAnswers)
+        setupCollectionView()
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    
+    private func setupCollectionView() {
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.scrollDirection = UICollectionViewScrollDirection.Horizontal
+        
+        browseAnswers = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
+        browseAnswers?.registerClass(BrowseAnswersCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+//        browseAnswers?.registerClass(UICollectionReusableView.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+        
+        addSubview(browseAnswers!)
+        
+        browseAnswers?.translatesAutoresizingMaskIntoConstraints = false
+        browseAnswers?.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.7).active = true
+        browseAnswers?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        browseAnswers?.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        browseAnswers?.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
+
+        browseAnswers?.layoutIfNeeded()
+        
+        cellWidth = browseAnswers.bounds.width * 0.6
+        spacerBetweenCells = browseAnswers.bounds.width * 0.05
+        print("cell width is \(cellWidth) and spacer width is \(spacerBetweenCells)")
+        
+        browseAnswers?.backgroundView = nil
+        browseAnswers?.showsVerticalScrollIndicator = false
+        browseAnswers?.showsHorizontalScrollIndicator = false
+        
+        browseAnswers?.delegate = self
+        browseAnswers?.dataSource = self
+        browseAnswers?.reloadData()
     }
 }
 
@@ -64,12 +93,18 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         return 1
     }
     
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
-        return CGSize(width: bounds.width, height: bounds.height)
-    }
-    
+//    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+//        return CGSize(width: collectionView.bounds.width * 0.2, height: collectionView.bounds.height)
+//    }
+
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! BrowseAnswersCell
+        
+        if (indexPath.row == 0 && isfirstTimeTransform) { // make a bool and set YES initially, this check will prevent fist load transform
+            isfirstTimeTransform = false
+        } else {
+            cell.transform = CGAffineTransformMakeScale(0.8, 0.8)
+        }
         
         /* GET QUESTION PREVIEW IMAGE FROM STORAGE */
         if browseAnswerPreviewImages[indexPath.row] != nil && gettingImageForCell[indexPath.row] == true {
@@ -81,7 +116,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
 
             Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![indexPath.row]+".jpg", maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error != nil {
-                    cell.answerPreviewImage?.backgroundColor = UIColor.redColor()
+                    cell.answerPreviewImage?.backgroundColor = UIColor.redColor() /* NEED TO CHANGE */
                 } else {
                     let _answerPreviewImage = UIImage(data: _data!)
                     self.browseAnswerPreviewImages.insert(_answerPreviewImage, atIndex: indexPath.row)
@@ -116,5 +151,98 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         delegate.userSelectedFromExploreQuestions(indexPath)
+    }
+    
+    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+        return CGSize(width: CGFloat(cellWidth), height: collectionView.bounds.height)
+    }
+    
+    func collectionView(collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                               minimumLineSpacingForSectionAtIndex section: Int) -> CGFloat {
+        return spacerBetweenCells
+    }
+    
+    func collectionView(collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                               insetForSectionAtIndex section: Int) -> UIEdgeInsets {
+        return UIEdgeInsetsMake(0, collectionView.bounds.width * 0.2, 0, collectionView.bounds.width * 0.2)
+    }
+    
+//    func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView   {
+//        
+//        if (kind ==  UICollectionElementKindSectionHeader) {
+//            reusableSupplementaryView = collectionView.dequeueReusableSupplementaryViewOfKind(UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier, forIndexPath: indexPath)
+//            reusableSupplementaryView?.backgroundColor = UIColor.clearColor()
+//        }
+//        return reusableSupplementaryView!
+//    }
+//    
+    
+    //center the incoming cell -- doesn't work w/ paging enabled
+    func scrollViewWillEndDragging(scrollView: UIScrollView,
+                                   withVelocity velocity: CGPoint,
+                                                targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+        let pageWidth : Float = Float(cellWidth + spacerBetweenCells) // width + space
+        
+        let currentOffset = Float(scrollView.contentOffset.x)
+        let targetOffset = Float(targetContentOffset.memory.x)
+        var newTargetOffset : Float = 0
+        
+        print("current offset is \(currentOffset), target offset is \(targetOffset), new target offset \(newTargetOffset)")
+        
+        if (targetOffset > currentOffset) {
+            newTargetOffset = ceilf(currentOffset / pageWidth) * pageWidth
+        } else {
+            newTargetOffset = floorf(currentOffset / pageWidth) * pageWidth
+        }
+        
+        if (newTargetOffset < 0) {
+            newTargetOffset = 0
+        } else if (newTargetOffset > Float(scrollView.contentSize.width)) {
+            newTargetOffset = Float(scrollView.contentSize.width)
+        }
+
+        targetContentOffset.memory.x = CGFloat(currentOffset)
+        scrollView.setContentOffset(CGPointMake(CGFloat(newTargetOffset), scrollView.contentOffset.y), animated: true)
+        
+        let index : Int = Int(newTargetOffset / pageWidth)
+        print("target offset is \(newTargetOffset), pagewidth is \(pageWidth) and index is \(index)")
+        
+        if (index == 0) { // If first index
+            print("first index")
+            let cell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index, inSection: 0))
+            UIView.animateWithDuration(0.2) {
+                cell!.transform = CGAffineTransformIdentity
+            }
+            
+            let nextCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index + 1, inSection: 0))
+            UIView.animateWithDuration(0.2) {
+                nextCell!.transform = CGAffineTransformMakeScale(0.8, 0.8)
+            }
+        } else {
+            if let cell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index, inSection: 0)) {
+                print("making center cell big")
+                UIView.animateWithDuration(0.2) {
+                    cell.transform = CGAffineTransformIdentity
+                }
+            }
+
+            if let priorCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index - 1, inSection: 0)) {
+                print("making left cell small")
+
+                UIView.animateWithDuration(0.2) {
+                    priorCell.transform = CGAffineTransformMakeScale(0.8, 0.8)
+                }
+            }
+            
+            if let nextCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index + 1, inSection: 0)) {
+                print("making right cell small")
+                
+                UIView.animateWithDuration(0.2) {
+                    nextCell.transform = CGAffineTransformMakeScale(0.8, 0.8)
+                }
+            }
+        }
     }
 }

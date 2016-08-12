@@ -58,12 +58,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     private var exploreAnswers : BrowseAnswersView?
     
     weak var delegate : childVCDelegate!
+    private var tap : UITapGestureRecognizer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-//        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
-//        view.addGestureRecognizer(tap)
+        tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        view.addGestureRecognizer(tap)
         
         if (currentQuestion != nil){
             _loadAnswer(currentQuestion, index: answerIndex)
@@ -250,6 +251,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     
     func userClickedExploreAnswers() {
         removeObserverIfNeeded()
+        tap.enabled = false
         
         let _topHeaderHeight = _answerOverlay.getHeaderHeight()
         let exploreAnswersFrame = CGRectMake(0, _topHeaderHeight, view.bounds.width, view.bounds.height - _topHeaderHeight)
@@ -261,6 +263,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     }
     
     func userSelectedFromExploreQuestions(index : NSIndexPath) {
+        tap.enabled = true
         exploreAnswers?.removeFromSuperview()
         _loadAnswer(currentQuestion, index: index.row)
     }
