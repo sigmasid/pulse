@@ -13,6 +13,7 @@ class BrowseAnswersView: UIView {
     private var reuseIdentifier = "BrowseAnswersCell"
     private var browseAnswerPreviewImages : [UIImage?]!
     private var usersForAnswerPreviews : [User?]!
+    private var answersForQuestion : [Answer?]!
 
     private var gettingImageForCell : [Bool]!
     private var gettingInfoForCell : [Bool]!
@@ -24,6 +25,10 @@ class BrowseAnswersView: UIView {
     /* set by parent */
     var currentQuestion : Question?
     weak var delegate : answerDetailDelegate!
+    
+    private var addAnswerButton = UIButton()
+    private var sortAnswersButton = UIButton()
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -40,6 +45,8 @@ class BrowseAnswersView: UIView {
         
         backgroundColor = UIColor.init(red: 35 / 255, green: 31 / 255, blue: 32 / 255, alpha: 0.9)
         
+        setupSortAnswersButton()
+        setupAddAnswerButton()
         setupCollectionView()
     }
     
@@ -47,6 +54,50 @@ class BrowseAnswersView: UIView {
         super.init(coder: aDecoder)
     }
     
+    private func setupAddAnswerButton() {
+        addSubview(addAnswerButton)
+        
+        addAnswerButton.translatesAutoresizingMaskIntoConstraints = false
+        addAnswerButton.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        addAnswerButton.heightAnchor.constraintEqualToAnchor(addAnswerButton.widthAnchor).active = true
+        addAnswerButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        addAnswerButton.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.s.rawValue).active = true
+        addAnswerButton.layoutIfNeeded()
+        
+        addAnswerButton.makeRound()
+        addAnswerButton.backgroundColor = iconBackgroundColor
+        addAnswerButton.setTitle("add answer", forState: .Normal)
+        addAnswerButton.titleLabel?.numberOfLines = 0
+        addAnswerButton.titleLabel?.lineBreakMode = .ByWordWrapping
+        addAnswerButton.titleLabel?.textAlignment = .Center
+        addAnswerButton.titleLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+        addAnswerButton.addTarget(self, action: #selector(userClickedAddAnswer), forControlEvents: UIControlEvents.TouchDown)
+
+    }
+    
+    private func setupSortAnswersButton() {
+        addSubview(sortAnswersButton)
+        
+        sortAnswersButton.translatesAutoresizingMaskIntoConstraints = false
+        sortAnswersButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        sortAnswersButton.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue).active = true
+//        sortAnswersButton.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        sortAnswersButton.layoutIfNeeded()
+        
+        sortAnswersButton.backgroundColor = UIColor.clearColor()
+        sortAnswersButton.setImage(UIImage(named: "down-arrow-icon"), forState: .Normal)
+        sortAnswersButton.imageEdgeInsets = UIEdgeInsetsMake(5, -10, 5, 5)
+
+        sortAnswersButton.titleLabel?.textColor = UIColor.whiteColor()
+        sortAnswersButton.titleLabel?.textAlignment = .Right
+//        sortAnswersButton.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+
+        sortAnswersButton.setTitle("newest", forState: .Normal)
+        sortAnswersButton.imageView?.contentMode = UIViewContentMode.ScaleAspectFit
+        sortAnswersButton.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightBlack)
+//        addAnswerButton.addTarget(self, action: #selector(userClickedAddAnswer), forControlEvents: UIControlEvents.TouchDown)
+        
+    }
     
     private func setupCollectionView() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
@@ -75,6 +126,10 @@ class BrowseAnswersView: UIView {
         browseAnswers?.dataSource = self
         browseAnswers?.reloadData()
     }
+    
+    func userClickedAddAnswer() {
+        delegate.userClickedAddAnswer()
+    }
 }
 
 extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelegate {
@@ -95,7 +150,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             cell.transform = CGAffineTransformMakeScale(0.8, 0.8)
         }
-        
+            
         /* GET QUESTION PREVIEW IMAGE FROM STORAGE */
         if browseAnswerPreviewImages[indexPath.row] != nil && gettingImageForCell[indexPath.row] == true {
             cell.answerPreviewImage!.image = browseAnswerPreviewImages[indexPath.row]!
@@ -104,7 +159,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             gettingImageForCell[indexPath.row] = true
 
-            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![indexPath.row]+".jpg", maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![indexPath.row], maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error != nil {
                     cell.answerPreviewImage?.backgroundColor = UIColor.redColor() /* NEED TO CHANGE */
                 } else {
@@ -127,7 +182,9 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
             
             Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![indexPath.row], completion: { (user, error) in
                 if error != nil {
-                    cell.answerPreviewImage?.backgroundColor = UIColor.redColor()
+                    cell.answerPreviewName!.text = nil
+                    cell.answerPreviewBio!.text = nil
+                    self.usersForAnswerPreviews.insert(nil, atIndex: indexPath.row)
                 } else {
                     cell.answerPreviewName!.text = user?.name
                     cell.answerPreviewBio!.text = user?.shortBio

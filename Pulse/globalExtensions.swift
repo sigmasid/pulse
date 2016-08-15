@@ -32,7 +32,6 @@ class PaddingLabel: UILabel {
         let heigth = superSizeThatFits.height + padding.top + padding.bottom
         return CGSize(width: width, height: heigth)
     }
-    
 }
 
 // To dismiss keyboard when needed
@@ -59,6 +58,14 @@ extension UILabel {
         self.textColor = color
         self.numberOfLines = 0
         self.lineBreakMode = .ByWordWrapping
+    }
+    
+    func addTextSpacing(spacing: CGFloat){
+        if let _text = self.text {
+            let attributedString = NSMutableAttributedString(string: _text)
+            attributedString.addAttribute(NSKernAttributeName, value: spacing, range: NSRange(location: 0, length: self.text!.characters.count))
+            self.attributedText = attributedString
+        }
     }
 }
 

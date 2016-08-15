@@ -64,7 +64,7 @@ class TagDetailVC: UIViewController, ParentDelegate {
         super.viewDidAppear(true)
         
         if currentTag != nil && !returningToExplore {
-            _currentView = .tableview
+            _currentView = .collectionview
             setupScreenLayout()
 //            loadTagData()
         }

@@ -25,6 +25,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     private var _controlsOverlay : RecordedAnswerOverlay!
     private var _answersFilters : FiltersOverlay?
+    private var _thumbnailImage : UIImage?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,11 +40,16 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         avPlayerLayer.frame = view.frame
         
         if let _currentQuestion = currentQuestion {
-            let _ = processVideo(fileURL!, aQuestion : _currentQuestion) { (resultURL) in
-                let currentVideo = AVPlayerItem(URL: resultURL)
-                self.fileURL = resultURL
-                aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
-                aPlayer.play()
+            let _ = processVideo(fileURL!, aQuestion : _currentQuestion) { (resultURL, thumbnailImage, error) in
+                if let _resultURL = resultURL {
+                    let currentVideo = AVPlayerItem(URL: _resultURL)
+                    self.fileURL = _resultURL
+                    self._thumbnailImage = thumbnailImage
+                    aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                    aPlayer.play()
+                } else {
+                    GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                }
             }
             
             _controlsOverlay = RecordedAnswerOverlay(frame: view.frame)
@@ -114,6 +120,16 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                     fileSize = _attr.fileSize()
                 }
             } catch {}
+    
+            if _thumbnailImage != nil {
+                Database.uploadImage(.AnswerThumbs, fileID: uploadName, image: _thumbnailImage!, completion: { (success, error) in
+                    if success {
+                        print("uploaded thumbnail")
+                    } else {
+                        print("upload thumbnail failed \(error?.localizedDescription)")
+                    }
+                })
+            }
             
             let path = Database.getStoragePath(.Answers, itemID: uploadName)
             uploadTask = path.putFile(localFile, metadata: _metadata)

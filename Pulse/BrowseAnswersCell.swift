@@ -41,6 +41,7 @@ class BrowseAnswersCell: UICollectionViewCell {
         answerPreviewImage?.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.7).active = true
         answerPreviewImage?.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.85).active = true
         answerPreviewImage?.contentMode = UIViewContentMode.ScaleAspectFill
+        answerPreviewImage?.clipsToBounds = true
         answerPreviewImage?.layoutIfNeeded()
         
         answerPreviewBio = UILabel()

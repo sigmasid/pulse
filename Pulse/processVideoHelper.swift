@@ -11,7 +11,7 @@ import AVKit
 import AVFoundation
 import Photos
 
-func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: NSURL) -> Void) {
+func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: NSURL?, thumbnail : UIImage?, error : NSError?) -> Void) {
     let saveFileName = "/pulse-\(Int(NSDate().timeIntervalSince1970)).mp4"
     
     // Edit video
@@ -86,6 +86,7 @@ func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: 
     
     // Export the video
     let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetMediumQuality)
+    let _thumbnail = thumbnailForVideoAtURL(composition)
     
     exporter!.outputURL = outputUrl
     exporter!.videoComposition = themeVideoComposition
@@ -94,13 +95,33 @@ func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: 
     exporter!.exportAsynchronouslyWithCompletionHandler({
         switch exporter!.status {
         case  AVAssetExportSessionStatus.Failed:
-            print("failed \(exporter!.error)")
+            let userInfo = [ NSLocalizedDescriptionKey : "export failed" ]
+            completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
         case AVAssetExportSessionStatus.Cancelled:
-            print("cancelled \(exporter!.error)")
+            let userInfo = [ NSLocalizedDescriptionKey : "export cancelled" ]
+            completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Cancelled", code: 0, userInfo: userInfo))
         case AVAssetExportSessionStatus.Completed:
-            print("complete \(exporter!.outputURL)")
-            completion(result: exporter!.outputURL!)
-        default: print("somehting else")
+            completion(result: exporter!.outputURL!, thumbnail: _thumbnail, error: nil)
+        default:
+            let userInfo = [ NSLocalizedDescriptionKey : "unknown error occured" ]
+            completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Unknown", code: 0, userInfo: userInfo))
         }
     })
+}
+
+private func thumbnailForVideoAtURL(asset: AVMutableComposition) -> UIImage? {
+    
+    let assetImageGenerator = AVAssetImageGenerator(asset: asset)
+    assetImageGenerator.appliesPreferredTrackTransform = true
+    
+    var time = asset.duration
+    time.value = min(time.value, 2)
+    
+    do {
+        let imageRef = try assetImageGenerator.copyCGImageAtTime(time, actualTime: nil)
+        let image = GlobalFunctions.fixOrientation(UIImage(CGImage: imageRef, scale: 1.0, orientation: .Right))
+        return image
+    } catch {
+        return nil
+    }
 }

@@ -49,6 +49,7 @@ class LoginHeaderView: UIView {
         _appTitleLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
         _appTitleLabel.textColor = UIColor.whiteColor()
         _appTitleLabel.textAlignment = .Left
+        _appTitleLabel.addTextSpacing(10)
     }
     
     private func addScreenTitleLabel() {
@@ -101,10 +102,13 @@ class LoginHeaderView: UIView {
     
     func setAppTitleLabel(_message : String) {
         _appTitleLabel.text = _message
+        _appTitleLabel.addTextSpacing(3)
     }
     
     func setScreenTitleLabel(_message : String) {
         _screenTitleLabel.text = _message
+        _screenTitleLabel.addTextSpacing(3)
+
     }
     
     private func addIcon() {

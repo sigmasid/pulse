@@ -59,8 +59,6 @@ class LoadingView: UIView {
         _iconManager.heightAnchor.constraintEqualToConstant(_iconSize).active = true
         _iconManager.centerYAnchor.constraintEqualToAnchor(self.centerYAnchor).active = true
         _iconManager.centerXAnchor.constraintEqualToAnchor(self.centerXAnchor).active = true
-
-
     }
 }
 

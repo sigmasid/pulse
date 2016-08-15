@@ -47,6 +47,10 @@ class MiniProfile: UIView {
         return false
     }
     
+    func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
+        return false
+    }
+    
     private func addProfileImage() {
         profileImage = UIImageView()
         addSubview(profileImage)

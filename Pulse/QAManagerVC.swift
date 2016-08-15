@@ -19,6 +19,7 @@ protocol childVCDelegate: class {
     func userDismissedCamera(_: UIViewController)
     func userDismissedRecording(_: UIViewController)
     func minAnswersShown()
+    func askUserQuestion()
     func showNextQuestion()
     func goBack(_ : UIViewController)
     func showQuestionPreviewOverlay()
@@ -192,6 +193,22 @@ class QAManagerVC: UIViewController, childVCDelegate {
         })
     }
     
+    func askUserQuestion() {
+        if User.isLoggedIn() {
+            if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
+                returnToAnswers()
+            } else {
+                answerVC.view.hidden = true
+                _hasMoreAnswers = true
+                showCamera()
+            }
+        } else {
+            answerVC.view.hidden = true
+            _hasMoreAnswers = true
+            showCamera()
+        }
+    }
+    
     func noAnswersToShow(currentVC : UIViewController) {
         if _hasMoreAnswers {
             showNextQuestion()
@@ -214,7 +231,6 @@ class QAManagerVC: UIViewController, childVCDelegate {
         if User.isLoggedIn() {
             if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
                 returnToAnswers()
-                
             } else {
                 answerVC.view.hidden = true
                 _hasMoreAnswers = true

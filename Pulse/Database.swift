@@ -475,6 +475,24 @@ class Database {
     }
     
     /* UPLOAD IMAGE TO STORAGE */
+    
+    static func uploadImage(type : Item, fileID : String, image : UIImage, completion: (success : Bool, error : NSError?) -> Void) {
+        let path = getStoragePath(type, itemID: fileID)
+        let _metadata = FIRStorageMetadata()
+        _metadata.contentType = "image/jpeg"
+        let imgData = UIImageJPEGRepresentation(image, 0.4)
+        
+        if let imgData = imgData {
+            path.putData(imgData, metadata: _metadata) { (metadata, error) in
+                if (error != nil) {
+                    completion(success: false, error: error)
+                } else {
+                    
+                }
+            }
+        }
+    }
+    
     ///upload image to firebase and update current user with photoURL upon success
     static func uploadProfileImage(imgData : NSData, completion: (URL : NSURL?, error : NSError?) -> Void) {
         var _downloadURL : NSURL?

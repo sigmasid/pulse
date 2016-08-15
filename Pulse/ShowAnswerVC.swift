@@ -15,6 +15,7 @@ protocol answerDetailDelegate : class {
     func userClickedProfile()
     func userClosedMiniProfile(_ : UIView)
     func userClickedExploreAnswers()
+    func userClickedAddAnswer()
     func userSelectedFromExploreQuestions(index : NSIndexPath)
 }
 
@@ -251,6 +252,12 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     func userClosedMiniProfile(_profileView : UIView) {
         _profileView.removeFromSuperview()
         _isMiniProfileShown = false
+    }
+    
+    func userClickedAddAnswer() {
+        tap.enabled = true
+        exploreAnswers?.removeFromSuperview()
+        delegate.askUserQuestion()
     }
     
     func userClickedExploreAnswers() {
