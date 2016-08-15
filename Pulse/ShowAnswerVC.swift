@@ -239,10 +239,11 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     func userClickedProfile() {
         let _profileFrame = CGRectMake(view.bounds.width * (1/5), view.bounds.height * (1/4), view.bounds.width * (3/5), view.bounds.height * (1/2))
         
-        /* BLUR BACKGROUND WHEN MINI PROFILE IS SHOWING */
+        /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
         _blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .Dark))
         _blurBackground.frame = view.bounds
         view.addSubview(_blurBackground)
+        tap.enabled = false
         
         if let _userForCurrentAnswer = userForCurrentAnswer {
             miniProfile = MiniProfile(frame: _profileFrame)
@@ -271,6 +272,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         _profileView.removeFromSuperview()
         _blurBackground.removeFromSuperview()
         _isMiniProfileShown = false
+        tap.enabled = true
     }
     
     func userClickedAddAnswer() {
