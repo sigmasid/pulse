@@ -13,6 +13,7 @@ class MiniProfile: UIView {
     private var profileImage : UIImageView!
     private var nameLabel : UILabel!
     private var tagLine : UILabel!
+    private var bioLabel : UILabel!
     private var messageButton : UIButton!
     private var closeButton : UIButton!
     private var selectedUser : User!
@@ -22,16 +23,13 @@ class MiniProfile: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
         layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        layer.borderWidth = 4.0
-        layer.borderColor = UIColor.blackColor().CGColor
+        clipsToBounds = true
         
-        addCloseButton()
         addProfileImage()
-        addNameLabel()
-        addTagLineLabel()
         addMessageButton()
+        addLabels()
+        addCloseButton()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -52,60 +50,36 @@ class MiniProfile: UIView {
     }
     
     private func addProfileImage() {
-        profileImage = UIImageView()
+        profileImage = UIImageView(frame: bounds)
         addSubview(profileImage)
         
-        profileImage.translatesAutoresizingMaskIntoConstraints = false
-        
-        profileImage.topAnchor.constraintEqualToAnchor(closeButton.bottomAnchor, constant: Spacing.s.rawValue).active = true
-        profileImage.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        profileImage.widthAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
-        profileImage.heightAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
         profileImage.contentMode = UIViewContentMode.ScaleAspectFill
-        profileImage.clipsToBounds = true
-        profileImage.layoutIfNeeded()
-        
-        profileImage.layer.cornerRadius = buttonCornerRadius.radius(.round, width: Int(profileImage.bounds.width))
     }
     
-    func setProfileImage(image : UIImage) {
-        profileImage.image = image
-    }
-    
-    private func addNameLabel() {
+    private func addLabels() {
         nameLabel = UILabel()
         addSubview(nameLabel)
         
-        nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        nameLabel.font = UIFont.systemFontOfSize(12, weight: UIFontWeightBold)
-        nameLabel.textAlignment = .Center
-        nameLabel.textColor = UIColor.whiteColor()
-        
-        nameLabel.topAnchor.constraintEqualToAnchor(profileImage.bottomAnchor, constant: Spacing.m.rawValue).active = true
-        nameLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        nameLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.7).active = true
-    }
-    
-    func setNameLabel(name : String?) {
-        nameLabel.text = name
-    }
-    
-    private func addTagLineLabel() {
         tagLine = UILabel()
         addSubview(tagLine)
         
-        tagLine.translatesAutoresizingMaskIntoConstraints = false
-        tagLine.setPreferredFont(UIColor.whiteColor())
+        bioLabel = UILabel()
+        addSubview(bioLabel)
         
-        tagLine.topAnchor.constraintEqualToAnchor(nameLabel.bottomAnchor).active = true
+        nameLabel.translatesAutoresizingMaskIntoConstraints = false
+        nameLabel.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue).active = true
+        nameLabel.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.s.rawValue).active = true
+        
+        bioLabel.translatesAutoresizingMaskIntoConstraints = false
+        bioLabel.bottomAnchor.constraintEqualToAnchor(messageButton.topAnchor, constant: -Spacing.s.rawValue).active = true
+        bioLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        bioLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.8).active = true
+        
+        tagLine.translatesAutoresizingMaskIntoConstraints = false
+        tagLine.bottomAnchor.constraintEqualToAnchor(bioLabel.topAnchor, constant: -Spacing.xs.rawValue).active = true
         tagLine.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        tagLine.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        tagLine.widthAnchor.constraintEqualToAnchor(bioLabel.widthAnchor).active = true
     }
-    
-    func setTagline(text : String?) {
-        tagLine.text = text
-    }
-    
     
     private func addMessageButton() {
         messageButton = UIButton()
@@ -117,8 +91,7 @@ class MiniProfile: UIView {
         
         messageButton.titleLabel?.setPreferredFont(UIColor.whiteColor())
         messageButton.translatesAutoresizingMaskIntoConstraints = false
-        messageButton.topAnchor.constraintEqualToAnchor(tagLine.bottomAnchor, constant: Spacing.m.rawValue).active = true
-
+        messageButton.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.s.rawValue).active = true
         messageButton.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
         messageButton.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.7).active = true
         messageButton.heightAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
@@ -133,25 +106,52 @@ class MiniProfile: UIView {
         if let closeButtonImage = UIImage(named: "close") {
             closeButton.setImage(closeButtonImage, forState: UIControlState.Normal)
         } else {
-            closeButton.titleLabel?.text = "Close"
+            closeButton.titleLabel?.text = "close"
         }
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        closeButton.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue).active = true
-        closeButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        closeButton.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue / 2).active = true
-        closeButton.heightAnchor.constraintEqualToConstant(IconSizes.Small.rawValue / 2).active = true
+        closeButton.centerYAnchor.constraintEqualToAnchor(nameLabel.centerYAnchor).active = true
+        closeButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        closeButton.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
+        closeButton.heightAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
         closeButton.addTarget(self, action: #selector(closeButtonClicked), forControlEvents: UIControlEvents.TouchDown)
-        closeButton.layoutIfNeeded()
         
-        closeButton.imageEdgeInsets = UIEdgeInsetsMake(3, 3, 3, 3)
-        closeButton.backgroundColor = iconBackgroundColor
-        closeButton.makeRound()
+        closeButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+        closeButton.layoutIfNeeded()
     }
     
+    /* SETTER / PUBLIC FUNCTIONS */
     func closeButtonClicked() {
         delegate.userClosedMiniProfile(self)
     }
+    
+    func setNameLabel(name : String?) {
+        nameLabel.text = name?.uppercaseString
+        nameLabel.font = UIFont.systemFontOfSize(FontSizes.Title.rawValue, weight: UIFontWeightHeavy)
+        nameLabel.textAlignment = .Left
+        nameLabel.textColor = UIColor.whiteColor()
+    }
+    
+    func setTagLabel(text : String?) {
+        tagLine.text = text
+        tagLine.numberOfLines = 0
+        tagLine.font = UIFont.systemFontOfSize(FontSizes.Body.rawValue, weight: UIFontWeightHeavy)
+        tagLine.textAlignment = .Center
+        tagLine.textColor = UIColor.whiteColor()
+    }
+    
+    func setBioLabel(text : String?) {
+        bioLabel.text = text
+        bioLabel.numberOfLines = 0
+        bioLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightRegular)
+        bioLabel.textAlignment = .Center
+        bioLabel.textColor = UIColor.whiteColor()
 
+    }
+    
+    func setProfileImage(image : UIImage) {
+        profileImage.image = image
+        profileImage.clipsToBounds = true
+    }
 }

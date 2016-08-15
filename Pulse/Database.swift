@@ -113,6 +113,17 @@ class Database {
         })
     }
     
+    static func getUserProperty(uID : String, property: String, completion: (property : String?) -> Void) {
+        usersRef.child("\(uID)/\(property)").observeSingleEventOfType(.Value, withBlock: { snap in
+            if snap.value != nil {
+                let _property = snap.value as! String
+                completion(property : _property)
+            } else {
+                completion(property :  nil)
+            }
+        })
+    }
+    
     static func getUserSummaryForAnswer(aID : String, completion: (user : User?, error : NSError?) -> Void) {
         answersRef.child(aID).observeSingleEventOfType(.Value, withBlock: { snap in
             if snap.hasChild("uID") {

@@ -191,6 +191,7 @@ enum buttonCornerRadius : CGFloat {
 enum FontSizes: CGFloat {
     case Caption = 10
     case Body = 14
+    case Title = 16
     case Headline = 20
 }
 

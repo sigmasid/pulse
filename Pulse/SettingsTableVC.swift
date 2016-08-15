@@ -148,7 +148,7 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
                 cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
             }
             if _setting.editable {
-                cell.accessoryType = .DetailButton
+                cell.accessoryType = .DisclosureIndicator
             }
         } else {
             Database.getSetting(_settingID, completion: {(_setting, error) in

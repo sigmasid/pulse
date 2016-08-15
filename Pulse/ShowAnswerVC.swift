@@ -16,6 +16,7 @@ protocol answerDetailDelegate : class {
     func userClosedMiniProfile(_ : UIView)
     func userClickedExploreAnswers()
     func userClickedAddAnswer()
+    func userClickedShowMenu()
     func userSelectedFromExploreQuestions(index : NSIndexPath)
 }
 
@@ -50,12 +51,14 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     private var _NextItemReady = false
     private var _CanAdvanceReady = false
     private var _hasUserBeenAskedQuestion = false
-    
     private var isObserving = false
     private var isLoaded = false
+    private var _isMenuShowing = false
+    private var _isMiniProfileShown = false
+
     private var startObserver : AnyObject!
     private var miniProfile : MiniProfile?
-    private var _isMiniProfileShown = false
+    lazy var _blurBackground = UIVisualEffectView()
     
     private var exploreAnswers : BrowseAnswersView?
     
@@ -103,6 +106,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     
     private func _loadAnswer(currentQuestion : Question, index: Int) {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        self._CanAdvanceReady = false
         
         if let _answerID = currentQuestion.qAnswers?[index] {
             Database.getAnswer(_answerID, completion: { (answer, error) in
@@ -233,13 +237,27 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     }
     
     func userClickedProfile() {
-        let _profileFrame = CGRectMake(view.bounds.width * (1/6), view.bounds.height * (1/4), view.bounds.width * (2/3), view.bounds.height * (1/2))
+        let _profileFrame = CGRectMake(view.bounds.width * (1/5), view.bounds.height * (1/4), view.bounds.width * (3/5), view.bounds.height * (1/2))
+        
+        /* BLUR BACKGROUND WHEN MINI PROFILE IS SHOWING */
+        _blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .Dark))
+        _blurBackground.frame = view.bounds
+        view.addSubview(_blurBackground)
         
         if let _userForCurrentAnswer = userForCurrentAnswer {
             miniProfile = MiniProfile(frame: _profileFrame)
             miniProfile!.delegate = self
             miniProfile!.setNameLabel(_userForCurrentAnswer.name)
-            miniProfile!.setTagline(_userForCurrentAnswer.bio)
+            
+            if _userForCurrentAnswer.bio != nil {
+                miniProfile!.setBioLabel(_userForCurrentAnswer.bio)
+            } else {
+                Database.getUserProperty(_userForCurrentAnswer.uID!, property: "bio", completion: {(bio) in
+                    self.miniProfile!.setBioLabel(bio)
+                })
+            }
+            
+            miniProfile!.setTagLabel(_userForCurrentAnswer.shortBio)
             
             if let currentUserImage = currentUserImage {
                 miniProfile!.setProfileImage(currentUserImage)
@@ -251,6 +269,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     
     func userClosedMiniProfile(_profileView : UIView) {
         _profileView.removeFromSuperview()
+        _blurBackground.removeFromSuperview()
         _isMiniProfileShown = false
     }
     
@@ -277,6 +296,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         tap.enabled = true
         exploreAnswers?.removeFromSuperview()
         _loadAnswer(currentQuestion, index: index.row)
+    }
+    
+    func userClickedShowMenu() {
+        _answerOverlay.toggleMenu()
     }
     
     deinit {
@@ -307,7 +330,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
             return
         }
         
-        print("answer index is \(answerIndex), camera shown \(_hasUserBeenAskedQuestion) and can advance \(_CanAdvanceReady)")
+//        print("answer index is \(answerIndex), camera shown \(_hasUserBeenAskedQuestion) and can advance \(_CanAdvanceReady)")
         
         if (answerIndex == minAnswersToShow && !_hasUserBeenAskedQuestion && _CanAdvanceReady) { //ask user to answer the question
             if (delegate != nil) {

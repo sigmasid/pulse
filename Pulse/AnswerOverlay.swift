@@ -22,6 +22,8 @@ class AnswerOverlay: UIView {
     private var _userImage = UIImageView()
     private let _videoTimer = UIView()
     private var _pulseIcon = Icon()
+    private var _showMenu : AnswerMenu!
+    private var _isShowingMenu = false
 
     private let _footerHeight : CGFloat = Spacing.l.rawValue
     private var _countdownTimerRadiusStroke : CGFloat = 3
@@ -100,7 +102,6 @@ class AnswerOverlay: UIView {
         _questionLabel.translatesAutoresizingMaskIntoConstraints = false
         _questionLabel.topAnchor.constraintEqualToAnchor(_headerBackground.topAnchor, constant: _headerBackground.frame.height / 6).active = true
         _questionLabel.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
-//        _questionLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
         _questionLabel.leadingAnchor.constraintEqualToAnchor(_pulseIcon.trailingAnchor, constant: Spacing.xs.rawValue).active = true
     
     }
@@ -135,7 +136,7 @@ class AnswerOverlay: UIView {
         _pulseIcon.heightAnchor.constraintEqualToAnchor(_pulseIcon.widthAnchor).active = true
         _pulseIcon.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
         
-        let exploreAnswersTap = UITapGestureRecognizer(target: self, action: #selector(handleExploreTap))
+        let exploreAnswersTap = UITapGestureRecognizer(target: self, action: #selector(handleShowMenu))
         _pulseIcon.addGestureRecognizer(exploreAnswersTap)
     }
     
@@ -145,9 +146,23 @@ class AnswerOverlay: UIView {
         }
     }
     
+    func handleShowMenu() {
+        if delegate != nil {
+            delegate.userClickedShowMenu()
+        }
+    }
+    
     func handleExploreTap() {
         if delegate != nil {
+            toggleMenu()
             delegate.userClickedExploreAnswers()
+        }
+    }
+    
+    func handleAddAnswerTap() {
+        if delegate != nil {
+            toggleMenu()
+            delegate.userClickedAddAnswer()
         }
     }
     
@@ -234,6 +249,29 @@ class AnswerOverlay: UIView {
     
     func setTagName(tagName : String) {
         _tagLabel.text = "#" + tagName.uppercaseString
+    }
+    
+    func toggleMenu() {
+        if !_isShowingMenu {
+            _showMenu = AnswerMenu()
+            addSubview(_showMenu)
+            
+            _showMenu.translatesAutoresizingMaskIntoConstraints = false
+            _showMenu.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.s.rawValue).active = true
+            _showMenu.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 2/5).active = true
+            _showMenu.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+            _showMenu.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 1/4).active = true
+            _showMenu.layoutIfNeeded()
+            
+            _showMenu.getButton(.AddAnswer).addTarget(self, action: #selector(handleAddAnswerTap), forControlEvents: UIControlEvents.TouchDown)
+            _showMenu.getButton(.BrowseAnswers).addTarget(self, action: #selector(handleExploreTap), forControlEvents: UIControlEvents.TouchDown)
+            
+            _isShowingMenu = true
+
+        } else {
+            _showMenu.removeFromSuperview()
+            _isShowingMenu = false
+        }
     }
     
     /// Add video countdown
