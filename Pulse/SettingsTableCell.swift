@@ -28,10 +28,11 @@ class SettingsTableCell: UITableViewCell {
         addSubview(_detailTextLabel)
         
         _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
-        _detailTextLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.4).active = true
-        _detailTextLabel.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        _detailTextLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.5).active = true
+        _detailTextLabel.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.m.rawValue).active = true
         _detailTextLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
         _detailTextLabel.setPreferredFont(UIColor.whiteColor())
+        _detailTextLabel.textAlignment = .Right
         
         backgroundColor = UIColor.clearColor()
         textLabel?.textColor = UIColor.whiteColor()

@@ -38,7 +38,7 @@ class UpdateProfileVC: UIViewController {
         if !_loaded {
             setDarkBackground()
             hideKeyboardWhenTappedAround()
-            addHeader(appTitle: "PULSE", screenTitle: "UPDATE PROFILE")
+            addHeader(appTitle: "PULSE", screenTitle: "PROFILE")
             addSettingDescription()
             addSettingSection()
 
@@ -55,10 +55,10 @@ class UpdateProfileVC: UIViewController {
         view.addSubview(_headerView)
         
         _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(topLayoutGuide.topAnchor, constant: Spacing.xs.rawValue).active = true
+        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
         _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/view.frame.width)).active = true
+        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
+        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
         _headerView.layoutIfNeeded()
         
         _loginHeader = LoginHeaderView(frame: _headerView.frame)
@@ -105,24 +105,38 @@ class UpdateProfileVC: UIViewController {
             _settingSection.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
             _settingSection.layoutIfNeeded()
             addTableView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-        case .bio:
+        case .bio, .shortBio:
             _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/8).active = true
             _settingSection.layoutIfNeeded()
             showBioUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-            addUpdateButton()
-            updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
-        case .email, .gender, .name, .password:
+            if _currentSetting.editable {
+                addUpdateButton()
+                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+            }
+        case .email:
             _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
             _settingSection.layoutIfNeeded()
             showNameUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-            addUpdateButton()
-            updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+            if _currentSetting.editable {
+                addUpdateButton()
+                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+            }
+        case .gender, .name, .password:
+            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
+            _settingSection.layoutIfNeeded()
+            showNameUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+            if _currentSetting.editable {
+                addUpdateButton()
+                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+            }
         case .birthday:
             _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
             _settingSection.layoutIfNeeded()
             showBirthdayUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-            addUpdateButton()
-            updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+            if _currentSetting.editable {
+                addUpdateButton()
+                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
+            }
         default:
             return
         }
@@ -283,7 +297,7 @@ class UpdateProfileVC: UIViewController {
                 self.updateButton.setEnabled()
                 self.updateButton.removeLoadingIndicator(_loading)
             })
-        case .bio:
+        case .bio, .shortBio:
             let _bio = _longTextField.text
             addStatusLabel()
             Database.updateUserProfile(_currentSetting, newValue: _bio, completion: {(success, error) in

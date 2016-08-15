@@ -19,7 +19,7 @@ class Icon : UIView {
         super.init(coder: aDecoder)
     }
     func drawLongIcon(color : UIColor, iconThickness : CGFloat) {
-        let _flatLine = self.frame.width - self.frame.height
+        let _flatLine = bounds.width - bounds.height
         _drawIcon(color, iconThickness: iconThickness, flatLine: _flatLine)
     }
     
@@ -29,10 +29,9 @@ class Icon : UIView {
     
     private func _drawIcon(color : UIColor, iconThickness : CGFloat, flatLine : CGFloat) {
         let startX = CGFloat(0)
-        let startY = self.frame.height / 2
-        
-        let firstXStep = flatLine + (self.frame.height / 4)  //15, 20,
-        let restXStep = self.frame.height / 12 //12.9
+        let startY = frame.height / 2
+        let firstXStep = bounds.height / 4  //15, 20,
+        let restXStep = frame.height / 12 //12.9
         
         let yStep = startY / 5
         
@@ -41,14 +40,15 @@ class Icon : UIView {
         
         let heartLineBezier = UIBezierPath()
         heartLineBezier.moveToPoint(CGPoint(x: startX, y: startY)) // 0
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep, y: startY)) //15
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 1 * restXStep, y: startY - yStep)) //20
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 2 * restXStep, y: startY)) // 25
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 3 * restXStep, y: startY - yStep * 3)) //30
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 4 * restXStep, y: startY + yStep * 2)) //35
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 5 * restXStep, y: startY - yStep * 2)) //40
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 6 * restXStep, y: startY)) //45
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + (firstXStep * 2) + 6 * restXStep, y: startY)) //60
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep, y: startY)) //15
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 1 * restXStep, y: startY - yStep)) //20
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 2 * restXStep, y: startY)) // 25
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 3 * restXStep, y: startY - yStep * 3)) //30
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 4 * restXStep, y: startY + yStep * 2)) //35
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 5 * restXStep, y: startY - yStep * 2)) //40
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY)) //45
+        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + 2 * firstXStep + 6 * restXStep, y: startY)) //60
+
         
         heartLine.lineWidth = iconThickness
         heartLine.fillColor = UIColor.clearColor().CGColor
@@ -61,14 +61,14 @@ class Icon : UIView {
         let pulseDotBezier = UIBezierPath()
         pulseDotBezier.moveToPoint(CGPoint(x: startX, y: startY))
         pulseDotBezier.addLineToPoint(CGPoint(x: startX, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + firstXStep, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 1 * restXStep, y: startY - yStep))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 2 * restXStep, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 3 * restXStep, y: startY - yStep * 3))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 4 * restXStep, y: startY + yStep * 2))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 5 * restXStep, y: startY - yStep * 2))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + firstXStep + 6 * restXStep, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + (firstXStep * 2) + 6 * restXStep, y: startY))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep, y: startY))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 1 * restXStep, y: startY - yStep))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 2 * restXStep, y: startY))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 3 * restXStep, y: startY - yStep * 3))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 4 * restXStep, y: startY + yStep * 2))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 5 * restXStep, y: startY - yStep * 2))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY))
+        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + (firstXStep * 2) + 6 * restXStep, y: startY))
         
         //Animations
         

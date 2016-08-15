@@ -55,10 +55,10 @@ class LoginAddNameVC: UIViewController {
         view.addSubview(_headerView)
         
         _headerView.translatesAutoresizingMaskIntoConstraints = false
-        view.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .TopMargin , multiplier: 2, constant: 0))
-        view.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX , multiplier: 1, constant: 0))
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/view.frame.width)).active = true
+        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
+        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
+        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
         _headerView.layoutIfNeeded()
         
         _loginHeader = LoginHeaderView(frame: _headerView.frame)

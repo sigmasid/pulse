@@ -103,8 +103,8 @@ class User {
     func getValueForStringProperty(property : String) -> String? {
         switch property {
         case "name": return User.currentUser!.name
-        case "shortBio": return User.currentUser!.bio
-        case "bio": return User.currentUser!.shortBio
+        case "shortBio": return User.currentUser!.shortBio
+        case "bio": return User.currentUser!.bio
         case "birthday": return User.currentUser!.birthday
         case "gender": return User.currentUser!.gender
         case "email": return getEmail()

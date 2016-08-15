@@ -75,11 +75,14 @@ class LoginHeaderView: UIView {
             _statusLabel.widthAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
             _statusLabel.heightAnchor.constraintEqualToAnchor(_statusLabel.widthAnchor).active = true
             _statusLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+            _screenTitleLabel.trailingAnchor.constraintEqualToAnchor(_statusLabel.leadingAnchor).active = true
+
             
             _statusLabel.layoutIfNeeded()
-            _statusLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+            _statusLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightThin)
             _statusLabel.backgroundColor = UIColor.whiteColor()
             _statusLabel.textColor = UIColor.blackColor()
+            _statusLabel.layer.cornerRadius = _statusLabel.bounds.width / 2
             
             _statusLabel.lineBreakMode = .ByWordWrapping
             _statusLabel.minimumScaleFactor = 0.1
@@ -102,25 +105,25 @@ class LoginHeaderView: UIView {
     
     func setAppTitleLabel(_message : String) {
         _appTitleLabel.text = _message
-        _appTitleLabel.addTextSpacing(3)
+        _appTitleLabel.addTextSpacing(2.5)
     }
     
     func setScreenTitleLabel(_message : String) {
         _screenTitleLabel.text = _message
-        _screenTitleLabel.addTextSpacing(3)
-
+        _screenTitleLabel.addTextSpacing(2.5)
+        _screenTitleLabel.adjustsFontSizeToFitWidth = true
     }
     
     private func addIcon() {
-        _logoView = Icon(frame: CGRectMake(0,0, frame.width, frame.height))
+        _logoView = Icon(frame: CGRectMake(0,0, frame.width - IconSizes.Medium.rawValue, frame.height))
         _logoView.drawLongIcon(UIColor.whiteColor(), iconThickness: IconThickness.Medium.rawValue)
         addSubview(_logoView)
         
         _logoView.translatesAutoresizingMaskIntoConstraints = false
         _logoView.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
-        _logoView.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
         _logoView.heightAnchor.constraintEqualToAnchor(heightAnchor).active = true
-        _logoView.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        _logoView.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: IconSizes.Medium.rawValue).active = true
+        _logoView.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -IconSizes.Medium.rawValue).active = true
         _logoView.layoutIfNeeded()
     }
     
@@ -129,9 +132,9 @@ class LoginHeaderView: UIView {
         _goBack.setImage(UIImage(named: "back"), forState: UIControlState.Normal)
         _goBack.translatesAutoresizingMaskIntoConstraints = false
         _goBack.centerYAnchor.constraintEqualToAnchor(_logoView.centerYAnchor).active = true
-        _goBack.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
-        _goBack.heightAnchor.constraintEqualToAnchor(_logoView.heightAnchor, multiplier: 0.8).active = true
-        _goBack.leadingAnchor.constraintEqualToAnchor(_logoView.leadingAnchor , constant: -IconSizes.Small.rawValue).active = true
+        _goBack.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        _goBack.heightAnchor.constraintEqualToAnchor(heightAnchor).active = true
+        _goBack.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
     }
     
     func addSettingsButton() {
@@ -139,9 +142,10 @@ class LoginHeaderView: UIView {
         
         _settings.translatesAutoresizingMaskIntoConstraints = false
         _settings.centerYAnchor.constraintEqualToAnchor(_logoView.centerYAnchor).active = true
-        _settings.widthAnchor.constraintEqualToConstant(IconSizes.XSmall.rawValue).active = true
+        _settings.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
         _settings.heightAnchor.constraintEqualToAnchor(_settings.widthAnchor).active = true
-        _settings.leadingAnchor.constraintEqualToAnchor(_logoView.leadingAnchor , constant: -IconSizes.Small.rawValue).active = true
+        _settings.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+        _settings.layoutIfNeeded()
         
         _settings.setImage(UIImage(named: "settings"), forState: .Normal)
     }

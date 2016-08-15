@@ -81,15 +81,15 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         _headerView.translatesAutoresizingMaskIntoConstraints = false
         _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
         _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/13).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/view.frame.width)).active = true
-        
+        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
+        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
         _headerView.layoutIfNeeded()
         
         _loginHeader = LoginHeaderView(frame: _headerView.frame)
         if let _loginHeader = _loginHeader {
             _loginHeader.setAppTitleLabel("PULSE")
-            _loginHeader.setScreenTitleLabel("CREATE ACCOUNT")
+            _loginHeader.setScreenTitleLabel("ACCOUNT")
+            _loginHeader.updateStatusMessage("create account")
             _loginHeader.addGoBack()
             _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
             _headerView.addSubview(_loginHeader)

@@ -341,6 +341,7 @@ class Database {
                     error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 }
             case .shortBio, .name, .profilePic:
+                userPost[setting.settingID] = newValue
                 usersPublicSummaryRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                     error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 })
