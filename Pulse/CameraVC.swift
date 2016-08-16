@@ -21,8 +21,11 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     private let videoDuration : Double = 6
     private var countdownTimer : CALayer!
     
-    var questionToShow : Question!
+    var questionToShow : Question! //set by delegate
     weak var childDelegate : childVCDelegate?
+    
+    /* ALBUM PICKER */
+    private var _AlbumPicker : AlbumPickerVC!
     
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
@@ -36,12 +39,11 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(CameraVC.respondToPanGesture(_:)))
         panGesture.minimumNumberOfTouches = 1
-
-        self.view.addGestureRecognizer(panGesture)
+        view.addGestureRecognizer(panGesture)
         
-        self.view.userInteractionEnabled = true
-        self.view.multipleTouchEnabled = true
-        self.view.addGestureRecognizer(zoomPinch)
+        view.userInteractionEnabled = true
+        view.multipleTouchEnabled = true
+        view.addGestureRecognizer(zoomPinch)
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -108,19 +110,19 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         }
     }
     
-    func setupLoading() {
-        _loadingOverlay = LoadingView(frame: self.view.bounds, backgroundColor : UIColor.blackColor())
+    private func setupLoading() {
+        _loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.blackColor())
         view.addSubview(_loadingOverlay)
     }
     
-    func setupCamera() {
+    private func setupCamera() {
         _Camera.showAccessPermissionPopupAutomatically = true
         _Camera.shouldRespondToOrientationChanges = false
         _Camera.cameraDevice = .Front
         _Camera.cameraVideoDuration = videoDuration
         
 
-        _Camera.addPreviewLayerToView(self.view, newCameraOutputMode: .VideoWithMic, completition: {() in
+        _Camera.addPreviewLayerToView(view, newCameraOutputMode: .VideoWithMic, completition: {() in
             dispatch_async(dispatch_get_main_queue()) {
                 UIView.animateWithDuration(0.2, animations: { self._loadingOverlay.alpha = 0.0 } ,
                     completion: {(value: Bool) in
@@ -139,8 +141,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         }
     }
     
-    func setupCameraOverlay() {
-        self.view.addSubview(_cameraOverlay)
+    private func setupCameraOverlay() {
+        view.addSubview(_cameraOverlay)
         _cameraOverlay.updateQuestion(self.questionToShow.qTitle!)
         
         switch _Camera.flashMode {
@@ -149,12 +151,13 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         case .Auto: _cameraOverlay._flashMode = .Auto
         }
         
-        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(CameraVC.startVideoCapture), forControlEvents: UIControlEvents.TouchDown)
+        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(startVideoCapture), forControlEvents: UIControlEvents.TouchDown)
         _cameraOverlay.getButton(.Shutter).enabled = false
-        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(CameraVC.stopVideoCapture), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(stopVideoCapture), forControlEvents: UIControlEvents.TouchUpInside)
         
-        _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
-        _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Album).addTarget(self, action: #selector(showAlbumPicker), forControlEvents: UIControlEvents.TouchUpInside)
     }
     
     func respondToPanGesture(pan: UIPanGestureRecognizer) {
@@ -167,23 +170,29 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         }
         else if (pan.state == UIGestureRecognizerState.Ended) {
             switch panCurrentPointY {
-            case _ where panCurrentPointY > panStartingPointY + (self.view.bounds.height / 3) :
-                if (self.childDelegate != nil) {
-                    self.childDelegate!.userDismissedCamera(self)
+            case _ where panCurrentPointY > panStartingPointY + (view.bounds.height / 3) :
+                if (childDelegate != nil) {
+                    childDelegate!.userDismissedCamera(self)
                 }
-                pan.setTranslation(CGPointZero, inView: self.view)
-                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: self.view.bounds.height / 2)
+                pan.setTranslation(CGPointZero, inView: view)
+                view.center = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
             default:
-                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: self.view.bounds.height / 2)
-                pan.setTranslation(CGPointZero, inView: self.view)
+                view.center = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
+                pan.setTranslation(CGPointZero, inView: view)
             }
         } else {
-            let translation = pan.translationInView(self.view)
+            let translation = pan.translationInView(view)
             if translation.y > 20 { ///only allow vertical pulldown
-                self.view.center = CGPoint(x: pan.view!.center.x, y: pan.view!.center.y + translation.y)
-                pan.setTranslation(CGPointZero, inView: self.view)
+                view.center = CGPoint(x: pan.view!.center.x, y: pan.view!.center.y + translation.y)
+                pan.setTranslation(CGPointZero, inView: view)
             }
         }
+    }
+    
+    func showAlbumPicker() {
+        _AlbumPicker = AlbumPickerVC()
+        GlobalFunctions.addNewVC(_AlbumPicker, parentVC: self)
+        
     }
 }
 

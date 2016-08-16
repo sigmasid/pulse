@@ -16,6 +16,7 @@ class CameraOverlayView: UIView {
     private var _flashModeButton = UIButton()
     private var _questionBackground = UILabel()
     private var _countdownTimer = UILabel()
+    private var _showAlbumPicker = UIButton()
     
     var _flashMode : CameraFlashMode! {
         didSet {
@@ -38,13 +39,14 @@ class CameraOverlayView: UIView {
     }
     
     internal enum CameraButtonSelector: Int {
-        case Shutter, Flash, Flip
+        case Shutter, Flash, Flip, Album
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
 
         _shutterButtonRadius = frame.size.width / 11
+        drawAlbumPicker()
         drawShutterButton()
         drawQuestionBackground()
         drawFlashCamera()
@@ -84,13 +86,13 @@ class CameraOverlayView: UIView {
         strokeIt.duration = videoDuration
         
         timeLeftShapeLayer.addAnimation(strokeIt, forKey: nil)
-        self.addSubview(_countdownTimer)
+        addSubview(_countdownTimer)
         
         _countdownTimer.translatesAutoresizingMaskIntoConstraints = false
         
         _countdownTimer.topAnchor.constraintEqualToAnchor(_questionBackground.bottomAnchor, constant: _elementSpacing + _countdownTimerRadius).active = true
         _countdownTimer.widthAnchor.constraintEqualToConstant(_countdownTimerRadius * 2 + _countdownTimerRadiusStroke).active = true
-        _countdownTimer.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor, constant: _elementSpacing + _countdownTimerRadius).active = true
+        _countdownTimer.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: _elementSpacing + _countdownTimerRadius).active = true
         _countdownTimer.heightAnchor.constraintEqualToConstant(_countdownTimerRadius * 2 + _countdownTimerRadiusStroke).active = true
     }
     
@@ -99,6 +101,7 @@ class CameraOverlayView: UIView {
             case .Flash: return _flashModeButton
             case .Flip: return _flipCameraButton
             case .Shutter: return _shutterButton
+            case .Album: return _showAlbumPicker
         }
     }
     
@@ -111,7 +114,7 @@ class CameraOverlayView: UIView {
         let circleLayer = CAShapeLayer()
         circleLayer.frame = CGRectMake(0,0,_shutterButtonRadius * 2,_shutterButtonRadius * 2)
         circleLayer.path = circlePath.CGPath
-        circleLayer.fillColor = UIColor(red: 255/255, green: 255/255, blue: 255/255, alpha: 0.3 ).CGColor
+        circleLayer.fillColor = iconBackgroundColor.colorWithAlphaComponent(0.5).CGColor
         circleLayer.strokeColor = UIColor.whiteColor().CGColor
         circleLayer.lineWidth = 4.0
         
@@ -121,9 +124,9 @@ class CameraOverlayView: UIView {
         
         _shutterButton.translatesAutoresizingMaskIntoConstraints = false
         
-        _shutterButton.bottomAnchor.constraintEqualToAnchor(self.bottomAnchor, constant: -100).active = true
+        _shutterButton.bottomAnchor.constraintEqualToAnchor(_showAlbumPicker.bottomAnchor, constant: -Spacing.xl.rawValue * 1.5).active = true
         _shutterButton.widthAnchor.constraintEqualToConstant(_shutterButtonRadius * 2).active = true
-        _shutterButton.centerXAnchor.constraintEqualToAnchor(self.centerXAnchor).active = true
+        _shutterButton.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
         _shutterButton.heightAnchor.constraintEqualToConstant(_shutterButtonRadius * 2).active = true
         
     }
@@ -137,7 +140,7 @@ class CameraOverlayView: UIView {
         
         _flashModeButton.topAnchor.constraintEqualToAnchor(_questionBackground.bottomAnchor, constant: _elementSpacing).active = true
         _flashModeButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
-        _flashModeButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -_elementSpacing).active = true
+        _flashModeButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -_elementSpacing).active = true
         _flashModeButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
     }
     
@@ -152,7 +155,7 @@ class CameraOverlayView: UIView {
     
     ///Icon to turn the camera from front to back
     private func drawFlipCamera() {
-        self.addSubview(_flipCameraButton)
+        addSubview(_flipCameraButton)
         
         _flipCameraButton.setImage(UIImage(named: "flip-camera"), forState: .Normal)
         _flipCameraButton.alpha = CGFloat(_elementOpacity)
@@ -161,18 +164,33 @@ class CameraOverlayView: UIView {
         
         _flipCameraButton.topAnchor.constraintEqualToAnchor(_flashModeButton.bottomAnchor, constant: _elementSpacing).active = true
         _flipCameraButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
-        _flipCameraButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -_elementSpacing).active = true
+        _flipCameraButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -_elementSpacing).active = true
         _flipCameraButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
+    }
+    
+    ///Icon to turn the bring up photo album
+    private func drawAlbumPicker() {
+        addSubview(_showAlbumPicker)
+        
+        _showAlbumPicker.setImage(UIImage(named: "flip-camera"), forState: .Normal)
+        _showAlbumPicker.alpha = CGFloat(_elementOpacity)
+        
+        _showAlbumPicker.translatesAutoresizingMaskIntoConstraints = false
+        
+        _showAlbumPicker.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -_elementSpacing).active = true
+        _showAlbumPicker.widthAnchor.constraintEqualToConstant(_iconSize).active = true
+        _showAlbumPicker.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        _showAlbumPicker.heightAnchor.constraintEqualToConstant(_iconSize).active = true
     }
     
     ///Adds the stripe for the question
     private func drawQuestionBackground() {
-        self.addSubview(_questionBackground)
+        addSubview(_questionBackground)
         _questionBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        _questionBackground.topAnchor.constraintEqualToAnchor(self.topAnchor).active = true
-        _questionBackground.widthAnchor.constraintEqualToAnchor(self.widthAnchor, multiplier: 1.0).active = true
-        _questionBackground.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor).active = true
+        _questionBackground.topAnchor.constraintEqualToAnchor(topAnchor).active = true
+        _questionBackground.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 1.0).active = true
+        _questionBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
         _questionBackground.heightAnchor.constraintEqualToConstant(_questionBackgroundHeight).active = true
         
         _questionBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)

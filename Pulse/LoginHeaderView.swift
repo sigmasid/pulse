@@ -31,10 +31,10 @@ class LoginHeaderView: UIView {
     }
     
     override func pointInside(point: CGPoint, withEvent event: UIEvent?) -> Bool {
-        if  self.hidden {
+        if  hidden {
             return false
         } else {
-            let expandedBounds = CGRectInset(self.bounds, -50, -50)
+            let expandedBounds = CGRectInset(bounds, -50, -50)
             return CGRectContainsPoint(expandedBounds, point)
         }
     }
