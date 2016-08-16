@@ -11,9 +11,7 @@ import AVKit
 import AVFoundation
 import Photos
 
-func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: NSURL?, thumbnail : UIImage?, error : NSError?) -> Void) {
-    let saveFileName = "/pulse-\(Int(NSDate().timeIntervalSince1970)).mp4"
-    
+func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UIImage?, error : NSError?) -> Void) {
     // Edit video
     let sourceAsset = AVURLAsset(URL: videoURL, options: nil)
     let composition : AVMutableComposition = AVMutableComposition()
@@ -70,11 +68,7 @@ func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: 
     themeVideoComposition.animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: videoLayer, inLayer: parentLayer)
     
     // Save the video to the app directory so we can play it later
-    let paths = NSSearchPathForDirectoriesInDomains(
-        NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
-    let documentsDirectory: AnyObject = paths[0]
-    let dataPath = documentsDirectory.stringByAppendingPathComponent(saveFileName)
-    let outputUrl = NSURL(fileURLWithPath: dataPath)
+    let outputUrl = tempFileURL()
     
     // Remove the file if it already exists (merger does not overwrite)
     let fileManager = NSFileManager.defaultManager()
@@ -109,7 +103,7 @@ func processVideo(videoURL : NSURL, aQuestion : Question?, completion: (result: 
     })
 }
 
-private func thumbnailForVideoAtURL(asset: AVMutableComposition) -> UIImage? {
+private func thumbnailForVideoAtURL(asset: AVAsset) -> UIImage? {
     
     let assetImageGenerator = AVAssetImageGenerator(asset: asset)
     assetImageGenerator.appliesPreferredTrackTransform = true
@@ -125,3 +119,45 @@ private func thumbnailForVideoAtURL(asset: AVMutableComposition) -> UIImage? {
         return nil
     }
 }
+
+func compressVideo(inputURL: NSURL, completion: (result: NSURL?, thumbnail : UIImage?, error : NSError?) -> Void) {
+    let outputURL = tempFileURL()
+    
+    let urlAsset = AVURLAsset(URL: inputURL, options: nil)
+    let _thumbnail = thumbnailForVideoAtURL(urlAsset)
+
+    if let exporter = AVAssetExportSession(asset: urlAsset, presetName: AVAssetExportPresetMediumQuality) {
+        exporter.outputURL = outputURL
+        exporter.outputFileType = AVFileTypeQuickTimeMovie
+        exporter.shouldOptimizeForNetworkUse = true
+        exporter.exportAsynchronouslyWithCompletionHandler { () -> Void in
+            switch exporter.status {
+            case  AVAssetExportSessionStatus.Failed:
+                let userInfo = [ NSLocalizedDescriptionKey : "export failed" ]
+                completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
+            case AVAssetExportSessionStatus.Cancelled:
+                let userInfo = [ NSLocalizedDescriptionKey : "export cancelled" ]
+                completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Cancelled", code: 0, userInfo: userInfo))
+            case AVAssetExportSessionStatus.Completed:
+                completion(result: exporter.outputURL!, thumbnail: _thumbnail, error: nil)
+            default:
+                let userInfo = [ NSLocalizedDescriptionKey : "unknown error occured" ]
+                completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Unknown", code: 0, userInfo: userInfo))
+            }
+        }
+    }
+}
+
+private func tempFileURL() -> NSURL {
+    let saveFileName = "/pulse-\(Int(NSDate().timeIntervalSince1970)).mp4"
+    
+    let paths = NSSearchPathForDirectoriesInDomains(
+        NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
+    let documentsDirectory: AnyObject = paths[0]
+    let dataPath = documentsDirectory.stringByAppendingPathComponent(saveFileName)
+    let outputUrl = NSURL(fileURLWithPath: dataPath)
+    
+    return outputUrl
+}
+
+

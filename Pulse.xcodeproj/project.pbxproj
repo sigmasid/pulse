@@ -33,7 +33,6 @@
 		BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */; };
 		BA2CCC141D4A9618003C94FC /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC131D4A9618003C94FC /* Settings.swift */; };
 		BA48858C1D24390B007333E0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BA48858B1D24390B007333E0 /* GoogleService-Info.plist */; };
-		BA564B571D63B3BA0010D244 /* AlbumPickerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA564B561D63B3BA0010D244 /* AlbumPickerVC.swift */; };
 		BA6B78B61D2E2620003EE992 /* RecordedAnswerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6B78B51D2E2620003EE992 /* RecordedAnswerOverlay.swift */; };
 		BA7D677D1D30D07400883B88 /* LoginCreateAccountVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D677C1D30D07400883B88 /* LoginCreateAccountVC.swift */; };
 		BA7D677F1D30D0B100883B88 /* LoginAddNameVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D677E1D30D0B100883B88 /* LoginAddNameVC.swift */; };
@@ -90,7 +89,6 @@
 		BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableVC.swift; sourceTree = "<group>"; };
 		BA2CCC131D4A9618003C94FC /* Settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		BA48858B1D24390B007333E0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		BA564B561D63B3BA0010D244 /* AlbumPickerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AlbumPickerVC.swift; sourceTree = "<group>"; };
 		BA6B78B51D2E2620003EE992 /* RecordedAnswerOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecordedAnswerOverlay.swift; sourceTree = "<group>"; };
 		BA7D677C1D30D07400883B88 /* LoginCreateAccountVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginCreateAccountVC.swift; sourceTree = "<group>"; };
 		BA7D677E1D30D0B100883B88 /* LoginAddNameVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginAddNameVC.swift; sourceTree = "<group>"; };
@@ -211,7 +209,6 @@
 				BA1DE1361D244A6A004F3ED2 /* CameraVC.swift */,
 				BA1DE1381D244A9D004F3ED2 /* CameraManager.swift */,
 				BA1DE13A1D244AE0004F3ED2 /* CameraOverlayView.swift */,
-				BA564B561D63B3BA0010D244 /* AlbumPickerVC.swift */,
 			);
 			name = Camera;
 			sourceTree = "<group>";
@@ -448,7 +445,6 @@
 				BA1DE1271D2443FD004F3ED2 /* Tag.swift in Sources */,
 				BA1C48BE1D243704008F8A04 /* ViewController.swift in Sources */,
 				BA1DE1301D24463B004F3ED2 /* TagDetailVC.swift in Sources */,
-				BA564B571D63B3BA0010D244 /* AlbumPickerVC.swift in Sources */,
 				BAF2940F1D46E6DA0046B073 /* AccountLoginManagerVC.swift in Sources */,
 				BA1DE1451D244D6B004F3ED2 /* LoginVC.swift in Sources */,
 				BAFAC6F91D3436B30073651F /* TagDetailQuestionCell.swift in Sources */,

@@ -124,7 +124,7 @@ class CameraOverlayView: UIView {
         
         _shutterButton.translatesAutoresizingMaskIntoConstraints = false
         
-        _shutterButton.bottomAnchor.constraintEqualToAnchor(_showAlbumPicker.bottomAnchor, constant: -Spacing.xl.rawValue * 1.5).active = true
+        _shutterButton.bottomAnchor.constraintEqualToAnchor(_showAlbumPicker.bottomAnchor, constant: -Spacing.xl.rawValue).active = true
         _shutterButton.widthAnchor.constraintEqualToConstant(_shutterButtonRadius * 2).active = true
         _shutterButton.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
         _shutterButton.heightAnchor.constraintEqualToConstant(_shutterButtonRadius * 2).active = true
@@ -137,7 +137,6 @@ class CameraOverlayView: UIView {
         _flashModeButton.alpha = 0.7
         
         _flashModeButton.translatesAutoresizingMaskIntoConstraints = false
-        
         _flashModeButton.topAnchor.constraintEqualToAnchor(_questionBackground.bottomAnchor, constant: _elementSpacing).active = true
         _flashModeButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _flashModeButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -_elementSpacing).active = true
@@ -172,7 +171,7 @@ class CameraOverlayView: UIView {
     private func drawAlbumPicker() {
         addSubview(_showAlbumPicker)
         
-        _showAlbumPicker.setImage(UIImage(named: "flip-camera"), forState: .Normal)
+        _showAlbumPicker.setImage(UIImage(named: "down-arrow"), forState: .Normal)
         _showAlbumPicker.alpha = CGFloat(_elementOpacity)
         
         _showAlbumPicker.translatesAutoresizingMaskIntoConstraints = false

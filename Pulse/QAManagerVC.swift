@@ -7,17 +7,18 @@
 //
 
 import UIKit
-import FirebaseDatabase
+import MobileCoreServices
 
 protocol childVCDelegate: class {
     func noAnswersToShow(_ : UIViewController)
     func hasAnswersToShow()
-    func doneRecording(_: NSURL?, currentVC : UIViewController, qID: String?, location: String?)
+    func doneRecording(_: NSURL?, currentVC : UIViewController, location: String?, assetType : AssetType?)
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
     func userDismissedCamera(_: UIViewController)
     func userDismissedRecording(_: UIViewController)
+    func showAlbumPicker(_: UIViewController)
     func minAnswersShown()
     func askUserQuestion()
     func showNextQuestion()
@@ -25,7 +26,7 @@ protocol childVCDelegate: class {
     func showQuestionPreviewOverlay()
 }
 
-class QAManagerVC: UIViewController, childVCDelegate {
+class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     
     // delegate vars
     var selectedTag : Tag!
@@ -119,7 +120,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         }
     }
     
-    func doneRecording(assetURL : NSURL?, currentVC : UIViewController, qID : String?, location: String?){
+    func doneRecording(assetURL : NSURL?, currentVC : UIViewController, location: String?, assetType : AssetType?){
         _isShowingCamera = false
 
         let userAnswer = UserRecordedAnswerVC()
@@ -128,6 +129,7 @@ class QAManagerVC: UIViewController, childVCDelegate {
         userAnswer.fileURL = assetURL
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
+        userAnswer.currentAssetType = assetType
         
         _isShowingUserRecordedVideo = true
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
@@ -254,8 +256,16 @@ class QAManagerVC: UIViewController, childVCDelegate {
             GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
             self.removeQuestionPreviewOverlay()
         })
-
-
+    }
+    
+    func showAlbumPicker(currentVC : UIViewController) {
+        let albumPicker = UIImagePickerController()
+        albumPicker.delegate = self
+        albumPicker.allowsEditing = false
+        albumPicker.sourceType = .PhotoLibrary
+        albumPicker.mediaTypes = [kUTTypeMovie as String]
+        
+        GlobalFunctions.cycleBetweenVC(currentVC, newVC: albumPicker, parentVC: self)
     }
     
     func showQuestionPreviewOverlay() {
@@ -375,5 +385,29 @@ class QAManagerVC: UIViewController, childVCDelegate {
                 pan.setTranslation(CGPointZero, inView: self.view)
             }
         }
+    }
+    
+    func imagePickerController(picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : AnyObject]) {
+        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
+        
+        if mediaType.isEqualToString(kUTTypeImage as String) {
+            
+            let image = info[UIImagePickerControllerOriginalImage] as! UIImage
+            // Media is an image
+//            doneRecording(videoURL, currentVC: picker, location: nil, assetType: .albumVideo)
+
+            
+        } else if mediaType.isEqualToString(kUTTypeMovie as String) {
+            
+            let videoURL = info[UIImagePickerControllerMediaURL] as? NSURL
+            doneRecording(videoURL, currentVC: picker, location: nil, assetType: .albumVideo)
+            // Media is a video
+            
+        }
+    }
+    
+    func imagePickerControllerDidCancel(picker: UIImagePickerController) {
+        showCamera()
+        GlobalFunctions.dismissVC(picker)
     }
 }

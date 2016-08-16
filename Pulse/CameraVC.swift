@@ -24,9 +24,6 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     var questionToShow : Question! //set by delegate
     weak var childDelegate : childVCDelegate?
     
-    /* ALBUM PICKER */
-    private var _AlbumPicker : AlbumPickerVC!
-    
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
     
@@ -75,7 +72,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
             } else {
-                self.childDelegate!.doneRecording(videoURL, currentVC: self, qID: self.questionToShow.qID, location: self._Camera.recordedLocation)
+                self.childDelegate!.doneRecording(videoURL, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
                 self._Camera.stopAndRemoveCaptureSession()
             }
         })
@@ -87,7 +84,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         if let errorOccured = error {
             self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
         } else {
-            self.childDelegate!.doneRecording(fileURL, currentVC: self, qID: self.questionToShow.qID, location: self._Camera.recordedLocation)
+            self.childDelegate!.doneRecording(fileURL, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
             self._Camera.stopAndRemoveCaptureSession()
         }
     }
@@ -190,9 +187,9 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     func showAlbumPicker() {
-        _AlbumPicker = AlbumPickerVC()
-        GlobalFunctions.addNewVC(_AlbumPicker, parentVC: self)
-        
+        if let childDelegate = childDelegate {
+            childDelegate.showAlbumPicker(self)
+        }
     }
 }
 

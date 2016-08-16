@@ -20,6 +20,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     var currentQuestion : Question?
     var aLocation : String?
     var currentAnswer : Answer!
+    var currentAssetType : AssetType?
     
     weak var answerDelegate : childVCDelegate?
     
@@ -40,16 +41,32 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         avPlayerLayer.frame = view.frame
         
         if let _currentQuestion = currentQuestion {
-            let _ = processVideo(fileURL!, aQuestion : _currentQuestion) { (resultURL, thumbnailImage, error) in
-                if let _resultURL = resultURL {
-                    let currentVideo = AVPlayerItem(URL: _resultURL)
-                    self.fileURL = _resultURL
-                    self._thumbnailImage = thumbnailImage
-                    aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
-                    aPlayer.play()
-                } else {
-                    GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+            
+            if currentAssetType != nil && currentAssetType == .recordedVideo {
+                processVideo(fileURL!) { (resultURL, thumbnailImage, error) in
+                    if let resultURL = resultURL {
+                        let currentVideo = AVPlayerItem(URL: resultURL)
+                        self.fileURL = resultURL
+                        self._thumbnailImage = thumbnailImage
+                        aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                        aPlayer.play()
+                    } else {
+                        GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                    }
                 }
+            } else if currentAssetType != nil && currentAssetType == .albumVideo {
+                compressVideo(fileURL!, completion: {(resultURL, thumbnailImage, error) in
+                    if let resultURL = resultURL {
+                        let currentVideo = AVPlayerItem(URL: resultURL)
+                        self.fileURL = resultURL
+                        self._thumbnailImage = thumbnailImage
+                        aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                        aPlayer.play()
+                    } else {
+                        GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                    }
+                })
+
             }
             
             _controlsOverlay = RecordedAnswerOverlay(frame: view.frame)

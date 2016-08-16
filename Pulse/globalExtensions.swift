@@ -145,6 +145,13 @@ enum SaveType {
     case Unsave
 }
 
+enum AssetType {
+    case recordedImage
+    case albumImage
+    case recordedVideo
+    case albumVideo
+}
+
 enum Spacing: CGFloat {
     case xs = 10
     case s = 20

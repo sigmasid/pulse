@@ -85,7 +85,7 @@ class BrowseAnswersView: UIView {
         sortAnswersButton.layoutIfNeeded()
         
         sortAnswersButton.backgroundColor = UIColor.clearColor()
-        sortAnswersButton.setImage(UIImage(named: "down-arrow-icon"), forState: .Normal)
+        sortAnswersButton.setImage(UIImage(named: "down-arrow"), forState: .Normal)
         sortAnswersButton.imageEdgeInsets = UIEdgeInsetsMake(5, -10, 5, 5)
 
         sortAnswersButton.titleLabel?.textColor = UIColor.whiteColor()
