@@ -45,7 +45,11 @@ class TagDetailVC: UIViewController, ParentDelegate {
     
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
-    private var _currentView : currentLoadedView?
+    private var _currentView : currentLoadedView? {
+        didSet {
+            toggleView()
+        }
+    }
     
     private enum currentLoadedView : String {
         case tableview = "tableView"
@@ -64,9 +68,7 @@ class TagDetailVC: UIViewController, ParentDelegate {
         super.viewDidAppear(true)
         
         if currentTag != nil && !returningToExplore {
-            _currentView = .collectionview
             setupScreenLayout()
-//            loadTagData()
         }
     }
     
@@ -79,35 +81,40 @@ class TagDetailVC: UIViewController, ParentDelegate {
         return true
     }
     
-    private func loadTagData() {
-        
-    }
-    
-    func toggleView(sender: UIButton) {
+    func setCurrentView() {
         if _currentView == .tableview {
-            QuestionsTableView?.hidden = true
+            _currentView = .collectionview
+        } else {
+            _currentView = .tableview
+        }
+    }
+
+    func toggleView() {
+        if _currentView == .tableview {
+            
+            toggleButton.setImage(UIImage(named: "collection-list"), forState: .Normal)
+            
+            if QuestionsTableView == nil {
+                setupTableView()
+            } else {
+                QuestionsTableView?.hidden = false
+            }
+            
+            QuestionsCollectionView?.hidden = true
+            
+        } else {
+            
             toggleButton.setImage(UIImage(named: "table-list"), forState: .Normal)
+            
             if QuestionsCollectionView == nil {
                 setupCollectionView()
             } else {
                 QuestionsCollectionView?.hidden = false
             }
-            _currentView = .collectionview
-        } else {
-            QuestionsTableView?.hidden = false
-            QuestionsCollectionView?.hidden = true
-            toggleButton.setImage(UIImage(named: "collection-list"), forState: .Normal)
-            _currentView = .tableview
+            QuestionsTableView?.hidden = true
         }
     }
     
-    func showInitialView() {
-        if _currentView == .tableview {
-            setupTableView()
-        } else {
-            setupCollectionView()
-        }
-    }
     private func setupScreenLayout() {
         tagImage = UIImageView()
         view.addSubview(tagImage)
@@ -119,8 +126,7 @@ class TagDetailVC: UIViewController, ParentDelegate {
         tagImage.heightAnchor.constraintEqualToAnchor(view.heightAnchor).active = true
         
         view.addSubview(toggleButton)
-        toggleButton.setImage(UIImage(named: "collection-list"), forState: .Normal)
-        toggleButton.addTarget(self, action: #selector(toggleView), forControlEvents: UIControlEvents.TouchDown)
+        toggleButton.addTarget(self, action: #selector(setCurrentView), forControlEvents: UIControlEvents.TouchDown)
         toggleButton.backgroundColor = UIColor.darkGrayColor()
         
         toggleButton.translatesAutoresizingMaskIntoConstraints = false
@@ -157,7 +163,7 @@ class TagDetailVC: UIViewController, ParentDelegate {
             })
         }
         
-        showInitialView()
+        _currentView = .collectionview
 
     }
     
