@@ -47,7 +47,24 @@ extension UIViewController {
     }
     
     func setDarkBackground() {
-        view.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.95)
+        self.view.backgroundColor = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
+
+//        let gradientLayer = CAGradientLayer()
+//        self.view.backgroundColor = UIColor(red: 21/255, green: 27/255, blue: 31/255, alpha: 1.0)
+//        gradientLayer.frame = self.view.bounds
+//        
+//        // 3
+//        let color1 = UIColor(red: 21/255, green: 27/255, blue: 31/255, alpha: 1.0).CGColor as CGColorRef
+//        let color2 = UIColor(red: 9/255, green: 21/255, blue: 77/255, alpha: 1.0).CGColor as CGColorRef
+//        let color3 = UIColor(red: 50/255, green: 5/255, blue: 66/255, alpha: 1.0).CGColor as CGColorRef
+//        let color4 = UIColor(red: 3/255, green: 1/255, blue: 1/255, alpha: 1.0).CGColor as CGColorRef
+//        gradientLayer.colors = [color1, color2, color3, color4]
+//        
+//        // 4
+//        gradientLayer.locations = [0.0, 0.25, 0.75, 1.0]
+//        
+//        // 5
+//        self.view.layer.addSublayer(gradientLayer)
     }
 }
 

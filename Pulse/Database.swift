@@ -499,7 +499,7 @@ class Database {
                 if (error != nil) {
                     completion(success: false, error: error)
                 } else {
-                    
+                    completion(success: true, error: nil)
                 }
             }
         }

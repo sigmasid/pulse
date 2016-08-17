@@ -12,7 +12,7 @@ import MobileCoreServices
 protocol childVCDelegate: class {
     func noAnswersToShow(_ : UIViewController)
     func hasAnswersToShow()
-    func doneRecording(_: NSURL?, currentVC : UIViewController, location: String?, assetType : AssetType?)
+    func doneRecording(_: NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : AssetType?)
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
@@ -120,7 +120,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         }
     }
     
-    func doneRecording(assetURL : NSURL?, currentVC : UIViewController, location: String?, assetType : AssetType?){
+    func doneRecording(assetURL : NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : AssetType?){
         _isShowingCamera = false
 
         let userAnswer = UserRecordedAnswerVC()
@@ -130,6 +130,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
         userAnswer.currentAssetType = assetType
+        userAnswer.capturedImage = image
         
         _isShowingUserRecordedVideo = true
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
@@ -146,7 +147,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
                 }
             } else {
                 if let _userAnswerVC = currentVC as? UserRecordedAnswerVC {
-                    _userAnswerVC._postVideo()
+                    _userAnswerVC._post()
                 }
             }
         })
@@ -263,7 +264,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         albumPicker.delegate = self
         albumPicker.allowsEditing = false
         albumPicker.sourceType = .PhotoLibrary
-        albumPicker.mediaTypes = [kUTTypeMovie as String]
+        albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
         
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: albumPicker, parentVC: self)
     }
@@ -327,7 +328,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     
     func loginSuccess (currentVC : UIViewController) {
         if let _userAnswerVC = savedRecordedVideoVC {
-            _userAnswerVC._postVideo()
+            _userAnswerVC._post()
         }
         GlobalFunctions.dismissVC(currentVC)
     }
@@ -392,15 +393,14 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         
         if mediaType.isEqualToString(kUTTypeImage as String) {
             
-            let image = info[UIImagePickerControllerOriginalImage] as! UIImage
+            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+            doneRecording(nil, image: pickedImage, currentVC: picker, location: nil, assetType: .albumImage)
             // Media is an image
-//            doneRecording(videoURL, currentVC: picker, location: nil, assetType: .albumVideo)
 
-            
         } else if mediaType.isEqualToString(kUTTypeMovie as String) {
             
             let videoURL = info[UIImagePickerControllerMediaURL] as? NSURL
-            doneRecording(videoURL, currentVC: picker, location: nil, assetType: .albumVideo)
+            doneRecording(videoURL, image: nil, currentVC: picker, location: nil, assetType: .albumVideo)
             // Media is a video
             
         }

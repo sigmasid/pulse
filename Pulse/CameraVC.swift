@@ -72,7 +72,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
             } else {
-                self.childDelegate!.doneRecording(videoURL, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
+                self.childDelegate!.doneRecording(videoURL, image: nil, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
                 self._Camera.stopAndRemoveCaptureSession()
             }
         })
@@ -84,7 +84,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         if let errorOccured = error {
             self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
         } else {
-            self.childDelegate!.doneRecording(fileURL, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
+            self.childDelegate!.doneRecording(fileURL, image: nil, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
             self._Camera.stopAndRemoveCaptureSession()
         }
     }
