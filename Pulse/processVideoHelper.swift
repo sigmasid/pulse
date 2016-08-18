@@ -80,7 +80,7 @@ func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UII
     
     // Export the video
     let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetMediumQuality)
-    let _thumbnail = thumbnailForVideoAtURL(composition)
+    let _thumbnail = thumbnailForVideoAtURL(composition, orientation: .Right)
     
     exporter!.outputURL = outputUrl
     exporter!.videoComposition = themeVideoComposition
@@ -103,17 +103,17 @@ func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UII
     })
 }
 
-private func thumbnailForVideoAtURL(asset: AVAsset) -> UIImage? {
-    
+func thumbnailForVideoAtURL(asset: AVAsset, orientation: UIImageOrientation) -> UIImage? {
     let assetImageGenerator = AVAssetImageGenerator(asset: asset)
-    assetImageGenerator.appliesPreferredTrackTransform = true
+//    assetImageGenerator.appliesPreferredTrackTransform = true
     
     var time = asset.duration
     time.value = min(time.value, 2)
     
     do {
         let imageRef = try assetImageGenerator.copyCGImageAtTime(time, actualTime: nil)
-        let image = GlobalFunctions.fixOrientation(UIImage(CGImage: imageRef, scale: 1.0, orientation: .Right))
+        let image = UIImage(CGImage: imageRef, scale: 1.0, orientation: orientation)
+//        let image = GlobalFunctions.fixOrientation(UIImage(CGImage: imageRef, scale: 1.0, orientation: .Left))
         return image
     } catch {
         return nil
@@ -124,7 +124,7 @@ func compressVideo(inputURL: NSURL, completion: (result: NSURL?, thumbnail : UII
     let outputURL = tempFileURL()
     
     let urlAsset = AVURLAsset(URL: inputURL, options: nil)
-    let _thumbnail = thumbnailForVideoAtURL(urlAsset)
+    let _thumbnail = thumbnailForVideoAtURL(urlAsset, orientation: .Left)
 
     if let exporter = AVAssetExportSession(asset: urlAsset, presetName: AVAssetExportPresetMediumQuality) {
         exporter.outputURL = outputURL

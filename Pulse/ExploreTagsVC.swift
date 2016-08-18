@@ -144,7 +144,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     ///Save / Unsave tag and update user profile
-    func handleLongPress(longPress : UIPanGestureRecognizer) {
+    func handleLongPress(longPress : UILongPressGestureRecognizer) {
         if longPress.state == UIGestureRecognizerState.Began {
             let point = longPress.locationInView(ExploreTags)
             let index = ExploreTags.indexPathForItemAtPoint(point)
@@ -250,12 +250,12 @@ extension ExploreTagsVC : UICollectionViewDataSource {
         if let _currentTag = _currentTag {
             cell.tagLabel.text = "#"+_currentTag.tagID!.uppercaseString
             
-            let tapLabel = UITapGestureRecognizer(target: self, action: #selector(ExploreTagsVC.showTagDetailTap(_:)))
+            let tapLabel = UITapGestureRecognizer(target: self, action: #selector(showTagDetailTap(_:)))
             cell.tagLabel.userInteractionEnabled = true
             cell.tagLabel.tag = indexPath.row
             cell.tagLabel.addGestureRecognizer(tapLabel)
             
-            let _longPress = UILongPressGestureRecognizer(target: self, action: #selector(ExploreTagsVC.handleLongPress(_:)))
+            let _longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
             _longPress.minimumPressDuration = 0.5
             cell.tagLabel.addGestureRecognizer(_longPress)
             

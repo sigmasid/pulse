@@ -172,9 +172,10 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     
     
     // MARK: - Private properties
-    
+    private var _didReachMaxRecording = false
+
     private weak var embeddingView: UIView?
-    private var videoCompletition: ((videoURL: NSURL?, error: NSError?) -> Void)?
+    private var videoCompletition: ((videoURL: NSURL?, image: UIImage?, error: NSError?) -> Void)?
     
     private var sessionQueue: dispatch_queue_t = dispatch_queue_create("CameraSessionQueue", DISPATCH_QUEUE_SERIAL)
     
@@ -369,6 +370,21 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /**
+     Captures still image from currently running video session
+     
+     :param: imageCompletition Completition block containing the captured imageData
+     */
+    public func capturePictureDataFromVideoWithCompletition(videoURL: NSURL, imageCompletion: (UIImage?, NSError?) -> Void) {
+        
+        let urlAsset = AVURLAsset(URL: videoURL, options: nil)
+
+        let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .LeftMirrored)
+        
+        imageCompletion(imageData, nil)
+    }
+
+    
+    /**
      Captures still image from currently running capture session.
      
      :param: imageCompletition Completition block containing the captured imageData
@@ -421,14 +437,18 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     /**
      Stop recording a video. Save it to the cameraRoll and give back the url.
      */
-    public func stopRecordingVideo(completition:(videoURL: NSURL?, error: NSError?) -> Void) {
+    public func stopRecordingVideo(completion:(videoURL: NSURL?, image: UIImage?, error: NSError?) -> Void) {
         if let runningMovieOutput = movieOutput {
             if runningMovieOutput.recording {
-                videoCompletition = completition
+                videoCompletition = completion
                 runningMovieOutput.stopRecording()
             }
         }
     }
+    
+    /**
+    Max time reached.
+    */
     
     /**
      Current camera status.
@@ -474,9 +494,9 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         if (error != nil) {
             if (error.code == AVError.MaximumDurationReached.rawValue) {
 //                _show(NSLocalizedString("Maximum Time Limit Reached", comment:""), message: error.localizedDescription)
-                maxRecordingDelegate.didReachMaxRecording(outputFileURL, error: nil)
-                _executeVideoCompletitionWithURL(outputFileURL, error: error)
-
+//                _executeVideoCompletitionWithURL(outputFileURL, error: nil)
+                _didReachMaxRecording = true
+                
                 if writeFilesToPhoneLibrary {
                     _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: NSURL?, error: NSError?) -> Void in
                         if (error != nil) {
@@ -489,11 +509,12 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
                         }
                     })
                 } else {
-                    _executeVideoCompletitionWithURL(outputFileURL, error: error)
+                    print("error is nil with output file, going to execute video")
+                    _executeVideoCompletitionWithURL(outputFileURL, error: nil)
                 }
-
             } else {
-                _show(NSLocalizedString("Unable to save video to the iPhone", comment:""), message: error.localizedDescription)
+                _executeVideoCompletitionWithURL(outputFileURL, error: error)
+                _show(NSLocalizedString("Unable to save video to the phone", comment:""), message: error.localizedDescription)
             }
         } else {
             if writeFilesToPhoneLibrary {
@@ -596,8 +617,39 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     
     private func _executeVideoCompletitionWithURL(url: NSURL?, error: NSError?) {
         if let validCompletition = videoCompletition {
-            validCompletition(videoURL: url, error: error)
-            videoCompletition = nil
+
+            let _duration = movieOutput?.recordedDuration.seconds
+            print("have valid completion with duration \(_duration)")
+
+            if _duration > 1.5 {
+                validCompletition(videoURL: url, image: nil, error: error)
+                self.videoCompletition = nil
+            } else {
+                if let url = url {
+                    capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, error) in
+                        validCompletition(videoURL: nil, image: image, error: error)
+                        self.videoCompletition = nil
+                    })
+                }
+            }
+        } else if _didReachMaxRecording {
+            let _duration = movieOutput?.recordedDuration.seconds
+            print("have valid completion with duration \(_duration)")
+
+            if _duration > 1.1 {
+                print("it's a max video")
+                maxRecordingDelegate.didReachMaxRecording(url, image: nil, error: error)
+            } else {
+                print("it's an image")
+                if let url = url {
+                    capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, error) in
+                        if self._didReachMaxRecording {
+                            print("sending image back")
+                            self.maxRecordingDelegate.didReachMaxRecording(nil, image: image, error: error)
+                        }
+                    })
+                }
+            }
         }
     }
     
