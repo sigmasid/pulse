@@ -667,6 +667,12 @@
                                 <color key="textColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="down-arrow" translatesAutoresizingMaskIntoConstraints="NO" id="ibv-E2-utG">
+                                <rect key="frame" x="291" y="568" width="18.5" height="18.5"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="ibv-E2-utG" secondAttribute="height" multiplier="1:1" id="IwL-yx-wzC"/>
+                                </constraints>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
@@ -682,10 +688,12 @@
                             <constraint firstItem="V9l-dU-bre" firstAttribute="centerX" secondItem="Hug-Q0-Kzs" secondAttribute="centerX" id="Mld-aG-tf7"/>
                             <constraint firstAttribute="centerY" secondItem="Hug-Q0-Kzs" secondAttribute="centerY" multiplier="2" id="NAv-Bc-Iy7"/>
                             <constraint firstItem="9jY-kC-7e6" firstAttribute="trailing" secondItem="pAC-Un-EK5" secondAttribute="trailing" id="Nwj-Aq-cvp"/>
+                            <constraint firstItem="ibv-E2-utG" firstAttribute="top" secondItem="6RX-EZ-zRL" secondAttribute="bottom" constant="18" id="QtU-8X-SZq"/>
                             <constraint firstItem="IKm-5q-7Hf" firstAttribute="centerX" secondItem="s8K-6d-YN2" secondAttribute="centerX" id="RWf-5D-O6v"/>
                             <constraint firstItem="pAC-Un-EK5" firstAttribute="centerY" secondItem="1om-Nh-Zgp" secondAttribute="centerY" id="S0k-Wa-WHE"/>
                             <constraint firstItem="DN1-mo-X2c" firstAttribute="leading" secondItem="Hug-Q0-Kzs" secondAttribute="trailing" id="Tk0-02-or4"/>
                             <constraint firstItem="6b1-yu-SPO" firstAttribute="top" secondItem="DN1-mo-X2c" secondAttribute="bottom" constant="2" id="WiO-XN-fay"/>
+                            <constraint firstItem="NWs-bx-mUA" firstAttribute="top" secondItem="ibv-E2-utG" secondAttribute="bottom" constant="13.5" id="Ybg-jf-4zf"/>
                             <constraint firstItem="DN1-mo-X2c" firstAttribute="top" secondItem="1sn-mf-tRu" secondAttribute="bottom" constant="20" id="ZGa-1B-phK"/>
                             <constraint firstItem="IKm-5q-7Hf" firstAttribute="top" secondItem="s8K-6d-YN2" secondAttribute="bottom" constant="2" id="bAl-mw-pLF"/>
                             <constraint firstItem="iHz-5M-Quu" firstAttribute="centerY" secondItem="pAC-Un-EK5" secondAttribute="centerY" id="cIB-7w-yK0"/>
@@ -693,6 +701,7 @@
                             <constraint firstItem="9jY-kC-7e6" firstAttribute="centerY" secondItem="1om-Nh-Zgp" secondAttribute="centerY" multiplier="1.2" id="dmB-2I-yP3"/>
                             <constraint firstItem="NWs-bx-mUA" firstAttribute="top" secondItem="6RX-EZ-zRL" secondAttribute="bottom" constant="50" id="ebt-kW-uyV"/>
                             <constraint firstItem="uzi-MY-FAJ" firstAttribute="top" secondItem="6RX-EZ-zRL" secondAttribute="bottom" constant="2" id="fcI-yr-JW5"/>
+                            <constraint firstItem="ibv-E2-utG" firstAttribute="centerX" secondItem="6RX-EZ-zRL" secondAttribute="centerX" id="iHI-71-A8X"/>
                             <constraint firstItem="9jY-kC-7e6" firstAttribute="height" secondItem="pAC-Un-EK5" secondAttribute="height" id="kVD-xa-f3a"/>
                             <constraint firstItem="1sn-mf-tRu" firstAttribute="leading" secondItem="iHz-5M-Quu" secondAttribute="leading" id="ooq-db-F55"/>
                             <constraint firstItem="6RX-EZ-zRL" firstAttribute="width" secondItem="s8K-6d-YN2" secondAttribute="width" id="sVK-MM-VQe"/>
@@ -722,6 +731,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="down-arrow" width="32" height="32"/>
         <image name="facebook-icon" width="24" height="24"/>
         <image name="linkedin-icon" width="32" height="32"/>
         <image name="mail-icon" width="32" height="32"/>

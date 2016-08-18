@@ -270,8 +270,8 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(gotImage), forControlEvents: UIControlEvents.TouchUpInside)
         _cameraOverlay.getButton(.Shutter).enabled = false
         
-        _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(CameraVC.flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
-        _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(CameraVC.cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
+        _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
         _cameraOverlay.updateQuestion("smile!")
     }
     
@@ -293,6 +293,24 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             _loginHeader._settings.addTarget(self, action: #selector(ClickedSettings), forControlEvents: UIControlEvents.TouchUpInside)
 
             _headerView.addSubview(_loginHeader)
+        }
+    }
+    
+    func flipCamera() {
+        if _Camera.cameraDevice == .Front {
+            _Camera.cameraDevice = .Back
+        } else {
+            _Camera.cameraDevice = .Front
+        }
+    }
+    
+    func cycleFlash(oldButton : UIButton) {
+        _Camera.changeFlashMode()
+        
+        switch _Camera.flashMode {
+        case .Off: _cameraOverlay._flashMode =  .Off
+        case .On: _cameraOverlay._flashMode = .On
+        case .Auto: _cameraOverlay._flashMode = .Auto
         }
     }
     

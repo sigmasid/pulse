@@ -18,7 +18,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     private var _cameraOverlay : CameraOverlayView!
     private var _loadingOverlay : LoadingView!
     
-    private let videoDuration : Double = 6
+    /* duration set in milliseconds */
+    private let videoDuration : Double = 60
     private var countdownTimer : CALayer!
     
     var questionToShow : Question! //set by delegate
@@ -146,9 +147,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
                     completion: {(value: Bool) in
                         self._loadingOverlay.removeFromSuperview()
                 })
-                self.tap.enabled = true
+                self.tap.enabled = true //enables tap when camera is ready
                 self.longTap.enabled = true
-//                self._cameraOverlay.getButton(.Shutter).enabled = true
             }
         })
         
@@ -186,8 +186,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     func respondToShutterTap() {
-        print("tap gesture fired")
-        _Camera.cameraVideoDuration = 1
+        _Camera.cameraVideoDuration = 0.2
         takeImage()
     }
     
@@ -200,7 +199,6 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
 //        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(startVideoCapture), forControlEvents: UIControlEvents.TouchDown)
 //        _cameraOverlay.getButton(.Shutter).enabled = false
 //        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(stopVideoCapture), forControlEvents: UIControlEvents.TouchUpInside)
-        print("long tap gesture fired")
     }
     
     func respondToPanGesture(pan: UIPanGestureRecognizer) {

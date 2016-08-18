@@ -377,10 +377,16 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     public func capturePictureDataFromVideoWithCompletition(videoURL: NSURL, imageCompletion: (UIImage?, NSError?) -> Void) {
         
         let urlAsset = AVURLAsset(URL: videoURL, options: nil)
-
-        let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .LeftMirrored)
         
-        imageCompletion(imageData, nil)
+        if cameraDevice == .Front {
+            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .LeftMirrored)
+            imageCompletion(imageData, nil)
+
+        } else {
+            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .Right)
+            imageCompletion(imageData, nil)
+        }
+        
     }
 
     
@@ -575,7 +581,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     
     /// set the max video duration to specified duration in seconds
     private func _updateMaxDuration(duration: Double) {
-        movieOutput?.maxRecordedDuration = CMTimeMakeWithSeconds(duration, 1)
+        movieOutput?.maxRecordedDuration = CMTimeMakeWithSeconds(duration, 10)
     }
     
     private func _zoom(scale: CGFloat) {
@@ -621,7 +627,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
             let _duration = movieOutput?.recordedDuration.seconds
             print("have valid completion with duration \(_duration)")
 
-            if _duration > 1.5 {
+            if _duration > 1.1 {
                 validCompletition(videoURL: url, image: nil, error: error)
                 self.videoCompletition = nil
             } else {
