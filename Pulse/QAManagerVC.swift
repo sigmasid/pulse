@@ -24,6 +24,7 @@ protocol childVCDelegate: class {
     func showNextQuestion()
     func goBack(_ : UIViewController)
     func showQuestionPreviewOverlay()
+    func userClickedAddMoreToAnswer(_ : UIViewController, currentAnswer : Answer)
 }
 
 class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
@@ -33,6 +34,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     var allQuestions = [Question?]()
     var questionCounter = 0
     var currentQuestion = Question!(nil)
+    lazy var currentAnswers = [Answer]()
     
     private var savedRecordedVideoVC : UserRecordedAnswerVC?
     private var questionPreviewOverlay : QuestionPreviewOverlay?
@@ -75,7 +77,6 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     /* QA Specific Methods */
-    
     func displayQuestion() {
         showQuestionPreviewOverlay()
         answerVC.currentQuestion = currentQuestion
@@ -120,22 +121,35 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         }
     }
     
+    /* user finished recording video or image - send to user recorded answer to add more or post */
     func doneRecording(assetURL : NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : AssetType?){
         _isShowingCamera = false
+        let userAnswer : UserRecordedAnswerVC!
 
-        let userAnswer = UserRecordedAnswerVC()
-        userAnswer.answerDelegate = self
+        if savedRecordedVideoVC != nil {
+            userAnswer = savedRecordedVideoVC
+            userAnswer.fileURL = nil
+            userAnswer.aLocation = nil
+            userAnswer.currentAssetType = nil
+            userAnswer.capturedImage = nil
+        } else {
+            userAnswer = UserRecordedAnswerVC()
+        }
+        
+        userAnswer.delegate = self
         
         userAnswer.fileURL = assetURL
         userAnswer.currentQuestion = currentQuestion
         userAnswer.aLocation = location
         userAnswer.currentAssetType = assetType
         userAnswer.capturedImage = image
+        userAnswer.currentAnswers = currentAnswers
         
         _isShowingUserRecordedVideo = true
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
     }
     
+    /* check if social token available - if yes, then login and post on return, else ask user to login */
     func askUserToLogin(currentVC : UIViewController) {
         Database.checkSocialTokens({ result in
             if !result {
@@ -151,6 +165,12 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
                 }
             }
         })
+    }
+    
+    func userClickedAddMoreToAnswer(currentVC : UIViewController, currentAnswer : Answer) {
+        currentAnswers.append(currentAnswer)
+        savedRecordedVideoVC = currentVC as? UserRecordedAnswerVC
+        showCamera(true)
     }
     
     func doneUploadingAnswer(currentVC: UIViewController) {
@@ -259,6 +279,22 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         })
     }
     
+    func showCamera(addingMore : Bool) {
+        let _cameraVC = CameraVC()
+        _cameraVC.childDelegate = self
+        _cameraVC.questionToShow = currentQuestion
+        _isShowingCamera = true
+        _cameraVC.view.alpha = 0
+        
+        if addingMore {
+            UIView.animateWithDuration(0.5, animations: { _cameraVC.view.alpha = 1.0 } , completion: {(value: Bool) in
+                GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
+            })
+        } else {
+            showCamera()
+        }
+    }
+    
     func showAlbumPicker(currentVC : UIViewController) {
         let albumPicker = UIImagePickerController()
         albumPicker.delegate = self
@@ -270,7 +306,6 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     func showQuestionPreviewOverlay() {
-//        print("adding question preview overlay")
         questionPreviewOverlay = QuestionPreviewOverlay(frame: view.frame)
         questionPreviewOverlay!.setQuestionLabel(currentQuestion.qTitle)
         questionPreviewOverlay!.setNumAnswersLabel(currentQuestion.totalAnswers())
@@ -278,7 +313,6 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     private func removeQuestionPreviewOverlay() {
-//        print("removing question preview overlay")
         UIView.animateWithDuration(1, animations: { self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
             self.questionPreviewOverlay?.removeFromSuperview()
         })

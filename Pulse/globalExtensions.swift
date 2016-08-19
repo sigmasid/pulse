@@ -162,31 +162,12 @@ enum SaveType {
     case Unsave
 }
 
-enum AssetType {
-    case recordedImage
-    case albumImage
-    case recordedVideo
-    case albumVideo
-}
-
 enum Spacing: CGFloat {
     case xs = 10
     case s = 20
     case m = 30
     case l = 40
     case xl = 50
-}
-
-enum Item : String {
-    case Tags = "tags"
-    case Questions = "questions"
-    case Answers = "answers"
-    case Users = "users"
-    case Filters = "filters"
-    case Settings = "settings"
-    case SettingSections = "settingsSections"
-    case AnswerThumbs = "answerThumbnails"
-    case UserSummary = "userPublicSummary"
 }
 
 enum buttonCornerRadius : CGFloat {
@@ -224,6 +205,7 @@ enum UserErrors: ErrorType {
     case InvalidData
 }
 
+/* CORE DATABASE */
 enum SectionTypes : String {
     case activity = "activity"
     case personalInfo = "personalInfo"
@@ -246,6 +228,18 @@ enum SectionTypes : String {
         default: return nil
         }
     }
+}
+
+enum Item : String {
+    case Tags = "tags"
+    case Questions = "questions"
+    case Answers = "answers"
+    case Users = "users"
+    case Filters = "filters"
+    case Settings = "settings"
+    case SettingSections = "settingsSections"
+    case AnswerThumbs = "answerThumbnails"
+    case UserSummary = "userPublicSummary"
 }
 
 enum SettingTypes : String{
@@ -274,6 +268,13 @@ enum SettingTypes : String{
         default: return nil
         }
     }
+}
+
+enum AssetType {
+    case recordedImage
+    case albumImage
+    case recordedVideo
+    case albumVideo
 }
 
 /* EXTEND CUSTOM LOADING */

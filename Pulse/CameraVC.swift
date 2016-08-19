@@ -69,7 +69,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     private func startVideoCapture() {
-        _cameraOverlay.countdownTimer(videoDuration)
+        _cameraOverlay.countdownTimer(videoDuration / 10) //convert to seconds
         _Camera.startRecordingVideo()
     }
     
@@ -186,7 +186,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     func respondToShutterTap() {
-        _Camera.cameraVideoDuration = 0.2
+        _Camera.cameraVideoDuration = 0.1
         takeImage()
     }
     

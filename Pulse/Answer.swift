@@ -14,19 +14,17 @@ class Answer : NSObject {
     var qID : String
     var uID : String?
     var aLocation : String?
-    dynamic var aURL : NSURL! //used to indicate when upload is completed - do not remove dynamic keyword to allow notification observers
+    var aImage : UIImage?
+    var thumbImage : UIImage?
+    var aType : AssetType?
+    dynamic var aURL : NSURL! //used to indicate local file location or when upload is completed - do not remove dynamic keyword to allow notification observers
     
-    init(aID: String, qID:String, uID : String, aURL : NSURL) {
+    init(aID: String, qID:String, uID : String, aType : AssetType, aLocation : String?) {
         self.aID = aID
         self.qID = qID
         self.uID = uID
-        self.aURL = aURL
-    }
-    
-    init(aID: String, qID:String, aURL : NSURL) {
-        self.aID = aID
-        self.qID = qID
-        self.aURL = aURL
+        self.aType = aType
+        self.aLocation = aLocation
     }
     
     init(aID: String, qID:String, uID : String) {

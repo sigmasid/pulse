@@ -515,7 +515,6 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
                         }
                     })
                 } else {
-                    print("error is nil with output file, going to execute video")
                     _executeVideoCompletitionWithURL(outputFileURL, error: nil)
                 }
             } else {
@@ -625,9 +624,8 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         if let validCompletition = videoCompletition {
 
             let _duration = movieOutput?.recordedDuration.seconds
-            print("have valid completion with duration \(_duration)")
 
-            if _duration > 1.1 {
+            if _duration > 0.5 {
                 validCompletition(videoURL: url, image: nil, error: error)
                 self.videoCompletition = nil
             } else {
@@ -640,17 +638,13 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
             }
         } else if _didReachMaxRecording {
             let _duration = movieOutput?.recordedDuration.seconds
-            print("have valid completion with duration \(_duration)")
 
-            if _duration > 1.1 {
-                print("it's a max video")
+            if _duration > 0.5 {
                 maxRecordingDelegate.didReachMaxRecording(url, image: nil, error: error)
             } else {
-                print("it's an image")
                 if let url = url {
                     capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, error) in
                         if self._didReachMaxRecording {
-                            print("sending image back")
                             self.maxRecordingDelegate.didReachMaxRecording(nil, image: image, error: error)
                         }
                     })

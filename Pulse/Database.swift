@@ -379,18 +379,32 @@ class Database {
         })
     }
     
-    ///Save user answers to Pulse database after Auth
-    static func addUserAnswersToDatabase( aID: String, qID: String, completion: (success : Bool, error : NSError?) -> Void) {
+    ///Save individual answer to Pulse database after Auth
+    static func addUserAnswersToDatabase( answer : Answer, completion: (success : Bool, error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
-        let post = ["users/\(_user!.uid)/answers/\(aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(qID)" : "true","questions/\(qID)/answers/\(aID)" : true]
+        
+        var answersPost = [String : String]()
+        if answer.aLocation != nil {
+            answersPost = ["qID": answer.qID, "uID": _user!.uid, "location" : answer.aLocation!]
+        } else {
+            answersPost = ["qID": answer.qID, "uID": _user!.uid]
+        }
+        
+        let post : [NSObject : AnyObject] = ["users/\(_user!.uid)/answers/\(answer.aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(answer.qID)" : "true","questions/\(answer.qID)/answers/\(answer.aID)" : true, "answers/\(answer.aID)" : answersPost]
+
         if _user != nil {
-            databaseRef.updateChildValues(post, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+            databaseRef.updateChildValues(post , withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                 error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
             })
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(success: false, error: NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
         }
+    }
+    
+    ///Save collection into question / user
+    static func addAnswerCollectionToDatabase(completion: (success : Bool, error : NSError?) -> Void) {
+        
     }
     
     static func addAnswerVote(_vote : AnswerVoteType, aID : String, completion: (success : Bool, error : NSError?) -> Void) {

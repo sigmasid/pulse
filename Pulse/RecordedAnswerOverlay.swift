@@ -10,24 +10,24 @@ import UIKit
 
 class RecordedAnswerOverlay: UIView {
     private var _saveToDiskButton = UIButton()
+    private var _addMoreButton = UIButton()
     private var _postButton = UIButton()
     private var _closeButton = UIButton()
     private var _savingLabel = UILabel()
     private var _progressBar = UIProgressView()
    
     private var _iconSize : CGFloat = IconSizes.XSmall.rawValue
-    private var _postButtonHeight : CGFloat = IconSizes.Medium.rawValue
     
     var tap : UITapGestureRecognizer!
     
     internal enum ControlButtons: Int {
-        case Save, Post, Close
+        case Save, Post, Close, AddMore
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self.addPostButton()
+        self.addFooterButtons()
         self.addCloseButton()
         self.addSaveButton()
     }
@@ -54,7 +54,41 @@ class RecordedAnswerOverlay: UIView {
         case .Save: return _saveToDiskButton
         case .Post: return _postButton
         case .Close: return _closeButton
+        case .AddMore: return _addMoreButton
         }
+    }
+    
+    private func addFooterButtons() {
+        addSubview(_postButton)
+        addSubview(_addMoreButton)
+
+        _postButton.backgroundColor = UIColor( red: 35/255, green: 31/255, blue:32/255, alpha: 1.0 )
+        _postButton.setTitle("DONE", forState: UIControlState.Normal)
+        _postButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
+        _postButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
+        _postButton.setImage(UIImage(named: "check"), forState: .Normal)
+        _postButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
+        _postButton.imageView?.contentMode = .ScaleAspectFit
+
+        _addMoreButton.backgroundColor = UIColor( red: 35/255, green: 31/255, blue:32/255, alpha: 1.0 )
+        _addMoreButton.setTitle("ADD MORE", forState: UIControlState.Normal)
+        _addMoreButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
+        _addMoreButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
+        _addMoreButton.setImage(UIImage(named: "add"), forState: .Normal)
+        _addMoreButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
+        _addMoreButton.imageView?.contentMode = .ScaleAspectFit
+
+        _postButton.translatesAutoresizingMaskIntoConstraints = false
+        _postButton.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
+        _postButton.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.5).active = true
+        _postButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
+        _postButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        
+        _addMoreButton.translatesAutoresizingMaskIntoConstraints = false
+        _addMoreButton.bottomAnchor.constraintEqualToAnchor(_postButton.bottomAnchor).active = true
+        _addMoreButton.widthAnchor.constraintEqualToAnchor(_postButton.widthAnchor).active = true
+        _addMoreButton.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+        _addMoreButton.heightAnchor.constraintEqualToAnchor(_postButton.heightAnchor).active = true
     }
     
     private func addSaveButton() {
@@ -65,26 +99,10 @@ class RecordedAnswerOverlay: UIView {
         
         _saveToDiskButton.translatesAutoresizingMaskIntoConstraints = false
         
-        _saveToDiskButton.topAnchor.constraintEqualToAnchor(_closeButton.bottomAnchor, constant: Spacing.m.rawValue).active = true
-        _saveToDiskButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -Spacing.m.rawValue).active = true
+        _saveToDiskButton.topAnchor.constraintEqualToAnchor(_closeButton.topAnchor).active = true
+        _saveToDiskButton.leadingAnchor.constraintEqualToAnchor(_closeButton.trailingAnchor, constant: Spacing.s.rawValue).active = true
         _saveToDiskButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _saveToDiskButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
-    }
-    
-    private func addPostButton() {
-        _postButton.backgroundColor = UIColor( red: 245/255, green: 44/255, blue:90/255, alpha: 1.0 )
-        _postButton.setTitle("Post Answer", forState: UIControlState.Normal)
-        _postButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
-        _postButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
-        
-        self.addSubview(_postButton)
-        
-        _postButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        _postButton.bottomAnchor.constraintEqualToAnchor(self.bottomAnchor).active = true
-        _postButton.widthAnchor.constraintEqualToAnchor(self.widthAnchor).active = true
-        _postButton.leadingAnchor.constraintEqualToAnchor(self.leadingAnchor).active = true
-        _postButton.heightAnchor.constraintEqualToConstant(_postButtonHeight).active = true
     }
     
     private func addCloseButton() {
@@ -97,8 +115,8 @@ class RecordedAnswerOverlay: UIView {
         
         _closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        _closeButton.topAnchor.constraintEqualToAnchor(self.topAnchor, constant: _postButtonHeight).active = true
-        _closeButton.trailingAnchor.constraintEqualToAnchor(self.trailingAnchor, constant: -Spacing.m.rawValue).active = true
+        _closeButton.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue + IconSizes.XSmall.rawValue).active = true
+        _closeButton.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.s.rawValue).active = true
         _closeButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _closeButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
     }
@@ -114,10 +132,10 @@ class RecordedAnswerOverlay: UIView {
         
         _savingLabel.translatesAutoresizingMaskIntoConstraints = false
         
-        _savingLabel.centerXAnchor.constraintEqualToAnchor(self.centerXAnchor).active = true
-        _savingLabel.centerYAnchor.constraintEqualToAnchor(self.centerYAnchor).active = true
-        _savingLabel.widthAnchor.constraintEqualToAnchor(self.widthAnchor, multiplier: 0.7).active = true
-        _savingLabel.heightAnchor.constraintEqualToConstant(_postButtonHeight).active = true
+        _savingLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        _savingLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
+        _savingLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.7).active = true
+        _savingLabel.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
     }
     
     func hideSavingLabel(label : String) {
@@ -128,7 +146,7 @@ class RecordedAnswerOverlay: UIView {
         dispatch_after(time, dispatch_get_main_queue()) {
             self._savingLabel.centerXAnchor.constraintEqualToAnchor(self.centerXAnchor).active = false
             self._savingLabel.centerYAnchor.constraintEqualToAnchor(self.centerYAnchor).active = false
-            self._savingLabel.heightAnchor.constraintEqualToConstant(self._postButtonHeight).active = false
+            self._savingLabel.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = false
             self._savingLabel.widthAnchor.constraintEqualToAnchor(self.widthAnchor, multiplier: 0.7).active = false
             super.updateConstraints()
 
@@ -140,6 +158,10 @@ class RecordedAnswerOverlay: UIView {
         }
     }
     
+    func addAnswerMakers(num : Int) {
+        
+    }
+    
     func addUploadProgressBar() {
         _progressBar.progressTintColor = UIColor.whiteColor()
         _progressBar.trackTintColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
@@ -149,10 +171,10 @@ class RecordedAnswerOverlay: UIView {
         
         _progressBar.translatesAutoresizingMaskIntoConstraints = false
 
-        _progressBar.centerXAnchor.constraintEqualToAnchor(self.centerXAnchor).active = true
-        _progressBar.topAnchor.constraintEqualToAnchor(self.topAnchor).active = true
-        _progressBar.heightAnchor.constraintEqualToConstant(self._postButtonHeight / 2).active = true
-        _progressBar.widthAnchor.constraintEqualToAnchor(self.widthAnchor).active = true
+        _progressBar.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        _progressBar.topAnchor.constraintEqualToAnchor(topAnchor).active = true
+        _progressBar.heightAnchor.constraintEqualToConstant(IconSizes.XSmall.rawValue).active = true
+        _progressBar.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
     }
     
     func updateProgressBar(percentComplete : Float) {
