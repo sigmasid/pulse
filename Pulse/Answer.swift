@@ -19,12 +19,20 @@ class Answer : NSObject {
     var aType : AssetType?
     dynamic var aURL : NSURL! //used to indicate local file location or when upload is completed - do not remove dynamic keyword to allow notification observers
     
-    init(aID: String, qID:String, uID : String, aType : AssetType, aLocation : String?) {
+    init(aID: String, qID:String, uID : String, aType : AssetType, aLocation : String?, aImage : UIImage?, aURL : NSURL?) {
         self.aID = aID
         self.qID = qID
         self.uID = uID
         self.aType = aType
         self.aLocation = aLocation
+        
+        if aImage != nil {
+            self.aImage = aImage
+        }
+        
+        if aURL != nil {
+            self.aURL = aURL!
+        }
     }
     
     init(aID: String, qID:String, uID : String) {

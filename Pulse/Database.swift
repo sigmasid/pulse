@@ -390,7 +390,7 @@ class Database {
             answersPost = ["qID": answer.qID, "uID": _user!.uid]
         }
         
-        let post : [NSObject : AnyObject] = ["users/\(_user!.uid)/answers/\(answer.aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(answer.qID)" : "true","questions/\(answer.qID)/answers/\(answer.aID)" : true, "answers/\(answer.aID)" : answersPost]
+        let post : [NSObject : AnyObject] = ["answers/\(answer.aID)" : answersPost]
 
         if _user != nil {
             databaseRef.updateChildValues(post , withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
@@ -403,8 +403,19 @@ class Database {
     }
     
     ///Save collection into question / user
-    static func addAnswerCollectionToDatabase(completion: (success : Bool, error : NSError?) -> Void) {
+    static func addAnswerCollectionToDatabase(firstAnswer : Answer, post : [String : Bool], completion: (success : Bool, error : NSError?) -> Void) {
+        let _user = FIRAuth.auth()?.currentUser
         
+        let collectionPost : [NSObject : AnyObject] = ["users/\(_user!.uid)/answers/\(firstAnswer.aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(firstAnswer.qID)" : "true","questions/\(firstAnswer.qID)/answers/\(firstAnswer.aID)" : true, "answerCollections/\(firstAnswer.aID)" : post]
+        
+        if _user != nil {
+            databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
+            })
+        } else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(success: false, error: NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+        }
     }
     
     static func addAnswerVote(_vote : AnswerVoteType, aID : String, completion: (success : Bool, error : NSError?) -> Void) {

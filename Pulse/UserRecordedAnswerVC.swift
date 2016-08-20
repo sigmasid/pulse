@@ -14,15 +14,42 @@ import Photos
 class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     private var uploadTask : FIRStorageUploadTask!
-    var currentAnswer : Answer!
 
     // set by the delegate
-    var fileURL : NSURL?
-    var capturedImage : UIImage?
-    var currentQuestion : Question?
-    var aLocation : String?
-    var currentAssetType : AssetType?
-    var currentAnswers : [Answer]!
+    var currentAnswer : Answer! {
+        didSet {
+            if currentAnswer.aType == .recordedVideo || currentAnswer.aType == .albumVideo {
+                setupVideoForAnswer()
+            } else if currentAnswer.aType == .recordedImage || currentAnswer.aType == .albumImage {
+                setupImageForAnswer()
+            }
+        }
+    }
+    
+    var currentQuestion : Question! {
+        didSet {
+            _controlsOverlay = RecordedAnswerOverlay(frame: view.bounds)
+            
+            if currentQuestion.hasFilters() {
+                _answersFilters = FiltersOverlay(frame: view.bounds)
+                _answersFilters!.currentQuestion = currentQuestion
+                view.addSubview(_answersFilters!)
+                view.addSubview(_controlsOverlay)
+            } else {
+                view.addSubview(_controlsOverlay)
+            }
+            setupOverlayButtons()
+        }
+    }
+    
+    //does not include currentAnswer - added after processing when uploading file or adding more
+    var currentAnswers : [Answer]! {
+        didSet {
+
+                print("trying to draw pagers with count \(currentAnswers.count + 1)")
+                _controlsOverlay.addAnswerPagers(currentAnswers.count + 1)
+        }
+    }
     weak var delegate : childVCDelegate?
     
     private var _controlsOverlay : RecordedAnswerOverlay!
@@ -42,86 +69,71 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(true)
-
-        if let _currentQuestion = currentQuestion {
-            currentAnswer = createAnswer()
-            if currentAssetType != nil && currentAssetType == .recordedVideo || currentAssetType == .albumVideo {
-                if !_isVideoLoaded {
-                    aPlayer = AVPlayer()
-                    
-                    avPlayerLayer = AVPlayerLayer(player: aPlayer)
-                    avPlayerLayer.frame = view.bounds
-
-                    _isVideoLoaded = true
-                }
-                
-                view.layer.addSublayer(avPlayerLayer)
-                
-                if currentAssetType == .recordedVideo {
-                    processVideo(fileURL!) { (resultURL, thumbnailImage, error) in
-                        if let resultURL = resultURL {
-                            let currentVideo = AVPlayerItem(URL: resultURL)
-                            self.currentAnswer.aURL = resultURL
-                            self.currentAnswer.aType = .recordedVideo
-
-                            print("video URL is \(self.currentAnswer.aURL)")
-                            self.currentAnswer.thumbImage = thumbnailImage
-                            self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
-                            self.aPlayer.play()
-                        } else {
-                            GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
-                        }
-                    }
-                } else if currentAssetType == .albumVideo {
-                    compressVideo(fileURL!, completion: {(resultURL, thumbnailImage, error) in
-                        if let resultURL = resultURL {
-                            let currentVideo = AVPlayerItem(URL: resultURL)
-                            self.currentAnswer.aURL = resultURL
-                            self.currentAnswer.thumbImage = thumbnailImage
-                            self.currentAnswer.aType = .albumVideo
-
-                            self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
-                            self.aPlayer.play()
-                        } else {
-                            GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
-                        }
-                    })
-                }
-                
-            } else if currentAssetType != nil && currentAssetType == .recordedImage || currentAssetType == .albumImage {
-                print("setting image for current answer")
-                
-                if !_isImageViewLoaded {
-                    imageView = UIImageView(frame: view.bounds)
-                    imageView.contentMode = .ScaleAspectFill
-                    view.addSubview(imageView)
-
-                    _isImageViewLoaded = true
-                }
-                
-                view.bringSubviewToFront(imageView)
-                imageView.image = capturedImage
-                currentAnswer.aImage = capturedImage
-                
-                if currentAssetType == .recordedImage {
-                    currentAnswer.aType = .recordedImage
-                } else {
-                    currentAnswer.aType = .albumImage
-                }
-            }
+    }
+    
+    private func setupImageForAnswer() {
+        if !_isImageViewLoaded {
+            imageView = UIImageView(frame: view.bounds)
+            imageView.contentMode = .ScaleAspectFill
+            view.addSubview(imageView)
             
-            _controlsOverlay = RecordedAnswerOverlay(frame: view.frame)
-            
-            if _currentQuestion.hasFilters() {
-                _answersFilters = FiltersOverlay(frame: view.frame)
-                _answersFilters!.currentQuestion = currentQuestion
-                view.addSubview(_answersFilters!)
-                view.addSubview(_controlsOverlay)
-            } else {
-                view.addSubview(_controlsOverlay)
-            }
-            setupOverlayButtons()
+            _isImageViewLoaded = true
         }
+        
+        view.bringSubviewToFront(imageView)
+        arrangeViews()
+        
+        imageView.image = currentAnswer.aImage
+    }
+    
+    private func setupVideoForAnswer() {
+        //don't create new AVPlayer if it already exists
+        if !_isVideoLoaded {
+            aPlayer = AVPlayer()
+            
+            avPlayerLayer = AVPlayerLayer(player: aPlayer)
+            avPlayerLayer.frame = view.bounds
+            
+            _isVideoLoaded = true
+        }
+        
+        //reorder views so controls & filters are still on top
+        view.layer.addSublayer(avPlayerLayer)
+        arrangeViews()
+        
+        if currentAnswer.aType == .recordedVideo {
+            processVideo(currentAnswer.aURL) { (resultURL, thumbnailImage, error) in
+                if let resultURL = resultURL {
+                    let currentVideo = AVPlayerItem(URL: resultURL)
+                    self.currentAnswer.aURL = resultURL
+                    self.currentAnswer.thumbImage = thumbnailImage
+                    self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                    self.aPlayer.play()
+                } else {
+                    GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                }
+            }
+        } else if currentAnswer.aType == .albumVideo {
+            compressVideo(currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
+                if let resultURL = resultURL {
+                    let currentVideo = AVPlayerItem(URL: resultURL)
+                    self.currentAnswer.aURL = resultURL
+                    self.currentAnswer.thumbImage = thumbnailImage
+                    self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                    self.aPlayer.play()
+                } else {
+                    GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                }
+            })
+        }
+    }
+    
+    //move the controls and filters to top layer
+    private func arrangeViews() {
+        if _answersFilters != nil {
+            view.bringSubviewToFront(_answersFilters!)
+        }
+        view.bringSubviewToFront(_controlsOverlay!)
     }
     
     func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
@@ -147,9 +159,15 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///close window and go back to camera
     func _close() {
-        if let delegate = delegate {
-            delegate.userDismissedRecording(self)
+        // need to check if it was first answer -> if yes, go to camera else stay in UserRecordedAnswer and go back to last question, remove the current answer value from currentAnswers
+        if currentAnswers.count == 1 {
+            if let delegate = delegate {
+                delegate.userDismissedRecording(self)
+            }
+        } else {
+            currentAnswers.removeLast()
         }
+
     }
     
     ///post video to firebase
@@ -171,9 +189,6 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     ///upload video to firebase and update current answer with URL upon success
     private func uploadAnswer() {
         currentAnswers.append(currentAnswer)
-        
-        let totalAnswers = currentAnswers.count
-        print("total answers is \(totalAnswers)")
         
         for answer in currentAnswers {
             answerCollectionPost[answer.aID] = false
@@ -286,32 +301,30 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
-    private func createAnswer() -> Answer {
-        let answerKey = databaseRef.child("answers").childByAutoId().key
-        print("answerKey is \(answerKey)")
-        
-        return Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser!.uID!, aType: currentAssetType!, aLocation: aLocation)
-    }
-    
     ///Called after user has completed sharing the answer
     private func doneCreatingAnswer() {
         print("done uploading answer")
-        
-        if let delegate = delegate {
-            delegate.doneUploadingAnswer(self)
-        }
+        Database.addAnswerCollectionToDatabase(currentAnswers.first!, post: answerCollectionPost, completion: {(success, error) in
+            if success {
+                print("added answer collection to database")
+            }
+            if let delegate = self.delegate {
+                delegate.doneUploadingAnswer(self)
+            }
+        })
     }
     
     ///User clicked save to album button
     func _save(sender: UIButton!) {
         _controlsOverlay.addSavingLabel("Saving...")
-        if fileURL != nil && currentAssetType == .recordedVideo || currentAssetType == .albumVideo {
-            _saveVideoToAlbum(fileURL!)
-        } else if capturedImage != nil && currentAssetType == .recordedImage || currentAssetType == .albumImage {
-            _saveImageToAlbum(capturedImage!)
+        
+        if currentAnswer.aType == .recordedVideo || currentAnswer.aType == .albumVideo {
+            _saveVideoToAlbum(currentAnswer.aURL)
+        } else if currentAnswer.aType == .recordedVideo || currentAnswer.aType == .albumVideo {
+            _saveImageToAlbum(currentAnswer.aImage!)
         }
         else {
-            _controlsOverlay.hideSavingLabel("Sorry there was an error")
+            _controlsOverlay.hideSavingLabel("Sorry error saving file")
         }
     }
     

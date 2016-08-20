@@ -27,9 +27,9 @@ class RecordedAnswerOverlay: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self.addFooterButtons()
-        self.addCloseButton()
-        self.addSaveButton()
+        addFooterButtons()
+        addCloseButton()
+        addSaveButton()
     }
     
     func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
@@ -95,7 +95,7 @@ class RecordedAnswerOverlay: UIView {
         if let saveToDiskImage = UIImage(named: "download-to-disk") {
             _saveToDiskButton.setImage(saveToDiskImage, forState: UIControlState.Normal)
         }
-        self.addSubview(_saveToDiskButton)
+        addSubview(_saveToDiskButton)
         
         _saveToDiskButton.translatesAutoresizingMaskIntoConstraints = false
         
@@ -111,7 +111,7 @@ class RecordedAnswerOverlay: UIView {
         } else {
             _closeButton.titleLabel?.text = "Close"
         }
-        self.addSubview(_closeButton)
+        addSubview(_closeButton)
         
         _closeButton.translatesAutoresizingMaskIntoConstraints = false
         
@@ -128,7 +128,7 @@ class RecordedAnswerOverlay: UIView {
         _savingLabel.textAlignment = .Center
         _savingLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
         _savingLabel.textColor = UIColor.whiteColor()
-        self.addSubview(_savingLabel)
+        addSubview(_savingLabel)
         
         _savingLabel.translatesAutoresizingMaskIntoConstraints = false
         
@@ -136,6 +136,21 @@ class RecordedAnswerOverlay: UIView {
         _savingLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
         _savingLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.7).active = true
         _savingLabel.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+    }
+    
+    func addAnswerPagers(count : Int) {
+        let _pulseDot = UIView()
+        addSubview(_pulseDot)
+        
+        _pulseDot.translatesAutoresizingMaskIntoConstraints = false
+        _pulseDot.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -(CGFloat(count) * Spacing.m.rawValue) ).active = true
+        _pulseDot.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue + IconSizes.XSmall.rawValue).active = true
+        _pulseDot.widthAnchor.constraintEqualToConstant(IconSizes.XXSmall.rawValue).active = true
+        _pulseDot.heightAnchor.constraintEqualToAnchor(_pulseDot.widthAnchor).active = true
+    
+        _pulseDot.layoutIfNeeded()
+        _pulseDot.layer.cornerRadius = _pulseDot.frame.width / 2
+        _pulseDot.backgroundColor = UIColor.whiteColor()
     }
     
     func hideSavingLabel(label : String) {

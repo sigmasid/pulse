@@ -34,8 +34,8 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     var allQuestions = [Question?]()
     var questionCounter = 0
     var currentQuestion = Question!(nil)
-    lazy var currentAnswers = [Answer]()
     
+    private var currentAnswers = [Answer]()
     private var savedRecordedVideoVC : UserRecordedAnswerVC?
     private var questionPreviewOverlay : QuestionPreviewOverlay?
     private let answerVC = ShowAnswerVC()
@@ -125,24 +125,18 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     func doneRecording(assetURL : NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : AssetType?){
         _isShowingCamera = false
         let userAnswer : UserRecordedAnswerVC!
-
+        let answerKey = databaseRef.child("answers").childByAutoId().key
+        let answer = Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser!.uID!, aType: assetType!, aLocation: location, aImage: image, aURL: assetURL)
+        
         if savedRecordedVideoVC != nil {
             userAnswer = savedRecordedVideoVC
-            userAnswer.fileURL = nil
-            userAnswer.aLocation = nil
-            userAnswer.currentAssetType = nil
-            userAnswer.capturedImage = nil
         } else {
             userAnswer = UserRecordedAnswerVC()
+            userAnswer.currentQuestion = currentQuestion
         }
         
+        userAnswer.currentAnswer = answer
         userAnswer.delegate = self
-        
-        userAnswer.fileURL = assetURL
-        userAnswer.currentQuestion = currentQuestion
-        userAnswer.aLocation = location
-        userAnswer.currentAssetType = assetType
-        userAnswer.capturedImage = image
         userAnswer.currentAnswers = currentAnswers
         
         _isShowingUserRecordedVideo = true
@@ -175,6 +169,8 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     
     func doneUploadingAnswer(currentVC: UIViewController) {
         _isShowingUserRecordedVideo = false
+        currentAnswers.removeAll() // empty current answers array
+        
         if _hasMoreAnswers {
             returnToAnswers()
             GlobalFunctions.dismissVC(currentVC)
@@ -324,6 +320,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     func userDismissedRecording(currentVC : UIViewController) {
+        
         _isShowingUserRecordedVideo = false
         GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
         showCamera()

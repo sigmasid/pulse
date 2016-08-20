@@ -135,6 +135,7 @@ enum AnimationStyle {
 }
 
 enum IconSizes: CGFloat {
+    case XXSmall = 10
     case XSmall = 20
     case Small = 25
     case Medium = 50
