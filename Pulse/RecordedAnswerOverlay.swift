@@ -83,7 +83,7 @@ class RecordedAnswerOverlay: UIView {
         _postButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
         _postButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue * 0.9).active = true
         _postButton.layoutIfNeeded()
-        _postButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
+        _postButton.imageEdgeInsets = UIEdgeInsetsMake(15, -7.5, 15, 15)
         
         _addMoreButton.translatesAutoresizingMaskIntoConstraints = false
         _addMoreButton.bottomAnchor.constraintEqualToAnchor(_postButton.bottomAnchor).active = true
@@ -91,7 +91,7 @@ class RecordedAnswerOverlay: UIView {
         _addMoreButton.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
         _addMoreButton.heightAnchor.constraintEqualToAnchor(_postButton.heightAnchor).active = true
         _addMoreButton.layoutIfNeeded()
-        _addMoreButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
+        _addMoreButton.imageEdgeInsets = UIEdgeInsetsMake(16, -8, 16, 16)
 
     }
     
@@ -123,6 +123,8 @@ class RecordedAnswerOverlay: UIView {
         _closeButton.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.m.rawValue).active = true
         _closeButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _closeButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
+        _closeButton.imageEdgeInsets = UIEdgeInsetsMake(2, 2, 2, 2)
+
     }
     
     func addSavingLabel(label : String) {

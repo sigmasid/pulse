@@ -129,7 +129,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     /// Property to change video duration.
-    public var cameraVideoDuration : Double = 10 {
+    public var cameraVideoDuration : Double = 60 {
         didSet {
             if cameraIsSetup {
                 _updateMaxDuration(cameraVideoDuration)
@@ -578,9 +578,10 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     
-    /// set the max video duration to specified duration in seconds
+    /// set the max video duration to specified duration in milliseconds
     private func _updateMaxDuration(duration: Double) {
-        movieOutput?.maxRecordedDuration = CMTimeMakeWithSeconds(duration, 10)
+        let preferredTimeScale : Int32 = 600
+        movieOutput?.maxRecordedDuration = CMTimeMakeWithSeconds(duration / 10, preferredTimeScale)
     }
     
     private func _zoom(scale: CGFloat) {
