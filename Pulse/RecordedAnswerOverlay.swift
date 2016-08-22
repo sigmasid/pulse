@@ -15,7 +15,8 @@ class RecordedAnswerOverlay: UIView {
     private var _closeButton = UIButton()
     private var _savingLabel = UILabel()
     private var _progressBar = UIProgressView()
-   
+    
+    private var _pagers = [UIView]()
     private var _iconSize : CGFloat = IconSizes.XSmall.rawValue
     
     var tap : UITapGestureRecognizer!
@@ -64,31 +65,34 @@ class RecordedAnswerOverlay: UIView {
 
         _postButton.backgroundColor = UIColor( red: 35/255, green: 31/255, blue:32/255, alpha: 1.0 )
         _postButton.setTitle("DONE", forState: UIControlState.Normal)
-        _postButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
+        _postButton.titleLabel!.font = UIFont.systemFontOfSize(FontSizes.Body.rawValue, weight: UIFontWeightRegular)
         _postButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
         _postButton.setImage(UIImage(named: "check"), forState: .Normal)
-        _postButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
         _postButton.imageView?.contentMode = .ScaleAspectFit
 
         _addMoreButton.backgroundColor = UIColor( red: 35/255, green: 31/255, blue:32/255, alpha: 1.0 )
         _addMoreButton.setTitle("ADD MORE", forState: UIControlState.Normal)
-        _addMoreButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleSubheadline)
+        _addMoreButton.titleLabel!.font = UIFont.systemFontOfSize(FontSizes.Body.rawValue, weight: UIFontWeightRegular)
         _addMoreButton.setTitleColor(UIColor.whiteColor(), forState: UIControlState.Normal)
         _addMoreButton.setImage(UIImage(named: "add"), forState: .Normal)
-        _addMoreButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
         _addMoreButton.imageView?.contentMode = .ScaleAspectFit
 
         _postButton.translatesAutoresizingMaskIntoConstraints = false
         _postButton.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
         _postButton.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.5).active = true
         _postButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
-        _postButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        _postButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue * 0.9).active = true
+        _postButton.layoutIfNeeded()
+        _postButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
         
         _addMoreButton.translatesAutoresizingMaskIntoConstraints = false
         _addMoreButton.bottomAnchor.constraintEqualToAnchor(_postButton.bottomAnchor).active = true
         _addMoreButton.widthAnchor.constraintEqualToAnchor(_postButton.widthAnchor).active = true
         _addMoreButton.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
         _addMoreButton.heightAnchor.constraintEqualToAnchor(_postButton.heightAnchor).active = true
+        _addMoreButton.layoutIfNeeded()
+        _addMoreButton.imageEdgeInsets = UIEdgeInsetsMake(10, -10, 10, 10)
+
     }
     
     private func addSaveButton() {
@@ -100,7 +104,7 @@ class RecordedAnswerOverlay: UIView {
         _saveToDiskButton.translatesAutoresizingMaskIntoConstraints = false
         
         _saveToDiskButton.topAnchor.constraintEqualToAnchor(_closeButton.topAnchor).active = true
-        _saveToDiskButton.leadingAnchor.constraintEqualToAnchor(_closeButton.trailingAnchor, constant: Spacing.s.rawValue).active = true
+        _saveToDiskButton.leadingAnchor.constraintEqualToAnchor(_closeButton.trailingAnchor, constant: Spacing.m.rawValue).active = true
         _saveToDiskButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _saveToDiskButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
     }
@@ -116,7 +120,7 @@ class RecordedAnswerOverlay: UIView {
         _closeButton.translatesAutoresizingMaskIntoConstraints = false
         
         _closeButton.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue + IconSizes.XSmall.rawValue).active = true
-        _closeButton.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.s.rawValue).active = true
+        _closeButton.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.m.rawValue).active = true
         _closeButton.widthAnchor.constraintEqualToConstant(_iconSize).active = true
         _closeButton.heightAnchor.constraintEqualToConstant(_iconSize).active = true
     }
@@ -139,18 +143,24 @@ class RecordedAnswerOverlay: UIView {
     }
     
     func addAnswerPagers(count : Int) {
-        let _pulseDot = UIView()
-        addSubview(_pulseDot)
+        _pagers.append(UIView())
+        addSubview(_pagers.last!)
+
+        _pagers.last!.translatesAutoresizingMaskIntoConstraints = false
+        _pagers.last!.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -(CGFloat(count) * Spacing.m.rawValue) ).active = true
+        _pagers.last!.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue + IconSizes.XSmall.rawValue).active = true
+        _pagers.last!.widthAnchor.constraintEqualToConstant(IconSizes.XXSmall.rawValue).active = true
+        _pagers.last!.heightAnchor.constraintEqualToAnchor(_pagers.last!.widthAnchor).active = true
         
-        _pulseDot.translatesAutoresizingMaskIntoConstraints = false
-        _pulseDot.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -(CGFloat(count) * Spacing.m.rawValue) ).active = true
-        _pulseDot.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue + IconSizes.XSmall.rawValue).active = true
-        _pulseDot.widthAnchor.constraintEqualToConstant(IconSizes.XXSmall.rawValue).active = true
-        _pulseDot.heightAnchor.constraintEqualToAnchor(_pulseDot.widthAnchor).active = true
+        _pagers.last!.layoutIfNeeded()
+        _pagers.last!.layer.cornerRadius = _pagers.last!.frame.width / 2
+        _pagers.last!.backgroundColor = UIColor.whiteColor()
+        
+    }
     
-        _pulseDot.layoutIfNeeded()
-        _pulseDot.layer.cornerRadius = _pulseDot.frame.width / 2
-        _pulseDot.backgroundColor = UIColor.whiteColor()
+    func removeAnswerPager() {
+        _pagers.last?.removeFromSuperview()
+        _pagers.removeLast()
     }
     
     func hideSavingLabel(label : String) {
@@ -171,10 +181,6 @@ class RecordedAnswerOverlay: UIView {
         UIView.animateWithDuration(1) { () -> Void in
             self.layoutIfNeeded()
         }
-    }
-    
-    func addAnswerMakers(num : Int) {
-        
     }
     
     func addUploadProgressBar() {

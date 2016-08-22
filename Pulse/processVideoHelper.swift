@@ -41,7 +41,7 @@ func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UII
     mainInstruction.timeRange = sourceDuration
     
     // Create an AVMutableVideoCompositionLayerInstruction for the video track and fix the orientation.
-    let videolayerInstruction : AVMutableVideoCompositionLayerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: clipVideoTrack)
+    let videolayerInstruction : AVMutableVideoCompositionLayerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionVideoTrack)
     videolayerInstruction.setTransform(clipVideoTrack.preferredTransform, atTime: insertTime)
     videolayerInstruction.setOpacity(0.0, atTime: endTime)
     
@@ -89,6 +89,7 @@ func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UII
     exporter!.exportAsynchronouslyWithCompletionHandler({
         switch exporter!.status {
         case  AVAssetExportSessionStatus.Failed:
+            print(exporter?.error)
             let userInfo = [ NSLocalizedDescriptionKey : "export failed" ]
             completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
         case AVAssetExportSessionStatus.Cancelled:

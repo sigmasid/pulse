@@ -17,14 +17,14 @@ protocol childVCDelegate: class {
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
     func userDismissedCamera(_: UIViewController)
-    func userDismissedRecording(_: UIViewController)
+    func userDismissedRecording(_: UIViewController, _currentAnswers : [Answer])
     func showAlbumPicker(_: UIViewController)
     func minAnswersShown()
     func askUserQuestion()
     func showNextQuestion()
     func goBack(_ : UIViewController)
     func showQuestionPreviewOverlay()
-    func userClickedAddMoreToAnswer(_ : UIViewController, currentAnswer : Answer)
+    func userClickedAddMoreToAnswer(_ : UIViewController, _currentAnswers : [Answer])
 }
 
 class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
@@ -36,7 +36,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     var currentQuestion = Question!(nil)
     
     private var currentAnswers = [Answer]()
-    private var savedRecordedVideoVC : UserRecordedAnswerVC?
+    weak var savedRecordedVideoVC : UserRecordedAnswerVC?
     private var questionPreviewOverlay : QuestionPreviewOverlay?
     private let answerVC = ShowAnswerVC()
     weak var returnToParentDelegate : ParentDelegate!
@@ -129,15 +129,20 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         let answer = Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser!.uID!, aType: assetType!, aLocation: location, aImage: image, aURL: assetURL)
         
         if savedRecordedVideoVC != nil {
+            print("found existing user recorded video")
             userAnswer = savedRecordedVideoVC
         } else {
+            print("creating new user recorded video")
+
             userAnswer = UserRecordedAnswerVC()
             userAnswer.currentQuestion = currentQuestion
         }
         
-        userAnswer.currentAnswer = answer
         userAnswer.delegate = self
+        currentAnswers.append(answer)
+        userAnswer.isNewEntry = true
         userAnswer.currentAnswers = currentAnswers
+        userAnswer.currentAnswerIndex += 1
         
         _isShowingUserRecordedVideo = true
         GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
@@ -161,9 +166,9 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         })
     }
     
-    func userClickedAddMoreToAnswer(currentVC : UIViewController, currentAnswer : Answer) {
-        currentAnswers.append(currentAnswer)
+    func userClickedAddMoreToAnswer(currentVC : UIViewController, _currentAnswers : [Answer]) {
         savedRecordedVideoVC = currentVC as? UserRecordedAnswerVC
+        currentAnswers = _currentAnswers
         showCamera(true)
     }
     
@@ -319,8 +324,8 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         removeQuestionPreviewOverlay()
     }
     
-    func userDismissedRecording(currentVC : UIViewController) {
-        
+    func userDismissedRecording(currentVC : UIViewController, _currentAnswers : [Answer]) {
+        currentAnswers = _currentAnswers
         _isShowingUserRecordedVideo = false
         GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
         showCamera()

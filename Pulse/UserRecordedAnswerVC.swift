@@ -42,14 +42,31 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
-    //does not include currentAnswer - added after processing when uploading file or adding more
-    var currentAnswers : [Answer]! {
+    //includes currentAnswer - set by delegate - the image / video is replaced after processing when uploading file or adding more
+    var currentAnswers : [Answer]!
+    var isNewEntry = true
+    
+    var currentAnswerIndex : Int = 0 {
         didSet {
-
-                print("trying to draw pagers with count \(currentAnswers.count + 1)")
-                _controlsOverlay.addAnswerPagers(currentAnswers.count + 1)
+            if currentAnswerIndex == 0 {
+                if let delegate = delegate {
+                    delegate.userDismissedRecording(self, _currentAnswers : currentAnswers)
+                }
+            } else {
+                print("setting answer to \(currentAnswerIndex)")
+                currentAnswer = currentAnswers[currentAnswerIndex - 1] // adjust for array index vs. count
+            }
+        }
+        willSet {
+            if newValue < currentAnswerIndex {
+                print("user is removing entry, total entries after are \(newValue) and total entries are \(currentAnswers.count)")
+                isNewEntry = false
+            } else {
+                _controlsOverlay.addAnswerPagers(newValue)
+            }
         }
     }
+    
     weak var delegate : childVCDelegate?
     
     private var _controlsOverlay : RecordedAnswerOverlay!
@@ -101,30 +118,38 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         view.layer.addSublayer(avPlayerLayer)
         arrangeViews()
         
-        if currentAnswer.aType == .recordedVideo {
-            processVideo(currentAnswer.aURL) { (resultURL, thumbnailImage, error) in
-                if let resultURL = resultURL {
-                    let currentVideo = AVPlayerItem(URL: resultURL)
-                    self.currentAnswer.aURL = resultURL
-                    self.currentAnswer.thumbImage = thumbnailImage
-                    self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
-                    self.aPlayer.play()
-                } else {
-                    GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+        if isNewEntry {
+            if currentAnswer.aType == .recordedVideo {
+
+                processVideo(currentAnswer.aURL) { (resultURL, thumbnailImage, error) in
+                    if let resultURL = resultURL {
+                        let currentVideo = AVPlayerItem(URL: resultURL)
+                        self.currentAnswer.aURL = resultURL
+                        self.currentAnswer.thumbImage = thumbnailImage
+                        self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                        self.aPlayer.play()
+                    } else {
+                        GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                    }
                 }
+            } else if currentAnswer.aType == .albumVideo {
+
+                compressVideo(currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
+                    if let resultURL = resultURL {
+                        let currentVideo = AVPlayerItem(URL: resultURL)
+                        self.currentAnswer.aURL = resultURL
+                        self.currentAnswer.thumbImage = thumbnailImage
+                        self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+                        self.aPlayer.play()
+                    } else {
+                        GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                    }
+                })
             }
-        } else if currentAnswer.aType == .albumVideo {
-            compressVideo(currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
-                if let resultURL = resultURL {
-                    let currentVideo = AVPlayerItem(URL: resultURL)
-                    self.currentAnswer.aURL = resultURL
-                    self.currentAnswer.thumbImage = thumbnailImage
-                    self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
-                    self.aPlayer.play()
-                } else {
-                    GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
-                }
-            })
+        } else {
+            let currentVideo = AVPlayerItem(URL: currentAnswer.aURL)
+            aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
+            aPlayer.play()
         }
     }
     
@@ -153,21 +178,16 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     func _addMore() {
         if let delegate = delegate {
-            delegate.userClickedAddMoreToAnswer(self, currentAnswer: currentAnswer)
+            delegate.userClickedAddMoreToAnswer(self, _currentAnswers: currentAnswers)
         }
     }
     
     ///close window and go back to camera
     func _close() {
         // need to check if it was first answer -> if yes, go to camera else stay in UserRecordedAnswer and go back to last question, remove the current answer value from currentAnswers
-        if currentAnswers.count == 1 {
-            if let delegate = delegate {
-                delegate.userDismissedRecording(self)
-            }
-        } else {
-            currentAnswers.removeLast()
-        }
-
+        _controlsOverlay.removeAnswerPager()
+        currentAnswers.removeAtIndex(currentAnswerIndex - 1)
+        currentAnswerIndex = currentAnswerIndex - 1
     }
     
     ///post video to firebase
