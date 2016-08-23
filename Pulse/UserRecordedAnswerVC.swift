@@ -53,13 +53,11 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                     delegate.userDismissedRecording(self, _currentAnswers : currentAnswers)
                 }
             } else {
-                print("setting answer to \(currentAnswerIndex)")
                 currentAnswer = currentAnswers[currentAnswerIndex - 1] // adjust for array index vs. count
             }
         }
         willSet {
             if newValue < currentAnswerIndex {
-                print("user is removing entry, total entries after are \(newValue) and total entries are \(currentAnswers.count)")
                 isNewEntry = false
             } else {
                 _controlsOverlay.addAnswerPagers(newValue)
@@ -214,45 +212,33 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             answerCollectionPost[answer.aID] = false
             
             if answer.aType != nil && answer.aType == .recordedVideo || answer.aType == .albumVideo {
-                print("currently uploading video \(answer.aID)")
 
                 uploadVideo(answer, completion: {(success, _answerID) in
                     if success {
-                        print("successfully uploaded video for answer \(answer.aID)")
                         self.answerCollectionPost[_answerID!] = true
-                    } else {
-                        print("did not successfully upload video")
                     }
                     
                     if answer == self.currentAnswers.last {
-                        print("uploading last video")
                         self.doneCreatingAnswer()
                     }
                 })
             }
                 
             else if answer.aType != nil && answer.aType == .recordedImage || answer.aType == .albumImage {
-                print("currently uploading image for \(answer.aID)")
-
                 Database.uploadImage(.Answers, fileID: answer.aID, image: answer.aImage!, completion: {(success, error) in
                     if error != nil {
-                        print("error uploading image")
-//                        GlobalFunctions.showErrorBlock("Error Posting Image", erMessage: error!.localizedDescription)
+                        GlobalFunctions.showErrorBlock("Error Posting Image", erMessage: error!.localizedDescription)
                     } else {
-                        print("successfully uploaded image for answer \(answer.aID)")
                         self.answerCollectionPost[answer.aID] = true
                         
                         Database.addUserAnswersToDatabase(answer, completion: {(success, error) in
                             if !success {
                                 print(error)
-                            } else {
-                                print("added image to database")
                             }
                         })
                     }
                     
                     if answer == self.currentAnswers.last {
-                        print("uploading last image")
                         self.doneCreatingAnswer()
                     }
                 })
@@ -283,13 +269,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
                 
                 if self.currentAnswer.thumbImage != nil {
-                    Database.uploadImage(.AnswerThumbs, fileID: answer.aID, image: self.currentAnswer.thumbImage!, completion: { (success, error) in
-                        if success {
-                            print("uploaded thumbnail")
-                        } else {
-                            print("upload thumbnail failed \(error?.localizedDescription)")
-                        }
-                    })
+                    Database.uploadImage(.AnswerThumbs, fileID: answer.aID, image: self.currentAnswer.thumbImage!, completion: { (success, error) in } )
                 }
                 
                 Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
@@ -323,11 +303,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///Called after user has completed sharing the answer
     private func doneCreatingAnswer() {
-        print("done uploading answer")
         Database.addAnswerCollectionToDatabase(currentAnswers.first!, post: answerCollectionPost, completion: {(success, error) in
-            if success {
-                print("added answer collection to database")
-            }
             if let delegate = self.delegate {
                 delegate.doneUploadingAnswer(self)
             }

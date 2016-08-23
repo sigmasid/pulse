@@ -12,6 +12,7 @@ class AnswerOverlay: UIView {
 
     private var _headerBackground = UIView()
     private var _userBackground = UIView()
+    private var _exploreAnswer = UIButton()
     
     private let _tagLabel = PaddingLabel()
     private let _questionLabel = PaddingLabel()
@@ -85,6 +86,25 @@ class AnswerOverlay: UIView {
         addUserImage()
         addUserName()
         addLocation()
+        addExploreAnswer()
+    }
+    
+    private func addExploreAnswer() {
+        _exploreAnswer.hidden = true
+        addSubview(_exploreAnswer)
+        
+        _exploreAnswer.translatesAutoresizingMaskIntoConstraints = false
+        _exploreAnswer.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.xs.rawValue).active = true
+        _exploreAnswer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        _exploreAnswer.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.xs.rawValue).active = true
+        _exploreAnswer.heightAnchor.constraintEqualToAnchor(_exploreAnswer.widthAnchor).active = true
+        _exploreAnswer.layoutIfNeeded()
+        
+        _exploreAnswer.makeRound()
+        _exploreAnswer.titleLabel?.lineBreakMode = .ByWordWrapping
+        _exploreAnswer.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Caption2.rawValue, weight: UIFontWeightBold)
+        
+        _exploreAnswer.addTarget(self, action: #selector(handleExploreAnswerTap), forControlEvents: UIControlEvents.TouchDown)
     }
     
     ///Update question text
@@ -166,8 +186,29 @@ class AnswerOverlay: UIView {
         }
     }
     
+    func handleExploreAnswerTap() {
+        if delegate != nil {
+            delegate.userClickedExpandAnswer()
+        }
+    }
+    
     func getHeaderHeight() -> CGFloat {
         return _headerBackground.bounds.height  
+    }
+    
+    func showExploreAnswerDetail() {
+        _exploreAnswer.setTitle("EXPLORE ANSWER", forState: .Normal)
+        _exploreAnswer.setEnabled()
+        _exploreAnswer.hidden = false
+    }
+    
+    func hideExploreAnswerDetail() {
+        _exploreAnswer.hidden = true
+    }
+    
+    func updateExploreAnswerDetail() {
+        _exploreAnswer.setTitle("EXPLORING", forState: .Disabled)
+        _exploreAnswer.setDisabled()
     }
     
     private func addUserName() {
@@ -274,8 +315,8 @@ class AnswerOverlay: UIView {
         }
     }
     
-    /// Add video countdown
-    func addVideoTimerCountdown() {
+    /// Add clip countdown
+    func addClipTimerCountdown() {
         addSubview(_videoTimer)
         
         _videoTimer.translatesAutoresizingMaskIntoConstraints = false

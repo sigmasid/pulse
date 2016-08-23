@@ -18,9 +18,10 @@ protocol answerDetailDelegate : class {
     func userClickedAddAnswer()
     func userClickedShowMenu()
     func userSelectedFromExploreQuestions(index : NSIndexPath)
+    func userClickedExpandAnswer()
 }
 
-class ShowAnswerVC: UIViewController, answerDetailDelegate {
+class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerDelegate {
     internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded() {
@@ -33,28 +34,34 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         }
     }
     
-    internal var currentTag : Tag!
     internal var answerIndex = 0
-    
     internal var minAnswersToShow = 3
-    internal var currentAnswer : Answer?
-    private var userForCurrentAnswer : User?
-    private var currentUserImage : UIImage?
     
+    internal var currentTag : Tag!
+    internal var currentAnswer : Answer?
     private var nextAnswer : Answer?
+    private var userForCurrentAnswer : User?
+    
+    private var currentUserImage : UIImage?
     private var _avPlayerLayer: AVPlayerLayer!
     private var _answerOverlay : AnswerOverlay!
     private var qPlayer = AVQueuePlayer()
     private var currentPlayerItem : AVPlayerItem?
+    private var imageView : UIImageView!
     
-    private var _TapReady = false
-    private var _NextItemReady = false
-    private var _CanAdvanceReady = false
+    /* bools to make sure can click next video and no errors from unhandled observers */
+    private var _tapReady = false
+    private var _nextItemReady = false
+    private var _canAdvanceReady = false
     private var _hasUserBeenAskedQuestion = false
     private var isObserving = false
     private var isLoaded = false
     private var _isMenuShowing = false
     private var _isMiniProfileShown = false
+    private var _isImageViewShown = false
+    
+    lazy var currentAnswerCollection = [String]()
+    lazy var answerCollectionIndex = 0
 
     private var startObserver : AnyObject!
     private var miniProfile : MiniProfile?
@@ -64,6 +71,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
     
     weak var delegate : childVCDelegate!
     private var tap : UITapGestureRecognizer!
+    private var answerDetailTap : UITapGestureRecognizer!
+    private var expandAnswer : UIPinchGestureRecognizer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -75,17 +84,20 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         if !isLoaded {
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             view.addGestureRecognizer(tap)
+            
+            expandAnswer = UIPinchGestureRecognizer(target: self, action: #selector(handleExpandAnswer))
+            view.addGestureRecognizer(expandAnswer)
+            expandAnswer.enabled = false
         
             if (currentQuestion != nil){
                 _loadAnswer(currentQuestion, index: answerIndex)
                 _answerOverlay = AnswerOverlay(frame: view.bounds, iconColor: UIColor.blackColor(), iconBackground: UIColor.whiteColor())
-                _answerOverlay.addVideoTimerCountdown()
+                _answerOverlay.addClipTimerCountdown()
                 _answerOverlay.delegate = self
                 
                 _avPlayerLayer = AVPlayerLayer(player: qPlayer)
                 view.layer.insertSublayer(_avPlayerLayer, atIndex: 0)
-                view.insertSubview(_answerOverlay, atIndex: 1)
-                
+                view.insertSubview(_answerOverlay, atIndex: 2)
                 _avPlayerLayer.frame = view.bounds
                 qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
             }
@@ -95,7 +107,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
             startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
                 NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
             })
-            
             isLoaded = true
         }
     }
@@ -104,22 +115,36 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         super.viewDidDisappear(animated)
     }
     
+    func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
+    
     private func _loadAnswer(currentQuestion : Question, index: Int) {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-        self._CanAdvanceReady = false
+        _canAdvanceReady = false
         
         if let _answerID = currentQuestion.qAnswers?[index] {
+            Database.getAnswerCollection(_answerID, completion: {(hasDetail, answerCollection) in
+                if hasDetail {
+                    self._answerOverlay.showExploreAnswerDetail()
+                    self.currentAnswerCollection = answerCollection!
+                    self.expandAnswer.enabled = true
+                } else {
+                    self._answerOverlay.hideExploreAnswerDetail()
+                }
+            })
+            
             Database.getAnswer(_answerID, completion: { (answer, error) in
                 self.currentAnswer = answer
-                self._addVideo(answer.aID)
+                self._addClip(answer)
                 self._updateOverlayData(answer)
-                self._answerOverlay.addVideoTimerCountdown()
+                self._answerOverlay.addClipTimerCountdown()
                 self.answerIndex = index
 
                 if self._canAdvance(self.answerIndex + 1) {
-                    self._addNextVideoToQueue(self.currentQuestion.qAnswers![self.answerIndex + 1])
+                    self._addNextClipToQueue(self.currentQuestion.qAnswers![self.answerIndex + 1])
                     self.answerIndex += 1
-                    self._CanAdvanceReady = true
+                    self._canAdvanceReady = true
                 }
                 UIApplication.sharedApplication().networkActivityIndicatorVisible = false
 
@@ -131,19 +156,67 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         }
     }
     
-    private func _addVideo(answerID : String) {
-        Database.getAnswerURL(answerID, completion: { (URL, error) in
+    private func _loadAnswerCollections(index : Int) {
+        tap.enabled = false
+        answerDetailTap = UITapGestureRecognizer(target: self, action: #selector(handleAnswerDetailTap))
+        view.addGestureRecognizer(answerDetailTap)
+        
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        _canAdvanceReady = false
+        answerCollectionIndex = index
+
+        _addClip(currentAnswerCollection[answerCollectionIndex])
+        _answerOverlay.addClipTimerCountdown()
+        
+        if _canAdvanceAnswerDetail(answerCollectionIndex + 1) {
+            _addNextClipToQueue(currentAnswerCollection[answerCollectionIndex + 1])
+            answerCollectionIndex += 1
+            _canAdvanceReady = true
+        }
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+    }
+    
+    private func _addClip(answerID : String) {
+        Database.getAnswer(answerID, completion: { (answer, error) in
             if error != nil {
-                GlobalFunctions.showErrorBlock("Error Getting Answers", erMessage: error!.localizedDescription)
+                print("error getting question")
             } else {
-                self.currentPlayerItem = AVPlayerItem(URL: URL!)
-                if let _currentPlayerItem = self.currentPlayerItem {
-                    self.qPlayer.replaceCurrentItemWithPlayerItem(_currentPlayerItem)
-                    self.delegate.hasAnswersToShow()
-                    self.addObserverForStatusReady()
-                }
+                self._addClip(answer)
             }
         })
+    }
+    
+    private func _addClip(answer : Answer) {
+        guard let _answerType = answer.aType else {
+            return
+        }
+        
+        if _answerType == .recordedVideo || _answerType == .albumVideo {
+            Database.getAnswerURL(answer.aID, completion: { (URL, error) in
+                if (error != nil) {
+                    GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please go to next answer")
+                } else {
+                    self.currentPlayerItem = AVPlayerItem(URL: URL!)
+                    self.removeImageView()
+                    if let _currentPlayerItem = self.currentPlayerItem {
+                        self.qPlayer.replaceCurrentItemWithPlayerItem(_currentPlayerItem)
+                        self.delegate.hasAnswersToShow()
+                        self.addObserverForStatusReady()
+                    }
+                }
+            })
+        } else if _answerType == .recordedImage || _answerType == .albumImage {
+            Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
+                if error != nil {
+                    print("error getting image")
+                } else {
+                    if let _image = UIImage(data: data!) {
+                        let _orientatedImage = UIImage(CGImage: _image.CGImage!, scale: 1.0, orientation: .Up)
+                        self.showImageView(_orientatedImage)
+                    }
+                }
+            })
+        }
     }
     
     internal func _startCountdownTimer() {
@@ -189,22 +262,38 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         }
     }
     
-    private func _addNextVideoToQueue(nextAnswerID : String) {
-        _NextItemReady = false
+    private func _addNextClipToQueue(nextAnswerID : String) {
+        _nextItemReady = false
         
         Database.getAnswer(nextAnswerID, completion: { (answer, error) in
-            self.nextAnswer = answer
-            Database.getAnswerURL(nextAnswerID, completion: { (URL, error) in
-                if (error != nil) {
-                    print(error.debugDescription)
-                } else {
-                    let nextPlayerItem = AVPlayerItem(URL: URL!)
-                    if self.qPlayer.canInsertItem(nextPlayerItem, afterItem: nil) {
-                        self.qPlayer.insertItem(nextPlayerItem, afterItem: nil)
-                        self._NextItemReady = true
-                    }
+            if error != nil {
+                print("error getting answer")
+            } else {
+                self.nextAnswer = answer
+                
+                if self.nextAnswer!.aType == .recordedVideo || self.nextAnswer!.aType == .albumVideo {
+                    Database.getAnswerURL(nextAnswerID, completion: { (URL, error) in
+                        if (error != nil) {
+                            GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
+                        } else {
+                            let nextPlayerItem = AVPlayerItem(URL: URL!)
+                            if self.qPlayer.canInsertItem(nextPlayerItem, afterItem: nil) {
+                                self.qPlayer.insertItem(nextPlayerItem, afterItem: nil)
+                                self._nextItemReady = true
+                            }
+                        }
+                    })
+                } else if self.nextAnswer!.aType == .recordedImage || self.nextAnswer!.aType == .albumImage {
+                    Database.getImage(.Answers, fileID: nextAnswerID, maxImgSize: maxImgSize, completion: {(data, error) in
+                        if error != nil {
+                            GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
+                        } else {
+                            self._nextItemReady = true
+                            self.nextAnswer?.aImage = UIImage(data: data!)
+                        }
+                    })
                 }
-            })
+            }
         })
     }
     
@@ -213,8 +302,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
             switch self.qPlayer.status {
             case AVPlayerStatus.ReadyToPlay:
                 qPlayer.play()
-                if !_TapReady {
-                    _TapReady = true
+                if !_tapReady {
+                    _tapReady = true
                 }
                 break
             default: break
@@ -222,6 +311,57 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         }
     }
     
+    deinit {
+        removeObserverIfNeeded()
+    }
+    
+    private func removeObserverIfNeeded() {
+        if isObserving {
+            qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
+            isObserving = false
+        }
+    }
+    
+    private func addObserverForStatusReady() {
+        if qPlayer.currentItem != nil {
+            qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+            isObserving = true
+        }
+    }
+    
+    private func _canAdvance(index: Int) -> Bool{
+        return index < currentQuestion.totalAnswers() ? true : false
+    }
+    
+    private func _canAdvanceAnswerDetail(index: Int) -> Bool{
+        print("checking if can can advance with index \(index) and total count \(currentAnswerCollection.count)")
+        return index < currentAnswerCollection.count ? true : false
+    }
+    
+    //move the controls and filters to top layer
+    private func showImageView(image : UIImage) {
+        print("adding image view")
+        if _isImageViewShown {
+            imageView.image = image
+        } else {
+            imageView = UIImageView(frame: view.bounds)
+            imageView.image = image
+            imageView.contentMode = .ScaleAspectFill
+            view.insertSubview(imageView, atIndex: 1)
+            _isImageViewShown = true
+        }
+    }
+    
+    private func removeImageView() {
+        if _isImageViewShown {
+            print("removing image view")
+            imageView.image = nil
+            imageView.removeFromSuperview()
+            _isImageViewShown = false
+        }
+    }
+    
+    /* DELEGATE METHODS */
     func votedAnswer(_vote : AnswerVoteType) {
         _answerOverlay.addVote(_vote)
         
@@ -304,72 +444,106 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate {
         _answerOverlay.toggleMenu()
     }
     
-    deinit {
+    func userClickedExpandAnswer() {
         removeObserverIfNeeded()
+        _answerOverlay.updateExploreAnswerDetail()
+        _loadAnswerCollections(1)
     }
     
-    private func removeObserverIfNeeded() {
-        if isObserving {
-            qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
-            isObserving = false
-        }
-    }
-    
-    private func addObserverForStatusReady() {
-        if qPlayer.currentItem != nil {
-            qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
-            isObserving = true
-        }
-    }
-    
-    private func _canAdvance(index: Int) -> Bool{
-        return index < self.currentQuestion.totalAnswers() ? true : false
-    }
-    
-    /* HANDLE GESTURES */
+    /* MARK : HANDLE GESTURES */
     func handleTap() {
         if _isMiniProfileShown { //ignore tap
             return
         }
         
-//        print("answer index is \(answerIndex), camera shown \(_hasUserBeenAskedQuestion) and can advance \(_CanAdvanceReady)")
-        
-        if (answerIndex == minAnswersToShow && !_hasUserBeenAskedQuestion && _CanAdvanceReady) { //ask user to answer the question
+        if (answerIndex == minAnswersToShow && !_hasUserBeenAskedQuestion && _canAdvanceReady) { //ask user to answer the question
             if (delegate != nil) {
                 qPlayer.pause()
                 _hasUserBeenAskedQuestion = true
                 delegate.minAnswersShown()
             }
         }
-        else if (!_TapReady || (!_NextItemReady && _CanAdvanceReady)) {
-            //ignore swipe
+            
+        else if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
+            //ignore tap
         }
-        else if _CanAdvanceReady {
-            _TapReady = false
+        
+        else if _canAdvanceReady {
             _answerOverlay.resetTimer()
-            qPlayer.pause()
-            
-            removeObserverIfNeeded()
             _updateOverlayData(nextAnswer!)
-            qPlayer.advanceToNextItem()
-            addObserverForStatusReady()
-            
+
+            if nextAnswer?.aType == .recordedImage || nextAnswer?.aType == .albumImage {
+                if let _image = nextAnswer!.aImage {
+                    showImageView(_image)
+                }
+            } else if nextAnswer?.aType == .recordedVideo || nextAnswer?.aType == .albumVideo  {
+                removeImageView()
+                _tapReady = false
+                qPlayer.pause()
+                removeObserverIfNeeded()
+                qPlayer.advanceToNextItem()
+                addObserverForStatusReady()
+            }
+        
             currentAnswer = nextAnswer
             answerIndex += 1
             
             if _canAdvance(answerIndex) {
-                _addNextVideoToQueue(currentQuestion.qAnswers![answerIndex])
-                _CanAdvanceReady = true
-//                print("added next item to queue")
+                _addNextClipToQueue(currentQuestion.qAnswers![answerIndex])
+                _canAdvanceReady = true
             } else {
-                _CanAdvanceReady = false
-//                print("already added last item to queue")
+                _canAdvanceReady = false
             }
-        } else {
-//            print("no more answers")
+        }
+        
+        else {
             if (delegate != nil) {
                 delegate.noAnswersToShow(self)
             }
+        }
+    }
+    
+    func handleExpandAnswer(sender:UIPinchGestureRecognizer) {
+        handleAnswerDetailTap()
+    }
+    
+    func handleAnswerDetailTap() {
+        if _isMiniProfileShown {
+            return
+        }
+        
+        if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
+            //ignore tap
+        }
+        else if _canAdvanceReady {
+            
+            if nextAnswer?.aType == .recordedImage || nextAnswer?.aType == .albumImage {
+                if let _image = nextAnswer!.aImage {
+                    showImageView(_image)
+                }
+            } else if nextAnswer?.aType == .recordedVideo || nextAnswer?.aType == .albumVideo  {
+                removeImageView()
+                _tapReady = false
+                _answerOverlay.resetTimer()
+                qPlayer.pause()
+                
+                removeObserverIfNeeded()
+                qPlayer.advanceToNextItem()
+                addObserverForStatusReady()
+            }
+            
+            currentAnswer = nextAnswer
+            answerCollectionIndex += 1
+            
+            if _canAdvanceAnswerDetail(answerCollectionIndex) {
+                _addNextClipToQueue(currentAnswerCollection[answerCollectionIndex])
+                _canAdvanceReady = true
+            } else {
+                _canAdvanceReady = false
+            }
+        } else {
+//            print("done with detail - returning to main answer queue")
+            handleTap()
         }
     }
     

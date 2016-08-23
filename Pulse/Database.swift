@@ -22,6 +22,8 @@ class Database {
     static let tagsRef = databaseRef.child(Item.Tags.rawValue)
     static let questionsRef = databaseRef.child(Item.Questions.rawValue)
     static let answersRef = databaseRef.child(Item.Answers.rawValue)
+    static let answerCollectionsRef = databaseRef.child(Item.AnswerCollections.rawValue)
+
 
     static let usersRef = databaseRef.child(Item.Users.rawValue)
     static let usersPublicSummaryRef = databaseRef.child(Item.UserSummary.rawValue)
@@ -106,6 +108,20 @@ class Database {
         })
     }
     
+    static func getAnswerCollection(aCollectionID : String, completion: (hasDetail : Bool, answers : [String]?) -> Void) {
+        var answers = [String]()
+        answerCollectionsRef.child(aCollectionID).observeSingleEventOfType(.Value, withBlock: { snap in
+            if snap.childrenCount <= 1 {
+                completion(hasDetail : false, answers: nil)
+            } else {
+                for child in snap.children {
+                    answers.append(child.key as String)
+                }
+                completion(hasDetail : true, answers: answers)
+            }
+        })
+    }
+    
     static func getUser(uID : String, completion: (user : User, error : NSError?) -> Void) {
         usersPublicSummaryRef.child(uID).observeSingleEventOfType(.Value, withBlock: { snap in
             let _returnUser = User(uID: uID, snapshot: snap)
@@ -114,9 +130,9 @@ class Database {
     }
     
     static func getUserProperty(uID : String, property: String, completion: (property : String?) -> Void) {
+        print("trying to get \(property) for uID \(uID)")
         usersRef.child("\(uID)/\(property)").observeSingleEventOfType(.Value, withBlock: { snap in
-            if snap.value != nil {
-                let _property = snap.value as! String
+            if let _property = snap.value as? String {
                 completion(property : _property)
             } else {
                 completion(property :  nil)
@@ -383,11 +399,14 @@ class Database {
     static func addUserAnswersToDatabase( answer : Answer, completion: (success : Bool, error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         
-        var answersPost = [String : String]()
+        var answersPost = ["qID": answer.qID, "uID": _user!.uid]
+        
         if answer.aLocation != nil {
-            answersPost = ["qID": answer.qID, "uID": _user!.uid, "location" : answer.aLocation!]
-        } else {
-            answersPost = ["qID": answer.qID, "uID": _user!.uid]
+            answersPost["location"] = answer.aLocation!
+        }
+        
+        if answer.aType != nil {
+            answersPost["type"] = String(answer.aType!)
         }
         
         let post : [NSObject : AnyObject] = ["answers/\(answer.aID)" : answersPost]
@@ -454,8 +473,21 @@ class Database {
     
     /* STORAGE METHODS */
     static func getAnswerURL(fileID : String, completion: (URL : NSURL?, error : NSError?) -> Void) {
-        let _ = answersStorageRef.child(fileID).downloadURLWithCompletion { (URL, error) -> Void in
-            error != nil ? completion(URL: nil, error: error!) : completion(URL: URL, error: nil)
+        let path = answersStorageRef.child(fileID)
+        
+        let _ = path.downloadURLWithCompletion { (URL, error) -> Void in
+            error != nil ? completion(URL: nil, error: error!) : completion(URL: URL!, error: nil)
+        }
+    }
+    
+    
+    static func getAnswerMeta(fileID : String, completion: (contentType : MediaAssetType?, error : NSError?) -> Void) {
+        let path = answersStorageRef.child(fileID)
+        
+        path.metadataWithCompletion { (metadata, error) -> Void in
+            if let _metadata = metadata?.contentType {
+                error != nil ? completion(contentType : nil, error: error!) : completion(contentType: MediaAssetType.getAssetType(_metadata), error: nil)
+            }
         }
     }
     

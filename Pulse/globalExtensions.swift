@@ -195,6 +195,7 @@ enum buttonCornerRadius : CGFloat {
 
 
 enum FontSizes: CGFloat {
+    case Caption2 = 8
     case Caption = 10
     case Body = 14
     case Title = 16
@@ -240,6 +241,7 @@ enum Item : String {
     case Settings = "settings"
     case SettingSections = "settingsSections"
     case AnswerThumbs = "answerThumbnails"
+    case AnswerCollections = "answerCollections"
     case UserSummary = "userPublicSummary"
 }
 
@@ -271,11 +273,51 @@ enum SettingTypes : String{
     }
 }
 
-enum AssetType {
+enum CreatedAssetType {
     case recordedImage
     case albumImage
     case recordedVideo
     case albumVideo
+    
+    static func getAssetType(value : String?) -> CreatedAssetType? {
+        if let _value = value {
+            switch _value {
+            case "recordedImage": return .recordedImage
+            case "albumImage": return .albumImage
+            case "recordedVideo": return .recordedVideo
+            case "albumVideo": return .albumVideo
+                
+            default: return nil
+            }
+        } else {
+            return nil
+        }
+        
+    }
+}
+
+enum MediaAssetType {
+    case video
+    case image
+    case unknown
+    
+    static func getAssetType(metadata : String) -> MediaAssetType? {
+        switch metadata {
+        case "video/mp4": return .video
+        case "video/mpeg": return .video
+        case "video/mpeg-4": return .video
+        case "video/avi": return .video
+
+        case "image/jpeg": return .image
+        case "image/png": return .image
+        case "image/gif": return .image
+        case "image/pict": return .image
+        case "image/tiff": return .image
+        case "image/jpg": return .image
+            
+        default: return .unknown
+        }
+    }
 }
 
 /* EXTEND CUSTOM LOADING */

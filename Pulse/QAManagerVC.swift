@@ -12,7 +12,7 @@ import MobileCoreServices
 protocol childVCDelegate: class {
     func noAnswersToShow(_ : UIViewController)
     func hasAnswersToShow()
-    func doneRecording(_: NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : AssetType?)
+    func doneRecording(_: NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?)
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
@@ -122,7 +122,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
-    func doneRecording(assetURL : NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : AssetType?){
+    func doneRecording(assetURL : NSURL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?){
         _isShowingCamera = false
         let userAnswer : UserRecordedAnswerVC!
         let answerKey = databaseRef.child("answers").childByAutoId().key
@@ -389,13 +389,13 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
                 case _ where translation.y < -self.view.bounds.maxY / 3:
                     showNextQuestion()
                     pan.setTranslation(CGPointZero, inView: self.view)
-                    self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y) /*ADDED*/
+                    self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
                 case _ where translation.y < -20 && translation.y > -self.view.bounds.maxY / 4:
                     answerVC.votedAnswer(.Upvote)
                 case _ where translation.y > self.view.bounds.maxY / 3:
                     showPriorQuestion()
                     pan.setTranslation(CGPointZero, inView: self.view)
-                    self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y) /*ADDED*/
+                    self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
 
                 case _ where translation.y > 20 && translation.y < self.view.bounds.maxY / 4:
                     answerVC.votedAnswer(.Downvote)
@@ -414,8 +414,8 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
             } else if _isShowingUserRecordedVideo {
                 //userRecordedVC will handle
             }else if (translation.y < -20 || translation.y > 20) {
-                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y) /*ADDED*/
-                //ignore moving the screen if user was trying to move up / down - ha
+                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
+                //ignore moving the screen if user was trying to move up / down
             }
             else if (translation.x > 0) { //only go back but not go forward - animates as dragging the view off
                 self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
