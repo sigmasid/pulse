@@ -429,7 +429,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         
         if mediaType.isEqualToString(kUTTypeImage as String) {
             
-            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage            
             doneRecording(nil, image: pickedImage, currentVC: picker, location: nil, assetType: .albumImage)
             // Media is an image
 

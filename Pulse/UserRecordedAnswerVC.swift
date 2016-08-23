@@ -99,6 +99,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         arrangeViews()
         
         imageView.image = currentAnswer.aImage
+        currentAnswer.thumbImage = currentAnswer.aImage
     }
     
     private func setupVideoForAnswer() {
@@ -124,6 +125,8 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                         let currentVideo = AVPlayerItem(URL: resultURL)
                         self.currentAnswer.aURL = resultURL
                         self.currentAnswer.thumbImage = thumbnailImage
+                        self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
+
                         self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
                         self.aPlayer.play()
                     } else {
@@ -137,6 +140,8 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                         let currentVideo = AVPlayerItem(URL: resultURL)
                         self.currentAnswer.aURL = resultURL
                         self.currentAnswer.thumbImage = thumbnailImage
+                        self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
+                        
                         self.aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
                         self.aPlayer.play()
                     } else {
@@ -206,17 +211,19 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///upload video to firebase and update current answer with URL upon success
     private func uploadAnswer() {
-        currentAnswers.append(currentAnswer)
+        
+        if let _image = currentAnswers.first?.thumbImage  {
+            
+            Database.uploadImage(.AnswerThumbs, fileID: currentAnswers.first!.aID, image: _image, completion: { (success, error) in } )
+            
+        }
         
         for answer in currentAnswers {
-            answerCollectionPost[answer.aID] = false
+            answerCollectionPost[answer.aID] = true
             
             if answer.aType != nil && answer.aType == .recordedVideo || answer.aType == .albumVideo {
 
                 uploadVideo(answer, completion: {(success, _answerID) in
-                    if success {
-                        self.answerCollectionPost[_answerID!] = true
-                    }
                     
                     if answer == self.currentAnswers.last {
                         self.doneCreatingAnswer()
@@ -229,7 +236,6 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                     if error != nil {
                         GlobalFunctions.showErrorBlock("Error Posting Image", erMessage: error!.localizedDescription)
                     } else {
-                        self.answerCollectionPost[answer.aID] = true
                         
                         Database.addUserAnswersToDatabase(answer, completion: {(success, error) in
                             if !success {
@@ -267,10 +273,6 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             
             uploadTask.observeStatus(.Success) { snapshot in
                 self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
-                
-                if self.currentAnswer.thumbImage != nil {
-                    Database.uploadImage(.AnswerThumbs, fileID: answer.aID, image: self.currentAnswer.thumbImage!, completion: { (success, error) in } )
-                }
                 
                 Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
                     if !success {

@@ -53,6 +53,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     private var _tapReady = false
     private var _nextItemReady = false
     private var _canAdvanceReady = false
+    private var _canAdvanceDetailReady = false
     private var _hasUserBeenAskedQuestion = false
     private var isObserving = false
     private var isLoaded = false
@@ -72,7 +73,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     weak var delegate : childVCDelegate!
     private var tap : UITapGestureRecognizer!
     private var answerDetailTap : UITapGestureRecognizer!
-    private var expandAnswer : UIPinchGestureRecognizer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -84,10 +84,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         if !isLoaded {
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             view.addGestureRecognizer(tap)
-            
-            expandAnswer = UIPinchGestureRecognizer(target: self, action: #selector(handleExpandAnswer))
-            view.addGestureRecognizer(expandAnswer)
-            expandAnswer.enabled = false
         
             if (currentQuestion != nil){
                 _loadAnswer(currentQuestion, index: answerIndex)
@@ -124,15 +120,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         _canAdvanceReady = false
         
         if let _answerID = currentQuestion.qAnswers?[index] {
-            Database.getAnswerCollection(_answerID, completion: {(hasDetail, answerCollection) in
-                if hasDetail {
-                    self._answerOverlay.showExploreAnswerDetail()
-                    self.currentAnswerCollection = answerCollection!
-                    self.expandAnswer.enabled = true
-                } else {
-                    self._answerOverlay.hideExploreAnswerDetail()
-                }
-            })
+            _addExploreAnswerDetail(_answerID)
             
             Database.getAnswer(_answerID, completion: { (answer, error) in
                 self.currentAnswer = answer
@@ -158,11 +146,12 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     private func _loadAnswerCollections(index : Int) {
         tap.enabled = false
+        
         answerDetailTap = UITapGestureRecognizer(target: self, action: #selector(handleAnswerDetailTap))
         view.addGestureRecognizer(answerDetailTap)
         
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-        _canAdvanceReady = false
+        _canAdvanceDetailReady = false
         answerCollectionIndex = index
 
         _addClip(currentAnswerCollection[answerCollectionIndex])
@@ -171,9 +160,21 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         if _canAdvanceAnswerDetail(answerCollectionIndex + 1) {
             _addNextClipToQueue(currentAnswerCollection[answerCollectionIndex + 1])
             answerCollectionIndex += 1
-            _canAdvanceReady = true
+            _canAdvanceDetailReady = true
         }
         UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+    }
+    
+    private func _addExploreAnswerDetail(_answerID : String) {
+        
+        Database.getAnswerCollection(_answerID, completion: {(hasDetail, answerCollection) in
+            if hasDetail {
+                self._answerOverlay.showExploreAnswerDetail()
+                self.currentAnswerCollection = answerCollection!
+            } else {
+                self._answerOverlay.hideExploreAnswerDetail()
+            }
+        })
     }
     
     private func _addClip(answerID : String) {
@@ -210,9 +211,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 if error != nil {
                     print("error getting image")
                 } else {
-                    if let _image = UIImage(data: data!) {
-                        let _orientatedImage = UIImage(CGImage: _image.CGImage!, scale: 1.0, orientation: .Up)
-                        self.showImageView(_orientatedImage)
+                    if let _image = GlobalFunctions.createImageFromData(data!) {
+                        self.showImageView(_image)
                     }
                 }
             })
@@ -456,6 +456,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             return
         }
         
+        print("answer index is \(answerIndex), can advance \(_canAdvanceReady), tap ready \(_tapReady), next item ready \(_nextItemReady)")
         if (answerIndex == minAnswersToShow && !_hasUserBeenAskedQuestion && _canAdvanceReady) { //ask user to answer the question
             if (delegate != nil) {
                 qPlayer.pause()
@@ -469,14 +470,23 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
         
         else if _canAdvanceReady {
+            guard let _nextAnswer = nextAnswer else {
+                print("invalid next answer")
+                return
+            }
+            
             _answerOverlay.resetTimer()
-            _updateOverlayData(nextAnswer!)
-
-            if nextAnswer?.aType == .recordedImage || nextAnswer?.aType == .albumImage {
-                if let _image = nextAnswer!.aImage {
+            _updateOverlayData(_nextAnswer)
+            _addExploreAnswerDetail(_nextAnswer.aID)
+            
+            if _nextAnswer.aType == .recordedImage || _nextAnswer.aType == .albumImage {
+                print("next answer is image")
+                if let _image = _nextAnswer.aImage {
                     showImageView(_image)
                 }
-            } else if nextAnswer?.aType == .recordedVideo || nextAnswer?.aType == .albumVideo  {
+            } else if _nextAnswer.aType == .recordedVideo || _nextAnswer.aType == .albumVideo  {
+                print("next answer is video")
+
                 removeImageView()
                 _tapReady = false
                 qPlayer.pause()
@@ -485,7 +495,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 addObserverForStatusReady()
             }
         
-            currentAnswer = nextAnswer
+            currentAnswer = _nextAnswer
             answerIndex += 1
             
             if _canAdvance(answerIndex) {
@@ -498,24 +508,22 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         
         else {
             if (delegate != nil) {
+                print("no answers to show")
+
                 delegate.noAnswersToShow(self)
             }
         }
     }
-    
-    func handleExpandAnswer(sender:UIPinchGestureRecognizer) {
-        handleAnswerDetailTap()
-    }
-    
+
     func handleAnswerDetailTap() {
         if _isMiniProfileShown {
             return
         }
         
-        if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
+        if (!_tapReady || (!_nextItemReady && _canAdvanceDetailReady)) {
             //ignore tap
         }
-        else if _canAdvanceReady {
+        else if _canAdvanceDetailReady {
             
             if nextAnswer?.aType == .recordedImage || nextAnswer?.aType == .albumImage {
                 if let _image = nextAnswer!.aImage {
@@ -537,12 +545,22 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             
             if _canAdvanceAnswerDetail(answerCollectionIndex) {
                 _addNextClipToQueue(currentAnswerCollection[answerCollectionIndex])
-                _canAdvanceReady = true
+                _canAdvanceDetailReady = true
             } else {
-                _canAdvanceReady = false
+                _canAdvanceDetailReady = false
+                
+                // done w/ answer detail - queue up next answer if it exists
+                if _canAdvance(answerIndex) {
+                    _addNextClipToQueue(currentQuestion.qAnswers![answerIndex])
+                    _canAdvanceReady = true
+                } else {
+                    _canAdvanceReady = false
+                }
             }
         } else {
-//            print("done with detail - returning to main answer queue")
+            
+            // reset answer detail count and go to next answer
+            answerCollectionIndex = 0
             handleTap()
         }
     }

@@ -544,20 +544,17 @@ class Database {
     }
     
     /* UPLOAD IMAGE TO STORAGE */
-    
     static func uploadImage(type : Item, fileID : String, image : UIImage, completion: (success : Bool, error : NSError?) -> Void) {
         let path = getStoragePath(type, itemID: fileID)
         let _metadata = FIRStorageMetadata()
         _metadata.contentType = "image/jpeg"
-        let imgData = UIImageJPEGRepresentation(image, 0.4)
+        let imgData = image.mediumQualityJPEGNSData
         
-        if let imgData = imgData {
-            path.putData(imgData, metadata: _metadata) { (metadata, error) in
-                if (error != nil) {
-                    completion(success: false, error: error)
-                } else {
-                    completion(success: true, error: nil)
-                }
+        path.putData(imgData, metadata: _metadata) { (metadata, error) in
+            if (error != nil) {
+                completion(success: false, error: error)
+            } else {
+                completion(success: true, error: nil)
             }
         }
     }
@@ -566,7 +563,7 @@ class Database {
     static func uploadProfileImage(imgData : NSData, completion: (URL : NSURL?, error : NSError?) -> Void) {
         var _downloadURL : NSURL?
         let _metadata = FIRStorageMetadata()
-        _metadata.contentType = "image/"
+        _metadata.contentType = "image/jpeg"
         
         if let _currentUserID = User.currentUser?.uID {
             usersStorageRef.child(_currentUserID).child("profilePic").putData(imgData, metadata: nil) { (metadata, error) in

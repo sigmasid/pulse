@@ -163,7 +163,8 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
                 if error != nil {
                     cell.answerPreviewImage?.backgroundColor = UIColor.redColor() /* NEED TO CHANGE */
                 } else {
-                    let _answerPreviewImage = UIImage(data: _data!)
+                    
+                    let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
                     self.browseAnswerPreviewImages.insert(_answerPreviewImage, atIndex: indexPath.row)
                     cell.answerPreviewImage!.image = _answerPreviewImage
                 }

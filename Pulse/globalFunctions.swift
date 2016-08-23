@@ -80,6 +80,15 @@ class GlobalFunctions {
         }
     }
     
+    static func createImageFromData(data : NSData) -> UIImage? {
+        if let _image = UIImage(data: data, scale: 1.0) {
+            let _orientatedImage = UIImage(CGImage: _image.CGImage!, scale: 1.0, orientation: .Up)
+            return _orientatedImage
+        } else {
+            return nil
+        }
+    }
+    
     ///Validate email
     static func validateEmail(enteredEmail:String?, completion: (verified: Bool, error: NSError?) -> Void) {
         let emailFormat = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"

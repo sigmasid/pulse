@@ -19,7 +19,8 @@ class AnswerMenu: UIView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.3)
+        self.userInteractionEnabled = true
         layoutButtons()
     }
     
