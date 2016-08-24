@@ -17,7 +17,7 @@ class TagDetailCollectionCell: UICollectionViewCell {
         super.init(frame: frame)
         
         questionLabel = UILabel()
-        questionLabel?.setPreferredFont(UIColor.whiteColor())
+        questionLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Center)
         
         addSubview(questionLabel!)
         

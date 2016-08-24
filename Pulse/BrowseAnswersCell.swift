@@ -32,30 +32,36 @@ class BrowseAnswersCell: UICollectionViewCell {
     }
     
     func setupCell() {
+        answerPreviewName = UILabel()
+        addSubview(answerPreviewName!)
+        answerPreviewName!.translatesAutoresizingMaskIntoConstraints = false
+        answerPreviewName?.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue).active = true
+        answerPreviewName?.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.85).active = true
+        answerPreviewName?.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        answerPreviewName?.setPreferredFont(UIColor.whiteColor(), alignment : .Left)
+        answerPreviewName?.layoutIfNeeded()
+        
+        answerPreviewBio = UILabel()
+        addSubview(answerPreviewBio!)
+        answerPreviewBio!.translatesAutoresizingMaskIntoConstraints = false
+        answerPreviewBio?.leadingAnchor.constraintEqualToAnchor(answerPreviewName?.leadingAnchor).active = true
+        answerPreviewBio?.topAnchor.constraintEqualToAnchor(answerPreviewName?.bottomAnchor).active = true
+        answerPreviewBio?.setPreferredFont(UIColor.whiteColor(), alignment : .Left)
+        answerPreviewBio?.layoutIfNeeded()
+        
         answerPreviewImage = UIImageView()
         addSubview(answerPreviewImage!)
 
         answerPreviewImage!.translatesAutoresizingMaskIntoConstraints = false
         answerPreviewImage?.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        answerPreviewImage?.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
-        answerPreviewImage?.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.7).active = true
+        answerPreviewImage?.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.s.rawValue).active = true
+        answerPreviewImage?.topAnchor.constraintEqualToAnchor(answerPreviewBio?.bottomAnchor, constant: Spacing.s.rawValue).active = true
         answerPreviewImage?.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.85).active = true
         answerPreviewImage?.contentMode = UIViewContentMode.ScaleAspectFill
         answerPreviewImage?.clipsToBounds = true
         answerPreviewImage?.layoutIfNeeded()
+
         
-        answerPreviewBio = UILabel()
-        addSubview(answerPreviewBio!)
-        answerPreviewBio!.translatesAutoresizingMaskIntoConstraints = false
-        answerPreviewBio?.leadingAnchor.constraintEqualToAnchor(answerPreviewImage?.leadingAnchor).active = true
-        answerPreviewBio?.bottomAnchor.constraintEqualToAnchor(answerPreviewImage?.topAnchor, constant: -Spacing.s.rawValue).active = true
-        answerPreviewBio?.setPreferredFont(UIColor.whiteColor())
-        
-        answerPreviewName = UILabel()
-        addSubview(answerPreviewName!)
-        answerPreviewName!.translatesAutoresizingMaskIntoConstraints = false
-        answerPreviewName?.leadingAnchor.constraintEqualToAnchor(answerPreviewImage?.leadingAnchor).active = true
-        answerPreviewName?.bottomAnchor.constraintEqualToAnchor(answerPreviewBio?.topAnchor).active = true
-        answerPreviewName?.setPreferredFont(UIColor.whiteColor())
+
     }
 }

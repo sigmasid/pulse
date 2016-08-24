@@ -54,8 +54,7 @@ class TagDetailQuestionCell: UITableViewCell {
         
         /*QUESTION LABEL*/
         questionLabel = UILabel()
-        questionLabel?.setPreferredFont(UIColor.whiteColor())
-        questionLabel.textAlignment = .Left
+        questionLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Left)
         
         addSubview(questionLabel!)
         

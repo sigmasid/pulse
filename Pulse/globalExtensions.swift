@@ -69,8 +69,8 @@ extension UIViewController {
 }
 
 extension UILabel {
-    func setPreferredFont(color : UIColor) {
-        self.textAlignment = .Center
+    func setPreferredFont(color : UIColor, alignment : NSTextAlignment) {
+        self.textAlignment = alignment
         self.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
         self.textColor = color
         self.numberOfLines = 0

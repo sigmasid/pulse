@@ -148,7 +148,6 @@ class BrowseAnswersView: UIView {
         sortAnswersButton.translatesAutoresizingMaskIntoConstraints = false
         sortAnswersButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
         sortAnswersButton.topAnchor.constraintEqualToAnchor(topHeaderView.bottomAnchor, constant: Spacing.s.rawValue).active = true
-//        sortAnswersButton.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
         sortAnswersButton.layoutIfNeeded()
         
         sortAnswersButton.backgroundColor = UIColor.clearColor()
@@ -157,13 +156,10 @@ class BrowseAnswersView: UIView {
 
         sortAnswersButton.titleLabel?.textColor = UIColor.whiteColor()
         sortAnswersButton.titleLabel?.textAlignment = .Right
-//        sortAnswersButton.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
 
         sortAnswersButton.setTitle("newest", forState: .Normal)
         sortAnswersButton.imageView?.contentMode = UIViewContentMode.ScaleAspectFit
         sortAnswersButton.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightBlack)
-//        addAnswerButton.addTarget(self, action: #selector(userClickedAddAnswer), forControlEvents: UIControlEvents.TouchDown)
-        
     }
     
     private func setupCollectionView() {
@@ -179,7 +175,7 @@ class BrowseAnswersView: UIView {
         browseAnswers?.topAnchor.constraintEqualToAnchor(sortAnswersButton.bottomAnchor, constant: Spacing.m.rawValue).active = true
         browseAnswers?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
         browseAnswers?.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
-        browseAnswers?.bottomAnchor.constraintEqualToAnchor(addAnswerButton.topAnchor, constant: Spacing.m.rawValue).active = true
+        browseAnswers?.bottomAnchor.constraintEqualToAnchor(addAnswerButton.topAnchor, constant: -Spacing.m.rawValue).active = true
         browseAnswers?.layoutIfNeeded()
         
         cellWidth = browseAnswers.bounds.width * 0.6
@@ -211,7 +207,8 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! BrowseAnswersCell
         
-        if (indexPath.row == 0 && isfirstTimeTransform) { // make a bool and set YES initially, this check will prevent fist load transform
+        if (indexPath.row == 0 && isfirstTimeTransform) {
+            // make a bool and set YES initially, this check will prevent fist load transform
             isfirstTimeTransform = false
         } else {
             cell.transform = CGAffineTransformMakeScale(0.8, 0.8)

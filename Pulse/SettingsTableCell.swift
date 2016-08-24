@@ -31,8 +31,7 @@ class SettingsTableCell: UITableViewCell {
         _detailTextLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.5).active = true
         _detailTextLabel.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.m.rawValue).active = true
         _detailTextLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
-        _detailTextLabel.setPreferredFont(UIColor.whiteColor())
-        _detailTextLabel.textAlignment = .Right
+        _detailTextLabel.setPreferredFont(UIColor.whiteColor(), alignment : .Right)
         
         backgroundColor = UIColor.clearColor()
         textLabel?.textColor = UIColor.whiteColor()

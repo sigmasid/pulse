@@ -89,7 +89,7 @@ class MiniProfile: UIView {
         messageButton.backgroundColor = iconBackgroundColor
         messageButton.layer.cornerRadius = buttonCornerRadius.radius(.small)
         
-        messageButton.titleLabel?.setPreferredFont(UIColor.whiteColor())
+        messageButton.titleLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Center)
         messageButton.translatesAutoresizingMaskIntoConstraints = false
         messageButton.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.s.rawValue).active = true
         messageButton.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true

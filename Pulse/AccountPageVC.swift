@@ -149,7 +149,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             _defaultProfileOverlay = UILabel(frame: CGRectMake(0, 0, uProfilePic.frame.width, uProfilePic.frame.height))
             _defaultProfileOverlay.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.5)
             _defaultProfileOverlay.text = "tap to add image"
-            _defaultProfileOverlay.setPreferredFont(UIColor.whiteColor())
+            _defaultProfileOverlay.setPreferredFont(UIColor.whiteColor(), alignment : .Center)
             uProfilePic.addSubview(_defaultProfileOverlay)
         }
         
