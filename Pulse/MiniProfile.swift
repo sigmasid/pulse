@@ -131,6 +131,7 @@ class MiniProfile: UIView {
         nameLabel.font = UIFont.systemFontOfSize(FontSizes.Title.rawValue, weight: UIFontWeightHeavy)
         nameLabel.textAlignment = .Left
         nameLabel.textColor = UIColor.whiteColor()
+        nameLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
     }
     
     func setTagLabel(text : String?) {
@@ -139,6 +140,8 @@ class MiniProfile: UIView {
         tagLine.font = UIFont.systemFontOfSize(FontSizes.Body.rawValue, weight: UIFontWeightHeavy)
         tagLine.textAlignment = .Center
         tagLine.textColor = UIColor.whiteColor()
+        tagLine.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+
     }
     
     func setBioLabel(text : String?) {
@@ -147,11 +150,32 @@ class MiniProfile: UIView {
         bioLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightRegular)
         bioLabel.textAlignment = .Center
         bioLabel.textColor = UIColor.whiteColor()
+        bioLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
 
     }
     
     func setProfileImage(image : UIImage) {
-        profileImage.image = image
+        guard let cgimg = image.CGImage else {
+            return
+        }
+        
+        let openGLContext = EAGLContext(API: .OpenGLES2)
+        let context = CIContext(EAGLContext: openGLContext)
+        
+        let coreImage = CIImage(CGImage: cgimg)
+        
+        let filter = CIFilter(name: "CIPhotoEffectTransfer")
+        filter?.setValue(coreImage, forKey: kCIInputImageKey)
+        
+        if let output = filter?.valueForKey(kCIOutputImageKey) as? CIImage {
+            let cgimgresult = context.createCGImage(output, fromRect: output.extent)
+            let result = UIImage(CGImage: cgimgresult)
+            profileImage?.image = result
+        } else {
+            profileImage.image = image
+        }
+        
         profileImage.clipsToBounds = true
     }
+
 }

@@ -95,8 +95,9 @@ class BrowseAnswersView: UIView {
         
         _questionLabel.translatesAutoresizingMaskIntoConstraints = false
         _questionLabel.leadingAnchor.constraintEqualToAnchor(topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).active = true
-        _questionLabel.topAnchor.constraintEqualToAnchor(_answerCount.topAnchor).active = true
+        _questionLabel.topAnchor.constraintEqualToAnchor(_answerCount.topAnchor, constant: -Spacing.xs.rawValue).active = true
         _questionLabel.trailingAnchor.constraintEqualToAnchor(_answerCount.leadingAnchor, constant: -Spacing.s.rawValue).active = true
+        
         _questionLabel.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightRegular)
         _questionLabel.textColor = UIColor.blackColor()
         _questionLabel.textAlignment = .Left
