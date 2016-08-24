@@ -20,7 +20,7 @@ class AnswerMenu: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.3)
-        self.userInteractionEnabled = true
+
         layoutButtons()
     }
     
@@ -28,7 +28,18 @@ class AnswerMenu: UIView {
         super.init(coder: aDecoder)
     }
     
+    override func pointInside(point: CGPoint, withEvent event: UIEvent?) -> Bool {
+        if  hidden {
+            return false
+        } else {
+            print("expanded bounds fired")
+            let expandedBounds = CGRectInset(bounds, -50, -50)
+            return CGRectContainsPoint(expandedBounds, point)
+        }
+    }
+    
     private func layoutButtons() {
+
         addSubview(_addAnswer)
         addSubview(_quickBrowse)
         

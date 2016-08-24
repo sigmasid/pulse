@@ -112,7 +112,11 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
+        if _isMiniProfileShown {
+            return true
+        } else {
+            return false
+        }
     }
     
     private func _loadAnswer(currentQuestion : Question, index: Int) {
@@ -133,6 +137,9 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     self._addNextClipToQueue(self.currentQuestion.qAnswers![self.answerIndex + 1])
                     self.answerIndex += 1
                     self._canAdvanceReady = true
+                } else {
+                    self.answerIndex += 1
+                    self._canAdvanceReady = false
                 }
                 UIApplication.sharedApplication().networkActivityIndicatorVisible = false
 
@@ -340,7 +347,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     //move the controls and filters to top layer
     private func showImageView(image : UIImage) {
-        print("adding image view")
         if _isImageViewShown {
             imageView.image = image
         } else {
@@ -354,7 +360,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     private func removeImageView() {
         if _isImageViewShown {
-            print("removing image view")
             imageView.image = nil
             imageView.removeFromSuperview()
             _isImageViewShown = false
@@ -425,10 +430,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         removeObserverIfNeeded()
         tap.enabled = false
         
-        let _topHeaderHeight = _answerOverlay.getHeaderHeight()
-        let exploreAnswersFrame = CGRectMake(0, _topHeaderHeight, view.bounds.width, view.bounds.height - _topHeaderHeight)
-        
-        exploreAnswers = BrowseAnswersView(frame: exploreAnswersFrame, _currentQuestion: currentQuestion)
+        exploreAnswers = BrowseAnswersView(frame: view.bounds, _currentQuestion: currentQuestion, _currentTag: currentTag)
         exploreAnswers!.delegate = self
         view.addSubview(exploreAnswers!)
         //add browse answers view and set question
@@ -558,7 +560,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 }
             }
         } else {
-            
             // reset answer detail count and go to next answer
             answerCollectionIndex = 0
             handleTap()

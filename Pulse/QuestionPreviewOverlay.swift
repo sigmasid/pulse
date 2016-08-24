@@ -63,7 +63,6 @@ class QuestionPreviewOverlay: UIView {
         _answerCount.titleLabel!.textAlignment = .Center
         _answerCount.setBackgroundImage(UIImage(named: "count-label"), forState: .Normal)
         _answerCount.imageView?.contentMode = .ScaleAspectFit
-
     }
     
     func setQuestionLabel(qTitle : String?) {

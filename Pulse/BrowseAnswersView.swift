@@ -9,6 +9,7 @@
 import UIKit
 
 class BrowseAnswersView: UIView {
+    
     private var browseAnswers: UICollectionView!
     private var reuseIdentifier = "BrowseAnswersCell"
     private var browseAnswerPreviewImages : [UIImage?]!
@@ -24,20 +25,27 @@ class BrowseAnswersView: UIView {
     
     /* set by parent */
     var currentQuestion : Question?
+    var currentTag : Tag?
     weak var delegate : answerDetailDelegate!
     
+    private var topHeaderView = UIView()
     private var addAnswerButton = UIButton()
     private var sortAnswersButton = UIButton()
     
+    private var _questionLabel = UILabel()
+    private var _tagLabel = UILabel()
+    private var _answerCount = UIButton()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
     
-    convenience init(frame: CGRect, _currentQuestion : Question) {
+    convenience init(frame: CGRect, _currentQuestion : Question, _currentTag : Tag) {
         self.init(frame: frame)
         
         currentQuestion = _currentQuestion
+        currentTag = _currentTag
+        
         gettingImageForCell = [Bool](count: currentQuestion!.totalAnswers(), repeatedValue: false)
         gettingInfoForCell = [Bool](count: currentQuestion!.totalAnswers(), repeatedValue: false)
         browseAnswerPreviewImages = [UIImage?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
@@ -45,6 +53,7 @@ class BrowseAnswersView: UIView {
         
         backgroundColor = UIColor.init(red: 35 / 255, green: 31 / 255, blue: 32 / 255, alpha: 0.9)
         
+        setupTopHeader()
         setupSortAnswersButton()
         setupAddAnswerButton()
         setupCollectionView()
@@ -52,6 +61,64 @@ class BrowseAnswersView: UIView {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    private func setupTopHeader() {
+        addSubview(topHeaderView)
+        
+        topHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        topHeaderView.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        topHeaderView.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.15).active = true
+        topHeaderView.topAnchor.constraintEqualToAnchor(topAnchor).active = true
+        topHeaderView.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+        topHeaderView.layoutIfNeeded()
+        
+        topHeaderView.backgroundColor = UIColor.whiteColor()
+        
+        addSubview(_answerCount)
+        addSubview(_questionLabel)
+        addSubview(_tagLabel)
+
+        _answerCount.translatesAutoresizingMaskIntoConstraints = false
+        _answerCount.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        _answerCount.heightAnchor.constraintEqualToAnchor(_answerCount.widthAnchor).active = true
+        _answerCount.centerYAnchor.constraintEqualToAnchor(topHeaderView.centerYAnchor).active = true
+        _answerCount.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        _answerCount.layoutIfNeeded()
+        
+        _answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
+        _answerCount.titleLabel!.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightBold)
+        _answerCount.titleLabel!.textColor = UIColor.whiteColor()
+        _answerCount.titleLabel!.textAlignment = .Center
+        _answerCount.setBackgroundImage(UIImage(named: "count-label"), forState: .Normal)
+        _answerCount.imageView?.contentMode = .ScaleAspectFit
+        
+        _questionLabel.translatesAutoresizingMaskIntoConstraints = false
+        _questionLabel.leadingAnchor.constraintEqualToAnchor(topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).active = true
+        _questionLabel.topAnchor.constraintEqualToAnchor(_answerCount.topAnchor).active = true
+        _questionLabel.trailingAnchor.constraintEqualToAnchor(_answerCount.leadingAnchor, constant: -Spacing.s.rawValue).active = true
+        _questionLabel.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightRegular)
+        _questionLabel.textColor = UIColor.blackColor()
+        _questionLabel.textAlignment = .Left
+        _questionLabel.text = currentQuestion?.qTitle
+        _questionLabel.numberOfLines = 0
+        _questionLabel.layoutIfNeeded()
+        
+        _tagLabel.translatesAutoresizingMaskIntoConstraints = false
+        _tagLabel.leadingAnchor.constraintEqualToAnchor(topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).active = true
+        _tagLabel.topAnchor.constraintEqualToAnchor(_questionLabel.bottomAnchor).active = true
+        _tagLabel.trailingAnchor.constraintEqualToAnchor(_answerCount.leadingAnchor, constant: -Spacing.s.rawValue).active = true
+        _tagLabel.font = UIFont.systemFontOfSize(FontSizes.Body.rawValue, weight: UIFontWeightBold)
+        _tagLabel.textColor = UIColor.blackColor()
+        _tagLabel.textAlignment = .Left
+        
+        if let _currentTagTile = currentTag?.tagID {
+            _tagLabel.text = "#\(_currentTagTile)"
+        }
+        
+        if let _answerCountText = currentQuestion?.totalAnswers() {
+            _answerCount.setTitle(String(_answerCountText), forState: .Normal)
+        }
     }
     
     private func setupAddAnswerButton() {
@@ -66,11 +133,11 @@ class BrowseAnswersView: UIView {
         
         addAnswerButton.makeRound()
         addAnswerButton.backgroundColor = iconBackgroundColor
-        addAnswerButton.setTitle("add answer", forState: .Normal)
+        addAnswerButton.setTitle("ADD ANSWER", forState: .Normal)
         addAnswerButton.titleLabel?.numberOfLines = 0
         addAnswerButton.titleLabel?.lineBreakMode = .ByWordWrapping
         addAnswerButton.titleLabel?.textAlignment = .Center
-        addAnswerButton.titleLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+        addAnswerButton.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Caption2.rawValue, weight: UIFontWeightBold)
         addAnswerButton.addTarget(self, action: #selector(userClickedAddAnswer), forControlEvents: UIControlEvents.TouchDown)
 
     }
@@ -80,7 +147,7 @@ class BrowseAnswersView: UIView {
         
         sortAnswersButton.translatesAutoresizingMaskIntoConstraints = false
         sortAnswersButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        sortAnswersButton.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue).active = true
+        sortAnswersButton.topAnchor.constraintEqualToAnchor(topHeaderView.bottomAnchor, constant: Spacing.s.rawValue).active = true
 //        sortAnswersButton.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
         sortAnswersButton.layoutIfNeeded()
         
@@ -109,11 +176,10 @@ class BrowseAnswersView: UIView {
         addSubview(browseAnswers!)
         
         browseAnswers?.translatesAutoresizingMaskIntoConstraints = false
-        browseAnswers?.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.7).active = true
+        browseAnswers?.topAnchor.constraintEqualToAnchor(sortAnswersButton.bottomAnchor, constant: Spacing.m.rawValue).active = true
         browseAnswers?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        browseAnswers?.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        browseAnswers?.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
-
+        browseAnswers?.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+        browseAnswers?.bottomAnchor.constraintEqualToAnchor(addAnswerButton.topAnchor, constant: Spacing.m.rawValue).active = true
         browseAnswers?.layoutIfNeeded()
         
         cellWidth = browseAnswers.bounds.width * 0.6
