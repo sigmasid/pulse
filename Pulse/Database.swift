@@ -130,7 +130,6 @@ class Database {
     }
     
     static func getUserProperty(uID : String, property: String, completion: (property : String?) -> Void) {
-        print("trying to get \(property) for uID \(uID)")
         usersRef.child("\(uID)/\(property)").observeSingleEventOfType(.Value, withBlock: { snap in
             if let _property = snap.value as? String {
                 completion(property : _property)
@@ -367,7 +366,7 @@ class Database {
                 _user?.updatePassword(newValue) { error in
                     error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 }
-            case .shortBio, .name, .profilePic:
+            case .shortBio, .name, .profilePic, .thumbPic:
                 userPost[setting.settingID] = newValue
                 usersPublicSummaryRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                     error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
@@ -565,22 +564,39 @@ class Database {
         let _metadata = FIRStorageMetadata()
         _metadata.contentType = "image/jpeg"
         
-        if let _currentUserID = User.currentUser?.uID {
-            usersStorageRef.child(_currentUserID).child("profilePic").putData(imgData, metadata: nil) { (metadata, error) in
-                if (error != nil) {
-                    completion(URL: nil, error: error)
-                } else {
-                    _downloadURL = metadata!.downloadURL()
+        if let _currentUserID = User.currentUser?.uID, _imageToResize = UIImage(data: imgData), _img = resizeImage(_imageToResize, newWidth: 600){
+            usersStorageRef.child(_currentUserID).child("profilePic").putData(_img, metadata: nil) { (metadata, error) in
+                if let metadata = metadata {
+                    _downloadURL = metadata.downloadURL()
                     updateUserData(.photoURL, value: String(_downloadURL!)) { success, error in
-                        if success {
-                            completion(URL: _downloadURL, error: nil)
-                        }
-                        else {
-                            completion(URL: nil, error: error)
-                        }
+                        success ? completion(URL: _downloadURL, error: nil) : completion(URL: nil, error: error)
                     }
+                } else {
+                    completion(URL: nil, error: error)
                 }
             }
+            
+            if let _thumbImageData = resizeImage(UIImage(data: imgData)!, newWidth: 100) {
+                usersStorageRef.child(_currentUserID).child("thumbPic").putData(_thumbImageData, metadata: nil) { (metadata, error) in
+                    if let url = metadata?.downloadURL() {
+                        let userPost = ["thumbPic" : String(url)]
+                        usersPublicSummaryRef.child(_currentUserID).updateChildValues(userPost)
+                    }
+                }
+
+            }
         }
+    }
+    
+    static func resizeImage(image: UIImage, newWidth: CGFloat) -> NSData? {
+        
+        let scale = newWidth / image.size.width
+        let newHeight = image.size.height * scale
+        UIGraphicsBeginImageContext(CGSizeMake(newWidth, newHeight))
+        image.drawInRect(CGRectMake(0, 0, newWidth, newHeight))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return UIImageJPEGRepresentation(newImage, 0.7)
     }
 }

@@ -20,6 +20,7 @@ class User {
     var answers : [String]?
     var answeredQuestions : [String]?
     var profilePic : String?
+    var thumbPic : String?
     var shownCameraForQuestion = [ String : String ]()
     var _totalAnswers : Int?
     var savedTags : [String]?
@@ -64,9 +65,17 @@ class User {
         if snapshot.hasChild("name") {
             self.name = snapshot.childSnapshotForPath("name").value as? String
         }
+        
         if snapshot.hasChild("profilePic") {
             self.profilePic = snapshot.childSnapshotForPath("profilePic").value as? String
         }
+        
+        if snapshot.hasChild("thumbPic") {
+            self.thumbPic = snapshot.childSnapshotForPath("thumbPic").value as? String
+        } else {
+            self.thumbPic = self.profilePic
+        }
+
         if snapshot.hasChild("shortBio") {
             self.shortBio = snapshot.childSnapshotForPath("shortBio").value as? String
         }

@@ -263,6 +263,7 @@ enum SettingTypes : String{
     case password = "password"
     case gender = "gender"
     case profilePic = "profilePic"
+    case thumbPic = "thumbPic"
     case array = "array"
     
     static func getSettingType(index : String) -> SettingTypes? {
@@ -276,6 +277,8 @@ enum SettingTypes : String{
         case "array": return .array
         case "gender": return .array
         case "profilePic": return .profilePic
+        case "thumbPic": return .thumbPic
+
 
         default: return nil
         }
