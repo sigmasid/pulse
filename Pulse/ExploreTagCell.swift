@@ -38,7 +38,7 @@ class ExploreTagCell: UICollectionViewCell {
     
     var currentTag : Tag! {
         didSet {
-            if currentTag.totalQuestionsForTag() != nil {
+            if currentTag.totalQuestionsForTag() > 0 {
                 _totalQuestions = currentTag.totalQuestionsForTag()
                 ExploreQuestions.dataSource = self
                 ExploreQuestions.delegate = self

@@ -1,5 +1,5 @@
 //
-//  QuestionPreviewVC.swift
+//  PreviewVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
@@ -9,9 +9,10 @@
 import UIKit
 import AVFoundation
 
-class QuestionPreviewVC: UIView, PreviewPlayerItemDelegate {
+class PreviewVC: UIView, PreviewPlayerItemDelegate {
     private var _loadingIndicator : LoadingIndicatorView?
     private var aPlayer = AVPlayer()
+    
     var currentQuestion : Question! {
         didSet {
             loadQuestion()
@@ -19,14 +20,20 @@ class QuestionPreviewVC: UIView, PreviewPlayerItemDelegate {
         }
     }
     
+    var currentAnswerID : String! {
+        didSet {
+            setupAnswer(currentAnswerID)
+            addLoadingIndicator()
+        }
+    }
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        self.backgroundColor = UIColor.blackColor()
+        backgroundColor = UIColor.blackColor()
         let avPlayerLayer = AVPlayerLayer(player: aPlayer)
         layer.addSublayer(avPlayerLayer)
-        avPlayerLayer.frame = CGRectMake(0, 0, bounds.width, bounds.height)
-
+        avPlayerLayer.frame = bounds
         avPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
     }
     

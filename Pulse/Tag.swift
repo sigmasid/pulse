@@ -42,7 +42,7 @@ class Tag : NSObject {
         self.tagCreated = true
     }
     
-    func totalQuestionsForTag() -> Int? {
-        return self.questions?.count > 0 ? self.questions!.count : nil
+    func totalQuestionsForTag() -> Int {
+        return self.questions?.count > 0 ? self.questions!.count : 0
     }
 }

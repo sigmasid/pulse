@@ -1,5 +1,5 @@
 //
-//  TagDetailQuestionCell.swift
+//  DetailTableCell.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 7/11/16.
@@ -8,10 +8,11 @@
 
 import UIKit
 
-class TagDetailQuestionCell: UITableViewCell {
+class DetailTableCell: UITableViewCell {
     
     var separatorView: UIView!
-    var questionLabel: UILabel!
+    var titleLabel: UILabel!
+    var subtitleLabel: UILabel!
     var leftSeparatorView: UIView!
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
@@ -52,22 +53,37 @@ class TagDetailQuestionCell: UITableViewCell {
         leftSeparatorView?.widthAnchor.constraintEqualToConstant(Spacing.s.rawValue).active = true
         leftSeparatorView.layoutIfNeeded()
         
-        /*QUESTION LABEL*/
-        questionLabel = UILabel()
-        questionLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Left)
+        /*TITLE LABEL*/
+        titleLabel = UILabel()
+        titleLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Left)
         
-        addSubview(questionLabel!)
+        addSubview(titleLabel!)
         
-        questionLabel!.translatesAutoresizingMaskIntoConstraints = false
-        questionLabel?.leadingAnchor.constraintEqualToAnchor(leftSeparatorView.trailingAnchor).active = true
-        questionLabel?.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
-        questionLabel?.topAnchor.constraintEqualToAnchor(separatorView.bottomAnchor).active = true
-        questionLabel?.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
-        questionLabel.layoutIfNeeded()
+        titleLabel!.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel?.leadingAnchor.constraintEqualToAnchor(leftSeparatorView.trailingAnchor).active = true
+        titleLabel?.topAnchor.constraintEqualToAnchor(separatorView.bottomAnchor).active = true
+        titleLabel?.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
+        titleLabel?.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
+        titleLabel.layoutIfNeeded()
+        
+        /*SUBTITLE LABEL*/
+        subtitleLabel = UILabel()
+        subtitleLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Left)
+        
+        addSubview(subtitleLabel!)
+        
+        subtitleLabel!.translatesAutoresizingMaskIntoConstraints = false
+        subtitleLabel?.leadingAnchor.constraintEqualToAnchor(leftSeparatorView.trailingAnchor).active = true
+        subtitleLabel?.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
+        subtitleLabel?.topAnchor.constraintEqualToAnchor(titleLabel.bottomAnchor).active = true
+        subtitleLabel?.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
+        subtitleLabel.layoutIfNeeded()
 
         let _color = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.3 )
         leftSeparatorView.backgroundColor = _color
-        questionLabel.backgroundColor = _color
-        questionLabel.numberOfLines = 0
+        titleLabel.backgroundColor = _color
+        titleLabel.numberOfLines = 0
+        subtitleLabel.backgroundColor = _color
+        subtitleLabel.numberOfLines = 0
     }
 }

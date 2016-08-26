@@ -60,8 +60,5 @@ class BrowseAnswersCell: UICollectionViewCell {
         answerPreviewImage?.contentMode = UIViewContentMode.ScaleAspectFill
         answerPreviewImage?.clipsToBounds = true
         answerPreviewImage?.layoutIfNeeded()
-
-        
-
     }
 }

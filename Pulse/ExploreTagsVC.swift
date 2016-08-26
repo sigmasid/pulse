@@ -109,24 +109,32 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     }
     
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
-        let QAVC = QAManagerVC()
-        QAVC.selectedTag = _selectedTag
-        QAVC.allQuestions = _allQuestions
-        QAVC.currentQuestion = _selectedQuestion
-        QAVC.questionCounter = _questionIndex
-        QAVC.view.frame = view.bounds
+        let detailVC = DetailVC()
+        detailVC.view.frame = view.bounds
+        detailVC.currentTag = _selectedTag
+        detailVC.currentQuestion = _selectedQuestion
+        detailVC.currentLoadedItem = .Answers
+        detailVC.returnToParentDelegate = self
+        GlobalFunctions.addNewVC(detailVC, parentVC: self)
         
-        QAVC.returnToParentDelegate = self
-        GlobalFunctions.addNewVC(QAVC, parentVC: self)
+//        let QAVC = QAManagerVC()
+//        QAVC.selectedTag = _selectedTag
+//        QAVC.allQuestions = _allQuestions
+//        QAVC.currentQuestion = _selectedQuestion
+//        QAVC.questionCounter = _questionIndex
+//        QAVC.view.frame = view.bounds
+//        
+//        QAVC.returnToParentDelegate = self
+//        GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     
     func showTagDetail(_selectedTag : Tag) {
-        let tagDetailVC = TagDetailVC()
-        tagDetailVC.currentTag = _selectedTag
-        tagDetailVC.view.frame = view.bounds
-    
-        tagDetailVC.returnToParentDelegate = self
-        GlobalFunctions.addNewVC(tagDetailVC, parentVC: self)
+        let detailVC = DetailVC()
+        detailVC.view.frame = view.bounds
+        detailVC.currentTag = _selectedTag
+        detailVC.currentLoadedItem = .Questions
+        detailVC.returnToParentDelegate = self
+        GlobalFunctions.addNewVC(detailVC, parentVC: self)
     }
     
     func showTagDetailTap(sender : UITapGestureRecognizer) {

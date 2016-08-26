@@ -173,6 +173,7 @@ enum SaveType {
 }
 
 enum Spacing: CGFloat {
+    case xxs = 5
     case xs = 10
     case s = 20
     case m = 30
@@ -209,6 +210,8 @@ enum FontSizes: CGFloat {
     case Body = 14
     case Title = 16
     case Headline = 20
+    case Headline2 = 30
+    case Mammoth = 40
 }
 
 enum UserErrors: ErrorType {
