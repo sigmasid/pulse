@@ -394,7 +394,7 @@ extension DetailVC : UICollectionViewDataSource {
         cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
         
         if currentLoadedItem == .Questions {
-            cell.itemType = .Questions
+            cell.feedItemType = .Question
             
             if _allQuestions.count > indexPath.row && _allQuestions[indexPath.row] != nil {
                 let _currentQuestion = _allQuestions[indexPath.row]
@@ -424,7 +424,7 @@ extension DetailVC : UICollectionViewDataSource {
             }
             
         } else if currentLoadedItem == .Answers {
-            cell.itemType = .Answers
+            cell.feedItemType = .Answer
 
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
             if browseAnswerPreviewImages[indexPath.row] != nil && gettingImageForCell[indexPath.row] == true {

@@ -31,8 +31,8 @@ class LoginAddNameVC: UIViewController {
         hideKeyboardWhenTappedAround()
         setDarkBackground()
 
-        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.whiteColor()))
-        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.whiteColor()))
+        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
+        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
         
         firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
         lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])

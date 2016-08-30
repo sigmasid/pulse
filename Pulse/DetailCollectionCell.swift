@@ -17,21 +17,20 @@ class DetailCollectionCell: UICollectionViewCell {
     private var previewAdded = false
     private var reuseCell = false
     
-    var itemType : Item? {
+    var feedItemType : FeedItemType? {
         didSet {
-            switch itemType! {
-            case .Questions:
+            switch feedItemType! {
+            case .Question:
                 if !reuseCell {
                     setupQuestionPreview()
                     reuseCell = true
                 }
-            case .Answers:
+            case .Answer:
                 if !reuseCell {
                     setupAnswerPreview()
                     reuseCell = true
                 }
-            case .Tags: return
-            default: return
+            case .Tag: return
             }
         }
     }
@@ -63,9 +62,9 @@ class DetailCollectionCell: UICollectionViewCell {
     }
     
     func removeAnswer() {
-        if itemType == .Questions {
+        if feedItemType == .Question {
              titleLabel?.hidden = false
-        } else if itemType == .Answers {
+        } else if feedItemType == .Answer {
             previewImage?.hidden = false
             titleLabel?.hidden = false
             subtitleLabel?.hidden = false

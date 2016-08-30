@@ -69,6 +69,14 @@ extension UIViewController {
 }
 
 extension UILabel {
+    func setFont(size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
+        self.textAlignment = alignment
+        self.font = UIFont.systemFontOfSize(size, weight: weight)
+        self.textColor = color
+        self.numberOfLines = 0
+        self.lineBreakMode = .ByWordWrapping
+    }
+    
     func setPreferredFont(color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
         self.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
@@ -155,6 +163,7 @@ enum IconThickness: CGFloat {
     case Thin = 1.0
     case Medium = 2.0
     case Thick = 3.0
+    case ExtraThick = 5.0
 }
 
 enum UserProfileUpdateType {
@@ -207,6 +216,7 @@ enum buttonCornerRadius : CGFloat {
 enum FontSizes: CGFloat {
     case Caption2 = 8
     case Caption = 10
+    case Body2 = 12
     case Body = 14
     case Title = 16
     case Headline = 20
@@ -242,6 +252,17 @@ enum SectionTypes : String {
         default: return nil
         }
     }
+}
+
+enum FeedItemType {
+    case Tag
+    case Question
+    case Answer
+}
+
+enum PageType {
+    case Home
+    case Detail
 }
 
 enum Item : String {

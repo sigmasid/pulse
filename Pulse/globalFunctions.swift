@@ -11,6 +11,7 @@ import UIKit
 
 let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
 let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
+let blueColor = UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0)
 
 let maxImgSize : Int64 = 1242 * 2208
 let _backgroundColors = [UIColor.cyanColor(), UIColor.yellowColor(), UIColor.blueColor(), UIColor.greenColor(), UIColor.orangeColor(), UIColor.magentaColor()]
@@ -18,13 +19,13 @@ let _backgroundColors = [UIColor.cyanColor(), UIColor.yellowColor(), UIColor.blu
 class GlobalFunctions {
     static func addBorders(_textField : UITextField) -> CAShapeLayer {
         let color = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 )
-        return addBorders(_textField, _color: color)
+        return addBorders(_textField, _color: color, thickness : 1.0)
     }
     
-    static func addBorders(_textField : UITextField, _color : UIColor) -> CAShapeLayer {
+    static func addBorders(_textField : UITextField, _color : UIColor, thickness : CGFloat) -> CAShapeLayer {
         let _bottomBorder = CAShapeLayer()
         
-        _bottomBorder.frame = CGRectMake(0.0, _textField.frame.size.height - 1, _textField.frame.size.width, 1.0);
+        _bottomBorder.frame = CGRectMake(0, _textField.frame.size.height - thickness, _textField.frame.size.width, thickness);
         _bottomBorder.backgroundColor = _color.CGColor
         
         return _bottomBorder

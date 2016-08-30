@@ -168,7 +168,7 @@ class UpdateProfileVC: UIViewController {
         _shortTextField.backgroundColor = UIColor.clearColor()
         _shortTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
         _shortTextField.textColor = .whiteColor()
-        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
+        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
         _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
         
@@ -203,7 +203,7 @@ class UpdateProfileVC: UIViewController {
         _shortTextField.borderStyle = .None
         _shortTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
         _shortTextField.textColor = .whiteColor()
-        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
+        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
         _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         
         _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])

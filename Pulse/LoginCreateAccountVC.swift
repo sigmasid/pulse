@@ -52,8 +52,8 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         
         userEmail.tag = 100
         userPassword.tag = 200
-        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.whiteColor()))
-        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.whiteColor()))
+        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
+        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
         userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), forControlEvents: UIControlEvents.EditingChanged)
         
         userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
