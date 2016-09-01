@@ -111,10 +111,11 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
         let detailVC = FeedVC()
         detailVC.view.frame = view.bounds
-        detailVC.currentTag = _selectedTag
-        detailVC.currentQuestion = _selectedQuestion
         detailVC.pageType = .Detail
         detailVC.feedItemType = .Answer
+        detailVC.currentTag = _selectedTag
+        detailVC.currentQuestion = _selectedQuestion
+        
         detailVC.returnToParentDelegate = self
         GlobalFunctions.addNewVC(detailVC, parentVC: self)
         
@@ -132,9 +133,12 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     func showTagDetail(_selectedTag : Tag) {
         let detailVC = FeedVC()
         detailVC.view.frame = view.bounds
-        detailVC.currentTag = _selectedTag
-        detailVC.pageType = .Detail
+        detailVC.pageType = .Home
+
+//        detailVC.pageType = .Detail
         detailVC.feedItemType = .Question
+//        detailVC.currentTag = _selectedTag
+
         detailVC.returnToParentDelegate = self
         GlobalFunctions.addNewVC(detailVC, parentVC: self)
     }

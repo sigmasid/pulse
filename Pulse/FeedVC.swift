@@ -15,6 +15,7 @@ class FeedVC: UIViewController, ParentDelegate {
             switch pageType! {
             case .Home:
                 setupScreenLayout(pageType)
+                Database.createFeed { feed in self.currentTag = feed }
             case .Detail:
                 setupDetailView()
                 setupScreenLayout(pageType)
@@ -22,7 +23,9 @@ class FeedVC: UIViewController, ParentDelegate {
         }
     }
     
-    var feedItemType : FeedItemType! {
+    var feedItemType : FeedItemType!
+
+    var currentTag : Tag! {
         didSet {
             switch feedItemType! {
             case .Question:
@@ -40,16 +43,17 @@ class FeedVC: UIViewController, ParentDelegate {
                 }
             case .Tag: return
             }
+
             if pageType! == .Detail {
-                updateTitleTag()
+                updateDetail()
             }
+            
             FeedCollectionView?.delegate = self
             FeedCollectionView?.dataSource = self
             FeedCollectionView?.reloadData()
         }
     }
-
-    var currentTag : Tag!
+    
     var currentQuestion : Question!
     private var totalItemCount = 0
     
@@ -128,6 +132,7 @@ class FeedVC: UIViewController, ParentDelegate {
         FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
         
         if pageType == .Home {
+            FeedCollectionView?.backgroundColor = UIColor.whiteColor()
             FeedCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
         } else if pageType == .Detail {
             FeedCollectionView?.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
@@ -136,7 +141,7 @@ class FeedVC: UIViewController, ParentDelegate {
         FeedCollectionView?.layoutIfNeeded()
         
         FeedCollectionView?.backgroundView = nil
-        FeedCollectionView?.backgroundColor = UIColor.clearColor()
+//        FeedCollectionView?.backgroundColor = UIColor.clearColor()
         FeedCollectionView?.showsVerticalScrollIndicator = false
         FeedCollectionView?.pagingEnabled = true
     }
@@ -149,15 +154,6 @@ class FeedVC: UIViewController, ParentDelegate {
         backgroundImage.topAnchor.constraintEqualToAnchor(view.topAnchor).active = true
         backgroundImage.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
         backgroundImage.layoutIfNeeded()
-        if let _tagImage = currentTag.tagImage {
-            Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-                if error != nil {
-                    print (error?.localizedDescription)
-                } else {
-                    self.backgroundImage.image = UIImage(data: data!)
-                }
-            })
-        }
         
         view.addSubview(rotatedView)
         rotatedView.translatesAutoresizingMaskIntoConstraints = false
@@ -179,7 +175,7 @@ class FeedVC: UIViewController, ParentDelegate {
         titleLabel.transform = transform
     }
     
-    private func updateTitleTag() {
+    private func updateDetail() {
         if feedItemType! == .Question {
             titleLabel.text = "#"+(currentTag.tagID!).uppercaseString
             titleLabel.font = UIFont.systemFontOfSize(FontSizes.Mammoth.rawValue, weight: UIFontWeightHeavy)
@@ -189,6 +185,16 @@ class FeedVC: UIViewController, ParentDelegate {
         }
         titleLabel.textColor = UIColor.whiteColor()
         titleLabel.numberOfLines = 0
+        
+        if let _tagImage = currentTag.tagImage {
+            Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
+                if error != nil {
+                    print (error?.localizedDescription)
+                } else {
+                    self.backgroundImage.image = UIImage(data: data!)
+                }
+            })
+        }
     }
     
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag, _frame : CGRect?) {
@@ -254,7 +260,12 @@ extension FeedVC : UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(collectionReuseIdentifier, forIndexPath: indexPath) as! FeedCell
         let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
+        
+        if pageType == .Detail {
+            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
+        } else if pageType == .Home {
+            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)]
+        }
         
         if feedItemType! == .Question {
             cell.itemType = .Question

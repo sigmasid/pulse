@@ -157,6 +157,40 @@ class Database {
     }
     
     /* CREATE / UPDATE FEED */
+    static func createFeed(completedFeed: (feed : Tag) -> Void) {
+        Database.keepUserTagsUpdated()
+        
+        //add in new posts before returning feed
+        for (index, (tagID, _)) in User.currentUser!.savedTags.enumerate() {
+            print("current tag is \(tagID)")
+            Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
+                if index + 1 == User.currentUser?.savedTags.count && success {
+                    initialFeedUpdateComplete = true
+                    
+                    //once feed is updated get the feed to return
+                    getFeed({ homeFeed in
+                        completedFeed(feed: homeFeed)
+                    })
+                }
+            })
+        }
+    }
+    
+    static func getFeed(completion: (feed : Tag) -> Void) {
+        let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
+        let feedPath = currentUserFeedRef.queryOrderedByValue().queryLimitedToFirst(50)
+        
+        feedPath.observeSingleEventOfType(.Value, withBlock: {(snap) in
+            for question in snap.children {
+                if (homeFeed.questions?.append(question.key) == nil) {
+                    homeFeed.questions = [question.key]
+                }
+            }
+            completion(feed: homeFeed)
+        })
+        
+    }
+    
     static func addNewQuestionsFromTagToFeed(tagID : String, completion: (success: Bool) -> Void) {
         var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
         
@@ -188,14 +222,14 @@ class Database {
                 }
                 
                 // adds the questions to the feed once we have iterated through all the questions
-                updateFeedQuestions(newQuestions)
+                updateFeedQuestions(tagID, questions: newQuestions)
                 completion(success: true)
             })
         }
         })
     }
     
-    static func updateFeedQuestions(questions : [String : String?]) {
+    static func updateFeedQuestions(tagID : String, questions : [String : String?]) {
         //add new questions to feed
         let _updatePath = currentUserRef.child(Item.Feed.rawValue)
         
@@ -213,7 +247,8 @@ class Database {
                     
                     if answerIndex + 1 == Int(totalNewAnswers) && answerID.key != lastAnswerID {
                         //if last answer then update value for last sync'd answer in database and add listener
-                        _updatePath.updateChildValues([questionID : answerID.key])
+                        let post = ["tagID": tagID, "lastAnswerID": answerID.key]
+                        _updatePath.updateChildValues([questionID : post])
                         keepQuestionsAnswersUpdated(questionID, lastAnswerID: answerID.key)
                     }
                 }
@@ -240,18 +275,18 @@ class Database {
             if snap.key != lastQuestionID {
                 print("observer fired for new question added to tag, tagID : questionID \(tagID, lastQuestionID)")
                 currentUserRef.child("savedTags").updateChildValues([tagID : snap.key]) //update last sync'd question for user
-                updateFeedQuestions([snap.key : "true"]) //add question to feed
+                updateFeedQuestions(tagID, questions: [snap.key : "true"]) //add question to feed
             }
         })
     }
     
     static func keepQuestionsAnswersUpdated(questionID : String, lastAnswerID : String) {
-        let _updatePath = currentUserRef.child("savedQuestions")
+        let _updatePath = currentUserRef.child("savedQuestions").child(questionID).child("lastAnswerID")
         let _observePath = getDatabasePath(Item.Questions, itemID: questionID).child("answers").queryOrderedByKey().queryStartingAtValue(lastAnswerID)
         
         _observePath.observeEventType(.ChildAdded, withBlock: { snap in
             print("this should fire once for each question with questionID : lastAnswerID \(questionID, lastAnswerID)")
-            _updatePath.updateChildValues([questionID : snap.key])
+            _updatePath.setValue(snap.key)
         })
     }
     
