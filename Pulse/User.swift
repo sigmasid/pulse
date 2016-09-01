@@ -23,8 +23,8 @@ class User {
     var thumbPic : String?
     var shownCameraForQuestion = [ String : String ]()
     var _totalAnswers : Int?
-    var savedTags : [String]?
-    var savedQuestions : [String]?
+    var savedTags = [String : String?]()
+    var savedQuestions = [String : String?]()
     var socialSources = [ Social : Bool ]()
 
     enum Gender {
@@ -98,7 +98,8 @@ class User {
     }
     
     func hasSavedTags() -> Bool {
-        return self.savedTags != nil ? true : false
+        print("is tags empty: \(self.savedTags.isEmpty)")
+        return self.savedTags.isEmpty ? false : true
     }
     
     func totalAnswers() -> Int {

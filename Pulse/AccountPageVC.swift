@@ -154,7 +154,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
         
         if User.currentUser!.hasSavedTags() {
-            addSavedTags(User.currentUser!.savedTags!)
+            addSavedTags(User.currentUser!.savedTags)
         }
         
         highlightConnectedSocialSources()
@@ -162,8 +162,10 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         view.setNeedsLayout()
     }
     
-    private func addSavedTags(tagList : [String]) {
-        let _msg = tagList.map {"#"+$0 }.joinWithSeparator("\u{0085}")
+    private func addSavedTags(tagList : [String : String?]) {
+        let _msg = tagList.map { (key, value) in "#"+key }.joinWithSeparator("\u{0085}")
+        
+//        let _msg = tagList.map {"#"+$0 }.joinWithSeparator("\u{0085}")
         
         savedTags.textAlignment = .Left
         savedTags.text = _msg

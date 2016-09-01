@@ -16,6 +16,7 @@ import FBSDKLoginKit
 let storage = FIRStorage.storage()
 let storageRef = storage.referenceForURL("gs://pulse-84022.appspot.com")
 let databaseRef = FIRDatabase.database().reference()
+var initialFeedUpdateComplete = false
 
 class Database {
 
@@ -24,6 +25,8 @@ class Database {
     static let answersRef = databaseRef.child(Item.Answers.rawValue)
     static let answerCollectionsRef = databaseRef.child(Item.AnswerCollections.rawValue)
 
+    static let currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
+    static let currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!).child(Item.Feed.rawValue)
 
     static let usersRef = databaseRef.child(Item.Users.rawValue)
     static let usersPublicSummaryRef = databaseRef.child(Item.UserSummary.rawValue)
@@ -153,6 +156,105 @@ class Database {
         })
     }
     
+    /* CREATE / UPDATE FEED */
+    static func addNewQuestionsFromTagToFeed(tagID : String, completion: (success: Bool) -> Void) {
+        var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
+        
+        currentUserRef.child("savedTags").child(tagID).observeSingleEventOfType(.Value, withBlock: { snap in
+        if snap.exists() && snap.value!.isKindOfClass(NSString) {
+            //first get the last sync'd question for a tag
+            let lastQuestionID = snap.value as! String
+            
+            if lastQuestionID != "true" {
+                tagQuestions = tagQuestions.queryOrderedByKey().queryStartingAtValue(lastQuestionID)
+            }
+            
+            print("last question ID \(lastQuestionID)")
+            
+            var newQuestions = [String : String?]()
+            
+            tagQuestions.observeSingleEventOfType(.Value, withBlock: { questionSnap in
+                for (questionIndex, questionID) in questionSnap.children.enumerate() {
+                    print("current index is \(questionIndex) and questionID is \(questionID)")
+                    
+                    if questionID.key != lastQuestionID {
+                        newQuestions[questionID.key] = "true"
+                    }
+                        
+                    if questionIndex + 1 == Int(questionSnap.childrenCount) && questionID.key != lastQuestionID { //at the last question in tag query
+                        currentUserRef.child("savedTags").updateChildValues([tagID : questionID.key]) // update last sync'd question ID
+                        keepTagQuestionsUpdated(tagID, lastQuestionID: questionID.key) // add listener for new questions added to tag
+                    }
+                }
+                
+                // adds the questions to the feed once we have iterated through all the questions
+                updateFeedQuestions(newQuestions)
+                completion(success: true)
+            })
+        }
+        })
+    }
+    
+    static func updateFeedQuestions(questions : [String : String?]) {
+        //add new questions to feed
+        let _updatePath = currentUserRef.child(Item.Feed.rawValue)
+        
+        for (questionID, lastAnswerID) in questions {
+            var newAnswersForQuestion : FIRDatabaseQuery = questionsRef.child(questionID).child("answers")
+
+            if lastAnswerID != "true" {
+                newAnswersForQuestion = newAnswersForQuestion.queryOrderedByKey().queryStartingAtValue(lastAnswerID)
+            }
+            
+            newAnswersForQuestion.observeSingleEventOfType(.Value, withBlock: { snap in
+                let totalNewAnswers = snap.childrenCount
+
+                for (answerIndex, answerID) in snap.children.enumerate() {
+                    
+                    if answerIndex + 1 == Int(totalNewAnswers) && answerID.key != lastAnswerID {
+                        //if last answer then update value for last sync'd answer in database and add listener
+                        _updatePath.updateChildValues([questionID : answerID.key])
+                        keepQuestionsAnswersUpdated(questionID, lastAnswerID: answerID.key)
+                    }
+                }
+            })
+        }
+    }
+    
+    static func keepUserTagsUpdated() {
+        let userTagsPath : FIRDatabaseQuery = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
+        
+        userTagsPath.observeEventType(.ChildAdded, withBlock: { tagSnap in
+            if initialFeedUpdateComplete {
+                print("observer for child added fired")
+                addNewQuestionsFromTagToFeed(tagSnap.key, completion: { success in })
+            } else {
+                print("ignoring child added)")
+            }
+        })
+    }
+    
+    static func keepTagQuestionsUpdated(tagID : String, lastQuestionID : String) {
+        let tagsRef = getDatabasePath(Item.Tags, itemID: tagID).child("questions").queryOrderedByKey().queryStartingAtValue(lastQuestionID)
+        tagsRef.observeEventType(.ChildAdded, withBlock: { (snap) in
+            if snap.key != lastQuestionID {
+                print("observer fired for new question added to tag, tagID : questionID \(tagID, lastQuestionID)")
+                currentUserRef.child("savedTags").updateChildValues([tagID : snap.key]) //update last sync'd question for user
+                updateFeedQuestions([snap.key : "true"]) //add question to feed
+            }
+        })
+    }
+    
+    static func keepQuestionsAnswersUpdated(questionID : String, lastAnswerID : String) {
+        let _updatePath = currentUserRef.child("savedQuestions")
+        let _observePath = getDatabasePath(Item.Questions, itemID: questionID).child("answers").queryOrderedByKey().queryStartingAtValue(lastAnswerID)
+        
+        _observePath.observeEventType(.ChildAdded, withBlock: { snap in
+            print("this should fire once for each question with questionID : lastAnswerID \(questionID, lastAnswerID)")
+            _updatePath.updateChildValues([questionID : snap.key])
+        })
+    }
+    
     /* AUTH METHODS */
     static func createEmailUser(email : String, password: String, completion: (user : User?, error : NSError?) -> Void) {
         FIRAuth.auth()?.createUserWithEmail(email, password: password) { (_user, _error) in
@@ -262,13 +364,13 @@ class Database {
         User.currentUser!.name = nil
         User.currentUser!.answers = nil
         User.currentUser!.answeredQuestions = nil
-        User.currentUser!.savedTags = nil
+        User.currentUser!.savedTags = [ : ]
         User.currentUser!.profilePic = nil
         User.currentUser!._totalAnswers = nil
         User.currentUser!.birthday = nil
         User.currentUser!.bio = nil
         User.currentUser!.gender = nil
-        User.currentUser!.savedQuestions = nil
+        User.currentUser!.savedQuestions = [ : ]
         User.currentUser!.socialSources = [ : ]
         
         NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
@@ -321,20 +423,15 @@ class Database {
             }
             
             if snap.hasChild("savedTags") {
-                User.currentUser!.savedTags = nil
                 for _tag in snap.childSnapshotForPath("savedTags").children {
-                    if (User.currentUser!.savedTags?.append(_tag.key) == nil) {
-                        User.currentUser!.savedTags = [_tag.key]
-                    }
+                    User.currentUser!.savedTags[_tag.key] = _tag.value
                 }
             }
             
             if snap.hasChild("savedQuestions") {
-                User.currentUser!.savedQuestions = nil
+                User.currentUser!.savedQuestions = [ : ]
                 for _tag in snap.childSnapshotForPath("savedQuestions").children {
-                    if (User.currentUser!.savedQuestions?.append(_tag.key) == nil) {
-                        User.currentUser!.savedQuestions = [_tag.key]
-                    }
+                    User.currentUser!.savedQuestions[_tag.key] = _tag.value
                 }
             }
             
@@ -398,7 +495,7 @@ class Database {
     static func addUserAnswersToDatabase( answer : Answer, completion: (success : Bool, error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         
-        var answersPost = ["qID": answer.qID, "uID": _user!.uid]
+        var answersPost : [ String : AnyObject ] = ["qID": answer.qID, "uID": _user!.uid, "createdAt" : FIRServerValue.timestamp()]
         
         if answer.aLocation != nil {
             answersPost["location"] = answer.aLocation!
@@ -503,16 +600,16 @@ class Database {
         }
     }
     
-    static func pinQuestionForUser(question : Question, completion: (success : Bool, error : NSError?) -> Void) {
+    static func saveQuestion(questionID : String, completion: (success : Bool, error : NSError?) -> Void) {
         if User.isLoggedIn() {
-            if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) { //remove question
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions/\(question.qID)")
-                _path.setValue(nil, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+            if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[questionID] != nil { //remove question
+                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions/\(questionID)")
+                _path.setValue("true", withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                     error != nil ? completion(success: false, error: error!) : completion(success: true, error: nil)
                 })
             } else { //pin question
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
-                _path.updateChildValues([question.qID: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
+                _path.updateChildValues([questionID: "true"], withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                     error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)
                 })
             }
@@ -524,7 +621,7 @@ class Database {
     
     static func pinTagForUser(tag : Tag, completion: (success : Bool, error : NSError?) -> Void) {
         if User.isLoggedIn() {
-            if User.currentUser?.savedTags != nil && User.currentUser!.savedTags!.contains(tag.tagID!) { //remove tag
+            if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[tag.tagID!] != nil { //remove tag
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
                 _path.setValue(nil, withCompletionBlock: { (error:NSError?, ref:FIRDatabaseReference!) in
                     error != nil ? completion(success: false, error: error) : completion(success: true, error: nil)

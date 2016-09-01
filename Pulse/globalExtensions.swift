@@ -272,6 +272,7 @@ enum Item : String {
     case Users = "users"
     case Filters = "filters"
     case Settings = "settings"
+    case Feed = "savedQuestions"
     case SettingSections = "settingsSections"
     case AnswerThumbs = "answerThumbnails"
     case AnswerCollections = "answerCollections"

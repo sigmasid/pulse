@@ -28,6 +28,19 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    @IBAction func updateFeed(sender: UIButton) {
+        Database.keepUserTagsUpdated()
+
+        for (index, (tagID, _)) in User.currentUser!.savedTags.enumerate() {
+            print("current tag is \(tagID)")
+            Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
+                if index + 1 == User.currentUser?.savedTags.count {
+                    initialFeedUpdateComplete = true
+                }
+            })
+        }
+    }
+    
     
     @IBAction func loadQuestions(sender: UIButton) {
         // get all answers from database

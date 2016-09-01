@@ -80,8 +80,8 @@ class ExploreTagCell: UICollectionViewCell {
             
             if let _index = index {
                 if let question = _allQuestions[_index.row] {
-                    if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) {
-                        Database.pinQuestionForUser(question, completion: {(success, error) in
+                    if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[question.qID] != nil {
+                        Database.saveQuestion(question.qID, completion: {(success, error) in
                             if !success {
                                 GlobalFunctions.showErrorBlock("Error Saving Question", erMessage: error!.localizedDescription)
                             } else {
@@ -89,7 +89,7 @@ class ExploreTagCell: UICollectionViewCell {
                             }
                         })
                     } else {
-                        Database.pinQuestionForUser(question, completion: {(success, error) in
+                        Database.saveQuestion(question.qID, completion: {(success, error) in
                             if !success {
                                 GlobalFunctions.showErrorBlock("Error Removing Question", erMessage: error!.localizedDescription)
                             } else {
@@ -135,7 +135,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
             cell.qTitle.text = _currentQuestion?.qTitle
             if savedQuestions != nil && savedQuestions!.contains(indexPath) {
                 cell.toggleSaveIcon(.Save)
-            } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(_currentQuestion!.qID) {
+            } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[_currentQuestion!.qID] != nil {
                 cell.toggleSaveIcon(.Save)
             }
             else {
@@ -148,7 +148,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
                     cell.qTitle.text = question.qTitle
                     if self.savedQuestions != nil && self.savedQuestions!.contains(indexPath) {
                         cell.toggleSaveIcon(.Save)
-                    } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) {
+                    } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[question.qID] != nil {
                         cell.toggleSaveIcon(.Save)
                     }
                     else {

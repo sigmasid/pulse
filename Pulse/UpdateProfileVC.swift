@@ -260,22 +260,22 @@ class UpdateProfileVC: UIViewController {
         switch _currentSetting.settingID {
         case "answers":
             cell.textLabel!.text = nil
-        case "savedQuestions":
-            Database.getQuestion(User.currentUser!.savedQuestions![indexRow], completion: {(question, error) in
-                if error != nil {
-                    cell.textLabel!.text = nil
-                } else {
-                    cell.textLabel!.text = question.qTitle
-                }
-            })
-        case "savedTags":
-            Database.getTag(User.currentUser!.savedTags![indexRow], completion: {(tag, error) in
-                if error != nil {
-                    cell.textLabel!.text = nil
-                } else {
-                    cell.textLabel!.text = tag.tagID
-                }
-            })
+        case "savedQuestions": return
+//            Database.getQuestion(User.currentUser!.savedQuestions![indexRow], completion: {(question, error) in
+//                if error != nil {
+//                    cell.textLabel!.text  = nil
+//                } else {
+//                    cell.textLabel!.text = question.qTitle
+//                }
+//            })
+        case "savedTags": return
+//            Database.getTag(User.currentUser!.savedTags![indexRow], completion: {(tag, error) in
+//                if error != nil {
+//                    cell.textLabel!.text = nil
+//                } else {
+//                    cell.textLabel!.text = tag.tagID
+//                }
+//            })
         default: return
         }
     }
@@ -397,9 +397,9 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
         case "answers":
             return User.currentUser!.answers?.count ?? 0
         case "savedQuestions":
-            return User.currentUser!.savedQuestions?.count ?? 0
+            return User.currentUser!.savedQuestions.count ?? 0
         case "savedTags":
-            return User.currentUser!.savedTags?.count ?? 0
+            return User.currentUser!.savedTags.count ?? 0
         default: return 0
         }
     }

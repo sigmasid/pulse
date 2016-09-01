@@ -162,7 +162,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             if let _index = index {
                 let _tag = _allTags[_index.row]
 
-                if User.currentUser?.savedTags != nil && User.currentUser!.savedTags!.contains(_tag.tagID!) {
+                if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[_tag.tagID!] != nil {
                     Database.pinTagForUser(_allTags[_index.row], completion: {(success, error) in
                         if !success {
                             GlobalFunctions.showErrorBlock("Error Pinning Tag", erMessage: error!.localizedDescription)
@@ -282,7 +282,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
             
             if savedTags != nil && savedTags!.contains(indexPath) {
                 cell.toggleSaveTagIcon(.Save)
-            } else if User.currentUser?.savedTags != nil && User.currentUser!.savedTags!.contains(_currentTag.tagID!) {
+            } else if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[_currentTag.tagID!] != nil {
                 cell.toggleSaveTagIcon(.Save)
             }
             else {
