@@ -23,7 +23,7 @@ class Question : NSObject {
         self.qID = qID
     }
     
-    init(qID: String, qTagID : String) {
+    init(qID: String, qTagID : String?) {
         self.qID = qID
         self.qTagID = qTagID
     }

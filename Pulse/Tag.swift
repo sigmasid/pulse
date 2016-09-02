@@ -20,7 +20,6 @@ class Tag : NSObject {
     
     init(tagID: String) {
         self.tagID = tagID
-        self.questions = nil
     }
     
     init(tagID: String, questions : [Question]?) {

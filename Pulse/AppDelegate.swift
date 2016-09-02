@@ -20,13 +20,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+        
+        var initialLoadComplete = false
+        // setup firebase, check twitter and facebook tokens to login if available
         FIRApp.configure()
         Fabric.with([Twitter.self()])
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
-        FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:NSError!) -> Void in
-        }
+        FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:NSError!) -> Void in }
         FBSDKProfile.enableUpdatesOnAccessTokenChange(true)
-        Database.checkCurrentUser()
+        
+        self.window = UIWindow(frame: UIScreen.mainScreen().bounds)
+        let initialVC = FeedVC()
+        self.window?.rootViewController = initialVC
+        self.window?.makeKeyAndVisible()
+        
+        Database.checkCurrentUser { success in
+            // get feed and show initial view controller
+            if success && !initialLoadComplete {
+                print("success in check current user fired")
+                initialVC.pageType = .Home
+                initialVC.feedItemType = .Question
+                initialLoadComplete = true
+            }
+        }
+
+
+        
+
+        
+//        initialVC.returnToParentDelegate = self
+//        GlobalFunctions.addNewVC(detailVC, parentVC: self)
         return true
     }
     

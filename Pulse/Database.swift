@@ -25,8 +25,8 @@ class Database {
     static let answersRef = databaseRef.child(Item.Answers.rawValue)
     static let answerCollectionsRef = databaseRef.child(Item.AnswerCollections.rawValue)
 
-    static let currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
-    static let currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!).child(Item.Feed.rawValue)
+    static var currentUserRef : FIRDatabaseReference!
+    static var currentUserFeedRef : FIRDatabaseReference!
 
     static let usersRef = databaseRef.child(Item.Users.rawValue)
     static let usersPublicSummaryRef = databaseRef.child(Item.UserSummary.rawValue)
@@ -44,6 +44,11 @@ class Database {
 //            return storageRef.child(type.rawValue).child(itemID)
 //        }
 //    }
+    
+    static func setCurrentUserPaths() {
+        currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
+        currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!).child(Item.Feed.rawValue)
+    }
     
     static func getDatabasePath(type : Item, itemID : String) -> FIRDatabaseReference {
         return databaseRef.child(type.rawValue).child(itemID)
@@ -181,32 +186,46 @@ class Database {
     static func getFeed(completion: (feed : Tag) -> Void) {
         let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
         let feedPath = currentUserFeedRef.queryOrderedByChild("lastAnswerID").queryLimitedToLast(50)
+        homeFeed.questions = [Question]()
         
         feedPath.observeSingleEventOfType(.Value, withBlock: {(snap) in
             for question in snap.children {
-                let _question = Question(qID: question.key)
-                if (homeFeed.questions?.append(_question) == nil) {
-                    homeFeed.questions = [_question]
-                }
+                let _question = Question(qID: question.key, qTagID: question.childSnapshotForPath("tagID").value as? String)
+                homeFeed.questions?.insert(_question, atIndex: 0)
+//                if (homeFeed.questions?.append(_question) == nil) {
+//                    homeFeed.questions = [_question]
+//                }
             }
             completion(feed: homeFeed)
         })
-        
+    }
+    
+    static func updateAnswersForExistingFeedQuestions() {
+        currentUserFeedRef.observeSingleEventOfType(.Value, withBlock: {(questionSnap) in
+            for question in questionSnap.children {
+                if let _answerID = questionSnap.childSnapshotForPath("\(question.key as String)/lastAnswerID").value as? String {
+                    User.currentUser!.savedQuestions[question.key] = _answerID
+                    //  Database.keepQuestionsAnswersUpdated(question.key, lastAnswerID: _answerID)
+                } else {
+                    User.currentUser!.savedQuestions[question.key] = "true"
+                }
+            }
+            updateFeedQuestions(nil, questions: User.currentUser!.savedQuestions)
+        })
     }
     
     static func addNewQuestionsFromTagToFeed(tagID : String, completion: (success: Bool) -> Void) {
+        print("add new questions form tag fired with currentUserRef of \(currentUserRef)")
         var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
         
         currentUserRef.child("savedTags").child(tagID).observeSingleEventOfType(.Value, withBlock: { snap in
-        if snap.exists() && snap.value!.isKindOfClass(NSString) {
+            if snap.exists() && snap.value!.isKindOfClass(NSString) {
             //first get the last sync'd question for a tag
             let lastQuestionID = snap.value as! String
             
             if lastQuestionID != "true" {
                 tagQuestions = tagQuestions.queryOrderedByKey().queryStartingAtValue(lastQuestionID)
             }
-            
-            print("last question ID \(lastQuestionID)")
             
             var newQuestions = [String : String?]()
             
@@ -232,9 +251,10 @@ class Database {
         })
     }
     
-    static func updateFeedQuestions(tagID : String, questions : [String : String?]) {
+    static func updateFeedQuestions(tagID : String?, questions : [String : String?]) {
         //add new questions to feed
         let _updatePath = currentUserRef.child(Item.Feed.rawValue)
+        var post = [String : AnyObject]()
         
         for (questionID, lastAnswerID) in questions {
             var newAnswersForQuestion : FIRDatabaseQuery = questionsRef.child(questionID).child("answers")
@@ -249,39 +269,37 @@ class Database {
                 for (answerIndex, answerID) in snap.children.enumerate() {
                     
                     if answerIndex + 1 == Int(totalNewAnswers) && answerID.key != lastAnswerID {
+                        
                         //if last answer then update value for last sync'd answer in database and add listener
-                        let post = ["tagID": tagID, "lastAnswerID": answerID.key]
+                        post["lastAnswerID"] = answerID.key
+                        post["newAnswerCount"] = totalNewAnswers
+                        
+                        if let _tagID = tagID {
+                            post["tagID"] = _tagID
+                        }
+                        
                         _updatePath.updateChildValues([questionID : post])
-                        keepQuestionsAnswersUpdated(questionID, lastAnswerID: answerID.key)
+//                        keepQuestionsAnswersUpdated(questionID, lastAnswerID: answerID.key)
                     }
                 }
             })
         }
     }
     
-    static func updateAnswersForExistingFeedQuestions() {
-        currentUserFeedRef.observeSingleEventOfType(.Value, withBlock: {(snap) in
-            for question in snap.children {
-                if let _answerID = snap.childSnapshotForPath("\(question.key as String)/lastAnswerID").value as? String {
-                    print("last answer ID for question \(question.key as String) is \(_answerID)")
-                    User.currentUser!.savedQuestions[question.key] = _answerID
-                    Database.keepQuestionsAnswersUpdated(question.key, lastAnswerID: _answerID)
-                }
-            }
-        })
-    }
-    
     static func keepUserTagsUpdated() {
-        let userTagsPath : FIRDatabaseQuery = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
-        
-        userTagsPath.observeEventType(.ChildAdded, withBlock: { tagSnap in
-            if initialFeedUpdateComplete {
-                print("observer for child added fired")
-                addNewQuestionsFromTagToFeed(tagSnap.key, completion: { success in })
-            } else {
-                print("ignoring child added)")
-            }
-        })
+        if User.isLoggedIn() {
+            
+            let userTagsPath : FIRDatabaseQuery = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
+            
+            userTagsPath.observeEventType(.ChildAdded, withBlock: { tagSnap in
+                if initialFeedUpdateComplete {
+                    print("observer for child added to tag fired with tag : \(tagSnap.key)")
+                    addNewQuestionsFromTagToFeed(tagSnap.key, completion: { success in })
+                } else {
+                    print("ignoring child added)")
+                }
+            })
+        }
     }
     
     static func keepTagQuestionsUpdated(tagID : String, lastQuestionID : String) {
@@ -295,6 +313,7 @@ class Database {
         })
     }
     
+    /** REMOVED THIS LISTENER TO MINIMIZE NUMBER OF CONNECTIONS - ONLY REFRESHING ANSWERS ON RELOAD **/
     static func keepQuestionsAnswersUpdated(questionID : String, lastAnswerID : String) {
         let _updatePath = currentUserRef.child("savedQuestions").child(questionID).child("lastAnswerID")
         let _observePath = getDatabasePath(Item.Questions, itemID: questionID).child("answers").queryOrderedByKey().queryStartingAtValue(lastAnswerID)
@@ -362,7 +381,6 @@ class Database {
     }
     
     static func checkSocialTokens(completion: (result: Bool) -> Void) {
-        print("checking social tokens")
         if FBSDKAccessToken.currentAccessToken() != nil {
             print("found fb token")
 
@@ -394,14 +412,17 @@ class Database {
     }
     
     ///Check if user is logged in
-    static func checkCurrentUser() {
+    static func checkCurrentUser(completion: (success : Bool) -> Void) {
         Database.checkSocialTokens({(result) in print(result)})
 
         FIRAuth.auth()?.addAuthStateDidChangeListener { auth, user in
             if let _user = user {
-                Database.populateCurrentUser(_user)
+                populateCurrentUser(_user, completion: { (success) in
+                    setCurrentUserPaths()
+                    completion(success: true)
+                })
             } else {
-                print("auth state changed")
+                print("user logged out")
                 Database.removeCurrentUser()
                 return
             }
@@ -428,7 +449,7 @@ class Database {
     }
     
     ///Populate current user
-    static func populateCurrentUser(user: FIRUser!) {
+    static func populateCurrentUser(user: FIRUser!, completion: (success: Bool) -> Void) {
         User.currentUser!.uID = user.uid
         
         usersPublicSummaryRef.child(user.uid).observeEventType(.Value, withBlock: { snap in
@@ -497,8 +518,9 @@ class Database {
                     User.currentUser!.socialSources[.twitter] = true
                 }
             }
+            
             NSNotificationCenter.defaultCenter().postNotificationName("UserUpdated", object: self)
-
+            completion(success: true)
         })
     }
     

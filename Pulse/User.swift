@@ -98,7 +98,6 @@ class User {
     }
     
     func hasSavedTags() -> Bool {
-        print("is tags empty: \(self.savedTags.isEmpty)")
         return self.savedTags.isEmpty ? false : true
     }
     

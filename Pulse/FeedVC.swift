@@ -15,7 +15,9 @@ class FeedVC: UIViewController, ParentDelegate {
             switch pageType! {
             case .Home:
                 setupScreenLayout(pageType)
-                Database.createFeed { feed in self.currentTag = feed }
+                Database.createFeed { feed in
+                    self.currentTag = feed
+                }
             case .Detail:
                 setupDetailView()
                 setupScreenLayout(pageType)
@@ -30,12 +32,12 @@ class FeedVC: UIViewController, ParentDelegate {
             switch feedItemType! {
             case .Question:
                 if !returningToExplore {
-                    totalItemCount = currentTag!.totalQuestionsForTag()
+                    totalItemCount = currentTag.totalQuestionsForTag()
                     _allQuestions = [Question?](count: totalItemCount, repeatedValue: nil)
                 }
             case .Answer:
                 if !returningToExplore {
-                    totalItemCount = currentQuestion!.totalAnswers()
+                    totalItemCount = currentQuestion.totalAnswers()
                     gettingImageForCell = [Bool](count: totalItemCount, repeatedValue: false)
                     gettingInfoForCell = [Bool](count: totalItemCount, repeatedValue: false)
                     browseAnswerPreviewImages = [UIImage?](count: totalItemCount, repeatedValue: nil)
@@ -51,12 +53,16 @@ class FeedVC: UIViewController, ParentDelegate {
             FeedCollectionView?.delegate = self
             FeedCollectionView?.dataSource = self
             FeedCollectionView?.reloadData()
+            FeedCollectionView?.layoutIfNeeded()
         }
     }
     
     var currentQuestion : Question!
     private var totalItemCount = 0
     
+    
+    private var loadingView : LoadingView?
+
     /* cache questions & answers that have been shown */
     private var _allQuestions : [Question?]!
     private var gettingImageForCell : [Bool]!
@@ -103,6 +109,12 @@ class FeedVC: UIViewController, ParentDelegate {
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(true)
+        
+        loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
+        loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
+        loadingView?.addMessage("Loading...")
+        
+        self.view.addSubview(loadingView!)
     }
     
     override func didReceiveMemoryWarning() {
@@ -115,6 +127,7 @@ class FeedVC: UIViewController, ParentDelegate {
     }
     
     private func setupScreenLayout(pageType : PageType) {
+        print("setup screen layout fired")
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
         layout.scrollDirection = UICollectionViewScrollDirection.Vertical
         layout.minimumLineSpacing = 0
@@ -132,7 +145,7 @@ class FeedVC: UIViewController, ParentDelegate {
         FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
         
         if pageType == .Home {
-            FeedCollectionView?.backgroundColor = UIColor.whiteColor()
+            FeedCollectionView?.backgroundColor = UIColor.clearColor()
             FeedCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
         } else if pageType == .Detail {
             FeedCollectionView?.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
@@ -141,7 +154,6 @@ class FeedVC: UIViewController, ParentDelegate {
         FeedCollectionView?.layoutIfNeeded()
         
         FeedCollectionView?.backgroundView = nil
-//        FeedCollectionView?.backgroundColor = UIColor.clearColor()
         FeedCollectionView?.showsVerticalScrollIndicator = false
         FeedCollectionView?.pagingEnabled = true
     }
@@ -271,14 +283,22 @@ extension FeedVC : UICollectionViewDataSource {
             cell.itemType = .Question
             
             if _allQuestions.count > indexPath.row && _allQuestions[indexPath.row] != nil {
-                let _currentQuestion = _allQuestions[indexPath.row]
-                cell.updateLabel(_currentQuestion!.qTitle, _subtitle: "#\(self.currentTag.tagID!.uppercaseString)")
-                cell.answerCount.setTitle(String(_currentQuestion!.totalAnswers()), forState: .Normal)
+                if let _currentQuestion = _allQuestions[indexPath.row] {
+                    pageType == .Home ? cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(_currentQuestion.qTagID!.uppercaseString)") :
+                        cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
+                    cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), forState: .Normal)
+                }
             } else {
                 Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
                     if error == nil {
+                        if self.pageType == .Home {
+                            question.qTagID = self.currentTag.questions![indexPath.row].qTagID
+                            cell.updateLabel(question.qTitle, _subtitle: "#\(question.qTagID!.uppercaseString)")
+                        } else {
+                            cell.updateLabel(question.qTitle, _subtitle: nil)
+
+                        }
                         self._allQuestions[indexPath.row] = question
-                        cell.updateLabel(question.qTitle, _subtitle: "#\(self.currentTag.tagID!.uppercaseString)")
                         cell.answerCount.setTitle(String(question.totalAnswers()), forState: .Normal)
                     }
                 })
@@ -357,7 +377,6 @@ extension FeedVC : UICollectionViewDataSource {
                 cell.removeAnswer()
             }
         }
-        
         return cell
     }
     
