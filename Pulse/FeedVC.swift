@@ -236,7 +236,16 @@ class FeedVC: UIViewController, ParentDelegate {
     func handlePan(pan : UIPanGestureRecognizer) {
         
         if (pan.state == UIGestureRecognizerState.Began) {
-            panStartingPointX = pan.view!.center.x
+            let translation = pan.translationInView(view)
+            let panDirection = pan.view!.frame.origin.x + translation.x
+            
+            if panDirection > 0 {
+                
+            }
+            print(panStartingPointX, panStartingPointY)
+
+
+//            panStartingPointX = pan.view!.center.x
             panStartingPointY = pan.view!.center.y
             
         } else if (pan.state == UIGestureRecognizerState.Ended) {
@@ -244,7 +253,7 @@ class FeedVC: UIViewController, ParentDelegate {
             _ = pan.view!.center.y
             
             if (panFinishingPointX > view.bounds.width) {
-                returnToParentDelegate.returnToParent(self)
+                loadSearchVC()
             } else {
                 view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
                 pan.setTranslation(CGPointZero, inView: view)
@@ -256,6 +265,13 @@ class FeedVC: UIViewController, ParentDelegate {
                 pan.setTranslation(CGPointZero, inView: view)
             }
         }
+    }
+    
+    private func loadSearchVC() {
+        let searchVC = SearchVC()
+        searchVC.view.frame = view.bounds
+        searchVC.goBackDelegate = self
+        presentViewController(searchVC, animated: true, completion: {})
     }
 }
 

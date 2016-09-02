@@ -21,6 +21,8 @@ class SearchVC: UIViewController {
     private var isMainViewSetup = false
     private var resultsViewSetup = false
     
+    weak var goBackDelegate : ParentDelegate!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
@@ -37,6 +39,7 @@ class SearchVC: UIViewController {
     func setupView() {
         
         if !isMainViewSetup {
+            view.backgroundColor = UIColor.whiteColor()
             icon = Icon(frame: CGRectMake(0, 0, IconSizes.Medium.rawValue, IconSizes.Medium.rawValue))
             icon.drawIconBackground(UIColor.blackColor())
             icon.drawIcon(UIColor.whiteColor(), iconThickness: IconThickness.Medium.rawValue)
