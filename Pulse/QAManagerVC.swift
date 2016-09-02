@@ -90,7 +90,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         questionCounter += 1
         
         if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
-            Database.getQuestion(selectedTag.questions![questionCounter], completion: { (question, error) in
+            Database.getQuestion(selectedTag.questions![questionCounter].qID, completion: { (question, error) in
                 if error != nil {
                     completion(question: nil, error: error)
                 } else {

@@ -275,7 +275,7 @@ extension FeedVC : UICollectionViewDataSource {
                 cell.updateLabel(_currentQuestion!.qTitle, _subtitle: "#\(self.currentTag.tagID!.uppercaseString)")
                 cell.answerCount.setTitle(String(_currentQuestion!.totalAnswers()), forState: .Normal)
             } else {
-                Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+                Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
                     if error == nil {
                         self._allQuestions[indexPath.row] = question
                         cell.updateLabel(question.qTitle, _subtitle: "#\(self.currentTag.tagID!.uppercaseString)")

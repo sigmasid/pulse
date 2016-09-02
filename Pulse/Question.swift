@@ -11,7 +11,7 @@ import Firebase
 
 class Question : NSObject {
     var qID : String
-    var channelTags : [String]?
+    var qTagID : String?
     var qTitle : String?
     
     dynamic var qCreated = false
@@ -21,6 +21,11 @@ class Question : NSObject {
     
     init(qID: String) {
         self.qID = qID
+    }
+    
+    init(qID: String, qTagID : String) {
+        self.qID = qID
+        self.qTagID = qTagID
     }
     
     init(qID: String, snapshot: FIRDataSnapshot) {

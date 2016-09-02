@@ -325,7 +325,7 @@ extension DetailVC : UITableViewDataSource, UITableViewDelegate {
                 let _currentQuestion = _allQuestions[indexPath.row]
                 cell.titleLabel.text = _currentQuestion?.qTitle
             } else {
-                Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+                Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
                     if error == nil {
                         self._allQuestions[indexPath.row] =  question
                         cell.titleLabel.text = question.qTitle
@@ -400,7 +400,7 @@ extension DetailVC : UICollectionViewDataSource {
                 let _currentQuestion = _allQuestions[indexPath.row]
                 cell.titleLabel!.text = _currentQuestion?.qTitle
             } else {
-                Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+                Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
                     if error == nil {
                         self._allQuestions[indexPath.row] = question
                         cell.titleLabel!.text = question.qTitle

@@ -142,7 +142,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
                 cell.keepSaveHidden()
             }
         } else {
-            Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+            Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
                 if error == nil {
                     self._allQuestions.append(question)
                     cell.qTitle.text = question.qTitle

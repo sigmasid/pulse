@@ -12,7 +12,7 @@ import Firebase
 
 class Tag : NSObject {
     var tagID: String?
-    var questions: [String]?
+    var questions: [Question]?
     var tagImage : String?
     var previewImage : String?
     
@@ -23,7 +23,7 @@ class Tag : NSObject {
         self.questions = nil
     }
     
-    init(tagID: String, questions : [String]?) {
+    init(tagID: String, questions : [Question]?) {
         self.tagID = tagID
         self.questions = questions
     }
@@ -35,8 +35,9 @@ class Tag : NSObject {
         self.previewImage = snapshot.childSnapshotForPath("previewImage").value as? String
 
         for question in snapshot.childSnapshotForPath("questions").children {
-            if (self.questions?.append(question.key) == nil) {
-                self.questions = [question.key]
+            let _question = Question(qID: question.key)
+            if (self.questions?.append(_question) == nil) {
+                self.questions = [_question]
             }
         }
         self.tagCreated = true

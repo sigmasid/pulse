@@ -160,9 +160,11 @@ class Database {
     static func createFeed(completedFeed: (feed : Tag) -> Void) {
         Database.keepUserTagsUpdated()
         
+        //monitor updates to existing questions
+        updateAnswersForExistingFeedQuestions()
+        
         //add in new posts before returning feed
         for (index, (tagID, _)) in User.currentUser!.savedTags.enumerate() {
-            print("current tag is \(tagID)")
             Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
                 if index + 1 == User.currentUser?.savedTags.count && success {
                     initialFeedUpdateComplete = true
@@ -178,12 +180,13 @@ class Database {
     
     static func getFeed(completion: (feed : Tag) -> Void) {
         let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
-        let feedPath = currentUserFeedRef.queryOrderedByValue().queryLimitedToFirst(50)
+        let feedPath = currentUserFeedRef.queryOrderedByChild("lastAnswerID").queryLimitedToLast(50)
         
         feedPath.observeSingleEventOfType(.Value, withBlock: {(snap) in
             for question in snap.children {
-                if (homeFeed.questions?.append(question.key) == nil) {
-                    homeFeed.questions = [question.key]
+                let _question = Question(qID: question.key)
+                if (homeFeed.questions?.append(_question) == nil) {
+                    homeFeed.questions = [_question]
                 }
             }
             completion(feed: homeFeed)
@@ -256,6 +259,18 @@ class Database {
         }
     }
     
+    static func updateAnswersForExistingFeedQuestions() {
+        currentUserFeedRef.observeSingleEventOfType(.Value, withBlock: {(snap) in
+            for question in snap.children {
+                if let _answerID = snap.childSnapshotForPath("\(question.key as String)/lastAnswerID").value as? String {
+                    print("last answer ID for question \(question.key as String) is \(_answerID)")
+                    User.currentUser!.savedQuestions[question.key] = _answerID
+                    Database.keepQuestionsAnswersUpdated(question.key, lastAnswerID: _answerID)
+                }
+            }
+        })
+    }
+    
     static func keepUserTagsUpdated() {
         let userTagsPath : FIRDatabaseQuery = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
         
@@ -285,7 +300,7 @@ class Database {
         let _observePath = getDatabasePath(Item.Questions, itemID: questionID).child("answers").queryOrderedByKey().queryStartingAtValue(lastAnswerID)
         
         _observePath.observeEventType(.ChildAdded, withBlock: { snap in
-            print("this should fire once for each question with questionID : lastAnswerID \(questionID, lastAnswerID)")
+            print("this should fire once for each last answer with questionID : lastAnswerID \(questionID, lastAnswerID)")
             _updatePath.setValue(snap.key)
         })
     }
@@ -462,13 +477,17 @@ class Database {
                     User.currentUser!.savedTags[_tag.key] = _tag.value
                 }
             }
-            
-            if snap.hasChild("savedQuestions") {
-                User.currentUser!.savedQuestions = [ : ]
-                for _tag in snap.childSnapshotForPath("savedQuestions").children {
-                    User.currentUser!.savedQuestions[_tag.key] = _tag.value
-                }
-            }
+
+//            ** GETS UPDATED WHEN FEED IS LOADED ** //
+//            if snap.hasChild("savedQuestions") {
+//                User.currentUser!.savedQuestions = [ : ]
+//                for question in snap.childSnapshotForPath("savedQuestions").children {
+//                    if let _answerID = snap.childSnapshotForPath("savedQuestions/\(question)/lastAnswerID").value as? String {
+//                        User.currentUser!.savedQuestions[question.key] = _answerID
+//                        Database.keepQuestionsAnswersUpdated(question.key, lastAnswerID: _answerID)
+//                    }
+//                }
+//            }
             
             for profile in user.providerData {
                 let providerID = profile.providerID
