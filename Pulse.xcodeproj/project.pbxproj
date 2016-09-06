@@ -43,12 +43,15 @@
 		BA819D781D5E82EA002D69FA /* AnswerMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA819D771D5E82EA002D69FA /* AnswerMenu.swift */; };
 		BA8D6F3A1D372B4400C83942 /* ExploreQuestionCellFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8D6F391D372B4400C83942 /* ExploreQuestionCellFooter.swift */; };
 		BA8E83031D38540C002345D2 /* AccountPageVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8E83021D38540C002345D2 /* AccountPageVC.swift */; };
+		BAA794A01D7A50C700700AF7 /* BaseAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */; };
 		BAA815911D2C710D00507E02 /* AnswerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA815901D2C710D00507E02 /* AnswerOverlay.swift */; };
 		BAACBF7C1D248C3A009F23D0 /* ExploreTagCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */; };
 		BAACBF7E1D248C4C009F23D0 /* ExploreTagsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */; };
 		BAB7CD211D4AEB310058AD9C /* UpdateProfileVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */; };
 		BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */; };
 		BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */; };
+		BAC892D91D7A28870060A928 /* PanInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892D81D7A28870060A928 /* PanInteractionController.swift */; };
+		BAC892DC1D7A291E0060A928 /* PanPresentAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892DB1D7A291E0060A928 /* PanPresentAnimationController.swift */; };
 		BAD363A81D51319600560EB5 /* QuestionPreviewOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A71D51319600560EB5 /* QuestionPreviewOverlay.swift */; };
 		BAD363AA1D51646E00560EB5 /* DetailCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A91D51646E00560EB5 /* DetailCollectionCell.swift */; };
 		BAD37D601D25ED9D00BACB04 /* ExploreQuestionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */; };
@@ -102,12 +105,15 @@
 		BA819D771D5E82EA002D69FA /* AnswerMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnswerMenu.swift; sourceTree = "<group>"; };
 		BA8D6F391D372B4400C83942 /* ExploreQuestionCellFooter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreQuestionCellFooter.swift; sourceTree = "<group>"; };
 		BA8E83021D38540C002345D2 /* AccountPageVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountPageVC.swift; sourceTree = "<group>"; };
+		BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseAnimator.swift; sourceTree = "<group>"; };
 		BAA815901D2C710D00507E02 /* AnswerOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnswerOverlay.swift; sourceTree = "<group>"; };
 		BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagCell.swift; sourceTree = "<group>"; };
 		BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagsVC.swift; sourceTree = "<group>"; };
 		BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateProfileVC.swift; sourceTree = "<group>"; };
 		BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableCell.swift; sourceTree = "<group>"; };
 		BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginHeaderView.swift; sourceTree = "<group>"; };
+		BAC892D81D7A28870060A928 /* PanInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanInteractionController.swift; sourceTree = "<group>"; };
+		BAC892DB1D7A291E0060A928 /* PanPresentAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanPresentAnimationController.swift; sourceTree = "<group>"; };
 		BAD363A71D51319600560EB5 /* QuestionPreviewOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuestionPreviewOverlay.swift; sourceTree = "<group>"; };
 		BAD363A91D51646E00560EB5 /* DetailCollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailCollectionCell.swift; sourceTree = "<group>"; };
 		BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreQuestionCell.swift; sourceTree = "<group>"; };
@@ -193,6 +199,7 @@
 				BA6B78B41D2D7D56003EE992 /* User Recorded Answer */,
 				BAA2C15D1D2F932900169A13 /* Explore */,
 				BA53EAB81D70E08100357E5A /* SearchVC.swift */,
+				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
 			);
 			path = Pulse;
 			sourceTree = "<group>";
@@ -289,6 +296,16 @@
 				BA7D55291D74C5A9005EF7F3 /* FeedCell.swift */,
 			);
 			name = Explore;
+			sourceTree = "<group>";
+		};
+		BAC892DA1D7A28CF0060A928 /* Transition Animation */ = {
+			isa = PBXGroup;
+			children = (
+				BAC892D81D7A28870060A928 /* PanInteractionController.swift */,
+				BAC892DB1D7A291E0060A928 /* PanPresentAnimationController.swift */,
+				BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */,
+			);
+			name = "Transition Animation";
 			sourceTree = "<group>";
 		};
 		BAFA886F1D5922B100854B12 /* Browse Answers */ = {
@@ -460,6 +477,7 @@
 				BA1DE1291D244440004F3ED2 /* Icon.swift in Sources */,
 				BA1DE1231D244393004F3ED2 /* Question.swift in Sources */,
 				BAD37D621D2640E800BACB04 /* Database.swift in Sources */,
+				BAC892D91D7A28870060A928 /* PanInteractionController.swift in Sources */,
 				BA1DE13E1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift in Sources */,
 				BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */,
 				BAD7A2B11D5473D30003CED4 /* Save.swift in Sources */,
@@ -476,6 +494,7 @@
 				BA7D677D1D30D07400883B88 /* LoginCreateAccountVC.swift in Sources */,
 				BA8D6F3A1D372B4400C83942 /* ExploreQuestionCellFooter.swift in Sources */,
 				BA53EAB91D70E08100357E5A /* SearchVC.swift in Sources */,
+				BAA794A01D7A50C700700AF7 /* BaseAnimator.swift in Sources */,
 				BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */,
 				BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */,
 				BAFA88711D59240B00854B12 /* BrowseAnswersCell.swift in Sources */,
@@ -492,6 +511,7 @@
 				BAD363AA1D51646E00560EB5 /* DetailCollectionCell.swift in Sources */,
 				BA819D781D5E82EA002D69FA /* AnswerMenu.swift in Sources */,
 				BAD363A81D51319600560EB5 /* QuestionPreviewOverlay.swift in Sources */,
+				BAC892DC1D7A291E0060A928 /* PanPresentAnimationController.swift in Sources */,
 				BA7D552A1D74C5A9005EF7F3 /* FeedCell.swift in Sources */,
 				BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */,
 				BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */,

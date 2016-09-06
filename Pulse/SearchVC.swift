@@ -21,15 +21,16 @@ class SearchVC: UIViewController {
     private var isMainViewSetup = false
     private var resultsViewSetup = false
     
-    weak var goBackDelegate : ParentDelegate!
+    //set by delegate
+    var rootVC : UIViewController?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupView()
     }
 
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
-        setupView()
     }
     
     override func didReceiveMemoryWarning() {

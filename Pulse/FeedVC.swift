@@ -8,7 +8,12 @@
 
 import UIKit
 
-class FeedVC: UIViewController, ParentDelegate {
+class FeedVC: UIViewController {
+    
+    private var panPresentController = PanPresentAnimationController()
+
+    private var panPresentInteractionController = PanInteractionController()
+    private var panDismissInteractionController = PanInteractionController()
     
     var pageType : PageType! {
         didSet {
@@ -102,19 +107,30 @@ class FeedVC: UIViewController, ParentDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        _panGesture.minimumNumberOfTouches = 1
-        view.addGestureRecognizer(_panGesture)
-    }
-    
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(true)
-        
         loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
         loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
         loadingView?.addMessage("Loading...")
         
         self.view.addSubview(loadingView!)
+        
+        let searchVC = SearchVC()
+        searchVC.view.frame = view.bounds
+        searchVC.rootVC = self
+        searchVC.transitioningDelegate = self
+        
+        panPresentInteractionController.wireToViewController(self, toViewController: searchVC, edge: UIRectEdge.Left)
+        panDismissInteractionController.wireToViewController(searchVC, toViewController: nil, edge: UIRectEdge.Right)
+        
+//        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+//        _panGesture.minimumNumberOfTouches = 1
+//        view.addGestureRecognizer(_panGesture)
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(true)
+        
+
+        
     }
     
     override func didReceiveMemoryWarning() {
@@ -127,7 +143,6 @@ class FeedVC: UIViewController, ParentDelegate {
     }
     
     private func setupScreenLayout(pageType : PageType) {
-        print("setup screen layout fired")
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
         layout.scrollDirection = UICollectionViewScrollDirection.Vertical
         layout.minimumLineSpacing = 0
@@ -215,7 +230,7 @@ class FeedVC: UIViewController, ParentDelegate {
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-        QAVC.returnToParentDelegate = self
+//        QAVC.returnToParentDelegate = self
         QAVC.view.frame = view.bounds
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
@@ -225,53 +240,43 @@ class FeedVC: UIViewController, ParentDelegate {
         GlobalFunctions.dismissVC(currentVC)
     }
     
-    private func loadHomeFeed() {
-        
-    }
-    
-    private func keepFeedUpdated() {
-        
-    }
-    
-    func handlePan(pan : UIPanGestureRecognizer) {
-        
-        if (pan.state == UIGestureRecognizerState.Began) {
-            let translation = pan.translationInView(view)
-            let panDirection = pan.view!.frame.origin.x + translation.x
-            
-            if panDirection > 0 {
-                
-            }
-            print(panStartingPointX, panStartingPointY)
-
-
-//            panStartingPointX = pan.view!.center.x
-            panStartingPointY = pan.view!.center.y
-            
-        } else if (pan.state == UIGestureRecognizerState.Ended) {
-            let panFinishingPointX = pan.view!.center.x
-            _ = pan.view!.center.y
-            
-            if (panFinishingPointX > view.bounds.width) {
-                loadSearchVC()
-            } else {
-                view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
-                pan.setTranslation(CGPointZero, inView: view)
-            }
-        } else {
-            let translation = pan.translationInView(view)
-            if translation.x > 0 {
-                view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-                pan.setTranslation(CGPointZero, inView: view)
-            }
-        }
-    }
-    
+//    func handlePan(pan : UIPanGestureRecognizer) {
+//        
+//        if (pan.state == UIGestureRecognizerState.Began) {
+//            let translation = pan.translationInView(view)
+//            let panDirection = pan.view!.frame.origin.x + translation.x
+//            
+//            if panDirection > 0 {
+//                
+//            }
+//            print(panStartingPointX, panStartingPointY)
+//
+//
+////            panStartingPointX = pan.view!.center.x
+//            panStartingPointY = pan.view!.center.y
+//            
+//        } else if (pan.state == UIGestureRecognizerState.Ended) {
+//            let panFinishingPointX = pan.view!.center.x
+//            _ = pan.view!.center.y
+//            
+//            if (panFinishingPointX > view.bounds.width) {
+//                loadSearchVC()
+//            } else {
+//                view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
+//                pan.setTranslation(CGPointZero, inView: view)
+//            }
+//        } else {
+//            let translation = pan.translationInView(view)
+//            if translation.x > 0 {
+//                view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
+//                pan.setTranslation(CGPointZero, inView: view)
+//            }
+//        }
+//    }
+  
     private func loadSearchVC() {
-        let searchVC = SearchVC()
-        searchVC.view.frame = view.bounds
-        searchVC.goBackDelegate = self
-        presentViewController(searchVC, animated: true, completion: {})
+
+//        panInteractionController.wireToViewController(nextViewController, withView: nextViewController.view, presentViewController: nil)
     }
 }
 
@@ -408,5 +413,30 @@ extension FeedVC : UICollectionViewDataSource {
 extension FeedVC: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
         return CGSize(width: (FeedCollectionView!.frame.width / 2), height: FeedCollectionView!.frame.height / 3.5)
+    }
+}
+
+extension FeedVC: UIViewControllerTransitioningDelegate {
+    
+    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        let animator = PanPresentAnimationController()
+        animator.transitionType = .Present
+        return animator
+    }
+    
+    func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        let animator = PanPresentAnimationController()
+        animator.transitionType = .Dismiss
+        print("dismiss animation controller fired")
+        return animator
+    }
+    
+    func interactionControllerForPresentation(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return panPresentInteractionController.interactionInProgress ? panPresentInteractionController : nil
+    }
+    
+    func interactionControllerForDismissal(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        print("interaction controller for dismiss fired")
+        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
