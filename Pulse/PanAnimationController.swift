@@ -8,9 +8,11 @@
 
 import UIKit
 
-class PanPresentAnimationController: BaseAnimator  {
+class PanAnimationController: BaseAnimator  {
     
-    /* set by master */
+    var initialFrame : CGRect!
+    var exitFrame : CGRect!
+    
     override func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
         return 0.5
     }
@@ -22,13 +24,11 @@ class PanPresentAnimationController: BaseAnimator  {
         }
         
         let fromVCRect = transitionContext.initialFrameForViewController(fromVC)
-        var toVCRect = fromVCRect
-        toVCRect.origin.x = fromVCRect.minX - toVCRect.size.width
         toVC.view.frame = fromVCRect
         
         let snapshot = toVC.view.resizableSnapshotViewFromRect(toVC.view.frame, afterScreenUpdates: true, withCapInsets: UIEdgeInsetsZero)
         toVC.view.hidden = true
-        snapshot.frame = toVCRect
+        snapshot.frame = initialFrame
         
         containerView.addSubview(fromVC.view)
         containerView.addSubview(toVC.view)
@@ -43,27 +43,26 @@ class PanPresentAnimationController: BaseAnimator  {
             options: animOptions,
             animations: {
                 snapshot.frame = fromVCRect
+                fromVC.view.frame = self.exitFrame
             }, completion: { _ in
                 toVC.view.hidden = false
+                fromVC.view.frame = fromVCRect
                 snapshot.removeFromSuperview()
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
         })
     }
     
     override func animateDismissingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
-        
         guard let containerView = transitionContext.containerView() else {
             return
         }
         
         let fromVCRect = transitionContext.initialFrameForViewController(fromVC)
-        var toVCRect = fromVCRect
-        toVCRect.origin.x = fromVCRect.maxX
         toVC.view.frame = fromVCRect
         
         let snapshot = toVC.view.resizableSnapshotViewFromRect(toVC.view.frame, afterScreenUpdates: true, withCapInsets: UIEdgeInsetsZero)
         toVC.view.hidden = true
-        snapshot.frame = toVCRect
+        snapshot.frame = initialFrame
         
         containerView.addSubview(fromVC.view)
         containerView.addSubview(toVC.view)
@@ -78,7 +77,9 @@ class PanPresentAnimationController: BaseAnimator  {
             options: animOptions,
             animations: {
                 snapshot.frame = fromVCRect
+                fromVC.view.frame = self.exitFrame
             }, completion: { _ in
+                fromVC.view.frame = fromVCRect
                 toVC.view.hidden = false
                 snapshot.removeFromSuperview()
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled())

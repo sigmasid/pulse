@@ -47,7 +47,6 @@ class PanInteractionController: UIPercentDrivenInteractiveTransition {
             if let toViewController = toViewController {
                 fromViewController?.presentViewController(toViewController, animated: true, completion: nil)
             } else {
-                print("dismiss in switch fired")
                 fromViewController?.dismissViewControllerAnimated(true, completion: nil)
             }
             
@@ -63,10 +62,9 @@ class PanInteractionController: UIPercentDrivenInteractiveTransition {
             interactionInProgress = false
             
             if !shouldCompleteTransition {
-                print("canceled transition")
                 cancelInteractiveTransition()
             } else {
-                print("completed transition")
+                shouldCompleteTransition = false
                 finishInteractiveTransition()
             }
             

@@ -51,21 +51,21 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        _panGesture.minimumNumberOfTouches = 1
-        self.view.addGestureRecognizer(_panGesture)
+        displayQuestion()
+//        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+//        _panGesture.minimumNumberOfTouches = 1
+//        self.view.addGestureRecognizer(_panGesture)
     }
     
     override func viewDidAppear(animated: Bool) {
         
-        loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
-        loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
-        loadingView?.addMessage("Loading...")
+//        loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
+//        loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
+//        loadingView?.addMessage("Loading...")
+//        
+//        self.view.addSubview(loadingView!)
         
-        self.view.addSubview(loadingView!)
         
-        displayQuestion()
     }
     
     override func prefersStatusBarHidden() -> Bool {

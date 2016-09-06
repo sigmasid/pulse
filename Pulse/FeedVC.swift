@@ -10,10 +10,15 @@ import UIKit
 
 class FeedVC: UIViewController {
     
-    private var panPresentController = PanPresentAnimationController()
-
     private var panPresentInteractionController = PanInteractionController()
     private var panDismissInteractionController = PanInteractionController()
+    
+    private var initialFrame : CGRect!
+    private var rectToRight : CGRect!
+    private var rectToLeft : CGRect!
+    
+    private var searchVC : SearchVC!
+    private var QAVC : QAManagerVC!
     
     var pageType : PageType! {
         didSet {
@@ -64,8 +69,6 @@ class FeedVC: UIViewController {
     
     var currentQuestion : Question!
     private var totalItemCount = 0
-    
-    
     private var loadingView : LoadingView?
 
     /* cache questions & answers that have been shown */
@@ -99,10 +102,9 @@ class FeedVC: UIViewController {
     private var deselectedIndex : NSIndexPath?
     
     var returningToExplore = false
-    weak var returnToParentDelegate : ParentDelegate!
-    
-    private var panStartingPointX : CGFloat = 0
-    private var panStartingPointY : CGFloat = 0
+//    
+//    private var panStartingPointX : CGFloat = 0
+//    private var panStartingPointY : CGFloat = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -113,13 +115,18 @@ class FeedVC: UIViewController {
         
         self.view.addSubview(loadingView!)
         
-        let searchVC = SearchVC()
+        searchVC = SearchVC()
         searchVC.view.frame = view.bounds
         searchVC.rootVC = self
         searchVC.transitioningDelegate = self
         
         panPresentInteractionController.wireToViewController(self, toViewController: searchVC, edge: UIRectEdge.Left)
-        panDismissInteractionController.wireToViewController(searchVC, toViewController: nil, edge: UIRectEdge.Right)
+        
+        rectToLeft = view.frame
+        rectToLeft.origin.x = view.frame.minX - view.frame.size.width
+        
+        rectToRight = view.frame
+        rectToRight.origin.x = view.frame.maxX
         
 //        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
 //        _panGesture.minimumNumberOfTouches = 1
@@ -128,9 +135,6 @@ class FeedVC: UIViewController {
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(true)
-        
-
-        
     }
     
     override func didReceiveMemoryWarning() {
@@ -224,59 +228,18 @@ class FeedVC: UIViewController {
         }
     }
     
-    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag, _frame : CGRect?) {
-        let QAVC = QAManagerVC()
+    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
+        QAVC = QAManagerVC()
         QAVC.selectedTag = _selectedTag
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-//        QAVC.returnToParentDelegate = self
         QAVC.view.frame = view.bounds
-        GlobalFunctions.addNewVC(QAVC, parentVC: self)
-    }
-    
-    func returnToParent(currentVC : UIViewController) {
-        returningToExplore = true
-        GlobalFunctions.dismissVC(currentVC)
-    }
-    
-//    func handlePan(pan : UIPanGestureRecognizer) {
-//        
-//        if (pan.state == UIGestureRecognizerState.Began) {
-//            let translation = pan.translationInView(view)
-//            let panDirection = pan.view!.frame.origin.x + translation.x
-//            
-//            if panDirection > 0 {
-//                
-//            }
-//            print(panStartingPointX, panStartingPointY)
-//
-//
-////            panStartingPointX = pan.view!.center.x
-//            panStartingPointY = pan.view!.center.y
-//            
-//        } else if (pan.state == UIGestureRecognizerState.Ended) {
-//            let panFinishingPointX = pan.view!.center.x
-//            _ = pan.view!.center.y
-//            
-//            if (panFinishingPointX > view.bounds.width) {
-//                loadSearchVC()
-//            } else {
-//                view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
-//                pan.setTranslation(CGPointZero, inView: view)
-//            }
-//        } else {
-//            let translation = pan.translationInView(view)
-//            if translation.x > 0 {
-//                view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-//                pan.setTranslation(CGPointZero, inView: view)
-//            }
-//        }
-//    }
-  
-    private func loadSearchVC() {
-
-//        panInteractionController.wireToViewController(nextViewController, withView: nextViewController.view, presentViewController: nil)
+            
+        QAVC.transitioningDelegate = self
+        presentViewController(QAVC, animated: true, completion: nil)
+        
+//        GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
 }
 
@@ -328,7 +291,7 @@ extension FeedVC : UICollectionViewDataSource {
             if indexPath == selectedIndex && indexPath == deselectedIndex {
                 if let _selectedQuestion = _allQuestions[indexPath.row] {
                     let _translatedFrame = cell.convertRect(cell.frame, toView: self.view)
-                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
+                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
                 }
             } else if indexPath == selectedIndex {
                 if let _selectedQuestion = _allQuestions[indexPath.row] {
@@ -402,6 +365,10 @@ extension FeedVC : UICollectionViewDataSource {
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        if let attributes = collectionView.layoutAttributesForItemAtIndexPath(indexPath) {
+            let cellRect = attributes.frame
+            initialFrame = collectionView.convertRect(cellRect, toView: collectionView.superview)
+        }
         selectedIndex = indexPath
     }
     
@@ -419,16 +386,46 @@ extension FeedVC: UICollectionViewDelegateFlowLayout {
 extension FeedVC: UIViewControllerTransitioningDelegate {
     
     func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        let animator = PanPresentAnimationController()
-        animator.transitionType = .Present
-        return animator
+        if presented is SearchVC {
+            panDismissInteractionController.wireToViewController(searchVC, toViewController: nil, edge: UIRectEdge.Right)
+
+            let animator = PanAnimationController()
+            
+            animator.initialFrame = rectToLeft
+            animator.exitFrame = rectToRight
+            animator.transitionType = .Present
+            
+            return animator
+        } else if presented is QAManagerVC {
+            panDismissInteractionController.wireToViewController(QAVC, toViewController: nil, edge: UIRectEdge.Left)
+            
+            let animator = ExpandAnimationController()
+            animator.initialFrame = initialFrame
+            return animator
+        } else {
+            return nil
+        }
     }
     
     func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        let animator = PanPresentAnimationController()
-        animator.transitionType = .Dismiss
-        print("dismiss animation controller fired")
-        return animator
+        if dismissed is SearchVC {
+            let animator = PanAnimationController()
+            
+            animator.initialFrame = rectToRight
+            animator.exitFrame = rectToLeft
+            animator.transitionType = .Dismiss
+            
+            return animator
+        } else if dismissed is QAManagerVC {
+            let animator = PanAnimationController()
+
+            animator.initialFrame = rectToLeft
+            animator.exitFrame = rectToRight
+            animator.transitionType = .Dismiss
+            return animator
+        } else {
+            return nil
+        }
     }
     
     func interactionControllerForPresentation(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
@@ -436,7 +433,44 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
     }
     
     func interactionControllerForDismissal(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        print("interaction controller for dismiss fired")
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
+
+
+
+
+/* OLD PAN */
+//    func handlePan(pan : UIPanGestureRecognizer) {
+//
+//        if (pan.state == UIGestureRecognizerState.Began) {
+//            let translation = pan.translationInView(view)
+//            let panDirection = pan.view!.frame.origin.x + translation.x
+//
+//            if panDirection > 0 {
+//
+//            }
+//            print(panStartingPointX, panStartingPointY)
+//
+//
+////            panStartingPointX = pan.view!.center.x
+//            panStartingPointY = pan.view!.center.y
+//
+//        } else if (pan.state == UIGestureRecognizerState.Ended) {
+//            let panFinishingPointX = pan.view!.center.x
+//            _ = pan.view!.center.y
+//
+//            if (panFinishingPointX > view.bounds.width) {
+//                loadSearchVC()
+//            } else {
+//                view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
+//                pan.setTranslation(CGPointZero, inView: view)
+//            }
+//        } else {
+//            let translation = pan.translationInView(view)
+//            if translation.x > 0 {
+//                view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
+//                pan.setTranslation(CGPointZero, inView: view)
+//            }
+//        }
+//    }

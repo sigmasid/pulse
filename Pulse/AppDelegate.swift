@@ -37,7 +37,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Database.checkCurrentUser { success in
             // get feed and show initial view controller
             if success && !initialLoadComplete {
-                print("success in check current user fired")
                 initialVC.pageType = .Home
                 initialVC.feedItemType = .Question
                 initialLoadComplete = true

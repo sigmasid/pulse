@@ -14,6 +14,7 @@ enum ModalAnimatedTransitioningType {
 }
 
 class BaseAnimator: NSObject {
+    
     var transitionType: ModalAnimatedTransitioningType = .Present
     
     func animatePresentingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
@@ -36,7 +37,6 @@ extension BaseAnimator: UIViewControllerAnimatedTransitioning {
             case .Present:
                 animatePresentingInContext(transitionContext, fromVC: from, toVC: to)
             case .Dismiss:
-                print("dismiss case in base animator fired")
                 animateDismissingInContext(transitionContext, fromVC: from, toVC: to)
             }
         }

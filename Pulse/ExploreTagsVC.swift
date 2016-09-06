@@ -116,7 +116,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         detailVC.currentTag = _selectedTag
         detailVC.currentQuestion = _selectedQuestion
         
-        detailVC.returnToParentDelegate = self
         GlobalFunctions.addNewVC(detailVC, parentVC: self)
         
 //        let QAVC = QAManagerVC()
@@ -139,7 +138,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         detailVC.feedItemType = .Question
 //        detailVC.currentTag = _selectedTag
 
-        detailVC.returnToParentDelegate = self
         GlobalFunctions.addNewVC(detailVC, parentVC: self)
     }
     
