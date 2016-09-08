@@ -11,6 +11,7 @@ import UIKit
 class ExpandAnimationController: BaseAnimator {
     
     var initialFrame : CGRect!
+    var exitFrame : CGRect!
     
     override func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
         return 0.2
@@ -25,9 +26,8 @@ class ExpandAnimationController: BaseAnimator {
         toVC.view.frame = fromVCRect
         
         let snapshot = toVC.view.resizableSnapshotViewFromRect(toVC.view.frame, afterScreenUpdates: true, withCapInsets: UIEdgeInsetsZero)
-        toVC.view.hidden = true
+        toVC.view.alpha = 0
         snapshot.frame = initialFrame
-        print("snapshot frame is \(snapshot.frame)")
         
         containerView.addSubview(fromVC.view)
         containerView.addSubview(toVC.view)
@@ -35,16 +35,25 @@ class ExpandAnimationController: BaseAnimator {
         
         let duration = transitionDuration(transitionContext)
         
-        UIView.animateWithDuration(
+        UIView.animateKeyframesWithDuration(
             duration,
-            delay: 0.0,
-            options: UIViewAnimationOptions.CurveEaseInOut,
+            delay: 0,
+            options: .CalculationModeCubic,
             animations: {
-                snapshot.frame = fromVCRect
-            }, completion: { finished in
-                toVC.view.hidden = false
+                
+                UIView.addKeyframeWithRelativeStartTime(0.0, relativeDuration: 1, animations: {
+                    snapshot.frame = fromVCRect
+                    toVC.view.alpha = 1.0
+                })
+                
+//                UIView.addKeyframeWithRelativeStartTime(4/5, relativeDuration: 1/5, animations: {
+//                    snapshot.frame = self.exitFrame
+//                    toVC.view.alpha = 1.0
+//                })
+            },
+            completion: { _ in
                 snapshot.removeFromSuperview()
-                transitionContext.completeTransition(true)
+                transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
         })
     }
 }

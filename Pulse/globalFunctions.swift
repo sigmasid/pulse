@@ -14,7 +14,15 @@ let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alp
 let blueColor = UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0)
 
 let maxImgSize : Int64 = 1242 * 2208
-let _backgroundColors = [UIColor.cyanColor(), UIColor.yellowColor(), UIColor.blueColor(), UIColor.greenColor(), UIColor.orangeColor(), UIColor.magentaColor()]
+let color1 = UIColor(red: 0/255, green: 84/255, blue: 166/255, alpha: 1.0)
+let color2 = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0)
+let color3 = UIColor(red: 119/255, green: 4/255, blue: 37/255, alpha: 1.0)
+let color4 = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
+let color5 = UIColor(red: 39/255, green: 73/255, blue: 46/255, alpha: 1.0)
+let color6 = UIColor(red: 149/255, green: 149/255, blue: 149/255, alpha: 1.0)
+
+
+let _backgroundColors = [color1, color2, color3, color4, color5, color6]
 
 class GlobalFunctions {
     static func addBorders(_textField : UITextField) -> CAShapeLayer {

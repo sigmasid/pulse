@@ -27,6 +27,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             if self.isViewLoaded() {
                 removeObserverIfNeeded()
                 delegate.showQuestionPreviewOverlay()
+                isShowingQuestion = true
                 answerIndex = 0
                 _hasUserBeenAskedQuestion = false
                 _loadAnswer(currentQuestion, index: answerIndex)
@@ -34,6 +35,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
     }
     
+    internal var isShowingQuestion : Bool = true
     internal var answerIndex = 0
     internal var minAnswersToShow = 3
     
@@ -82,6 +84,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         super.viewWillAppear(true)
         
         if !isLoaded {
+            view.backgroundColor = UIColor.whiteColor()
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             view.addGestureRecognizer(tap)
         
@@ -208,7 +211,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     self.removeImageView()
                     if let _currentPlayerItem = self.currentPlayerItem {
                         self.qPlayer.replaceCurrentItemWithPlayerItem(_currentPlayerItem)
-                        self.delegate.hasAnswersToShow()
                         self.addObserverForStatusReady()
                     }
                 }
@@ -241,7 +243,17 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 if let _uName = user.name {
                     self._answerOverlay.setUserName(_uName)
                 }
+                
+                if let _uBio = user.shortBio {
+                    self._answerOverlay.setUserSubtitle(_uBio)
+                } else if let _location = answer.aLocation {
+                    self._answerOverlay.setUserSubtitle(_location)
+                }
+                
                 if let _uPic = user.thumbPic {
+                    self.currentUserImage = UIImage(named: "default-profile")
+                    self._answerOverlay.setUserImage(self.currentUserImage)
+                    
                     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
                         let _userImageData = NSData(contentsOfURL: NSURL(string: _uPic)!)
                         dispatch_async(dispatch_get_main_queue(), {
@@ -263,9 +275,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
         if let _qTitle = currentQuestion.qTitle {
             self._answerOverlay.setQuestion(_qTitle)
-        }
-        if let _location = answer.aLocation {
-            self._answerOverlay.setUserLocation(_location)
         }
     }
     
@@ -311,6 +320,9 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 qPlayer.play()
                 if !_tapReady {
                     _tapReady = true
+                }
+                if isShowingQuestion {
+                    delegate.hasAnswersToShow()
                 }
                 break
             default: break
@@ -473,7 +485,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         
         else if _canAdvanceReady {
             guard let _nextAnswer = nextAnswer else {
-                print("invalid next answer")
                 return
             }
             
@@ -482,12 +493,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             _addExploreAnswerDetail(_nextAnswer.aID)
             
             if _nextAnswer.aType == .recordedImage || _nextAnswer.aType == .albumImage {
-                print("next answer is image")
                 if let _image = _nextAnswer.aImage {
                     showImageView(_image)
                 }
             } else if _nextAnswer.aType == .recordedVideo || _nextAnswer.aType == .albumVideo  {
-                print("next answer is video")
 
                 removeImageView()
                 _tapReady = false
@@ -510,8 +519,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         
         else {
             if (delegate != nil) {
-                print("no answers to show")
-
                 delegate.noAnswersToShow(self)
             }
         }

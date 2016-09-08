@@ -1,5 +1,5 @@
 //
-//  PanInteractionController.swift
+//  PanEdgeInteractionController.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 9/2/16.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class PanInteractionController: UIPercentDrivenInteractiveTransition {
+class PanEdgeInteractionController: UIPercentDrivenInteractiveTransition {
     
     var interactionInProgress = false
     private var shouldCompleteTransition = false
@@ -55,6 +55,7 @@ class PanInteractionController: UIPercentDrivenInteractiveTransition {
             updateInteractiveTransition(progress)
             
         case .Cancelled:
+            print("went into cancelled animation")
             interactionInProgress = false
             cancelInteractiveTransition()
             
@@ -62,8 +63,10 @@ class PanInteractionController: UIPercentDrivenInteractiveTransition {
             interactionInProgress = false
             
             if !shouldCompleteTransition {
+                print("went into cancelled animation")
                 cancelInteractiveTransition()
             } else {
+                print("went into complete animation")
                 shouldCompleteTransition = false
                 finishInteractiveTransition()
             }

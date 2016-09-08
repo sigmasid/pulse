@@ -42,13 +42,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 initialLoadComplete = true
             }
         }
-
-
-        
-
-        
-//        initialVC.returnToParentDelegate = self
-//        GlobalFunctions.addNewVC(detailVC, parentVC: self)
         return true
     }
     

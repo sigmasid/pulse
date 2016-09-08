@@ -172,6 +172,7 @@ class CameraOverlayView: UIView {
         addSubview(_showAlbumPicker)
         
         _showAlbumPicker.setImage(UIImage(named: "down-arrow"), forState: .Normal)
+        _showAlbumPicker.backgroundColor = UIColor.whiteColor().colorWithAlphaComponent(0.01)
         _showAlbumPicker.alpha = CGFloat(_elementOpacity)
         
         _showAlbumPicker.translatesAutoresizingMaskIntoConstraints = false

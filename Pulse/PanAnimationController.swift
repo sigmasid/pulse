@@ -64,8 +64,7 @@ class PanAnimationController: BaseAnimator  {
         toVC.view.hidden = true
         snapshot.frame = initialFrame
         
-        containerView.addSubview(fromVC.view)
-        containerView.addSubview(toVC.view)
+        containerView.insertSubview(toVC.view, atIndex: 0)
         containerView.addSubview(snapshot)
         
         let duration = transitionDuration(transitionContext)
@@ -82,6 +81,7 @@ class PanAnimationController: BaseAnimator  {
                 fromVC.view.frame = fromVCRect
                 toVC.view.hidden = false
                 snapshot.removeFromSuperview()
+                
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
         })
     }

@@ -10,25 +10,24 @@ import UIKit
 
 class AnswerOverlay: UIView {
 
-    private var _headerBackground = UIView()
+    private var _questionBackground = UIView()
     private var _userBackground = UIView()
     private var _exploreAnswer = UIButton()
     
     private let _tagLabel = PaddingLabel()
     private let _questionLabel = PaddingLabel()
     
-    private let _userNameLabel = UILabel()
-    private let _userLocationLabel = UILabel()
-    private lazy var _userShortBioLabel = UILabel()
+    private let _userTitleLabel = UILabel()
+    private let _userSubtitleLabel = UILabel()
     private var _userImage = UIImageView()
     private let _videoTimer = UIView()
-    private var _pulseIcon = Icon()
     private var _showMenu : AnswerMenu!
     private var _isShowingMenu = false
+    private var _iconContainer : IconContainer!
 
-    private let _footerHeight : CGFloat = Spacing.l.rawValue
+    private let _footerHeight : CGFloat = Spacing.xl.rawValue
     private var _countdownTimerRadiusStroke : CGFloat = 3
-    private var _iconSize : CGFloat = Spacing.l.rawValue
+    private var _iconSize : CGFloat = IconSizes.Medium.rawValue
     
     private lazy var upvote = UIImageView(image: UIImage(named: "upvote"))
     private lazy var downvote = UIImageView(image: UIImage(named: "downvote"))
@@ -46,35 +45,34 @@ class AnswerOverlay: UIView {
         self.init(frame: frame)
         addIcon(iconColor, backgroundColor: iconBackground)
         addUserBackground()
-        addHeaderBackground()
+        addQuestionBackground()
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
-    private func addHeaderBackground() {
-        addSubview(_headerBackground)
-        _headerBackground.translatesAutoresizingMaskIntoConstraints = false
+    private func addQuestionBackground() {
+        addSubview(_questionBackground)
+        _questionBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        _headerBackground.topAnchor.constraintEqualToAnchor(topAnchor, constant: 0.0).active = true
-        _headerBackground.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 1.0).active = true
-        _headerBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: 0.0).active = true
-        _headerBackground.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.1).active = true
-        _headerBackground.layoutIfNeeded()
+        _questionBackground.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: 0.0).active = true
+        _questionBackground.trailingAnchor.constraintEqualToAnchor(_iconContainer.leadingAnchor).active = true
+        _questionBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: 0.0).active = true
+        _questionBackground.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.1).active = true
+        _questionBackground.layoutIfNeeded()
         
-        addQuestion()
         addTag()
+        addQuestion()
 
     }
     
     private func addUserBackground() {
         addSubview(_userBackground)
         
-//        _userBackground.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
         _userBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        _userBackground.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
+        _userBackground.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.xs.rawValue).active = true
         _userBackground.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
         _userBackground.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
         _userBackground.heightAnchor.constraintEqualToConstant(_footerHeight).active = true
@@ -84,8 +82,8 @@ class AnswerOverlay: UIView {
         _userBackground.addGestureRecognizer(userBackgroundTap)
         
         addUserImage()
-        addUserName()
-        addLocation()
+        addUserTitle()
+        addUserSubtitle()
         addExploreAnswer()
     }
     
@@ -94,7 +92,7 @@ class AnswerOverlay: UIView {
         addSubview(_exploreAnswer)
         
         _exploreAnswer.translatesAutoresizingMaskIntoConstraints = false
-        _exploreAnswer.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.xs.rawValue).active = true
+        _exploreAnswer.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.xs.rawValue).active = true
         _exploreAnswer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
         _exploreAnswer.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.xs.rawValue).active = true
         _exploreAnswer.heightAnchor.constraintEqualToAnchor(_exploreAnswer.widthAnchor).active = true
@@ -109,7 +107,7 @@ class AnswerOverlay: UIView {
     
     ///Update question text
     private func addQuestion() {
-        _headerBackground.addSubview(_questionLabel)
+        _questionBackground.addSubview(_questionLabel)
         _questionLabel.adjustsFontSizeToFitWidth = true
         
         _questionLabel.textColor = UIColor.whiteColor()
@@ -120,15 +118,15 @@ class AnswerOverlay: UIView {
         _questionLabel.lineBreakMode = .ByWordWrapping
         
         _questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        _questionLabel.topAnchor.constraintEqualToAnchor(_headerBackground.topAnchor, constant: _headerBackground.frame.height / 6).active = true
-        _questionLabel.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
-        _questionLabel.leadingAnchor.constraintEqualToAnchor(_pulseIcon.trailingAnchor, constant: Spacing.xs.rawValue).active = true
+        _questionLabel.bottomAnchor.constraintEqualToAnchor(_tagLabel.topAnchor, constant: 1.0).active = true
+        _questionLabel.trailingAnchor.constraintEqualToAnchor(_questionBackground.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
+        _questionLabel.leadingAnchor.constraintEqualToAnchor(_tagLabel.leadingAnchor).active = true
     
     }
     
     ///Update Tag in header
     private func addTag() {
-        _headerBackground.addSubview(_tagLabel)
+        _questionBackground.addSubview(_tagLabel)
         
         _tagLabel.textColor = UIColor.whiteColor()
         _tagLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.7)
@@ -136,28 +134,25 @@ class AnswerOverlay: UIView {
         _tagLabel.textAlignment = .Left
         
         _tagLabel.translatesAutoresizingMaskIntoConstraints = false
-        _tagLabel.topAnchor.constraintEqualToAnchor(_questionLabel.bottomAnchor, constant: 1.0).active = true
-        _tagLabel.heightAnchor.constraintEqualToAnchor(_headerBackground.heightAnchor, multiplier: 1/3).active = true
-        _tagLabel.leadingAnchor.constraintEqualToAnchor(_pulseIcon.trailingAnchor, constant: Spacing.xs.rawValue).active = true
+        _tagLabel.centerYAnchor.constraintEqualToAnchor(_questionBackground.centerYAnchor, constant: _questionBackground.frame.size.height * (1/6)).active = true
+        _tagLabel.leadingAnchor.constraintEqualToAnchor(_questionBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
+        _tagLabel.layoutIfNeeded()
     }
     
     ///Add Icon in header
     func addIcon(iconColor: UIColor, backgroundColor : UIColor) {
-        _pulseIcon = Icon(frame: CGRectMake(0,0, _iconSize, _iconSize))
-
-        _pulseIcon.drawIconBackground(backgroundColor.colorWithAlphaComponent(0.7))
-        _pulseIcon.drawIcon(iconColor, iconThickness: IconThickness.Medium.rawValue)
-
-        _headerBackground.addSubview(_pulseIcon)
+        _iconContainer = IconContainer(frame: CGRectMake(0,0,IconSizes.Medium.rawValue, IconSizes.Medium.rawValue + Spacing.m.rawValue), iconColor: iconColor, iconBackgroundColor: backgroundColor.colorWithAlphaComponent(0.7))
+        addSubview(_iconContainer)
         
-        _pulseIcon.translatesAutoresizingMaskIntoConstraints = false
-        _pulseIcon.centerYAnchor.constraintEqualToAnchor(_headerBackground.centerYAnchor).active = true
-        _pulseIcon.widthAnchor.constraintEqualToConstant(_iconSize).active = true
-        _pulseIcon.heightAnchor.constraintEqualToAnchor(_pulseIcon.widthAnchor).active = true
-        _pulseIcon.leadingAnchor.constraintEqualToAnchor(_headerBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
-        
+        _iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        _iconContainer.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.s.rawValue).active = true
+        _iconContainer.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue + Spacing.m.rawValue).active = true
+        _iconContainer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        _iconContainer.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.xs.rawValue).active = true
+        _iconContainer.layoutIfNeeded()
+
         let exploreAnswersTap = UITapGestureRecognizer(target: self, action: #selector(handleShowMenu))
-        _pulseIcon.addGestureRecognizer(exploreAnswersTap)
+        _iconContainer.addGestureRecognizer(exploreAnswersTap)
     }
     
     func handleProfileTap() {
@@ -193,7 +188,7 @@ class AnswerOverlay: UIView {
     }
     
     func getHeaderHeight() -> CGFloat {
-        return _headerBackground.bounds.height  
+        return _questionBackground.bounds.height
     }
     
     func showExploreAnswerDetail() {
@@ -211,39 +206,29 @@ class AnswerOverlay: UIView {
         _exploreAnswer.setDisabled()
     }
     
-    private func addUserName() {
-        _userBackground.addSubview(_userNameLabel)
+    private func addUserTitle() {
+        _userBackground.addSubview(_userTitleLabel)
 
-        _userNameLabel.textColor = UIColor.whiteColor()
-        _userNameLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
-        _userNameLabel.shadowOffset = CGSizeMake(1, 1)
-        _userNameLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightBlack)
+        _userTitleLabel.textColor = UIColor.whiteColor()
+        _userTitleLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        _userTitleLabel.shadowOffset = CGSizeMake(1, 1)
+        _userTitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightBlack)
         
-        _userNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        _userNameLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _footerHeight / 6).active = true
-        _userNameLabel.leadingAnchor.constraintEqualToAnchor(_userImage.trailingAnchor, constant: Spacing.xs.rawValue).active = true
+        _userTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        _userTitleLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _footerHeight / 5).active = true
+        _userTitleLabel.leadingAnchor.constraintEqualToAnchor(_userImage.trailingAnchor, constant: Spacing.xs.rawValue).active = true
     }
     
-    private func addLocation() {
-        _userLocationLabel.textColor = UIColor.whiteColor()
-        _userLocationLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue)
-        _userLocationLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
-        _userLocationLabel.shadowOffset = CGSizeMake(1, 1)
-        _userBackground.addSubview(_userLocationLabel)
+    private func addUserSubtitle() {
+        _userSubtitleLabel.textColor = UIColor.whiteColor()
+        _userSubtitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue)
+        _userSubtitleLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        _userSubtitleLabel.shadowOffset = CGSizeMake(1, 1)
+        _userBackground.addSubview(_userSubtitleLabel)
 
-        _userLocationLabel.translatesAutoresizingMaskIntoConstraints = false
-        _userLocationLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_footerHeight / 6).active = true
-        _userLocationLabel.leadingAnchor.constraintEqualToAnchor(_userNameLabel.leadingAnchor).active = true
-    }
-    
-    private func addBio() {
-        _userShortBioLabel.textColor = UIColor.whiteColor()
-        _userShortBioLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        _userBackground.addSubview(_userShortBioLabel)
-        
-        _userShortBioLabel.translatesAutoresizingMaskIntoConstraints = false
-        _userShortBioLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_footerHeight / 6).active = true
-        _userShortBioLabel.leadingAnchor.constraintEqualToAnchor(_userNameLabel.leadingAnchor).active = true
+        _userSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        _userSubtitleLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_footerHeight / 5).active = true
+        _userSubtitleLabel.leadingAnchor.constraintEqualToAnchor(_userTitleLabel.leadingAnchor).active = true
     }
     
     private func addUserImage() {
@@ -269,11 +254,11 @@ class AnswerOverlay: UIView {
     
     /* PUBLIC SETTER FUNCTIONS */
     func setUserName(_userName : String?) {
-        _userNameLabel.text = _userName
+        _userTitleLabel.text = _userName
     }
     
-    func setUserLocation(_userLocation : String?) {
-        _userLocationLabel.text = _userLocation
+    func setUserSubtitle(_userSubtitle : String?) {
+        _userSubtitleLabel.text = _userSubtitle
     }
     
     func setUserImage(image : UIImage?) {
@@ -298,9 +283,9 @@ class AnswerOverlay: UIView {
             addSubview(_showMenu)
             
             _showMenu.translatesAutoresizingMaskIntoConstraints = false
-            _showMenu.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.s.rawValue).active = true
+            _showMenu.bottomAnchor.constraintEqualToAnchor(_iconContainer.topAnchor).active = true
             _showMenu.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 2/5).active = true
-            _showMenu.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+            _showMenu.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
             _showMenu.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 1/4).active = true
             _showMenu.layoutIfNeeded()
             
@@ -320,9 +305,9 @@ class AnswerOverlay: UIView {
         addSubview(_videoTimer)
         
         _videoTimer.translatesAutoresizingMaskIntoConstraints = false
-        _videoTimer.centerXAnchor.constraintEqualToAnchor(_pulseIcon.centerXAnchor, constant: _iconSize / 2).active = true
+        _videoTimer.centerXAnchor.constraintEqualToAnchor(_iconContainer.centerXAnchor, constant: _iconSize / 2).active = true
         _videoTimer.widthAnchor.constraintEqualToConstant(_iconSize).active = true
-        _videoTimer.centerYAnchor.constraintEqualToAnchor(_pulseIcon.centerYAnchor, constant: _iconSize / 2).active = true
+        _videoTimer.centerYAnchor.constraintEqualToAnchor(_iconContainer.centerYAnchor, constant: _iconSize / 2 + Spacing.m.rawValue / 2).active = true
         _videoTimer.heightAnchor.constraintEqualToConstant(_iconSize).active = true
         
         // draw the countdown
@@ -384,8 +369,8 @@ class AnswerOverlay: UIView {
 
         _voteImage.translatesAutoresizingMaskIntoConstraints = false
         
-        _voteImage.topAnchor.constraintEqualToAnchor(_headerBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
-        _voteImage.trailingAnchor.constraintEqualToAnchor(_headerBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
+        _voteImage.topAnchor.constraintEqualToAnchor(_questionBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
+        _voteImage.trailingAnchor.constraintEqualToAnchor(_questionBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
         _voteImage.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
         _voteImage.heightAnchor.constraintEqualToAnchor(_voteImage.widthAnchor).active = true
         

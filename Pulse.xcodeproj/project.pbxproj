@@ -48,10 +48,14 @@
 		BAACBF7C1D248C3A009F23D0 /* ExploreTagCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */; };
 		BAACBF7E1D248C4C009F23D0 /* ExploreTagsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */; };
 		BAB03AC01D7F510C00090147 /* ExpandAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */; };
+		BAB03AC21D7F86A900090147 /* FeedPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC11D7F86A900090147 /* FeedPreview.swift */; };
+		BAB03AC41D808DEF00090147 /* ShrinkDismissAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */; };
+		BAB03AC61D80AB0500090147 /* IconContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC51D80AB0500090147 /* IconContainer.swift */; };
+		BAB03AC81D80D76300090147 /* PanInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC71D80D76300090147 /* PanInteraction.swift */; };
 		BAB7CD211D4AEB310058AD9C /* UpdateProfileVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */; };
 		BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */; };
 		BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */; };
-		BAC892D91D7A28870060A928 /* PanInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892D81D7A28870060A928 /* PanInteractionController.swift */; };
+		BAC892D91D7A28870060A928 /* PanEdgeInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */; };
 		BAC892DC1D7A291E0060A928 /* PanAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */; };
 		BAD363A81D51319600560EB5 /* QuestionPreviewOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A71D51319600560EB5 /* QuestionPreviewOverlay.swift */; };
 		BAD363AA1D51646E00560EB5 /* DetailCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A91D51646E00560EB5 /* DetailCollectionCell.swift */; };
@@ -65,6 +69,7 @@
 		BAFA8F331D42984F00C1BB14 /* FiltersOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFA8F321D42984F00C1BB14 /* FiltersOverlay.swift */; };
 		BAFA8F351D42987000C1BB14 /* FiltersCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFA8F341D42987000C1BB14 /* FiltersCell.swift */; };
 		BAFAC6F91D3436B30073651F /* DetailTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFAC6F81D3436B30073651F /* DetailTableCell.swift */; };
+		BAFBD1651D81DD7F00911453 /* FadeAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFBD1641D81DD7F00911453 /* FadeAnimationController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -111,10 +116,14 @@
 		BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagCell.swift; sourceTree = "<group>"; };
 		BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagsVC.swift; sourceTree = "<group>"; };
 		BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExpandAnimationController.swift; sourceTree = "<group>"; };
+		BAB03AC11D7F86A900090147 /* FeedPreview.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedPreview.swift; sourceTree = "<group>"; };
+		BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShrinkDismissAnimationController.swift; sourceTree = "<group>"; };
+		BAB03AC51D80AB0500090147 /* IconContainer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IconContainer.swift; sourceTree = "<group>"; };
+		BAB03AC71D80D76300090147 /* PanInteraction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanInteraction.swift; sourceTree = "<group>"; };
 		BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateProfileVC.swift; sourceTree = "<group>"; };
 		BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableCell.swift; sourceTree = "<group>"; };
 		BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginHeaderView.swift; sourceTree = "<group>"; };
-		BAC892D81D7A28870060A928 /* PanInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanInteractionController.swift; sourceTree = "<group>"; };
+		BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanEdgeInteractionController.swift; sourceTree = "<group>"; };
 		BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanAnimationController.swift; sourceTree = "<group>"; };
 		BAD363A71D51319600560EB5 /* QuestionPreviewOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuestionPreviewOverlay.swift; sourceTree = "<group>"; };
 		BAD363A91D51646E00560EB5 /* DetailCollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailCollectionCell.swift; sourceTree = "<group>"; };
@@ -128,6 +137,7 @@
 		BAFA8F321D42984F00C1BB14 /* FiltersOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FiltersOverlay.swift; sourceTree = "<group>"; };
 		BAFA8F341D42987000C1BB14 /* FiltersCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FiltersCell.swift; sourceTree = "<group>"; };
 		BAFAC6F81D3436B30073651F /* DetailTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailTableCell.swift; sourceTree = "<group>"; };
+		BAFBD1641D81DD7F00911453 /* FadeAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FadeAnimationController.swift; sourceTree = "<group>"; };
 		C4B93ACED20027ACF593EDFD /* Pods-Pulse.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pulse.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pulse/Pods-Pulse.release.xcconfig"; sourceTree = "<group>"; };
 		F6E190E94E153F0B7B61227E /* Pods_Pulse.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pulse.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -237,6 +247,7 @@
 				BA1DE1411D244C9F004F3ED2 /* globalExtensions.swift */,
 				BA7D67801D30DEA100883B88 /* globalFunctions.swift */,
 				BAD7A2B01D5473D30003CED4 /* Save.swift */,
+				BAB03AC51D80AB0500090147 /* IconContainer.swift */,
 			);
 			name = "Global Refs";
 			sourceTree = "<group>";
@@ -296,6 +307,7 @@
 				BA8D6F391D372B4400C83942 /* ExploreQuestionCellFooter.swift */,
 				BA7D55271D74C58D005EF7F3 /* FeedVC.swift */,
 				BA7D55291D74C5A9005EF7F3 /* FeedCell.swift */,
+				BAB03AC11D7F86A900090147 /* FeedPreview.swift */,
 			);
 			name = Explore;
 			sourceTree = "<group>";
@@ -303,10 +315,13 @@
 		BAC892DA1D7A28CF0060A928 /* Transition Animation */ = {
 			isa = PBXGroup;
 			children = (
-				BAC892D81D7A28870060A928 /* PanInteractionController.swift */,
+				BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */,
 				BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */,
 				BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */,
 				BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */,
+				BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */,
+				BAB03AC71D80D76300090147 /* PanInteraction.swift */,
+				BAFBD1641D81DD7F00911453 /* FadeAnimationController.swift */,
 			);
 			name = "Transition Animation";
 			sourceTree = "<group>";
@@ -471,7 +486,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				BAFA8F351D42987000C1BB14 /* FiltersCell.swift in Sources */,
+				BAB03AC41D808DEF00090147 /* ShrinkDismissAnimationController.swift in Sources */,
 				BA1DE1271D2443FD004F3ED2 /* Tag.swift in Sources */,
+				BAB03AC21D7F86A900090147 /* FeedPreview.swift in Sources */,
 				BA1C48BE1D243704008F8A04 /* ViewController.swift in Sources */,
 				BA1DE1301D24463B004F3ED2 /* DetailVC.swift in Sources */,
 				BAF2940F1D46E6DA0046B073 /* AccountLoginManagerVC.swift in Sources */,
@@ -481,14 +498,16 @@
 				BA1DE1291D244440004F3ED2 /* Icon.swift in Sources */,
 				BA1DE1231D244393004F3ED2 /* Question.swift in Sources */,
 				BAD37D621D2640E800BACB04 /* Database.swift in Sources */,
-				BAC892D91D7A28870060A928 /* PanInteractionController.swift in Sources */,
+				BAC892D91D7A28870060A928 /* PanEdgeInteractionController.swift in Sources */,
 				BA1DE13E1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift in Sources */,
 				BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */,
 				BAD7A2B11D5473D30003CED4 /* Save.swift in Sources */,
 				BAA815911D2C710D00507E02 /* AnswerOverlay.swift in Sources */,
+				BAB03AC61D80AB0500090147 /* IconContainer.swift in Sources */,
 				BA1DE12C1D2444A4004F3ED2 /* User.swift in Sources */,
 				BA7D67811D30DEA100883B88 /* globalFunctions.swift in Sources */,
 				BA1DE1251D2443BF004F3ED2 /* Answer.swift in Sources */,
+				BAFBD1651D81DD7F00911453 /* FadeAnimationController.swift in Sources */,
 				BAD37D601D25ED9D00BACB04 /* ExploreQuestionCell.swift in Sources */,
 				BA2CCC141D4A9618003C94FC /* Settings.swift in Sources */,
 				BA7D677F1D30D0B100883B88 /* LoginAddNameVC.swift in Sources */,
@@ -502,6 +521,7 @@
 				BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */,
 				BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */,
 				BAFA88711D59240B00854B12 /* BrowseAnswersCell.swift in Sources */,
+				BAB03AC81D80D76300090147 /* PanInteraction.swift in Sources */,
 				BA1DE1321D244942004F3ED2 /* processVideoHelper.swift in Sources */,
 				BAACBF7C1D248C3A009F23D0 /* ExploreTagCell.swift in Sources */,
 				BAB7CD211D4AEB310058AD9C /* UpdateProfileVC.swift in Sources */,

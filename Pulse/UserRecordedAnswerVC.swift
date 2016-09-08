@@ -44,7 +44,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     //includes currentAnswer - set by delegate - the image / video is replaced after processing when uploading file or adding more
     var currentAnswers : [Answer]!
-    var isNewEntry = true
+    var isNewEntry = true //don't reprocess video / image if the user is returning back to prior entry
     
     var currentAnswerIndex : Int = 0 {
         didSet {
@@ -119,7 +119,8 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         
         if isNewEntry {
             if currentAnswer.aType == .recordedVideo {
-
+                aPlayer.replaceCurrentItemWithPlayerItem(nil)
+                
                 processVideo(currentAnswer.aURL) { (resultURL, thumbnailImage, error) in
                     if let resultURL = resultURL {
                         let currentVideo = AVPlayerItem(URL: resultURL)
@@ -134,6 +135,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                     }
                 }
             } else if currentAnswer.aType == .albumVideo {
+                aPlayer.replaceCurrentItemWithPlayerItem(nil)
 
                 compressVideo(currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
                     if let resultURL = resultURL {
@@ -150,6 +152,8 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 })
             }
         } else {
+            aPlayer.replaceCurrentItemWithPlayerItem(nil)
+
             let currentVideo = AVPlayerItem(URL: currentAnswer.aURL)
             aPlayer.replaceCurrentItemWithPlayerItem(currentVideo)
             aPlayer.play()

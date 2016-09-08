@@ -10,8 +10,9 @@ import UIKit
 
 class FeedVC: UIViewController {
     
-    private var panPresentInteractionController = PanInteractionController()
-    private var panDismissInteractionController = PanInteractionController()
+    private var isLoaded = false
+    private var panPresentInteractionController = PanEdgeInteractionController()
+    private var panDismissInteractionController = PanEdgeInteractionController()
     
     private var initialFrame : CGRect!
     private var rectToRight : CGRect!
@@ -32,6 +33,7 @@ class FeedVC: UIViewController {
                 setupDetailView()
                 setupScreenLayout(pageType)
             }
+            addIconContainer()
         }
     }
     
@@ -68,6 +70,7 @@ class FeedVC: UIViewController {
     }
     
     var currentQuestion : Question!
+    var allTags : [Tag]!
     private var totalItemCount = 0
     private var loadingView : LoadingView?
 
@@ -84,6 +87,7 @@ class FeedVC: UIViewController {
     private lazy var titleLabel = UILabel()
     private lazy var rotatedView = UIView()
     private lazy var backgroundImage = UIImageView()
+    private var iconContainer : IconContainer!
     
     private var FeedCollectionView : UICollectionView?
     private var selectedIndex : NSIndexPath? {
@@ -109,24 +113,28 @@ class FeedVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
-        loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
-        loadingView?.addMessage("Loading...")
-        
-        self.view.addSubview(loadingView!)
-        
-        searchVC = SearchVC()
-        searchVC.view.frame = view.bounds
-        searchVC.rootVC = self
-        searchVC.transitioningDelegate = self
-        
-        panPresentInteractionController.wireToViewController(self, toViewController: searchVC, edge: UIRectEdge.Left)
-        
-        rectToLeft = view.frame
-        rectToLeft.origin.x = view.frame.minX - view.frame.size.width
-        
-        rectToRight = view.frame
-        rectToRight.origin.x = view.frame.maxX
+        if !isLoaded {
+            loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
+            loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
+            loadingView?.addMessage("Loading...")
+            
+            view.addSubview(loadingView!)
+            
+            searchVC = SearchVC()
+            searchVC.view.frame = view.bounds
+            searchVC.rootVC = self
+            searchVC.transitioningDelegate = self
+            
+            panPresentInteractionController.wireToViewController(self, toViewController: searchVC, edge: UIRectEdge.Left)
+            
+            rectToLeft = view.frame
+            rectToLeft.origin.x = view.frame.minX - view.frame.size.width
+            
+            rectToRight = view.frame
+            rectToRight.origin.x = view.frame.maxX
+            
+            isLoaded = true
+        }
         
 //        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
 //        _panGesture.minimumNumberOfTouches = 1
@@ -175,6 +183,8 @@ class FeedVC: UIViewController {
         FeedCollectionView?.backgroundView = nil
         FeedCollectionView?.showsVerticalScrollIndicator = false
         FeedCollectionView?.pagingEnabled = true
+        
+        loadingView?.removeFromSuperview()
     }
     
     private func setupDetailView() {
@@ -228,6 +238,19 @@ class FeedVC: UIViewController {
         }
     }
     
+    private func addIconContainer() {
+        iconContainer = IconContainer(frame: CGRectMake(0,0,IconSizes.Medium.rawValue, IconSizes.Medium.rawValue + Spacing.m.rawValue))
+        iconContainer.setViewTitle("HOME")
+        view.addSubview(iconContainer)
+        
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.s.rawValue).active = true
+        iconContainer.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue + Spacing.m.rawValue).active = true
+        iconContainer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        iconContainer.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        iconContainer.layoutIfNeeded()
+    }
+    
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
         QAVC = QAManagerVC()
         QAVC.selectedTag = _selectedTag
@@ -265,7 +288,8 @@ extension FeedVC : UICollectionViewDataSource {
         
         if feedItemType! == .Question {
             cell.itemType = .Question
-            
+            cell.updateLabel(nil, _subtitle: nil)
+
             if _allQuestions.count > indexPath.row && _allQuestions[indexPath.row] != nil {
                 if let _currentQuestion = _allQuestions[indexPath.row] {
                     pageType == .Home ? cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(_currentQuestion.qTagID!.uppercaseString)") :
@@ -273,6 +297,7 @@ extension FeedVC : UICollectionViewDataSource {
                     cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), forState: .Normal)
                 }
             } else {
+
                 Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
                     if error == nil {
                         if self.pageType == .Home {
@@ -401,6 +426,8 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
+            animator.exitFrame = rectToLeft
+            
             return animator
         } else {
             return nil

@@ -11,7 +11,7 @@ import UIKit
 class SearchVC: UIViewController {
     private var searchField = UITextField()
     private var searchOptions = UISegmentedControl()
-    private var icon : Icon!
+    private var iconContainer : IconContainer!
     private var viewTitleLabel = UILabel()
     
     private var searchButton = UIButton()
@@ -41,24 +41,17 @@ class SearchVC: UIViewController {
         
         if !isMainViewSetup {
             view.backgroundColor = UIColor.whiteColor()
-            icon = Icon(frame: CGRectMake(0, 0, IconSizes.Medium.rawValue, IconSizes.Medium.rawValue))
-            icon.drawIconBackground(UIColor.blackColor())
-            icon.drawIcon(UIColor.whiteColor(), iconThickness: IconThickness.Medium.rawValue)
-            view.addSubview(icon)
             
-            icon.translatesAutoresizingMaskIntoConstraints = false
-            icon.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.s.rawValue).active = true
-            icon.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
-            icon.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-            icon.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-            icon.layoutIfNeeded()
+            iconContainer = IconContainer(frame: CGRectMake(0,0,IconSizes.Medium.rawValue, IconSizes.Medium.rawValue + Spacing.m.rawValue))
+            iconContainer.setViewTitle("SEARCH")
+            view.addSubview(iconContainer)
             
-            view.addSubview(viewTitleLabel)
-            viewTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-            viewTitleLabel.topAnchor.constraintEqualToAnchor(icon.bottomAnchor).active = true
-            viewTitleLabel.centerXAnchor.constraintEqualToAnchor(icon.centerXAnchor).active = true
-            viewTitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightBold)
-            viewTitleLabel.text = "SEARCH"
+            iconContainer.translatesAutoresizingMaskIntoConstraints = false
+            iconContainer.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.s.rawValue).active = true
+            iconContainer.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue + Spacing.m.rawValue).active = true
+            iconContainer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+            iconContainer.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+            iconContainer.layoutIfNeeded()
             
             view.addSubview(toggleButton)
 //            toggleButton.addTarget(self, action: #selector(setCurrentView), forControlEvents: UIControlEvents.TouchDown)

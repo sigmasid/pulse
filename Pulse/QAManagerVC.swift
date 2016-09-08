@@ -16,7 +16,9 @@ protocol childVCDelegate: class {
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
-    func userDismissedCamera(_: UIViewController)
+//    func userDismissedCamera(_: UIViewController)
+
+    func userDismissedCamera()
     func userDismissedRecording(_: UIViewController, _currentAnswers : [Answer])
     func showAlbumPicker(_: UIViewController)
     func minAnswersShown()
@@ -39,33 +41,51 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     weak var savedRecordedVideoVC : UserRecordedAnswerVC?
     private var questionPreviewOverlay : QuestionPreviewOverlay?
     private let answerVC = ShowAnswerVC()
-    weak var returnToParentDelegate : ParentDelegate!
+//    weak var returnToParentDelegate : ParentDelegate!
     private var loadingView : LoadingView?
     
+    private var _cameraVC : CameraVC!
     private var _hasMoreAnswers = false
     private var _isShowingCamera = false
     private var _isShowingUserRecordedVideo = false
+    private var _isAddingMoreAnswers = false
+    private var panDismissInteractionController = PanInteraction()
 
     private var panStartingPointX : CGFloat = 0
     private var panStartingPointY : CGFloat = 0
     
+    private var rectToRight : CGRect!
+    private var rectToLeft : CGRect!
+    private var isLoaded = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        displayQuestion()
+        
 //        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
 //        _panGesture.minimumNumberOfTouches = 1
 //        self.view.addGestureRecognizer(_panGesture)
+        
+        rectToLeft = view.frame
+        rectToLeft.origin.x = view.frame.minX - view.frame.size.width
+        
+        rectToRight = view.frame
+        rectToRight.origin.x = view.frame.maxX
+        
+        panDismissInteractionController.delegate = self
+        
+        if !isLoaded {
+            loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
+            loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
+            loadingView?.addMessage("Loading...")
+            
+            view.addSubview(loadingView!)
+            
+            displayQuestion()
+            isLoaded = true
+        }
     }
     
     override func viewDidAppear(animated: Bool) {
-        
-//        loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
-//        loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
-//        loadingView?.addMessage("Loading...")
-//        
-//        self.view.addSubview(loadingView!)
-        
-        
     }
     
     override func prefersStatusBarHidden() -> Bool {
@@ -82,7 +102,9 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         answerVC.currentQuestion = currentQuestion
         answerVC.currentTag = selectedTag
         answerVC.delegate = self
+        
         GlobalFunctions.addNewVC(answerVC, parentVC: self)
+//        presentViewController(answerVC, animated: false, completion: nil)
         answerVC.view.hidden = true
     }
     
@@ -129,11 +151,8 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         let answer = Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser!.uID!, aType: assetType!, aLocation: location, aImage: image, aURL: assetURL)
         
         if savedRecordedVideoVC != nil {
-            print("found existing user recorded video")
             userAnswer = savedRecordedVideoVC
         } else {
-            print("creating new user recorded video")
-
             userAnswer = UserRecordedAnswerVC()
             userAnswer.currentQuestion = currentQuestion
         }
@@ -145,7 +164,26 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         userAnswer.currentAnswerIndex += 1
         
         _isShowingUserRecordedVideo = true
-        GlobalFunctions.cycleBetweenVC(currentVC, newVC: userAnswer, parentVC: self)
+        GlobalFunctions.addNewVC(userAnswer, parentVC: self)
+    }
+    
+    private func returnToRecordings() {
+        _isShowingCamera = false
+        let userAnswer : UserRecordedAnswerVC!
+        
+        if savedRecordedVideoVC != nil {
+            userAnswer = savedRecordedVideoVC
+        } else {
+            userAnswer = UserRecordedAnswerVC()
+            userAnswer.currentQuestion = currentQuestion
+        }
+        
+        userAnswer.delegate = self
+        userAnswer.isNewEntry = false
+        userAnswer.currentAnswers = currentAnswers
+        
+        _isShowingUserRecordedVideo = true
+        GlobalFunctions.addNewVC(userAnswer, parentVC: self)
     }
     
     /* check if social token available - if yes, then login and post on return, else ask user to login */
@@ -183,7 +221,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
             self.loadNextQuestion({ (question, error) in
                 if error != nil {
                     if error?.domain == "ReachedEnd" {
-                        self.returnToParentDelegate.returnToParent(self)
+                        self.dismissViewControllerAnimated(true, completion: nil)
                     }
                 } else {
                     self.answerVC.currentQuestion = question
@@ -197,7 +235,9 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         loadNextQuestion({ (question, error) in
             if error != nil {
                 if error?.domain == "ReachedEnd" {
-                    self.returnToParentDelegate.returnToParent(self)
+                    self.dismissViewControllerAnimated(true, completion: nil)
+
+//                    self.returnToParentDelegate.returnToParent(self)
                 }
             } else {
                 self.answerVC.currentQuestion = question
@@ -209,7 +249,9 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         loadPriorQuestion({ (question, error) in
             if error != nil {
                 if error?.domain == "ReachedBeginning" {
-                    self.returnToParentDelegate.returnToParent(self)
+                    self.dismissViewControllerAnimated(true, completion: nil)
+
+//                    self.returnToParentDelegate.returnToParent(self)
                 }
             } else {
                 self.answerVC.currentQuestion = question
@@ -268,29 +310,36 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     func showCamera() {
-        let _cameraVC = CameraVC()
+        _cameraVC = CameraVC()
         _cameraVC.childDelegate = self
         _cameraVC.questionToShow = currentQuestion
         _isShowingCamera = true
-        _cameraVC.view.alpha = 0
-        
-        UIView.animateWithDuration(1, animations: { _cameraVC.view.alpha = 1.0; self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
-            GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
-            self.removeQuestionPreviewOverlay()
-        })
+        _cameraVC.transitioningDelegate = self
+        presentViewController(_cameraVC, animated: true, completion: nil)
+
+//        UIView.animateWithDuration(1, animations: { self._cameraVC.view.alpha = 1.0; self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
+//            GlobalFunctions.addNewVC(self._cameraVC, parentVC: self)
+//            self.removeQuestionPreviewOverlay()
+//        })
     }
     
     func showCamera(addingMore : Bool) {
-        let _cameraVC = CameraVC()
+        _cameraVC = CameraVC()
         _cameraVC.childDelegate = self
         _cameraVC.questionToShow = currentQuestion
         _isShowingCamera = true
-        _cameraVC.view.alpha = 0
+        _isAddingMoreAnswers = true
+        
+        _cameraVC.transitioningDelegate = self
+//        _cameraVC.view.alpha = 0
         
         if addingMore {
-            UIView.animateWithDuration(0.5, animations: { _cameraVC.view.alpha = 1.0 } , completion: {(value: Bool) in
-                GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
-            })
+            panDismissInteractionController.wireToViewController(_cameraVC, toViewController: nil)
+            presentViewController(_cameraVC, animated: true, completion: nil)
+
+//            UIView.animateWithDuration(0.5, animations: { _cameraVC.view.alpha = 1.0 } , completion: {(value: Bool) in
+//                GlobalFunctions.addNewVC(_cameraVC, parentVC: self)
+//            })
         } else {
             showCamera()
         }
@@ -303,7 +352,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         albumPicker.sourceType = .PhotoLibrary
         albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
         
-        GlobalFunctions.cycleBetweenVC(currentVC, newVC: albumPicker, parentVC: self)
+        GlobalFunctions.addNewVC(albumPicker, parentVC: self)
     }
     
     func showQuestionPreviewOverlay() {
@@ -314,8 +363,9 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     private func removeQuestionPreviewOverlay() {
-        UIView.animateWithDuration(1, animations: { self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
+        UIView.animateWithDuration(0.2, animations: { self.questionPreviewOverlay?.alpha = 0 } , completion: {(value: Bool) in
             self.questionPreviewOverlay?.removeFromSuperview()
+            self.answerVC.isShowingQuestion = false
         })
     }
     
@@ -328,24 +378,24 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         currentAnswers = _currentAnswers
         _isShowingUserRecordedVideo = false
         GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
+        _isAddingMoreAnswers = false
         showCamera()
     }
     
-    func userDismissedCamera(currentVC : UIViewController) {
+    func userDismissedCamera() {
         _isShowingCamera = false
-
-        if _hasMoreAnswers {
+        if _isAddingMoreAnswers {
+            returnToRecordings()
+        } else if _hasMoreAnswers {
             returnToAnswers()
-            GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
         } else {
             self.loadNextQuestion({ (question, error) in
                 if error != nil {
                     if error?.domain == "ReachedEnd" {
-                        self.returnToParentDelegate.returnToParent(self)
+                        self.dismissViewControllerAnimated(true, completion: nil)
                     }
                 } else {
                     self.answerVC.currentQuestion = question
-                    GlobalFunctions.dismissVC(currentVC, _animationStyle: .VerticalDown)
                 }
             })
         }
@@ -357,9 +407,7 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
     }
     
     func goBack(currentVC : UIViewController) {
-        if let _returnToParent = returnToParentDelegate {
-            _returnToParent.returnToParent(self)
-        }
+        self.dismissViewControllerAnimated(true, completion: nil)
     }
     
     func loginSuccess (currentVC : UIViewController) {
@@ -369,6 +417,8 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
         GlobalFunctions.dismissVC(currentVC)
     }
     
+    
+    /* PAN GESTURE HANDLER */
     func handlePan(pan : UIPanGestureRecognizer) {
         let panCurrentPointX = pan.view!.center.x
         let _ = pan.view!.center.y
@@ -438,12 +488,47 @@ class QAManagerVC: UIViewController, childVCDelegate, UIImagePickerControllerDel
             let videoURL = info[UIImagePickerControllerMediaURL] as? NSURL
             doneRecording(videoURL, image: nil, currentVC: picker, location: nil, assetType: .albumVideo)
             // Media is a video
-            
         }
+        GlobalFunctions.dismissVC(picker)
     }
     
     func imagePickerControllerDidCancel(picker: UIImagePickerController) {
         showCamera()
         GlobalFunctions.dismissVC(picker)
+    }
+}
+
+extension QAManagerVC: UIViewControllerTransitioningDelegate {
+    
+    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        if presented is CameraVC {
+            panDismissInteractionController.wireToViewController(_cameraVC, toViewController: nil)
+            let animator = FadeAnimationController()
+            animator.transitionType = .Present
+            
+            return animator
+        } else {
+            return nil
+        }
+    }
+    
+    func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        if dismissed is CameraVC {
+            let animator = ShrinkDismissController()
+            animator.transitionType = .Dismiss
+            animator.shrinkToView = UIView(frame: CGRectMake(20,400,40,40))
+            
+            return animator
+        } else {
+            return nil
+        }
+    }
+    
+    func interactionControllerForPresentation(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return nil
+    }
+    
+    func interactionControllerForDismissal(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }

@@ -268,7 +268,7 @@ class DetailVC: UIViewController, ParentDelegate {
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-        QAVC.returnToParentDelegate = self
+//        QAVC.returnToParentDelegate = self
         QAVC.view.frame = view.bounds
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }

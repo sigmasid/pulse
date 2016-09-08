@@ -127,7 +127,6 @@ class FeedCell: UICollectionViewCell {
 
         titleLabel.setFont(FontSizes.Body.rawValue, weight: UIFontWeightRegular, color: UIColor.whiteColor(), alignment: .Left)
         titleLabel.layoutIfNeeded()
-        
         addSubview(titleLabel)
 
         addSubview(answerCount)
