@@ -40,16 +40,10 @@ class ExpandAnimationController: BaseAnimator {
             delay: 0,
             options: .CalculationModeCubic,
             animations: {
-                
                 UIView.addKeyframeWithRelativeStartTime(0.0, relativeDuration: 1, animations: {
                     snapshot.frame = fromVCRect
                     toVC.view.alpha = 1.0
                 })
-                
-//                UIView.addKeyframeWithRelativeStartTime(4/5, relativeDuration: 1/5, animations: {
-//                    snapshot.frame = self.exitFrame
-//                    toVC.view.alpha = 1.0
-//                })
             },
             completion: { _ in
                 snapshot.removeFromSuperview()

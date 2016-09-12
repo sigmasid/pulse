@@ -28,12 +28,12 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     var currentQuestion : Question! {
         didSet {
-            _controlsOverlay = RecordedAnswerOverlay(frame: view.bounds)
+//            _controlsOverlay = RecordedAnswerOverlay(frame: view.bounds)
             
             if currentQuestion.hasFilters() {
                 _answersFilters = FiltersOverlay(frame: view.bounds)
                 _answersFilters!.currentQuestion = currentQuestion
-                view.addSubview(_answersFilters!)
+//                view.addSubview(_answersFilters!) //NEED TO PUT BACK IN 
                 view.addSubview(_controlsOverlay)
             } else {
                 view.addSubview(_controlsOverlay)
@@ -67,7 +67,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     weak var delegate : childVCDelegate?
     
-    private var _controlsOverlay : RecordedAnswerOverlay!
+    private lazy var _controlsOverlay : RecordedAnswerOverlay = RecordedAnswerOverlay(frame: self.view.bounds)
     private var _answersFilters : FiltersOverlay?
     private var _isVideoLoaded = false
     private var _isImageViewLoaded = false
@@ -165,7 +165,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         if _answersFilters != nil {
             view.bringSubviewToFront(_answersFilters!)
         }
-        view.bringSubviewToFront(_controlsOverlay!)
+        view.bringSubviewToFront(_controlsOverlay)
     }
     
     func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {

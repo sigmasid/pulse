@@ -12,7 +12,7 @@ class ShrinkDismissController: BaseAnimator {
     var shrinkToView : UIView!
     
     override func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
-        return 0.5
+        return 0.3
     }
 
     override func animateDismissingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
@@ -21,12 +21,16 @@ class ShrinkDismissController: BaseAnimator {
         }
         
         let fromVCRect = transitionContext.initialFrameForViewController(fromVC)
-        containerView.addSubview(toVC.view)
-
         let snapshot = fromVC.view.resizableSnapshotViewFromRect(fromVC.view.frame, afterScreenUpdates: false, withCapInsets: UIEdgeInsetsZero)
-        snapshot.frame = fromVCRect
+        let blankView = UIView(frame: fromVCRect)
+        blankView.backgroundColor = UIColor.whiteColor()
         
-//        containerView.addSubview(fromVC.view)
+        snapshot.frame = fromVCRect
+        toVC.view.frame = fromVCRect
+        
+        containerView.addSubview(fromVC.view)
+        containerView.addSubview(toVC.view)
+        containerView.addSubview(blankView)
         containerView.addSubview(snapshot)
         
         let duration = transitionDuration(transitionContext)        
@@ -56,8 +60,11 @@ class ShrinkDismissController: BaseAnimator {
 
         CATransaction.setCompletionBlock {
             toVC.view.layer.mask = nil
+            
             transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
+            
             snapshot.removeFromSuperview()
+            blankView.removeFromSuperview()
         }
             
         maskLayer.addAnimation(pathAnimation, forKey:"pathAnimation")

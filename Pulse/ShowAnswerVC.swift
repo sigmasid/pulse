@@ -19,6 +19,7 @@ protocol answerDetailDelegate : class {
     func userClickedShowMenu()
     func userSelectedFromExploreQuestions(index : NSIndexPath)
     func userClickedExpandAnswer()
+    func votedAnswer(_vote : AnswerVoteType)
 }
 
 class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerDelegate {
@@ -26,8 +27,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         didSet {
             if self.isViewLoaded() {
                 removeObserverIfNeeded()
-                delegate.showQuestionPreviewOverlay()
-                isShowingQuestion = true
                 answerIndex = 0
                 _hasUserBeenAskedQuestion = false
                 _loadAnswer(currentQuestion, index: answerIndex)
@@ -35,7 +34,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
     }
     
-    internal var isShowingQuestion : Bool = true
     internal var answerIndex = 0
     internal var minAnswersToShow = 3
     
@@ -78,16 +76,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     override func viewDidLoad() {
         super.viewDidLoad()
-    }
-    
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(true)
         
         if !isLoaded {
+            print("went into view will appear")
             view.backgroundColor = UIColor.whiteColor()
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             view.addGestureRecognizer(tap)
-        
+            
             if (currentQuestion != nil){
                 _loadAnswer(currentQuestion, index: answerIndex)
                 _answerOverlay = AnswerOverlay(frame: view.bounds, iconColor: UIColor.blackColor(), iconBackground: UIColor.whiteColor())
@@ -102,12 +97,16 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             }
             
             NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(_startCountdownTimer), name: "PlaybackStartedNotification", object: currentPlayerItem)
-        
+            
             startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
                 NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
             })
             isLoaded = true
         }
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(true)
     }
     
     override func viewDidDisappear(animated: Bool) {
@@ -321,9 +320,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 if !_tapReady {
                     _tapReady = true
                 }
-                if isShowingQuestion {
-                    delegate.hasAnswersToShow()
-                }
+                
+                delegate.removeQuestionPreview()
                 break
             default: break
             }
@@ -379,9 +377,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     /* DELEGATE METHODS */
-    func votedAnswer(_vote : AnswerVoteType) {
-        _answerOverlay.addVote(_vote)
-        
+    func votedAnswer(_vote : AnswerVoteType) {        
         if let _currentAnswer = currentAnswer {
             Database.addAnswerVote( _vote, aID: _currentAnswer.aID, completion: { (success, error) in
                 if success {

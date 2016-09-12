@@ -12,7 +12,11 @@ class AnswerOverlay: UIView {
 
     private var _questionBackground = UIView()
     private var _userBackground = UIView()
+    
     private var _exploreAnswer = UIButton()
+    private var _upvoteButton = UIButton()
+    private var _downvoteButton = UIButton()
+    private var _saveButton = UIButton()
     
     private let _tagLabel = PaddingLabel()
     private let _questionLabel = PaddingLabel()
@@ -20,22 +24,24 @@ class AnswerOverlay: UIView {
     private let _userTitleLabel = UILabel()
     private let _userSubtitleLabel = UILabel()
     private var _userImage = UIImageView()
-    private let _videoTimer = UIView()
+    
     private var _showMenu : AnswerMenu!
     private var _isShowingMenu = false
     private var _iconContainer : IconContainer!
 
     private let _footerHeight : CGFloat = Spacing.xl.rawValue
-    private var _countdownTimerRadiusStroke : CGFloat = 3
     private var _iconSize : CGFloat = IconSizes.Medium.rawValue
     
-    private lazy var upvote = UIImageView(image: UIImage(named: "upvote"))
-    private lazy var downvote = UIImageView(image: UIImage(named: "downvote"))
-
+    private var _countdownTimerRadiusStroke : CGFloat = 3
+    private let _videoTimer = UIView()
     private var _timeLeftShapeLayer = CAShapeLayer()
     private var _bgShapeLayer = CAShapeLayer()
     
     weak var delegate : answerDetailDelegate!
+    
+    internal enum AnswersButtonSelector: Int {
+        case Upvote, Downvote, Save, Album
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -86,6 +92,52 @@ class AnswerOverlay: UIView {
         addUserSubtitle()
         addExploreAnswer()
     }
+    
+    private func addUserTitle() {
+        _userBackground.addSubview(_userTitleLabel)
+        
+        _userTitleLabel.textColor = UIColor.whiteColor()
+        _userTitleLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        _userTitleLabel.shadowOffset = CGSizeMake(1, 1)
+        _userTitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightBlack)
+        
+        _userTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        _userTitleLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _footerHeight / 5).active = true
+        _userTitleLabel.leadingAnchor.constraintEqualToAnchor(_userImage.trailingAnchor, constant: Spacing.xs.rawValue).active = true
+    }
+    
+    private func addUserSubtitle() {
+        _userSubtitleLabel.textColor = UIColor.whiteColor()
+        _userSubtitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue)
+        _userSubtitleLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        _userSubtitleLabel.shadowOffset = CGSizeMake(1, 1)
+        _userBackground.addSubview(_userSubtitleLabel)
+        
+        _userSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        _userSubtitleLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_footerHeight / 5).active = true
+        _userSubtitleLabel.leadingAnchor.constraintEqualToAnchor(_userTitleLabel.leadingAnchor).active = true
+    }
+    
+    private func addUserImage() {
+        _userBackground.addSubview(_userImage)
+        
+        _userImage.translatesAutoresizingMaskIntoConstraints = false
+        _userImage.contentMode = UIViewContentMode.ScaleAspectFill
+        _userImage.clipsToBounds = true
+        _userImage.image = nil
+        
+        _userImage.centerYAnchor.constraintEqualToAnchor(_userBackground.centerYAnchor).active = true
+        _userImage.heightAnchor.constraintEqualToAnchor(_userBackground.heightAnchor, multiplier: 0.8).active = true
+        _userImage.widthAnchor.constraintEqualToAnchor(_userImage.heightAnchor).active = true
+        _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
+        _userImage.layoutIfNeeded()
+        
+        _userImage.layer.cornerRadius = _userImage.bounds.height / 2
+        _userImage.layer.masksToBounds = true
+        _userImage.layer.shouldRasterize = true
+        _userImage.layer.rasterizationScale = UIScreen.mainScreen().scale
+    }
+
     
     private func addExploreAnswer() {
         _exploreAnswer.hidden = true
@@ -151,8 +203,64 @@ class AnswerOverlay: UIView {
         _iconContainer.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.xs.rawValue).active = true
         _iconContainer.layoutIfNeeded()
 
-        let exploreAnswersTap = UITapGestureRecognizer(target: self, action: #selector(handleShowMenu))
-        _iconContainer.addGestureRecognizer(exploreAnswersTap)
+        let iconTap = UITapGestureRecognizer(target: self, action: #selector(handleShowMenu))
+        _iconContainer.addGestureRecognizer(iconTap)
+        
+        addRestIcons()
+    }
+    
+    private func addRestIcons() {
+        addSubview(_upvoteButton)
+        addSubview(_downvoteButton)
+        addSubview(_saveButton)
+        
+        _upvoteButton.setImage(UIImage(named: "upvote"), forState: .Normal)
+        _downvoteButton.setImage(UIImage(named: "downvote"), forState: .Normal)
+        _saveButton.setImage(UIImage(named: "save"), forState: .Normal)
+        
+        _upvoteButton.alpha = 0.5
+        _downvoteButton.alpha = 0.5
+        _saveButton.alpha = 0.5
+        
+        _downvoteButton.translatesAutoresizingMaskIntoConstraints = false
+        _downvoteButton.bottomAnchor.constraintEqualToAnchor(_iconContainer.topAnchor).active = true
+        _downvoteButton.centerXAnchor.constraintEqualToAnchor(_iconContainer.centerXAnchor).active = true
+        _downvoteButton.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
+        _downvoteButton.heightAnchor.constraintEqualToAnchor(_downvoteButton.widthAnchor).active = true
+        
+        _upvoteButton.translatesAutoresizingMaskIntoConstraints = false
+        _upvoteButton.bottomAnchor.constraintEqualToAnchor(_downvoteButton.topAnchor, constant: -Spacing.s.rawValue).active = true
+        _upvoteButton.centerXAnchor.constraintEqualToAnchor(_iconContainer.centerXAnchor).active = true
+        _upvoteButton.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
+        _upvoteButton.heightAnchor.constraintEqualToAnchor(_upvoteButton.widthAnchor).active = true
+        
+        _saveButton.translatesAutoresizingMaskIntoConstraints = false
+        _saveButton.bottomAnchor.constraintEqualToAnchor(_upvoteButton.topAnchor, constant: -Spacing.s.rawValue).active = true
+        _saveButton.centerXAnchor.constraintEqualToAnchor(_iconContainer.centerXAnchor).active = true
+        _saveButton.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
+        _saveButton.heightAnchor.constraintEqualToAnchor(_saveButton.widthAnchor).active = true
+        
+        _downvoteButton.addTarget(self, action: #selector(handleDownvote), forControlEvents: UIControlEvents.TouchDown)
+        _upvoteButton.addTarget(self, action: #selector(handleUpvote), forControlEvents: UIControlEvents.TouchDown)
+        _saveButton.addTarget(self, action: #selector(handleSave), forControlEvents: UIControlEvents.TouchDown)
+    }
+    
+    func handleSave() {
+
+    }
+    
+    func handleUpvote() {
+        if delegate != nil {
+            delegate.votedAnswer(.Upvote)
+            addVote(.Upvote)
+        }
+    }
+    
+    func handleDownvote() {
+        if delegate != nil {
+            delegate.votedAnswer(.Downvote)
+            addVote(.Downvote)
+        }
     }
     
     func handleProfileTap() {
@@ -205,52 +313,6 @@ class AnswerOverlay: UIView {
         _exploreAnswer.setTitle("EXPLORING", forState: .Disabled)
         _exploreAnswer.setDisabled()
     }
-    
-    private func addUserTitle() {
-        _userBackground.addSubview(_userTitleLabel)
-
-        _userTitleLabel.textColor = UIColor.whiteColor()
-        _userTitleLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
-        _userTitleLabel.shadowOffset = CGSizeMake(1, 1)
-        _userTitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightBlack)
-        
-        _userTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        _userTitleLabel.topAnchor.constraintEqualToAnchor(_userBackground.topAnchor, constant: _footerHeight / 5).active = true
-        _userTitleLabel.leadingAnchor.constraintEqualToAnchor(_userImage.trailingAnchor, constant: Spacing.xs.rawValue).active = true
-    }
-    
-    private func addUserSubtitle() {
-        _userSubtitleLabel.textColor = UIColor.whiteColor()
-        _userSubtitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue)
-        _userSubtitleLabel.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
-        _userSubtitleLabel.shadowOffset = CGSizeMake(1, 1)
-        _userBackground.addSubview(_userSubtitleLabel)
-
-        _userSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        _userSubtitleLabel.bottomAnchor.constraintEqualToAnchor(_userBackground.bottomAnchor, constant: -_footerHeight / 5).active = true
-        _userSubtitleLabel.leadingAnchor.constraintEqualToAnchor(_userTitleLabel.leadingAnchor).active = true
-    }
-    
-    private func addUserImage() {
-        _userBackground.addSubview(_userImage)
-
-        _userImage.translatesAutoresizingMaskIntoConstraints = false
-        _userImage.contentMode = UIViewContentMode.ScaleAspectFill
-        _userImage.clipsToBounds = true
-        _userImage.image = nil
-        
-        _userImage.centerYAnchor.constraintEqualToAnchor(_userBackground.centerYAnchor).active = true
-        _userImage.heightAnchor.constraintEqualToAnchor(_userBackground.heightAnchor, multiplier: 0.8).active = true
-        _userImage.widthAnchor.constraintEqualToAnchor(_userImage.heightAnchor).active = true
-        _userImage.leadingAnchor.constraintEqualToAnchor(_userBackground.leadingAnchor, constant: Spacing.xs.rawValue).active = true
-        _userImage.layoutIfNeeded()
-        
-        _userImage.layer.cornerRadius = _userImage.bounds.height / 2
-        _userImage.layer.masksToBounds = true
-        _userImage.layer.shouldRasterize = true
-        _userImage.layer.rasterizationScale = UIScreen.mainScreen().scale
-    }
-    
     
     /* PUBLIC SETTER FUNCTIONS */
     func setUserName(_userName : String?) {
@@ -357,20 +419,25 @@ class AnswerOverlay: UIView {
     
     /* ADD VOTE ANIMATION */
     func addVote(_vote : AnswerVoteType) {
-        let _voteImage : UIImageView!
+        var _voteImage : UIImageView!
         
         switch _vote {
-        case .Upvote: _voteImage = UIImageView(image: UIImage(named: "upvote"))
-        case .Downvote: _voteImage = UIImageView(image: UIImage(named: "downvote"))
+        case .Upvote:
+            print("case upvote")
+            _voteImage = UIImageView(image: UIImage(named: "upvote"))
+            addSubview(_voteImage)
+            _voteImage.translatesAutoresizingMaskIntoConstraints = false
+            _voteImage.centerYAnchor.constraintEqualToAnchor(_upvoteButton.centerYAnchor).active = true
+            _voteImage.centerXAnchor.constraintEqualToAnchor(_upvoteButton.centerXAnchor).active = true
+        case .Downvote:
+            _voteImage = UIImageView(image: UIImage(named: "downvote"))
+            addSubview(_voteImage)
+            _voteImage.translatesAutoresizingMaskIntoConstraints = false
+            
+            _voteImage.centerYAnchor.constraintEqualToAnchor(_downvoteButton.centerYAnchor).active = true
+            _voteImage.centerXAnchor.constraintEqualToAnchor(_downvoteButton.centerXAnchor).active = true
         }
         
-        addSubview(_voteImage)
-        _voteImage.alpha = 1.0
-
-        _voteImage.translatesAutoresizingMaskIntoConstraints = false
-        
-        _voteImage.topAnchor.constraintEqualToAnchor(_questionBackground.bottomAnchor, constant: Spacing.l.rawValue).active = true
-        _voteImage.trailingAnchor.constraintEqualToAnchor(_questionBackground.trailingAnchor, constant: -Spacing.l.rawValue).active = true
         _voteImage.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
         _voteImage.heightAnchor.constraintEqualToAnchor(_voteImage.widthAnchor).active = true
         

@@ -8,31 +8,42 @@
 
 import UIKit
 
-class QuestionPreviewOverlay: UIView {
+class QuestionPreviewVC: UIViewController {
     
     private let _questionLabel = UILabel()
-    
-    private let _iconSize = IconSizes.Large.rawValue
     private let _answerCount = UIButton()
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    var questionTitle : String! {
+        didSet {
+            _questionLabel.text = questionTitle.uppercaseString
+        }
+    }
+    
+    var numAnswers : Int! {
+        didSet {
+            _answerCount.setTitle(String(numAnswers), forState: .Normal)
+        }
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
         addBackgroundColor()
         addQuestionLabel()
         addAnswerCount()
     }
     
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(true)
     }
     
     private func addBackgroundColor() {
         let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-        backgroundColor = _backgroundColors[Int(_rand)]
+        view.backgroundColor = _backgroundColors[Int(_rand)]
     }
     
     private func addQuestionLabel() {
-        addSubview(_questionLabel)
+        view.addSubview(_questionLabel)
         
         _questionLabel.backgroundColor = UIColor.clearColor()
         _questionLabel.font = UIFont.systemFontOfSize(40, weight: UIFontWeightBlack)
@@ -41,20 +52,20 @@ class QuestionPreviewOverlay: UIView {
         _questionLabel.lineBreakMode = .ByWordWrapping
         
         _questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        _questionLabel.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        _questionLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        _questionLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
+        _questionLabel.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
+        _questionLabel.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        _questionLabel.centerYAnchor.constraintEqualToAnchor(view.centerYAnchor).active = true
     }
     
     ///Add icon in top left
     private func addAnswerCount() {
-        addSubview(_answerCount)
+        view.addSubview(_answerCount)
         
         _answerCount.translatesAutoresizingMaskIntoConstraints = false
-        _answerCount.widthAnchor.constraintEqualToConstant(_iconSize).active = true
+        _answerCount.widthAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
         _answerCount.heightAnchor.constraintEqualToAnchor(_answerCount.widthAnchor).active = true
-        _answerCount.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.m.rawValue).active = true
-        _answerCount.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.m.rawValue).active = true
+        _answerCount.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.m.rawValue).active = true
+        _answerCount.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.m.rawValue).active = true
         _answerCount.layoutIfNeeded()
         
         _answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
@@ -66,10 +77,9 @@ class QuestionPreviewOverlay: UIView {
     }
     
     func setQuestionLabel(qTitle : String?) {
-        _questionLabel.text = qTitle?.uppercaseString
+
     }
     
     func setNumAnswersLabel(numAnswers : Int) {
-        _answerCount.setTitle(String(numAnswers), forState: .Normal)
     }
 }

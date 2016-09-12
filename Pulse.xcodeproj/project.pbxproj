@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5C25B58D8611991E7B2DFBA2 /* Pods_Pulse.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E190E94E153F0B7B61227E /* Pods_Pulse.framework */; };
+		BA0969841D83922D00A9BA51 /* PanContainerInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0969831D83922D00A9BA51 /* PanContainerInteractionController.swift */; };
 		BA1550C51D5554C4000EF1AA /* MiniProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1550C41D5554C4000EF1AA /* MiniProfile.swift */; };
 		BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA17FC051D3E0AEC00DC952D /* LoadingView.swift */; };
 		BA1C48BC1D243704008F8A04 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1C48BB1D243704008F8A04 /* AppDelegate.swift */; };
@@ -51,13 +52,13 @@
 		BAB03AC21D7F86A900090147 /* FeedPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC11D7F86A900090147 /* FeedPreview.swift */; };
 		BAB03AC41D808DEF00090147 /* ShrinkDismissAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */; };
 		BAB03AC61D80AB0500090147 /* IconContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC51D80AB0500090147 /* IconContainer.swift */; };
-		BAB03AC81D80D76300090147 /* PanInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC71D80D76300090147 /* PanInteraction.swift */; };
+		BAB03AC81D80D76300090147 /* PanHorizontalInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC71D80D76300090147 /* PanHorizontalInteraction.swift */; };
 		BAB7CD211D4AEB310058AD9C /* UpdateProfileVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */; };
 		BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */; };
 		BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */; };
 		BAC892D91D7A28870060A928 /* PanEdgeInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */; };
 		BAC892DC1D7A291E0060A928 /* PanAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */; };
-		BAD363A81D51319600560EB5 /* QuestionPreviewOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A71D51319600560EB5 /* QuestionPreviewOverlay.swift */; };
+		BAD363A81D51319600560EB5 /* QuestionPreviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A71D51319600560EB5 /* QuestionPreviewVC.swift */; };
 		BAD363AA1D51646E00560EB5 /* DetailCollectionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A91D51646E00560EB5 /* DetailCollectionCell.swift */; };
 		BAD37D601D25ED9D00BACB04 /* ExploreQuestionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */; };
 		BAD37D621D2640E800BACB04 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD37D611D2640E800BACB04 /* Database.swift */; };
@@ -74,6 +75,7 @@
 
 /* Begin PBXFileReference section */
 		37C2C90EEEB2CE21BC7828B6 /* Pods-Pulse.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pulse.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Pulse/Pods-Pulse.debug.xcconfig"; sourceTree = "<group>"; };
+		BA0969831D83922D00A9BA51 /* PanContainerInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanContainerInteractionController.swift; sourceTree = "<group>"; };
 		BA1550C41D5554C4000EF1AA /* MiniProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MiniProfile.swift; sourceTree = "<group>"; };
 		BA17FC051D3E0AEC00DC952D /* LoadingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
 		BA1C48B81D243704008F8A04 /* Pulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -119,13 +121,13 @@
 		BAB03AC11D7F86A900090147 /* FeedPreview.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedPreview.swift; sourceTree = "<group>"; };
 		BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShrinkDismissAnimationController.swift; sourceTree = "<group>"; };
 		BAB03AC51D80AB0500090147 /* IconContainer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IconContainer.swift; sourceTree = "<group>"; };
-		BAB03AC71D80D76300090147 /* PanInteraction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanInteraction.swift; sourceTree = "<group>"; };
+		BAB03AC71D80D76300090147 /* PanHorizontalInteraction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanHorizontalInteraction.swift; sourceTree = "<group>"; };
 		BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateProfileVC.swift; sourceTree = "<group>"; };
 		BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableCell.swift; sourceTree = "<group>"; };
 		BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginHeaderView.swift; sourceTree = "<group>"; };
 		BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanEdgeInteractionController.swift; sourceTree = "<group>"; };
 		BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanAnimationController.swift; sourceTree = "<group>"; };
-		BAD363A71D51319600560EB5 /* QuestionPreviewOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuestionPreviewOverlay.swift; sourceTree = "<group>"; };
+		BAD363A71D51319600560EB5 /* QuestionPreviewVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuestionPreviewVC.swift; sourceTree = "<group>"; };
 		BAD363A91D51646E00560EB5 /* DetailCollectionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailCollectionCell.swift; sourceTree = "<group>"; };
 		BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreQuestionCell.swift; sourceTree = "<group>"; };
 		BAD37D611D2640E800BACB04 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
@@ -269,8 +271,8 @@
 			children = (
 				BA1DE13F1D244C51004F3ED2 /* ShowAnswerVC.swift */,
 				BA1DE1201D244330004F3ED2 /* PreviewVC.swift */,
+				BAD363A71D51319600560EB5 /* QuestionPreviewVC.swift */,
 				BAA815901D2C710D00507E02 /* AnswerOverlay.swift */,
-				BAD363A71D51319600560EB5 /* QuestionPreviewOverlay.swift */,
 				BA819D771D5E82EA002D69FA /* AnswerMenu.swift */,
 			);
 			name = "Show Answer";
@@ -316,11 +318,12 @@
 			isa = PBXGroup;
 			children = (
 				BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */,
-				BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */,
-				BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */,
-				BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */,
+				BA0969831D83922D00A9BA51 /* PanContainerInteractionController.swift */,
 				BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */,
-				BAB03AC71D80D76300090147 /* PanInteraction.swift */,
+				BAB03AC71D80D76300090147 /* PanHorizontalInteraction.swift */,
+				BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */,
+				BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */,
+				BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */,
 				BAFBD1641D81DD7F00911453 /* FadeAnimationController.swift */,
 			);
 			name = "Transition Animation";
@@ -521,10 +524,11 @@
 				BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */,
 				BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */,
 				BAFA88711D59240B00854B12 /* BrowseAnswersCell.swift in Sources */,
-				BAB03AC81D80D76300090147 /* PanInteraction.swift in Sources */,
+				BAB03AC81D80D76300090147 /* PanHorizontalInteraction.swift in Sources */,
 				BA1DE1321D244942004F3ED2 /* processVideoHelper.swift in Sources */,
 				BAACBF7C1D248C3A009F23D0 /* ExploreTagCell.swift in Sources */,
 				BAB7CD211D4AEB310058AD9C /* UpdateProfileVC.swift in Sources */,
+				BA0969841D83922D00A9BA51 /* PanContainerInteractionController.swift in Sources */,
 				BA6B78B61D2E2620003EE992 /* RecordedAnswerOverlay.swift in Sources */,
 				BA1DE1471D244DFA004F3ED2 /* QAManagerVC.swift in Sources */,
 				BA8E83031D38540C002345D2 /* AccountPageVC.swift in Sources */,
@@ -534,7 +538,7 @@
 				BA1C48BC1D243704008F8A04 /* AppDelegate.swift in Sources */,
 				BAD363AA1D51646E00560EB5 /* DetailCollectionCell.swift in Sources */,
 				BA819D781D5E82EA002D69FA /* AnswerMenu.swift in Sources */,
-				BAD363A81D51319600560EB5 /* QuestionPreviewOverlay.swift in Sources */,
+				BAD363A81D51319600560EB5 /* QuestionPreviewVC.swift in Sources */,
 				BAC892DC1D7A291E0060A928 /* PanAnimationController.swift in Sources */,
 				BA7D552A1D74C5A9005EF7F3 /* FeedCell.swift in Sources */,
 				BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */,

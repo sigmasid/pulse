@@ -257,12 +257,9 @@ class FeedVC: UIViewController {
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-        QAVC.view.frame = view.bounds
-            
+        
         QAVC.transitioningDelegate = self
         presentViewController(QAVC, animated: true, completion: nil)
-        
-//        GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
 }
 
@@ -315,7 +312,6 @@ extension FeedVC : UICollectionViewDataSource {
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
                 if let _selectedQuestion = _allQuestions[indexPath.row] {
-                    let _translatedFrame = cell.convertRect(cell.frame, toView: self.view)
                     showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
                 }
             } else if indexPath == selectedIndex {

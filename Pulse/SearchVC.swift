@@ -13,13 +13,14 @@ class SearchVC: UIViewController {
     private var searchOptions = UISegmentedControl()
     private var iconContainer : IconContainer!
     private var viewTitleLabel = UILabel()
-    
     private var searchButton = UIButton()
-    private var toggleButton = UIButton()
     
     private lazy var searchResults = UITableView()
     private var isMainViewSetup = false
     private var resultsViewSetup = false
+    
+    private var panPresentInteractionController = PanEdgeInteractionController()
+
     
     //set by delegate
     var rootVC : UIViewController?
@@ -53,23 +54,9 @@ class SearchVC: UIViewController {
             iconContainer.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
             iconContainer.layoutIfNeeded()
             
-            view.addSubview(toggleButton)
-//            toggleButton.addTarget(self, action: #selector(setCurrentView), forControlEvents: UIControlEvents.TouchDown)
-            toggleButton.translatesAutoresizingMaskIntoConstraints = false
-            toggleButton.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.l.rawValue).active = true
-            toggleButton.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor, constant: Spacing.m.rawValue).active = true
-            toggleButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-            toggleButton.widthAnchor.constraintEqualToAnchor(toggleButton.heightAnchor).active = true
-            toggleButton.contentEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
-            toggleButton.layoutIfNeeded()
-            
-            let toggleIconImage = UIImage(named: "collection-list")?.imageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)
-            toggleButton.setImage(toggleIconImage, forState: .Normal)
-            toggleButton.tintColor = UIColor.blackColor()
-            
             view.addSubview(searchField)
             searchField.translatesAutoresizingMaskIntoConstraints = false
-            searchField.topAnchor.constraintEqualToAnchor(toggleButton.bottomAnchor, constant: Spacing.xl.rawValue * 1.25).active = true
+            searchField.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xl.rawValue).active = true
             searchField.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
             searchField.heightAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
             searchField.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
