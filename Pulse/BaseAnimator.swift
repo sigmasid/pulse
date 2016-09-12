@@ -35,8 +35,11 @@ extension BaseAnimator: UIViewControllerAnimatedTransitioning {
         if let from = from, to = to {
             switch transitionType {
             case .Present:
+                print("base animator fired with present")
                 animatePresentingInContext(transitionContext, fromVC: from, toVC: to)
             case .Dismiss:
+                print("base animator fired with dismiss")
+
                 animateDismissingInContext(transitionContext, fromVC: from, toVC: to)
             }
         }

@@ -8,19 +8,19 @@
 
 import UIKit
 
-class PanHorizontalInteractionController: UIPercentDrivenInteractiveTransition {
+class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
     var interactionInProgress = false
     private var shouldCompleteTransition = false
-    private var fromViewController: UIViewController?
-    private var toViewController: UIViewController?
-    private var lastProgress: CGFloat?
+    private var tabBarController : UITabBarController!
+    
+    private var rightToLeftPan : Bool = false
     
     var delegate : childVCDelegate!
     
-    func wireToViewController(fromViewController: UIViewController, toViewController: UIViewController?) {
-        self.fromViewController = fromViewController
-        self.toViewController = toViewController
-        prepareGestureRecognizerInView(fromViewController.view)
+    func wireToViewController(tabBarController : UITabBarController) {
+        self.tabBarController = tabBarController
+        
+        prepareGestureRecognizerInView(tabBarController.view)
     }
     
     private func prepareGestureRecognizerInView(view: UIView) {
@@ -29,31 +29,33 @@ class PanHorizontalInteractionController: UIPercentDrivenInteractiveTransition {
     }
     
     func handleGesture(gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
-        print("pan happened")
         //Represents the percentage of the transition that must be completed before allowing to complete.
         let percentThreshold: CGFloat = 0.3
         
-        let screenHeight: CGFloat = UIScreen.mainScreen().bounds.size.height
+        let screenWidth: CGFloat = UIScreen.mainScreen().bounds.size.width
         let translation = gestureRecognizer.translationInView(gestureRecognizer.view!.superview!)
-        var progress: CGFloat = translation.y / screenHeight
         
+        var progress: CGFloat = translation.x / screenWidth
+        
+        rightToLeftPan = progress < 0
+        
+        progress = abs(progress)
         progress = fmax(progress, 0)
         progress = fmin(progress, 1)
-        print("progress is \(progress)")
+        
         switch gestureRecognizer.state {
             
         case .Began:
             interactionInProgress = true
-            if let toViewController = toViewController {
-                fromViewController?.presentViewController(toViewController, animated: true, completion: nil)
+            if rightToLeftPan {
+                if (tabBarController.selectedIndex < tabBarController.viewControllers!.count - 1) {
+                    tabBarController.selectedIndex += 1
+                }
             } else {
-                fromViewController?.dismissViewControllerAnimated(true, completion: {
-                    if self.delegate != nil {
-                        self.delegate.userDismissedCamera()
-                    }
-                })
+                if (tabBarController.selectedIndex > 0) {
+                    tabBarController.selectedIndex -= 1
+                }
             }
-            
         case .Changed:
             shouldCompleteTransition = progress > percentThreshold
             updateInteractiveTransition(progress)

@@ -21,7 +21,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         
-        var initialLoadComplete = false
         // setup firebase, check twitter and facebook tokens to login if available
         FIRApp.configure()
         Fabric.with([Twitter.self()])
@@ -30,18 +29,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FBSDKProfile.enableUpdatesOnAccessTokenChange(true)
         
         self.window = UIWindow(frame: UIScreen.mainScreen().bounds)
-        let initialVC = FeedVC()
+        let initialVC = MasterTabVC()
+
+//        let initialVC = FeedVC()
         self.window?.rootViewController = initialVC
         self.window?.makeKeyAndVisible()
         
-        Database.checkCurrentUser { success in
-            // get feed and show initial view controller
-            if success && !initialLoadComplete {
-                initialVC.pageType = .Home
-                initialVC.feedItemType = .Question
-                initialLoadComplete = true
-            }
-        }
         return true
     }
     

@@ -82,7 +82,6 @@ class FeedVC: UIViewController {
     private var usersForAnswerPreviews : [User?]!
     
     let collectionReuseIdentifier = "FeedCell"
-    var questionCount = 1
     
     private lazy var titleLabel = UILabel()
     private lazy var rotatedView = UIView()
@@ -106,9 +105,6 @@ class FeedVC: UIViewController {
     private var deselectedIndex : NSIndexPath?
     
     var returningToExplore = false
-//    
-//    private var panStartingPointX : CGFloat = 0
-//    private var panStartingPointY : CGFloat = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -125,7 +121,7 @@ class FeedVC: UIViewController {
             searchVC.rootVC = self
             searchVC.transitioningDelegate = self
             
-            panPresentInteractionController.wireToViewController(self, toViewController: searchVC, edge: UIRectEdge.Left)
+//            panPresentInteractionController.wireToViewController(self, toViewController: searchVC, edge: UIRectEdge.Left)
             
             rectToLeft = view.frame
             rectToLeft.origin.x = view.frame.minX - view.frame.size.width
@@ -135,10 +131,6 @@ class FeedVC: UIViewController {
             
             isLoaded = true
         }
-        
-//        let _panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-//        _panGesture.minimumNumberOfTouches = 1
-//        view.addGestureRecognizer(_panGesture)
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -408,7 +400,7 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
     
     func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         if presented is SearchVC {
-            panDismissInteractionController.wireToViewController(searchVC, toViewController: nil, edge: UIRectEdge.Right)
+//            panDismissInteractionController.wireToViewController(searchVC, toViewController: nil, edge: UIRectEdge.Right)
 
             let animator = PanAnimationController()
             

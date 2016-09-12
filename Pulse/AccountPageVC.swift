@@ -23,7 +23,6 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     @IBOutlet weak var linkTwitter: UILabel!
     @IBOutlet weak var linkFacebook: UILabel!
     
-    weak var returnToParentDelegate : ParentDelegate!
     private var _nameErrorLabel = UILabel()
     
     private lazy var _defaultProfileOverlay = UILabel()

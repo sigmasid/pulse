@@ -432,10 +432,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControl
     
     func navigationController(navigationController: UINavigationController,
                                 interactionControllerFor animationController: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        if panDismissInteractionController.interactionInProgress{
-            print("pan is in progress, returning panDismissController")
-        }
-        
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
