@@ -215,6 +215,7 @@
 				BA6B78B41D2D7D56003EE992 /* User Recorded Answer */,
 				BAA2C15D1D2F932900169A13 /* Explore */,
 				BA53EAB81D70E08100357E5A /* SearchVC.swift */,
+				BAE51E1F1D87353600677A50 /* MasterTabVC.swift */,
 				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
 			);
 			path = Pulse;
@@ -312,7 +313,6 @@
 				BA7D55271D74C58D005EF7F3 /* FeedVC.swift */,
 				BA7D55291D74C5A9005EF7F3 /* FeedCell.swift */,
 				BAB03AC11D7F86A900090147 /* FeedPreview.swift */,
-				BAE51E1F1D87353600677A50 /* MasterTabVC.swift */,
 			);
 			name = Explore;
 			sourceTree = "<group>";

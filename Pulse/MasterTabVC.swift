@@ -21,16 +21,22 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     private var rectToRight : CGRect!
     private var rectToLeft : CGRect!
     
+    private var isLoaded = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        Database.checkCurrentUser { success in
+        if !isLoaded {
+            Database.checkCurrentUser { success in
             // get feed and show initial view controller
             if success && !self.initialLoadComplete {
+//                self.feedVC.feedItemType = .Question
                 self.feedVC.pageType = .Home
-                self.feedVC.feedItemType = .Question
-                self.setupControllers()
+                
+                self.setupControllers(2)
                 self.initialLoadComplete = true
+            }
+            self.isLoaded = true
             }
         }
     }
@@ -39,7 +45,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         super.didReceiveMemoryWarning()
     }
     
-    func setupControllers() {
+    func setupControllers(initialIndex : Int) {
         viewControllers = [accountVC, searchVC, feedVC]
 
         let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "settings"))
@@ -50,15 +56,17 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         searchVC.tabBarItem = tabSearch
         feedVC.tabBarItem = tabFeed
         
-        selectedIndex = 2
+        selectedIndex = initialIndex
         
         rectToLeft = view.frame
         rectToLeft.origin.x = view.frame.minX - view.frame.size.width
-        
         rectToRight = view.frame
         rectToRight.origin.x = view.frame.maxX
         
         delegate = self
+        tabBar.tintColor = UIColor.whiteColor().colorWithAlphaComponent(0.5)
+        tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clearColor())
+        
         panInteractionController.wireToViewController(self)
 
     }

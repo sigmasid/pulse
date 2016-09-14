@@ -263,6 +263,7 @@ enum FeedItemType {
 enum PageType {
     case Home
     case Detail
+    case Explore
 }
 
 enum Item : String {

@@ -14,6 +14,7 @@ class Tag : NSObject {
     var tagID: String?
     var questions: [Question]?
     var tagImage : String?
+    var tagDescription : String?
     var previewImage : String?
     
     dynamic var tagCreated = false
@@ -30,7 +31,8 @@ class Tag : NSObject {
     init(tagID: String, snapshot: FIRDataSnapshot) {
         self.tagID = tagID
         super.init()
-        self.tagImage = snapshot.childSnapshotForPath("tagImage").value as? String
+        
+        self.tagDescription  = snapshot.childSnapshotForPath("description").value as? String
         self.previewImage = snapshot.childSnapshotForPath("previewImage").value as? String
 
         for question in snapshot.childSnapshotForPath("questions").children {

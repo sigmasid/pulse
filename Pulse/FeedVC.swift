@@ -17,8 +17,6 @@ class FeedVC: UIViewController {
     private var initialFrame : CGRect!
     private var rectToRight : CGRect!
     private var rectToLeft : CGRect!
-    
-    private var searchVC : SearchVC!
     private var QAVC : QAManagerVC!
     
     var pageType : PageType! {
@@ -28,36 +26,75 @@ class FeedVC: UIViewController {
                 setupScreenLayout(pageType)
                 Database.createFeed { feed in
                     self.currentTag = feed
+                    self.feedItemType = .Question
+                    self.updateDataSource = true
                 }
+                addIconContainer()
             case .Detail:
                 setupDetailView()
+            case .Explore:
                 setupScreenLayout(pageType)
             }
-            addIconContainer()
         }
     }
     
-    var feedItemType : FeedItemType!
-
-    var currentTag : Tag! {
+    var feedItemType : FeedItemType! {
         didSet {
             switch feedItemType! {
+            case .Tag:
+                if pageType! == .Explore {
+                    Database.getExploreTags({ tags, error in
+                        if error == nil {
+                            self.allTags = tags
+                            self.updateDataSource = true
+                        }
+                    })
+                }
             case .Question:
-                if !returningToExplore {
-                    totalItemCount = currentTag.totalQuestionsForTag()
-                    _allQuestions = [Question?](count: totalItemCount, repeatedValue: nil)
+                if pageType! == .Explore {
+                    Database.getExploreQuestions({ questions, error in
+                        if error == nil {
+                            self.allQuestions = questions
+                            self.updateDataSource = true
+                        }
+                    })
+                } else if pageType! == .Detail {
+                    self.updateDataSource = true
                 }
             case .Answer:
-                if !returningToExplore {
-                    totalItemCount = currentQuestion.totalAnswers()
-                    gettingImageForCell = [Bool](count: totalItemCount, repeatedValue: false)
-                    gettingInfoForCell = [Bool](count: totalItemCount, repeatedValue: false)
-                    browseAnswerPreviewImages = [UIImage?](count: totalItemCount, repeatedValue: nil)
-                    usersForAnswerPreviews = [User?](count: totalItemCount, repeatedValue: nil)
+                if pageType! == .Explore {
+                    Database.getExploreAnswers({ answers, error in
+                        if error == nil {
+                            self.allAnswers = answers
+                            self.updateDataSource = true
+                        }
+                    })
                 }
-            case .Tag: return
             }
+        }
+    }
+    
+    var updateDataSource : Bool = false {
+        didSet {
+            switch feedItemType! {
+            case .Tag:
+                totalItemCount = allTags.count
+            case .Question:
+                if pageType! == .Explore {
+                    totalItemCount = allQuestions.count
+                } else {
+                    totalItemCount = currentTag.totalQuestionsForTag()
+                    allQuestions = [Question?](count: totalItemCount, repeatedValue: nil)
+                }
+            case .Answer:
+                totalItemCount = (pageType! == .Explore ? allAnswers.count : currentQuestion.totalAnswers())
 
+                gettingImageForCell = [Bool](count: totalItemCount, repeatedValue: false)
+                gettingInfoForCell = [Bool](count: totalItemCount, repeatedValue: false)
+                browseAnswerPreviewImages = [UIImage?](count: totalItemCount, repeatedValue: nil)
+                usersForAnswerPreviews = [User?](count: totalItemCount, repeatedValue: nil)
+            }
+            
             if pageType! == .Detail {
                 updateDetail()
             }
@@ -69,13 +106,38 @@ class FeedVC: UIViewController {
         }
     }
     
-    var currentQuestion : Question!
+    private var FeedCollectionView : UICollectionView?
+    private var selectedIndex : NSIndexPath? {
+        didSet {
+            if feedItemType! == .Question {
+                FeedCollectionView?.reloadItemsAtIndexPaths([selectedIndex!])
+                if deselectedIndex != nil && deselectedIndex != selectedIndex {
+                    FeedCollectionView?.reloadItemsAtIndexPaths([deselectedIndex!])
+                }
+            } else if feedItemType! == .Tag {
+                pageType = .Detail
+                feedItemType! = .Question
+            }
+        }
+        willSet {
+            if selectedIndex != nil {
+                deselectedIndex = selectedIndex
+            }
+        }
+    }
+    private var deselectedIndex : NSIndexPath?
+
     var allTags : [Tag]!
+    var allQuestions : [Question?]!
+    var allAnswers : [Answer]!
+    
+    var currentTag : Tag!
+    var currentQuestion : Question!
+    
     private var totalItemCount = 0
     private var loadingView : LoadingView?
 
     /* cache questions & answers that have been shown */
-    private var _allQuestions : [Question?]!
     private var gettingImageForCell : [Bool]!
     private var gettingInfoForCell : [Bool]!
     private var browseAnswerPreviewImages : [UIImage?]!
@@ -88,22 +150,6 @@ class FeedVC: UIViewController {
     private lazy var backgroundImage = UIImageView()
     private var iconContainer : IconContainer!
     
-    private var FeedCollectionView : UICollectionView?
-    private var selectedIndex : NSIndexPath? {
-        didSet {
-            FeedCollectionView?.reloadItemsAtIndexPaths([selectedIndex!])
-            if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                FeedCollectionView?.reloadItemsAtIndexPaths([deselectedIndex!])
-            }
-        }
-        willSet {
-            if selectedIndex != nil {
-                deselectedIndex = selectedIndex
-            }
-        }
-    }
-    private var deselectedIndex : NSIndexPath?
-    
     var returningToExplore = false
     
     override func viewDidLoad() {
@@ -115,13 +161,6 @@ class FeedVC: UIViewController {
             loadingView?.addMessage("Loading...")
             
             view.addSubview(loadingView!)
-            
-            searchVC = SearchVC()
-            searchVC.view.frame = view.bounds
-            searchVC.rootVC = self
-            searchVC.transitioningDelegate = self
-            
-//            panPresentInteractionController.wireToViewController(self, toViewController: searchVC, edge: UIRectEdge.Left)
             
             rectToLeft = view.frame
             rectToLeft.origin.x = view.frame.minX - view.frame.size.width
@@ -139,7 +178,6 @@ class FeedVC: UIViewController {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     override func prefersStatusBarHidden() -> Bool {
@@ -161,17 +199,12 @@ class FeedVC: UIViewController {
         FeedCollectionView?.translatesAutoresizingMaskIntoConstraints = false
         FeedCollectionView?.topAnchor.constraintEqualToAnchor(view.topAnchor).active = true
         FeedCollectionView?.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
+        FeedCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
         FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
-        
-        if pageType == .Home {
-            FeedCollectionView?.backgroundColor = UIColor.clearColor()
-            FeedCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
-        } else if pageType == .Detail {
-            FeedCollectionView?.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
-        }
         
         FeedCollectionView?.layoutIfNeeded()
         
+        FeedCollectionView?.backgroundColor = UIColor.clearColor()
         FeedCollectionView?.backgroundView = nil
         FeedCollectionView?.showsVerticalScrollIndicator = false
         FeedCollectionView?.pagingEnabled = true
@@ -180,13 +213,15 @@ class FeedVC: UIViewController {
     }
     
     private func setupDetailView() {
-        view.addSubview(backgroundImage)
-        backgroundImage.translatesAutoresizingMaskIntoConstraints = false
-        backgroundImage.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
-        backgroundImage.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
-        backgroundImage.topAnchor.constraintEqualToAnchor(view.topAnchor).active = true
-        backgroundImage.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-        backgroundImage.layoutIfNeeded()
+        
+        FeedCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = false
+        FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = false
+
+        FeedCollectionView?.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
+        FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
+        
+        backgroundImage.frame = view.bounds
+        view.insertSubview(backgroundImage, atIndex: 0)
         
         view.addSubview(rotatedView)
         rotatedView.translatesAutoresizingMaskIntoConstraints = false
@@ -204,7 +239,6 @@ class FeedVC: UIViewController {
         var transform = CGAffineTransformIdentity
         transform = CGAffineTransformTranslate(transform, (rotatedView.bounds.width / 2)-(rotatedView.bounds.height / 2), (rotatedView.bounds.height / 2)-(rotatedView.bounds.width / 2))
         transform = CGAffineTransformRotate(transform, CGFloat(-M_PI_2))
-        
         titleLabel.transform = transform
     }
     
@@ -271,22 +305,23 @@ extension FeedVC : UICollectionViewDataSource {
         
         if pageType == .Detail {
             cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
-        } else if pageType == .Home {
+        } else if pageType == .Home || pageType == .Explore {
             cell.contentView.backgroundColor = _backgroundColors[Int(_rand)]
         }
         
         if feedItemType! == .Question {
-            cell.itemType = .Question
+            if cell.itemType == nil || cell.itemType != feedItemType {
+                cell.itemType = .Question
+            }
             cell.updateLabel(nil, _subtitle: nil)
 
-            if _allQuestions.count > indexPath.row && _allQuestions[indexPath.row] != nil {
-                if let _currentQuestion = _allQuestions[indexPath.row] {
+            if allQuestions.count > indexPath.row && allQuestions[indexPath.row] != nil {
+                if let _currentQuestion = allQuestions[indexPath.row] {
                     pageType == .Home ? cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(_currentQuestion.qTagID!.uppercaseString)") :
                         cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
                     cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), forState: .Normal)
                 }
             } else {
-
                 Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
                     if error == nil {
                         if self.pageType == .Home {
@@ -296,18 +331,22 @@ extension FeedVC : UICollectionViewDataSource {
                             cell.updateLabel(question.qTitle, _subtitle: nil)
 
                         }
-                        self._allQuestions[indexPath.row] = question
+                        self.allQuestions[indexPath.row] = question
                         cell.answerCount.setTitle(String(question.totalAnswers()), forState: .Normal)
                     }
                 })
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                if let _selectedQuestion = _allQuestions[indexPath.row] {
-                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+                if let _selectedQuestion = allQuestions[indexPath.row] {
+                    if pageType! == .Explore {
+                        showQuestion(_selectedQuestion, _allQuestions: [_selectedQuestion], _questionIndex: 0, _selectedTag: Tag(tagID: "EXPLORE"))
+                    } else {
+                        showQuestion(_selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+                    }
                 }
             } else if indexPath == selectedIndex {
-                if let _selectedQuestion = _allQuestions[indexPath.row] {
+                if let _selectedQuestion = allQuestions[indexPath.row] {
                     if _selectedQuestion.hasAnswers() {
                         cell.showQuestion(_selectedQuestion)
                     }
@@ -316,8 +355,24 @@ extension FeedVC : UICollectionViewDataSource {
                 cell.removeAnswer()
             }
             
-        } else if feedItemType == .Answer {
-            cell.itemType = .Answer
+        } else if feedItemType == .Tag {
+            if cell.itemType == nil || cell.itemType != feedItemType {
+                cell.itemType = .Tag
+            }
+            cell.updateLabel(nil, _subtitle: nil)
+            
+            if allTags.count > indexPath.row {
+                let _currentTag = allTags[indexPath.row]
+                if pageType == .Home || pageType == .Explore {
+                    cell.updateLabel("#\(_currentTag.tagID!.uppercaseString)", _subtitle: _currentTag.tagDescription)
+                }
+                cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), forState: .Normal)
+            }
+        }
+        else if feedItemType == .Answer {
+            if cell.itemType == nil || cell.itemType != feedItemType {
+                cell.itemType = .Answer
+            }
             
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
             if browseAnswerPreviewImages[indexPath.row] != nil && gettingImageForCell[indexPath.row] == true {
@@ -382,7 +437,13 @@ extension FeedVC : UICollectionViewDataSource {
             let cellRect = attributes.frame
             initialFrame = collectionView.convertRect(cellRect, toView: collectionView.superview)
         }
+        
+        if pageType! == .Explore && feedItemType == .Tag {
+            currentTag = allTags[indexPath.row]
+        }
+        
         selectedIndex = indexPath
+
     }
     
     func collectionView(collectionView: UICollectionView, shouldSelectItemAtIndexPath indexPath: NSIndexPath) -> Bool {
@@ -399,17 +460,8 @@ extension FeedVC: UICollectionViewDelegateFlowLayout {
 extension FeedVC: UIViewControllerTransitioningDelegate {
     
     func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if presented is SearchVC {
-//            panDismissInteractionController.wireToViewController(searchVC, toViewController: nil, edge: UIRectEdge.Right)
-
-            let animator = PanAnimationController()
-            
-            animator.initialFrame = rectToLeft
-            animator.exitFrame = rectToRight
-            animator.transitionType = .Present
-            
-            return animator
-        } else if presented is QAManagerVC {
+        
+        if presented is QAManagerVC {
             panDismissInteractionController.wireToViewController(QAVC, toViewController: nil, edge: UIRectEdge.Left)
             
             let animator = ExpandAnimationController()
@@ -423,15 +475,7 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
     }
     
     func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is SearchVC {
-            let animator = PanAnimationController()
-            
-            animator.initialFrame = rectToRight
-            animator.exitFrame = rectToLeft
-            animator.transitionType = .Dismiss
-            
-            return animator
-        } else if dismissed is QAManagerVC {
+        if dismissed is QAManagerVC {
             let animator = PanAnimationController()
 
             animator.initialFrame = rectToLeft
@@ -451,41 +495,3 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
-
-
-
-
-/* OLD PAN */
-//    func handlePan(pan : UIPanGestureRecognizer) {
-//
-//        if (pan.state == UIGestureRecognizerState.Began) {
-//            let translation = pan.translationInView(view)
-//            let panDirection = pan.view!.frame.origin.x + translation.x
-//
-//            if panDirection > 0 {
-//
-//            }
-//            print(panStartingPointX, panStartingPointY)
-//
-//
-////            panStartingPointX = pan.view!.center.x
-//            panStartingPointY = pan.view!.center.y
-//
-//        } else if (pan.state == UIGestureRecognizerState.Ended) {
-//            let panFinishingPointX = pan.view!.center.x
-//            _ = pan.view!.center.y
-//
-//            if (panFinishingPointX > view.bounds.width) {
-//                loadSearchVC()
-//            } else {
-//                view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
-//                pan.setTranslation(CGPointZero, inView: view)
-//            }
-//        } else {
-//            let translation = pan.translationInView(view)
-//            if translation.x > 0 {
-//                view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-//                pan.setTranslation(CGPointZero, inView: view)
-//            }
-//        }
-//    }

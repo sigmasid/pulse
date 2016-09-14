@@ -94,7 +94,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     func loadTagsFromFirebase() {
         UIApplication.sharedApplication().networkActivityIndicatorVisible = true
         
-        Database.getAllTags() { (tags , error) in
+        Database.getExploreTags() { (tags , error) in
             if error != nil {
                 print(error!.description)
                 UIApplication.sharedApplication().networkActivityIndicatorVisible = false

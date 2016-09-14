@@ -9,25 +9,34 @@
 import UIKit
 
 class SearchVC: UIViewController {
-    private var searchField = UITextField()
-    private var searchOptions = UISegmentedControl()
+    private let searchContainer = UIView()
+    private var searchField = UISearchController(searchResultsController: nil)
     private var iconContainer : IconContainer!
-    private var viewTitleLabel = UILabel()
-    private var searchButton = UIButton()
     
-    private lazy var searchResults = UITableView()
-    private var isMainViewSetup = false
-    private var resultsViewSetup = false
+    private var toggleTagButton = UIButton()
+    private var toggleQuestionButton = UIButton()
+    
+    
+    private var exploreContainer : FeedVC!
+    private var isSearchSetup = false
+    private var exploreViewSetup = false
+    
+    private var selectedExploreType : FeedItemType! {
+        didSet {
+            print("set feed item type")
+            exploreContainer.feedItemType = selectedExploreType
+        }
+    }
     
     private var panPresentInteractionController = PanEdgeInteractionController()
 
-    
     //set by delegate
     var rootVC : UIViewController?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupView()
+        setupSearch()
+        setupExplore()
     }
 
     override func viewDidAppear(animated: Bool) {
@@ -38,13 +47,12 @@ class SearchVC: UIViewController {
         super.didReceiveMemoryWarning()
     }
     
-    func setupView() {
-        
-        if !isMainViewSetup {
+    func setupSearch() {
+        if !isSearchSetup {
             view.backgroundColor = UIColor.whiteColor()
             
             iconContainer = IconContainer(frame: CGRectMake(0,0,IconSizes.Medium.rawValue, IconSizes.Medium.rawValue + Spacing.m.rawValue))
-            iconContainer.setViewTitle("SEARCH")
+            iconContainer.setViewTitle("EXPLORE")
             view.addSubview(iconContainer)
             
             iconContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -54,81 +62,103 @@ class SearchVC: UIViewController {
             iconContainer.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
             iconContainer.layoutIfNeeded()
             
-            view.addSubview(searchField)
-            searchField.translatesAutoresizingMaskIntoConstraints = false
-            searchField.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xl.rawValue).active = true
-            searchField.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
-            searchField.heightAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
-            searchField.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-            searchField.layoutIfNeeded()
-            searchField.layer.addSublayer(GlobalFunctions.addBorders(searchField, _color: UIColor.blackColor(), thickness: IconThickness.ExtraThick.rawValue))
+            view.addSubview(searchContainer)
+            searchContainer.translatesAutoresizingMaskIntoConstraints = false
+            searchContainer.topAnchor.constraintEqualToAnchor(topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).active = true
+            searchContainer.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
+            searchContainer.heightAnchor.constraintEqualToConstant(IconSizes.Large.rawValue).active = true
+            searchContainer.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+            searchContainer.layoutIfNeeded()
             
-            searchField.addSubview(searchButton)
-            searchButton.translatesAutoresizingMaskIntoConstraints = false
-            searchButton.topAnchor.constraintEqualToAnchor(searchField.topAnchor, constant: Spacing.s.rawValue).active = true
-            searchButton.bottomAnchor.constraintEqualToAnchor(searchField.bottomAnchor, constant: -Spacing.s.rawValue).active = true
-            searchButton.widthAnchor.constraintEqualToAnchor(searchButton.heightAnchor).active = true
-            searchButton.trailingAnchor.constraintEqualToAnchor(searchField.trailingAnchor).active = true
-            searchButton.layoutIfNeeded()
-            searchButton.setImage(UIImage(named: "search"), forState: .Normal)
-            
-            searchOptions = UISegmentedControl(items: ["TAGS","QUESTIONS","USERS"])
-            searchOptions.selectedSegmentIndex = 1
-            
-            
-            let attributes = [
-                NSForegroundColorAttributeName : UIColor.blackColor(),
-                NSFontAttributeName : UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightHeavy)
-            ]
-            
-            searchOptions.setTitleTextAttributes(attributes, forState: .Normal)
-            
-            searchOptions.setDividerImage(imageWithColor(UIColor.clearColor()), forLeftSegmentState: UIControlState.Normal,
-                                               rightSegmentState: UIControlState.Normal, barMetrics: UIBarMetrics.Default)
-            searchOptions.setDividerImage(imageWithColor(UIColor.clearColor()), forLeftSegmentState: UIControlState.Selected,
-                                               rightSegmentState: UIControlState.Normal, barMetrics: UIBarMetrics.Default)
-            searchOptions.setDividerImage(imageWithColor(UIColor.clearColor()), forLeftSegmentState: UIControlState.Normal,
-                                               rightSegmentState: UIControlState.Selected, barMetrics: UIBarMetrics.Default)
+            searchContainer.addSubview(searchField.searchBar)
+            searchField.searchBar.sizeToFit()
+//            searchField.searchResultsUpdater = self
+            searchField.dimsBackgroundDuringPresentation = true
+            searchField.searchBar.delegate = self
 
-            searchOptions.setBackgroundImage(imageWithColor(UIColor.clearColor()), forState: .Normal, barMetrics: .Default)
-            searchOptions.setBackgroundImage(imageWithColor(UIColor.grayColor()), forState: .Selected, barMetrics: .Default)
+            searchField.searchBar.scopeButtonTitles = ["Tags", "Questions", "People"]
+            definesPresentationContext = true
 
-            
-            view.addSubview(searchOptions)
-            searchOptions.translatesAutoresizingMaskIntoConstraints = false
-            searchOptions.topAnchor.constraintEqualToAnchor(searchField.bottomAnchor, constant: Spacing.m.rawValue).active = true
-            searchOptions.widthAnchor.constraintEqualToAnchor(searchField.widthAnchor).active = true
-            searchOptions.heightAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
-            searchOptions.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-            searchOptions.layoutIfNeeded()
-            
-            hideKeyboardWhenTappedAround()
+            isSearchSetup = true
         }
     }
     
-    private func setupResults() {
-        if !resultsViewSetup {
-            view.addSubview(searchResults)
+    private func setupExplore() {
+        if !exploreViewSetup {
             
-            searchResults.translatesAutoresizingMaskIntoConstraints = false
-            searchResults.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.m.rawValue).active = true
-            searchResults.topAnchor.constraintEqualToAnchor(searchOptions.bottomAnchor, constant: Spacing.m.rawValue).active = true
-            searchResults.widthAnchor.constraintEqualToAnchor(searchOptions.widthAnchor).active = true
-            searchResults.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-            searchResults.layoutIfNeeded()
+            view.addSubview(toggleTagButton)
+            toggleTagButton.translatesAutoresizingMaskIntoConstraints = false
+            toggleTagButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+            toggleTagButton.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.5).active = true
+            toggleTagButton.topAnchor.constraintEqualToAnchor(searchContainer.bottomAnchor).active = true
+            toggleTagButton.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
+            toggleTagButton.layoutIfNeeded()
             
-            resultsViewSetup = true
+            view.addSubview(toggleQuestionButton)
+            toggleQuestionButton.translatesAutoresizingMaskIntoConstraints = false
+            toggleQuestionButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+            toggleQuestionButton.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.5).active = true
+            toggleQuestionButton.topAnchor.constraintEqualToAnchor(searchContainer.bottomAnchor).active = true
+            toggleQuestionButton.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
+            toggleQuestionButton.layoutIfNeeded()
+            
+            toggleTagButton.backgroundColor = UIColor.blackColor()
+            toggleQuestionButton.backgroundColor = UIColor.blackColor()
+            
+            toggleTagButton.titleLabel?.setFont(FontSizes.Caption.rawValue, weight: UIFontWeightRegular, color: UIColor.whiteColor(), alignment: .Center)
+            toggleQuestionButton.titleLabel?.setFont(FontSizes.Caption.rawValue, weight: UIFontWeightRegular, color: UIColor.whiteColor(), alignment: .Center)
+            
+            toggleTagButton.setTitle("TAGS", forState: .Normal)
+            toggleQuestionButton.setTitle("QUESTIONS", forState: .Normal)
+            
+            toggleTagButton.addTarget(self, action: #selector(toggleTags), forControlEvents: .TouchUpInside)
+            toggleQuestionButton.addTarget(self, action: #selector(toggleQuestions), forControlEvents: .TouchUpInside)
+
+            let containerView = UIView()
+            view.addSubview(containerView)
+            
+            containerView.translatesAutoresizingMaskIntoConstraints = false
+            containerView.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
+            containerView.topAnchor.constraintEqualToAnchor(toggleTagButton.bottomAnchor).active = true
+            containerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
+            containerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+            containerView.layoutIfNeeded()
+            
+            exploreContainer = FeedVC()
+            exploreContainer.view.frame = containerView.frame
+            exploreContainer.pageType = .Explore
+            selectedExploreType = .Tag
+
+            GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
+            exploreViewSetup = true
         }
     }
     
-    private func imageWithColor(color: UIColor) -> UIImage {
-        let rect = CGRectMake(0.0, 0.0, 1.0, 1.0)
-        UIGraphicsBeginImageContext(rect.size)
-        let context = UIGraphicsGetCurrentContext()
-        CGContextSetFillColorWithColor(context, color.CGColor);
-        CGContextFillRect(context, rect);
-        let image = UIGraphicsGetImageFromCurrentImageContext();
-        UIGraphicsEndImageContext();
-        return image
+    func toggleTags() {
+        if selectedExploreType != .Tag {
+            selectedExploreType = .Tag
+        }
+    }
+    
+    func toggleQuestions() {
+        if selectedExploreType != .Question {
+            selectedExploreType = .Question
+        }
+    }
+}
+
+extension SearchVC: UISearchBarDelegate {
+    // MARK: - UISearchBar Delegate
+    func searchBar(searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
+//        filterContentForSearchText(searchBar.text!, scope: searchBar.scopeButtonTitles![selectedScope])
+    }
+}
+
+extension SearchVC: UISearchResultsUpdating {
+    // MARK: - UISearchResultsUpdating Delegate
+    func updateSearchResultsForSearchController(searchController: UISearchController) {
+        let searchBar = searchController.searchBar
+        let scope = searchBar.scopeButtonTitles![searchBar.selectedScopeButtonIndex]
+//        filterContentForSearchText(searchController.searchBar.text!, scope: scope)
     }
 }

@@ -31,11 +31,11 @@ class Question : NSObject {
     init(qID: String, snapshot: FIRDataSnapshot) {
         self.qID = qID
         self.qTitle = snapshot.childSnapshotForPath("title").value as? String
-        for choice in snapshot.childSnapshotForPath("choices").children {
-            if (self.qFilters?.append(choice.key) == nil) {
-                self.qFilters = [choice.key]
-            }
-        }
+//        for choice in snapshot.childSnapshotForPath("choices").children {
+//            if (self.qFilters?.append(choice.key) == nil) {
+//                self.qFilters = [choice.key]
+//            }
+//        }
         for answer in snapshot.childSnapshotForPath("answers").children {
             if (self.qAnswers?.append(answer.key) == nil) {
                 self.qAnswers = [answer.key]

@@ -38,12 +38,8 @@ class Database {
     static let answersStorageRef = storageRef.child(Item.Answers.rawValue)
     static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
     static let usersStorageRef = storageRef.child(Item.Users.rawValue)
-
-//    static func getPath(from : Source, type : Item, itemID : String) -> FIRDatabaseReference? {
-//        if from == .Storage {
-//            return storageRef.child(type.rawValue).child(itemID)
-//        }
-//    }
+    
+    static let querySize : UInt = 20
     
     static func setCurrentUserPaths() {
         currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
@@ -58,15 +54,39 @@ class Database {
         return storageRef.child(type.rawValue).child(itemID)
     }
     
-    static func getAllTags(completion: (tags : [Tag], error : NSError?) -> Void) {
+    static func getExploreTags(completion: (tags : [Tag], error : NSError?) -> Void) {
         var allTags = [Tag]()
         
-        tagsRef.observeSingleEventOfType(.Value, withBlock: { snapshot in
+        tagsRef.queryLimitedToLast(querySize).observeSingleEventOfType(.Value, withBlock: { snapshot in
             for item in snapshot.children {
                 let child = item as! FIRDataSnapshot
                 allTags.append(Tag(tagID: child.key, snapshot: child))
             }
             completion(tags: allTags, error: nil)
+        })
+    }
+    
+    static func getExploreQuestions(completion: (questions : [Question?], error : NSError?) -> Void) {
+        var allQuestions = [Question?]()
+        
+        questionsRef.queryLimitedToLast(querySize).observeSingleEventOfType(.Value, withBlock: { snapshot in
+            for item in snapshot.children {
+                let child = item as! FIRDataSnapshot
+                allQuestions.append(Question(qID: child.key, snapshot: child))
+            }
+            completion(questions: allQuestions, error: nil)
+        })
+    }
+    
+    static func getExploreAnswers(completion: (answers : [Answer], error : NSError?) -> Void) {
+        var allAnswers = [Answer]()
+        
+        answersRef.queryLimitedToLast(querySize).observeSingleEventOfType(.Value, withBlock: { snapshot in
+            for item in snapshot.children {
+                let child = item as! FIRDataSnapshot
+                allAnswers.append(Answer(aID: child.key, snapshot: child))
+            }
+            completion(answers: allAnswers, error: nil)
         })
     }
     
@@ -162,6 +182,31 @@ class Database {
     }
     
     /* CREATE / UPDATE FEED */
+    static func createExploreFeed(feedItemType: FeedItemType, completedFeed: (feed : [AnyObject?]) -> Void) {
+        switch feedItemType {
+        case .Tag:
+            getExploreTags({ tags, error in
+                if error == nil {
+                    let _feed = tags.map({$0 as AnyObject?})
+                    completedFeed(feed: _feed)
+                }
+            })
+        case .Question:
+            getExploreQuestions({ questions, error in
+                if error == nil {
+                    let _feed = questions.map({$0 as AnyObject?})
+                    completedFeed(feed: _feed)
+                }
+            })
+        case .Answer:
+            getExploreAnswers({ answers, error in
+                if error == nil {
+                    completedFeed(feed: answers)
+                }
+            })
+        }
+    }
+    
     static func createFeed(completedFeed: (feed : Tag) -> Void) {
         Database.keepUserTagsUpdated()
         
@@ -215,7 +260,6 @@ class Database {
     }
     
     static func addNewQuestionsFromTagToFeed(tagID : String, completion: (success: Bool) -> Void) {
-        print("add new questions form tag fired with currentUserRef of \(currentUserRef)")
         var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
         
         currentUserRef.child("savedTags").child(tagID).observeSingleEventOfType(.Value, withBlock: { snap in
