@@ -123,7 +123,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControl
         questionCounter += 1
         
         if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
-            Database.getQuestion(selectedTag.questions![questionCounter].qID, completion: { (question, error) in
+            Database.getQuestion(selectedTag.questions![questionCounter]!.qID, completion: { (question, error) in
                 if error != nil {
                     completion(question: nil, error: error)
                 } else {
@@ -436,17 +436,11 @@ class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControl
     }
 }
 
-
-
-
-
-/** OLD **/
+/** OLD - STILL USED FOR CAMERA? **/
 extension QAManagerVC: UIViewControllerTransitioningDelegate {
     
     func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
-        print("animation for presented controller fired")
-
         if presented is CameraVC {
             let animator = FadeAnimationController()
             animator.transitionType = .Present
@@ -477,55 +471,3 @@ extension QAManagerVC: UIViewControllerTransitioningDelegate {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
-
-/* PAN GESTURE HANDLER */
-//    func handlePan(pan : UIPanGestureRecognizer) {
-//        let panCurrentPointX = pan.view!.center.x
-//        let _ = pan.view!.center.y
-//
-//        if (pan.state == UIGestureRecognizerState.Began) {
-//            panStartingPointX = pan.view!.center.x
-//            panStartingPointY = pan.view!.center.y
-//        }
-//
-//        else if (pan.state == UIGestureRecognizerState.Ended) {
-//            let translation = pan.translationInView(self.view)
-//            if _isShowingUserRecordedVideo {
-//                //userRecordedVC will handle
-//            } else {
-//                switch translation {
-//                case _ where translation.y < -self.view.bounds.maxY / 3:
-//                    showNextQuestion()
-//                    pan.setTranslation(CGPointZero, inView: self.view)
-//                    self.view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
-//                case _ where translation.y < -20 && translation.y > -self.view.bounds.maxY / 4:
-//                    return
-////                    answerVC.votedAnswer(.Upvote)
-//                case _ where translation.y > view.bounds.maxY / 3:
-//                    showPriorQuestion()
-//                    pan.setTranslation(CGPointZero, inView: view)
-//                    self.view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
-//
-//                case _ where translation.y > 20 && translation.y < self.view.bounds.maxY / 4:
-//                    return
-////                    answerVC.votedAnswer(.Downvote)
-//                default:
-//                    self.view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
-//                    pan.setTranslation(CGPointZero, inView: view)
-//                }
-//            }
-//        } else {
-//            let translation = pan.translationInView(view)
-//
-//            if _isShowingUserRecordedVideo {
-//                //userRecordedVC will handle
-//            }else if (translation.y < -20 || translation.y > 20) {
-//                self.view.center = CGPoint(x: self.view.bounds.width / 2, y: pan.view!.center.y)
-//                //ignore moving the screen if user was trying to move up / down
-//            }
-//            else if (translation.x > 0) { //only go back but not go forward - animates as dragging the view off
-//                self.view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-//                pan.setTranslation(CGPointZero, inView: view)
-//            }
-//        }
-//    }

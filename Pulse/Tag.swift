@@ -12,7 +12,7 @@ import Firebase
 
 class Tag : NSObject {
     var tagID: String?
-    var questions: [Question]?
+    var questions: [Question?]?
     var tagImage : String?
     var tagDescription : String?
     var previewImage : String?

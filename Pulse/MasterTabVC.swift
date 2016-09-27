@@ -12,7 +12,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     private var initialLoadComplete = false
 
     lazy var searchVC : SearchVC = SearchVC()
-    lazy var feedVC : FeedVC = FeedVC()
+    lazy var homeVC : HomeVC = HomeVC()
     lazy var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     
     private var panInteractionController = PanHorizonInteractionController()
@@ -28,11 +28,9 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         
         if !isLoaded {
             Database.checkCurrentUser { success in
+                
             // get feed and show initial view controller
             if success && !self.initialLoadComplete {
-//                self.feedVC.feedItemType = .Question
-                self.feedVC.pageType = .Home
-                
                 self.setupControllers(2)
                 self.initialLoadComplete = true
             }
@@ -46,15 +44,15 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     }
     
     func setupControllers(initialIndex : Int) {
-        viewControllers = [accountVC, searchVC, feedVC]
+        viewControllers = [accountVC, searchVC, homeVC]
 
         let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "settings"))
         let tabSearch = UITabBarItem(title: "Search", image: UIImage(named: "search"), selectedImage: UIImage(named: "search"))
-        let tabFeed = UITabBarItem(title: "Home", image: UIImage(named: "browse"), selectedImage: UIImage(named: "browse"))
+        let tabHome = UITabBarItem(title: "Home", image: UIImage(named: "browse"), selectedImage: UIImage(named: "browse"))
         
         accountVC.tabBarItem = tabAccount
         searchVC.tabBarItem = tabSearch
-        feedVC.tabBarItem = tabFeed
+        homeVC.tabBarItem = tabHome
         
         selectedIndex = initialIndex
         

@@ -19,58 +19,9 @@ class FeedVC: UIViewController {
     private var rectToLeft : CGRect!
     private var QAVC : QAManagerVC!
     
-    var pageType : PageType! {
-        didSet {
-            switch pageType! {
-            case .Home:
-                setupScreenLayout(pageType)
-                Database.createFeed { feed in
-                    self.currentTag = feed
-                    self.feedItemType = .Question
-                    self.updateDataSource = true
-                }
-                addIconContainer()
-            case .Detail:
-                setupDetailView()
-            case .Explore:
-                setupScreenLayout(pageType)
-            }
-        }
-    }
-    
     var feedItemType : FeedItemType! {
         didSet {
-            switch feedItemType! {
-            case .Tag:
-                if pageType! == .Explore {
-                    Database.getExploreTags({ tags, error in
-                        if error == nil {
-                            self.allTags = tags
-                            self.updateDataSource = true
-                        }
-                    })
-                }
-            case .Question:
-                if pageType! == .Explore {
-                    Database.getExploreQuestions({ questions, error in
-                        if error == nil {
-                            self.allQuestions = questions
-                            self.updateDataSource = true
-                        }
-                    })
-                } else if pageType! == .Detail {
-                    self.updateDataSource = true
-                }
-            case .Answer:
-                if pageType! == .Explore {
-                    Database.getExploreAnswers({ answers, error in
-                        if error == nil {
-                            self.allAnswers = answers
-                            self.updateDataSource = true
-                        }
-                    })
-                }
-            }
+            self.updateDataSource = true
         }
     }
     
@@ -80,23 +31,14 @@ class FeedVC: UIViewController {
             case .Tag:
                 totalItemCount = allTags.count
             case .Question:
-                if pageType! == .Explore {
-                    totalItemCount = allQuestions.count
-                } else {
-                    totalItemCount = currentTag.totalQuestionsForTag()
-                    allQuestions = [Question?](count: totalItemCount, repeatedValue: nil)
-                }
+                totalItemCount = allQuestions.count
             case .Answer:
-                totalItemCount = (pageType! == .Explore ? allAnswers.count : currentQuestion.totalAnswers())
+                totalItemCount = allAnswers.count
 
                 gettingImageForCell = [Bool](count: totalItemCount, repeatedValue: false)
                 gettingInfoForCell = [Bool](count: totalItemCount, repeatedValue: false)
                 browseAnswerPreviewImages = [UIImage?](count: totalItemCount, repeatedValue: nil)
                 usersForAnswerPreviews = [User?](count: totalItemCount, repeatedValue: nil)
-            }
-            
-            if pageType! == .Detail {
-                updateDetail()
             }
             
             FeedCollectionView?.delegate = self
@@ -107,6 +49,7 @@ class FeedVC: UIViewController {
     }
     
     private var FeedCollectionView : UICollectionView?
+    
     private var selectedIndex : NSIndexPath? {
         didSet {
             if feedItemType! == .Question {
@@ -115,7 +58,7 @@ class FeedVC: UIViewController {
                     FeedCollectionView?.reloadItemsAtIndexPaths([deselectedIndex!])
                 }
             } else if feedItemType! == .Tag {
-                pageType = .Detail
+                selectedIndex = nil
                 feedItemType! = .Question
             }
         }
@@ -135,7 +78,6 @@ class FeedVC: UIViewController {
     var currentQuestion : Question!
     
     private var totalItemCount = 0
-    private var loadingView : LoadingView?
 
     /* cache questions & answers that have been shown */
     private var gettingImageForCell : [Bool]!
@@ -145,28 +87,17 @@ class FeedVC: UIViewController {
     
     let collectionReuseIdentifier = "FeedCell"
     
-    private lazy var titleLabel = UILabel()
-    private lazy var rotatedView = UIView()
-    private lazy var backgroundImage = UIImageView()
-    private var iconContainer : IconContainer!
-    
-    var returningToExplore = false
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         if !isLoaded {
-            loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.whiteColor())
-            loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
-            loadingView?.addMessage("Loading...")
-            
-            view.addSubview(loadingView!)
-            
             rectToLeft = view.frame
             rectToLeft.origin.x = view.frame.minX - view.frame.size.width
             
             rectToRight = view.frame
             rectToRight.origin.x = view.frame.maxX
+            
+            setupScreenLayout()
             
             isLoaded = true
         }
@@ -184,7 +115,7 @@ class FeedVC: UIViewController {
         return true
     }
     
-    private func setupScreenLayout(pageType : PageType) {
+    private func setupScreenLayout() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
         layout.scrollDirection = UICollectionViewScrollDirection.Vertical
         layout.minimumLineSpacing = 0
@@ -208,73 +139,6 @@ class FeedVC: UIViewController {
         FeedCollectionView?.backgroundView = nil
         FeedCollectionView?.showsVerticalScrollIndicator = false
         FeedCollectionView?.pagingEnabled = true
-        
-        loadingView?.removeFromSuperview()
-    }
-    
-    private func setupDetailView() {
-        
-        FeedCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = false
-        FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = false
-
-        FeedCollectionView?.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
-        FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
-        
-        backgroundImage.frame = view.bounds
-        view.insertSubview(backgroundImage, atIndex: 0)
-        
-        view.addSubview(rotatedView)
-        rotatedView.translatesAutoresizingMaskIntoConstraints = false
-        rotatedView.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.xs.rawValue).active = true
-        rotatedView.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
-        rotatedView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        rotatedView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.2).active = true
-        rotatedView.layoutIfNeeded()
-        rotatedView.addSubview(titleLabel)
-        
-        titleLabel.transform = CGAffineTransformIdentity
-        titleLabel.frame = CGRect(origin: CGPointZero, size: CGSize(width: rotatedView.bounds.height, height: rotatedView.bounds.width))
-        
-        //rotate tag
-        var transform = CGAffineTransformIdentity
-        transform = CGAffineTransformTranslate(transform, (rotatedView.bounds.width / 2)-(rotatedView.bounds.height / 2), (rotatedView.bounds.height / 2)-(rotatedView.bounds.width / 2))
-        transform = CGAffineTransformRotate(transform, CGFloat(-M_PI_2))
-        titleLabel.transform = transform
-    }
-    
-    private func updateDetail() {
-        if feedItemType! == .Question {
-            titleLabel.text = "#"+(currentTag.tagID!).uppercaseString
-            titleLabel.font = UIFont.systemFontOfSize(FontSizes.Mammoth.rawValue, weight: UIFontWeightHeavy)
-        } else if feedItemType!  == .Answer {
-            titleLabel.text = currentQuestion.qTitle
-            titleLabel.font = UIFont.systemFontOfSize(FontSizes.Headline2.rawValue, weight: UIFontWeightBold)
-        }
-        titleLabel.textColor = UIColor.whiteColor()
-        titleLabel.numberOfLines = 0
-        
-        if let _tagImage = currentTag.tagImage {
-            Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-                if error != nil {
-                    print (error?.localizedDescription)
-                } else {
-                    self.backgroundImage.image = UIImage(data: data!)
-                }
-            })
-        }
-    }
-    
-    private func addIconContainer() {
-        iconContainer = IconContainer(frame: CGRectMake(0,0,IconSizes.Medium.rawValue, IconSizes.Medium.rawValue + Spacing.m.rawValue))
-        iconContainer.setViewTitle("HOME")
-        view.addSubview(iconContainer)
-        
-        iconContainer.translatesAutoresizingMaskIntoConstraints = false
-        iconContainer.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.s.rawValue).active = true
-        iconContainer.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue + Spacing.m.rawValue).active = true
-        iconContainer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-        iconContainer.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        iconContainer.layoutIfNeeded()
     }
     
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
@@ -286,6 +150,10 @@ class FeedVC: UIViewController {
         
         QAVC.transitioningDelegate = self
         presentViewController(QAVC, animated: true, completion: nil)
+    }
+    
+    func showTagDetail(selectedTag : Tag) {
+        
     }
 }
 
@@ -302,12 +170,8 @@ extension FeedVC : UICollectionViewDataSource {
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(collectionReuseIdentifier, forIndexPath: indexPath) as! FeedCell
         let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-        
-        if pageType == .Detail {
-            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
-        } else if pageType == .Home || pageType == .Explore {
-            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)]
-        }
+    
+        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)]
         
         if feedItemType! == .Question {
             if cell.itemType == nil || cell.itemType != feedItemType {
@@ -315,21 +179,22 @@ extension FeedVC : UICollectionViewDataSource {
             }
             cell.updateLabel(nil, _subtitle: nil)
 
-            if allQuestions.count > indexPath.row && allQuestions[indexPath.row] != nil {
+            if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 if let _currentQuestion = allQuestions[indexPath.row] {
-                    pageType == .Home ? cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(_currentQuestion.qTagID!.uppercaseString)") :
+                    if let tagID = _currentQuestion.qTagID {
+                        cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(tagID.uppercaseString)")
+                    } else {
                         cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
+                    }
                     cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), forState: .Normal)
                 }
             } else {
-                Database.getQuestion(currentTag.questions![indexPath.row].qID, completion: { (question, error) in
+                Database.getQuestion(currentTag.questions![indexPath.row]!.qID, completion: { (question, error) in
                     if error == nil {
-                        if self.pageType == .Home {
-                            question.qTagID = self.currentTag.questions![indexPath.row].qTagID
-                            cell.updateLabel(question.qTitle, _subtitle: "#\(question.qTagID!.uppercaseString)")
+                        if let tagID = self.currentTag.questions![indexPath.row]!.qTagID {
+                            cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercaseString)")
                         } else {
                             cell.updateLabel(question.qTitle, _subtitle: nil)
-
                         }
                         self.allQuestions[indexPath.row] = question
                         cell.answerCount.setTitle(String(question.totalAnswers()), forState: .Normal)
@@ -339,11 +204,7 @@ extension FeedVC : UICollectionViewDataSource {
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
                 if let _selectedQuestion = allQuestions[indexPath.row] {
-                    if pageType! == .Explore {
-                        showQuestion(_selectedQuestion, _allQuestions: [_selectedQuestion], _questionIndex: 0, _selectedTag: Tag(tagID: "EXPLORE"))
-                    } else {
-                        showQuestion(_selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
-                    }
+                    showQuestion(_selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
                 }
             } else if indexPath == selectedIndex {
                 if let _selectedQuestion = allQuestions[indexPath.row] {
@@ -363,9 +224,7 @@ extension FeedVC : UICollectionViewDataSource {
             
             if allTags.count > indexPath.row {
                 let _currentTag = allTags[indexPath.row]
-                if pageType == .Home || pageType == .Explore {
-                    cell.updateLabel("#\(_currentTag.tagID!.uppercaseString)", _subtitle: _currentTag.tagDescription)
-                }
+                cell.updateLabel("#\(_currentTag.tagID!.uppercaseString)", _subtitle: _currentTag.tagDescription)
                 cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), forState: .Normal)
             }
         }
@@ -438,9 +297,7 @@ extension FeedVC : UICollectionViewDataSource {
             initialFrame = collectionView.convertRect(cellRect, toView: collectionView.superview)
         }
         
-        if pageType! == .Explore && feedItemType == .Tag {
-            currentTag = allTags[indexPath.row]
-        }
+        if feedItemType == .Tag { currentTag = allTags[indexPath.row] }
         
         selectedIndex = indexPath
 

@@ -207,7 +207,7 @@ class Database {
         }
     }
     
-    static func createFeed(completedFeed: (feed : Tag) -> Void) {
+    static func createFeed(completedFeed: (_ feed : Tag) -> Void) {
         Database.keepUserTagsUpdated()
         
         //monitor updates to existing questions
@@ -228,15 +228,15 @@ class Database {
         }
     }
     
-    static func getFeed(completion: (feed : Tag) -> Void) {
+    static func getFeed(completion: (_ feed : Tag) -> Void) {
         let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
-        let feedPath = currentUserFeedRef.queryOrderedByChild("lastAnswerID").queryLimitedToLast(50)
+        let feedPath = currentUserFeedRef.queryOrderedByChild("lastAnswerID").queryLimitedToLast(querySize)
         homeFeed.questions = [Question]()
         
         feedPath.observeSingleEventOfType(.Value, withBlock: {(snap) in
             for question in snap.children {
                 let _question = Question(qID: question.key, qTagID: question.childSnapshotForPath("tagID").value as? String)
-                homeFeed.questions?.insert(_question, atIndex: 0)
+                homeFeed.questions!.insert(_question, atIndex: 0)
 //                if (homeFeed.questions?.append(_question) == nil) {
 //                    homeFeed.questions = [_question]
 //                }
@@ -259,7 +259,7 @@ class Database {
         })
     }
     
-    static func addNewQuestionsFromTagToFeed(tagID : String, completion: (success: Bool) -> Void) {
+    static func addNewQuestionsFromTagToFeed(tagID : String, completion: (_ success: Bool) -> Void) {
         var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
         
         currentUserRef.child("savedTags").child(tagID).observeSingleEventOfType(.Value, withBlock: { snap in
@@ -369,7 +369,7 @@ class Database {
     }
     
     /* AUTH METHODS */
-    static func createEmailUser(email : String, password: String, completion: (user : User?, error : NSError?) -> Void) {
+    static func createEmailUser(email : String, password: String, completion: (_ user : User?, error : NSError?) -> Void) {
         FIRAuth.auth()?.createUserWithEmail(email, password: password) { (_user, _error) in
             if _error != nil {
                 completion(user: nil, error: _error)

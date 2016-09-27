@@ -111,7 +111,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
         let detailVC = FeedVC()
         detailVC.view.frame = view.bounds
-        detailVC.pageType = .Detail
         detailVC.feedItemType = .Answer
         detailVC.currentTag = _selectedTag
         detailVC.currentQuestion = _selectedQuestion
@@ -132,7 +131,6 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
     func showTagDetail(_selectedTag : Tag) {
         let detailVC = FeedVC()
         detailVC.view.frame = view.bounds
-        detailVC.pageType = .Home
 
 //        detailVC.pageType = .Detail
         detailVC.feedItemType = .Question

@@ -249,14 +249,7 @@ class FeedCell: UICollectionViewCell {
     }
     
     func updateLabel(_title : String?, _subtitle : String?) {
-//        if let _title = _title {
-            titleLabel.text = _title
-//        }
-//
-//        if let _subtitle = _subtitle {
-            subtitleLabel.text = _subtitle
-//        } else {
-//            
-//        }
+        titleLabel.text = _title
+        subtitleLabel.text = _subtitle
     }
 }
