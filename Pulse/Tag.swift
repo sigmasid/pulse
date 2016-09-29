@@ -9,6 +9,26 @@
 import Foundation
 
 import Firebase
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l > r
+  default:
+    return rhs < lhs
+  }
+}
+
 
 class Tag : NSObject {
     var tagID: String?
@@ -32,11 +52,11 @@ class Tag : NSObject {
         self.tagID = tagID
         super.init()
         
-        self.tagDescription  = snapshot.childSnapshotForPath("description").value as? String
-        self.previewImage = snapshot.childSnapshotForPath("previewImage").value as? String
+        self.tagDescription  = snapshot.childSnapshot(forPath: "description").value as? String
+        self.previewImage = snapshot.childSnapshot(forPath: "previewImage").value as? String
 
-        for question in snapshot.childSnapshotForPath("questions").children {
-            let _question = Question(qID: question.key)
+        for question in snapshot.childSnapshot(forPath: "questions").children {
+            let _question = Question(qID: (question as AnyObject).key)
             if (self.questions?.append(_question) == nil) {
                 self.questions = [_question]
             }

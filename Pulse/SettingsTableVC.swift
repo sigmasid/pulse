@@ -11,21 +11,21 @@ import UIKit
 class SettingsTableVC: UIViewController, ParentDelegate {
     weak var returnToParentDelegate : ParentDelegate!
 
-    private var _sections : [SettingSection]?
-    private var _settings = [[Setting]]()
+    fileprivate var _sections : [SettingSection]?
+    fileprivate var _settings = [[Setting]]()
     
-    private lazy var _headerView = UIView()
-    private var _loginHeader : LoginHeaderView?
+    fileprivate lazy var _headerView = UIView()
+    fileprivate var _loginHeader : LoginHeaderView?
 
-    private var settingsTable = UITableView()
-    private let _reuseIdentifier = "SettingsTableCell"
+    fileprivate var settingsTable = UITableView()
+    fileprivate let _reuseIdentifier = "SettingsTableCell"
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        settingsTable.registerClass(SettingsTableCell.self, forCellReuseIdentifier: _reuseIdentifier)
+        settingsTable.register(SettingsTableCell.self, forCellReuseIdentifier: _reuseIdentifier)
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
         setDarkBackground()
@@ -48,15 +48,15 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         view.addSubview(settingsTable)
 
         settingsTable.translatesAutoresizingMaskIntoConstraints = false
-        settingsTable.topAnchor.constraintEqualToAnchor(_headerView.bottomAnchor, constant: Spacing.s.rawValue).active = true
-        settingsTable.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
-        settingsTable.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor, constant: Spacing.s.rawValue).active = true
-        settingsTable.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        settingsTable.topAnchor.constraint(equalTo: _headerView.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        settingsTable.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        settingsTable.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        settingsTable.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         
         settingsTable.backgroundView = nil
-        settingsTable.backgroundColor = UIColor.clearColor()
-        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
-        settingsTable.separatorColor = UIColor.grayColor().colorWithAlphaComponent(0.7)
+        settingsTable.backgroundColor = UIColor.clear
+        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.singleLine
+        settingsTable.separatorColor = UIColor.gray.withAlphaComponent(0.7)
         settingsTable.tableFooterView = UIView()
         settingsTable.showsVerticalScrollIndicator = false
 
@@ -65,24 +65,24 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         settingsTable.reloadData()
     }
     
-    private func addHeader(appTitle appTitle : String, screenTitle : String) {
+    fileprivate func addHeader(appTitle : String, screenTitle : String) {
          view.addSubview(_headerView)
         
         _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
+        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         _headerView.layoutIfNeeded()
         
         _loginHeader = LoginHeaderView(frame: _headerView.frame)
         if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(appTitle)
-            _loginHeader.setScreenTitleLabel(screenTitle)
-            _loginHeader.updateStatusMessage("PROFILE SETTINGS")
+            _loginHeader.setAppTitleLabel(_message: appTitle)
+            _loginHeader.setScreenTitleLabel(_message: screenTitle)
+            _loginHeader.updateStatusMessage(_message: "PROFILE SETTINGS")
 
             _loginHeader.addGoBack()
-            _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
+            _loginHeader._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
             
             _headerView.addSubview(_loginHeader)
         }
@@ -94,7 +94,7 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         }
     }
     
-    func showSettingDetail(selectedSetting : Setting) {
+    func showSettingDetail(_ selectedSetting : Setting) {
         if selectedSetting.settingID == "logout" {
             Database.signOut({ success in
                 if !success {
@@ -109,46 +109,46 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         }
     }
     
-    func returnToParent(currentVC : UIViewController) {
+    func returnToParent(_ currentVC : UIViewController) {
         GlobalFunctions.dismissVC(currentVC)
     }
 }
 
 extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     // MARK: - Table view data source
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return _sections?.count ?? 0
     }
 
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return _sections?[section].sectionSettingsCount ?? 0
     }
     
-    func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         let _sectionID = _sections![section].sectionID
         return SectionTypes.getSectionDisplayName(_sectionID)
     }
     
-    func tableView(tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+    func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
-            header.backgroundView?.backgroundColor = UIColor.clearColor()
-            header.textLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-            header.textLabel!.textColor = UIColor.orangeColor()
+            header.backgroundView?.backgroundColor = UIColor.clear
+            header.textLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+            header.textLabel!.textColor = UIColor.orange
         }
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let _settingID = _sections![indexPath.section].settings![indexPath.row]
-        let cell = tableView.dequeueReusableCellWithIdentifier(_reuseIdentifier) as! SettingsTableCell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let _settingID = _sections![(indexPath as NSIndexPath).section].settings![(indexPath as NSIndexPath).row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: _reuseIdentifier) as! SettingsTableCell
 
-        if _settings[indexPath.section].count > indexPath.row {
-            let _setting = _settings[indexPath.section][indexPath.row]
+        if _settings[(indexPath as NSIndexPath).section].count > (indexPath as NSIndexPath).row {
+            let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
             cell.textLabel!.text = _setting.display!
             if _setting.type != nil {
                 cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
             }
             if _setting.editable {
-                cell.accessoryType = .DisclosureIndicator
+                cell.accessoryType = .disclosureIndicator
             }
         } else {
             Database.getSetting(_settingID, completion: {(_setting, error) in
@@ -156,19 +156,19 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
                 if _setting.type != nil {
                     cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
                 }
-                self._settings[indexPath.section].append(_setting)
+                self._settings[(indexPath as NSIndexPath).section].append(_setting)
                 if _setting.editable {
-                    cell.accessoryType = .DisclosureIndicator
+                    cell.accessoryType = .disclosureIndicator
                 }
             })
         }
         return cell
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        let _setting = _settings[indexPath.section][indexPath.row]
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
         showSettingDetail(_setting)
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
 

@@ -11,43 +11,41 @@ import UIKit
 class ShrinkDismissController: BaseAnimator {
     var shrinkToView : UIView!
     
-    override func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
+    override func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         return 0.3
     }
 
-    override func animateDismissingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
-        guard let containerView = transitionContext.containerView() else {
-            return
-        }
+    override func animateDismissingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
+        let containerView = transitionContext.containerView
         
-        let fromVCRect = transitionContext.initialFrameForViewController(fromVC)
-        let snapshot = fromVC.view.resizableSnapshotViewFromRect(fromVC.view.frame, afterScreenUpdates: false, withCapInsets: UIEdgeInsetsZero)
+        let fromVCRect = transitionContext.initialFrame(for: fromVC)
+        let snapshot = fromVC.view.resizableSnapshotView(from: fromVC.view.frame, afterScreenUpdates: false, withCapInsets: UIEdgeInsets.zero)
         let blankView = UIView(frame: fromVCRect)
-        blankView.backgroundColor = UIColor.whiteColor()
+        blankView.backgroundColor = UIColor.white
         
-        snapshot.frame = fromVCRect
+        snapshot?.frame = fromVCRect
         toVC.view.frame = fromVCRect
         
         containerView.addSubview(fromVC.view)
         containerView.addSubview(toVC.view)
         containerView.addSubview(blankView)
-        containerView.addSubview(snapshot)
+        containerView.addSubview(snapshot!)
         
-        let duration = transitionDuration(transitionContext)        
-        let initialFrame = CGRectMake(-fromVC.view.frame.size.width/2,0, fromVC.view.frame.size.height, fromVC.view.frame.size.height )
+        let duration = transitionDuration(using: transitionContext)        
+        let initialFrame = CGRect(x: -fromVC.view.frame.size.width/2,y: 0, width: fromVC.view.frame.size.height, height: fromVC.view.frame.size.height )
         let endFrame     = shrinkToView.frame
         
-        let maskPath : UIBezierPath = UIBezierPath(ovalInRect: initialFrame)
+        let maskPath : UIBezierPath = UIBezierPath(ovalIn: initialFrame)
         let maskLayer = CAShapeLayer()
         maskLayer.frame = toVC.view.frame
-        maskLayer.path = maskPath.CGPath
+        maskLayer.path = maskPath.cgPath
         
-        let smallCirclePath = UIBezierPath(ovalInRect: endFrame)
-        maskLayer.path = smallCirclePath.CGPath
-        snapshot.layer.mask = maskLayer
+        let smallCirclePath = UIBezierPath(ovalIn: endFrame)
+        maskLayer.path = smallCirclePath.cgPath
+        snapshot?.layer.mask = maskLayer
         
         let pathAnimation = CABasicAnimation(keyPath: "path")
-        pathAnimation.fromValue = maskPath.CGPath
+        pathAnimation.fromValue = maskPath.cgPath
         pathAnimation.toValue   = smallCirclePath
         pathAnimation.duration  = duration
         
@@ -61,14 +59,14 @@ class ShrinkDismissController: BaseAnimator {
         CATransaction.setCompletionBlock {
             toVC.view.layer.mask = nil
             
-            transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
+            transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
             
-            snapshot.removeFromSuperview()
+            snapshot?.removeFromSuperview()
             blankView.removeFromSuperview()
         }
             
-        maskLayer.addAnimation(pathAnimation, forKey:"pathAnimation")
-        maskLayer.addAnimation(opacityAnimation, forKey:"opacityAnimation")
+        maskLayer.add(pathAnimation, forKey:"pathAnimation")
+        maskLayer.add(opacityAnimation, forKey:"opacityAnimation")
             
         CATransaction.commit()
     }

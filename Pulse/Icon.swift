@@ -18,16 +18,16 @@ class Icon : UIView {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
-    func drawLongIcon(color : UIColor, iconThickness : CGFloat) {
+    func drawLongIcon(_ color : UIColor, iconThickness : CGFloat) {
         let _flatLine = bounds.width - bounds.height
         _drawIcon(color, iconThickness: iconThickness, flatLine: _flatLine)
     }
     
-    func drawIcon(color : UIColor, iconThickness : CGFloat) {
+    func drawIcon(_ color : UIColor, iconThickness : CGFloat) {
         _drawIcon(color, iconThickness: iconThickness, flatLine: 0)
     }
     
-    private func _drawIcon(color : UIColor, iconThickness : CGFloat, flatLine : CGFloat) {
+    fileprivate func _drawIcon(_ color : UIColor, iconThickness : CGFloat, flatLine : CGFloat) {
         let startX = CGFloat(0)
         let startY = frame.height / 2
         let firstXStep = bounds.height / 4  //15, 20,
@@ -36,39 +36,39 @@ class Icon : UIView {
         let yStep = startY / 5
         
         let heartLine = CAShapeLayer()
-        heartLine.strokeColor = color.CGColor
+        heartLine.strokeColor = color.cgColor
         
         let heartLineBezier = UIBezierPath()
-        heartLineBezier.moveToPoint(CGPoint(x: startX, y: startY)) // 0
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep, y: startY)) //15
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 1 * restXStep, y: startY - yStep)) //20
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 2 * restXStep, y: startY)) // 25
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 3 * restXStep, y: startY - yStep * 3)) //30
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 4 * restXStep, y: startY + yStep * 2)) //35
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 5 * restXStep, y: startY - yStep * 2)) //40
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY)) //45
-        heartLineBezier.addLineToPoint(CGPoint(x: startX + flatLine + 2 * firstXStep + 6 * restXStep, y: startY)) //60
+        heartLineBezier.move(to: CGPoint(x: startX, y: startY)) // 0
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep, y: startY)) //15
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 1 * restXStep, y: startY - yStep)) //20
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 2 * restXStep, y: startY)) // 25
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 3 * restXStep, y: startY - yStep * 3)) //30
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 4 * restXStep, y: startY + yStep * 2)) //35
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 5 * restXStep, y: startY - yStep * 2)) //40
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY)) //45
+        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + 2 * firstXStep + 6 * restXStep, y: startY)) //60
 
         
         heartLine.lineWidth = iconThickness
-        heartLine.fillColor = UIColor.clearColor().CGColor
-        heartLine.path = heartLineBezier.CGPath
+        heartLine.fillColor = UIColor.clear.cgColor
+        heartLine.path = heartLineBezier.cgPath
         
         let pulseDot = UIView(frame: CGRect(x: 0.0, y: 0.0, width: 6, height: 6))
         pulseDot.layer.cornerRadius = 3
-        pulseDot.backgroundColor = UIColor.whiteColor()
+        pulseDot.backgroundColor = UIColor.white
         
         let pulseDotBezier = UIBezierPath()
-        pulseDotBezier.moveToPoint(CGPoint(x: startX, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 1 * restXStep, y: startY - yStep))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 2 * restXStep, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 3 * restXStep, y: startY - yStep * 3))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 4 * restXStep, y: startY + yStep * 2))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 5 * restXStep, y: startY - yStep * 2))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY))
-        pulseDotBezier.addLineToPoint(CGPoint(x: startX + flatLine + (firstXStep * 2) + 6 * restXStep, y: startY))
+        pulseDotBezier.move(to: CGPoint(x: startX, y: startY))
+        pulseDotBezier.addLine(to: CGPoint(x: startX, y: startY))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep, y: startY))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 1 * restXStep, y: startY - yStep))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 2 * restXStep, y: startY))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 3 * restXStep, y: startY - yStep * 3))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 4 * restXStep, y: startY + yStep * 2))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 5 * restXStep, y: startY - yStep * 2))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY))
+        pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + (firstXStep * 2) + 6 * restXStep, y: startY))
         
         //Animations
         
@@ -90,36 +90,36 @@ class Icon : UIView {
         dotOpacity.toValue = 1.0
         dotOpacity.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
         dotOpacity.repeatCount = FLT_MAX
-        dotOpacity.removedOnCompletion = false
+        dotOpacity.isRemovedOnCompletion = false
         dotOpacity.duration = Double(0.5)
         
         let dotMotion = CAKeyframeAnimation(keyPath: "position")
-        dotMotion.path = pulseDotBezier.CGPath
+        dotMotion.path = pulseDotBezier.cgPath
         dotMotion.duration = Double(2.05)
         dotMotion.fillMode = kCAFillModeForwards
-        dotMotion.removedOnCompletion = false
+        dotMotion.isRemovedOnCompletion = false
         dotMotion.repeatCount = FLT_MAX
         
-        heartLine.addAnimation(heartLineStroke, forKey: nil)
-        heartLine.addAnimation(heartLineOpactiy, forKey: nil)
+        heartLine.add(heartLineStroke, forKey: nil)
+        heartLine.add(heartLineOpactiy, forKey: nil)
         
-        pulseDot.layer.addAnimation(dotMotion, forKey: nil)
-        pulseDot.layer.addAnimation(dotOpacity, forKey: nil)
+        pulseDot.layer.add(dotMotion, forKey: nil)
+        pulseDot.layer.add(dotOpacity, forKey: nil)
         
         layer.addSublayer(heartLine)
         addSubview(pulseDot)
     }
     
     ///Draw background circle behind logo with parameter color - should be contrasting color
-    func drawIconBackground(color: UIColor) {
+    func drawIconBackground(_ color: UIColor) {
         let circleShape = CAShapeLayer()
         
         if frame.height == frame.width {
-            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.midX , y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
+            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.midX , y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
         } else {
-            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.maxX - (frame.height / 2), y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).CGPath
+            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.maxX - (frame.height / 2), y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
         }
-        circleShape.fillColor = color.CGColor
+        circleShape.fillColor = color.cgColor
         layer.addSublayer(circleShape)
     }
 }

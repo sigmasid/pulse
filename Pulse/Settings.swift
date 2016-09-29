@@ -31,8 +31,8 @@ class SettingSection {
         
         if snapshot.childrenCount > 0 {
             for settingID in snapshot.children {
-                if (self.settings?.append(settingID.key) == nil) {
-                    self.settings = [settingID.key]
+                if (self.settings?.append((settingID as AnyObject).key) == nil) {
+                    self.settings = [(settingID as AnyObject).key]
                 }
             }
         }
@@ -62,13 +62,13 @@ class Setting {
         self.settingID = snap.key
         
         if snap.hasChild("display") {
-            self.display = snap.childSnapshotForPath("display").value as? String
+            self.display = snap.childSnapshot(forPath: "display").value as? String
         } else {
             self.display = nil
         }
         
         if snap.hasChild("editable") {
-            switch snap.childSnapshotForPath("editable").value as! Bool {
+            switch snap.childSnapshot(forPath: "editable").value as! Bool {
             case true: self.editable = true
             case false: self.editable = false
             }
@@ -77,25 +77,25 @@ class Setting {
         }
         
         if snap.hasChild("type") {
-            self.type = SettingTypes.getSettingType(snap.childSnapshotForPath("type").value as! String)
+            self.type = SettingTypes.getSettingType(snap.childSnapshot(forPath: "type").value as! String)
         } else {
             self.type = nil
         }
         
         if snap.hasChild("section") {
-            self.section = snap.childSnapshotForPath("section").value as? String
+            self.section = snap.childSnapshot(forPath: "section").value as? String
         } else {
             self.section = nil
         }
         
         if snap.hasChild("longDescription") {
-            self.longDescription = snap.childSnapshotForPath("longDescription").value as? String
+            self.longDescription = snap.childSnapshot(forPath: "longDescription").value as? String
         } else {
             self.longDescription = nil
         }
         
         if snap.hasChild("placeholder") {
-            self.placeholder = snap.childSnapshotForPath("placeholder").value as? String
+            self.placeholder = snap.childSnapshot(forPath: "placeholder").value as? String
         } else {
             self.placeholder = nil
         }

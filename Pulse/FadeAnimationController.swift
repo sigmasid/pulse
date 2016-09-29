@@ -10,52 +10,48 @@ import UIKit
 
 class FadeAnimationController: BaseAnimator {
 
-    override func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
+    override func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         return 0.3
     }
     
-    override func animatePresentingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
+    override func animatePresentingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
         
-        guard let containerView = transitionContext.containerView() else {
-            return
-        }
+        let containerView = transitionContext.containerView
         
         containerView.insertSubview(toVC.view, aboveSubview: fromVC.view)
         toVC.view.alpha = 0
         
-        let duration = transitionDuration(transitionContext)
-        let animOptions: UIViewAnimationOptions = transitionContext.isInteractive() ? [UIViewAnimationOptions.CurveLinear] : []
+        let duration = transitionDuration(using: transitionContext)
+        let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveLinear] : []
         
-        UIView.animateWithDuration(
-            duration,
+        UIView.animate(
+            withDuration: duration,
             delay: 0,
             options: animOptions,
             animations: {
                 toVC.view.alpha = 1.0
             }, completion: { _ in
-                transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
+                transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
         })
     }
     
-    override func animateDismissingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
-        guard let containerView = transitionContext.containerView() else {
-            return
-        }
+    override func animateDismissingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
+        let containerView = transitionContext.containerView
         
         containerView.insertSubview(toVC.view, aboveSubview: fromVC.view)
         toVC.view.alpha = 0
         
-        let duration = transitionDuration(transitionContext)
-        let animOptions: UIViewAnimationOptions = transitionContext.isInteractive() ? [UIViewAnimationOptions.CurveLinear] : []
+        let duration = transitionDuration(using: transitionContext)
+        let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveLinear] : []
         
-        UIView.animateWithDuration(
-            duration,
+        UIView.animate(
+            withDuration: duration,
             delay: 0,
             options: animOptions,
             animations: {
                 toVC.view.alpha = 1.0
             }, completion: { _ in
-                transitionContext.completeTransition(!transitionContext.transitionWasCancelled())
+                transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
         })
     }
 }

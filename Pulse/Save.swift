@@ -10,7 +10,7 @@ import UIKit
 
 class Save: UIView {
 
-    private var _saveImage = UIImageView()
+    fileprivate var _saveImage = UIImageView()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -22,19 +22,19 @@ class Save: UIView {
         super.init(coder: aDecoder)
     }
     
-    func toggle(mode : SaveType) {
+    func toggle(_ mode : SaveType) {
         switch mode {
-        case .Save:
+        case .save:
             _saveImage.image = UIImage(named: "save")
-            let xForm = CGAffineTransformScale(CGAffineTransformIdentity, 2.0, 2.0)
-            UIView.animateWithDuration(0.25, animations: { self._saveImage.transform = xForm } , completion: {(value: Bool) in
-                self._saveImage.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1.0, 1.0)
+            let xForm = CGAffineTransform.identity.scaledBy(x: 2.0, y: 2.0)
+            UIView.animate(withDuration: 0.25, animations: { self._saveImage.transform = xForm } , completion: {(value: Bool) in
+                self._saveImage.transform = CGAffineTransform.identity.scaledBy(x: 1.0, y: 1.0)
             })
-        case .Unsave:
+        case .unsave:
             _saveImage.image = UIImage(named: "unsave")
-            let xForm = CGAffineTransformScale(CGAffineTransformIdentity, 2.0, 2.0)
-            UIView.animateWithDuration(0.25, animations: { self._saveImage.transform = xForm } , completion: {(value: Bool) in
-                self._saveImage.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1.0, 1.0)
+            let xForm = CGAffineTransform.identity.scaledBy(x: 2.0, y: 2.0)
+            UIView.animate(withDuration: 0.25, animations: { self._saveImage.transform = xForm } , completion: {(value: Bool) in
+                self._saveImage.transform = CGAffineTransform.identity.scaledBy(x: 1.0, y: 1.0)
             })
         }
     }

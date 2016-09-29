@@ -13,20 +13,20 @@ class PaddingLabel: UILabel {
     
     let padding = UIEdgeInsets(top: 2.5, left: 5, bottom: 2.5, right: 5)
     
-    override func drawTextInRect(rect: CGRect) {
-        super.drawTextInRect(UIEdgeInsetsInsetRect(rect, padding))
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: UIEdgeInsetsInsetRect(rect, padding))
     }
     
     // Override -intrinsicContentSize: for Auto layout code
-    override func intrinsicContentSize() -> CGSize {
-        let superContentSize = super.intrinsicContentSize()
+    override var intrinsicContentSize : CGSize {
+        let superContentSize = super.intrinsicContentSize
         let width = superContentSize.width + padding.left + padding.right
         let heigth = superContentSize.height + padding.top + padding.bottom
         return CGSize(width: width, height: heigth)
     }
     
     // Override -sizeThatFits: for Springs & Struts code
-    override func sizeThatFits(size: CGSize) -> CGSize {
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
         let superSizeThatFits = super.sizeThatFits(size)
         let width = superSizeThatFits.width + padding.left + padding.right
         let heigth = superSizeThatFits.height + padding.top + padding.bottom
@@ -69,23 +69,23 @@ extension UIViewController {
 }
 
 extension UILabel {
-    func setFont(size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
+    func setFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
-        self.font = UIFont.systemFontOfSize(size, weight: weight)
+        self.font = UIFont.systemFont(ofSize: size, weight: weight)
         self.textColor = color
         self.numberOfLines = 0
-        self.lineBreakMode = .ByWordWrapping
+        self.lineBreakMode = .byWordWrapping
     }
     
-    func setPreferredFont(color : UIColor, alignment : NSTextAlignment) {
+    func setPreferredFont(_ color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
-        self.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+        self.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
         self.textColor = color
         self.numberOfLines = 0
-        self.lineBreakMode = .ByWordWrapping
+        self.lineBreakMode = .byWordWrapping
     }
     
-    func addTextSpacing(spacing: CGFloat){
+    func addTextSpacing(_ spacing: CGFloat){
         if let _text = self.text {
             let attributedString = NSMutableAttributedString(string: _text)
             attributedString.addAttribute(NSKernAttributeName, value: spacing, range: NSRange(location: 0, length: self.text!.characters.count))
@@ -96,25 +96,25 @@ extension UILabel {
 
 extension UIButton {
     func setEnabled() {
-        self.enabled = true
+        self.isEnabled = true
         self.alpha = 1.0
         self.backgroundColor = UIColor(red: 245/255, green: 44/255, blue: 90/255, alpha: 1.0 )
     }
     
     func setDisabled() {
-        self.enabled = false
+        self.isEnabled = false
         self.alpha = 0.5
         self.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
     }
     
     func addLoadingIndicator() -> UIView {
-        let _loadingIndicatorFrame = CGRectMake(5, 0, self.frame.height, self.frame.height)
-        let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.whiteColor())
+        let _loadingIndicatorFrame = CGRect(x: 5, y: 0, width: self.frame.height, height: self.frame.height)
+        let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.white)
         self.addSubview(_loadingIndicator)
         return _loadingIndicator
     }
     
-    func removeLoadingIndicator(indicator : UIView) {
+    func removeLoadingIndicator(_ indicator : UIView) {
         indicator.removeFromSuperview()
     }
     
@@ -125,11 +125,11 @@ extension UIButton {
 
 extension UIImage
 {
-    var highestQualityJPEGNSData: NSData { return UIImageJPEGRepresentation(self, 1.0)! }
-    var highQualityJPEGNSData: NSData    { return UIImageJPEGRepresentation(self, 0.75)!}
-    var mediumQualityJPEGNSData: NSData  { return UIImageJPEGRepresentation(self, 0.5)! }
-    var lowQualityJPEGNSData: NSData     { return UIImageJPEGRepresentation(self, 0.25)!}
-    var lowestQualityJPEGNSData: NSData  { return UIImageJPEGRepresentation(self, 0.0)! }
+    var highestQualityJPEGNSData: Data { return UIImageJPEGRepresentation(self, 1.0)! }
+    var highQualityJPEGNSData: Data    { return UIImageJPEGRepresentation(self, 0.75)!}
+    var mediumQualityJPEGNSData: Data  { return UIImageJPEGRepresentation(self, 0.5)! }
+    var lowQualityJPEGNSData: Data     { return UIImageJPEGRepresentation(self, 0.25)!}
+    var lowestQualityJPEGNSData: Data  { return UIImageJPEGRepresentation(self, 0.0)! }
 }
 
 extension Double {
@@ -138,32 +138,32 @@ extension Double {
     }
 }
 
-extension NSTimeInterval {
+extension TimeInterval {
     var time:String {
-        return String(format:"%02d:%02d", Int(self/60.0),  Int(ceil(self%60)) )
+        return String(format:"%02d:%02d", Int(self/60.0),  Int(ceil(self.truncatingRemainder(dividingBy: 60))) )
     }
 }
 
 enum AnimationStyle {
-    case VerticalUp
-    case VerticalDown
-    case Horizontal
-    case HorizontalFlip
+    case verticalUp
+    case verticalDown
+    case horizontal
+    case horizontalFlip
 }
 
 enum IconSizes: CGFloat {
-    case XXSmall = 10
-    case XSmall = 20
-    case Small = 25
-    case Medium = 50
-    case Large = 75
+    case xxSmall = 10
+    case xSmall = 20
+    case small = 25
+    case medium = 50
+    case large = 75
 }
 
 enum IconThickness: CGFloat {
-    case Thin = 1.0
-    case Medium = 2.0
-    case Thick = 3.0
-    case ExtraThick = 5.0
+    case thin = 1.0
+    case medium = 2.0
+    case thick = 3.0
+    case extraThick = 5.0
 }
 
 enum UserProfileUpdateType {
@@ -172,13 +172,13 @@ enum UserProfileUpdateType {
 }
 
 enum AnswerVoteType {
-    case Upvote
-    case Downvote
+    case upvote
+    case downvote
 }
 
 enum SaveType {
-    case Save
-    case Unsave
+    case save
+    case unsave
 }
 
 enum Spacing: CGFloat {
@@ -195,7 +195,7 @@ enum buttonCornerRadius : CGFloat {
     case small = 10
     case round = 0
     
-    static func radius(type : buttonCornerRadius, width: Int) -> CGFloat {
+    static func radius(_ type : buttonCornerRadius, width: Int) -> CGFloat {
         switch type {
         case .regular: return buttonCornerRadius.regular.rawValue
         case .small: return buttonCornerRadius.small.rawValue
@@ -203,7 +203,7 @@ enum buttonCornerRadius : CGFloat {
         }
     }
     
-    static func radius(type : buttonCornerRadius) -> CGFloat {
+    static func radius(_ type : buttonCornerRadius) -> CGFloat {
         switch type {
         case .regular: return buttonCornerRadius.regular.rawValue
         case .small: return buttonCornerRadius.small.rawValue
@@ -214,19 +214,19 @@ enum buttonCornerRadius : CGFloat {
 
 
 enum FontSizes: CGFloat {
-    case Caption2 = 8
-    case Caption = 10
-    case Body2 = 12
-    case Body = 14
-    case Title = 16
-    case Headline = 20
-    case Headline2 = 30
-    case Mammoth = 40
+    case caption2 = 8
+    case caption = 10
+    case body2 = 12
+    case body = 14
+    case title = 16
+    case headline = 20
+    case headline2 = 30
+    case mammoth = 40
 }
 
-enum UserErrors: ErrorType {
-    case NotLoggedIn
-    case InvalidData
+enum UserErrors: Error {
+    case notLoggedIn
+    case invalidData
 }
 
 /* CORE DATABASE */
@@ -235,7 +235,7 @@ enum SectionTypes : String {
     case personalInfo = "personalInfo"
     case account = "account"
     
-    static func getSectionDisplayName(index : String) -> String? {
+    static func getSectionDisplayName(_ index : String) -> String? {
         switch index {
         case "activity": return "Activity"
         case "personalInfo": return "Personal Info"
@@ -244,7 +244,7 @@ enum SectionTypes : String {
         }
     }
     
-    static func getSectionType(index : String) -> SectionTypes? {
+    static func getSectionType(_ index : String) -> SectionTypes? {
         switch index {
         case "account": return .account
         case "activity": return .activity
@@ -255,15 +255,15 @@ enum SectionTypes : String {
 }
 
 enum FeedItemType {
-    case Tag
-    case Question
-    case Answer
+    case tag
+    case question
+    case answer
 }
 
 enum PageType {
-    case Home
-    case Detail
-    case Explore
+    case home
+    case detail
+    case explore
 }
 
 enum Item : String {
@@ -292,7 +292,7 @@ enum SettingTypes : String{
     case thumbPic = "thumbPic"
     case array = "array"
     
-    static func getSettingType(index : String) -> SettingTypes? {
+    static func getSettingType(_ index : String) -> SettingTypes? {
         switch index {
         case "bio": return .bio
         case "shortBio": return .shortBio
@@ -317,7 +317,7 @@ enum CreatedAssetType {
     case recordedVideo
     case albumVideo
     
-    static func getAssetType(value : String?) -> CreatedAssetType? {
+    static func getAssetType(_ value : String?) -> CreatedAssetType? {
         if let _value = value {
             switch _value {
             case "recordedImage": return .recordedImage
@@ -330,7 +330,6 @@ enum CreatedAssetType {
         } else {
             return nil
         }
-        
     }
 }
 
@@ -339,7 +338,7 @@ enum MediaAssetType {
     case image
     case unknown
     
-    static func getAssetType(metadata : String) -> MediaAssetType? {
+    static func getAssetType(_ metadata : String) -> MediaAssetType? {
         switch metadata {
         case "video/mp4": return .video
         case "video/mpeg": return .video

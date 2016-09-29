@@ -9,35 +9,35 @@
 import UIKit
 
 enum ModalAnimatedTransitioningType {
-    case Present
-    case Dismiss
+    case present
+    case dismiss
 }
 
 class BaseAnimator: NSObject {
     
-    var transitionType: ModalAnimatedTransitioningType = .Present
+    var transitionType: ModalAnimatedTransitioningType = .present
     
-    func animatePresentingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
-        NSException(name:NSInternalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+    func animatePresentingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
+        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
     }
     
-    func animateDismissingInContext(transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
-        NSException(name:NSInternalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+    func animateDismissingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
+        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
     }
 }
 
 extension BaseAnimator: UIViewControllerAnimatedTransitioning {
     
-    func animateTransition(transitionContext: UIViewControllerContextTransitioning) {
-        let from = transitionContext.viewControllerForKey(UITransitionContextFromViewControllerKey)
-        let to = transitionContext.viewControllerForKey(UITransitionContextToViewControllerKey)
+    func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
+        let from = transitionContext.viewController(forKey: UITransitionContextViewControllerKey.from)
+        let to = transitionContext.viewController(forKey: UITransitionContextViewControllerKey.to)
         
-        if let from = from, to = to {
+        if let from = from, let to = to {
             switch transitionType {
-            case .Present:
+            case .present:
                 print("base animator fired with present")
                 animatePresentingInContext(transitionContext, fromVC: from, toVC: to)
-            case .Dismiss:
+            case .dismiss:
                 print("base animator fired with dismiss")
 
                 animateDismissingInContext(transitionContext, fromVC: from, toVC: to)
@@ -45,8 +45,8 @@ extension BaseAnimator: UIViewControllerAnimatedTransitioning {
         }
     }
     
-    func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
-        NSException(name:NSInternalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+    func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
+        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
         return 0
     }
 }

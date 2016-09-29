@@ -19,23 +19,23 @@ class LoginAddNameVC: UIViewController {
     @IBOutlet weak var _lastNameError: UILabel!
     
     weak var loginVCDelegate : childVCDelegate?
-    private var _headerView : UIView!
-    private var _loginHeader : LoginHeaderView?
+    fileprivate var _headerView : UIView!
+    fileprivate var _loginHeader : LoginHeaderView?
     
     override func viewDidLoad() {
         super.viewDidLoad()
     }
     
-    override func viewDidAppear(animated : Bool) {
+    override func viewDidAppear(_ animated : Bool) {
         super.viewDidAppear(true)
         hideKeyboardWhenTappedAround()
         setDarkBackground()
 
-        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
-        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
+        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
+        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
         
-        firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
-        lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
+        firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
+        lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
         
         doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         doneButton.setEnabled()
@@ -46,7 +46,7 @@ class LoginAddNameVC: UIViewController {
         super.didReceiveMemoryWarning()
     }
     
-    override func viewDidDisappear(animated: Bool) {
+    override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
     }
     
@@ -55,29 +55,29 @@ class LoginAddNameVC: UIViewController {
         view.addSubview(_headerView)
         
         _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
+        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         _headerView.layoutIfNeeded()
         
         _loginHeader = LoginHeaderView(frame: _headerView.frame)
         if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel("PULSE")
-            _loginHeader.setScreenTitleLabel("ADD NAME")
-            _loginHeader.updateStatusMessage("could we get a name with that?")
+            _loginHeader.setAppTitleLabel(_message: "PULSE")
+            _loginHeader.setScreenTitleLabel(_message: "ADD NAME")
+            _loginHeader.updateStatusMessage(_message: "could we get a name with that?")
             _headerView.addSubview(_loginHeader)
         }
     }
 
-    @IBAction func addNameTouchDown(sender: UIButton) {
+    @IBAction func addNameTouchDown(_ sender: UIButton) {
         
     }
     
-    @IBAction func addName(sender: UIButton) {
+    @IBAction func addName(_ sender: UIButton) {
         dismissKeyboard()
         sender.setDisabled()
-        sender.addLoadingIndicator()
+        let _ = sender.addLoadingIndicator()
         
         GlobalFunctions.validateName(firstName.text, completion: {(verified, error) in
             if !verified {
@@ -96,7 +96,7 @@ class LoginAddNameVC: UIViewController {
                                 sender.setEnabled()
                             }
                             else {
-                                NSNotificationCenter.defaultCenter().postNotificationName("LoginSuccess", object: self)
+                                NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
                                 sender.setEnabled()
                                 self._loggedInSuccess()
                             }
@@ -113,7 +113,7 @@ class LoginAddNameVC: UIViewController {
         }
     }
     
-    func textFieldDidBeginEditing(textField: UITextField) {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
         _firstNameError.text = ""
         _lastNameError.text = ""
     }

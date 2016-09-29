@@ -8,47 +8,65 @@
 
 import UIKit
 
-class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
-    private var initialLoadComplete = false
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
 
-    lazy var searchVC : SearchVC = SearchVC()
+
+class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
+    fileprivate var initialLoadComplete = false
+
+    var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
+    var searchVC : SearchVC = SearchVC()
     lazy var homeVC : HomeVC = HomeVC()
-    lazy var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     
-    private var panInteractionController = PanHorizonInteractionController()
+    fileprivate var panInteractionController = PanHorizonInteractionController()
     
-    private var initialFrame : CGRect!
-    private var rectToRight : CGRect!
-    private var rectToLeft : CGRect!
+    fileprivate var initialFrame : CGRect!
+    fileprivate var rectToRight : CGRect!
+    fileprivate var rectToLeft : CGRect!
     
-    private var isLoaded = false
+    fileprivate var isLoaded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         if !isLoaded {
             Database.checkCurrentUser { success in
-                
             // get feed and show initial view controller
             if success && !self.initialLoadComplete {
                 self.setupControllers(2)
+                self.initialLoadComplete = true
+            } else if !success && !self.initialLoadComplete {
+                self.setupControllers(1)
                 self.initialLoadComplete = true
             }
             self.isLoaded = true
             }
         }
     }
+    
+    override var prefersStatusBarHidden : Bool {
+        return true
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    func setupControllers(initialIndex : Int) {
+    func setupControllers(_ initialIndex : Int) {
         viewControllers = [accountVC, searchVC, homeVC]
 
-        let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "settings"))
+        let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "profile"))
         let tabSearch = UITabBarItem(title: "Search", image: UIImage(named: "search"), selectedImage: UIImage(named: "search"))
-        let tabHome = UITabBarItem(title: "Home", image: UIImage(named: "browse"), selectedImage: UIImage(named: "browse"))
+        let tabHome = UITabBarItem(title: "Home", image: UIImage(named: "browse"), selectedImage: UIImage(named: "explore"))
         
         accountVC.tabBarItem = tabAccount
         searchVC.tabBarItem = tabSearch
@@ -62,43 +80,42 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         rectToRight.origin.x = view.frame.maxX
         
         delegate = self
-        tabBar.tintColor = UIColor.whiteColor().colorWithAlphaComponent(0.5)
-        tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clearColor())
+        tabBar.tintColor = UIColor.white.withAlphaComponent(0.5)
+        tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clear)
         
         panInteractionController.wireToViewController(self)
-
     }
     
-    func tabBarController(tabBarController: UITabBarController, didSelectViewController viewController: UIViewController) {
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         print("Selected \(viewController.title!)")
     }
     
-    func tabBarController(tabBarController: UITabBarController,
-                                animationControllerForTransitionFromViewController
+    func tabBarController(_ tabBarController: UITabBarController,
+                                animationControllerForTransitionFrom
                                 fromVC: UIViewController,
-                                toViewController toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+                                to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
-        let fromVCIndex = tabBarController.viewControllers?.indexOf(fromVC)
-        let toVCIndex = tabBarController.viewControllers?.indexOf(toVC)
+        let fromVCIndex = tabBarController.viewControllers?.index(of: fromVC)
+        let toVCIndex = tabBarController.viewControllers?.index(of: toVC)
         
         let animator = PanAnimationController()
         
         if fromVCIndex < toVCIndex {
             animator.initialFrame = rectToRight
             animator.exitFrame = rectToLeft
-            animator.transitionType = .Present
+            animator.transitionType = .present
         } else {
             animator.initialFrame = rectToLeft
             animator.exitFrame = rectToRight
-            animator.transitionType = .Dismiss
+            animator.transitionType = .dismiss
         }
         
         return animator
         
     }
     
-    func tabBarController(tabBarController: UITabBarController,
-                            interactionControllerForAnimationController animationController: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+    func tabBarController(_ tabBarController: UITabBarController,
+                            interactionControllerFor animationController: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panInteractionController.interactionInProgress ? panInteractionController : nil
     }
 

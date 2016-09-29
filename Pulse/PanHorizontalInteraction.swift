@@ -10,30 +10,30 @@ import UIKit
 
 class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
     var interactionInProgress = false
-    private var shouldCompleteTransition = false
-    private var tabBarController : UITabBarController!
+    fileprivate var shouldCompleteTransition = false
+    fileprivate var tabBarController : UITabBarController!
     
-    private var rightToLeftPan : Bool = false
+    fileprivate var rightToLeftPan : Bool = false
     
     var delegate : childVCDelegate!
     
-    func wireToViewController(tabBarController : UITabBarController) {
+    func wireToViewController(_ tabBarController : UITabBarController) {
         self.tabBarController = tabBarController
         
         prepareGestureRecognizerInView(tabBarController.view)
     }
     
-    private func prepareGestureRecognizerInView(view: UIView) {
+    fileprivate func prepareGestureRecognizerInView(_ view: UIView) {
         let gesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
         view.addGestureRecognizer(gesture)
     }
     
-    func handleGesture(gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
+    func handleGesture(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
         //Represents the percentage of the transition that must be completed before allowing to complete.
         let percentThreshold: CGFloat = 0.3
         
-        let screenWidth: CGFloat = UIScreen.mainScreen().bounds.size.width
-        let translation = gestureRecognizer.translationInView(gestureRecognizer.view!.superview!)
+        let screenWidth: CGFloat = UIScreen.main.bounds.size.width
+        let translation = gestureRecognizer.translation(in: gestureRecognizer.view!.superview!)
         
         var progress: CGFloat = translation.x / screenWidth
         
@@ -45,7 +45,7 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
         
         switch gestureRecognizer.state {
             
-        case .Began:
+        case .began:
             interactionInProgress = true
             if rightToLeftPan {
                 if (tabBarController.selectedIndex < tabBarController.viewControllers!.count - 1) {
@@ -56,22 +56,22 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
                     tabBarController.selectedIndex -= 1
                 }
             }
-        case .Changed:
+        case .changed:
             shouldCompleteTransition = progress > percentThreshold
-            updateInteractiveTransition(progress)
+            update(progress)
             
-        case .Cancelled:
+        case .cancelled:
             interactionInProgress = false
-            cancelInteractiveTransition()
+            cancel()
             
-        case .Ended:
+        case .ended:
             interactionInProgress = false
             
             if !shouldCompleteTransition {
-                cancelInteractiveTransition()
+                cancel()
             } else {
                 shouldCompleteTransition = false
-                finishInteractiveTransition()
+                finish()
             }
             
         default:

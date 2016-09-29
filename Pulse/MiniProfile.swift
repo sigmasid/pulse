@@ -10,13 +10,13 @@ import UIKit
 
 class MiniProfile: UIView {
 
-    private var profileImage : UIImageView!
-    private var nameLabel : UILabel!
-    private var tagLine : UILabel!
-    private var bioLabel : UILabel!
-    private var messageButton : UIButton!
-    private var closeButton : UIButton!
-    private var selectedUser : User!
+    fileprivate var profileImage : UIImageView!
+    fileprivate var nameLabel : UILabel!
+    fileprivate var tagLine : UILabel!
+    fileprivate var bioLabel : UILabel!
+    fileprivate var messageButton : UIButton!
+    fileprivate var closeButton : UIButton!
+    fileprivate var selectedUser : User!
     
     var delegate : answerDetailDelegate!
 
@@ -36,27 +36,27 @@ class MiniProfile: UIView {
         super.init(coder: aDecoder)
     }
     
-    override func pointInside(point : CGPoint, withEvent event : UIEvent?) -> Bool {
+    override func point(inside point : CGPoint, with event : UIEvent?) -> Bool {
         for _view in self.subviews {
-            if _view.userInteractionEnabled == true && _view.pointInside(convertPoint(point, toView: _view) , withEvent: event) {
+            if _view.isUserInteractionEnabled == true && _view.point(inside: convert(point, to: _view) , with: event) {
                 return true
             }
         }
         return false
     }
     
-    func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
+    func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
         return false
     }
     
-    private func addProfileImage() {
+    fileprivate func addProfileImage() {
         profileImage = UIImageView(frame: bounds)
         addSubview(profileImage)
         
-        profileImage.contentMode = UIViewContentMode.ScaleAspectFill
+        profileImage.contentMode = UIViewContentMode.scaleAspectFill
     }
     
-    private func addLabels() {
+    fileprivate func addLabels() {
         nameLabel = UILabel()
         addSubview(nameLabel)
         
@@ -67,55 +67,55 @@ class MiniProfile: UIView {
         addSubview(bioLabel)
         
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        nameLabel.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue).active = true
-        nameLabel.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.s.rawValue).active = true
+        nameLabel.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue).isActive = true
+        nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         
         bioLabel.translatesAutoresizingMaskIntoConstraints = false
-        bioLabel.bottomAnchor.constraintEqualToAnchor(messageButton.topAnchor, constant: -Spacing.s.rawValue).active = true
-        bioLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        bioLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.8).active = true
+        bioLabel.bottomAnchor.constraint(equalTo: messageButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        bioLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        bioLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
         
         tagLine.translatesAutoresizingMaskIntoConstraints = false
-        tagLine.bottomAnchor.constraintEqualToAnchor(bioLabel.topAnchor, constant: -Spacing.xs.rawValue).active = true
-        tagLine.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        tagLine.widthAnchor.constraintEqualToAnchor(bioLabel.widthAnchor).active = true
+        tagLine.bottomAnchor.constraint(equalTo: bioLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        tagLine.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        tagLine.widthAnchor.constraint(equalTo: bioLabel.widthAnchor).isActive = true
     }
     
-    private func addMessageButton() {
+    fileprivate func addMessageButton() {
         messageButton = UIButton()
         addSubview(messageButton)
         
-        messageButton.setTitle("message", forState: .Normal)
+        messageButton.setTitle("message", for: UIControlState())
         messageButton.backgroundColor = iconBackgroundColor
         messageButton.layer.cornerRadius = buttonCornerRadius.radius(.small)
         
-        messageButton.titleLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Center)
+        messageButton.titleLabel?.setPreferredFont(UIColor.white, alignment : .center)
         messageButton.translatesAutoresizingMaskIntoConstraints = false
-        messageButton.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.s.rawValue).active = true
-        messageButton.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        messageButton.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.7).active = true
-        messageButton.heightAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
+        messageButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        messageButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        messageButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7).isActive = true
+        messageButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         
         messageButton.layoutIfNeeded()
     }
     
-    private func addCloseButton() {
+    fileprivate func addCloseButton() {
         closeButton = UIButton()
         addSubview(closeButton)
 
         if let closeButtonImage = UIImage(named: "close") {
-            closeButton.setImage(closeButtonImage, forState: UIControlState.Normal)
+            closeButton.setImage(closeButtonImage, for: UIControlState())
         } else {
             closeButton.titleLabel?.text = "close"
         }
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        closeButton.centerYAnchor.constraintEqualToAnchor(nameLabel.centerYAnchor).active = true
-        closeButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        closeButton.widthAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
-        closeButton.heightAnchor.constraintEqualToConstant(IconSizes.Small.rawValue).active = true
-        closeButton.addTarget(self, action: #selector(closeButtonClicked), forControlEvents: UIControlEvents.TouchDown)
+        closeButton.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor).isActive = true
+        closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.addTarget(self, action: #selector(closeButtonClicked), for: UIControlEvents.touchDown)
         
         closeButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
         closeButton.layoutIfNeeded()
@@ -126,50 +126,50 @@ class MiniProfile: UIView {
         delegate.userClosedMiniProfile(self)
     }
     
-    func setNameLabel(name : String?) {
-        nameLabel.text = name?.uppercaseString
-        nameLabel.font = UIFont.systemFontOfSize(FontSizes.Title.rawValue, weight: UIFontWeightHeavy)
-        nameLabel.textAlignment = .Left
-        nameLabel.textColor = UIColor.whiteColor()
-        nameLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+    func setNameLabel(_ name : String?) {
+        nameLabel.text = name?.uppercased()
+        nameLabel.font = UIFont.systemFont(ofSize: FontSizes.title.rawValue, weight: UIFontWeightHeavy)
+        nameLabel.textAlignment = .left
+        nameLabel.textColor = UIColor.white
+        nameLabel.backgroundColor = UIColor.black.withAlphaComponent(0.2)
     }
     
-    func setTagLabel(text : String?) {
+    func setTagLabel(_ text : String?) {
         tagLine.text = text
         tagLine.numberOfLines = 0
-        tagLine.font = UIFont.systemFontOfSize(FontSizes.Body.rawValue, weight: UIFontWeightHeavy)
-        tagLine.textAlignment = .Center
-        tagLine.textColor = UIColor.whiteColor()
-        tagLine.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        tagLine.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)
+        tagLine.textAlignment = .center
+        tagLine.textColor = UIColor.white
+        tagLine.backgroundColor = UIColor.black.withAlphaComponent(0.2)
 
     }
     
-    func setBioLabel(text : String?) {
+    func setBioLabel(_ text : String?) {
         bioLabel.text = text
         bioLabel.numberOfLines = 0
-        bioLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightRegular)
-        bioLabel.textAlignment = .Center
-        bioLabel.textColor = UIColor.whiteColor()
-        bioLabel.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.2)
+        bioLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightRegular)
+        bioLabel.textAlignment = .center
+        bioLabel.textColor = UIColor.white
+        bioLabel.backgroundColor = UIColor.black.withAlphaComponent(0.2)
 
     }
     
-    func setProfileImage(image : UIImage) {
-        guard let cgimg = image.CGImage else {
+    func setProfileImage(_ image : UIImage) {
+        guard let cgimg = image.cgImage else {
             return
         }
         
-        let openGLContext = EAGLContext(API: .OpenGLES2)
-        let context = CIContext(EAGLContext: openGLContext)
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
         
-        let coreImage = CIImage(CGImage: cgimg)
+        let coreImage = CIImage(cgImage: cgimg)
         
         let filter = CIFilter(name: "CIPhotoEffectTransfer")
         filter?.setValue(coreImage, forKey: kCIInputImageKey)
         
-        if let output = filter?.valueForKey(kCIOutputImageKey) as? CIImage {
-            let cgimgresult = context.createCGImage(output, fromRect: output.extent)
-            let result = UIImage(CGImage: cgimgresult)
+        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
+            let cgimgresult = context.createCGImage(output, from: output.extent)
+            let result = UIImage(cgImage: cgimgresult!)
             profileImage?.image = result
         } else {
             profileImage.image = image

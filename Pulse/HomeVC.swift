@@ -9,9 +9,9 @@
 import UIKit
 
 class HomeVC: UIViewController {
-    private var isLoaded = false
-    private var homeFeedVC : FeedVC!
-    private var iconContainer : IconContainer!
+    fileprivate var isLoaded = false
+    fileprivate var homeFeedVC : FeedVC!
+    fileprivate var iconContainer : IconContainer!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,22 +39,22 @@ class HomeVC: UIViewController {
             if let allQuestions = feed.questions {
                 self.homeFeedVC.allQuestions = allQuestions
             }
-            self.homeFeedVC.feedItemType = .Question
+            self.homeFeedVC.feedItemType = .question
             
             GlobalFunctions.addNewVC(self.homeFeedVC, parentVC: self)
         }
     }
     
     func displayIcon() {
-        iconContainer = IconContainer(frame: CGRectMake(0,0,IconSizes.Medium.rawValue, IconSizes.Medium.rawValue + Spacing.m.rawValue))
+        iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
         iconContainer.setViewTitle("EXPLORE")
         view.addSubview(iconContainer)
         
         iconContainer.translatesAutoresizingMaskIntoConstraints = false
-        iconContainer.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.s.rawValue).active = true
-        iconContainer.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue + Spacing.m.rawValue).active = true
-        iconContainer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-        iconContainer.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        iconContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        iconContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
+        iconContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        iconContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         iconContainer.layoutIfNeeded()
     }
 }

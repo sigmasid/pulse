@@ -28,8 +28,8 @@ class User {
     var socialSources = [ Social : Bool ]()
 
     enum Gender {
-        case Male
-        case Female
+        case male
+        case female
     }
     
     enum Social {
@@ -63,21 +63,21 @@ class User {
     init(uID: String, snapshot: FIRDataSnapshot) {
         self.uID = uID
         if snapshot.hasChild("name") {
-            self.name = snapshot.childSnapshotForPath("name").value as? String
+            self.name = snapshot.childSnapshot(forPath: "name").value as? String
         }
         
         if snapshot.hasChild("profilePic") {
-            self.profilePic = snapshot.childSnapshotForPath("profilePic").value as? String
+            self.profilePic = snapshot.childSnapshot(forPath: "profilePic").value as? String
         }
         
         if snapshot.hasChild("thumbPic") {
-            self.thumbPic = snapshot.childSnapshotForPath("thumbPic").value as? String
+            self.thumbPic = snapshot.childSnapshot(forPath: "thumbPic").value as? String
         } else {
             self.thumbPic = self.profilePic
         }
 
         if snapshot.hasChild("shortBio") {
-            self.shortBio = snapshot.childSnapshotForPath("shortBio").value as? String
+            self.shortBio = snapshot.childSnapshot(forPath: "shortBio").value as? String
         }
     }
     
@@ -89,7 +89,7 @@ class User {
         return (User.currentUser?.uID != nil ? true : false)
     }
     
-    func hasAnsweredQuestion(qID : String) -> Bool {
+    func hasAnsweredQuestion(_ qID : String) -> Bool {
         if let _answeredQuestions = answeredQuestions {
             return _answeredQuestions.contains(qID) ? true : false
         } else {
@@ -109,7 +109,7 @@ class User {
         return FIRAuth.auth()?.currentUser?.email
     }
     
-    func getValueForStringProperty(property : String) -> String? {
+    func getValueForStringProperty(_ property : String) -> String? {
         switch property {
         case "name": return User.currentUser!.name
         case "shortBio": return User.currentUser!.shortBio

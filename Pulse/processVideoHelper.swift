@@ -11,16 +11,16 @@ import AVKit
 import AVFoundation
 import Photos
 
-func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UIImage?, error : NSError?) -> Void) {
+func processVideo(_ videoURL : URL, completion: @escaping (_ result: URL?, _ thumbnail : UIImage?, _ error : NSError?) -> Void) {
     // Edit video
-    let sourceAsset = AVURLAsset(URL: videoURL, options: nil)
+    let sourceAsset = AVURLAsset(url: videoURL, options: nil)
     let composition : AVMutableComposition = AVMutableComposition()
     let sourceDuration = CMTimeRangeMake(kCMTimeZero, sourceAsset.duration)
     
-    let compositionVideoTrack : AVMutableCompositionTrack = composition.addMutableTrackWithMediaType(AVMediaTypeVideo, preferredTrackID: kCMPersistentTrackID_Invalid)
-    let compositionAudioTrack : AVMutableCompositionTrack = composition.addMutableTrackWithMediaType(AVMediaTypeAudio, preferredTrackID: kCMPersistentTrackID_Invalid)
-    let clipVideoTrack : AVAssetTrack = sourceAsset.tracksWithMediaType(AVMediaTypeVideo)[0] as AVAssetTrack
-    let clipAudioTrack : AVAssetTrack = sourceAsset.tracksWithMediaType(AVMediaTypeAudio)[0] as AVAssetTrack
+    let compositionVideoTrack : AVMutableCompositionTrack = composition.addMutableTrack(withMediaType: AVMediaTypeVideo, preferredTrackID: kCMPersistentTrackID_Invalid)
+    let compositionAudioTrack : AVMutableCompositionTrack = composition.addMutableTrack(withMediaType: AVMediaTypeAudio, preferredTrackID: kCMPersistentTrackID_Invalid)
+    let clipVideoTrack : AVAssetTrack = sourceAsset.tracks(withMediaType: AVMediaTypeVideo)[0] as AVAssetTrack
+    let clipAudioTrack : AVAssetTrack = sourceAsset.tracks(withMediaType: AVMediaTypeAudio)[0] as AVAssetTrack
     
     let renderWidth = clipVideoTrack.naturalSize.width
     let renderHeight = clipVideoTrack.naturalSize.height
@@ -30,11 +30,11 @@ func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UII
     
     // Append tracks
     do {
-        try compositionVideoTrack.insertTimeRange(sourceDuration, ofTrack: clipVideoTrack, atTime: kCMTimeZero)
-        try compositionAudioTrack.insertTimeRange(sourceDuration, ofTrack: clipAudioTrack, atTime: kCMTimeZero)
+        try compositionVideoTrack.insertTimeRange(sourceDuration, of: clipVideoTrack, at: kCMTimeZero)
+        try compositionAudioTrack.insertTimeRange(sourceDuration, of: clipAudioTrack, at: kCMTimeZero)
     } catch _ {}
     
-    let themeVideoComposition : AVMutableVideoComposition = AVMutableVideoComposition(propertiesOfAsset: sourceAsset)
+    let themeVideoComposition : AVMutableVideoComposition = AVMutableVideoComposition(propertiesOf: sourceAsset)
     
     // Create AVMutableVideoCompositionInstruction
     let mainInstruction: AVMutableVideoCompositionInstruction = AVMutableVideoCompositionInstruction()
@@ -42,14 +42,14 @@ func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UII
     
     // Create an AVMutableVideoCompositionLayerInstruction for the video track and fix the orientation.
     let videolayerInstruction : AVMutableVideoCompositionLayerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compositionVideoTrack)
-    videolayerInstruction.setTransform(clipVideoTrack.preferredTransform, atTime: insertTime)
-    videolayerInstruction.setOpacity(0.0, atTime: endTime)
+    videolayerInstruction.setTransform(clipVideoTrack.preferredTransform, at: insertTime)
+    videolayerInstruction.setOpacity(0.0, at: endTime)
     
     // Add instructions
     mainInstruction.layerInstructions = NSArray(array: [videolayerInstruction]) as! [AVVideoCompositionLayerInstruction]
     
     themeVideoComposition.renderScale = 1.0
-    themeVideoComposition.renderSize = CGSizeMake(renderHeight, renderWidth)
+    themeVideoComposition.renderSize = CGSize(width: renderHeight, height: renderWidth)
     themeVideoComposition.frameDuration = CMTimeMake(1, 30)
     themeVideoComposition.instructions = NSArray(array: [mainInstruction]) as! [AVVideoCompositionInstructionProtocol]
     
@@ -61,50 +61,50 @@ func processVideo(videoURL : NSURL, completion: (result: NSURL?, thumbnail : UII
     videoLayer.frame =  CGRect(x: 0, y: 0, width: renderHeight, height: renderWidth)
     parentLayer.addSublayer(videoLayer)
     
-    parentLayer.contentsScale = UIScreen.mainScreen().scale
+    parentLayer.contentsScale = UIScreen.main.scale
     
     // 3. make animation
     
-    themeVideoComposition.animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: videoLayer, inLayer: parentLayer)
+    themeVideoComposition.animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: videoLayer, in: parentLayer)
     
     // Save the video to the app directory so we can play it later
     let outputUrl = tempFileURL()
     
     // Remove the file if it already exists (merger does not overwrite)
-    let fileManager = NSFileManager.defaultManager()
+    let fileManager = FileManager.default
     do {
-        try fileManager.removeItemAtURL(outputUrl)
+        try fileManager.removeItem(at: outputUrl)
     } catch _ {
         
     }
     
     // Export the video
     let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetMediumQuality)
-    let _thumbnail = thumbnailForVideoAtURL(composition, orientation: .Right)
+    let _thumbnail = thumbnailForVideoAtURL(composition, orientation: .right)
     
     exporter!.outputURL = outputUrl
     exporter!.videoComposition = themeVideoComposition
     exporter!.outputFileType = AVFileTypeQuickTimeMovie
     exporter!.shouldOptimizeForNetworkUse = true
-    exporter!.exportAsynchronouslyWithCompletionHandler({
+    exporter!.exportAsynchronously(completionHandler: {
         switch exporter!.status {
-        case  AVAssetExportSessionStatus.Failed:
+        case  AVAssetExportSessionStatus.failed:
             print(exporter?.error)
             let userInfo = [ NSLocalizedDescriptionKey : "export failed" ]
-            completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
-        case AVAssetExportSessionStatus.Cancelled:
+            completion(nil, nil, NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
+        case AVAssetExportSessionStatus.cancelled:
             let userInfo = [ NSLocalizedDescriptionKey : "export cancelled" ]
-            completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Cancelled", code: 0, userInfo: userInfo))
-        case AVAssetExportSessionStatus.Completed:
-            completion(result: exporter!.outputURL!, thumbnail: _thumbnail, error: nil)
+            completion(nil, nil, NSError.init(domain: "Cancelled", code: 0, userInfo: userInfo))
+        case AVAssetExportSessionStatus.completed:
+            completion(exporter!.outputURL!, _thumbnail, nil)
         default:
             let userInfo = [ NSLocalizedDescriptionKey : "unknown error occured" ]
-            completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Unknown", code: 0, userInfo: userInfo))
+            completion(nil, nil, NSError.init(domain: "Unknown", code: 0, userInfo: userInfo))
         }
     })
 }
 
-func thumbnailForVideoAtURL(asset: AVAsset, orientation: UIImageOrientation) -> UIImage? {
+func thumbnailForVideoAtURL(_ asset: AVAsset, orientation: UIImageOrientation) -> UIImage? {
     let assetImageGenerator = AVAssetImageGenerator(asset: asset)
 //    assetImageGenerator.appliesPreferredTrackTransform = true
     
@@ -112,8 +112,8 @@ func thumbnailForVideoAtURL(asset: AVAsset, orientation: UIImageOrientation) -> 
     time.value = min(time.value, 2)
     
     do {
-        let imageRef = try assetImageGenerator.copyCGImageAtTime(time, actualTime: nil)
-        let image = UIImage(CGImage: imageRef, scale: 1.0, orientation: orientation)
+        let imageRef = try assetImageGenerator.copyCGImage(at: time, actualTime: nil)
+        let image = UIImage(cgImage: imageRef, scale: 1.0, orientation: orientation)
 //        let image = GlobalFunctions.fixOrientation(UIImage(CGImage: imageRef, scale: 1.0, orientation: .Left))
         return image
     } catch {
@@ -121,42 +121,42 @@ func thumbnailForVideoAtURL(asset: AVAsset, orientation: UIImageOrientation) -> 
     }
 }
 
-func compressVideo(inputURL: NSURL, completion: (result: NSURL?, thumbnail : UIImage?, error : NSError?) -> Void) {
+func compressVideo(_ inputURL: URL, completion: @escaping (_ result: URL?, _ thumbnail : UIImage?, _ error : NSError?) -> Void) {
     let outputURL = tempFileURL()
     
-    let urlAsset = AVURLAsset(URL: inputURL, options: nil)
-    let _thumbnail = thumbnailForVideoAtURL(urlAsset, orientation: .Left)
+    let urlAsset = AVURLAsset(url: inputURL, options: nil)
+    let _thumbnail = thumbnailForVideoAtURL(urlAsset, orientation: .left)
 
     if let exporter = AVAssetExportSession(asset: urlAsset, presetName: AVAssetExportPresetMediumQuality) {
         exporter.outputURL = outputURL
         exporter.outputFileType = AVFileTypeQuickTimeMovie
         exporter.shouldOptimizeForNetworkUse = true
-        exporter.exportAsynchronouslyWithCompletionHandler { () -> Void in
+        exporter.exportAsynchronously { () -> Void in
             switch exporter.status {
-            case  AVAssetExportSessionStatus.Failed:
+            case  AVAssetExportSessionStatus.failed:
                 let userInfo = [ NSLocalizedDescriptionKey : "export failed" ]
-                completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
-            case AVAssetExportSessionStatus.Cancelled:
+                completion(nil, nil, NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
+            case AVAssetExportSessionStatus.cancelled:
                 let userInfo = [ NSLocalizedDescriptionKey : "export cancelled" ]
-                completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Cancelled", code: 0, userInfo: userInfo))
-            case AVAssetExportSessionStatus.Completed:
-                completion(result: exporter.outputURL!, thumbnail: _thumbnail, error: nil)
+                completion(nil, nil, NSError.init(domain: "Cancelled", code: 0, userInfo: userInfo))
+            case AVAssetExportSessionStatus.completed:
+                completion(exporter.outputURL!, _thumbnail, nil)
             default:
                 let userInfo = [ NSLocalizedDescriptionKey : "unknown error occured" ]
-                completion(result: nil, thumbnail: nil, error: NSError.init(domain: "Unknown", code: 0, userInfo: userInfo))
+                completion(nil, nil, NSError.init(domain: "Unknown", code: 0, userInfo: userInfo))
             }
         }
     }
 }
 
-private func tempFileURL() -> NSURL {
-    let saveFileName = "/pulse-\(Int(NSDate().timeIntervalSince1970)).mp4"
+private func tempFileURL() -> URL {
+    let saveFileName = "/pulse-\(Int(Date().timeIntervalSince1970)).mp4"
     
     let paths = NSSearchPathForDirectoriesInDomains(
-        NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)
-    let documentsDirectory: AnyObject = paths[0]
-    let dataPath = documentsDirectory.stringByAppendingPathComponent(saveFileName)
-    let outputUrl = NSURL(fileURLWithPath: dataPath)
+        FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+    let documentsDirectory: AnyObject = paths[0] as AnyObject
+    let dataPath = documentsDirectory.appending(saveFileName)
+    let outputUrl = URL(fileURLWithPath: dataPath)
     
     return outputUrl
 }

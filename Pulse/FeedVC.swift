@@ -10,14 +10,14 @@ import UIKit
 
 class FeedVC: UIViewController {
     
-    private var isLoaded = false
-    private var panPresentInteractionController = PanEdgeInteractionController()
-    private var panDismissInteractionController = PanEdgeInteractionController()
+    fileprivate var isLoaded = false
+    fileprivate var panPresentInteractionController = PanEdgeInteractionController()
+    fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
-    private var initialFrame : CGRect!
-    private var rectToRight : CGRect!
-    private var rectToLeft : CGRect!
-    private var QAVC : QAManagerVC!
+    fileprivate var initialFrame : CGRect!
+    fileprivate var rectToRight : CGRect!
+    fileprivate var rectToLeft : CGRect!
+    fileprivate var QAVC : QAManagerVC!
     
     var feedItemType : FeedItemType! {
         didSet {
@@ -28,17 +28,17 @@ class FeedVC: UIViewController {
     var updateDataSource : Bool = false {
         didSet {
             switch feedItemType! {
-            case .Tag:
+            case .tag:
                 totalItemCount = allTags.count
-            case .Question:
+            case .question:
                 totalItemCount = allQuestions.count
-            case .Answer:
+            case .answer:
                 totalItemCount = allAnswers.count
 
-                gettingImageForCell = [Bool](count: totalItemCount, repeatedValue: false)
-                gettingInfoForCell = [Bool](count: totalItemCount, repeatedValue: false)
-                browseAnswerPreviewImages = [UIImage?](count: totalItemCount, repeatedValue: nil)
-                usersForAnswerPreviews = [User?](count: totalItemCount, repeatedValue: nil)
+                gettingImageForCell = [Bool](repeating: false, count: totalItemCount)
+                gettingInfoForCell = [Bool](repeating: false, count: totalItemCount)
+                browseAnswerPreviewImages = [UIImage?](repeating: nil, count: totalItemCount)
+                usersForAnswerPreviews = [User?](repeating: nil, count: totalItemCount)
             }
             
             FeedCollectionView?.delegate = self
@@ -48,18 +48,18 @@ class FeedVC: UIViewController {
         }
     }
     
-    private var FeedCollectionView : UICollectionView?
+    fileprivate var FeedCollectionView : UICollectionView?
     
-    private var selectedIndex : NSIndexPath? {
+    fileprivate var selectedIndex : IndexPath? {
         didSet {
-            if feedItemType! == .Question {
-                FeedCollectionView?.reloadItemsAtIndexPaths([selectedIndex!])
+            if feedItemType! == .question {
+                FeedCollectionView?.reloadItems(at: [selectedIndex!])
                 if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                    FeedCollectionView?.reloadItemsAtIndexPaths([deselectedIndex!])
+                    FeedCollectionView?.reloadItems(at: [deselectedIndex!])
                 }
-            } else if feedItemType! == .Tag {
+            } else if feedItemType! == .tag {
                 selectedIndex = nil
-                feedItemType! = .Question
+                feedItemType! = .question
             }
         }
         willSet {
@@ -68,7 +68,7 @@ class FeedVC: UIViewController {
             }
         }
     }
-    private var deselectedIndex : NSIndexPath?
+    fileprivate var deselectedIndex : IndexPath?
 
     var allTags : [Tag]!
     var allQuestions : [Question?]!
@@ -77,15 +77,16 @@ class FeedVC: UIViewController {
     var currentTag : Tag!
     var currentQuestion : Question!
     
-    private var totalItemCount = 0
+    fileprivate var totalItemCount = 0
 
     /* cache questions & answers that have been shown */
-    private var gettingImageForCell : [Bool]!
-    private var gettingInfoForCell : [Bool]!
-    private var browseAnswerPreviewImages : [UIImage?]!
-    private var usersForAnswerPreviews : [User?]!
+    fileprivate var gettingImageForCell : [Bool]!
+    fileprivate var gettingInfoForCell : [Bool]!
+    fileprivate var browseAnswerPreviewImages : [UIImage?]!
+    fileprivate var usersForAnswerPreviews : [User?]!
     
     let collectionReuseIdentifier = "FeedCell"
+    let collectionHeaderReuseIdentifier = "SearchHeaderCell"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -103,7 +104,7 @@ class FeedVC: UIViewController {
         }
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
     }
     
@@ -111,37 +112,38 @@ class FeedVC: UIViewController {
         super.didReceiveMemoryWarning()
     }
     
-    override func prefersStatusBarHidden() -> Bool {
+    override var prefersStatusBarHidden : Bool {
         return true
     }
     
-    private func setupScreenLayout() {
+    fileprivate func setupScreenLayout() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.scrollDirection = UICollectionViewScrollDirection.Vertical
+        layout.scrollDirection = UICollectionViewScrollDirection.vertical
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
         layout.sectionInset = UIEdgeInsetsMake(0, 0, 0, 0)
         
-        FeedCollectionView = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
-        FeedCollectionView?.registerClass(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
-        
+        FeedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
+        FeedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        FeedCollectionView?.register(SearchHeaderCell.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: collectionHeaderReuseIdentifier)
+
         view.addSubview(FeedCollectionView!)
         
         FeedCollectionView?.translatesAutoresizingMaskIntoConstraints = false
-        FeedCollectionView?.topAnchor.constraintEqualToAnchor(view.topAnchor).active = true
-        FeedCollectionView?.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
-        FeedCollectionView?.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
-        FeedCollectionView?.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
+        FeedCollectionView?.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        FeedCollectionView?.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        FeedCollectionView?.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        FeedCollectionView?.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         
         FeedCollectionView?.layoutIfNeeded()
         
-        FeedCollectionView?.backgroundColor = UIColor.clearColor()
+        FeedCollectionView?.backgroundColor = UIColor.clear
         FeedCollectionView?.backgroundView = nil
         FeedCollectionView?.showsVerticalScrollIndicator = false
-        FeedCollectionView?.pagingEnabled = true
+        FeedCollectionView?.isPagingEnabled = true
     }
     
-    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
+    func showQuestion(_ _selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
         QAVC = QAManagerVC()
         QAVC.selectedTag = _selectedTag
         QAVC.allQuestions = _allQuestions
@@ -149,55 +151,55 @@ class FeedVC: UIViewController {
         QAVC.questionCounter = _questionIndex
         
         QAVC.transitioningDelegate = self
-        presentViewController(QAVC, animated: true, completion: nil)
+        present(QAVC, animated: true, completion: nil)
     }
     
-    func showTagDetail(selectedTag : Tag) {
+    func showTagDetail(_ selectedTag : Tag) {
         
     }
 }
 
 /* COLLECTION VIEW */
-extension FeedVC : UICollectionViewDataSource {
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return totalItemCount
     }
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
+    func numberOfSections(in collectionView: UICollectionView) -> Int{
         return 1
     }
     
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(collectionReuseIdentifier, forIndexPath: indexPath) as! FeedCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
         let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
     
         cell.contentView.backgroundColor = _backgroundColors[Int(_rand)]
         
-        if feedItemType! == .Question {
+        if feedItemType! == .question {
             if cell.itemType == nil || cell.itemType != feedItemType {
-                cell.itemType = .Question
+                cell.itemType = .question
             }
             cell.updateLabel(nil, _subtitle: nil)
 
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 if let _currentQuestion = allQuestions[indexPath.row] {
                     if let tagID = _currentQuestion.qTagID {
-                        cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(tagID.uppercaseString)")
+                        cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(tagID.uppercased())")
                     } else {
                         cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
                     }
-                    cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), forState: .Normal)
+                    cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
                 }
             } else {
                 Database.getQuestion(currentTag.questions![indexPath.row]!.qID, completion: { (question, error) in
                     if error == nil {
                         if let tagID = self.currentTag.questions![indexPath.row]!.qTagID {
-                            cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercaseString)")
+                            cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercased())")
                         } else {
                             cell.updateLabel(question.qTitle, _subtitle: nil)
                         }
                         self.allQuestions[indexPath.row] = question
-                        cell.answerCount.setTitle(String(question.totalAnswers()), forState: .Normal)
+                        cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
                     }
                 })
             }
@@ -216,21 +218,21 @@ extension FeedVC : UICollectionViewDataSource {
                 cell.removeAnswer()
             }
             
-        } else if feedItemType == .Tag {
+        } else if feedItemType == .tag {
             if cell.itemType == nil || cell.itemType != feedItemType {
-                cell.itemType = .Tag
+                cell.itemType = .tag
             }
             cell.updateLabel(nil, _subtitle: nil)
             
             if allTags.count > indexPath.row {
                 let _currentTag = allTags[indexPath.row]
-                cell.updateLabel("#\(_currentTag.tagID!.uppercaseString)", _subtitle: _currentTag.tagDescription)
-                cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), forState: .Normal)
+                cell.updateLabel("#\(_currentTag.tagID!.uppercased())", _subtitle: _currentTag.tagDescription)
+                cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), for: UIControlState())
             }
         }
-        else if feedItemType == .Answer {
+        else if feedItemType == .answer {
             if cell.itemType == nil || cell.itemType != feedItemType {
-                cell.itemType = .Answer
+                cell.itemType = .answer
             }
             
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
@@ -244,7 +246,7 @@ extension FeedVC : UICollectionViewDataSource {
                 
                 Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![indexPath.row], maxImgSize: maxImgSize, completion: {(_data, error) in
                     if error != nil {
-                        cell.previewImage.backgroundColor = UIColor.redColor()
+                        cell.previewImage.backgroundColor = UIColor.red
                     } else {
                         let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
                         cell.previewImage.image = _answerPreviewImage
@@ -291,35 +293,59 @@ extension FeedVC : UICollectionViewDataSource {
         return cell
     }
     
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        if let attributes = collectionView.layoutAttributesForItemAtIndexPath(indexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
-            initialFrame = collectionView.convertRect(cellRect, toView: collectionView.superview)
+            initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
         
-        if feedItemType == .Tag { currentTag = allTags[indexPath.row] }
+        if feedItemType == .tag { currentTag = allTags[indexPath.row] }
+        else if feedItemType == .question && currentTag == nil {
+            if let _selectedQuestion = allQuestions[indexPath.row] {
+                currentTag = Tag(tagID: "EXPLORE", questions: [Question(qID: _selectedQuestion.qID)])
+            }
+        }
         
         selectedIndex = indexPath
-
     }
     
-    func collectionView(collectionView: UICollectionView, shouldSelectItemAtIndexPath indexPath: NSIndexPath) -> Bool {
+    func collectionView(_ collectionView: UICollectionView,
+                        shouldSelectItemAt indexPath: IndexPath) -> Bool {
         return true
+    }
+    
+    func collectionView(_ collectionView: UICollectionView,
+                                 viewForSupplementaryElementOfKind kind: String,
+                                 at indexPath: IndexPath) -> UICollectionReusableView {
+        switch kind {
+        case UICollectionElementKindSectionHeader:
+            print("went into section header")
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                             withReuseIdentifier: collectionHeaderReuseIdentifier,
+                                                                             for: indexPath) as! SearchHeaderCell
+            return headerView
+        default:
+            assert(false, "Unexpected element kind")
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return CGSize(width: collectionView.frame.width, height: 44.0)
     }
 }
 
 extension FeedVC: UICollectionViewDelegateFlowLayout {
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: (FeedCollectionView!.frame.width / 2), height: FeedCollectionView!.frame.height / 3.5)
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: (FeedCollectionView!.frame.width / 2), height: max(minCellHeight , FeedCollectionView!.frame.height / 3.5))
     }
 }
 
 extension FeedVC: UIViewControllerTransitioningDelegate {
     
-    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is QAManagerVC {
-            panDismissInteractionController.wireToViewController(QAVC, toViewController: nil, edge: UIRectEdge.Left)
+            panDismissInteractionController.wireToViewController(QAVC, toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
@@ -331,24 +357,24 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
         }
     }
     
-    func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         if dismissed is QAManagerVC {
             let animator = PanAnimationController()
 
             animator.initialFrame = rectToLeft
             animator.exitFrame = rectToRight
-            animator.transitionType = .Dismiss
+            animator.transitionType = .dismiss
             return animator
         } else {
             return nil
         }
     }
     
-    func interactionControllerForPresentation(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panPresentInteractionController.interactionInProgress ? panPresentInteractionController : nil
     }
     
-    func interactionControllerForDismissal(animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }

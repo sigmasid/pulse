@@ -9,39 +9,38 @@
 import UIKit
 
 class SearchVC: UIViewController {
-    private let headerContainer = UIView()
-    private var headerImage = UIImageView()
-    private var headerTitle = UILabel()
+    fileprivate let headerContainer = UIView()
+    fileprivate var headerImage = UIImageView()
+    fileprivate var headerTitle = UILabel()
     
-    private var searchField = UISearchController(searchResultsController: nil)
-    private var iconContainer : IconContainer!
+    fileprivate var searchField = UISearchController(searchResultsController: nil)
+    fileprivate var iconContainer : IconContainer!
     
-    private var toggleTagButton = UIButton()
-    private var toggleQuestionButton = UIButton()
+    fileprivate var toggleTagButton = UIButton()
+    fileprivate var toggleQuestionButton = UIButton()
     
-    
-    private var exploreContainer : FeedVC!
-    private var isSearchSetup = false
-    private var exploreViewSetup = false
-    
-    private var selectedExploreType : FeedItemType! {
+    fileprivate var exploreContainer : FeedVC!
+    fileprivate var isSearchSetup = false
+    fileprivate var exploreViewSetup = false
+        
+    fileprivate var selectedExploreType : FeedItemType! {
         didSet {
             switch selectedExploreType! {
-            case .Question:
+            case .question:
                 Database.getExploreQuestions({ questions, error in
                     if error == nil {
                         self.exploreContainer.allQuestions = questions
                         self.exploreContainer.feedItemType = self.selectedExploreType
                     }
                 })
-            case .Tag:
+            case .tag:
                 Database.getExploreTags({ tags, error in
                     if error == nil {
                         self.exploreContainer.allTags = tags
                         self.exploreContainer.feedItemType = self.selectedExploreType
                     }
                 })
-            case .Answer:
+            case .answer:
                 Database.getExploreAnswers({ answers, error in
                     if error == nil {
                         self.exploreContainer.allAnswers = answers
@@ -52,18 +51,19 @@ class SearchVC: UIViewController {
         }
     }
     
-    private var panPresentInteractionController = PanEdgeInteractionController()
+    fileprivate var panPresentInteractionController = PanEdgeInteractionController()
 
     //set by delegate
     var rootVC : UIViewController?
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupInitialView()
         setupSearch()
         setupExplore()
     }
 
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
     }
     
@@ -72,21 +72,21 @@ class SearchVC: UIViewController {
     }
     
     func toggleTags() {
-        if selectedExploreType != .Tag {
-            selectedExploreType = .Tag
+        if selectedExploreType != .tag {
+            selectedExploreType = .tag
         }
     }
     
     func toggleQuestions() {
-        if selectedExploreType != .Question {
-            selectedExploreType = .Question
+        if selectedExploreType != .question {
+            selectedExploreType = .question
         }
     }
     
-    func updateHeader(tag : Tag) {
+    func updateHeader(_ tag : Tag) {
         
-        headerTitle.text = "#"+(tag.tagID!).uppercaseString
-        headerTitle.font = UIFont.systemFontOfSize(FontSizes.Mammoth.rawValue, weight: UIFontWeightHeavy)
+        headerTitle.text = "#"+(tag.tagID!).uppercased()
+        headerTitle.font = UIFont.systemFont(ofSize: FontSizes.mammoth.rawValue, weight: UIFontWeightHeavy)
         
         if let _tagImage = tag.previewImage {
             Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
@@ -101,49 +101,48 @@ class SearchVC: UIViewController {
     
     func setupSearch() {
         if !isSearchSetup {
-            view.backgroundColor = UIColor.whiteColor()
+            view.backgroundColor = UIColor.white
             
-            iconContainer = IconContainer(frame: CGRectMake(0,0,IconSizes.Medium.rawValue, IconSizes.Medium.rawValue + Spacing.m.rawValue))
+            iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
             iconContainer.setViewTitle("EXPLORE")
             view.addSubview(iconContainer)
             
             iconContainer.translatesAutoresizingMaskIntoConstraints = false
-            iconContainer.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor, constant: -Spacing.s.rawValue).active = true
-            iconContainer.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue + Spacing.m.rawValue).active = true
-            iconContainer.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-            iconContainer.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+            iconContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+            iconContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
+            iconContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+            iconContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
             iconContainer.layoutIfNeeded()
             
             headerContainer.addSubview(searchField.searchBar)
-            
             headerContainer.addSubview(toggleTagButton)
             
             toggleTagButton.translatesAutoresizingMaskIntoConstraints = false
-            toggleTagButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-            toggleTagButton.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.5).active = true
-            toggleTagButton.topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor).active = true
-            toggleTagButton.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor).active = true
+            toggleTagButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+            toggleTagButton.widthAnchor.constraint(equalTo: headerContainer.widthAnchor, multiplier: 0.5).isActive = true
+            toggleTagButton.bottomAnchor.constraint(equalTo: headerContainer.bottomAnchor).isActive = true
+            toggleTagButton.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor).isActive = true
             toggleTagButton.layoutIfNeeded()
             
             headerContainer.addSubview(toggleQuestionButton)
             toggleQuestionButton.translatesAutoresizingMaskIntoConstraints = false
-            toggleQuestionButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-            toggleQuestionButton.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.5).active = true
-            toggleQuestionButton.topAnchor.constraintEqualToAnchor(headerContainer.bottomAnchor).active = true
-            toggleQuestionButton.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
+            toggleQuestionButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+            toggleQuestionButton.widthAnchor.constraint(equalTo: headerContainer.widthAnchor, multiplier: 0.5).isActive = true
+            toggleQuestionButton.bottomAnchor.constraint(equalTo: headerContainer.bottomAnchor).isActive = true
+            toggleQuestionButton.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor).isActive = true
             toggleQuestionButton.layoutIfNeeded()
             
-            toggleTagButton.backgroundColor = UIColor.blackColor()
-            toggleQuestionButton.backgroundColor = UIColor.blackColor()
+            toggleTagButton.backgroundColor = UIColor.black
+            toggleQuestionButton.backgroundColor = UIColor.black
             
-            toggleTagButton.titleLabel?.setFont(FontSizes.Caption.rawValue, weight: UIFontWeightRegular, color: UIColor.whiteColor(), alignment: .Center)
-            toggleQuestionButton.titleLabel?.setFont(FontSizes.Caption.rawValue, weight: UIFontWeightRegular, color: UIColor.whiteColor(), alignment: .Center)
+            toggleTagButton.titleLabel?.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.white, alignment: .center)
+            toggleQuestionButton.titleLabel?.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.white, alignment: .center)
             
-            toggleTagButton.setTitle("TAGS", forState: .Normal)
-            toggleQuestionButton.setTitle("QUESTIONS", forState: .Normal)
+            toggleTagButton.setTitle("TAGS", for: UIControlState())
+            toggleQuestionButton.setTitle("QUESTIONS", for: UIControlState())
             
-            toggleTagButton.addTarget(self, action: #selector(toggleTags), forControlEvents: .TouchUpInside)
-            toggleQuestionButton.addTarget(self, action: #selector(toggleQuestions), forControlEvents: .TouchUpInside)
+            toggleTagButton.addTarget(self, action: #selector(toggleTags), for: .touchUpInside)
+            toggleQuestionButton.addTarget(self, action: #selector(toggleQuestions), for: .touchUpInside)
             
             searchField.searchBar.sizeToFit()
             //            searchField.searchResultsUpdater = self
@@ -157,63 +156,60 @@ class SearchVC: UIViewController {
         }
     }
     
-    private func setupInitialView() {
+    fileprivate func setupInitialView() {
         view.addSubview(headerContainer)
         
         headerContainer.translatesAutoresizingMaskIntoConstraints = false
-        headerContainer.topAnchor.constraintEqualToAnchor(topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).active = true
-        headerContainer.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-        headerContainer.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 0.2).active = true
-        headerContainer.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+        headerContainer.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).isActive = true
+        headerContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        headerContainer.heightAnchor.constraint(equalToConstant: searchField.searchBar.frame.height + IconSizes.medium.rawValue).isActive = true
+        headerContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         headerContainer.layoutIfNeeded()
         
         headerContainer.addSubview(headerImage)
         headerContainer.addSubview(headerTitle)
         
         headerImage.frame = headerContainer.bounds
-        headerImage.contentMode = UIViewContentMode.ScaleAspectFill
+        headerImage.contentMode = UIViewContentMode.scaleAspectFill
 
         headerTitle.translatesAutoresizingMaskIntoConstraints = false
-        headerTitle.topAnchor.constraintEqualToAnchor(headerContainer.topAnchor, constant: Spacing.s.rawValue).active = true
-        headerTitle.leadingAnchor.constraintEqualToAnchor(headerContainer.leadingAnchor, constant: Spacing.s.rawValue).active = true
+        headerTitle.topAnchor.constraint(equalTo: headerContainer.topAnchor, constant: Spacing.s.rawValue).isActive = true
+        headerTitle.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
     }
     
-    private func setupExplore() {
+    fileprivate func setupExplore() {
         if !exploreViewSetup {
             
             let containerView = UIView()
             view.addSubview(containerView)
             
             containerView.translatesAutoresizingMaskIntoConstraints = false
-            containerView.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
-            containerView.topAnchor.constraintEqualToAnchor(toggleTagButton.bottomAnchor).active = true
-            containerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-            containerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
+            containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            containerView.topAnchor.constraint(equalTo: headerContainer.bottomAnchor).isActive = true
+            containerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+            containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
             containerView.layoutIfNeeded()
             
             exploreContainer = FeedVC()
             exploreContainer.view.frame = containerView.frame
-            selectedExploreType = .Tag
+            selectedExploreType = .question
             
             GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
             exploreViewSetup = true
         }
     }
-    
-    
-
 }
 
 extension SearchVC: UISearchBarDelegate {
     // MARK: - UISearchBar Delegate
-    func searchBar(searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
+    func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
 //        filterContentForSearchText(searchBar.text!, scope: searchBar.scopeButtonTitles![selectedScope])
     }
 }
 
 extension SearchVC: UISearchResultsUpdating {
     // MARK: - UISearchResultsUpdating Delegate
-    func updateSearchResultsForSearchController(searchController: UISearchController) {
+    func updateSearchResults(for searchController: UISearchController) {
         let searchBar = searchController.searchBar
         let scope = searchBar.scopeButtonTitles![searchBar.selectedScopeButtonIndex]
 //        filterContentForSearchText(searchController.searchBar.text!, scope: scope)

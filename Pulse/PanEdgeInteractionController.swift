@@ -11,30 +11,30 @@ import UIKit
 class PanEdgeInteractionController: UIPercentDrivenInteractiveTransition {
     
     var interactionInProgress = false
-    private var shouldCompleteTransition = false
-    private var fromViewController: UIViewController?
-    private var toViewController: UIViewController?
+    fileprivate var shouldCompleteTransition = false
+    fileprivate var fromViewController: UIViewController?
+    fileprivate var toViewController: UIViewController?
     
-    private var lastProgress: CGFloat?
+    fileprivate var lastProgress: CGFloat?
     
-    func wireToViewController(fromViewController: UIViewController, toViewController: UIViewController?, edge : UIRectEdge) {
+    func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, edge : UIRectEdge) {
         self.fromViewController = fromViewController
         self.toViewController = toViewController
         prepareGestureRecognizerInView(fromViewController.view, edge: edge)
     }
     
-    private func prepareGestureRecognizerInView(view: UIView, edge : UIRectEdge) {
+    fileprivate func prepareGestureRecognizerInView(_ view: UIView, edge : UIRectEdge) {
         let gesture = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
         gesture.edges = edge
         view.addGestureRecognizer(gesture)
     }
     
-    func handleGesture(gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
+    func handleGesture(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
         //Represents the percentage of the transition that must be completed before allowing to complete.
         let percentThreshold: CGFloat = 0.3
         
-        let screenWidth: CGFloat = UIScreen.mainScreen().bounds.size.width
-        let translation = gestureRecognizer.translationInView(gestureRecognizer.view!.superview!)
+        let screenWidth: CGFloat = UIScreen.main.bounds.size.width
+        let translation = gestureRecognizer.translation(in: gestureRecognizer.view!.superview!)
         var progress: CGFloat = abs(translation.x) / screenWidth
         
         progress = fmax(progress, 0)
@@ -42,30 +42,30 @@ class PanEdgeInteractionController: UIPercentDrivenInteractiveTransition {
         
         switch gestureRecognizer.state {
             
-        case .Began:
+        case .began:
             interactionInProgress = true
             if let toViewController = toViewController {
-                fromViewController?.presentViewController(toViewController, animated: true, completion: nil)
+                fromViewController?.present(toViewController, animated: true, completion: nil)
             } else {
-                fromViewController?.dismissViewControllerAnimated(true, completion: nil)
+                fromViewController?.dismiss(animated: true, completion: nil)
             }
             
-        case .Changed:
+        case .changed:
             shouldCompleteTransition = progress > percentThreshold
-            updateInteractiveTransition(progress)
+            update(progress)
             
-        case .Cancelled:
+        case .cancelled:
             interactionInProgress = false
-            cancelInteractiveTransition()
+            cancel()
             
-        case .Ended:
+        case .ended:
             interactionInProgress = false
             
             if !shouldCompleteTransition {
-                cancelInteractiveTransition()
+                cancel()
             } else {
                 shouldCompleteTransition = false
-                finishInteractiveTransition()
+                finish()
             }
             
         default:

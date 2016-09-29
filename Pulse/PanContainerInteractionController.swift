@@ -11,33 +11,33 @@ import UIKit
 class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
     
     var interactionInProgress = false
-    private var shouldCompleteTransition = false
-    private var fromViewController: UIViewController?
-    private var toViewController: UIViewController?
-    private var parentViewController : UINavigationController!
+    fileprivate var shouldCompleteTransition = false
+    fileprivate var fromViewController: UIViewController?
+    fileprivate var toViewController: UIViewController?
+    fileprivate var parentViewController : UINavigationController!
     
-    private var lastProgress: CGFloat?
+    fileprivate var lastProgress: CGFloat?
     
     var delegate : childVCDelegate!
     
-    func wireToViewController(fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController) {
+    func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController) {
         self.fromViewController = fromViewController
         self.toViewController = toViewController
         self.parentViewController = parentViewController
         prepareGestureRecognizerInView(fromViewController.view)
     }
     
-    private func prepareGestureRecognizerInView(view: UIView) {
+    fileprivate func prepareGestureRecognizerInView(_ view: UIView) {
         let gesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
         view.addGestureRecognizer(gesture)
     }
     
-    func handleGesture(gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
+    func handleGesture(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
         //Represents the percentage of the transition that must be completed before allowing to complete.
         let percentThreshold: CGFloat = 0.3
         
-        let screenWidth: CGFloat = UIScreen.mainScreen().bounds.size.width
-        let translation = gestureRecognizer.translationInView(gestureRecognizer.view!.superview!)
+        let screenWidth: CGFloat = UIScreen.main.bounds.size.width
+        let translation = gestureRecognizer.translation(in: gestureRecognizer.view!.superview!)
         var progress: CGFloat = abs(translation.y) / screenWidth
         
         progress = fmax(progress, 0)
@@ -45,29 +45,29 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
         
         switch gestureRecognizer.state {
             
-        case .Began:
+        case .began:
             interactionInProgress = true
             if let toViewController = toViewController {
                 parentViewController.pushViewController(toViewController, animated: true)
             } else {
-                parentViewController.popViewControllerAnimated(true)
+                parentViewController.popViewController(animated: true)
             }
             
-        case .Changed:
+        case .changed:
             shouldCompleteTransition = progress > percentThreshold
-            updateInteractiveTransition(progress)
+            update(progress)
             
-        case .Cancelled:
+        case .cancelled:
             interactionInProgress = false
-            cancelInteractiveTransition()
+            cancel()
             
-        case .Ended:
+        case .ended:
             interactionInProgress = false
             
             if !shouldCompleteTransition {
-                cancelInteractiveTransition()
+                cancel()
             } else {
-                finishInteractiveTransition()
+                finish()
                 shouldCompleteTransition = false
                 delegate.userDismissedCamera()
             }

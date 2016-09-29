@@ -10,8 +10,8 @@ import UIKit
 import FirebaseDatabase
 
 protocol ExploreDelegate : class {
-    func showQuestion(_selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int, _selectedTag : Tag)
-    func showTagDetail(_selectedTag : Tag)
+    func showQuestion(_ _selectedQuestion : Question?, _allQuestions: [Question?], _questionIndex : Int, _selectedTag : Tag)
+    func showTagDetail(_ _selectedTag : Tag)
 }
 
 protocol ParentDelegate : class {
@@ -19,39 +19,39 @@ protocol ParentDelegate : class {
 }
 
 class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
-    private var _allTags = [Tag]()
-    private var _currentTag : Tag?
-    private var _loadedBackgroundView = false
+    fileprivate var _allTags = [Tag]()
+    fileprivate var _currentTag : Tag?
+    fileprivate var _loadedBackgroundView = false
     var returningToExplore = false
     
-    private var _backgroundVC : AccountLoginManagerVC!
-    private let _reuseIdentifier = "tagCell"
+    fileprivate var _backgroundVC : AccountLoginManagerVC!
+    fileprivate let _reuseIdentifier = "tagCell"
     
     @IBOutlet weak var ExploreTags: UICollectionView!
     @IBOutlet weak var logoIcon: UIView!
     
-    private var _panCurrentPointY : CGFloat = 0
-    private var _isBackgroundVCVisible = false
+    fileprivate var _panCurrentPointY : CGFloat = 0
+    fileprivate var _isBackgroundVCVisible = false
     
-    private var currentSavedTagIndex : NSIndexPath? {
+    fileprivate var currentSavedTagIndex : IndexPath? {
         didSet {
             if (savedTags?.append(currentSavedTagIndex!) == nil) {
                 savedTags = [currentSavedTagIndex!]
             }
-            ExploreTags.reloadItemsAtIndexPaths([currentSavedTagIndex!])
+            ExploreTags.reloadItems(at: [currentSavedTagIndex!])
         }
     }
     
-    private var currentRemovedTagIndex : NSIndexPath? {
+    fileprivate var currentRemovedTagIndex : IndexPath? {
         didSet {
-            if let _removalIndex = savedTags?.indexOf(currentRemovedTagIndex!) {
-                savedTags?.removeAtIndex(_removalIndex)
+            if let _removalIndex = savedTags?.index(of: currentRemovedTagIndex!) {
+                savedTags?.remove(at: _removalIndex)
             }
-            ExploreTags.reloadItemsAtIndexPaths([currentRemovedTagIndex!])
+            ExploreTags.reloadItems(at: [currentRemovedTagIndex!])
         }
     }
     
-    private var savedTags : [NSIndexPath]?
+    fileprivate var savedTags : [IndexPath]?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,12 +61,12 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         view.addGestureRecognizer(_panGesture)
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if !returningToExplore {
             loadTagsFromFirebase()
             
-            let pulseIcon = Icon(frame: CGRectMake(0,0,logoIcon.frame.width, logoIcon.frame.height))
+            let pulseIcon = Icon(frame: CGRect(x: 0,y: 0,width: logoIcon.frame.width, height: logoIcon.frame.height))
             pulseIcon.drawIconBackground(iconBackgroundColor)
             pulseIcon.drawIcon(iconColor, iconThickness: 2)
             logoIcon.addSubview(pulseIcon)
@@ -74,44 +74,44 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             if !_loadedBackgroundView {
                 let _bounds = self.view.bounds
                 _backgroundVC = AccountLoginManagerVC()
-                _backgroundVC.view.frame = CGRectMake(_bounds.minX, -_bounds.height, _bounds.width, _bounds.height)
+                _backgroundVC.view.frame = CGRect(x: _bounds.minX, y: -_bounds.height, width: _bounds.width, height: _bounds.height)
                 _loadedBackgroundView = true
                 GlobalFunctions.addNewVC(_backgroundVC, parentVC: self)
             }
         } else {
-            UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+            UIApplication.shared.isNetworkActivityIndicatorVisible = false
         }
     }
     
-    override func viewDidDisappear(animated: Bool) {
+    override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
     }
     
-    override func prefersStatusBarHidden() -> Bool {
+    override var prefersStatusBarHidden : Bool {
         return true
     }
     
     func loadTagsFromFirebase() {
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
         
         Database.getExploreTags() { (tags , error) in
             if error != nil {
                 print(error!.description)
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
             } else {
                 self._allTags = tags
                 self.ExploreTags.delegate = self
                 self.ExploreTags.dataSource = self
                 self.ExploreTags.reloadData()
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
         }
     }
     
-    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
+    func showQuestion(_ _selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
         let detailVC = FeedVC()
         detailVC.view.frame = view.bounds
-        detailVC.feedItemType = .Answer
+        detailVC.feedItemType = .answer
         detailVC.currentTag = _selectedTag
         detailVC.currentQuestion = _selectedQuestion
         
@@ -128,42 +128,42 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
 //        GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     
-    func showTagDetail(_selectedTag : Tag) {
+    func showTagDetail(_ _selectedTag : Tag) {
         let detailVC = FeedVC()
         detailVC.view.frame = view.bounds
 
 //        detailVC.pageType = .Detail
-        detailVC.feedItemType = .Question
+        detailVC.feedItemType = .question
 //        detailVC.currentTag = _selectedTag
 
         GlobalFunctions.addNewVC(detailVC, parentVC: self)
     }
     
-    func showTagDetailTap(sender : UITapGestureRecognizer) {
+    func showTagDetailTap(_ sender : UITapGestureRecognizer) {
         let _tagToShow = _allTags[sender.view!.tag]
         showTagDetail(_tagToShow)
     }
     
-    func moveAccountPage(_directionToMove: AnimationStyle) {
+    func moveAccountPage(_ _directionToMove: AnimationStyle) {
         GlobalFunctions.moveView(_backgroundVC.view, animationStyle: _directionToMove, parentView: view)
     }
     
-    func returnToParent(currentVC : UIViewController) {
+    func returnToParent(_ currentVC : UIViewController) {
         returningToExplore = true
         GlobalFunctions.dismissVC(currentVC)
     }
     
     ///Save / Unsave tag and update user profile
-    func handleLongPress(longPress : UILongPressGestureRecognizer) {
-        if longPress.state == UIGestureRecognizerState.Began {
-            let point = longPress.locationInView(ExploreTags)
-            let index = ExploreTags.indexPathForItemAtPoint(point)
+    func handleLongPress(_ longPress : UILongPressGestureRecognizer) {
+        if longPress.state == UIGestureRecognizerState.began {
+            let point = longPress.location(in: ExploreTags)
+            let index = ExploreTags.indexPathForItem(at: point)
             
             if let _index = index {
-                let _tag = _allTags[_index.row]
+                let _tag = _allTags[(_index as NSIndexPath).row]
 
                 if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[_tag.tagID!] != nil {
-                    Database.pinTagForUser(_allTags[_index.row], completion: {(success, error) in
+                    Database.pinTagForUser(_allTags[(_index as NSIndexPath).row], completion: {(success, error) in
                         if !success {
                             GlobalFunctions.showErrorBlock("Error Pinning Tag", erMessage: error!.localizedDescription)
                         }  else {
@@ -171,7 +171,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
                         }
                     })
                 } else {
-                    Database.pinTagForUser(_allTags[_index.row], completion: {(success, error) in
+                    Database.pinTagForUser(_allTags[(_index as NSIndexPath).row], completion: {(success, error) in
                         if !success {
                             GlobalFunctions.showErrorBlock("Error Pinning Tag", erMessage: error!.localizedDescription)
                         }  else {
@@ -183,43 +183,43 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         }
     }
     
-    func handlePan(pan : UIPanGestureRecognizer) {
+    func handlePan(_ pan : UIPanGestureRecognizer) {
         let _ = pan.view!.center.x
-        if (pan.state == UIGestureRecognizerState.Began) {
-            let translation = pan.translationInView(view)
+        if (pan.state == UIGestureRecognizerState.began) {
+            let translation = pan.translation(in: view)
             _panCurrentPointY = pan.view!.frame.origin.y + translation.y
         }
-        else if (pan.state == UIGestureRecognizerState.Ended) {
-            let translation = pan.translationInView(view)
+        else if (pan.state == UIGestureRecognizerState.ended) {
+            let translation = pan.translation(in: view)
 
             switch translation {
             case _ where _panCurrentPointY > _backgroundVC.view.bounds.height / 3:
-                moveAccountPage(.VerticalDown)
+                moveAccountPage(.verticalDown)
                 _isBackgroundVCVisible = true
 
                 _panCurrentPointY = 0
             case _ where _panCurrentPointY < -(_backgroundVC.view.bounds.height / 3):
-                moveAccountPage(.VerticalUp)
+                moveAccountPage(.verticalUp)
                 _isBackgroundVCVisible = false
 
                 _panCurrentPointY = 0
             default:
                 if !_isBackgroundVCVisible {
-                    moveAccountPage(.VerticalUp)
+                    moveAccountPage(.verticalUp)
                     _panCurrentPointY = 0
                 } else {
-                    moveAccountPage(.VerticalDown)
+                    moveAccountPage(.verticalDown)
                     _panCurrentPointY = 0
                 }
 
             }
         } else {
-            let translation = pan.translationInView(_backgroundVC.view)
+            let translation = pan.translation(in: _backgroundVC.view)
             if _isBackgroundVCVisible {
                 if translation.y < 0 {
                     _backgroundVC.view.center = CGPoint(x: _backgroundVC.view.center.x, y: _backgroundVC.view.center.y + translation.y)
                     _panCurrentPointY = _panCurrentPointY + translation.y
-                    pan.setTranslation(CGPointZero, inView: _backgroundVC.view)
+                    pan.setTranslation(CGPoint.zero, in: _backgroundVC.view)
                 } else {
                     //don't allow pan up when account page is showing
                 }
@@ -227,42 +227,42 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
             else if (translation.y > 0 || translation.y < 0) {
                 _backgroundVC.view.center = CGPoint(x: _backgroundVC.view.center.x, y: _backgroundVC.view.center.y + translation.y)
                 _panCurrentPointY = _panCurrentPointY + translation.y
-                pan.setTranslation(CGPointZero, inView: _backgroundVC.view)
+                pan.setTranslation(CGPoint.zero, in: _backgroundVC.view)
             }
         }
     }
 }
 
-extension ExploreTagsVC : UICollectionViewDataSource {
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+extension ExploreTagsVC : UICollectionViewDataSource, UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return _allTags.count
     }
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
+    func numberOfSections(in collectionView: UICollectionView) -> Int{
         return 1
     }
 
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
         return CGSize(width: view.frame.width, height: 150)
     }
     
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(_reuseIdentifier, forIndexPath: indexPath) as! ExploreTagCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell{
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: _reuseIdentifier, for: indexPath) as! ExploreTagCell
         
         cell.delegate = self
-        _currentTag = _allTags[indexPath.row]
-        cell.currentTag = _allTags[indexPath.row]
+        _currentTag = _allTags[(indexPath as NSIndexPath).row]
+        cell.currentTag = _allTags[(indexPath as NSIndexPath).row]
         configureCell(cell, indexPath: indexPath)
         return cell
     }
     
-    func configureCell(cell: ExploreTagCell, indexPath: NSIndexPath) {
+    func configureCell(_ cell: ExploreTagCell, indexPath: IndexPath) {
         if let _currentTag = _currentTag {
-            cell.tagLabel.text = "#"+_currentTag.tagID!.uppercaseString
+            cell.tagLabel.text = "#"+_currentTag.tagID!.uppercased()
             
             let tapLabel = UITapGestureRecognizer(target: self, action: #selector(showTagDetailTap(_:)))
-            cell.tagLabel.userInteractionEnabled = true
-            cell.tagLabel.tag = indexPath.row
+            cell.tagLabel.isUserInteractionEnabled = true
+            cell.tagLabel.tag = (indexPath as NSIndexPath).row
             cell.tagLabel.addGestureRecognizer(tapLabel)
             
             let _longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
@@ -275,15 +275,15 @@ extension ExploreTagsVC : UICollectionViewDataSource {
                         print (error?.localizedDescription)
                     } else {
                         cell.tagImage.image = UIImage(data: data!)
-                        cell.tagImage.contentMode = UIViewContentMode.ScaleAspectFill
+                        cell.tagImage.contentMode = UIViewContentMode.scaleAspectFill
                     }
                 })
             }
             
             if savedTags != nil && savedTags!.contains(indexPath) {
-                cell.toggleSaveTagIcon(.Save)
+                cell.toggleSaveTagIcon(.save)
             } else if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[_currentTag.tagID!] != nil {
-                cell.toggleSaveTagIcon(.Save)
+                cell.toggleSaveTagIcon(.save)
             }
             else {
                 cell.keepSaveTagHidden()
@@ -292,7 +292,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
 
     }
     
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 //        UNCOMMENT TO MAKE FULL TAG ROW CLICKABLE
 //        currentTag = allTags[indexPath.row]
 //        showTagDetail(currentTag)
@@ -300,7 +300,7 @@ extension ExploreTagsVC : UICollectionViewDataSource {
 }
 
 extension ExploreTagsVC: UICollectionViewDelegateFlowLayout {
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: view.frame.width, height: view.frame.height / 3)
     }
 }

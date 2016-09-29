@@ -9,8 +9,8 @@
 import UIKit
 
 class IconContainer: UIView {
-    private var icon : Icon!
-    private var viewTitleLabel = UILabel()
+    fileprivate var icon : Icon!
+    fileprivate var viewTitleLabel = UILabel()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -28,32 +28,32 @@ class IconContainer: UIView {
         super.init(coder: aDecoder)
     }
     
-    private func setupContainer(iconWidth : CGFloat) {
-        setupContainer(iconWidth, iconColor: UIColor.whiteColor(), iconBackgroundColor: UIColor.blackColor())
+    fileprivate func setupContainer(_ iconWidth : CGFloat) {
+        setupContainer(iconWidth, iconColor: UIColor.white, iconBackgroundColor: UIColor.black)
     }
     
-    private func setupContainer(iconWidth : CGFloat, iconColor : UIColor, iconBackgroundColor : UIColor) {
+    fileprivate func setupContainer(_ iconWidth : CGFloat, iconColor : UIColor, iconBackgroundColor : UIColor) {
         addSubview(viewTitleLabel)
         viewTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        viewTitleLabel.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
-        viewTitleLabel.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
+        viewTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        viewTitleLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         viewTitleLabel.layoutIfNeeded()
         
-        icon = Icon(frame: CGRectMake(0, 0, iconWidth, iconWidth))
+        icon = Icon(frame: CGRect(x: 0, y: 0, width: iconWidth, height: iconWidth))
         icon.drawIconBackground(iconBackgroundColor)
-        icon.drawIcon(iconColor, iconThickness: IconThickness.Medium.rawValue)
+        icon.drawIcon(iconColor, iconThickness: IconThickness.medium.rawValue)
         addSubview(icon)
         
         icon.translatesAutoresizingMaskIntoConstraints = false
-        icon.bottomAnchor.constraintEqualToAnchor(viewTitleLabel.topAnchor).active = true
-        icon.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        icon.widthAnchor.constraintEqualToConstant(iconWidth).active = true
-        icon.heightAnchor.constraintEqualToConstant(iconWidth).active = true
+        icon.bottomAnchor.constraint(equalTo: viewTitleLabel.topAnchor).isActive = true
+        icon.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        icon.widthAnchor.constraint(equalToConstant: iconWidth).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: iconWidth).isActive = true
         icon.layoutIfNeeded()
     }
     
-    func setViewTitle(title : String) {
-        viewTitleLabel.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightBold)
+    func setViewTitle(_ title : String) {
+        viewTitleLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightBold)
         viewTitleLabel.text = title
     }
 }

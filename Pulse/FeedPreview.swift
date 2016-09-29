@@ -10,19 +10,19 @@ import UIKit
 
 class FeedPreview: UIView {
     
-    private var leftTile = UIView()
-    private var rightTile = UIView()
+    fileprivate var leftTile = UIView()
+    fileprivate var rightTile = UIView()
     
-    private var qTitleLabel = UILabel()
-    private var tagTitleLabel = UILabel()
-    private var exploreButton = UIButton()
+    fileprivate var qTitleLabel = UILabel()
+    fileprivate var tagTitleLabel = UILabel()
+    fileprivate var exploreButton = UIButton()
     
-    private var previewPlayer : PreviewVC?
-    private var tileBackgroundImage : UIImageView?
+    fileprivate var previewPlayer : PreviewVC?
+    fileprivate var tileBackgroundImage : UIImageView?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor.whiteColor()
+        backgroundColor = UIColor.white
         
         setupLeftTile()
         setupRightTile()
@@ -32,43 +32,43 @@ class FeedPreview: UIView {
         super.init(coder: aDecoder)
     }
     
-    private func setupLeftTile() {
+    fileprivate func setupLeftTile() {
         addSubview(leftTile)
         
         leftTile.translatesAutoresizingMaskIntoConstraints = false
-        leftTile.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
-        leftTile.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
-        leftTile.topAnchor.constraintEqualToAnchor(topAnchor).active = true
-        leftTile.widthAnchor.constraintEqualToAnchor(widthAnchor , multiplier: 0.5).active = true
+        leftTile.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        leftTile.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        leftTile.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        leftTile.widthAnchor.constraint(equalTo: widthAnchor , multiplier: 0.5).isActive = true
         leftTile.layoutIfNeeded()
         
         leftTile.addSubview(tagTitleLabel)
         
         tagTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        tagTitleLabel.bottomAnchor.constraintEqualToAnchor(leftTile.bottomAnchor, constant: -Spacing.xxs.rawValue).active = true
-        tagTitleLabel.leadingAnchor.constraintEqualToAnchor(leftTile.leadingAnchor, constant: Spacing.xxs.rawValue).active = true
-        tagTitleLabel.trailingAnchor.constraintEqualToAnchor(leftTile.trailingAnchor, constant: -Spacing.xxs.rawValue).active = true
+        tagTitleLabel.bottomAnchor.constraint(equalTo: leftTile.bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        tagTitleLabel.leadingAnchor.constraint(equalTo: leftTile.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        tagTitleLabel.trailingAnchor.constraint(equalTo: leftTile.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         tagTitleLabel.layoutIfNeeded()
         
         leftTile.addSubview(qTitleLabel)
         
         qTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        qTitleLabel.bottomAnchor.constraintEqualToAnchor(tagTitleLabel.topAnchor, constant: -Spacing.xxs.rawValue).active = true
-        qTitleLabel.leadingAnchor.constraintEqualToAnchor(tagTitleLabel.leadingAnchor).active = true
-        qTitleLabel.trailingAnchor.constraintEqualToAnchor(tagTitleLabel.trailingAnchor).active = true
+        qTitleLabel.bottomAnchor.constraint(equalTo: tagTitleLabel.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        qTitleLabel.leadingAnchor.constraint(equalTo: tagTitleLabel.leadingAnchor).isActive = true
+        qTitleLabel.trailingAnchor.constraint(equalTo: tagTitleLabel.trailingAnchor).isActive = true
         qTitleLabel.layoutIfNeeded()
         
         leftTile.addSubview(exploreButton)
         
         exploreButton.translatesAutoresizingMaskIntoConstraints = false
-        exploreButton.topAnchor.constraintEqualToAnchor(leftTile.topAnchor, constant: Spacing.xs.rawValue).active = true
-        exploreButton.leadingAnchor.constraintEqualToAnchor(leftTile.leadingAnchor, constant: Spacing.xs.rawValue).active = true
-        exploreButton.widthAnchor.constraintEqualToConstant(IconSizes.XSmall.rawValue).active = true
-        exploreButton.heightAnchor.constraintEqualToConstant(IconSizes.XSmall.rawValue).active = true
+        exploreButton.topAnchor.constraint(equalTo: leftTile.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        exploreButton.leadingAnchor.constraint(equalTo: leftTile.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        exploreButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        exploreButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
 
-        let exploreImage = UIImage(named: "collection-list")?.imageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)
-        exploreButton.setImage(exploreImage, forState: .Normal)
-        exploreButton.tintColor = UIColor.blackColor()
+        let exploreImage = UIImage(named: "collection-list")?.withRenderingMode(UIImageRenderingMode.alwaysTemplate)
+        exploreButton.setImage(exploreImage, for: UIControlState())
+        exploreButton.tintColor = UIColor.black
         
         
         let nowPlayingLabel = UILabel()
@@ -78,37 +78,37 @@ class FeedPreview: UIView {
         leftTile.addSubview(nowPlayingImage)
 
         nowPlayingImage.translatesAutoresizingMaskIntoConstraints = false
-        nowPlayingImage.centerYAnchor.constraintEqualToAnchor(exploreButton.centerYAnchor).active = true
-        nowPlayingImage.trailingAnchor.constraintEqualToAnchor(leftTile.trailingAnchor, constant: -Spacing.xxs.rawValue).active = true
-        nowPlayingImage.widthAnchor.constraintEqualToConstant(IconSizes.XXSmall.rawValue).active = true
-        nowPlayingImage.heightAnchor.constraintEqualToConstant(IconSizes.XXSmall.rawValue).active = true
+        nowPlayingImage.centerYAnchor.constraint(equalTo: exploreButton.centerYAnchor).isActive = true
+        nowPlayingImage.trailingAnchor.constraint(equalTo: leftTile.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        nowPlayingImage.widthAnchor.constraint(equalToConstant: IconSizes.xxSmall.rawValue).isActive = true
+        nowPlayingImage.heightAnchor.constraint(equalToConstant: IconSizes.xxSmall.rawValue).isActive = true
         nowPlayingImage.layoutIfNeeded()
         
-        nowPlayingImage.image = UIImage(named: "filled-arrow")!.imageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)
-        nowPlayingImage.tintColor = UIColor.blackColor()
+        nowPlayingImage.image = UIImage(named: "filled-arrow")!.withRenderingMode(UIImageRenderingMode.alwaysTemplate)
+        nowPlayingImage.tintColor = UIColor.black
         
         nowPlayingLabel.translatesAutoresizingMaskIntoConstraints = false
-        nowPlayingLabel.centerYAnchor.constraintEqualToAnchor(nowPlayingImage.centerYAnchor).active = true
-        nowPlayingLabel.trailingAnchor.constraintEqualToAnchor(nowPlayingImage.leadingAnchor).active = true
-        nowPlayingLabel.leadingAnchor.constraintEqualToAnchor(exploreButton.trailingAnchor).active = true
+        nowPlayingLabel.centerYAnchor.constraint(equalTo: nowPlayingImage.centerYAnchor).isActive = true
+        nowPlayingLabel.trailingAnchor.constraint(equalTo: nowPlayingImage.leadingAnchor).isActive = true
+        nowPlayingLabel.leadingAnchor.constraint(equalTo: exploreButton.trailingAnchor).isActive = true
         
         nowPlayingLabel.text = "NOW PLAYING"
-        nowPlayingLabel.setFont(FontSizes.Caption.rawValue, weight: UIFontWeightRegular, color: UIColor.blackColor(), alignment: .Right)
+        nowPlayingLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.black, alignment: .right)
         
         qTitleLabel.numberOfLines = 0
-        qTitleLabel.lineBreakMode = .ByWordWrapping
-        tagTitleLabel.setFont(FontSizes.Caption.rawValue, weight: UIFontWeightBold, color: UIColor.blackColor(), alignment: .Left)
-        qTitleLabel.setFont(FontSizes.Caption.rawValue, weight: UIFontWeightRegular, color: UIColor.blackColor(), alignment: .Left)
+        qTitleLabel.lineBreakMode = .byWordWrapping
+        tagTitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .left)
+        qTitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.black, alignment: .left)
     }
     
-    private func setupRightTile() {
+    fileprivate func setupRightTile() {
         addSubview(rightTile)
         
         rightTile.translatesAutoresizingMaskIntoConstraints = false
-        rightTile.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
-        rightTile.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
-        rightTile.topAnchor.constraintEqualToAnchor(topAnchor).active = true
-        rightTile.widthAnchor.constraintEqualToAnchor(widthAnchor , multiplier: 0.5).active = true
+        rightTile.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        rightTile.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        rightTile.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        rightTile.widthAnchor.constraint(equalTo: widthAnchor , multiplier: 0.5).isActive = true
         rightTile.layoutIfNeeded()
         
         previewPlayer = PreviewVC(frame: rightTile.bounds)
@@ -117,37 +117,37 @@ class FeedPreview: UIView {
         }
     }
     
-    func setLabels(questionTitle : String?, tagTitle : String?) {
+    func setLabels(_ questionTitle : String?, tagTitle : String?) {
         qTitleLabel.text = questionTitle
         
         if let tagTitle = tagTitle {
-            tagTitleLabel.text = "#\(tagTitle.uppercaseString)"
+            tagTitleLabel.text = "#\(tagTitle.uppercased())"
         }
     }
     
-    func showQuestion(question : Question) {
+    func showQuestion(_ question : Question) {
         if let previewPlayer = previewPlayer {
             previewPlayer.currentQuestion = question
         }
     }
     
-    func setTileImage(image : UIImage) {
+    func setTileImage(_ image : UIImage) {
         if tileBackgroundImage == nil {
             tileBackgroundImage = UIImageView()
             
             leftTile.addSubview(tileBackgroundImage!)
             
             tileBackgroundImage!.translatesAutoresizingMaskIntoConstraints = false
-            tileBackgroundImage!.bottomAnchor.constraintEqualToAnchor(bottomAnchor).active = true
-            tileBackgroundImage!.trailingAnchor.constraintEqualToAnchor(trailingAnchor).active = true
-            tileBackgroundImage!.topAnchor.constraintEqualToAnchor(topAnchor).active = true
-            tileBackgroundImage!.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+            tileBackgroundImage!.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+            tileBackgroundImage!.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+            tileBackgroundImage!.topAnchor.constraint(equalTo: topAnchor).isActive = true
+            tileBackgroundImage!.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
             tileBackgroundImage!.layoutIfNeeded()
             
         }
         
         tileBackgroundImage!.image = image
-        tileBackgroundImage!.contentMode = .ScaleAspectFill
+        tileBackgroundImage!.contentMode = .scaleAspectFill
 
     }
     

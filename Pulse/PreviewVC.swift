@@ -10,8 +10,8 @@ import UIKit
 import AVFoundation
 
 class PreviewVC: UIView, PreviewPlayerItemDelegate {
-    private var _loadingIndicator : LoadingIndicatorView?
-    private var aPlayer = AVPlayer()
+    fileprivate var _loadingIndicator : LoadingIndicatorView?
+    fileprivate var aPlayer = AVPlayer()
     
     var currentQuestion : Question! {
         didSet {
@@ -30,7 +30,7 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        backgroundColor = UIColor.blackColor()
+        backgroundColor = UIColor.black
         let avPlayerLayer = AVPlayerLayer(player: aPlayer)
         layer.addSublayer(avPlayerLayer)
         avPlayerLayer.frame = bounds
@@ -41,7 +41,7 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         super.init(coder: aDecoder)
     }
     
-    private func loadQuestion() {
+    fileprivate func loadQuestion() {
         if currentQuestion.hasAnswers() {
             setupAnswer(currentQuestion.qAnswers!.first!)
         }
@@ -49,7 +49,7 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
     
     func itemStatusReady() {
         switch aPlayer.status {
-        case AVPlayerStatus.ReadyToPlay:
+        case AVPlayerStatus.readyToPlay:
             removeLoadingIndicator()
             aPlayer.play()
             break
@@ -57,21 +57,21 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         }
     }
     
-    private func setupAnswer(answerID : String) {
+    fileprivate func setupAnswer(_ answerID : String) {
         Database.getAnswerURL(answerID, completion: {(URL, error) in
             if (error != nil) {
                 print(error.debugDescription)
             } else {
-                let aPlayerItem = PreviewPlayerItem(URL: URL!)
+                let aPlayerItem = PreviewPlayerItem(url: URL!)
                 aPlayerItem.delegate = self
-                self.aPlayer.replaceCurrentItemWithPlayerItem(aPlayerItem)
+                self.aPlayer.replaceCurrentItem(with: aPlayerItem)
             }
         })
     }
     
     func addLoadingIndicator() {
-        let _loadingIndicatorFrame = CGRectMake(bounds.midX - (IconSizes.Medium.rawValue / 2), bounds.midY - (IconSizes.Medium.rawValue / 2), IconSizes.Medium.rawValue, IconSizes.Medium.rawValue)
-        _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.whiteColor())
+        let _loadingIndicatorFrame = CGRect(x: bounds.midX - (IconSizes.medium.rawValue / 2), y: bounds.midY - (IconSizes.medium.rawValue / 2), width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)
+        _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.white)
         addSubview(_loadingIndicator!)
     }
     
@@ -88,8 +88,8 @@ class PreviewPlayerItem: AVPlayerItem {
     
     var delegate : PreviewPlayerItemDelegate?
     
-    init(URL: NSURL) {
-        super.init(asset: AVAsset(URL: URL) , automaticallyLoadedAssetKeys:[])
+    init(url URL: URL) {
+        super.init(asset: AVAsset(url: URL) , automaticallyLoadedAssetKeys:[])
         self.addMyObservers()
     }
     
@@ -98,14 +98,14 @@ class PreviewPlayerItem: AVPlayerItem {
     }
     
     func addMyObservers() {
-        self.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+        self.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
     }
     
     func removeMyObservers() {
         self.removeObserver(self, forKeyPath: "status", context: nil)
     }
     
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "status" {
             self.delegate?.itemStatusReady()
         }

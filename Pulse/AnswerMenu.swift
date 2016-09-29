@@ -10,16 +10,16 @@ import UIKit
 
 class AnswerMenu: UIView {
     
-    private let _addAnswer = UIButton()
-    private let _quickBrowse = UIButton()
+    fileprivate let _addAnswer = UIButton()
+    fileprivate let _quickBrowse = UIButton()
         
     internal enum AnswerMenuButtonSelector: Int {
-        case AddAnswer, BrowseAnswers
+        case addAnswer, browseAnswers
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.3)
+        backgroundColor = UIColor.black.withAlphaComponent(0.3)
 
         layoutButtons()
     }
@@ -28,66 +28,66 @@ class AnswerMenu: UIView {
         super.init(coder: aDecoder)
     }
     
-    override func pointInside(point: CGPoint, withEvent event: UIEvent?) -> Bool {
-        if  hidden {
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        if  isHidden {
             return false
         } else {
             print("expanded bounds fired")
-            let expandedBounds = CGRectInset(bounds, -50, -50)
-            return CGRectContainsPoint(expandedBounds, point)
+            let expandedBounds = bounds.insetBy(dx: -50, dy: -50)
+            return expandedBounds.contains(point)
         }
     }
     
-    private func layoutButtons() {
+    fileprivate func layoutButtons() {
 
         addSubview(_addAnswer)
         addSubview(_quickBrowse)
         
         _addAnswer.translatesAutoresizingMaskIntoConstraints = false
-        _addAnswer.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.s.rawValue).active = true
-        _addAnswer.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        _addAnswer.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.xs.rawValue).active = true
-        _addAnswer.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        _addAnswer.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue).isActive = true
+        _addAnswer.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        _addAnswer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _addAnswer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
 
         _quickBrowse.translatesAutoresizingMaskIntoConstraints = false
-        _quickBrowse.topAnchor.constraintEqualToAnchor(_addAnswer.bottomAnchor, constant: Spacing.s.rawValue).active = true
-        _quickBrowse.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        _quickBrowse.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.xs.rawValue).active = true
-        _quickBrowse.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
+        _quickBrowse.topAnchor.constraint(equalTo: _addAnswer.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        _quickBrowse.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        _quickBrowse.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _quickBrowse.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         
-        _addAnswer.backgroundColor = UIColor.clearColor()
-        _quickBrowse.backgroundColor = UIColor.clearColor()
+        _addAnswer.backgroundColor = UIColor.clear
+        _quickBrowse.backgroundColor = UIColor.clear
         
-        _addAnswer.setTitle("add answer", forState: .Normal)
-        _quickBrowse.setTitle("browse answers", forState: .Normal)
+        _addAnswer.setTitle("add answer", for: UIControlState())
+        _quickBrowse.setTitle("browse answers", for: UIControlState())
         
-        _addAnswer.titleLabel?.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.5)
-        _quickBrowse.titleLabel?.shadowColor = UIColor.blackColor().colorWithAlphaComponent(0.5)
-        _addAnswer.titleLabel?.shadowOffset = CGSizeMake(1, 1)
-        _quickBrowse.titleLabel?.shadowOffset = CGSizeMake(1, 1)
-        _addAnswer.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightMedium)
-        _quickBrowse.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Caption.rawValue, weight: UIFontWeightMedium)
-        _addAnswer.titleLabel?.textAlignment = .Left
-        _quickBrowse.titleLabel?.textAlignment = .Left
+        _addAnswer.titleLabel?.shadowColor = UIColor.black.withAlphaComponent(0.5)
+        _quickBrowse.titleLabel?.shadowColor = UIColor.black.withAlphaComponent(0.5)
+        _addAnswer.titleLabel?.shadowOffset = CGSize(width: 1, height: 1)
+        _quickBrowse.titleLabel?.shadowOffset = CGSize(width: 1, height: 1)
+        _addAnswer.titleLabel?.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)
+        _quickBrowse.titleLabel?.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)
+        _addAnswer.titleLabel?.textAlignment = .left
+        _quickBrowse.titleLabel?.textAlignment = .left
 
-        _addAnswer.setImage(UIImage(named: "add"), forState: .Normal)
-        _addAnswer.imageView?.contentMode = .ScaleAspectFit
+        _addAnswer.setImage(UIImage(named: "add"), for: UIControlState())
+        _addAnswer.imageView?.contentMode = .scaleAspectFit
         _addAnswer.imageEdgeInsets = UIEdgeInsetsMake(15, -10, 15, 15) //to better align both buttons
 
-        _quickBrowse.setImage(UIImage(named: "browse"), forState: .Normal)
-        _quickBrowse.imageView?.contentMode = .ScaleAspectFit
+        _quickBrowse.setImage(UIImage(named: "browse"), for: UIControlState())
+        _quickBrowse.imageView?.contentMode = .scaleAspectFit
         _quickBrowse.imageEdgeInsets = UIEdgeInsetsMake(15, -10, 15, 15)
         
-        _addAnswer.contentHorizontalAlignment = .Left
-        _quickBrowse.contentHorizontalAlignment = .Left
+        _addAnswer.contentHorizontalAlignment = .left
+        _quickBrowse.contentHorizontalAlignment = .left
 
         
     }
     
-    func getButton(buttonName : AnswerMenuButtonSelector) -> UIButton {
+    func getButton(_ buttonName : AnswerMenuButtonSelector) -> UIButton {
         switch buttonName {
-        case .AddAnswer: return _addAnswer
-        case .BrowseAnswers: return _quickBrowse
+        case .addAnswer: return _addAnswer
+        case .browseAnswers: return _quickBrowse
         }
     }
 }

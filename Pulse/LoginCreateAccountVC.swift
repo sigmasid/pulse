@@ -19,10 +19,10 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var signupButton: UIButton!
     weak var returnToParentDelegate : ParentDelegate!
     
-    private var _headerView : UIView!
-    private var _loginHeader : LoginHeaderView?
+    fileprivate var _headerView : UIView!
+    fileprivate var _loginHeader : LoginHeaderView?
 
-    private var emailValidated = false {
+    fileprivate var emailValidated = false {
         didSet {
             if emailValidated && passwordValidated {
                 signupButton.setEnabled()
@@ -32,7 +32,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         }
     }
     
-    private var passwordValidated = false {
+    fileprivate var passwordValidated = false {
         didSet {
             if emailValidated && passwordValidated {
                 signupButton.setEnabled()
@@ -52,12 +52,12 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         
         userEmail.tag = 100
         userPassword.tag = 200
-        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
-        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.whiteColor(), thickness: IconThickness.Thin.rawValue))
-        userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), forControlEvents: UIControlEvents.EditingChanged)
+        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
+        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
+        userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
         
-        userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
-        userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
+        userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
+        userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
 
         signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         signupButton.setDisabled()
@@ -65,7 +65,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
 
     }
     
-    override func viewDidAppear(animated : Bool) {
+    override func viewDidAppear(_ animated : Bool) {
         super.viewDidAppear(true)
         addHeader()
     }
@@ -79,24 +79,24 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         view.addSubview(_headerView)
 
         _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
+        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         _headerView.layoutIfNeeded()
         
         _loginHeader = LoginHeaderView(frame: _headerView.frame)
         if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel("PULSE")
-            _loginHeader.setScreenTitleLabel("ACCOUNT")
-            _loginHeader.updateStatusMessage("create account")
+            _loginHeader.setAppTitleLabel(_message: "PULSE")
+            _loginHeader.setScreenTitleLabel(_message: "ACCOUNT")
+            _loginHeader.updateStatusMessage(_message: "create account")
             _loginHeader.addGoBack()
-            _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
+            _loginHeader._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
             _headerView.addSubview(_loginHeader)
         }
     }
     
-    @IBAction func createEmailAccount(sender: UIButton) {
+    @IBAction func createEmailAccount(_ sender: UIButton) {
         sender.setDisabled()
         let _loading = sender.addLoadingIndicator()
         
@@ -104,36 +104,36 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
             if let _error = error {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loading)
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
 
                 switch _error.code {
-                case FIRAuthErrorCode.ErrorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = error!.localizedDescription
-                case FIRAuthErrorCode.ErrorCodeEmailAlreadyInUse.rawValue: self._emailErrorLabel.text = "you already have an account! try signing in"
-                case FIRAuthErrorCode.ErrorCodeWeakPassword.rawValue: self._passwordErrorLabel.text = error!.localizedDescription
+                case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = error!.localizedDescription
+                case FIRAuthErrorCode.errorCodeEmailAlreadyInUse.rawValue: self._emailErrorLabel.text = "you already have an account! try signing in"
+                case FIRAuthErrorCode.errorCodeWeakPassword.rawValue: self._passwordErrorLabel.text = error!.localizedDescription
                 default: self._emailErrorLabel.text = "error creating your account. please try again!"
                 }
             } else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loading)
 
-                if let AddNameVC = self.storyboard?.instantiateViewControllerWithIdentifier("LoginAddNameVC") as? LoginAddNameVC {
+                if let AddNameVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginAddNameVC") as? LoginAddNameVC {
                     GlobalFunctions.addNewVC(AddNameVC, parentVC: self)
                 }
             }
         })
     }
     
-    func textFieldDidBeginEditing(textField: UITextField) {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
         _passwordErrorLabel.text = ""
         _emailErrorLabel.text = ""
     }
     
-    func textFieldDidEndEditing(textField: UITextField) {
+    func textFieldDidEndEditing(_ textField: UITextField) {
         if textField.tag == userEmail.tag {
             GlobalFunctions.validateEmail(userEmail.text, completion: {(verified, error) in
                 if !verified {
                     self.emailValidated = false
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                         self._emailErrorLabel.text = error!.localizedDescription
                     }
                 } else {
@@ -144,12 +144,12 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         }
     }
     
-    func textFieldDidChange(textField: UITextField) {
+    func textFieldDidChange(_ textField: UITextField) {
         if textField.tag == userPassword.tag {
             GlobalFunctions.validatePassword(userPassword.text, completion: {(verified, error) in
                 if !verified {
                     self.passwordValidated = false
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                         self._passwordErrorLabel.text = error!.localizedDescription
                     }
                 }  else {
@@ -160,7 +160,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         }
     }
     
-    func goBack(sender: UIButton) {
+    func goBack(_ sender: UIButton) {
         if returnToParentDelegate != nil {
             returnToParentDelegate.returnToParent(self)
         }

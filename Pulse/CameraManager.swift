@@ -12,45 +12,65 @@ import AVFoundation
 import AssetsLibrary
 import CoreLocation
 import Photos
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l > r
+  default:
+    return rhs < lhs
+  }
+}
+
 
 public enum CameraState {
-    case Ready, AccessDenied, NoDeviceFound, NotDetermined
+    case ready, accessDenied, noDeviceFound, notDetermined
 }
 
 public enum CameraDevice {
-    case Front, Back
+    case front, back
 }
 
 public enum CameraFlashMode: Int {
-    case Off, On, Auto
+    case off, on, auto
 }
 
 public enum CameraOutputMode {
-    case StillImage, VideoWithMic, VideoOnly
+    case stillImage, videoWithMic, videoOnly
 }
 
 public enum CameraOutputQuality: Int {
-    case Low, Medium, High
+    case low, medium, high
 }
 
 /// Class for handling iDevices custom camera usage
-public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGestureRecognizerDelegate, CLLocationManagerDelegate {
+open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGestureRecognizerDelegate, CLLocationManagerDelegate {
     
     
     var maxRecordingDelegate : CameraManagerProtocol!
     // MARK: - Public properties
     
     /// Capture session to customize camera settings.
-    public var captureSession: AVCaptureSession?
+    open var captureSession: AVCaptureSession?
     
     /// Property to determine if the manager should show the error for the user. If you want to show the errors yourself set this to false. If you want to add custom error UI set showErrorBlock property. Default value is false.
-    public var showErrorsToUsers = true
+    open var showErrorsToUsers = true
     
     /// Property to determine if the manager should show the camera permission popup immediatly when it's needed or you want to show it manually. Default value is true. Be carful cause using the camera requires permission, if you set this value to false and don't ask manually you won't be able to use the camera.
-    public var showAccessPermissionPopupAutomatically = true
+    open var showAccessPermissionPopupAutomatically = true
     
     /// A block creating UI to present error message to the user. This can be customised to be presented on the Window root view controller, or to pass in the viewController which will present the UIAlertController, for example.
-    public var showErrorBlock:(erTitle: String, erMessage: String) -> Void = { (erTitle: String, erMessage: String) -> Void in
+    open var showErrorBlock:(_ erTitle: String, _ erMessage: String) -> Void = { (erTitle: String, erMessage: String) -> Void in
         
         //        var alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
         //        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))
@@ -61,10 +81,10 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /// Property to determine if manager should write the resources to the phone library. Default value is false.
-    public var writeFilesToPhoneLibrary = false
+    open var writeFilesToPhoneLibrary = false
     
     /// Property to determine if manager should follow device orientation. Default value is true.
-    public var shouldRespondToOrientationChanges = true {
+    open var shouldRespondToOrientationChanges = true {
         didSet {
             if shouldRespondToOrientationChanges {
                 _startFollowingDeviceOrientation()
@@ -75,18 +95,18 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /// The Bool property to determine if the camera is ready to use.
-    public var cameraIsReady: Bool {
+    open var cameraIsReady: Bool {
         get {
             return cameraIsSetup
         }
     }
     
     /// The Bool property to determine if current device has front camera.
-    public var hasFrontCamera: Bool = {
-        let devices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo)
-        for  device in devices  {
+    open var hasFrontCamera: Bool = {
+        let devices = AVCaptureDevice.devices(withMediaType: AVMediaTypeVideo)
+        for  device in devices!  {
             let captureDevice = device as! AVCaptureDevice
-            if (captureDevice.position == .Front) {
+            if (captureDevice.position == .front) {
                 return true
             }
         }
@@ -94,11 +114,11 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }()
     
     /// The Bool property to determine if current device has flash.
-    public var hasFlash: Bool = {
-        let devices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo)
-        for  device in devices  {
+    open var hasFlash: Bool = {
+        let devices = AVCaptureDevice.devices(withMediaType: AVMediaTypeVideo)
+        for  device in devices!  {
             let captureDevice = device as! AVCaptureDevice
-            if (captureDevice.position == .Back) {
+            if (captureDevice.position == .back) {
                 return captureDevice.hasFlash
             }
         }
@@ -106,7 +126,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }()
     
     /// Property to change camera device between front and back.
-    public var cameraDevice = CameraDevice.Back {
+    open var cameraDevice = CameraDevice.back {
         didSet {
             if cameraIsSetup {
                 if cameraDevice != oldValue {
@@ -119,7 +139,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /// Property to change camera flash mode.
-    public var flashMode = CameraFlashMode.Off {
+    open var flashMode = CameraFlashMode.off {
         didSet {
             if cameraIsSetup {
                 if flashMode != oldValue {
@@ -129,7 +149,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     /// Property to change video duration.
-    public var cameraVideoDuration : Double = 60 {
+    open var cameraVideoDuration : Double = 60 {
         didSet {
             if cameraIsSetup {
                 _updateMaxDuration(cameraVideoDuration)
@@ -138,7 +158,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /// Property to change camera output quality.
-    public var cameraOutputQuality = CameraOutputQuality.High {
+    open var cameraOutputQuality = CameraOutputQuality.high {
         didSet {
             if cameraIsSetup {
                 if cameraOutputQuality != oldValue {
@@ -149,7 +169,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /// Property to change camera output.
-    public var cameraOutputMode = CameraOutputMode.StillImage {
+    open var cameraOutputMode = CameraOutputMode.stillImage {
         didSet {
             if cameraIsSetup {
                 if cameraOutputMode != oldValue {
@@ -162,60 +182,60 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /// Property to check video recording duration when in progress
-    public var recordedDuration : CMTime { return movieOutput?.recordedDuration ?? kCMTimeZero }
+    open var recordedDuration : CMTime { return movieOutput?.recordedDuration ?? kCMTimeZero }
     
     /// Property to check video recording file size when in progress
-    public var recordedFileSize : Int64 { return movieOutput?.recordedFileSize ?? 0 }
+    open var recordedFileSize : Int64 { return movieOutput?.recordedFileSize ?? 0 }
     
     /// Property to determine where video was shot if available
-    public var recordedLocation : String? { return location?.locality }
+    open var recordedLocation : String? { return location?.locality }
     
     
     // MARK: - Private properties
-    private var _didReachMaxRecording = false
+    fileprivate var _didReachMaxRecording = false
 
-    private weak var embeddingView: UIView?
-    private var videoCompletition: ((videoURL: NSURL?, image: UIImage?, error: NSError?) -> Void)?
+    fileprivate weak var embeddingView: UIView?
+    fileprivate var videoCompletition: ((_ videoURL: URL?, _ image: UIImage?, _ error: NSError?) -> Void)?
     
-    private var sessionQueue: dispatch_queue_t = dispatch_queue_create("CameraSessionQueue", DISPATCH_QUEUE_SERIAL)
+    fileprivate var sessionQueue: DispatchQueue = DispatchQueue(label: "CameraSessionQueue", attributes: [])
     
-    private lazy var frontCameraDevice: AVCaptureDevice? = {
-        let devices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo) as! [AVCaptureDevice]
-        return devices.filter{$0.position == .Front}.first
+    fileprivate lazy var frontCameraDevice: AVCaptureDevice? = {
+        let devices = AVCaptureDevice.devices(withMediaType: AVMediaTypeVideo) as! [AVCaptureDevice]
+        return devices.filter{$0.position == .front}.first
     }()
     
-    private lazy var backCameraDevice: AVCaptureDevice? = {
-        let devices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo) as! [AVCaptureDevice]
-        return devices.filter{$0.position == .Back}.first
+    fileprivate lazy var backCameraDevice: AVCaptureDevice? = {
+        let devices = AVCaptureDevice.devices(withMediaType: AVMediaTypeVideo) as! [AVCaptureDevice]
+        return devices.filter{$0.position == .back}.first
     }()
     
-    private lazy var mic: AVCaptureDevice? = {
-        return AVCaptureDevice.defaultDeviceWithMediaType(AVMediaTypeAudio)
+    fileprivate lazy var mic: AVCaptureDevice? = {
+        return AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio)
     }()
     
-    private var stillImageOutput: AVCaptureStillImageOutput?
-    private var movieOutput: AVCaptureMovieFileOutput?
-    private var previewLayer: AVCaptureVideoPreviewLayer?
-    private var library: PHPhotoLibrary?
+    fileprivate var stillImageOutput: AVCaptureStillImageOutput?
+    fileprivate var movieOutput: AVCaptureMovieFileOutput?
+    fileprivate var previewLayer: AVCaptureVideoPreviewLayer?
+    fileprivate var library: PHPhotoLibrary?
     
-    private var cameraIsSetup = false
-    private var cameraIsObservingDeviceOrientation = false
+    fileprivate var cameraIsSetup = false
+    fileprivate var cameraIsObservingDeviceOrientation = false
     
-    private var locationManager = CLLocationManager()
-    private var location : CLPlacemark?
+    fileprivate var locationManager = CLLocationManager()
+    fileprivate var location : CLPlacemark?
     
-    private var zoomScale       = CGFloat(1.0)
-    private var beginZoomScale  = CGFloat(1.0)
-    private var maxZoomScale    = CGFloat(1.0)
+    fileprivate var zoomScale       = CGFloat(1.0)
+    fileprivate var beginZoomScale  = CGFloat(1.0)
+    fileprivate var maxZoomScale    = CGFloat(1.0)
     
-    private var tempFilePath: NSURL = {
-        let tempPath = NSURL(fileURLWithPath: NSTemporaryDirectory()).URLByAppendingPathComponent("tempMovie").URLByAppendingPathExtension("mp4").absoluteString
-        if NSFileManager.defaultManager().fileExistsAtPath(tempPath) {
+    fileprivate var tempFilePath: URL = {
+        let tempPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("tempMovie").appendingPathExtension("mp4").absoluteString
+        if FileManager.default.fileExists(atPath: tempPath) {
             do {
-                try NSFileManager.defaultManager().removeItemAtPath(tempPath)
+                try FileManager.default.removeItem(atPath: tempPath)
             } catch { }
         }
-        return NSURL(string: tempPath)!
+        return URL(string: tempPath)!
     }()
     
     
@@ -230,13 +250,13 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :returns: Current state of the camera: Ready / AccessDenied / NoDeviceFound / NotDetermined.
      */
-    public func addPreviewLayerToView(view: UIView) -> CameraState {
+    open func addPreviewLayerToView(_ view: UIView) -> CameraState {
         return addPreviewLayerToView(view, newCameraOutputMode: cameraOutputMode)
     }
-    public func addPreviewLayerToView(view: UIView, newCameraOutputMode: CameraOutputMode) -> CameraState {
+    open func addPreviewLayerToView(_ view: UIView, newCameraOutputMode: CameraOutputMode) -> CameraState {
         return addPreviewLayerToView(view, newCameraOutputMode: newCameraOutputMode, completition: nil)
     }
-    public func addPreviewLayerToView(view: UIView, newCameraOutputMode: CameraOutputMode, completition: (Void -> Void)?) -> CameraState {
+    open func addPreviewLayerToView(_ view: UIView, newCameraOutputMode: CameraOutputMode, completition: ((Void) -> Void)?) -> CameraState {
         if _canLoadCamera() {
             if let _ = embeddingView {
                 if let validPreviewLayer = previewLayer {
@@ -267,16 +287,16 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :param: completition Completition block with the result of permission request
      */
-    public func askUserForCameraPermissions(completition: Bool -> Void) {
-        AVCaptureDevice.requestAccessForMediaType(AVMediaTypeVideo, completionHandler: { (alowedAccess) -> Void in
-            if self.cameraOutputMode == .VideoWithMic {
-                AVCaptureDevice.requestAccessForMediaType(AVMediaTypeAudio, completionHandler: { (alowedAccess) -> Void in
-                    dispatch_sync(dispatch_get_main_queue(), { () -> Void in
+    open func askUserForCameraPermissions(_ completition: @escaping (Bool) -> Void) {
+        AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeVideo, completionHandler: { (alowedAccess) -> Void in
+            if self.cameraOutputMode == .videoWithMic {
+                AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeAudio, completionHandler: { (alowedAccess) -> Void in
+                    DispatchQueue.main.sync(execute: { () -> Void in
                         completition(alowedAccess)
                     })
                 })
             } else {
-                dispatch_sync(dispatch_get_main_queue(), { () -> Void in
+                DispatchQueue.main.sync(execute: { () -> Void in
                     completition(alowedAccess)
                 })
                 
@@ -288,7 +308,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     /**
      Stops running capture session but all setup devices, inputs and outputs stay for further reuse.
      */
-    public func stopCaptureSession() {
+    open func stopCaptureSession() {
         captureSession?.stopRunning()
         _stopFollowingDeviceOrientation()
     }
@@ -296,9 +316,9 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     /**
      Resumes capture session.
      */
-    public func resumeCaptureSession() {
+    open func resumeCaptureSession() {
         if let validCaptureSession = captureSession {
-            if !validCaptureSession.running && cameraIsSetup {
+            if !validCaptureSession.isRunning && cameraIsSetup {
                 validCaptureSession.startRunning()
                 _startFollowingDeviceOrientation()
             }
@@ -320,9 +340,9 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     /**
      Stops running capture session and removes all setup devices, inputs and outputs.
      */
-    public func stopAndRemoveCaptureSession() {
+    open func stopAndRemoveCaptureSession() {
         stopCaptureSession()
-        cameraDevice = .Back
+        cameraDevice = .back
         cameraIsSetup = false
         previewLayer = nil
         captureSession = nil
@@ -339,7 +359,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :param: imageCompletition Completition block containing the captured UIImage
      */
-    public func capturePictureWithCompletition(imageCompletition: (UIImage?, NSError?) -> Void) {
+    open func capturePictureWithCompletition(_ imageCompletition: @escaping (UIImage?, NSError?) -> Void) {
         self.capturePictureDataWithCompletition { data, error in
             
             guard error == nil, let imageData = data else {
@@ -349,14 +369,14 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
             
             if self.writeFilesToPhoneLibrary == true  {
                 
-                let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-                    let _ = PHAssetChangeRequest.creationRequestForAssetFromImage(UIImage(data: imageData)!)
+                let _ = PHPhotoLibrary.shared().performChanges({
+                    let _ = PHAssetChangeRequest.creationRequestForAsset(from: UIImage(data: imageData)!)
                     }, completionHandler: { success, error in
                         guard error != nil else {
                             return
                         }
                         
-                        dispatch_async(dispatch_get_main_queue(), {
+                        DispatchQueue.main.async(execute: {
                             self._show(NSLocalizedString("Error", comment:""), message: error!.localizedDescription)
                         })
                 })
@@ -374,16 +394,16 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :param: imageCompletition Completition block containing the captured imageData
      */
-    public func capturePictureDataFromVideoWithCompletition(videoURL: NSURL, imageCompletion: (UIImage?, NSError?) -> Void) {
+    open func capturePictureDataFromVideoWithCompletition(_ videoURL: URL, imageCompletion: (UIImage?, NSError?) -> Void) {
         
-        let urlAsset = AVURLAsset(URL: videoURL, options: nil)
+        let urlAsset = AVURLAsset(url: videoURL, options: nil)
         
-        if cameraDevice == .Front {
-            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .LeftMirrored)
+        if cameraDevice == .front {
+            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .leftMirrored)
             imageCompletion(imageData, nil)
 
         } else {
-            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .Right)
+            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .right)
             imageCompletion(imageData, nil)
         }
         
@@ -395,27 +415,27 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :param: imageCompletition Completition block containing the captured imageData
      */
-    public func capturePictureDataWithCompletition(imageCompletition: (NSData?, NSError?) -> Void) {
+    open func capturePictureDataWithCompletition(_ imageCompletition: @escaping (Data?, NSError?) -> Void) {
         
         guard cameraIsSetup else {
             _show(NSLocalizedString("No capture session setup", comment:""), message: NSLocalizedString("I can't take any pictures", comment:""))
             return
         }
         
-        guard cameraOutputMode == .StillImage else {
+        guard cameraOutputMode == .stillImage else {
             _show(NSLocalizedString("Capture session output mode video", comment:""), message: NSLocalizedString("I can't take any pictures", comment:""))
             return
         }
         
-        dispatch_async(sessionQueue, {
-            self._getStillImageOutput().captureStillImageAsynchronouslyFromConnection(self._getStillImageOutput().connectionWithMediaType(AVMediaTypeVideo), completionHandler: { [unowned self] sample, error in
+        sessionQueue.async(execute: {
+            self._getStillImageOutput().captureStillImageAsynchronously(from: self._getStillImageOutput().connection(withMediaType: AVMediaTypeVideo), completionHandler: { [unowned self] sample, error in
                 
                 
                 guard error == nil else {
-                    dispatch_async(dispatch_get_main_queue(), {
-                        self._show(NSLocalizedString("Error", comment:""), message: error.localizedDescription)
+                    DispatchQueue.main.async(execute: {
+                        self._show(NSLocalizedString("Error", comment:""), message: (error?.localizedDescription)!)
                     })
-                    imageCompletition(nil, error)
+                    imageCompletition(nil, error as NSError?)
                     return
                 }
                 
@@ -432,9 +452,9 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     /**
      Starts recording a video with or without voice as in the session preset.
      */
-    public func startRecordingVideo() {
-        if cameraOutputMode != .StillImage {
-            _getMovieOutput().startRecordingToOutputFileURL(tempFilePath, recordingDelegate: self)
+    open func startRecordingVideo() {
+        if cameraOutputMode != .stillImage {
+            _getMovieOutput().startRecording(toOutputFileURL: tempFilePath, recordingDelegate: self)
         } else {
             _show(NSLocalizedString("Capture session output still image", comment:""), message: NSLocalizedString("I can only take pictures", comment:""))
         }
@@ -443,9 +463,9 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     /**
      Stop recording a video. Save it to the cameraRoll and give back the url.
      */
-    public func stopRecordingVideo(completion:(videoURL: NSURL?, image: UIImage?, error: NSError?) -> Void) {
+    open func stopRecordingVideo(_ completion:@escaping (_ videoURL: URL?, _ image: UIImage?, _ error: NSError?) -> Void) {
         if let runningMovieOutput = movieOutput {
-            if runningMovieOutput.recording {
+            if runningMovieOutput.isRecording {
                 videoCompletition = completion
                 runningMovieOutput.stopRecording()
             }
@@ -461,7 +481,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :returns: Current state of the camera: Ready / AccessDenied / NoDeviceFound / NotDetermined
      */
-    public func currentCameraStatus() -> CameraState {
+    open func currentCameraStatus() -> CameraState {
         return _checkIfCameraIsAvailable()
     }
     
@@ -470,7 +490,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :returns: Current flash mode: Off / On / Auto
      */
-    public func changeFlashMode() -> CameraFlashMode {
+    open func changeFlashMode() -> CameraFlashMode {
         flashMode = CameraFlashMode(rawValue: (flashMode.rawValue+1)%3)!
         return flashMode
     }
@@ -480,61 +500,61 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
      
      :returns: Current quality mode: Low / Medium / High
      */
-    public func changeQualityMode() -> CameraOutputQuality {
+    open func changeQualityMode() -> CameraOutputQuality {
         cameraOutputQuality = CameraOutputQuality(rawValue: (cameraOutputQuality.rawValue+1)%3)!
         return cameraOutputQuality
     }
     
     // MARK: - AVCaptureFileOutputRecordingDelegate
     
-    public func captureOutput(captureOutput: AVCaptureFileOutput!, didStartRecordingToOutputFileAtURL fileURL: NSURL!, fromConnections connections: [AnyObject]!) {
+    open func capture(_: AVCaptureFileOutput!, didStartRecordingToOutputFileAt: URL!, fromConnections: [Any]!) {
         captureSession?.beginConfiguration()
-        if flashMode != .Off {
+        if flashMode != .off {
             _updateTorch(flashMode)
         }
         captureSession?.commitConfiguration()
     }
     
-    public func captureOutput(captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAtURL outputFileURL: NSURL!, fromConnections connections: [AnyObject]!, error: NSError!) {
-        _updateTorch(.Off)
+    open func capture(_ captureOutput: AVCaptureFileOutput!, didFinishRecordingToOutputFileAt outputFileURL: URL!, fromConnections connections: [Any]!, error: Error!) {
+        _updateTorch(.off)
         if (error != nil) {
-            if (error.code == AVError.MaximumDurationReached.rawValue) {
+            if ((error as NSError).code == AVError.Code.maximumDurationReached.rawValue) {
 //                _show(NSLocalizedString("Maximum Time Limit Reached", comment:""), message: error.localizedDescription)
 //                _executeVideoCompletitionWithURL(outputFileURL, error: nil)
                 _didReachMaxRecording = true
                 
                 if writeFilesToPhoneLibrary {
-                    _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: NSURL?, error: NSError?) -> Void in
+                    _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: URL?, error: NSError?) -> Void in
                         if (error != nil) {
                             self._show(NSLocalizedString("Unable to save video to the iPhone.", comment:""), message: error!.localizedDescription)
-                            self._executeVideoCompletitionWithURL(nil, error: error)
+                            self._executeVideoCompletitionWithURL(nil, blockError: error)
                         } else {
                             if let validAssetURL = assetURL {
-                                self._executeVideoCompletitionWithURL(validAssetURL, error: error)
+                                self._executeVideoCompletitionWithURL(validAssetURL, blockError: error)
                             }
                         }
                     })
                 } else {
-                    _executeVideoCompletitionWithURL(outputFileURL, error: nil)
+                    _executeVideoCompletitionWithURL(outputFileURL, blockError: nil)
                 }
             } else {
-                _executeVideoCompletitionWithURL(outputFileURL, error: error)
+                _executeVideoCompletitionWithURL(outputFileURL, blockError: error as NSError?)
                 _show(NSLocalizedString("Unable to save video to the phone", comment:""), message: error.localizedDescription)
             }
         } else {
             if writeFilesToPhoneLibrary {
-                _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: NSURL?, error: NSError?) -> Void in
+                _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: URL?, error: NSError?) -> Void in
                     if (error != nil) {
                         self._show(NSLocalizedString("Unable to save video to the iPhone.", comment:""), message: error!.localizedDescription)
-                        self._executeVideoCompletitionWithURL(nil, error: error)
+                        self._executeVideoCompletitionWithURL(nil, blockError: error)
                     } else {
                         if let validAssetURL = assetURL {
-                            self._executeVideoCompletitionWithURL(validAssetURL, error: error)
+                            self._executeVideoCompletitionWithURL(validAssetURL, blockError: error)
                         }
                     }
                 })
             } else {
-                _executeVideoCompletitionWithURL(outputFileURL, error: error)
+                _executeVideoCompletitionWithURL(outputFileURL, blockError: error as NSError?)
 //                    _saveVideoToAlbum(outputFileURL, error: error)
             }
         }
@@ -542,14 +562,14 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     
     // MARK: - UIGestureRecognizerDelegate
     
-    private func attachZoom(view: UIView) {
+    fileprivate func attachZoom(_ view: UIView) {
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(CameraManager._zoomStart(_:)))
         view.addGestureRecognizer(pinch)
         pinch.delegate = self
     }
     
-    public func gestureRecognizerShouldBegin(gestureRecognizer: UIGestureRecognizer) -> Bool {
-        if gestureRecognizer.isKindOfClass(UIPinchGestureRecognizer) {
+    open func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer.isKind(of: UIPinchGestureRecognizer.self) {
             beginZoomScale = zoomScale
         }
         
@@ -557,18 +577,18 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     @objc
-    private func _zoomStart(recognizer: UIPinchGestureRecognizer) {
+    fileprivate func _zoomStart(_ recognizer: UIPinchGestureRecognizer) {
         guard let view = embeddingView,
-            previewLayer = previewLayer
+            let previewLayer = previewLayer
             else { return }
         
         var allTouchesOnPreviewLayer = true
-        let numTouch = recognizer.numberOfTouches()
+        let numTouch = recognizer.numberOfTouches
         
         for i in 0 ..< numTouch {
-            let location = recognizer.locationOfTouch(i, inView: view)
-            let convertedTouch = previewLayer.convertPoint(location, fromLayer: previewLayer.superlayer)
-            if !previewLayer.containsPoint(convertedTouch) {
+            let location = recognizer.location(ofTouch: i, in: view)
+            let convertedTouch = previewLayer.convert(location, from: previewLayer.superlayer)
+            if !previewLayer.contains(convertedTouch) {
                 allTouchesOnPreviewLayer = false
                 break
             }
@@ -579,12 +599,12 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     }
     
     /// set the max video duration to specified duration in milliseconds
-    private func _updateMaxDuration(duration: Double) {
+    fileprivate func _updateMaxDuration(_ duration: Double) {
         let preferredTimeScale : Int32 = 600
         movieOutput?.maxRecordedDuration = CMTimeMakeWithSeconds(duration / 10, preferredTimeScale)
     }
     
-    private func _zoom(scale: CGFloat) {
+    fileprivate func _zoom(_ scale: CGFloat) {
         do {
             let captureDevice = AVCaptureDevice.devices().first as? AVCaptureDevice
             try captureDevice?.lockForConfiguration()
@@ -600,12 +620,12 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     
     // MARK: - CameraManager()
     
-    private func _updateTorch(flashMode: CameraFlashMode) {
+    fileprivate func _updateTorch(_ flashMode: CameraFlashMode) {
         captureSession?.beginConfiguration()
-        let devices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo)
-        for  device in devices  {
+        let devices = AVCaptureDevice.devices(withMediaType: AVMediaTypeVideo)
+        for  device in devices!  {
             let captureDevice = device as! AVCaptureDevice
-            if (captureDevice.position == AVCaptureDevicePosition.Back) {
+            if (captureDevice.position == AVCaptureDevicePosition.back) {
                 let avTorchMode = AVCaptureTorchMode(rawValue: flashMode.rawValue)
                 if (captureDevice.isTorchModeSupported(avTorchMode!)) {
                     do {
@@ -621,18 +641,18 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         captureSession?.commitConfiguration()
     }
     
-    private func _executeVideoCompletitionWithURL(url: NSURL?, error: NSError?) {
+    fileprivate func _executeVideoCompletitionWithURL(_ url: URL?, blockError: NSError?) {
         if let validCompletition = videoCompletition {
 
             let _duration = movieOutput?.recordedDuration.seconds
 
             if _duration > 0.5 {
-                validCompletition(videoURL: url, image: nil, error: error)
+                validCompletition(url, nil, blockError)
                 self.videoCompletition = nil
             } else {
                 if let url = url {
-                    capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, error) in
-                        validCompletition(videoURL: nil, image: image, error: error)
+                    capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, blockError) in
+                        validCompletition(nil, image, blockError)
                         self.videoCompletition = nil
                     })
                 }
@@ -641,12 +661,12 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
             let _duration = movieOutput?.recordedDuration.seconds
 
             if _duration > 0.5 {
-                maxRecordingDelegate.didReachMaxRecording(url, image: nil, error: error)
+                maxRecordingDelegate.didReachMaxRecording(url, image: nil, error: blockError)
             } else {
                 if let url = url {
-                    capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, error) in
+                    capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, blockError) in
                         if self._didReachMaxRecording {
-                            self.maxRecordingDelegate.didReachMaxRecording(nil, image: image, error: error)
+                            self.maxRecordingDelegate.didReachMaxRecording(nil, image: image, error: blockError)
                         }
                     })
                 }
@@ -654,24 +674,24 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     
-    private func _saveVideoToAlbum(url: NSURL?, completionBlock: (assetURL: NSURL?, error: NSError?) -> Void) {
-        let _ = PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-            let _ = PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(url!)
+    fileprivate func _saveVideoToAlbum(_ url: URL?, completionBlock: @escaping (_ assetURL: URL?, _ error: NSError?) -> Void) {
+        let _ = PHPhotoLibrary.shared().performChanges({
+            let _ = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url!)
             }, completionHandler: { success, error in
                 if success {
-                    completionBlock(assetURL: url, error: nil)
+                    completionBlock(url, nil)
                 } else {
-                    completionBlock(assetURL: nil, error: error)
+                    completionBlock(nil, error as NSError?)
                 }
         })
     }
     
-    private func _getMovieOutput() -> AVCaptureMovieFileOutput {
+    fileprivate func _getMovieOutput() -> AVCaptureMovieFileOutput {
         var shouldReinitializeMovieOutput = movieOutput == nil
         
         if !shouldReinitializeMovieOutput {
-            if let connection = movieOutput!.connectionWithMediaType(AVMediaTypeVideo) {
-                shouldReinitializeMovieOutput = shouldReinitializeMovieOutput || !connection.active
+            if let connection = movieOutput!.connection(withMediaType: AVMediaTypeVideo) {
+                shouldReinitializeMovieOutput = shouldReinitializeMovieOutput || !connection.isActive
             }
         }
         
@@ -686,11 +706,11 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         return movieOutput!
     }
     
-    private func _getStillImageOutput() -> AVCaptureStillImageOutput {
+    fileprivate func _getStillImageOutput() -> AVCaptureStillImageOutput {
         var shouldReinitializeStillImageOutput = stillImageOutput == nil
         if !shouldReinitializeStillImageOutput {
-            if let connection = stillImageOutput!.connectionWithMediaType(AVMediaTypeVideo) {
-                shouldReinitializeStillImageOutput = shouldReinitializeStillImageOutput || !connection.active
+            if let connection = stillImageOutput!.connection(withMediaType: AVMediaTypeVideo) {
+                shouldReinitializeStillImageOutput = shouldReinitializeStillImageOutput || !connection.isActive
             }
         }
         if shouldReinitializeStillImageOutput {
@@ -703,26 +723,26 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         return stillImageOutput!
     }
     
-    @objc private func _orientationChanged() {
+    @objc fileprivate func _orientationChanged() {
         var currentConnection: AVCaptureConnection?;
         switch cameraOutputMode {
-        case .StillImage:
-            currentConnection = stillImageOutput?.connectionWithMediaType(AVMediaTypeVideo)
-        case .VideoOnly, .VideoWithMic:
-            currentConnection = _getMovieOutput().connectionWithMediaType(AVMediaTypeVideo)
+        case .stillImage:
+            currentConnection = stillImageOutput?.connection(withMediaType: AVMediaTypeVideo)
+        case .videoOnly, .videoWithMic:
+            currentConnection = _getMovieOutput().connection(withMediaType: AVMediaTypeVideo)
         }
         if let validPreviewLayer = previewLayer {
             if let validPreviewLayerConnection = validPreviewLayer.connection {
-                if validPreviewLayerConnection.supportsVideoOrientation {
+                if validPreviewLayerConnection.isVideoOrientationSupported {
                     validPreviewLayerConnection.videoOrientation = _currentVideoOrientation()
                 }
             }
             if let validOutputLayerConnection = currentConnection {
-                if validOutputLayerConnection.supportsVideoOrientation {
+                if validOutputLayerConnection.isVideoOrientationSupported {
                     validOutputLayerConnection.videoOrientation = _currentVideoOrientation()
                 }
             }
-            dispatch_async(dispatch_get_main_queue(), { () -> Void in
+            DispatchQueue.main.async(execute: { () -> Void in
                 if let validEmbeddingView = self.embeddingView {
                     validPreviewLayer.frame = validEmbeddingView.bounds
                 }
@@ -730,26 +750,26 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     
-    private func _currentVideoOrientation() -> AVCaptureVideoOrientation {
-        switch UIDevice.currentDevice().orientation {
-        case .LandscapeLeft:
-            return .LandscapeRight
-        case .LandscapeRight:
-            return .LandscapeLeft
+    fileprivate func _currentVideoOrientation() -> AVCaptureVideoOrientation {
+        switch UIDevice.current.orientation {
+        case .landscapeLeft:
+            return .landscapeRight
+        case .landscapeRight:
+            return .landscapeLeft
         default:
-            return .Portrait
+            return .portrait
         }
     }
     
-    private func _canLoadCamera() -> Bool {
+    fileprivate func _canLoadCamera() -> Bool {
         let currentCameraState = _checkIfCameraIsAvailable()
-        return currentCameraState == .Ready || (currentCameraState == .NotDetermined && showAccessPermissionPopupAutomatically)
+        return currentCameraState == .ready || (currentCameraState == .notDetermined && showAccessPermissionPopupAutomatically)
     }
     
-    private func _setupCamera(completition: Void -> Void) {
+    fileprivate func _setupCamera(_ completition: @escaping (Void) -> Void) {
         captureSession = AVCaptureSession()
         
-        dispatch_async(sessionQueue, {
+        sessionQueue.async(execute: {
             if let validCaptureSession = self.captureSession {
                 validCaptureSession.beginConfiguration()
                 validCaptureSession.sessionPreset = AVCaptureSessionPresetHigh
@@ -773,83 +793,83 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         })
     }
     
-    private func _startFollowingDeviceOrientation() {
+    fileprivate func _startFollowingDeviceOrientation() {
         if shouldRespondToOrientationChanges && !cameraIsObservingDeviceOrientation {
-            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(CameraManager._orientationChanged), name: UIDeviceOrientationDidChangeNotification, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(CameraManager._orientationChanged), name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
             cameraIsObservingDeviceOrientation = true
         }
     }
     
-    private func _stopFollowingDeviceOrientation() {
+    fileprivate func _stopFollowingDeviceOrientation() {
         if cameraIsObservingDeviceOrientation {
-            NSNotificationCenter.defaultCenter().removeObserver(self, name: UIDeviceOrientationDidChangeNotification, object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
             cameraIsObservingDeviceOrientation = false
         }
     }
     
-    private func _addPreviewLayerToView(view: UIView) {
+    fileprivate func _addPreviewLayerToView(_ view: UIView) {
         embeddingView = view
         attachZoom(view)
         
-        dispatch_async(dispatch_get_main_queue(), { () -> Void in
+        DispatchQueue.main.async(execute: { () -> Void in
             guard let _ = self.previewLayer else {
                 return
             }
             self.previewLayer!.videoGravity = AVLayerVideoGravityResizeAspectFill
             self.previewLayer!.frame = view.layer.bounds
             view.clipsToBounds = true
-            view.layer.insertSublayer(self.previewLayer!, atIndex: 0)
+            view.layer.insertSublayer(self.previewLayer!, at: 0)
         })
     }
     
-    private func _setupMaxZoomScale() {
+    fileprivate func _setupMaxZoomScale() {
         var maxZoom = CGFloat(1.0)
         beginZoomScale = CGFloat(1.0)
         
-        if cameraDevice == .Back {
+        if cameraDevice == .back {
             maxZoom = (backCameraDevice?.activeFormat.videoMaxZoomFactor)!
         }
-        else if cameraDevice == .Front {
+        else if cameraDevice == .front {
             maxZoom = (frontCameraDevice?.activeFormat.videoMaxZoomFactor)!
         }
         
         maxZoomScale = maxZoom
     }
     
-    private func _checkIfCameraIsAvailable() -> CameraState {
-        let deviceHasCamera = UIImagePickerController.isCameraDeviceAvailable(UIImagePickerControllerCameraDevice.Rear) || UIImagePickerController.isCameraDeviceAvailable(UIImagePickerControllerCameraDevice.Front)
+    fileprivate func _checkIfCameraIsAvailable() -> CameraState {
+        let deviceHasCamera = UIImagePickerController.isCameraDeviceAvailable(UIImagePickerControllerCameraDevice.rear) || UIImagePickerController.isCameraDeviceAvailable(UIImagePickerControllerCameraDevice.front)
         if deviceHasCamera {
-            let authorizationStatus = AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)
-            let userAgreedToUseIt = authorizationStatus == .Authorized
+            let authorizationStatus = AVCaptureDevice.authorizationStatus(forMediaType: AVMediaTypeVideo)
+            let userAgreedToUseIt = authorizationStatus == .authorized
             if userAgreedToUseIt {
-                return .Ready
-            } else if authorizationStatus == AVAuthorizationStatus.NotDetermined {
-                return .NotDetermined
+                return .ready
+            } else if authorizationStatus == AVAuthorizationStatus.notDetermined {
+                return .notDetermined
             } else {
                 _show(NSLocalizedString("Camera access denied", comment:""), message:NSLocalizedString("You need to go to settings app and grant acces to the camera device to use it.", comment:""))
-                return .AccessDenied
+                return .accessDenied
             }
         } else {
             _show(NSLocalizedString("Camera unavailable", comment:""), message:NSLocalizedString("The device does not have a camera.", comment:""))
-            return .NoDeviceFound
+            return .noDeviceFound
         }
     }
     
-    private func _setupOutputMode(newCameraOutputMode: CameraOutputMode, oldCameraOutputMode: CameraOutputMode?) {
+    fileprivate func _setupOutputMode(_ newCameraOutputMode: CameraOutputMode, oldCameraOutputMode: CameraOutputMode?) {
         captureSession?.beginConfiguration()
         
         if let cameraOutputToRemove = oldCameraOutputMode {
             // remove current setting
             switch cameraOutputToRemove {
-            case .StillImage:
+            case .stillImage:
                 if let validStillImageOutput = stillImageOutput {
                     captureSession?.removeOutput(validStillImageOutput)
                 }
-            case .VideoOnly, .VideoWithMic:
+            case .videoOnly, .videoWithMic:
                 if let validMovieOutput = movieOutput {
                     captureSession?.removeOutput(validMovieOutput)
                 }
-                if cameraOutputToRemove == .VideoWithMic {
+                if cameraOutputToRemove == .videoWithMic {
                     _removeMicInput()
                 }
             }
@@ -857,17 +877,17 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         
         // configure new devices
         switch newCameraOutputMode {
-        case .StillImage:
+        case .stillImage:
             if (stillImageOutput == nil) {
                 _setupOutputs()
             }
             if let validStillImageOutput = stillImageOutput {
                 captureSession?.addOutput(validStillImageOutput)
             }
-        case .VideoOnly, .VideoWithMic:
+        case .videoOnly, .videoWithMic:
             captureSession?.addOutput(_getMovieOutput())
             
-            if newCameraOutputMode == .VideoWithMic {
+            if newCameraOutputMode == .videoWithMic {
                 if let validMic = _deviceInputFromDevice(mic) {
                     captureSession?.addInput(validMic)
                 }
@@ -878,7 +898,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         _orientationChanged()
     }
     
-    private func _setupOutputs() {
+    fileprivate func _setupOutputs() {
         if (stillImageOutput == nil) {
             stillImageOutput = AVCaptureStillImageOutput()
         }
@@ -889,30 +909,30 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     
-    private func _setupPreviewLayer() {
+    fileprivate func _setupPreviewLayer() {
         if let validCaptureSession = captureSession {
             previewLayer = AVCaptureVideoPreviewLayer(session: validCaptureSession)
         }
     }
     
-    private func _updateCameraDevice(deviceType: CameraDevice) {
+    fileprivate func _updateCameraDevice(_ deviceType: CameraDevice) {
         if let validCaptureSession = captureSession {
             validCaptureSession.beginConfiguration()
             let inputs = validCaptureSession.inputs as! [AVCaptureInput]
             
             for input in inputs {
                 if let deviceInput = input as? AVCaptureDeviceInput {
-                    if deviceInput.device == backCameraDevice && cameraDevice == .Front {
+                    if deviceInput.device == backCameraDevice && cameraDevice == .front {
                         validCaptureSession.removeInput(deviceInput)
                         break;
-                    } else if deviceInput.device == frontCameraDevice && cameraDevice == .Back {
+                    } else if deviceInput.device == frontCameraDevice && cameraDevice == .back {
                         validCaptureSession.removeInput(deviceInput)
                         break;
                     }
                 }
             }
             switch cameraDevice {
-            case .Front:
+            case .front:
                 if hasFrontCamera {
                     if let validFrontDevice = _deviceInputFromDevice(frontCameraDevice) {
                         if !inputs.contains(validFrontDevice) {
@@ -920,7 +940,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
                         }
                     }
                 }
-            case .Back:
+            case .back:
                 if let validBackDevice = _deviceInputFromDevice(backCameraDevice) {
                     if !inputs.contains(validBackDevice) {
                         validCaptureSession.addInput(validBackDevice)
@@ -931,12 +951,12 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     
-    private func _updateFlasMode(flashMode: CameraFlashMode) {
+    fileprivate func _updateFlasMode(_ flashMode: CameraFlashMode) {
         captureSession?.beginConfiguration()
-        let devices = AVCaptureDevice.devicesWithMediaType(AVMediaTypeVideo)
-        for  device in devices  {
+        let devices = AVCaptureDevice.devices(withMediaType: AVMediaTypeVideo)
+        for  device in devices!  {
             let captureDevice = device as! AVCaptureDevice
-            if (captureDevice.position == AVCaptureDevicePosition.Back) {
+            if (captureDevice.position == AVCaptureDevicePosition.back) {
                 let avFlashMode = AVCaptureFlashMode(rawValue: flashMode.rawValue)
                 if (captureDevice.isFlashModeSupported(avFlashMode!)) {
                     do {
@@ -952,16 +972,16 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         captureSession?.commitConfiguration()
     }
     
-    private func _updateCameraQualityMode(newCameraOutputQuality: CameraOutputQuality) {
+    fileprivate func _updateCameraQualityMode(_ newCameraOutputQuality: CameraOutputQuality) {
         if let validCaptureSession = captureSession {
             var sessionPreset = AVCaptureSessionPresetLow
             switch (newCameraOutputQuality) {
-            case CameraOutputQuality.Low:
+            case CameraOutputQuality.low:
                 sessionPreset = AVCaptureSessionPresetLow
-            case CameraOutputQuality.Medium:
+            case CameraOutputQuality.medium:
                 sessionPreset = AVCaptureSessionPresetMedium
-            case CameraOutputQuality.High:
-                if cameraOutputMode == .StillImage {
+            case CameraOutputQuality.high:
+                if cameraOutputMode == .stillImage {
                     sessionPreset = AVCaptureSessionPresetPhoto
                 } else {
                     sessionPreset = AVCaptureSessionPresetHigh
@@ -979,7 +999,7 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     
-    private func _removeMicInput() {
+    fileprivate func _removeMicInput() {
         guard let inputs = captureSession?.inputs as? [AVCaptureInput] else { return }
         
         for input in inputs {
@@ -992,15 +1012,15 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         }
     }
     
-    private func _show(title: String, message: String) {
+    fileprivate func _show(_ title: String, message: String) {
         if showErrorsToUsers {
-            dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                self.showErrorBlock(erTitle: title, erMessage: message)
+            DispatchQueue.main.async(execute: { () -> Void in
+                self.showErrorBlock(title, message)
             })
         }
     }
     
-    private func _deviceInputFromDevice(device: AVCaptureDevice?) -> AVCaptureDeviceInput? {
+    fileprivate func _deviceInputFromDevice(_ device: AVCaptureDevice?) -> AVCaptureDeviceInput? {
         guard let validDevice = device else { return nil }
         do {
             return try AVCaptureDeviceInput(device: validDevice)
@@ -1012,9 +1032,9 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
     /* Location vars */
     
     /// setup the location tracking defaults
-    private func _setupLocation() {
+    fileprivate func _setupLocation() {
         
-        if CLLocationManager.authorizationStatus() != .AuthorizedWhenInUse {
+        if CLLocationManager.authorizationStatus() != .authorizedWhenInUse {
             self.locationManager.requestWhenInUseAuthorization()
         }
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -1023,11 +1043,11 @@ public class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGe
         
     }
     
-    public func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
+    open func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Error while updating location " + error.localizedDescription)
     }
     
-    public func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    open func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {(placemarks, error)-> Void in
             if (error != nil) {
                 return

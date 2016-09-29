@@ -21,53 +21,54 @@ let color4 = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
 let color5 = UIColor(red: 39/255, green: 73/255, blue: 46/255, alpha: 1.0)
 let color6 = UIColor(red: 149/255, green: 149/255, blue: 149/255, alpha: 1.0)
 
+let minCellHeight : CGFloat = 190
 
 let _backgroundColors = [color1, color2, color3, color4, color5, color6]
 
 class GlobalFunctions {
-    static func addBorders(_textField : UITextField) -> CAShapeLayer {
+    static func addBorders(_ _textField : UITextField) -> CAShapeLayer {
         let color = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 )
         return addBorders(_textField, _color: color, thickness : 1.0)
     }
     
-    static func addBorders(_textField : UITextField, _color : UIColor, thickness : CGFloat) -> CAShapeLayer {
+    static func addBorders(_ _textField : UITextField, _color : UIColor, thickness : CGFloat) -> CAShapeLayer {
         let _bottomBorder = CAShapeLayer()
         
-        _bottomBorder.frame = CGRectMake(0, _textField.frame.size.height - thickness, _textField.frame.size.width, thickness);
-        _bottomBorder.backgroundColor = _color.CGColor
+        _bottomBorder.frame = CGRect(x: 0, y: _textField.frame.size.height - thickness, width: _textField.frame.size.width, height: thickness);
+        _bottomBorder.backgroundColor = _color.cgColor
         
         return _bottomBorder
     }
 
-    static func addNewVC(newVC: UIViewController, parentVC: UIViewController) {
+    static func addNewVC(_ newVC: UIViewController, parentVC: UIViewController) {
         parentVC.addChildViewController(newVC)
         parentVC.view.addSubview(newVC.view)
-        newVC.didMoveToParentViewController(parentVC)
+        newVC.didMove(toParentViewController: parentVC)
     }
 
-    static func cycleBetweenVC(oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
+    static func cycleBetweenVC(_ oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
         parentVC.addChildViewController(newVC)
         
-        parentVC.transitionFromViewController(oldVC, toViewController: newVC, duration: 0.35, options: UIViewAnimationOptions.TransitionFlipFromLeft, animations: nil, completion: { (finished) in
+        parentVC.transition(from: oldVC, to: newVC, duration: 0.35, options: UIViewAnimationOptions.transitionFlipFromLeft, animations: nil, completion: { (finished) in
             if finished {
                 oldVC.removeFromParentViewController()
-                newVC.didMoveToParentViewController(parentVC)
+                newVC.didMove(toParentViewController: parentVC)
             }
         })
     }
 
-    static func dismissVC(currentVC : UIViewController) {
-        currentVC.willMoveToParentViewController(nil)
+    static func dismissVC(_ currentVC : UIViewController) {
+        currentVC.willMove(toParentViewController: nil)
         currentVC.view.removeFromSuperview()
         currentVC.removeFromParentViewController()
     }
     
-    static func dismissVC(currentVC : UIViewController, _animationStyle : AnimationStyle) {
+    static func dismissVC(_ currentVC : UIViewController, _animationStyle : AnimationStyle) {
         switch _animationStyle {
-        case .VerticalDown:
-            let xForm = CGAffineTransformMakeTranslation(0, currentVC.view.frame.height)
-            UIView.animateWithDuration(0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
-                currentVC.willMoveToParentViewController(nil)
+        case .verticalDown:
+            let xForm = CGAffineTransform(translationX: 0, y: currentVC.view.frame.height)
+            UIView.animate(withDuration: 0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
+                currentVC.willMove(toParentViewController: nil)
                 currentVC.view.removeFromSuperview()
                 currentVC.removeFromParentViewController()
             })
@@ -75,23 +76,23 @@ class GlobalFunctions {
         }
     }
     
-    static func moveView(newView : UIView, animationStyle : AnimationStyle, parentView : UIView) {
+    static func moveView(_ newView : UIView, animationStyle : AnimationStyle, parentView : UIView) {
         switch animationStyle {
-        case .VerticalUp:
-            UIView.animateWithDuration(0.25) {
+        case .verticalUp:
+            UIView.animate(withDuration: 0.25, animations: {
                 newView.frame.origin.y = -parentView.frame.height
-            }
-        case .VerticalDown:
-            UIView.animateWithDuration(0.25) {
+            }) 
+        case .verticalDown:
+            UIView.animate(withDuration: 0.25, animations: {
                 newView.frame.origin.y = parentView.frame.origin.y
-            }
+            }) 
         default: print("unhandled move")
         }
     }
     
-    static func createImageFromData(data : NSData) -> UIImage? {
+    static func createImageFromData(_ data : Data) -> UIImage? {
         if let _image = UIImage(data: data, scale: 1.0) {
-            let _orientatedImage = UIImage(CGImage: _image.CGImage!, scale: 1.0, orientation: .Up)
+            let _orientatedImage = UIImage(cgImage: _image.cgImage!, scale: 1.0, orientation: .up)
             return _orientatedImage
         } else {
             return nil
@@ -99,29 +100,29 @@ class GlobalFunctions {
     }
     
     ///Validate email
-    static func validateEmail(enteredEmail:String?, completion: (verified: Bool, error: NSError?) -> Void) {
+    static func validateEmail(_ enteredEmail:String?, completion: (_ verified: Bool, _ error: NSError?) -> Void) {
         let emailFormat = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailFormat)
         
-        if emailPredicate.evaluateWithObject(enteredEmail) {
-            completion(verified: true, error: nil)
+        if emailPredicate.evaluate(with: enteredEmail) {
+            completion(true, nil)
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "please enter a valid email" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
+            completion(false, NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
         }
     }
     
     ///Validate password returns true if validated, error otherwise
-    static func validatePassword(enteredPassword:String?, completion: (verified: Bool, error: NSError?) -> Void) {
+    static func validatePassword(_ enteredPassword:String?, completion: (_ verified: Bool, _ error: NSError?) -> Void) {
         let passwordFormat = "^(?=.*?[a-z]).{8,}$"
         let passwordPredicate = NSPredicate(format:"SELF MATCHES %@", passwordFormat)
         
-        if passwordPredicate.evaluateWithObject(enteredPassword) {
-            completion(verified: true, error: nil)
+        if passwordPredicate.evaluate(with: enteredPassword) {
+            completion(true, nil)
             return
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "password must be 8 characters in length" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
+            completion(false, NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
             return
         }
         //        let passwordFormat = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$"
@@ -130,70 +131,70 @@ class GlobalFunctions {
     
     
     ///Validate name
-    static func validateName(enteredName:String?, completion: (verified: Bool, error: NSError?) -> Void) {
+    static func validateName(_ enteredName:String?, completion: (_ verified: Bool, _ error: NSError?) -> Void) {
         let nameFormat = "[A-Za-z\\s]{2,64}"
         let namePredicate = NSPredicate(format:"SELF MATCHES %@", nameFormat)
         
-        if namePredicate.evaluateWithObject(enteredName) {
-            completion(verified: true, error: nil)
+        if namePredicate.evaluate(with: enteredName) {
+            completion(true, nil)
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "this doesn't look right" ]
-            completion(verified: false, error: NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
+            completion(false, NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
         }
     }
     
-    static func showErrorBlock(erTitle: String, erMessage: String) {
+    static func showErrorBlock(_ erTitle: String, erMessage: String) {
         
-        let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))
+        let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
 
-        if let topController = UIApplication.sharedApplication().keyWindow?.rootViewController {
-            topController.presentViewController(alertController, animated: true, completion:nil)
+        if let topController = UIApplication.shared.keyWindow?.rootViewController {
+            topController.present(alertController, animated: true, completion:nil)
         }
     }
     
     //rotate images if they are not correctly aligned
-    static func fixOrientation(img:UIImage) -> UIImage {
+    static func fixOrientation(_ img:UIImage) -> UIImage {
         
-        if (img.imageOrientation == UIImageOrientation.Up) {
+        if (img.imageOrientation == UIImageOrientation.up) {
             return img;
         }
         
         UIGraphicsBeginImageContextWithOptions(img.size, false, img.scale);
         let rect = CGRect(x: 0, y: 0, width: img.size.width, height: img.size.height)
-        img.drawInRect(rect)
+        img.draw(in: rect)
         
-        let normalizedImage : UIImage = UIGraphicsGetImageFromCurrentImageContext()
+        let normalizedImage : UIImage = UIGraphicsGetImageFromCurrentImageContext()!
         UIGraphicsEndImageContext()
         return normalizedImage
     }
     
-    static func imageWithColor(color: UIColor) -> UIImage {
-        let rect = CGRectMake(0.0, 0.0, 1.0, 1.0)
+    static func imageWithColor(_ color: UIColor) -> UIImage {
+        let rect = CGRect(x: 0.0, y: 0.0, width: 1.0, height: 1.0)
         UIGraphicsBeginImageContext(rect.size)
         let context = UIGraphicsGetCurrentContext()
-        CGContextSetFillColorWithColor(context, color.CGColor);
-        CGContextFillRect(context, rect);
+        context?.setFillColor(color.cgColor);
+        context?.fill(rect);
         let image = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
-        return image
+        return image!
     }
     
     /* NEED TO FIX */
-    static func addHeader(parent : UIView, appTitle : String?, screenTitle : String?) -> LoginHeaderView {
+    static func addHeader(_ parent : UIView, appTitle : String?, screenTitle : String?) -> LoginHeaderView {
         let _headerView = UIView()
         parent.addSubview(_headerView)
         
         _headerView.translatesAutoresizingMaskIntoConstraints = false
-        parent.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .Top, relatedBy: .Equal, toItem: parent, attribute: .TopMargin , multiplier: 2, constant: 0))
-        _headerView.centerXAnchor.constraintEqualToAnchor(parent.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(parent.heightAnchor, multiplier: 1/13).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(parent.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/parent.frame.width)).active = true
+        parent.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .top, relatedBy: .equal, toItem: parent, attribute: .topMargin , multiplier: 2, constant: 0))
+        _headerView.centerXAnchor.constraint(equalTo: parent.centerXAnchor).isActive = true
+        _headerView.heightAnchor.constraint(equalTo: parent.heightAnchor, multiplier: 1/13).isActive = true
+        _headerView.widthAnchor.constraint(equalTo: parent.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/parent.frame.width)).isActive = true
         _headerView.layoutIfNeeded()
         
         let _LoginHeader = LoginHeaderView(frame: _headerView.frame)
-        appTitle != nil ? _LoginHeader.setAppTitleLabel(appTitle!) :
-        screenTitle != nil ? _LoginHeader.setScreenTitleLabel(screenTitle!) :
+        appTitle != nil ? _LoginHeader.setAppTitleLabel(_message: appTitle!) :
+        screenTitle != nil ? _LoginHeader.setScreenTitleLabel(_message: screenTitle!) :
         parent.addSubview(_LoginHeader)
 
         return _LoginHeader
