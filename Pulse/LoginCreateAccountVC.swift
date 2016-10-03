@@ -20,7 +20,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     weak var returnToParentDelegate : ParentDelegate!
     
     fileprivate var _headerView : UIView!
-    fileprivate var _loginHeader : LoginHeaderView?
+    fileprivate var _loginHeader : LoginHeaderView!
 
     fileprivate var emailValidated = false {
         didSet {
@@ -45,24 +45,28 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         hideKeyboardWhenTappedAround()
-        setDarkBackground()
 
         userEmail.delegate = self
         userPassword.delegate = self
         
         userEmail.tag = 100
         userPassword.tag = 200
-        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
-        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
+        
+        userEmail.layer.addSublayer(GlobalFunctions.addBorders(userEmail))
+        userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
+        userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+
+        
+        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
         
-        userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
-        userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
+        userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
 
         signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         signupButton.setDisabled()
-        
-
     }
     
     override func viewDidAppear(_ animated : Bool) {
@@ -74,26 +78,16 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         super.didReceiveMemoryWarning()
     }
     
+    override var prefersStatusBarHidden : Bool {
+        return true
+    }
+    
     func addHeader() {
-        _headerView = UIView()
-        view.addSubview(_headerView)
-
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        _headerView.layoutIfNeeded()
+        _loginHeader = addHeader(text: "ACCOUNT")
         
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(_message: "PULSE")
-            _loginHeader.setScreenTitleLabel(_message: "ACCOUNT")
-            _loginHeader.updateStatusMessage(_message: "create account")
-            _loginHeader.addGoBack()
-            _loginHeader._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-            _headerView.addSubview(_loginHeader)
-        }
+        _loginHeader.updateStatusMessage(_message: "create account")
+        _loginHeader.addGoBack()
+        _loginHeader._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
     }
     
     @IBAction func createEmailAccount(_ sender: UIButton) {

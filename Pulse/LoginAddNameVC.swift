@@ -20,7 +20,7 @@ class LoginAddNameVC: UIViewController {
     
     weak var loginVCDelegate : childVCDelegate?
     fileprivate var _headerView : UIView!
-    fileprivate var _loginHeader : LoginHeaderView?
+    fileprivate var _loginHeader : LoginHeaderView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,13 +29,12 @@ class LoginAddNameVC: UIViewController {
     override func viewDidAppear(_ animated : Bool) {
         super.viewDidAppear(true)
         hideKeyboardWhenTappedAround()
-        setDarkBackground()
 
-        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
-        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
+        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         
-        firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
-        lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
+        firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         doneButton.setEnabled()
@@ -51,23 +50,9 @@ class LoginAddNameVC: UIViewController {
     }
     
     func addHeader() {
-        _headerView = UIView()
-        view.addSubview(_headerView)
-        
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(_message: "PULSE")
-            _loginHeader.setScreenTitleLabel(_message: "ADD NAME")
-            _loginHeader.updateStatusMessage(_message: "could we get a name with that?")
-            _headerView.addSubview(_loginHeader)
-        }
+        _loginHeader = addHeader(text: "ADD NAME")
+        _loginHeader.addEmptyButton(image: UIImage(named: "check")!)
+        _loginHeader.updateStatusMessage(_message: "and could we get a name with that?")
     }
 
     @IBAction func addNameTouchDown(_ sender: UIButton) {

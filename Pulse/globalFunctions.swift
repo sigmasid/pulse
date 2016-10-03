@@ -12,6 +12,7 @@ import UIKit
 let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
 let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
 let blueColor = UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0)
+let highlightedColor = UIColor(red: 0/255, green: 233/255, blue: 178/255, alpha: 1.0)
 
 let maxImgSize : Int64 = 1242 * 2208
 let color1 = UIColor(red: 0/255, green: 84/255, blue: 166/255, alpha: 1.0)
@@ -21,7 +22,9 @@ let color4 = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
 let color5 = UIColor(red: 39/255, green: 73/255, blue: 46/255, alpha: 1.0)
 let color6 = UIColor(red: 149/255, green: 149/255, blue: 149/255, alpha: 1.0)
 
-let minCellHeight : CGFloat = 190
+let minCellHeight : CGFloat = 225
+let searchBarHeight : CGFloat = 44
+let statusBarHeight : CGFloat = 20
 
 let _backgroundColors = [color1, color2, color3, color4, color5, color6]
 
@@ -178,6 +181,15 @@ class GlobalFunctions {
         let image = UIGraphicsGetImageFromCurrentImageContext();
         UIGraphicsEndImageContext();
         return image!
+    }
+    
+    static func recolorImage(imageView : UIImageView, color : UIColor) -> UIImageView {
+        let recoloredImageView = UIImageView()
+        
+        recoloredImageView.image = imageView.image!.withRenderingMode(.alwaysTemplate)
+        recoloredImageView.tintColor = color
+        
+        return recoloredImageView
     }
     
     /* NEED TO FIX */

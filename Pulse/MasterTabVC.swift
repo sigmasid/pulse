@@ -24,7 +24,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     fileprivate var initialLoadComplete = false
 
     var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
-    var searchVC : SearchVC = SearchVC()
+    var exploreVC : ExploreVC = ExploreVC()
     lazy var homeVC : HomeVC = HomeVC()
     
     fileprivate var panInteractionController = PanHorizonInteractionController()
@@ -62,14 +62,14 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     }
     
     func setupControllers(_ initialIndex : Int) {
-        viewControllers = [accountVC, searchVC, homeVC]
+        viewControllers = [accountVC, exploreVC, homeVC]
 
         let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "profile"))
-        let tabSearch = UITabBarItem(title: "Search", image: UIImage(named: "search"), selectedImage: UIImage(named: "search"))
+        let tabExplore = UITabBarItem(title: "Explore", image: UIImage(named: "search"), selectedImage: UIImage(named: "search"))
         let tabHome = UITabBarItem(title: "Home", image: UIImage(named: "browse"), selectedImage: UIImage(named: "explore"))
         
         accountVC.tabBarItem = tabAccount
-        searchVC.tabBarItem = tabSearch
+        exploreVC.tabBarItem = tabExplore
         homeVC.tabBarItem = tabHome
         
         selectedIndex = initialIndex
@@ -82,6 +82,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         delegate = self
         tabBar.tintColor = UIColor.white.withAlphaComponent(0.5)
         tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clear)
+        tabBar.isHidden = true
         
         panInteractionController.wireToViewController(self)
     }
@@ -111,7 +112,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         }
         
         return animator
-        
     }
     
     func tabBarController(_ tabBarController: UITabBarController,

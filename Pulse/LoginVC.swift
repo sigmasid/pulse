@@ -27,7 +27,6 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     
-    fileprivate var _headerView : UIView?
     fileprivate var _loginHeader : LoginHeaderView?
     fileprivate var _loaded = false
     var _currentLoadedView : currentLoadedView?
@@ -95,9 +94,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         super.didReceiveMemoryWarning()
     }
     
-    func setupView() {
-        setDarkBackground()
-        
+    fileprivate func setupView() {
         userEmail.delegate = self
         userPassword.delegate = self
         userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
@@ -107,8 +104,8 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         
-        userEmail.attributedPlaceholder = NSAttributedString(string: "email", attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
-        userPassword.attributedPlaceholder = NSAttributedString(string: "password", attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
+        userEmail.attributedPlaceholder = NSAttributedString(string: "email", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        userPassword.attributedPlaceholder = NSAttributedString(string: "password", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         userEmail.tag = 100
         userPassword.tag = 200
         
@@ -119,31 +116,14 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         emailButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         
         let _footerDividerLine = UIView(frame:CGRect(x: forgotPassword.frame.width - 1, y: 0 , width: 1 , height: forgotPassword.frame.height))
-        _footerDividerLine.backgroundColor = UIColor.white
+        _footerDividerLine.backgroundColor = UIColor.black
         forgotPassword.addSubview(_footerDividerLine)
 
     }
     
-    func addHeader() {
-        _headerView = UIView()
-        
-        if let _headerView = _headerView {
-            view.addSubview(_headerView)
-            
-            _headerView.translatesAutoresizingMaskIntoConstraints = false
-            _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-            _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-            _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-            _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-            _headerView.layoutIfNeeded()
-            
-            _loginHeader = LoginHeaderView(frame: _headerView.frame)
-            if let _loginHeader = _loginHeader {
-                _loginHeader.setAppTitleLabel(_message: "PULSE")
-                _loginHeader.setScreenTitleLabel(_message: "LOGIN")
-                _headerView.addSubview(_loginHeader)
-            }
-        }
+    fileprivate func addHeader() {
+        _loginHeader = addHeader(text: "LOGIN")
+        _loginHeader?.addEmptyButton(image: UIImage(named: "login")!)
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {

@@ -20,6 +20,7 @@ protocol answerDetailDelegate : class {
     func userSelectedFromExploreQuestions(_ index : IndexPath)
     func userClickedExpandAnswer()
     func votedAnswer(_ _vote : AnswerVoteType)
+    func userClickedSendMessage()
 }
 
 class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerDelegate {
@@ -111,6 +112,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+    }
+    
+    override var prefersStatusBarHidden : Bool {
+        return true
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -250,7 +255,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 }
                 
                 if let _uPic = user.thumbPic {
-                    self.currentUserImage = UIImage(named: "default-profile")
+                    self.currentUserImage = nil
                     self._answerOverlay.setUserImage(self.currentUserImage)
                     
                     DispatchQueue.main.async {
@@ -377,6 +382,17 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     /* DELEGATE METHODS */
+    func userClickedSendMessage() {
+        let messageVC = MessageVC()
+        messageVC.toUser = userForCurrentAnswer
+        
+        if let currentUserImage = currentUserImage {
+            messageVC.toUserImage = currentUserImage
+        }
+        
+        GlobalFunctions.addNewVC(messageVC, parentVC: self)
+    }
+    
     func votedAnswer(_ _vote : AnswerVoteType) {        
         if let _currentAnswer = currentAnswer {
             Database.addAnswerVote( _vote, aID: _currentAnswer.aID, completion: { (success, error) in

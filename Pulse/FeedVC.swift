@@ -8,6 +8,15 @@
 
 import UIKit
 
+protocol feedVCDelegate: class {
+    func userSelectedTag(_ : Tag)
+}
+
+protocol searchVCDelegate: class {
+    func userClickedSearch()
+    func userCancelledSearch()
+}
+
 class FeedVC: UIViewController {
     
     fileprivate var isLoaded = false
@@ -18,6 +27,9 @@ class FeedVC: UIViewController {
     fileprivate var rectToRight : CGRect!
     fileprivate var rectToLeft : CGRect!
     fileprivate var QAVC : QAManagerVC!
+    
+    var feedDelegate : feedVCDelegate!
+    var searchDelegate : searchVCDelegate!
     
     var feedItemType : FeedItemType! {
         didSet {
@@ -52,14 +64,16 @@ class FeedVC: UIViewController {
     
     fileprivate var selectedIndex : IndexPath? {
         didSet {
-            if feedItemType! == .question {
+            if selectedIndex != nil && feedItemType! == .question {
                 FeedCollectionView?.reloadItems(at: [selectedIndex!])
                 if deselectedIndex != nil && deselectedIndex != selectedIndex {
                     FeedCollectionView?.reloadItems(at: [deselectedIndex!])
                 }
-            } else if feedItemType! == .tag {
+            } else if selectedIndex != nil && feedItemType! == .tag {
                 selectedIndex = nil
-                feedItemType! = .question
+                if feedDelegate != nil {
+                    feedDelegate.userSelectedTag(currentTag)
+                }
             }
         }
         willSet {
@@ -106,6 +120,9 @@ class FeedVC: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
+        
+        let offset = CGPoint(x : 0, y : searchBarHeight)
+        FeedCollectionView?.setContentOffset(offset, animated: false)
     }
     
     override func didReceiveMemoryWarning() {
@@ -119,8 +136,8 @@ class FeedVC: UIViewController {
     fileprivate func setupScreenLayout() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
         layout.scrollDirection = UICollectionViewScrollDirection.vertical
-        layout.minimumLineSpacing = 0
-        layout.minimumInteritemSpacing = 0
+        layout.minimumLineSpacing = 1
+        layout.minimumInteritemSpacing = 1
         layout.sectionInset = UIEdgeInsetsMake(0, 0, 0, 0)
         
         FeedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
@@ -141,6 +158,9 @@ class FeedVC: UIViewController {
         FeedCollectionView?.backgroundView = nil
         FeedCollectionView?.showsVerticalScrollIndicator = false
         FeedCollectionView?.isPagingEnabled = true
+        
+        let offset = CGPoint(x : 0, y : searchBarHeight)
+        FeedCollectionView?.setContentOffset(offset, animated: true)
     }
     
     func showQuestion(_ _selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
@@ -149,13 +169,20 @@ class FeedVC: UIViewController {
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
+        selectedIndex = nil
         
         QAVC.transitioningDelegate = self
         present(QAVC, animated: true, completion: nil)
     }
     
-    func showTagDetail(_ selectedTag : Tag) {
+    func showSearch() {
+        let searchVC = SearchVC()
         
+        GlobalFunctions.addNewVC(searchVC, parentVC: self)
+        
+        if searchDelegate != nil {
+            searchDelegate.userClickedSearch()
+        }
     }
 }
 
@@ -282,7 +309,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
                 let _selectedAnswerID = currentQuestion.qAnswers![indexPath.row]
-                //                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
+                //  showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
             } else if indexPath == selectedIndex {
                 let _selectedAnswerID = currentQuestion.qAnswers![indexPath.row]
                 cell.showAnswer(_selectedAnswerID)
@@ -293,50 +320,61 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         return cell
     }
     
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    //Did select item at
+    func collectionView(_ collectionView: UICollectionView,
+                        didSelectItemAt indexPath: IndexPath) {
+        
         if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
         
-        if feedItemType == .tag { currentTag = allTags[indexPath.row] }
-        else if feedItemType == .question && currentTag == nil {
+        if feedItemType == .tag {
+            currentTag = allTags[indexPath.row]
+        } else if feedItemType == .question && currentTag == nil {
             if let _selectedQuestion = allQuestions[indexPath.row] {
                 currentTag = Tag(tagID: "EXPLORE", questions: [Question(qID: _selectedQuestion.qID)])
             }
         }
-        
         selectedIndex = indexPath
     }
     
+    //Should select item at
     func collectionView(_ collectionView: UICollectionView,
                         shouldSelectItemAt indexPath: IndexPath) -> Bool {
+        
         return true
     }
     
+    //Header cell
     func collectionView(_ collectionView: UICollectionView,
                                  viewForSupplementaryElementOfKind kind: String,
                                  at indexPath: IndexPath) -> UICollectionReusableView {
         switch kind {
         case UICollectionElementKindSectionHeader:
-            print("went into section header")
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
                                                                              withReuseIdentifier: collectionHeaderReuseIdentifier,
                                                                              for: indexPath) as! SearchHeaderCell
+            headerView.showSearchField.addTarget(self, action: #selector(showSearch), for: .touchUpInside)
             return headerView
         default:
             assert(false, "Unexpected element kind")
         }
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: 44.0)
+    //Size for header
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return CGSize(width: collectionView.frame.width, height: searchBarHeight)
     }
 }
 
 extension FeedVC: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (FeedCollectionView!.frame.width / 2), height: max(minCellHeight , FeedCollectionView!.frame.height / 3.5))
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: (FeedCollectionView!.frame.width / 2 - 0.5), height: max(minCellHeight , FeedCollectionView!.frame.height / 3))
     }
 }
 

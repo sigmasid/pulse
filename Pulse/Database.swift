@@ -54,6 +54,19 @@ class Database {
         return storageRef.child(type.rawValue).child(itemID)
     }
     
+    static func getSearchTags(searchText : String, completion: @escaping (_ tags : [String], _ error : NSError?) -> Void) {
+        var allTags = [String]()
+        var endingString = searchText.appending("~")
+        
+        tagsRef.queryOrderedByKey().queryStarting(atValue: searchText).queryEnding(atValue: endingString).observeSingleEvent(of: .value, with: { snapshot in
+            for item in snapshot.children {
+                let child = item as! FIRDataSnapshot
+                allTags.append(child.key)
+            }
+            completion(allTags, nil)
+        })
+    }
+
     static func getExploreTags(_ completion: @escaping (_ tags : [Tag], _ error : NSError?) -> Void) {
         var allTags = [Tag]()
         
@@ -237,9 +250,6 @@ class Database {
             for question in snap.children {
                 let _question = Question(qID: (question as AnyObject).key, qTagID: (question as AnyObject).childSnapshot(forPath: "tagID").value as? String)
                 homeFeed.questions!.insert(_question, at: 0)
-//                if (homeFeed.questions?.append(_question) == nil) {
-//                    homeFeed.questions = [_question]
-//                }
             }
             completion(homeFeed)
         })
@@ -627,7 +637,7 @@ class Database {
             answersPost["type"] = answer.aType! as AnyObject?
         }
         
-        let post : [AnyHashable: Any] = ["answers/\(answer.aID)" : answersPost]
+        let post : [String: Any] = ["answers/\(answer.aID)" : answersPost] //NEED TO CHECK THIS
 
         if _user != nil {
             databaseRef.updateChildValues(post , withCompletionBlock: { (blockError, ref) in
@@ -746,13 +756,24 @@ class Database {
             if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[tag.tagID!] != nil { //remove tag
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
-                    completionError != nil ? completion(false, completionError as NSError?) : completion(true, nil)
+                    if completionError != nil {
+                        completion(false, completionError as NSError?)
+                    } else {
+                        completion(true, nil)
+                        User.currentUser?.savedTags[tag.tagID!] = nil
+                    }
                 })
             }
             else { //save tag
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
                 _path.updateChildValues([tag.tagID!: "true"], withCompletionBlock: { (completionError, ref) in
-                    completionError != nil ? completion(false, completionError as NSError?) : completion(true, nil)
+                    if completionError != nil {
+                        completion(false, completionError as NSError?)
+                    }
+                    else {
+                        User.currentUser?.savedTags[tag.tagID!] = "true"
+                        completion(true, nil)
+                    }
                 })
             }
         } else {

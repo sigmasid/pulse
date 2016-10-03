@@ -38,8 +38,10 @@ class QuestionPreviewVC: UIViewController {
     }
     
     fileprivate func addBackgroundColor() {
-        let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-        view.backgroundColor = _backgroundColors[Int(_rand)]
+//        let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
+//        view.backgroundColor = _backgroundColors[Int(_rand)]
+        
+        view.backgroundColor = UIColor.white
     }
     
     fileprivate func addQuestionLabel() {

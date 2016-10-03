@@ -34,15 +34,19 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     fileprivate var _tapGesture : UITapGestureRecognizer?
     
     fileprivate lazy var _headerView = UIView()
-    fileprivate var _loginHeader : LoginHeaderView?
+    fileprivate var _loginHeader : LoginHeaderView!
     fileprivate var _loaded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
+        
         hideKeyboardWhenTappedAround()
         
         if !_loaded {
-            setDarkBackground()
             addHeader()
             
             fbButton.makeRound()
@@ -54,15 +58,15 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             
             NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "AccountPageLoaded"), object: nil)
-
+            
             _tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleImageTap))
             uProfilePic.addGestureRecognizer(_tapGesture!)
             uProfilePic.isUserInteractionEnabled = true
             uProfilePic.contentMode = UIViewContentMode.scaleAspectFill
             
             _loaded = true
+            addIcon(text: "ACCOUNT")
         }
-
     }
     
     override func didReceiveMemoryWarning() {
@@ -140,12 +144,13 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
         
         if let _uPic = User.currentUser!.profilePic {
+            _defaultProfileOverlay = UILabel(frame: uProfilePic.bounds)
             _defaultProfileOverlay.isHidden = true
             addUserProfilePic(URL(string: _uPic))
         } else {
             uProfilePic.image = UIImage(named: "default-profile")
             _defaultProfileOverlay.isHidden = false
-            _defaultProfileOverlay = UILabel(frame: CGRect(x: 0, y: 0, width: uProfilePic.frame.width, height: uProfilePic.frame.height))
+            _defaultProfileOverlay = UILabel(frame: uProfilePic.bounds)
             _defaultProfileOverlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
             _defaultProfileOverlay.text = "tap to add image"
             _defaultProfileOverlay.setPreferredFont(UIColor.white, alignment : .center)
@@ -168,7 +173,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         
         savedTags.textAlignment = .left
         savedTags.text = _msg
-        savedTags.textColor = UIColor.white
+//        savedTags.textColor = UIColor.white
         savedTags.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
 
     }
@@ -277,24 +282,9 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     }
     
     fileprivate func addHeader() {
-        view.addSubview(_headerView)
-        
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(_message: "PULSE")
-            _loginHeader.setScreenTitleLabel(_message: "PROFILE")
-            _loginHeader.addSettingsButton()
-            _loginHeader._settings.addTarget(self, action: #selector(ClickedSettings), for: UIControlEvents.touchUpInside)
-
-            _headerView.addSubview(_loginHeader)
-        }
+        _loginHeader = addHeader(text: "PROFILE")
+        _loginHeader.addSettingsButton()
+        _loginHeader._settings.addTarget(self, action: #selector(ClickedSettings), for: UIControlEvents.touchUpInside)
     }
     
     func flipCamera() {
@@ -316,8 +306,9 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     }
     
     func gotImage() {
-        _cameraOverlay.getButton(.shutter).isEnabled = false
         setupLoading()
+
+        _cameraOverlay.getButton(.shutter).isEnabled = false
         _loadingOverlay.addIcon(IconSizes.medium, _iconColor: UIColor.white, _iconBackgroundColor: nil)
         _loadingOverlay.addMessage("saving! just a sec...", _color: UIColor.white)
         

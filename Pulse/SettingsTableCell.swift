@@ -31,10 +31,10 @@ class SettingsTableCell: UITableViewCell {
         _detailTextLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.5).isActive = true
         _detailTextLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.m.rawValue).isActive = true
         _detailTextLabel.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
-        _detailTextLabel.setPreferredFont(UIColor.white, alignment : .right)
+        _detailTextLabel.setPreferredFont(UIColor.black, alignment : .right)
         
         backgroundColor = UIColor.clear
-        textLabel?.textColor = UIColor.white
+        textLabel?.textColor = UIColor.black
         textLabel?.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
     }
 

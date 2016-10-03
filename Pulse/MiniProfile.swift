@@ -97,6 +97,8 @@ class MiniProfile: UIView {
         messageButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         
         messageButton.layoutIfNeeded()
+        messageButton.addTarget(self, action: #selector(messageButtonClicked), for: UIControlEvents.touchDown)
+
     }
     
     fileprivate func addCloseButton() {
@@ -124,6 +126,10 @@ class MiniProfile: UIView {
     /* SETTER / PUBLIC FUNCTIONS */
     func closeButtonClicked() {
         delegate.userClosedMiniProfile(self)
+    }
+    
+    func messageButtonClicked() {
+        delegate.userClickedSendMessage()
     }
     
     func setNameLabel(_ name : String?) {

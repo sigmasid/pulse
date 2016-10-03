@@ -17,10 +17,18 @@ class HomeVC: UIViewController {
         super.viewDidLoad()
         
         if !isLoaded {
+            view.backgroundColor = UIColor.white
+
             displayHomeFeed()
-            displayIcon()
+
             isLoaded = true
         }
+    }
+    
+    override var prefersStatusBarHidden: Bool {
+        get {
+            return true
+        }  
     }
 
     override func didReceiveMemoryWarning() {
@@ -42,19 +50,11 @@ class HomeVC: UIViewController {
             self.homeFeedVC.feedItemType = .question
             
             GlobalFunctions.addNewVC(self.homeFeedVC, parentVC: self)
+            self.addIcon()
         }
     }
     
-    func displayIcon() {
-        iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
-        iconContainer.setViewTitle("EXPLORE")
-        view.addSubview(iconContainer)
-        
-        iconContainer.translatesAutoresizingMaskIntoConstraints = false
-        iconContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-        iconContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
-        iconContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        iconContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        iconContainer.layoutIfNeeded()
+    internal func addIcon() {
+        iconContainer = addIcon(text: "FEED")
     }
 }

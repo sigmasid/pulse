@@ -16,7 +16,6 @@ class UpdateProfileVC: UIViewController {
     
     weak var returnToParentDelegate : ParentDelegate!
     
-    fileprivate var _headerView = UIView()
     fileprivate var _loginHeader : LoginHeaderView?
     fileprivate var _settingDescription = UILabel()
     fileprivate var _settingSection = UIView()
@@ -32,15 +31,15 @@ class UpdateProfileVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         settingsTable.register(UITableViewCell.self, forCellReuseIdentifier: _reuseIdentifier)
 
         if !_loaded {
-            setDarkBackground()
             hideKeyboardWhenTappedAround()
-            addHeader(appTitle: "PULSE", screenTitle: "PROFILE")
+            addHeader()
             addSettingDescription()
             addSettingSection()
+            view.backgroundColor = UIColor.white
 
             _loaded = true
         }
@@ -51,33 +50,18 @@ class UpdateProfileVC: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    fileprivate func addHeader(appTitle : String, screenTitle : String) {
-        view.addSubview(_headerView)
-        
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(_message: appTitle)
-            _loginHeader.setScreenTitleLabel(_message: screenTitle)
-            _loginHeader.updateStatusMessage(_message: _currentSetting.display?.uppercased())
-            _loginHeader.addGoBack()
-            _loginHeader._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-            
-            _headerView.addSubview(_loginHeader)
-        }
+    fileprivate func addHeader() {
+        _loginHeader = addHeader(text: "PROFILE")
+        _loginHeader?.addGoBack()
+        _loginHeader?.updateStatusMessage(_message: "update profile")
+        _loginHeader?._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
     }
     
     fileprivate func addSettingDescription() {
         view.addSubview(_settingDescription)
         
         _settingDescription.translatesAutoresizingMaskIntoConstraints = false
-        _settingDescription.topAnchor.constraint(equalTo: _headerView.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        _settingDescription.topAnchor.constraint(equalTo: _loginHeader!.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         _settingDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         _settingDescription.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/10).isActive = true
         _settingDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
@@ -85,7 +69,7 @@ class UpdateProfileVC: UIViewController {
         _settingDescription.text = _currentSetting.longDescription
         _settingDescription.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         _settingDescription.numberOfLines = 0
-        _settingDescription.textColor = UIColor.white
+        _settingDescription.textColor = UIColor.black
         _settingDescription.textAlignment = .center
     }
     
@@ -167,10 +151,10 @@ class UpdateProfileVC: UIViewController {
         _shortTextField.borderStyle = .none
         _shortTextField.backgroundColor = UIColor.clear
         _shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        _shortTextField.textColor = UIColor.white
-        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
+        _shortTextField.textColor = UIColor.black
+        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
+        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         if _currentSetting.type == .password {
             _shortTextField.isSecureTextEntry = true
@@ -185,8 +169,8 @@ class UpdateProfileVC: UIViewController {
         
         _longTextField.backgroundColor = UIColor.clear
         _longTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        _longTextField.textColor = UIColor.white
-        _longTextField.layer.borderColor = UIColor.white.cgColor
+        _longTextField.textColor = UIColor.black
+        _longTextField.layer.borderColor = UIColor.black.cgColor
         _longTextField.layer.borderWidth = 1.0
         _longTextField.text = getValueOrPlaceholder()
     }
@@ -202,11 +186,11 @@ class UpdateProfileVC: UIViewController {
         
         _shortTextField.borderStyle = .none
         _shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        _shortTextField.textColor = UIColor.white
-        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.white, thickness: IconThickness.thin.rawValue))
+        _shortTextField.textColor = UIColor.black
+        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         
-        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.white.withAlphaComponent(0.7)])
+        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         _shortTextField.inputView = _birthdayPicker
     }
     
@@ -235,7 +219,7 @@ class UpdateProfileVC: UIViewController {
         
         _statusLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         _statusLabel.textAlignment = .center
-        _statusLabel.textColor = UIColor.white
+        _statusLabel.textColor = UIColor.black
         _statusLabel.numberOfLines = 0
     }
 
@@ -409,7 +393,7 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: _reuseIdentifier)! as UITableViewCell
         
         cell.backgroundColor = UIColor.clear
-        cell.textLabel?.textColor = UIColor.white
+        cell.textLabel?.textColor = UIColor.black
         cell.textLabel?.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         getValueOrPlaceholder((indexPath as NSIndexPath).row, cell : cell)
         

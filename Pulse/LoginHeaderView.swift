@@ -13,9 +13,11 @@ class LoginHeaderView: UIView {
     let _appTitleLabel = UILabel()
     fileprivate let _screenTitleLabel = UILabel()
     fileprivate var _logoView : Icon!
+    fileprivate var _screenButton = UIView()
     
     lazy var _goBack = UIButton()
     lazy var _settings = UIButton()
+    lazy var _emptyButton = UIButton()
 
     fileprivate var _statusLabel : UILabel?
 
@@ -24,6 +26,7 @@ class LoginHeaderView: UIView {
         addIcon()
         addScreenTitleLabel()
         addAppTitleLabel()
+        addScreenButton()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -47,7 +50,7 @@ class LoginHeaderView: UIView {
         _appTitleLabel.leadingAnchor.constraint(equalTo: _logoView.leadingAnchor).isActive = true
         
         _appTitleLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
-        _appTitleLabel.textColor = UIColor.white
+        _appTitleLabel.textColor = UIColor.black
         _appTitleLabel.textAlignment = .left
         _appTitleLabel.addTextSpacing(10)
     }
@@ -60,8 +63,20 @@ class LoginHeaderView: UIView {
         _screenTitleLabel.leadingAnchor.constraint(equalTo: _logoView.leadingAnchor).isActive = true
         
         _screenTitleLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
-        _screenTitleLabel.textColor = UIColor.white
+        _screenTitleLabel.textColor = UIColor.black
         _screenTitleLabel.textAlignment = .left
+    }
+    
+    fileprivate func addScreenButton() {
+        addSubview(_screenButton)
+        
+        _screenButton.translatesAutoresizingMaskIntoConstraints = false
+        _screenButton.centerYAnchor.constraint(equalTo: _logoView.centerYAnchor).isActive = true
+        _screenButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        _screenButton.heightAnchor.constraint(equalTo: heightAnchor).isActive = true
+        _screenButton.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        _screenButton.layoutIfNeeded()
+        
     }
     
     fileprivate func addStatus() {
@@ -80,8 +95,8 @@ class LoginHeaderView: UIView {
             
             _statusLabel.layoutIfNeeded()
             _statusLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
-            _statusLabel.backgroundColor = UIColor.white
-            _statusLabel.textColor = UIColor.black
+            _statusLabel.backgroundColor = UIColor.black
+            _statusLabel.textColor = UIColor.white
             _statusLabel.layer.cornerRadius = _statusLabel.bounds.width / 2
             
             _statusLabel.lineBreakMode = .byWordWrapping
@@ -116,7 +131,7 @@ class LoginHeaderView: UIView {
     
     fileprivate func addIcon() {
         _logoView = Icon(frame: CGRect(x: 0,y: 0, width: frame.width - IconSizes.medium.rawValue, height: frame.height))
-        _logoView.drawLongIcon(UIColor.white, iconThickness: IconThickness.medium.rawValue)
+        _logoView.drawLongIcon(UIColor.black, iconThickness: IconThickness.medium.rawValue)
         addSubview(_logoView)
         
         _logoView.translatesAutoresizingMaskIntoConstraints = false
@@ -128,25 +143,29 @@ class LoginHeaderView: UIView {
     }
     
     func addGoBack() {
-        addSubview(_goBack)
-        _goBack.setImage(UIImage(named: "back"), for: UIControlState())
-        _goBack.translatesAutoresizingMaskIntoConstraints = false
-        _goBack.centerYAnchor.constraint(equalTo: _logoView.centerYAnchor).isActive = true
-        _goBack.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        _goBack.heightAnchor.constraint(equalTo: heightAnchor).isActive = true
-        _goBack.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        _screenButton.addSubview(_goBack)
+        _goBack.frame = _screenButton.bounds
+        
+        let settingTintedImage = UIImage(named: "back")?.withRenderingMode(.alwaysTemplate)
+        _goBack.setImage(settingTintedImage, for: UIControlState())
+        _goBack.tintColor = UIColor.black
     }
     
     func addSettingsButton() {
-        addSubview(_settings)
+        _screenButton.addSubview(_settings)
+        _settings.frame = _screenButton.bounds
         
-        _settings.translatesAutoresizingMaskIntoConstraints = false
-        _settings.centerYAnchor.constraint(equalTo: _logoView.centerYAnchor).isActive = true
-        _settings.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        _settings.heightAnchor.constraint(equalTo: _settings.widthAnchor).isActive = true
-        _settings.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        _settings.layoutIfNeeded()
+        let settingTintedImage = UIImage(named: "settings")?.withRenderingMode(.alwaysTemplate)
+        _settings.setImage(settingTintedImage, for: UIControlState())
+        _settings.tintColor = UIColor.black
+    }
+    
+    func addEmptyButton(image : UIImage) {
+        _screenButton.addSubview(_emptyButton)
+        _emptyButton.frame = _screenButton.bounds
         
-        _settings.setImage(UIImage(named: "settings"), for: UIControlState())
+        let emptyTintedImage = image.withRenderingMode(.alwaysTemplate)
+        _emptyButton.setImage(emptyTintedImage, for: UIControlState())
+        _emptyButton.tintColor = UIColor.black
     }
 }

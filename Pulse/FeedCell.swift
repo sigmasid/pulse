@@ -133,11 +133,11 @@ class FeedCell: UICollectionViewCell {
         titleLabelConstraint3 = titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue)
         titleLabelConstraint4 = titleLabel.heightAnchor.constraint(equalTo: heightAnchor)
 
-        titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightRegular, color: UIColor.white, alignment: .left)
+        titleLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightMedium, color: UIColor.white, alignment: .left)
         titleLabel.layoutIfNeeded()
         addSubview(titleLabel)
 
-        addSubview(answerCount)
+        addSubview(answerCount) 
         answerCount.translatesAutoresizingMaskIntoConstraints = false
         answerCount.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.15).isActive = true
         answerCount.heightAnchor.constraint(equalTo: answerCount.widthAnchor).isActive = true
@@ -185,7 +185,7 @@ class FeedCell: UICollectionViewCell {
         titleLabelConstraint3 = titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue)
         titleLabelConstraint4 = titleLabel.heightAnchor.constraint(equalTo: heightAnchor)
         
-        titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightHeavy, color: UIColor.white, alignment: .left)
+        titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: UIColor.white, alignment: .left)
         titleLabel.layoutIfNeeded()
         addSubview(titleLabel)
         
@@ -215,9 +215,9 @@ class FeedCell: UICollectionViewCell {
         
         activateConstraints()
 
-        subtitleLabel.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: UIColor.white, alignment: .left)
-        subtitleLabel.numberOfLines =  2
-        subtitleLabel.lineBreakMode =  .byTruncatingTail
+        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.white, alignment: .left)
+        subtitleLabel.numberOfLines = 2
+        subtitleLabel.lineBreakMode = .byTruncatingTail
         subtitleLabel.adjustsFontSizeToFitWidth = true
         subtitleLabel.minimumScaleFactor = 0.4
         subtitleLabel.layoutIfNeeded()

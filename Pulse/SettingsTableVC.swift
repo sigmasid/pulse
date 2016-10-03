@@ -13,8 +13,6 @@ class SettingsTableVC: UIViewController, ParentDelegate {
 
     fileprivate var _sections : [SettingSection]?
     fileprivate var _settings = [[Setting]]()
-    
-    fileprivate lazy var _headerView = UIView()
     fileprivate var _loginHeader : LoginHeaderView?
 
     fileprivate var settingsTable = UITableView()
@@ -22,15 +20,15 @@ class SettingsTableVC: UIViewController, ParentDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        settingsTable.register(SettingsTableCell.self, forCellReuseIdentifier: _reuseIdentifier)
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        view.backgroundColor = UIColor.white
         
-        setDarkBackground()
-        addHeader(appTitle: "PULSE", screenTitle: "SETTINGS")
-        
+        addHeader()
+        settingsTable.register(SettingsTableCell.self, forCellReuseIdentifier: _reuseIdentifier)
+
         Database.getSections({ (sections , error) in
             self._sections = sections
             for _ in sections {
@@ -48,7 +46,7 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         view.addSubview(settingsTable)
 
         settingsTable.translatesAutoresizingMaskIntoConstraints = false
-        settingsTable.topAnchor.constraint(equalTo: _headerView.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        settingsTable.topAnchor.constraint(equalTo: _loginHeader!.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         settingsTable.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         settingsTable.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         settingsTable.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
@@ -65,27 +63,11 @@ class SettingsTableVC: UIViewController, ParentDelegate {
         settingsTable.reloadData()
     }
     
-    fileprivate func addHeader(appTitle : String, screenTitle : String) {
-         view.addSubview(_headerView)
-        
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(_message: appTitle)
-            _loginHeader.setScreenTitleLabel(_message: screenTitle)
-            _loginHeader.updateStatusMessage(_message: "PROFILE SETTINGS")
-
-            _loginHeader.addGoBack()
-            _loginHeader._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-            
-            _headerView.addSubview(_loginHeader)
-        }
+    fileprivate func addHeader() {
+        _loginHeader = addHeader(text: "SETTINGS")
+        _loginHeader?.addGoBack()
+        _loginHeader?.updateStatusMessage(_message: "profile settings")
+        _loginHeader?._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
     }
     
     func goBack() {

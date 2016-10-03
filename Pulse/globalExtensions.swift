@@ -66,6 +66,41 @@ extension UIViewController {
 //        // 5
 //        self.view.layer.addSublayer(gradientLayer)
     }
+    
+    func addHeader(text : String) -> LoginHeaderView {
+        let _headerView = UIView()
+        
+        view.addSubview(_headerView)
+        
+        _headerView.translatesAutoresizingMaskIntoConstraints = false
+        _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
+        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        _headerView.layoutIfNeeded()
+        
+        let _loginHeader = LoginHeaderView(frame: _headerView.bounds)
+        _loginHeader.setAppTitleLabel(_message: "PULSE")
+        _loginHeader.setScreenTitleLabel(_message: text)
+        _headerView.addSubview(_loginHeader)
+        
+        return _loginHeader
+    }
+    
+    func addIcon(text : String) -> IconContainer {
+        let iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
+        iconContainer.setViewTitle(text)
+        view.addSubview(iconContainer)
+        
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        iconContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
+        iconContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        iconContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        iconContainer.layoutIfNeeded()
+        
+        return iconContainer
+    }
 }
 
 extension UILabel {
@@ -119,7 +154,13 @@ extension UIButton {
     }
     
     func makeRound() {
-        self.layer.cornerRadius = self.frame.width / 2
+        self.layer.cornerRadius = self.frame.width > self.frame.height ?  self.frame.height / 2 : self.frame.width / 2
+    }
+    
+    func setButtonFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
+        self.titleLabel?.textAlignment = alignment
+        self.titleLabel?.font = UIFont.systemFont(ofSize: size, weight: weight)
+        self.setTitleColor(color, for: UIControlState())
     }
 }
 
@@ -149,6 +190,11 @@ enum AnimationStyle {
     case verticalDown
     case horizontal
     case horizontalFlip
+}
+
+enum FollowToggle {
+    case follow
+    case unfollow
 }
 
 enum IconSizes: CGFloat {
