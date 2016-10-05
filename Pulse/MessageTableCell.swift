@@ -1,0 +1,154 @@
+//
+//  MessageTableCell.swift
+//  Pulse
+//
+//  Created by Sidharth Tiwari on 10/4/16.
+//  Copyright © 2016 Think Apart. All rights reserved.
+//
+
+import UIKit
+
+class MessageTableCell: UITableViewCell {
+    
+    var message : Message! {
+        didSet {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .long
+            let stringDate: String = formatter.string(from: message.time)
+            messageTimestamp.text = stringDate
+            messageSenderName.text = message.from.name
+            messageBody.text = message.body
+        }
+    }
+    var messageType : MessageType! {
+        didSet { messageType == .sent ? sentByUser() : receivedByUser() }
+    }
+    enum MessageType { case sent, received }
+    
+    fileprivate var leftContainer = UIView()
+    fileprivate var rightContainer = UIView()
+    fileprivate var middleContainer = UIView()
+
+    fileprivate var messageSenderName = UILabel()
+    var messageSenderImage = UIImageView()
+
+    fileprivate var messageTimestamp = UILabel()
+    fileprivate var messageBody = UILabel()
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        // Initialization code
+    }
+    
+    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupCellLayout()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+
+    override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+        // Configure the view for the selected state
+    }
+    
+    fileprivate func setupCellLayout() {
+        addSubview(leftContainer)
+        leftContainer.translatesAutoresizingMaskIntoConstraints = false
+        leftContainer.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        leftContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        leftContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        leftContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        leftContainer.layoutIfNeeded()
+        
+        addSubview(rightContainer)
+        rightContainer.translatesAutoresizingMaskIntoConstraints = false
+        rightContainer.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        rightContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        rightContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        rightContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        rightContainer.layoutIfNeeded()
+        
+        addSubview(middleContainer)
+        middleContainer.translatesAutoresizingMaskIntoConstraints = false
+        middleContainer.trailingAnchor.constraint(equalTo: rightContainer.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        middleContainer.leadingAnchor.constraint(equalTo: leftContainer.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        middleContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        middleContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        middleContainer.layoutIfNeeded()
+        
+        setupMiddle()
+    }
+    
+    fileprivate func receivedByUser() {
+        print("received by user fired")
+
+        rightContainer.addSubview(messageSenderName)
+        rightContainer.addSubview(messageSenderImage)
+        
+        messageSenderImage.translatesAutoresizingMaskIntoConstraints = false
+        messageSenderImage.leadingAnchor.constraint(equalTo: rightContainer.leadingAnchor).isActive = true
+        messageSenderImage.topAnchor.constraint(equalTo: rightContainer.topAnchor).isActive = true
+        messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        messageSenderImage.widthAnchor.constraint(equalTo: messageSenderImage.heightAnchor).isActive = true
+        messageSenderImage.layoutIfNeeded()
+        
+        messageSenderImage.layer.cornerRadius = messageSenderImage.bounds.height / 2
+        messageSenderImage.layer.masksToBounds = true
+        messageSenderImage.layer.shouldRasterize = true
+        messageSenderImage.layer.rasterizationScale = UIScreen.main.scale
+        messageSenderImage.backgroundColor = UIColor.lightGray
+        
+        messageSenderName.translatesAutoresizingMaskIntoConstraints = false
+        messageSenderName.topAnchor.constraint(equalTo: messageSenderImage.bottomAnchor).isActive = true
+        messageSenderName.leadingAnchor.constraint(equalTo: messageSenderImage.leadingAnchor).isActive = true
+        messageSenderName.widthAnchor.constraint(equalTo: messageSenderImage.widthAnchor).isActive = true
+        messageSenderName.layoutIfNeeded()
+    }
+    
+    fileprivate func sentByUser() {
+        print("sent by user fired")
+        leftContainer.addSubview(messageSenderName)
+        leftContainer.addSubview(messageSenderImage)
+        
+        messageSenderImage.translatesAutoresizingMaskIntoConstraints = false
+        messageSenderImage.leadingAnchor.constraint(equalTo: leftContainer.leadingAnchor).isActive = true
+        messageSenderImage.topAnchor.constraint(equalTo: leftContainer.topAnchor).isActive = true
+        messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        messageSenderImage.widthAnchor.constraint(equalTo: messageSenderImage.heightAnchor).isActive = true
+        messageSenderImage.layoutIfNeeded()
+        
+        messageSenderName.translatesAutoresizingMaskIntoConstraints = false
+        messageSenderName.topAnchor.constraint(equalTo: messageSenderImage.bottomAnchor).isActive = true
+        messageSenderName.leadingAnchor.constraint(equalTo: messageSenderImage.leadingAnchor).isActive = true
+        messageSenderName.widthAnchor.constraint(equalTo: messageSenderImage.widthAnchor).isActive = true
+        messageSenderName.layoutIfNeeded()
+    }
+    
+    fileprivate func setupMiddle() {
+        middleContainer.addSubview(messageTimestamp)
+        middleContainer.addSubview(messageBody)
+        
+        messageTimestamp.translatesAutoresizingMaskIntoConstraints = false
+        messageTimestamp.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true
+        messageTimestamp.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor).isActive = true
+        messageTimestamp.topAnchor.constraint(equalTo: middleContainer.topAnchor).isActive = true
+        messageTimestamp.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        messageTimestamp.layoutIfNeeded()
+        
+        messageTimestamp.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: .lightGray, alignment: .left)
+        
+        messageBody.translatesAutoresizingMaskIntoConstraints = false
+        messageBody.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true
+        messageBody.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor).isActive = true
+        messageBody.topAnchor.constraint(equalTo: messageTimestamp.bottomAnchor).isActive = true
+        messageBody.bottomAnchor.constraint(equalTo: middleContainer.bottomAnchor).isActive = true
+        messageBody.layoutIfNeeded()
+        
+        messageBody.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
+        messageBody.numberOfLines = 0
+        messageBody.lineBreakMode = .byWordWrapping
+    }
+}

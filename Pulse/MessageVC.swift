@@ -8,34 +8,46 @@
 
 import UIKit
 
-class MessageVC: UIViewController, UITextFieldDelegate, UITextViewDelegate{
+class MessageVC: UIViewController, UITextViewDelegate{
     
+    fileprivate var messages = [Message]() {
+        didSet {
+            conversationHistory.dataSource = self
+            conversationHistory.delegate = self
+            conversationHistory.reloadData()
+        }
+    }
+    fileprivate var reuseIdentifier = "messageCell"
+
     var toUser : User! {
         didSet {
             setupToUserLayout()
             updateToUserData()
+            setupConversationHistory()
         }
     }
     
     var toUserImage : UIImage? {
         didSet {
-            msgToUserImage.image = toUserImage
-            msgToUserImage.contentMode = .scaleAspectFit
+            _loginHeader?.updateStatusBackground(_image: toUserImage)
         }
     }
     
     fileprivate var msgTo = UIView()
-    fileprivate var msgToUserImage = UIImageView()
     fileprivate var msgToUserName = UILabel()
     fileprivate var msgToUserBio = UILabel()
     
-    fileprivate var msgFrom = UITextField()
-    fileprivate var msgSubject = UITextField()
     fileprivate var msgBody = UITextView()
+    fileprivate var conversationHistory = UITableView()
+    fileprivate var sendContainer = UIView()
     
     fileprivate var msgSend = UIButton()
     fileprivate var _loginHeader : LoginHeaderView?
     fileprivate var _hasMovedUp = false
+    fileprivate var isExistingConversation = false
+    fileprivate var conversationID : String?
+    
+    fileprivate var sendBottomConstraint : NSLayoutConstraint!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,6 +56,9 @@ class MessageVC: UIViewController, UITextFieldDelegate, UITextViewDelegate{
         hideKeyboardWhenTappedAround()
         addHeader()
         setupLayout()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
     }
 
     override func didReceiveMemoryWarning() {
@@ -53,7 +68,6 @@ class MessageVC: UIViewController, UITextFieldDelegate, UITextViewDelegate{
     fileprivate func addHeader() {
         _loginHeader = addHeader(text: "MESSAGE")
         _loginHeader?.addGoBack()
-        _loginHeader?.updateStatusMessage(_message: "send message")
         _loginHeader?._goBack.addTarget(self, action: #selector(goBack), for: .touchUpInside)
         _loginHeader?.layoutIfNeeded()
     }
@@ -62,102 +76,127 @@ class MessageVC: UIViewController, UITextFieldDelegate, UITextViewDelegate{
         GlobalFunctions.dismissVC(self)
     }
     
+    func keyboardWillShow(notification: NSNotification) {
+        if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
+            let keyboardHeight = keyboardSize.height
+            self.sendBottomConstraint.constant = -(keyboardHeight + Spacing.xs.rawValue)
+            self.sendContainer.layoutIfNeeded()
+        }
+    }
+    
+    func keyboardWillHide(notification: NSNotification) {
+        sendBottomConstraint.constant = Spacing.xs.rawValue
+        sendContainer.layoutIfNeeded()
+    }
+    
+    fileprivate func setupConversationHistory() {
+        Database.checkExistingConversation(to: toUser, completion: {(success, _conversationID) in
+            if success {
+                self.isExistingConversation = true
+                self.conversationID = _conversationID
+                Database.getConversation(conversationID: _conversationID!, completion: { _messages in
+                    self.messages = _messages
+                })
+            }
+        })
+    }
+    
     fileprivate func setupLayout() {
         view.addSubview(msgTo)
-        view.addSubview(msgFrom)
-        view.addSubview(msgSubject)
-        view.addSubview(msgBody)
-        view.addSubview(msgSend)
+        view.addSubview(sendContainer)
+        view.addSubview(conversationHistory)
 
         msgTo.translatesAutoresizingMaskIntoConstraints = false
-        msgTo.topAnchor.constraint(equalTo: _loginHeader!.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        msgTo.topAnchor.constraint(equalTo: _loginHeader!.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         msgTo.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        msgTo.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        msgTo.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         msgTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
-        msgFrom.translatesAutoresizingMaskIntoConstraints = false
-        msgFrom.topAnchor.constraint(equalTo: msgTo.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
-        msgFrom.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        msgFrom.widthAnchor.constraint(equalTo: msgTo.widthAnchor).isActive = true
-        msgFrom.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
-        msgFrom.layoutIfNeeded()
-        
-        msgFrom.backgroundColor = UIColor.clear
-        msgFrom.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        msgFrom.textColor = UIColor.black
-        msgFrom.layer.addSublayer(GlobalFunctions.addBorders(msgFrom, _color: UIColor.black, thickness: 1.0))
-        if let _name = User.currentUser?.name {
-            msgFrom.text = "FROM: \(_name)"
-        }
-        msgFrom.delegate = self
+        sendContainer.translatesAutoresizingMaskIntoConstraints = false
+        sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.xs.rawValue)
+        sendBottomConstraint.isActive = true
+        sendContainer.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.1).isActive = true
+        sendContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        sendContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        sendContainer.layoutIfNeeded()
 
+        conversationHistory.translatesAutoresizingMaskIntoConstraints = false
+        conversationHistory.topAnchor.constraint(equalTo: msgTo.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        conversationHistory.bottomAnchor.constraint(equalTo: sendContainer.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        conversationHistory.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        conversationHistory.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
+        conversationHistory.layoutIfNeeded()
         
-        msgSubject.translatesAutoresizingMaskIntoConstraints = false
-        msgSubject.topAnchor.constraint(equalTo: msgFrom.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
-        msgSubject.heightAnchor.constraint(equalTo: msgFrom.heightAnchor).isActive = true
-        msgSubject.widthAnchor.constraint(equalTo: msgTo.widthAnchor).isActive = true
-        msgSubject.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
-        msgSubject.layoutIfNeeded()
+        conversationHistory.register(MessageTableCell.self, forCellReuseIdentifier: reuseIdentifier)
+        conversationHistory.tableFooterView = UIView() //empty footer to hide extra empty rows
+        
+        sendContainer.addSubview(msgBody)
+        sendContainer.addSubview(msgSend)
+        
+        msgSend.translatesAutoresizingMaskIntoConstraints = false
+        msgSend.trailingAnchor.constraint(equalTo: sendContainer.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        msgSend.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        msgSend.widthAnchor.constraint(equalTo: msgSend.heightAnchor).isActive = true
+        msgSend.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor).isActive = true
+        msgSend.layoutIfNeeded()
 
-        msgSubject.placeholder = "SUBJECT:"
-        msgSubject.delegate = self
-        msgSubject.backgroundColor = UIColor.clear
-        msgSubject.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        msgSubject.textColor = UIColor.black
-        msgSubject.layer.addSublayer(GlobalFunctions.addBorders(msgFrom, _color: UIColor.black, thickness: 1.0))
-        
         msgBody.translatesAutoresizingMaskIntoConstraints = false
-        msgBody.topAnchor.constraint(equalTo: msgSubject.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
-        msgBody.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/6).isActive = true
-        msgBody.widthAnchor.constraint(equalTo: msgTo.widthAnchor).isActive = true
-        msgBody.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
+        msgBody.topAnchor.constraint(equalTo: sendContainer.topAnchor).isActive = true
+        msgBody.leadingAnchor.constraint(equalTo: sendContainer.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        msgBody.trailingAnchor.constraint(equalTo: msgSend.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        msgBody.heightAnchor.constraint(equalTo: sendContainer.heightAnchor).isActive = true
         msgBody.layoutIfNeeded()
         
-        msgBody.backgroundColor = UIColor.clear
+        msgBody.backgroundColor = UIColor.white
         msgBody.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         msgBody.textColor = UIColor.black
-        msgBody.layer.borderColor = UIColor.black.cgColor
+        msgBody.layer.borderColor = UIColor.lightGray.cgColor
         msgBody.layer.borderWidth = 1.0
         msgBody.delegate = self
-
-        msgSend.translatesAutoresizingMaskIntoConstraints = false
-        msgSend.topAnchor.constraint(equalTo: msgBody.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
-        msgSend.heightAnchor.constraint(equalTo: msgFrom.heightAnchor).isActive = true
-        msgSend.widthAnchor.constraint(equalTo: msgTo.widthAnchor).isActive = true
-        msgSend.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
         
-        msgSend.layer.cornerRadius = buttonCornerRadius.radius(.regular)
+        msgBody.text = "Type message here"
+        msgBody.textColor = UIColor.lightGray
+
+        msgSend.makeRound()
         msgSend.setTitle("Send", for: UIControlState())
         msgSend.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        msgSend.setEnabled()
+        msgSend.setDisabled()
+        
+        msgSend.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
     }
     
     fileprivate func setupToUserLayout() {
-        msgTo.addSubview(msgToUserImage)
         msgTo.addSubview(msgToUserName)
         msgTo.addSubview(msgToUserBio)
 
-        msgToUserImage.translatesAutoresizingMaskIntoConstraints = false
-        msgToUserImage.topAnchor.constraint(equalTo: msgTo.topAnchor).isActive = true
-        msgToUserImage.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        msgToUserImage.widthAnchor.constraint(equalTo: msgToUserImage.heightAnchor).isActive = true
-        msgToUserImage.leadingAnchor.constraint(equalTo: msgTo.leadingAnchor).isActive = true
-        msgToUserImage.layoutIfNeeded()
-        
-        msgToUserImage.layer.cornerRadius = msgToUserImage.bounds.height / 2
-        msgToUserImage.layer.masksToBounds = true
-        msgToUserImage.layer.shouldRasterize = true
-        msgToUserImage.layer.rasterizationScale = UIScreen.main.scale
-        
         msgToUserName.translatesAutoresizingMaskIntoConstraints = false
-        msgToUserName.leadingAnchor.constraint(equalTo: msgToUserImage.trailingAnchor, constant: Spacing.s.rawValue).isActive = true
+        msgToUserName.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
         msgToUserName.topAnchor.constraint(equalTo: msgTo.topAnchor).isActive = true
-        msgToUserName.trailingAnchor.constraint(equalTo: msgTo.trailingAnchor).isActive = true
+        
+        msgToUserName.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)
         
         msgToUserBio.translatesAutoresizingMaskIntoConstraints = false
-        msgToUserBio.leadingAnchor.constraint(equalTo: msgToUserImage.trailingAnchor, constant: Spacing.s.rawValue).isActive = true
+        msgToUserBio.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
         msgToUserBio.topAnchor.constraint(equalTo: msgToUserName.bottomAnchor).isActive = true
-        msgToUserBio.trailingAnchor.constraint(equalTo: msgTo.trailingAnchor).isActive = true
+        
+        msgToUserBio.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.gray, alignment: .center)
+    }
+    
+    func sendMessage() {
+        guard User.currentUser!.uID != toUser.uID else { return }
+        
+        let message = Message(from: User.currentUser!, to: toUser, body: msgBody.text)
+        message.mID = isExistingConversation ? conversationID : nil
+        
+        Database.sendMessage(existing: isExistingConversation, message: message, completion: {(success, message) in
+            if success {
+                self.msgBody.text = "Type message here"
+                self.msgBody.textColor = UIColor.lightGray
+            } else {
+                print("error sending message")
+            }
+        })
+        
     }
     
     fileprivate func updateToUserData() {
@@ -168,43 +207,51 @@ class MessageVC: UIViewController, UITextFieldDelegate, UITextViewDelegate{
         if let _uBio = toUser.shortBio {
             msgToUserBio.text = _uBio
         }
+    }
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if textView.text == "Type message here" {
+            textView.text = ""
+            textView.textColor = UIColor.black
+        }
+    }
+    
+    func textViewDidChange(_ textView: UITextView) {
+        if textView.text != "" {
+            self.msgSend.setEnabled()
+        }
+    }
+    
+    func textViewDidEndEditing(_ textView: UITextView) {
+        if textView.text == "" {
+            textView.text = "Type message here"
+            textView.textColor = UIColor.lightGray
+        }
+    }
+}
+
+extension MessageVC: UITableViewDataSource, UITableViewDelegate {
+    // MARK: - Table view data source
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return messages.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! MessageTableCell
+        let _currentMessage = messages[indexPath.row]
         
-        msgToUserImage.backgroundColor = UIColor.lightGray
-    }
-    
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        if !_hasMovedUp {
-            UIView.animate(withDuration: 0.1, animations: {
-                self.view.frame.origin.y -= (self._loginHeader!.frame.height + Spacing.l.rawValue + Spacing.xs.rawValue)
-            })
-            _hasMovedUp = true
+        if _currentMessage.from.uID == User.currentUser?.uID {
+            cell.messageType = .sent
+        } else {
+            cell.messageType = .received
+            cell.messageSenderImage.image = toUserImage
         }
-    }
-    
-    func textFieldDidEndEditing(_ textField: UITextField) {
-        if _hasMovedUp {
-            UIView.animate(withDuration: 0.1, animations: {
-                self.view.frame.origin.y += (self._loginHeader!.frame.height + Spacing.l.rawValue + Spacing.xs.rawValue)
-            })
-            _hasMovedUp = false
-        }
-    }
-    
-    func textViewDidBeginEditing(_ textField: UITextView) {
-        if !_hasMovedUp {
-            UIView.animate(withDuration: 0.1, animations: {
-                self.view.frame.origin.y -= (self._loginHeader!.frame.height + Spacing.l.rawValue + Spacing.xs.rawValue)
-            })
-            _hasMovedUp = true
-        }
-    }
-    
-    func textViewDidEndEditing(_ textField: UITextView) {
-        if _hasMovedUp {
-            UIView.animate(withDuration: 0.1, animations: {
-                self.view.frame.origin.y += (self._loginHeader!.frame.height + Spacing.l.rawValue + Spacing.xs.rawValue)
-            })
-            _hasMovedUp = false
-        }
+
+        cell.message = messages[indexPath.row]
+        return cell
     }
 }

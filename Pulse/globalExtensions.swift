@@ -73,7 +73,15 @@ extension UIViewController {
         view.addSubview(_headerView)
         
         _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
+        
+        if self.prefersStatusBarHidden {
+            print("prefers top bar hidden")
+            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).isActive = true
+        } else {
+            print("does not prefer top bar hidden")
+
+            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
+        }
         _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
         _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
@@ -324,6 +332,8 @@ enum Item : String {
     case AnswerThumbs = "answerThumbnails"
     case AnswerCollections = "answerCollections"
     case UserSummary = "userPublicSummary"
+    case Messages = "messages"
+    case Conversations = "conversations"
 }
 
 enum SettingTypes : String{

@@ -20,6 +20,7 @@ class LoginHeaderView: UIView {
     lazy var _emptyButton = UIButton()
 
     fileprivate var _statusLabel : UILabel?
+    fileprivate var _statusImage : UIImageView?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -108,6 +109,29 @@ class LoginHeaderView: UIView {
         }
     }
     
+    fileprivate func addStatusImage() {
+        _statusImage = UIImageView()
+        
+        if let _statusImage = _statusImage {
+            addSubview(_statusImage)
+            
+            _statusImage.translatesAutoresizingMaskIntoConstraints = false
+            _statusImage.centerYAnchor.constraint(equalTo: _logoView.centerYAnchor).isActive = true
+            _statusImage.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+            _statusImage.heightAnchor.constraint(equalTo: _statusImage.widthAnchor).isActive = true
+            _statusImage.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+            _screenTitleLabel.trailingAnchor.constraint(equalTo: _statusImage.leadingAnchor).isActive = true
+            _statusImage.layoutIfNeeded()
+            print("status image frame is \(_statusImage.frame)")
+            
+            _statusImage.layer.cornerRadius = _statusImage.bounds.width / 2
+            _statusImage.layer.masksToBounds = true
+            _statusImage.layer.shouldRasterize = true
+            _statusImage.layer.rasterizationScale = UIScreen.main.scale
+            _statusImage.backgroundColor = UIColor.lightGray
+        }
+    }
+    
     func updateStatusMessage(_message : String?) {
         if _statusLabel == nil {
             addStatus()
@@ -116,6 +140,16 @@ class LoginHeaderView: UIView {
         if _message != nil {
             _statusLabel!.text = _message
         }
+    }
+    
+    func updateStatusBackground(_image : UIImage?) {
+        if _statusImage == nil {
+            print("creating status background")
+            addStatusImage()
+        }
+        
+        _statusImage?.image = _image
+        
     }
     
     func setAppTitleLabel(_message : String) {

@@ -25,6 +25,9 @@ class Database {
     static let answersRef = databaseRef.child(Item.Answers.rawValue)
     static let answerCollectionsRef = databaseRef.child(Item.AnswerCollections.rawValue)
 
+    static let messagesRef = databaseRef.child(Item.Messages.rawValue)
+    static let conversationsRef = databaseRef.child(Item.Conversations.rawValue)
+
     static var currentUserRef : FIRDatabaseReference!
     static var currentUserFeedRef : FIRDatabaseReference!
 
@@ -38,9 +41,70 @@ class Database {
     static let answersStorageRef = storageRef.child(Item.Answers.rawValue)
     static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
     static let usersStorageRef = storageRef.child(Item.Users.rawValue)
+
     
     static let querySize : UInt = 20
     
+    ///Check if user has an existing conversation with receiver, if yes then return the conversation ID
+    static func checkExistingConversation(to : User, completion: @escaping (Bool, String?) -> Void) {
+        if let _user = FIRAuth.auth()?.currentUser {
+            usersRef.child(_user.uid).child("conversations").child(to.uID!).observeSingleEvent(of: .value, with: { snapshot in
+                if snapshot.exists() {
+                    completion(true, snapshot.value as? String)
+                } else {
+                    completion(false, nil)
+                }
+            })
+        }
+    }
+    
+    static func getConversation(conversationID : String, completion: @escaping ([Message]) -> Void) {
+        var messages = [Message]()
+        
+        conversationsRef.child(conversationID).observe(.value, with: { snapshot in
+            for messageID in snapshot.children {
+                messagesRef.child((messageID as AnyObject).key).observe(.value, with: { snap in
+                    let message = Message(snapshot: snap)
+                    messages.append(message)
+                    
+                    if messages.count == Int(snapshot.childrenCount) {
+                        completion(messages)
+                    }
+                })
+            }
+        })
+    }
+    
+    ///Send message
+    static func sendMessage(existing : Bool, message: Message, completion: @escaping (_ success : Bool, _ message : Message?) -> Void) {
+        let _user = FIRAuth.auth()?.currentUser
+
+        let messagePost : [ String : AnyObject ] = ["fromID": _user!.uid as AnyObject,
+                                                    "toID": message.to.uID! as AnyObject,
+                                                    "body": message.body as AnyObject,
+                                                    "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        let messageKey = messagesRef.childByAutoId().key
+        
+        messagesRef.child(messageKey).setValue(messagePost)
+        
+        //check if user has this user in existing conversations [toID : conversationID]
+        if existing {
+            //append to existing conversation if it already exists
+            let conversationPost : [AnyHashable: Any] = ["conversations/\( message.mID)/\(messageKey)": FIRServerValue.timestamp() as AnyObject, "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
+            databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
+                completionError != nil ? completion(false, nil) : completion(true, message)
+            })
+        } else {
+            let conversationPost : [AnyHashable: Any] = ["conversations/\(messageKey)": FIRServerValue.timestamp() as AnyObject, "users/\(_user!.uid)/conversations/\(message.to.uID!)" : messageKey,"users/\(message.to.uID!)/conversations/\(_user!.uid)" : messageKey,"users/\(message.to.uID!)/conversations/\(_user!.uid)" : messageKey, "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
+            
+            databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
+                completionError != nil ? completion(false, nil) : completion(true, message)
+            })
+        }
+    }
+    
+
     static func setCurrentUserPaths() {
         currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
         currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!).child(Item.Feed.rawValue)

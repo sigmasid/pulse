@@ -46,6 +46,8 @@
 		BA8D6F3A1D372B4400C83942 /* ExploreQuestionCellFooter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8D6F391D372B4400C83942 /* ExploreQuestionCellFooter.swift */; };
 		BA8E83031D38540C002345D2 /* AccountPageVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8E83021D38540C002345D2 /* AccountPageVC.swift */; };
 		BA92F7521DA2C5ED00B89D66 /* MessageVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7511DA2C5ED00B89D66 /* MessageVC.swift */; };
+		BA92F7541DA31B2F00B89D66 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7531DA31B2F00B89D66 /* Message.swift */; };
+		BA92F7561DA44A6200B89D66 /* MessageTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7551DA44A6200B89D66 /* MessageTableCell.swift */; };
 		BAA794A01D7A50C700700AF7 /* BaseAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */; };
 		BAA815911D2C710D00507E02 /* AnswerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA815901D2C710D00507E02 /* AnswerOverlay.swift */; };
 		BAACBF7C1D248C3A009F23D0 /* ExploreTagCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */; };
@@ -120,6 +122,8 @@
 		BA8D6F391D372B4400C83942 /* ExploreQuestionCellFooter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreQuestionCellFooter.swift; sourceTree = "<group>"; };
 		BA8E83021D38540C002345D2 /* AccountPageVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountPageVC.swift; sourceTree = "<group>"; };
 		BA92F7511DA2C5ED00B89D66 /* MessageVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageVC.swift; sourceTree = "<group>"; };
+		BA92F7531DA31B2F00B89D66 /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		BA92F7551DA44A6200B89D66 /* MessageTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageTableCell.swift; sourceTree = "<group>"; };
 		BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseAnimator.swift; sourceTree = "<group>"; };
 		BAA815901D2C710D00507E02 /* AnswerOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AnswerOverlay.swift; sourceTree = "<group>"; };
 		BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreTagCell.swift; sourceTree = "<group>"; };
@@ -229,6 +233,7 @@
 				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
 				BAFD76D91D9C8384005FBBD0 /* SearchVC.swift */,
 				BA92F7511DA2C5ED00B89D66 /* MessageVC.swift */,
+				BA92F7551DA44A6200B89D66 /* MessageTableCell.swift */,
 			);
 			path = Pulse;
 			sourceTree = "<group>";
@@ -242,6 +247,7 @@
 				BA1DE12B1D2444A4004F3ED2 /* User.swift */,
 				BA1DE1221D244393004F3ED2 /* Question.swift */,
 				BA2CCC131D4A9618003C94FC /* Settings.swift */,
+				BA92F7531DA31B2F00B89D66 /* Message.swift */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -549,9 +555,11 @@
 				BAD7A2B11D5473D30003CED4 /* Save.swift in Sources */,
 				BAA815911D2C710D00507E02 /* AnswerOverlay.swift in Sources */,
 				BAB03AC61D80AB0500090147 /* IconContainer.swift in Sources */,
+				BA92F7541DA31B2F00B89D66 /* Message.swift in Sources */,
 				BA1DE12C1D2444A4004F3ED2 /* User.swift in Sources */,
 				BA7D67811D30DEA100883B88 /* globalFunctions.swift in Sources */,
 				BA1DE1251D2443BF004F3ED2 /* Answer.swift in Sources */,
+				BA92F7561DA44A6200B89D66 /* MessageTableCell.swift in Sources */,
 				BAFBD1651D81DD7F00911453 /* FadeAnimationController.swift in Sources */,
 				BAD37D601D25ED9D00BACB04 /* ExploreQuestionCell.swift in Sources */,
 				BA2CCC141D4A9618003C94FC /* Settings.swift in Sources */,
