@@ -20,10 +20,21 @@ class MessageTableCell: UITableViewCell {
             messageBody.text = message.body
         }
     }
-    var messageType : MessageType! {
-        didSet { messageType == .sent ? sentByUser() : receivedByUser() }
-    }
+    
     enum MessageType { case sent, received }
+    var messageType : MessageType! {
+        didSet {
+            if messageType == .sent {
+                sentByUser()
+                messageTimestamp.textAlignment = .right
+                messageBody.textAlignment = .right
+            } else {
+                receivedByUser()
+                messageTimestamp.textAlignment = .left
+                messageBody.textAlignment = .left
+            }
+        }
+    }
     
     fileprivate var leftContainer = UIView()
     fileprivate var rightContainer = UIView()
@@ -57,7 +68,7 @@ class MessageTableCell: UITableViewCell {
     fileprivate func setupCellLayout() {
         addSubview(leftContainer)
         leftContainer.translatesAutoresizingMaskIntoConstraints = false
-        leftContainer.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        leftContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
         leftContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
         leftContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
         leftContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
@@ -65,7 +76,7 @@ class MessageTableCell: UITableViewCell {
         
         addSubview(rightContainer)
         rightContainer.translatesAutoresizingMaskIntoConstraints = false
-        rightContainer.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        rightContainer.trailingAnchor.constraint(equalTo: trailingAnchor,  constant: -Spacing.xs.rawValue).isActive = true
         rightContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
         rightContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
         rightContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
@@ -82,16 +93,14 @@ class MessageTableCell: UITableViewCell {
         setupMiddle()
     }
     
-    fileprivate func receivedByUser() {
-        print("received by user fired")
-
+    fileprivate func sentByUser() {
         rightContainer.addSubview(messageSenderName)
         rightContainer.addSubview(messageSenderImage)
         
         messageSenderImage.translatesAutoresizingMaskIntoConstraints = false
-        messageSenderImage.leadingAnchor.constraint(equalTo: rightContainer.leadingAnchor).isActive = true
-        messageSenderImage.topAnchor.constraint(equalTo: rightContainer.topAnchor).isActive = true
-        messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        messageSenderImage.trailingAnchor.constraint(equalTo: rightContainer.trailingAnchor).isActive = true
+        messageSenderImage.centerYAnchor.constraint(equalTo: rightContainer.centerYAnchor).isActive = true
+        messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         messageSenderImage.widthAnchor.constraint(equalTo: messageSenderImage.heightAnchor).isActive = true
         messageSenderImage.layoutIfNeeded()
         
@@ -108,17 +117,22 @@ class MessageTableCell: UITableViewCell {
         messageSenderName.layoutIfNeeded()
     }
     
-    fileprivate func sentByUser() {
-        print("sent by user fired")
+    fileprivate func receivedByUser() {
         leftContainer.addSubview(messageSenderName)
         leftContainer.addSubview(messageSenderImage)
         
         messageSenderImage.translatesAutoresizingMaskIntoConstraints = false
         messageSenderImage.leadingAnchor.constraint(equalTo: leftContainer.leadingAnchor).isActive = true
-        messageSenderImage.topAnchor.constraint(equalTo: leftContainer.topAnchor).isActive = true
-        messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        messageSenderImage.centerYAnchor.constraint(equalTo: leftContainer.centerYAnchor).isActive = true
+        messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         messageSenderImage.widthAnchor.constraint(equalTo: messageSenderImage.heightAnchor).isActive = true
         messageSenderImage.layoutIfNeeded()
+        
+        messageSenderImage.layer.cornerRadius = messageSenderImage.bounds.height / 2
+        messageSenderImage.layer.masksToBounds = true
+        messageSenderImage.layer.shouldRasterize = true
+        messageSenderImage.layer.rasterizationScale = UIScreen.main.scale
+        messageSenderImage.backgroundColor = UIColor.lightGray
         
         messageSenderName.translatesAutoresizingMaskIntoConstraints = false
         messageSenderName.topAnchor.constraint(equalTo: messageSenderImage.bottomAnchor).isActive = true
@@ -131,24 +145,22 @@ class MessageTableCell: UITableViewCell {
         middleContainer.addSubview(messageTimestamp)
         middleContainer.addSubview(messageBody)
         
-        messageTimestamp.translatesAutoresizingMaskIntoConstraints = false
-        messageTimestamp.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true
-        messageTimestamp.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor).isActive = true
-        messageTimestamp.topAnchor.constraint(equalTo: middleContainer.topAnchor).isActive = true
-        messageTimestamp.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        messageTimestamp.layoutIfNeeded()
-        
-        messageTimestamp.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: .lightGray, alignment: .left)
-        
         messageBody.translatesAutoresizingMaskIntoConstraints = false
         messageBody.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true
         messageBody.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor).isActive = true
-        messageBody.topAnchor.constraint(equalTo: messageTimestamp.bottomAnchor).isActive = true
-        messageBody.bottomAnchor.constraint(equalTo: middleContainer.bottomAnchor).isActive = true
+        messageBody.bottomAnchor.constraint(equalTo: middleContainer.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
         messageBody.layoutIfNeeded()
         
-        messageBody.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
+        messageBody.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
         messageBody.numberOfLines = 0
         messageBody.lineBreakMode = .byWordWrapping
+        
+        messageTimestamp.translatesAutoresizingMaskIntoConstraints = false
+        messageTimestamp.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true
+        messageTimestamp.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor).isActive = true
+        messageTimestamp.bottomAnchor.constraint(equalTo: messageBody.topAnchor).isActive = true
+
+        messageTimestamp.layoutIfNeeded()
+        messageTimestamp.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: .lightGray, alignment: .left)
     }
 }

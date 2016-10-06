@@ -33,9 +33,8 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     fileprivate var _loadingOverlay : LoadingView!
     fileprivate var _tapGesture : UITapGestureRecognizer?
     
-    fileprivate lazy var _headerView = UIView()
     fileprivate var _loginHeader : LoginHeaderView!
-    fileprivate var _loaded = false
+    fileprivate var _isLoaded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,7 +45,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         
         hideKeyboardWhenTappedAround()
         
-        if !_loaded {
+        if !_isLoaded {
             addHeader()
             
             fbButton.makeRound()
@@ -64,7 +63,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             uProfilePic.isUserInteractionEnabled = true
             uProfilePic.contentMode = UIViewContentMode.scaleAspectFill
             
-            _loaded = true
+            _isLoaded = true
             addIcon(text: "ACCOUNT")
         }
     }
@@ -143,10 +142,12 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             uNameLabel.isUserInteractionEnabled = true
         }
         
-        if let _uPic = User.currentUser!.profilePic {
+        //add profile pic or use default image
+        if User.currentUser!.profilePic != nil || User.currentUser!.thumbPic != nil {
+            let _uPic = User.currentUser!.thumbPic != nil ? User.currentUser!.thumbPic : User.currentUser!.profilePic
             _defaultProfileOverlay = UILabel(frame: uProfilePic.bounds)
             _defaultProfileOverlay.isHidden = true
-            addUserProfilePic(URL(string: _uPic))
+            addUserProfilePic(URL(string: _uPic!))
         } else {
             uProfilePic.image = UIImage(named: "default-profile")
             _defaultProfileOverlay.isHidden = false
@@ -170,10 +171,8 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         let _msg = tagList.map { (key, value) in "#"+key }.joined(separator: "\u{0085}")
         
 //        let _msg = tagList.map {"#"+$0 }.joinWithSeparator("\u{0085}")
-        
         savedTags.textAlignment = .left
         savedTags.text = _msg
-//        savedTags.textColor = UIColor.white
         savedTags.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
 
     }
@@ -182,8 +181,9 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         if let _ = _userImageURL {
             DispatchQueue.global().async {
                 let _userImageData = try? Data(contentsOf: _userImageURL!)
+                User.currentUser?.thumbPicImage = UIImage(data: _userImageData!)
                 DispatchQueue.main.async(execute: {
-                    self.uProfilePic.image = UIImage(data: _userImageData!)
+                    self.uProfilePic.image = User.currentUser?.thumbPicImage
                     self.uProfilePic.clipsToBounds = true
                 })
             }

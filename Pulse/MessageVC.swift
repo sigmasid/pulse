@@ -10,28 +10,23 @@ import UIKit
 
 class MessageVC: UIViewController, UITextViewDelegate{
     
-    fileprivate var messages = [Message]() {
-        didSet {
-            conversationHistory.dataSource = self
-            conversationHistory.delegate = self
-            conversationHistory.reloadData()
-        }
-    }
+    fileprivate var messages = [Message]()
     fileprivate var reuseIdentifier = "messageCell"
 
     var toUser : User! {
         didSet {
-            setupToUserLayout()
-            updateToUserData()
-            setupConversationHistory()
+            if !isSetupLoaded {
+                isSetupLoaded = true
+                setupToUserLayout()
+                updateToUserData()
+                setupConversationHistory()
+            }
         }
     }
     
-    var toUserImage : UIImage? {
-        didSet {
-            _loginHeader?.updateStatusBackground(_image: toUserImage)
-        }
-    }
+    var toUserImage : UIImage?
+    
+    var lastMessageID : String! { didSet { keepConversationUpdated() }}
     
     fileprivate var msgTo = UIView()
     fileprivate var msgToUserName = UILabel()
@@ -44,8 +39,16 @@ class MessageVC: UIViewController, UITextViewDelegate{
     fileprivate var msgSend = UIButton()
     fileprivate var _loginHeader : LoginHeaderView?
     fileprivate var _hasMovedUp = false
+    
     fileprivate var isExistingConversation = false
-    fileprivate var conversationID : String?
+    fileprivate var hasConversationObserver = false
+    fileprivate var isSetupLoaded = false
+    
+    fileprivate var conversationID : String? {
+        didSet {
+            self.isExistingConversation = true
+        }
+    }
     
     fileprivate var sendBottomConstraint : NSLayoutConstraint!
 
@@ -60,6 +63,14 @@ class MessageVC: UIViewController, UITextViewDelegate{
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
     }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        
+        if let _conversationID = conversationID {
+            Database.removeConversationObserver(conversationID: _conversationID)
+        }
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -69,6 +80,9 @@ class MessageVC: UIViewController, UITextViewDelegate{
         _loginHeader = addHeader(text: "MESSAGE")
         _loginHeader?.addGoBack()
         _loginHeader?._goBack.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        
+        toUserImage != nil ? _loginHeader?.updateStatusBackground(_image: toUserImage) : _loginHeader?.updateStatusMessage(_message: "conversation history")
+
         _loginHeader?.layoutIfNeeded()
     }
     
@@ -85,18 +99,53 @@ class MessageVC: UIViewController, UITextViewDelegate{
     }
     
     func keyboardWillHide(notification: NSNotification) {
-        sendBottomConstraint.constant = Spacing.xs.rawValue
+        sendBottomConstraint.constant = -Spacing.xs.rawValue
         sendContainer.layoutIfNeeded()
     }
     
     fileprivate func setupConversationHistory() {
         Database.checkExistingConversation(to: toUser, completion: {(success, _conversationID) in
             if success {
-                self.isExistingConversation = true
-                self.conversationID = _conversationID
-                Database.getConversation(conversationID: _conversationID!, completion: { _messages in
-                    self.messages = _messages
+                self.conversationID = _conversationID!
+                Database.getConversation(conversationID: _conversationID!, completion: { messages, lastMessageID in
+                    self.messages = messages
+                    self.lastMessageID = lastMessageID
                 })
+            }
+        })
+    }
+    
+    fileprivate func keepConversationUpdated() {
+        if !hasConversationObserver {
+            hasConversationObserver = true
+
+            conversationHistory.dataSource = self
+            conversationHistory.delegate = self
+            conversationHistory.reloadData()
+
+            Database.keepConversationUpdated(conversationID: conversationID!, lastMessage: lastMessageID ?? nil, completion: { message in
+                self.messages.append(message)
+                let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
+                self.conversationHistory.insertRows(at:[indexPath], with: .fade)
+
+            })
+        }
+    }
+    
+    func sendMessage() {
+        guard User.currentUser!.uID != toUser.uID else { return }
+        
+        let message = Message(from: User.currentUser!, to: toUser, body: msgBody.text)
+        message.mID = isExistingConversation ? conversationID! : nil
+        
+        Database.sendMessage(existing: isExistingConversation, message: message, completion: {(success, _conversationID) in
+            if success {
+                self.msgBody.text = "Type message here"
+                self.msgBody.textColor = UIColor.lightGray
+                self.msgSend.setDisabled()
+                
+                self.conversationID = _conversationID!
+                self.keepConversationUpdated()
             }
         })
     }
@@ -129,6 +178,8 @@ class MessageVC: UIViewController, UITextViewDelegate{
         
         conversationHistory.register(MessageTableCell.self, forCellReuseIdentifier: reuseIdentifier)
         conversationHistory.tableFooterView = UIView() //empty footer to hide extra empty rows
+        conversationHistory.rowHeight = UITableViewAutomaticDimension
+        conversationHistory.estimatedRowHeight = UIScreen.main.bounds.height / 7
         
         sendContainer.addSubview(msgBody)
         sendContainer.addSubview(msgSend)
@@ -182,23 +233,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
         msgToUserBio.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.gray, alignment: .center)
     }
     
-    func sendMessage() {
-        guard User.currentUser!.uID != toUser.uID else { return }
-        
-        let message = Message(from: User.currentUser!, to: toUser, body: msgBody.text)
-        message.mID = isExistingConversation ? conversationID : nil
-        
-        Database.sendMessage(existing: isExistingConversation, message: message, completion: {(success, message) in
-            if success {
-                self.msgBody.text = "Type message here"
-                self.msgBody.textColor = UIColor.lightGray
-            } else {
-                print("error sending message")
-            }
-        })
-        
-    }
-    
     fileprivate func updateToUserData() {
         if let _uName = toUser.name {
             msgToUserName.text = _uName
@@ -246,6 +280,7 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         
         if _currentMessage.from.uID == User.currentUser?.uID {
             cell.messageType = .sent
+            cell.messageSenderImage.image = User.currentUser?.thumbPicImage
         } else {
             cell.messageType = .received
             cell.messageSenderImage.image = toUserImage

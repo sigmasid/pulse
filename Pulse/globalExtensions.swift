@@ -75,11 +75,8 @@ extension UIViewController {
         _headerView.translatesAutoresizingMaskIntoConstraints = false
         
         if self.prefersStatusBarHidden {
-            print("prefers top bar hidden")
             _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).isActive = true
         } else {
-            print("does not prefer top bar hidden")
-
             _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
         }
         _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true

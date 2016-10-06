@@ -111,7 +111,6 @@ class LoginHeaderView: UIView {
     
     fileprivate func addStatusImage() {
         _statusImage = UIImageView()
-        
         if let _statusImage = _statusImage {
             addSubview(_statusImage)
             
@@ -122,13 +121,13 @@ class LoginHeaderView: UIView {
             _statusImage.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
             _screenTitleLabel.trailingAnchor.constraint(equalTo: _statusImage.leadingAnchor).isActive = true
             _statusImage.layoutIfNeeded()
-            print("status image frame is \(_statusImage.frame)")
             
             _statusImage.layer.cornerRadius = _statusImage.bounds.width / 2
             _statusImage.layer.masksToBounds = true
             _statusImage.layer.shouldRasterize = true
             _statusImage.layer.rasterizationScale = UIScreen.main.scale
             _statusImage.backgroundColor = UIColor.lightGray
+            _statusImage.contentMode = .scaleAspectFill
         }
     }
     
@@ -144,7 +143,6 @@ class LoginHeaderView: UIView {
     
     func updateStatusBackground(_image : UIImage?) {
         if _statusImage == nil {
-            print("creating status background")
             addStatusImage()
         }
         

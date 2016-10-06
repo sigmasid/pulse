@@ -38,12 +38,10 @@ class Message : NSObject {
         
         if snapshot.hasChild("fromID") {
             self.from = User(uID: snapshot.childSnapshot(forPath: "fromID").value as? String)
-            print("from ID is \(self.from.uID)")
         }
         
         if snapshot.hasChild("toID") {
             self.to = User(uID: snapshot.childSnapshot(forPath: "toID").value as? String)
-            print("from ID is \(self.to.uID)")
         }
     }
 }

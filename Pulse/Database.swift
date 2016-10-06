@@ -49,26 +49,47 @@ class Database {
     static func checkExistingConversation(to : User, completion: @escaping (Bool, String?) -> Void) {
         if let _user = FIRAuth.auth()?.currentUser {
             usersRef.child(_user.uid).child("conversations").child(to.uID!).observeSingleEvent(of: .value, with: { snapshot in
-                if snapshot.exists() {
-                    completion(true, snapshot.value as? String)
-                } else {
-                    completion(false, nil)
-                }
+                snapshot.exists() ? completion(true, snapshot.value as? String) : completion(false, nil)
             })
         }
     }
     
-    static func getConversation(conversationID : String, completion: @escaping ([Message]) -> Void) {
+    //Keep conversation updated
+    static func keepConversationUpdated(conversationID : String, lastMessage : String?, completion: @escaping (Message) -> Void) {
+        print("adding observer for child added")
+        let startingValue = lastMessage ?? ""
+        
+        conversationsRef.child(conversationID).queryOrderedByKey().queryStarting(atValue: startingValue).observe(.childAdded, with: { snapshot in
+            if lastMessage != (snapshot as AnyObject).key {
+                messagesRef.child((snapshot as AnyObject).key).observeSingleEvent(of: .value, with: { snap in
+                    print("child added fired \(snap)")
+
+                    let message = Message(snapshot: snap)
+                    completion(message)
+                })
+            }
+        })
+    }
+    
+    //Remove listener
+    static func removeConversationObserver(conversationID : String) {
+        print("removed observer")
+        conversationsRef.child(conversationID).removeAllObservers()
+    }
+    
+    //Retrieve all conversation
+    static func getConversation(conversationID : String, completion: @escaping ([Message], String?) -> Void) {
         var messages = [Message]()
         
-        conversationsRef.child(conversationID).observe(.value, with: { snapshot in
+        conversationsRef.child(conversationID).observeSingleEvent(of: .value, with: { snapshot in
             for messageID in snapshot.children {
-                messagesRef.child((messageID as AnyObject).key).observe(.value, with: { snap in
+                messagesRef.child((messageID as AnyObject).key).observeSingleEvent(of: .value, with: { snap in
                     let message = Message(snapshot: snap)
                     messages.append(message)
                     
                     if messages.count == Int(snapshot.childrenCount) {
-                        completion(messages)
+                        let lastMessageID = snap.key
+                        completion(messages, lastMessageID)
                     }
                 })
             }
@@ -76,7 +97,7 @@ class Database {
     }
     
     ///Send message
-    static func sendMessage(existing : Bool, message: Message, completion: @escaping (_ success : Bool, _ message : Message?) -> Void) {
+    static func sendMessage(existing : Bool, message: Message, completion: @escaping (_ success : Bool, _ conversationID : String?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
 
         let messagePost : [ String : AnyObject ] = ["fromID": _user!.uid as AnyObject,
@@ -91,20 +112,27 @@ class Database {
         //check if user has this user in existing conversations [toID : conversationID]
         if existing {
             //append to existing conversation if it already exists
-            let conversationPost : [AnyHashable: Any] = ["conversations/\( message.mID)/\(messageKey)": FIRServerValue.timestamp() as AnyObject, "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
-            databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
-                completionError != nil ? completion(false, nil) : completion(true, message)
-            })
-        } else {
-            let conversationPost : [AnyHashable: Any] = ["conversations/\(messageKey)": FIRServerValue.timestamp() as AnyObject, "users/\(_user!.uid)/conversations/\(message.to.uID!)" : messageKey,"users/\(message.to.uID!)/conversations/\(_user!.uid)" : messageKey,"users/\(message.to.uID!)/conversations/\(_user!.uid)" : messageKey, "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
+            let conversationPost : [AnyHashable: Any] =
+                ["conversations/\(message.mID!)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
+                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
-                completionError != nil ? completion(false, nil) : completion(true, message)
+                completionError != nil ? completion(false, nil) : completion(true, message.mID)
+            })
+        } else {
+            //start new conversation
+            let conversationPost : [AnyHashable: Any] =
+                ["conversations/\(messageKey)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)" : messageKey,
+                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
+            
+            databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
+                completionError != nil ? completion(false, nil) : completion(true, messageKey)
             })
         }
     }
     
-
     static func setCurrentUserPaths() {
         currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
         currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!).child(Item.Feed.rawValue)
@@ -120,7 +148,7 @@ class Database {
     
     static func getSearchTags(searchText : String, completion: @escaping (_ tags : [String], _ error : NSError?) -> Void) {
         var allTags = [String]()
-        var endingString = searchText.appending("~")
+        let endingString = searchText.appending("\u{f8ff}")
         
         tagsRef.queryOrderedByKey().queryStarting(atValue: searchText).queryEnding(atValue: endingString).observeSingleEvent(of: .value, with: { snapshot in
             for item in snapshot.children {
@@ -556,6 +584,7 @@ class Database {
         User.currentUser!.answeredQuestions = nil
         User.currentUser!.savedTags = [ : ]
         User.currentUser!.profilePic = nil
+        User.currentUser!.thumbPic = nil
         User.currentUser!._totalAnswers = nil
         User.currentUser!.birthday = nil
         User.currentUser!.bio = nil
@@ -565,7 +594,18 @@ class Database {
         
         print("notification for no current user fired")
         NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-
+    }
+    
+    ///Get user image
+    static func getUserProfilePic() {
+        let userPicPath = User.currentUser!.profilePic != nil ? User.currentUser!.profilePic : User.currentUser!.thumbPic
+        
+        if let userPicPath = userPicPath {
+            if let userPicURL = URL(string: userPicPath) {
+                let _userImageData = try? Data(contentsOf: userPicURL)
+                User.currentUser?.thumbPicImage = UIImage(data: _userImageData!)
+            }
+        }
     }
     
     ///Populate current user
@@ -578,6 +618,7 @@ class Database {
             }
             if snap.hasChild(SettingTypes.profilePic.rawValue) {
                 User.currentUser!.profilePic = snap.childSnapshot(forPath: SettingTypes.profilePic.rawValue).value as? String
+                getUserProfilePic()
             }
             if snap.hasChild(SettingTypes.shortBio.rawValue) {
                 User.currentUser!.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
@@ -771,7 +812,6 @@ class Database {
             error != nil ? completion(nil, error! as NSError?) : completion(URL!, nil)
         }
     }
-    
     
     static func getAnswerMeta(_ fileID : String, completion: @escaping (_ contentType : MediaAssetType?, _ error : NSError?) -> Void) {
         let path = answersStorageRef.child(fileID)

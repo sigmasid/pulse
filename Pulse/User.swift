@@ -9,6 +9,7 @@
 import Foundation
 import FirebaseDatabase
 import FirebaseAuth
+import UIKit
 
 class User {
     var uID : String?
@@ -21,6 +22,8 @@ class User {
     var answeredQuestions : [String]?
     var profilePic : String?
     var thumbPic : String?
+    var thumbPicImage : UIImage?
+
     var shownCameraForQuestion = [ String : String ]()
     var _totalAnswers : Int?
     var savedTags = [String : String?]()
