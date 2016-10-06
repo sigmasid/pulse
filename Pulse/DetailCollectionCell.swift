@@ -31,6 +31,7 @@ class DetailCollectionCell: UICollectionViewCell {
                     reuseCell = true
                 }
             case .tag: return
+            case .people: return
             }
         }
     }

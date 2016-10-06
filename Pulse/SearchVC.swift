@@ -10,12 +10,12 @@ import UIKit
 
 class SearchVC: UIViewController {
     fileprivate var reuseIdentifier = "tableViewCell"
-    fileprivate var searchController = UISearchController(searchResultsController: nil)
+    fileprivate var searchController : UISearchController!
     fileprivate var tableView = UITableView()
     
     fileprivate var searchScope : SearchTypes? = .tags
     fileprivate enum SearchTypes { case tags, questions, users }
-    var results = [String]() {
+    var results = [(key:String , value:String)]() {
         didSet {
             tableView.reloadData()
         }
@@ -41,7 +41,7 @@ class SearchVC: UIViewController {
     }
     
     fileprivate func setupTableView() {
-        
+        searchController = UISearchController(searchResultsController: nil) //needs to be here as tableview uses it
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
 
         view.addSubview(tableView)
@@ -51,6 +51,7 @@ class SearchVC: UIViewController {
         tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         tableView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        tableView.layoutIfNeeded()
         
         tableView.backgroundColor = UIColor.white
         tableView.showsVerticalScrollIndicator = false
@@ -94,7 +95,7 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath)
-        cell.textLabel?.text = results[indexPath.row]
+        cell.textLabel?.text = searchScope == .tags ? results[indexPath.row].key : results[indexPath.row].value
         return cell
     }
 }
@@ -112,18 +113,17 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating {
     func updateSearchResults(for searchController: UISearchController) {
         let _searchText = searchController.searchBar.text!
         
-        if _searchText != "" {
+        if _searchText != "" && _searchText.characters.count > 1 {
             switch searchScope! {
             case .tags:
-                Database.getSearchTags(searchText: _searchText.lowercased(), completion: { searchResults, error in
-                    if error == nil {
+                Database.search(type: .tag, searchText: _searchText.lowercased(), completion:  { searchResults in
                         self.results = searchResults
-                        print("search results are \(searchResults)")
-
-                    }
                 })
-            case .questions: results = ["searching questions"]
-            default: results = ["no results found"]
+            case .questions:
+                Database.search(type: .question, searchText: _searchText.lowercased(), completion:  { searchResults in
+                    self.results = searchResults
+                })
+            default: break
             }
         }
     }

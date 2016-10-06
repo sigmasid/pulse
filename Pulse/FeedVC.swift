@@ -51,6 +51,7 @@ class FeedVC: UIViewController {
                 gettingInfoForCell = [Bool](repeating: false, count: totalItemCount)
                 browseAnswerPreviewImages = [UIImage?](repeating: nil, count: totalItemCount)
                 usersForAnswerPreviews = [User?](repeating: nil, count: totalItemCount)
+            case .people: break
             }
             
             FeedCollectionView?.delegate = self

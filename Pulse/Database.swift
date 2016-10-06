@@ -42,9 +42,99 @@ class Database {
     static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
     static let usersStorageRef = storageRef.child(Item.Users.rawValue)
 
-    
+    static var masterQuestionIndex = [String : String]()
+    static var masterTagIndex = [String : String]()
+
     static let querySize : UInt = 20
     
+    /** MARK : SEARCH **/
+    static func search(type : FeedItemType, searchText : String, completion: @escaping (_ results : [(key: String, value: String)]) -> Void) {
+        switch type {
+        case .question:
+            if masterQuestionIndex.count == 0 {
+                createQuestionIndex{
+                    performSearch(searchText: searchText, type: type, completion: {(_results) in
+                        completion(_results)
+                    })                }
+            } else {
+                performSearch(searchText: searchText, type: type, completion: {(_results) in
+                    completion(_results)
+                })
+            }
+        case .tag:
+            if masterTagIndex.count == 0 {
+                createTagIndex{
+                    performSearch(searchText: searchText, type: type, completion: {(_results) in
+                        completion(_results)
+                    })
+                }
+            } else {
+                performSearch(searchText: searchText, type: type, completion: {(_results) in
+                    completion(_results)
+                })
+            }
+        case .people: break
+        case .answer: break
+        }
+    }
+    
+    internal static func createTagIndex(completion: @escaping () -> Void) {
+        databaseRef.child("tagSearchIndex").observeSingleEvent(of: .value, with: { snapshot in
+            for aTag in snapshot.children {
+                masterTagIndex[(aTag as AnyObject).key] = (aTag as AnyObject).value.lowercased()
+                
+                if masterTagIndex.count == Int(snapshot.childrenCount) {
+                    completion()
+                }
+            }
+        })
+    }
+    
+    internal static func createQuestionIndex(completion: @escaping () -> Void) {
+        databaseRef.child("questionSearchIndex").observeSingleEvent(of: .value, with: { snapshot in
+            for aQuestion in snapshot.children {
+                masterQuestionIndex[(aQuestion as AnyObject).key] = (aQuestion as AnyObject).value.lowercased()
+                
+                if masterQuestionIndex.count == Int(snapshot.childrenCount) {
+                    completion()
+                }
+
+            }
+        })
+    }
+    
+    internal static func performSearch(searchText : String, type : FeedItemType, completion: @escaping (_ results : [(key: String, value: String)]) -> Void) {
+        switch type {
+        case .question:
+            let _results = masterQuestionIndex.filter({
+                $0.value.contains(searchText)
+            })
+            completion(_results)
+        case .tag:
+            let _results = masterTagIndex.filter({
+                $0.key.contains(searchText)
+            })
+            completion(_results)
+        case .people: break
+        case .answer: break
+        }
+    }
+    
+    //OLD WAY OF DIRECTLY SEARCHING ON DB - NEW WAY DOWNLOADS THE STACK
+//    static func getSearchTags(searchText : String, completion: @escaping (_ tags : [String], _ error : NSError?) -> Void) {
+//        var allTags = [String]()
+//        let endingString = searchText.appending("\u{f8ff}")
+//        
+//        tagsRef.queryOrderedByKey().queryStarting(atValue: searchText).queryEnding(atValue: endingString).observeSingleEvent(of: .value, with: { snapshot in
+//            for item in snapshot.children {
+//                let child = item as! FIRDataSnapshot
+//                allTags.append(child.key)
+//            }
+//            completion(allTags, nil)
+//        })
+//    }
+    
+    /** MARK : MESSAGING **/
     ///Check if user has an existing conversation with receiver, if yes then return the conversation ID
     static func checkExistingConversation(to : User, completion: @escaping (Bool, String?) -> Void) {
         if let _user = FIRAuth.auth()?.currentUser {
@@ -130,6 +220,7 @@ class Database {
         }
     }
     
+    /** MARK : DATABASE PATHS **/
     static func setCurrentUserPaths() {
         currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
         currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!).child(Item.Feed.rawValue)
@@ -141,19 +232,6 @@ class Database {
     
     static func getStoragePath(_ type : Item, itemID : String) -> FIRStorageReference {
         return storageRef.child(type.rawValue).child(itemID)
-    }
-    
-    static func getSearchTags(searchText : String, completion: @escaping (_ tags : [String], _ error : NSError?) -> Void) {
-        var allTags = [String]()
-        let endingString = searchText.appending("\u{f8ff}")
-        
-        tagsRef.queryOrderedByKey().queryStarting(atValue: searchText).queryEnding(atValue: endingString).observeSingleEvent(of: .value, with: { snapshot in
-            for item in snapshot.children {
-                let child = item as! FIRDataSnapshot
-                allTags.append(child.key)
-            }
-            completion(allTags, nil)
-        })
     }
 
     static func getExploreTags(_ completion: @escaping (_ tags : [Tag], _ error : NSError?) -> Void) {
@@ -306,6 +384,7 @@ class Database {
                     completedFeed(answers)
                 }
             })
+        case .people: break
         }
     }
     

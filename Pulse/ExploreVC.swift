@@ -71,6 +71,7 @@ class ExploreVC: UIViewController, feedVCDelegate, searchVCDelegate {
                             self.exploreContainer.feedItemType = self.selectedExploreType
                         }
                     })
+                case .people: break
                 }
             }
         }
@@ -129,6 +130,7 @@ class ExploreVC: UIViewController, feedVCDelegate, searchVCDelegate {
         }
     }
     
+    //searchVCDelegate methods
     func userClickedSearch() {
     }
     

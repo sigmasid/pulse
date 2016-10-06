@@ -309,6 +309,7 @@ enum FeedItemType {
     case tag
     case question
     case answer
+    case people
 }
 
 enum PageType {

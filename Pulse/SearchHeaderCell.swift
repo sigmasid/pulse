@@ -23,12 +23,6 @@ class SearchHeaderCell: UICollectionReusableView {
         let searchTintedImage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)
         showSearchField.setImage(searchTintedImage, for: UIControlState())
         showSearchField.tintColor = UIColor.lightGray
-        
-//        searchField.searchBar.scopeButtonTitles = ["Tags", "Questions", "People"]
-//        let image = UIImage()
-//        searchField.searchBar.setBackgroundImage(image, for: .any, barMetrics: .default)
-//        searchField.searchBar.scopeBarBackgroundImage = image
-//        searchField.searchBar.setNeedsLayout()
     }
     
     required init?(coder aDecoder: NSCoder) {

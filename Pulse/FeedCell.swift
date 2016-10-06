@@ -40,6 +40,7 @@ class FeedCell: UICollectionViewCell {
             case .tag:
                 setupTagPreview()
                 reuseCell = true
+            case .people: break
             }
         }
     }
