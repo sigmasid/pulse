@@ -81,7 +81,7 @@ class Database {
     static func getConversation(conversationID : String, completion: @escaping ([Message], String?) -> Void) {
         var messages = [Message]()
         
-        conversationsRef.child(conversationID).observeSingleEvent(of: .value, with: { snapshot in
+        conversationsRef.child(conversationID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
             for messageID in snapshot.children {
                 messagesRef.child((messageID as AnyObject).key).observeSingleEvent(of: .value, with: { snap in
                     let message = Message(snapshot: snap)

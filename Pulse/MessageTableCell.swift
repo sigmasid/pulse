@@ -66,28 +66,28 @@ class MessageTableCell: UITableViewCell {
     }
     
     fileprivate func setupCellLayout() {
-        addSubview(leftContainer)
+        contentView.addSubview(leftContainer)
         leftContainer.translatesAutoresizingMaskIntoConstraints = false
-        leftContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        leftContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        leftContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        leftContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+        leftContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
+        leftContainer.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
         leftContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         leftContainer.layoutIfNeeded()
         
-        addSubview(rightContainer)
+        contentView.addSubview(rightContainer)
         rightContainer.translatesAutoresizingMaskIntoConstraints = false
-        rightContainer.trailingAnchor.constraint(equalTo: trailingAnchor,  constant: -Spacing.xs.rawValue).isActive = true
-        rightContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        rightContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        rightContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
+        rightContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
+        rightContainer.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
         rightContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         rightContainer.layoutIfNeeded()
         
-        addSubview(middleContainer)
+        contentView.addSubview(middleContainer)
         middleContainer.translatesAutoresizingMaskIntoConstraints = false
         middleContainer.trailingAnchor.constraint(equalTo: rightContainer.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         middleContainer.leadingAnchor.constraint(equalTo: leftContainer.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        middleContainer.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        middleContainer.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        middleContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
+        middleContainer.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
         middleContainer.layoutIfNeeded()
         
         setupMiddle()
@@ -98,7 +98,7 @@ class MessageTableCell: UITableViewCell {
         rightContainer.addSubview(messageSenderImage)
         
         messageSenderImage.translatesAutoresizingMaskIntoConstraints = false
-        messageSenderImage.trailingAnchor.constraint(equalTo: rightContainer.trailingAnchor).isActive = true
+        messageSenderImage.centerXAnchor.constraint(equalTo: rightContainer.centerXAnchor).isActive = true
         messageSenderImage.centerYAnchor.constraint(equalTo: rightContainer.centerYAnchor).isActive = true
         messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         messageSenderImage.widthAnchor.constraint(equalTo: messageSenderImage.heightAnchor).isActive = true
@@ -122,7 +122,7 @@ class MessageTableCell: UITableViewCell {
         leftContainer.addSubview(messageSenderImage)
         
         messageSenderImage.translatesAutoresizingMaskIntoConstraints = false
-        messageSenderImage.leadingAnchor.constraint(equalTo: leftContainer.leadingAnchor).isActive = true
+        messageSenderImage.centerXAnchor.constraint(equalTo: leftContainer.centerXAnchor).isActive = true
         messageSenderImage.centerYAnchor.constraint(equalTo: leftContainer.centerYAnchor).isActive = true
         messageSenderImage.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         messageSenderImage.widthAnchor.constraint(equalTo: messageSenderImage.heightAnchor).isActive = true
@@ -158,6 +158,7 @@ class MessageTableCell: UITableViewCell {
         messageTimestamp.translatesAutoresizingMaskIntoConstraints = false
         messageTimestamp.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true
         messageTimestamp.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor).isActive = true
+        messageTimestamp.topAnchor.constraint(equalTo: middleContainer.topAnchor, constant: Spacing.xs.rawValue).isActive = true
         messageTimestamp.bottomAnchor.constraint(equalTo: messageBody.topAnchor).isActive = true
 
         messageTimestamp.layoutIfNeeded()

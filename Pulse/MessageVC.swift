@@ -110,12 +110,16 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 Database.getConversation(conversationID: _conversationID!, completion: { messages, lastMessageID in
                     self.messages = messages
                     self.lastMessageID = lastMessageID
+                    let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
+                    self.conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: true)
+
                 })
             }
         })
     }
     
     fileprivate func keepConversationUpdated() {
+        
         if !hasConversationObserver {
             hasConversationObserver = true
 
@@ -127,7 +131,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 self.messages.append(message)
                 let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
                 self.conversationHistory.insertRows(at:[indexPath], with: .fade)
-
+                self.conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: true)
             })
         }
     }
@@ -146,6 +150,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 
                 self.conversationID = _conversationID!
                 self.keepConversationUpdated()
+
             }
         })
     }
@@ -273,6 +278,10 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messages.count
     }
+    
+//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+//        return Spacing.l.rawValue
+//    }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! MessageTableCell
