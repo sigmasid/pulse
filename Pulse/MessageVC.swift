@@ -10,47 +10,42 @@ import UIKit
 
 class MessageVC: UIViewController, UITextViewDelegate{
     
+    //model elements
     fileprivate var messages = [Message]()
-    fileprivate var reuseIdentifier = "messageCell"
 
     var toUser : User! {
         didSet {
-            if !isSetupLoaded {
-                isSetupLoaded = true
+            if !isUserLoaded {
+                isUserLoaded = true
                 setupToUserLayout()
                 updateToUserData()
                 setupConversationHistory()
             }
         }
     }
+    fileprivate var conversationID : String? { didSet { self.isExistingConversation = true } } //set during initial load or after first message is sent
+    var toUserImage : UIImage? //set by delegate
+    var lastMessageID : String! { didSet { keepConversationUpdated() }} //to sync listener for last updated element
     
-    var toUserImage : UIImage?
-    
-    var lastMessageID : String! { didSet { keepConversationUpdated() }}
-    
+    //Layout elements
     fileprivate var msgTo = UIView()
     fileprivate var msgToUserName = UILabel()
     fileprivate var msgToUserBio = UILabel()
-    
     fileprivate var msgBody = UITextView()
     fileprivate var conversationHistory = UITableView()
     fileprivate var sendContainer = UIView()
-    
     fileprivate var msgSend = UIButton()
     fileprivate var _loginHeader : LoginHeaderView?
-    fileprivate var _hasMovedUp = false
-    
-    fileprivate var isExistingConversation = false
-    fileprivate var hasConversationObserver = false
-    fileprivate var isSetupLoaded = false
-    
-    fileprivate var conversationID : String? {
-        didSet {
-            self.isExistingConversation = true
-        }
-    }
     
     fileprivate var sendBottomConstraint : NSLayoutConstraint!
+
+    //Bools for logic checks
+    fileprivate var _hasMovedUp = false
+    fileprivate var isExistingConversation = false
+    fileprivate var hasConversationObserver = false
+    fileprivate var isUserLoaded = false
+    
+    fileprivate var reuseIdentifier = "messageCell"
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -95,12 +90,21 @@ class MessageVC: UIViewController, UITextViewDelegate{
             let keyboardHeight = keyboardSize.height
             self.sendBottomConstraint.constant = -(keyboardHeight + Spacing.xs.rawValue)
             self.sendContainer.layoutIfNeeded()
+            self.conversationHistory.layoutIfNeeded()
+            
+            if messages.count > 0 {
+                let indexPath : IndexPath = IndexPath(row:(messages.count - 1), section:0)
+                conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: false)
+            }
+
         }
     }
     
     func keyboardWillHide(notification: NSNotification) {
         sendBottomConstraint.constant = -Spacing.xs.rawValue
+
         sendContainer.layoutIfNeeded()
+        conversationHistory.layoutIfNeeded()
     }
     
     fileprivate func setupConversationHistory() {

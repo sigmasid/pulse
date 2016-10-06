@@ -56,13 +56,11 @@ class Database {
     
     //Keep conversation updated
     static func keepConversationUpdated(conversationID : String, lastMessage : String?, completion: @escaping (Message) -> Void) {
-        print("adding observer for child added")
         let startingValue = lastMessage ?? ""
         
         conversationsRef.child(conversationID).queryOrderedByKey().queryStarting(atValue: startingValue).observe(.childAdded, with: { snapshot in
             if lastMessage != (snapshot as AnyObject).key {
                 messagesRef.child((snapshot as AnyObject).key).observeSingleEvent(of: .value, with: { snap in
-                    print("child added fired \(snap)")
 
                     let message = Message(snapshot: snap)
                     completion(message)
@@ -73,7 +71,6 @@ class Database {
     
     //Remove listener
     static func removeConversationObserver(conversationID : String) {
-        print("removed observer")
         conversationsRef.child(conversationID).removeAllObservers()
     }
     
