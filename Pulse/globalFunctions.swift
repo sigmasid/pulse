@@ -21,12 +21,14 @@ let color3 = UIColor(red: 119/255, green: 4/255, blue: 37/255, alpha: 1.0)
 let color4 = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
 let color5 = UIColor(red: 39/255, green: 73/255, blue: 46/255, alpha: 1.0)
 let color6 = UIColor(red: 149/255, green: 149/255, blue: 149/255, alpha: 1.0)
+let color7 = UIColor(red: 38/255, green: 58/255, blue: 69/255, alpha: 1.0)
+let color8 = UIColor(red: 97/255, green: 101/255, blue: 111/255, alpha: 1.0)
 
 let minCellHeight : CGFloat = 225
 let searchBarHeight : CGFloat = 44
 let statusBarHeight : CGFloat = 20
 
-let _backgroundColors = [color1, color2, color3, color4, color5, color6]
+let _backgroundColors = [color1, color2, color3, color4, color5, color6, color7, color8]
 
 class GlobalFunctions {
     static func addBorders(_ _textField : UITextField) -> CAShapeLayer {

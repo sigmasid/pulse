@@ -48,6 +48,34 @@ class Database {
     static let querySize : UInt = 20
     
     /** MARK : SEARCH **/
+    static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
+        var _results = [Tag]()
+    
+        search(type: .tag, searchText: searchText, completion: { results in
+            for (key, value) in results {
+                let _currentTag = Tag(tagID: key)
+                _currentTag.tagDescription = value
+                _results.append(_currentTag)
+            }
+            
+            completion(_results)
+        })
+    }
+    
+    static func searchQuestions(searchText : String, completion: @escaping (_ questionsResult : [Question]) -> Void) {
+        var _results = [Question]()
+        
+        search(type: .question, searchText: searchText, completion: { results in
+            for (key, value) in results {
+                let _currentQuestion = Question(qID: key)
+                _currentQuestion.qTitle = value
+                _results.append(_currentQuestion)
+            }
+            
+            completion(_results)
+        })
+    }
+    
     static func search(type : FeedItemType, searchText : String, completion: @escaping (_ results : [(key: String, value: String)]) -> Void) {
         switch type {
         case .question:

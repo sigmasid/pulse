@@ -21,7 +21,8 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     
     fileprivate var _headerView : UIView!
     fileprivate var _loginHeader : LoginHeaderView!
-
+    fileprivate var isLoaded = false
+    
     fileprivate var emailValidated = false {
         didSet {
             if emailValidated && passwordValidated {
@@ -44,29 +45,33 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        hideKeyboardWhenTappedAround()
+        
+        if !isLoaded {
+            hideKeyboardWhenTappedAround()
 
-        userEmail.delegate = self
-        userPassword.delegate = self
-        
-        userEmail.tag = 100
-        userPassword.tag = 200
-        
-        userEmail.layer.addSublayer(GlobalFunctions.addBorders(userEmail))
-        userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
-        userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+            userEmail.delegate = self
+            userPassword.delegate = self
+            
+            userEmail.tag = 100
+            userPassword.tag = 200
+            
+            userEmail.layer.addSublayer(GlobalFunctions.addBorders(userEmail))
+            userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
+            userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+            userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
 
-        
-        userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
-        
-        userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            
+            userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+            userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+            userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
+            
+            userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
 
-        signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        signupButton.setDisabled()
+            signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
+            signupButton.setDisabled()
+            isLoaded = true
+        }
     }
     
     override func viewDidAppear(_ animated : Bool) {

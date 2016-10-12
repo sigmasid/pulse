@@ -85,6 +85,19 @@ class FeedCell: UICollectionViewCell {
         previewVC?.removeFromSuperview()
     }
     
+    func updateLabel(_ _title : String?, _subtitle : String?) {
+        titleLabel.text = _title
+        subtitleLabel.text = _subtitle
+    }
+    
+    func hideAnswerCount() {
+        answerCount.isHidden = true
+    }
+    
+    func showAnswerCount() {
+        answerCount.isHidden = false
+    }
+    
     override func prepareForReuse() {
         if previewAdded {
             removeAnswer()
@@ -247,10 +260,5 @@ class FeedCell: UICollectionViewCell {
         subtitleLabelConstraint3.isActive = true
         subtitleLabelConstraint4.isActive = true
 
-    }
-    
-    func updateLabel(_ _title : String?, _subtitle : String?) {
-        titleLabel.text = _title
-        subtitleLabel.text = _subtitle
     }
 }

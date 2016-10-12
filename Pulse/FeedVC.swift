@@ -9,12 +9,8 @@
 import UIKit
 
 protocol feedVCDelegate: class {
-    func userSelectedTag(_ : Tag)
-}
-
-protocol searchVCDelegate: class {
+    func userSelected(type : FeedItemType, item : Any)
     func userClickedSearch()
-    func userCancelledSearch()
 }
 
 class FeedVC: UIViewController {
@@ -28,8 +24,10 @@ class FeedVC: UIViewController {
     fileprivate var rectToLeft : CGRect!
     fileprivate var QAVC : QAManagerVC!
     
+    fileprivate var searchScope : FeedItemType? = .question
     var feedDelegate : feedVCDelegate!
-    var searchDelegate : searchVCDelegate!
+    fileprivate var headerView : SearchHeaderCell!
+    fileprivate var searchTap : UIGestureRecognizer!
     
     var feedItemType : FeedItemType! {
         didSet {
@@ -39,11 +37,14 @@ class FeedVC: UIViewController {
     
     var updateDataSource : Bool = false {
         didSet {
+            print("update data source fired")
+
             switch feedItemType! {
             case .tag:
                 totalItemCount = allTags.count
             case .question:
                 totalItemCount = allQuestions.count
+                print("total questions count is \(totalItemCount)")
             case .answer:
                 totalItemCount = allAnswers.count
 
@@ -70,10 +71,13 @@ class FeedVC: UIViewController {
                 if deselectedIndex != nil && deselectedIndex != selectedIndex {
                     FeedCollectionView?.reloadItems(at: [deselectedIndex!])
                 }
+                if feedDelegate != nil {
+                    feedDelegate.userSelected(type : .question, item : currentQuestion)
+                }
             } else if selectedIndex != nil && feedItemType! == .tag {
                 selectedIndex = nil
                 if feedDelegate != nil {
-                    feedDelegate.userSelectedTag(currentTag)
+                    feedDelegate.userSelected(type : .tag, item : currentTag)
                 }
             }
         }
@@ -84,6 +88,7 @@ class FeedVC: UIViewController {
         }
     }
     fileprivate var deselectedIndex : IndexPath?
+    fileprivate var selectedQuestion : Question!
 
     var allTags : [Tag]!
     var allQuestions : [Question?]!
@@ -114,16 +119,14 @@ class FeedVC: UIViewController {
             rectToRight.origin.x = view.frame.maxX
             
             setupScreenLayout()
-            
+            definesPresentationContext = true
+
             isLoaded = true
         }
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
-        
-        let offset = CGPoint(x : 0, y : searchBarHeight)
-        FeedCollectionView?.setContentOffset(offset, animated: false)
     }
     
     override func didReceiveMemoryWarning() {
@@ -143,7 +146,7 @@ class FeedVC: UIViewController {
         
         FeedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         FeedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
-        FeedCollectionView?.register(SearchHeaderCell.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: collectionHeaderReuseIdentifier)
+
 
         view.addSubview(FeedCollectionView!)
         
@@ -159,9 +162,6 @@ class FeedVC: UIViewController {
         FeedCollectionView?.backgroundView = nil
         FeedCollectionView?.showsVerticalScrollIndicator = false
         FeedCollectionView?.isPagingEnabled = true
-        
-        let offset = CGPoint(x : 0, y : searchBarHeight)
-        FeedCollectionView?.setContentOffset(offset, animated: true)
     }
     
     func showQuestion(_ _selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
@@ -176,14 +176,8 @@ class FeedVC: UIViewController {
         present(QAVC, animated: true, completion: nil)
     }
     
-    func showSearch() {
-        let searchVC = SearchVC()
-        
-        GlobalFunctions.addNewVC(searchVC, parentVC: self)
-        
-        if searchDelegate != nil {
-            searchDelegate.userClickedSearch()
-        }
+    func clearSelected() {
+        selectedIndex = nil
     }
 }
 
@@ -203,12 +197,17 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
         cell.contentView.backgroundColor = _backgroundColors[Int(_rand)]
         
-        if feedItemType! == .question {
+        switch feedItemType! {
+            
+        /** FEED ITEM: QUESTION **/
+        case .question:
+            
+            //clear the cells and set the item type first
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .question
             }
             cell.updateLabel(nil, _subtitle: nil)
-
+            
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 if let _currentQuestion = allQuestions[indexPath.row] {
                     if let tagID = _currentQuestion.qTagID {
@@ -216,37 +215,51 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     } else {
                         cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
                     }
-                    cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
+                    
+                    if _currentQuestion.hasAnswers() {
+                        cell.showAnswerCount()
+                        cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
+                    } else {
+                        cell.hideAnswerCount()
+                    }
                 }
             } else {
-                Database.getQuestion(currentTag.questions![indexPath.row]!.qID, completion: { (question, error) in
+                Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
                     if error == nil {
-                        if let tagID = self.currentTag.questions![indexPath.row]!.qTagID {
+                        if let tagID = question.qTagID {
                             cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercased())")
                         } else {
                             cell.updateLabel(question.qTitle, _subtitle: nil)
                         }
                         self.allQuestions[indexPath.row] = question
+                        cell.showAnswerCount()
                         cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
                     }
                 })
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                if let _selectedQuestion = allQuestions[indexPath.row] {
-                    showQuestion(_selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
-                }
-            } else if indexPath == selectedIndex {
-                if let _selectedQuestion = allQuestions[indexPath.row] {
-                    if _selectedQuestion.hasAnswers() {
-                        cell.showQuestion(_selectedQuestion)
+                showQuestion(selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag)
+                
+            } else if indexPath == selectedIndex, let _selectedQuestion = allQuestions[indexPath.row] {
+                if !_selectedQuestion.qCreated { //search case - get question from database
+                    Database.getQuestion(_selectedQuestion.qID, completion: { (question, error) in
+                    if error == nil {
+                        print("got question from database with answers \(question.totalAnswers())")
+                        self.selectedQuestion = question
+                        cell.showQuestion(question)
                     }
+                    })
+                } else if _selectedQuestion.hasAnswers() {
+                    self.selectedQuestion = _selectedQuestion
+                    cell.showQuestion(_selectedQuestion)
                 }
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()
             }
             
-        } else if feedItemType == .tag {
+        /** FEED ITEM: TAG **/
+        case .tag:
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .tag
             }
@@ -254,11 +267,12 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             if allTags.count > indexPath.row {
                 let _currentTag = allTags[indexPath.row]
-                cell.updateLabel("#\(_currentTag.tagID!.uppercased())", _subtitle: _currentTag.tagDescription)
+                cell.updateLabel(_currentTag.tagID, _subtitle: _currentTag.tagDescription)
                 cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), for: UIControlState())
             }
-        }
-        else if feedItemType == .answer {
+            
+        /** FEED ITEM: ANSWER **/
+        case .answer:
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .answer
             }
@@ -317,11 +331,12 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()
             }
+        case .people: break
         }
         return cell
     }
     
-    //Did select item at
+    //Did select item at index path
     func collectionView(_ collectionView: UICollectionView,
                         didSelectItemAt indexPath: IndexPath) {
         
@@ -330,44 +345,23 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
         
-        if feedItemType == .tag {
+        switch feedItemType! {
+        case .tag:
             currentTag = allTags[indexPath.row]
-        } else if feedItemType == .question && currentTag == nil {
-            if let _selectedQuestion = allQuestions[indexPath.row] {
-                currentTag = Tag(tagID: "EXPLORE", questions: [Question(qID: _selectedQuestion.qID)])
-            }
+        case .question:
+            currentQuestion = allQuestions[indexPath.row]
+        default: break
         }
+        
+//                currentTag = Tag(tagID: "EXPLORE", questions: [Question(qID: _selectedQuestion.qID)])
+
         selectedIndex = indexPath
     }
     
-    //Should select item at
+    //Should select item at indexPath
     func collectionView(_ collectionView: UICollectionView,
                         shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        
         return true
-    }
-    
-    //Header cell
-    func collectionView(_ collectionView: UICollectionView,
-                                 viewForSupplementaryElementOfKind kind: String,
-                                 at indexPath: IndexPath) -> UICollectionReusableView {
-        switch kind {
-        case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                             withReuseIdentifier: collectionHeaderReuseIdentifier,
-                                                                             for: indexPath) as! SearchHeaderCell
-            headerView.showSearchField.addTarget(self, action: #selector(showSearch), for: .touchUpInside)
-            return headerView
-        default:
-            assert(false, "Unexpected element kind")
-        }
-    }
-    
-    //Size for header
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: searchBarHeight)
     }
 }
 
@@ -375,7 +369,8 @@ extension FeedVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (FeedCollectionView!.frame.width / 2 - 0.5), height: max(minCellHeight , FeedCollectionView!.frame.height / 3))
+        return CGSize(width: (FeedCollectionView!.frame.width / 2 - 0.5),
+                      height: max(minCellHeight , FeedCollectionView!.frame.height / 3))
     }
 }
 

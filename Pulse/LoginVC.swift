@@ -63,10 +63,6 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-    }
-    
-    override func viewDidAppear(_ animated : Bool) {
-        super.viewDidAppear(true)
         
         if !_loaded {
             hideKeyboardWhenTappedAround()
@@ -74,15 +70,17 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             emailButton.setDisabled()
             addHeader()
             _currentLoadedView = .login
-
+            
             NotificationCenter.default.addObserver(self, selector: #selector(onFBProfileUpdated), name:NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
-
+            
             _loaded = true
-        } else {
-            view.layoutIfNeeded()
         }
+        
         _loginHeader?.updateStatusMessage(_message: "get logged in")
-
+    }
+    
+    override func viewDidAppear(_ animated : Bool) {
+        super.viewDidAppear(true)
     }
     
     override func viewDidDisappear(_ animated : Bool) {

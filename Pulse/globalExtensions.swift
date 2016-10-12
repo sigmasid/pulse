@@ -176,6 +176,22 @@ extension UIImage
     var mediumQualityJPEGNSData: Data  { return UIImageJPEGRepresentation(self, 0.5)! }
     var lowQualityJPEGNSData: Data     { return UIImageJPEGRepresentation(self, 0.25)!}
     var lowestQualityJPEGNSData: Data  { return UIImageJPEGRepresentation(self, 0.0)! }
+    
+    var circle: UIImage? {
+        let square = CGSize(width: min(size.width, size.height), height: min(size.width, size.height))
+        let imageView = UIImageView(frame: CGRect(origin: .zero, size: square))
+        imageView.backgroundColor = UIColor.black
+        imageView.contentMode = .scaleAspectFill
+        imageView.image = self
+        imageView.layer.cornerRadius = square.width/2
+        imageView.layer.masksToBounds = true
+        UIGraphicsBeginImageContextWithOptions(imageView.bounds.size, false, scale)
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+        imageView.layer.render(in: context)
+        let result = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return result
+    }
 }
 
 extension Double {

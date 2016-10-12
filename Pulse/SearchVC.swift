@@ -8,13 +8,24 @@
 
 import UIKit
 
-class SearchVC: UIViewController {
+protocol searchVCDelegate: class {
+    func userCancelledSearch()
+    func userSelectedSearchResult(type : FeedItemType?, id : String)
+}
+
+
+class SearchVC: UIViewController, XMSegmentedControlDelegate {
     fileprivate var reuseIdentifier = "tableViewCell"
-    fileprivate var searchController : UISearchController!
+    fileprivate var searchController = UISearchController(searchResultsController: nil)
+    fileprivate var searchBarContainer = UIView()
+    fileprivate var scopeBarContainer = UIView()
     fileprivate var tableView = UITableView()
     
-    fileprivate var searchScope : SearchTypes? = .tags
-    fileprivate enum SearchTypes { case tags, questions, users }
+    fileprivate var isSetupComplete = false
+    
+    fileprivate var searchScope : FeedItemType? = .tag
+    var searchDelegate : searchVCDelegate!
+
     var results = [(key:String , value:String)]() {
         didSet {
             tableView.reloadData()
@@ -33,21 +44,51 @@ class SearchVC: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
-        setupTableView()
+        if !isSetupComplete {
+            isSetupComplete = true
+            
+            addSearchBar()
+//            addScopeBar()
+            setupTableView()
+        }
     }
     
     override var prefersStatusBarHidden : Bool {
         return true
     }
     
-    fileprivate func setupTableView() {
-        searchController = UISearchController(searchResultsController: nil) //needs to be here as tableview uses it
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
-
-        view.addSubview(tableView)
+    fileprivate func addSearchBar() {
+        view.addSubview(searchBarContainer)
+        searchBarContainer.translatesAutoresizingMaskIntoConstraints = false
+        searchBarContainer.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        searchBarContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        searchBarContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        searchBarContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        searchBarContainer.layoutIfNeeded()
         
+        searchController.searchBar.sizeToFit()
+        searchBarContainer.addSubview(searchController.searchBar)
+        definesPresentationContext = true
+
+        print("searchcontroller frame is \(searchBarContainer.frame)")
+        
+        // Setup the Search Controller
+        searchController.searchResultsUpdater = self
+        searchController.searchBar.delegate = self
+        searchController.searchBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.white)
+
+        searchController.dimsBackgroundDuringPresentation = false
+        searchController.isActive = true
+        searchController.searchBar.becomeFirstResponder()
+
+    }
+    
+    fileprivate func setupTableView() {
+        
+        tableView.register(SearchTableCell.self, forCellReuseIdentifier: reuseIdentifier)
+        view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        tableView.topAnchor.constraint(equalTo: scopeBarContainer.bottomAnchor).isActive = true
         tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         tableView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
@@ -59,27 +100,15 @@ class SearchVC: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.reloadData()
-
-        // Setup the Search Controller
-        searchController.searchResultsUpdater = self
-        searchController.searchBar.delegate = self
-        searchController.searchBar.isTranslucent = false
-        searchController.searchBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.white)
-        searchController.searchBar.scopeBarBackgroundImage = GlobalFunctions.imageWithColor(UIColor.white)
-        searchController.searchBar.scopeButtonTitles = ["Tags","Questions","People"]
-        
-        let searchTextAttributes = [ NSForegroundColorAttributeName: UIColor.black ]
-        searchController.searchBar.setScopeBarButtonTitleTextAttributes(searchTextAttributes, for: .normal)
-        searchController.searchBar.setScopeBarButtonDividerImage(UIImage(), forLeftSegmentState: .normal, rightSegmentState: .normal)
-        
-        tableView.tableHeaderView?.backgroundColor = UIColor.white
-        tableView.tableHeaderView = searchController.searchBar
-        
-        definesPresentationContext = true
-        searchController.dimsBackgroundDuringPresentation = false
-        searchController.isActive = true
-        searchController.searchBar.becomeFirstResponder()
-
+    }
+    
+    func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
+        switch selectedSegment {
+        case 0: searchScope = .tag
+        case 1: searchScope = .question
+        case 2: searchScope = .people
+        default: searchScope = nil
+        }
     }
 }
 
@@ -94,37 +123,64 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath)
-        cell.textLabel?.text = searchScope == .tags ? results[indexPath.row].key : results[indexPath.row].value
+        let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! SearchTableCell
+        cell.titleLabel.text = searchScope == .tag ? results[indexPath.row].key : results[indexPath.row].value
+        cell.subtitleLabel.text = searchScope == .tag ? results[indexPath.row].value : ""
+        
+        cell.iconButton.setImage(searchScope == .tag ? UIImage(named: "tag") : UIImage(named: "question"), for: UIControlState())
+        
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return IconSizes.large.rawValue
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let id = results[indexPath.row].key
+        searchDelegate.userSelectedSearchResult(type: searchScope, id: id)
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection: Int) -> UIView? {
+        let headerView = UIView()
+        let activityIndicatorView = UIActivityIndicatorView()
+        let activityLabel = UILabel()
+        
+        headerView.addSubview(activityIndicatorView)
+        headerView.addSubview(activityLabel)
+
+        activityLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+        activityLabel.text = "Searching..."
+        
+        return headerView
+    }
+    
+    func tableView(_ tableView: UITableView,
+                   heightForHeaderInSection section: Int) -> CGFloat{
+        return IconSizes.medium.rawValue
     }
 }
 
 extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating {
-    func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
-        switch selectedScope {
-        case 0: searchScope = .tags
-        case 1: searchScope = .questions
-        case 2: searchScope = .users
-        default: searchScope = nil
-        }
-    }
+    // MARK: - Search controller delegate methods
     
     func updateSearchResults(for searchController: UISearchController) {
         let _searchText = searchController.searchBar.text!
         
         if _searchText != "" && _searchText.characters.count > 1 {
             switch searchScope! {
-            case .tags:
+            case .tag:
                 Database.search(type: .tag, searchText: _searchText.lowercased(), completion:  { searchResults in
                         self.results = searchResults
                 })
-            case .questions:
+            case .question:
                 Database.search(type: .question, searchText: _searchText.lowercased(), completion:  { searchResults in
                     self.results = searchResults
                 })
             default: break
             }
+        } else if _searchText == "" {
+            //empty the dictionary
         }
     }
     

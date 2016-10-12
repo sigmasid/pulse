@@ -180,12 +180,13 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     fileprivate func addUserProfilePic(_ _userImageURL : URL?) {
         if let _ = _userImageURL {
             DispatchQueue.global().async {
-                let _userImageData = try? Data(contentsOf: _userImageURL!)
-                User.currentUser?.thumbPicImage = UIImage(data: _userImageData!)
-                DispatchQueue.main.async(execute: {
-                    self.uProfilePic.image = User.currentUser?.thumbPicImage
-                    self.uProfilePic.clipsToBounds = true
-                })
+                if let _userImageData = try? Data(contentsOf: _userImageURL!) {
+                    User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
+                    DispatchQueue.main.async(execute: {
+                        self.uProfilePic.image = User.currentUser?.thumbPicImage
+                        self.uProfilePic.clipsToBounds = true
+                    })
+                }
             }
         }
     }
