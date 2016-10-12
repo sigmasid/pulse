@@ -112,8 +112,8 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         let detailVC = FeedVC()
         detailVC.view.frame = view.bounds
         detailVC.feedItemType = .answer
-        detailVC.currentTag = _selectedTag
-        detailVC.currentQuestion = _selectedQuestion
+        detailVC.selectedTag = _selectedTag
+        detailVC.selectedQuestion = _selectedQuestion
         
         GlobalFunctions.addNewVC(detailVC, parentVC: self)
         

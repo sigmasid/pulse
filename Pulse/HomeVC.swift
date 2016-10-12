@@ -43,7 +43,7 @@ class HomeVC: UIViewController {
             self.homeFeedVC = FeedVC()
             self.homeFeedVC.view.frame = containerView.frame
             
-            self.homeFeedVC.currentTag = feed
+            self.homeFeedVC.selectedTag = feed
             if let allQuestions = feed.questions {
                 self.homeFeedVC.allQuestions = allQuestions
             }

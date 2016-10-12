@@ -47,6 +47,7 @@ class Database {
 
     static let querySize : UInt = 20
     
+    
     /** MARK : SEARCH **/
     static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
         var _results = [Tag]()
@@ -73,6 +74,19 @@ class Database {
             }
             
             completion(_results)
+        })
+    }
+    
+    static func searchUsers(searchText : String, completion: @escaping (_ peopleResult : [User]) -> Void) {
+        var allUsers = [User]()
+        let endingString = searchText.appending("\u{f8ff}")
+        
+        usersPublicSummaryRef.queryOrdered(byChild: "name").queryStarting(atValue: searchText).queryEnding(atValue: endingString).observeSingleEvent(of: .value, with: { snapshot in
+            for item in snapshot.children {
+                let snap = item as! FIRDataSnapshot
+                allUsers.append(User(uID: snap.key, snapshot: snap))
+            }
+            completion(allUsers)
         })
     }
     

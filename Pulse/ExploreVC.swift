@@ -26,14 +26,39 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     }
     
     fileprivate var isLoaded = false
-    fileprivate var isSearchActive = false
+    fileprivate var isSearchActive = false {
+        didSet {
+            if isSearchActive {
+                if tapGesture == nil {
+                    tapGesture = UITapGestureRecognizer(target: exploreContainer.view, action: #selector(dismissSearchKeyboard))
+                }
+                
+                tapGesture.isEnabled = true
+            } else {
+                if tapGesture != nil {
+                    tapGesture.isEnabled = false
+                }
+            }
+        }
+    }
+    fileprivate var viewStack : String!
+    fileprivate var tapGesture : UIGestureRecognizer!
 
     fileprivate var selectedExploreType : FeedItemType? {
         didSet {
             if isSearchActive {
                 self.headerContainer.updateScopeBar(type: .search)
                 updateSearchResults(for: headerContainer.searchController)
-
+                switch selectedExploreType! {
+                case .question:
+                    self.headerContainer.updateHeader(title: "SEARCH QUESTIONS", subtitle: nil, image: nil)
+                case .tag:
+                    self.headerContainer.updateHeader(title: "SEARCH TAGS", subtitle: nil, image: nil)
+                case .answer:
+                    self.headerContainer.updateHeader(title: "SEARCH ANSWERS", subtitle: nil, image: nil)
+                case .people:
+                    self.headerContainer.updateHeader(title: "SEARCH PEOPLE", subtitle: nil, image: nil)
+                }
             } else if selectedExploreType != nil {
                 self.headerContainer.updateScopeBar(type: .explore)
 
@@ -110,7 +135,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
             selectedTagDetail = item as! Tag //didSet method pulls questions from database in case of search else assigns questions from existing tag
             selectedExploreType = nil
             
-            headerContainer.currentMode = .detail
             headerContainer.updateScopeBar(type: .tag)
             headerContainer.segmentedControl.selectedSegment = 0
             
@@ -134,9 +158,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
             }
         case .question:
             selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
-            
-            exploreContainer.currentTag = isSearchActive ? Tag(tagID: "SEARCH") : Tag(tagID : "EXPLORE")
-            headerContainer.updateHeader(title: headerContainer.headerTitle.text!, subtitle: selectedQuestion.qTitle, image : nil)
+            headerContainer.segmentedControl.selectedSegment = -1
+
+            exploreContainer.selectedTag = isSearchActive ? Tag(tagID: "SEARCH") : Tag(tagID : "EXPLORE")
+            headerContainer.updateHeader(title: "QUESTION", subtitle: selectedQuestion.qTitle, image : nil)
             headerContainer.updateScopeBar(type: .question)
 
         case .people:
@@ -147,32 +172,29 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     }
     
     func userClickedSearch() {
-        isSearchActive = true
-        headerContainer.currentMode = .search
         headerContainer.updateHeader(title: "SEARCH", subtitle: nil, image: nil)
         headerContainer.updateScopeBar(type: .search)
 
+        isSearchActive = true
         exploreContainer.clearSelected()
     }
     
     func userCancelledSearch() {
         isSearchActive = false
-        headerContainer.currentMode = .explore
         headerContainer.updateHeader(title: "EXPLORE", subtitle: nil, image: nil)
         headerContainer.updateScopeBar(type: .explore)
-
+        
+        exploreContainer.clearSelected()
         selectedExploreType = (selectedExploreType)
     }
     
     // UPDATE TAGS / QUESTIONS IN FEED
     internal func backToExplore() {
-        selectedExploreType = .tag
-        headerContainer.segmentedControl.selectedSegment = 0
-        headerContainer.currentMode = .explore
+        selectedExploreType = (selectedExploreType)
+        headerContainer.segmentedControl.selectedSegment = selectedExploreType != nil ? getSelectedExploreValue(type : selectedExploreType!) : -1
         headerContainer.updateScopeBar(type: .explore)
         headerContainer.updateHeader(title: "EXPLORE", subtitle: nil, image: nil)
     }
-    
     
     //FOLLOW / UNFOLLOW QUESTIONS AND UPDATE BUTTONS
     internal func follow() {
@@ -198,6 +220,18 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         }
     }
     
+    fileprivate func getSelectedExploreValue(type : FeedItemType) -> Int {
+        switch type {
+        case .tag: return 0
+        case .question: return 1
+        case .people: return 2
+        default: return -1
+        }
+    }
+    
+    func dismissSearchKeyboard() {
+    
+    }
     
     /* MARK : LAYOUT VIEW FUNCTIONS */
     fileprivate func setupExplore() {
@@ -213,7 +247,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
 
         headerContainer.updateHeader(title: "EXPLORE", subtitle : nil, image: nil)
         headerContainer.updateScopeBar(type: .explore)
-        headerContainer.currentMode = .explore
         
         headerContainer.segmentedControl.delegate = self
         headerContainer.searchController.searchResultsUpdater = self
@@ -252,7 +285,13 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
             case .question:
                 Database.searchQuestions(searchText: _searchText.lowercased(), completion:  { searchResults in
                     self.exploreContainer.allQuestions = searchResults
-                    self.exploreContainer.currentTag = Tag(tagID: "SEARCH")
+                    self.exploreContainer.selectedTag = Tag(tagID: "SEARCH")
+                    self.exploreContainer.feedItemType = self.selectedExploreType
+                    self.exploreContainer.updateDataSource = true
+                })
+            case .people:
+                Database.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
+                    self.exploreContainer.allUsers = searchResults
                     self.exploreContainer.feedItemType = self.selectedExploreType
                     self.exploreContainer.updateDataSource = true
                 })
@@ -266,6 +305,7 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     func didPresentSearchController(_ searchController: UISearchController) {
         searchController.searchBar.showsCancelButton = false
         searchController.searchBar.becomeFirstResponder()
+        searchController.searchBar.placeholder = "enter search text"
     }
 
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {

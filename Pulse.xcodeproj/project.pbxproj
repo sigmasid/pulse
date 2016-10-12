@@ -335,6 +335,7 @@
 				BAACBF7D1D248C4C009F23D0 /* ExploreTagsVC.swift */,
 				BAACBF7B1D248C3A009F23D0 /* ExploreTagCell.swift */,
 				BAD37D5F1D25ED9D00BACB04 /* ExploreQuestionCell.swift */,
+				BAB03AC11D7F86A900090147 /* FeedPreview.swift */,
 				BA8D6F391D372B4400C83942 /* ExploreQuestionCellFooter.swift */,
 			);
 			name = Explore;
@@ -381,7 +382,6 @@
 			children = (
 				BA7D55271D74C58D005EF7F3 /* FeedVC.swift */,
 				BA7D55291D74C5A9005EF7F3 /* FeedCell.swift */,
-				BAB03AC11D7F86A900090147 /* FeedPreview.swift */,
 				BAFD76DB1D9C8C7D005FBBD0 /* SearchHeaderCell.swift */,
 			);
 			name = Feed;

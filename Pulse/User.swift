@@ -29,6 +29,8 @@ class User {
     var savedTags = [String : String?]()
     var savedQuestions = [String : String?]()
     var socialSources = [ Social : Bool ]()
+    
+    dynamic var uCreated = false
 
     enum Gender {
         case male
@@ -82,6 +84,8 @@ class User {
         if snapshot.hasChild("shortBio") {
             self.shortBio = snapshot.childSnapshot(forPath: "shortBio").value as? String
         }
+        
+        uCreated = true
     }
     
     init(user: FIRUser) {

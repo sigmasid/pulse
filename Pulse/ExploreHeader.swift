@@ -22,13 +22,14 @@ class ExploreHeader: UIView {
     let exploreButton = UIButton()
     let backButton = UIButton()
     let searchButton = UIButton()
-    let exploreSearchButton = UIButton()
     let closeButton = UIButton()
     
     fileprivate var scopeBarContainer = UIView()
     fileprivate var searchBarContainer = UIView()
     var searchController = UISearchController(searchResultsController: nil)
     var segmentedControl : XMSegmentedControl!
+    
+    let buttonInsets = UIEdgeInsetsMake(5, 5, 5, 5)
     
     fileprivate var isExploreHeaderSetup = false
     
@@ -49,54 +50,7 @@ class ExploreHeader: UIView {
             updateScopeBar(type: scopeBarType)
         }
     }
-
-    enum CurrentModeTypes { case explore, detail, search }
-    var currentMode : CurrentModeTypes = .explore {
-        didSet {
-            switch currentMode {
-            case .explore:
-                exploreButton.isHidden = false
-                searchButton.isHidden = false
-                followButton.isHidden = true
-                backButton.isHidden = true
-                closeButton.isHidden = true
-                exploreSearchButton.isHidden = true
-
-                searchController.isActive = false
-                searchController.resignFirstResponder()
-                
-                toggleSearchBar(show: false)
-
-            case .detail:
-                followButton.isHidden = false
-                backButton.isHidden = false
-                exploreButton.isHidden = true
-                closeButton.isHidden = true
-                exploreSearchButton.isHidden = true
-                searchButton.isHidden = true
-
-                searchController.isActive = false
-                searchController.resignFirstResponder()
-                
-                toggleSearchBar(show: false)
-
-            case .search:
-                print("set mode to search")
-                followButton.isHidden = true
-                backButton.isHidden = true
-                exploreButton.isHidden = true
-                searchButton.isHidden = true
-
-                closeButton.isHidden = false
-                exploreSearchButton.isHidden = false
-                
-                toggleSearchBar(show: true)
-
-                searchController.isActive = true
-                searchController.becomeFirstResponder()
-            }
-        }
-    }
+    /* END PROPERTIES */
     
     func updateHeader(title : String, subtitle : String?, image : UIImage?) {
         headerTitle.text = title.uppercased()
@@ -107,14 +61,22 @@ class ExploreHeader: UIView {
     
     func updateScopeBar(type : ScopeBarTypes) {
         switch type {
-        case .explore, .search:
+        case .explore:
             let titles = ["Tags", "Questions", "People"]
             let icons = [UIImage(named: "tag")!,
                          UIImage(named: "question")!,
                          UIImage(named: "add")!]
             segmentedControl.segmentContent = (text: titles, icon : icons)
             segmentedControl.layoutIfNeeded()
-
+            updateButtons(mode: type)
+        case .search:
+            let titles = ["Tags", "Questions", "People"]
+            let icons = [UIImage(named: "tag")!,
+                         UIImage(named: "question")!,
+                         UIImage(named: "add")!]
+            segmentedControl.segmentContent = (text: titles, icon : icons)
+            segmentedControl.layoutIfNeeded()
+            updateButtons(mode: type)
         case .tag:
             let titles = ["Questions", "Experts", "Related"]
             let icons = [UIImage(named: "tag")!,
@@ -122,7 +84,7 @@ class ExploreHeader: UIView {
                          UIImage(named: "add")!]
             segmentedControl.segmentContent = (text: titles, icon : icons)
             segmentedControl.layoutIfNeeded()
-
+            updateButtons(mode: type)
         case .question:
             let titles = ["Answers", "Experts", "Related"]
             let icons = [UIImage(named: "tag")!,
@@ -130,7 +92,7 @@ class ExploreHeader: UIView {
                          UIImage(named: "add")!]
             segmentedControl.segmentContent = (text: titles, icon : icons)
             segmentedControl.layoutIfNeeded()
-
+            updateButtons(mode: type)
         case .people:
             let titles = ["Experts", "Questions", "People"]
             let icons = [UIImage(named: "tag")!,
@@ -138,8 +100,45 @@ class ExploreHeader: UIView {
                          UIImage(named: "add")!]
             segmentedControl.segmentContent = (text: titles, icon : icons)
             segmentedControl.layoutIfNeeded()
-
+            updateButtons(mode: type)
         }
+    }
+    
+    fileprivate func updateButtons(mode : ScopeBarTypes) {
+        switch mode {
+        case .explore:
+            exploreButton.isHidden = false
+            searchButton.isHidden = false
+            followButton.isHidden = true
+            backButton.isHidden = true
+            closeButton.isHidden = true
+            searchController.isActive = false
+            toggleSearchBar(show: false)
+        case .search:
+            followButton.isHidden = true
+            backButton.isHidden = true
+            exploreButton.isHidden = true
+            searchButton.isHidden = true
+            closeButton.isHidden = false
+            searchController.isActive = true
+            toggleSearchBar(show: true)
+        case .question, .people, .tag:
+            followButton.isHidden = false
+            backButton.isHidden = false
+            exploreButton.isHidden = true
+            closeButton.isHidden = true
+            searchButton.isHidden = true
+            searchController.isActive = false
+            toggleSearchBar(show: false)
+        }
+    }
+    
+    func updateExploreButtonImage(image : UIImage) {
+        let exploreTintedImage = image.withRenderingMode(.alwaysTemplate)
+        exploreButton.setImage(exploreTintedImage, for: UIControlState())
+        exploreButton.contentEdgeInsets = buttonInsets
+        exploreButton.tintColor = UIColor.white
+
     }
     
     func updateFollowButton(_ followMode : FollowToggle) {
@@ -245,20 +244,18 @@ class ExploreHeader: UIView {
             
             leftContainer.addSubview(exploreButton)
             leftContainer.addSubview(backButton)
-            leftContainer.addSubview(exploreSearchButton)
-            
+            leftContainer.addSubview(closeButton)
+
             middleContainer.addSubview(headerTitle)
             middleContainer.addSubview(headerSubtitle)
             
             rightContainer.addSubview(followButton)
             rightContainer.addSubview(searchButton)
-            rightContainer.addSubview(closeButton)
             
             /* LEFT CONTAINER */
-            let buttonInsets = UIEdgeInsetsMake(5, 5, 5, 5)
             backButton.frame = leftContainer.bounds
             exploreButton.frame = leftContainer.bounds
-            exploreSearchButton.frame = leftContainer.bounds
+            closeButton.frame = leftContainer.bounds
 
             let exploreTintedImage = UIImage(named: "collection-list")?.withRenderingMode(.alwaysTemplate)
             exploreButton.backgroundColor = color8
@@ -275,18 +272,6 @@ class ExploreHeader: UIView {
             backButton.isHidden = true
             backButton.contentEdgeInsets = buttonInsets
             
-            let exploreSearchTintedImage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)
-            exploreSearchButton.backgroundColor = color8
-            exploreSearchButton.makeRound()
-            exploreSearchButton.setImage(exploreSearchTintedImage, for: UIControlState())
-            exploreSearchButton.contentEdgeInsets = buttonInsets
-            exploreSearchButton.tintColor = UIColor.white
-            
-            /* RIGHT CONTAINER */
-            searchButton.frame = rightContainer.bounds
-            followButton.frame = rightContainer.bounds
-            closeButton.frame = rightContainer.bounds
-
             let closeButtonImage = UIImage(named: "close")?.withRenderingMode(.alwaysTemplate)
             closeButton.tintColor = UIColor.white
             closeButton.backgroundColor = color8
@@ -294,6 +279,10 @@ class ExploreHeader: UIView {
             closeButton.setImage(closeButtonImage, for: UIControlState())
             closeButton.contentEdgeInsets = buttonInsets
             closeButton.isHidden = true
+            
+            /* RIGHT CONTAINER */
+            searchButton.frame = rightContainer.bounds
+            followButton.frame = rightContainer.bounds
 
             let searchImage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)
             searchButton.backgroundColor = color8
@@ -323,7 +312,7 @@ class ExploreHeader: UIView {
             headerSubtitle.layoutIfNeeded()
 
             headerTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightBlack, color: UIColor.black, alignment: .left)
-            headerSubtitle.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.black, alignment: .left)
+            headerSubtitle.setFont(FontSizes.body.rawValue, weight: UIFontWeightRegular, color: UIColor.black, alignment: .left)
 
             isExploreHeaderSetup = true
         }
