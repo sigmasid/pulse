@@ -509,10 +509,10 @@
             </objects>
             <point key="canvasLocation" x="1834" y="1137"/>
         </scene>
-        <!--Account PageVC-->
+        <!--View Controller-->
         <scene sceneID="BPJ-jT-fGu">
             <objects>
-                <viewController storyboardIdentifier="AccountPageVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="LE9-nb-woB" customClass="AccountPageVC" customModule="Pulse" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="AccountPageVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="LE9-nb-woB" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="rX0-Og-eC7"/>
                         <viewControllerLayoutGuide type="bottom" id="NWs-bx-mUA"/>
@@ -528,8 +528,8 @@
                                 </constraints>
                             </imageView>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Your Name" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="V9l-dU-bre">
-                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <nil key="textColor"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                 <textInputTraits key="textInputTraits" returnKeyType="done"/>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="s8K-6d-YN2">
@@ -652,7 +652,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="l4P-21-AEe" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2499" y="1137"/>
+            <point key="canvasLocation" x="2498.4000000000001" y="1136.5817091454273"/>
         </scene>
     </scenes>
     <resources>

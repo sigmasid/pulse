@@ -111,7 +111,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
         Database.checkExistingConversation(to: toUser, completion: {(success, _conversationID) in
             if success {
                 self.conversationID = _conversationID!
-                Database.getConversation(conversationID: _conversationID!, completion: { messages, lastMessageID in
+                Database.getConversationMessages(conversationID: _conversationID!, completion: { messages, lastMessageID in
                     self.messages = messages
                     self.lastMessageID = lastMessageID
                     let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)

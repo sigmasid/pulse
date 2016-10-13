@@ -9,20 +9,25 @@
 import UIKit
 
 class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
+    
+    fileprivate var profileSummary = UIView()
+    fileprivate var uProfilePic = UIImageView()
+    fileprivate var uName = UITextField()
+    fileprivate var uShortBio = UITextField()
+    fileprivate var uMessages = UIButton()
+    
+    fileprivate var socialLinks = UIStackView()
+    fileprivate var inButton = UIButton()
+    fileprivate var twtrButton = UIButton()
+    fileprivate var fbButton = UIButton()
+    
+    fileprivate var settingsLinks = UIStackView()
+    fileprivate var sAboutButton = UIButton()
+    fileprivate var sMessagesButton = UIButton()
+    fileprivate var sActivityButton = UIButton()
+    fileprivate var sLogoutButton = UIButton()
+    fileprivate var sAnswersButton = UIButton()
 
-    @IBOutlet weak var uProfilePic: UIImageView!
-    @IBOutlet weak var uNameLabel: UITextField!
-    @IBOutlet weak var numAnswersLabel: UILabel!
-    @IBOutlet weak var inButton: UIButton!
-    @IBOutlet weak var twtrButton: UIButton!
-    @IBOutlet weak var fbButton: UIButton!
-    @IBOutlet weak var savedTags: UITextView!
-    fileprivate lazy var settingsButton = UIButton()
-    
-    @IBOutlet weak var linkLinkedin: UILabel!
-    @IBOutlet weak var linkTwitter: UILabel!
-    @IBOutlet weak var linkFacebook: UILabel!
-    
     fileprivate var _nameErrorLabel = UILabel()
     
     fileprivate lazy var _defaultProfileOverlay = UILabel()
@@ -31,32 +36,37 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     fileprivate var _cameraOverlay : CameraOverlayView!
     
     fileprivate var _loadingOverlay : LoadingView!
+    fileprivate var _icon : IconContainer!
     fileprivate var _tapGesture : UITapGestureRecognizer?
     
     fileprivate var _loginHeader : LoginHeaderView!
     fileprivate var _isLoaded = false
+    fileprivate var _notificationsSetup = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(true)
         
-        hideKeyboardWhenTappedAround()
-        
-        if !_isLoaded {
-            addHeader()
-            
-            fbButton.makeRound()
-            twtrButton.makeRound()
-            inButton.makeRound()
-            
-            uNameLabel.delegate = self
-            uNameLabel.clearsOnBeginEditing = true
-            
+        if !_notificationsSetup {
             NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "AccountPageLoaded"), object: nil)
+
+            _notificationsSetup = true
+        }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        if !_isLoaded {
+            hideKeyboardWhenTappedAround()
+            view.backgroundColor = UIColor.white
+            _icon = addIcon(text: "ACCOUNT")
+
+            addHeader()
+            setupProfileSummaryLayout()
+            setupSocialButtonsLayout()
+            setupSettingsMenuLayout()
+            
+            uName.delegate = self
+            uName.clearsOnBeginEditing = true
             
             _tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleImageTap))
             uProfilePic.addGestureRecognizer(_tapGesture!)
@@ -64,7 +74,6 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             uProfilePic.contentMode = UIViewContentMode.scaleAspectFill
             
             _isLoaded = true
-            addIcon(text: "ACCOUNT")
         }
     }
     
@@ -72,15 +81,16 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         super.didReceiveMemoryWarning()
     }
     
+    /* TEXT FIELD DELEGATES */
     func textFieldDidBeginEditing(_ textField: UITextField) {
         _nameErrorLabel.text = ""
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         dismissKeyboard()
-        GlobalFunctions.validateName(uNameLabel.text, completion: {(verified, error) in
+        GlobalFunctions.validateName(uName.text, completion: {(verified, error) in
             if verified {
-                Database.updateUserData(UserProfileUpdateType.displayName, value: self.uNameLabel.text!, completion: { (success, error) in
+                Database.updateUserData(UserProfileUpdateType.displayName, value: self.uName.text!, completion: { (success, error) in
                     if success {
                         //print("updated name in DB")
                     } else {
@@ -96,18 +106,58 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         return true
     }
     
+    func clickedSettings() {
+        settingsLinks.isHidden = settingsLinks.isHidden ? false : true
+        
+//        let settingsVC = SettingsTableVC()
+//        settingsVC.returnToParentDelegate = self
+//        GlobalFunctions.addNewVC(settingsVC, parentVC: self)
+    }
     
-    func ClickedSettings() {
-        let settingsVC = SettingsTableVC()
-        settingsVC.returnToParentDelegate = self
-        GlobalFunctions.addNewVC(settingsVC, parentVC: self)
+    func clickedProfile() {
+        
+    }
+    
+    func clickedMessages() {
+        Database.getConversations(completion: { conversations in
+            let inboxVC = InboxVC()
+            inboxVC.conversations = conversations
+            GlobalFunctions.addNewVC(inboxVC, parentVC: self)
+        })
+    }
+    
+    func clickedActivity() {
+        
+    }
+    
+    func clickedAnswers() {
+        
+    }
+    
+    func clickedLogout() {
+        let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
+        
+        confirmLogout.addAction(UIAlertAction(title: "logout", style: .default, handler: { (action: UIAlertAction!) in
+            Database.signOut({ success in
+                if !success {
+                    GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
+                }
+            })
+        }))
+        
+        confirmLogout.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            confirmLogout.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(confirmLogout, animated: true, completion: nil)
+
     }
     
     func returnToParent(_ currentVC : UIViewController) {
         GlobalFunctions.dismissVC(currentVC)
     }
 
-    @IBAction func LinkAccount(_ sender: UIButton) {
+    fileprivate func linkAccount() {
         //check w/ social source and connect to user profile on firebase
     }
     
@@ -116,10 +166,10 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         
         _nameErrorLabel.translatesAutoresizingMaskIntoConstraints = false
         
-        _nameErrorLabel.topAnchor.constraint(equalTo: uNameLabel.topAnchor).isActive = true
+        _nameErrorLabel.topAnchor.constraint(equalTo: uName.topAnchor).isActive = true
         _nameErrorLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        _nameErrorLabel.heightAnchor.constraint(equalTo: uNameLabel.heightAnchor).isActive = true
-        _nameErrorLabel.leadingAnchor.constraint(equalTo: uNameLabel.trailingAnchor, constant: 10).isActive = true
+        _nameErrorLabel.heightAnchor.constraint(equalTo: uName.heightAnchor).isActive = true
+        _nameErrorLabel.leadingAnchor.constraint(equalTo: uName.trailingAnchor, constant: 10).isActive = true
         
         _nameErrorLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
         _nameErrorLabel.backgroundColor = UIColor.gray
@@ -134,24 +184,30 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     func updateLabels(_ notification: Notification) {
         if let _userName = User.currentUser!.name {
             _loginHeader?.updateStatusMessage(_message: "Welcome \(_userName)")
-            uNameLabel.text = _userName
-            uNameLabel.isUserInteractionEnabled = false
+            uName.text = _userName
+            uName.isUserInteractionEnabled = false
         } else {
             _loginHeader?.updateStatusMessage(_message: "please login")
-            uNameLabel.text = "tap to edit name"
-            uNameLabel.isUserInteractionEnabled = true
+            uName.text = "tap to edit name"
+            uName.isUserInteractionEnabled = true
+        }
+        
+        if let _userBio = User.currentUser!.shortBio {
+            uShortBio.text = _userBio
+            uShortBio.isUserInteractionEnabled = false
+        } else {
+            uShortBio.text = "tap to edit bio"
+            uShortBio.isUserInteractionEnabled = true
         }
         
         //add profile pic or use default image
         if User.currentUser!.profilePic != nil || User.currentUser!.thumbPic != nil {
             let _uPic = User.currentUser!.thumbPic != nil ? User.currentUser!.thumbPic : User.currentUser!.profilePic
-            _defaultProfileOverlay = UILabel(frame: uProfilePic.bounds)
             _defaultProfileOverlay.isHidden = true
             addUserProfilePic(URL(string: _uPic!))
         } else {
             uProfilePic.image = UIImage(named: "default-profile")
             _defaultProfileOverlay.isHidden = false
-            _defaultProfileOverlay = UILabel(frame: uProfilePic.bounds)
             _defaultProfileOverlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
             _defaultProfileOverlay.text = "tap to add image"
             _defaultProfileOverlay.setPreferredFont(UIColor.white, alignment : .center)
@@ -159,22 +215,10 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
         
         if User.currentUser!.hasSavedTags() {
-            addSavedTags(User.currentUser!.savedTags)
         }
         
         highlightConnectedSocialSources()
-        numAnswersLabel.text = String(User.currentUser!.totalAnswers())
         view.setNeedsLayout()
-    }
-    
-    fileprivate func addSavedTags(_ tagList : [String : String?]) {
-        let _msg = tagList.map { (key, value) in "#"+key }.joined(separator: "\u{0085}")
-        
-//        let _msg = tagList.map {"#"+$0 }.joinWithSeparator("\u{0085}")
-        savedTags.textAlignment = .left
-        savedTags.text = _msg
-        savedTags.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
-
     }
     
     fileprivate func addUserProfilePic(_ _userImageURL : URL?) {
@@ -183,6 +227,7 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 if let _userImageData = try? Data(contentsOf: _userImageURL!) {
                     User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
                     DispatchQueue.main.async(execute: {
+                        print("got image for user")
                         self.uProfilePic.image = User.currentUser?.thumbPicImage
                         self.uProfilePic.clipsToBounds = true
                     })
@@ -191,49 +236,43 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
     }
     
-    func handleImageTap() {
-        setupCamera()
-        setupCameraOverlay()
-        setupLoading()
-    }
     
     fileprivate func highlightConnectedSocialSources() {
         if User.currentUser?.socialSources[.facebook] != true {
             fbButton.alpha = 0.5
             fbButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-            linkFacebook.isHidden = false
         } else if User.currentUser?.socialSources[.facebook] == true {
             fbButton.alpha = 1.0
             fbButton.backgroundColor = UIColor(red: 78/255, green: 99/255, blue: 152/255, alpha: 1.0 )
-            linkFacebook.isHidden = true
         }
         
         if User.currentUser?.socialSources[.twitter] != true {
             twtrButton.alpha = 0.5
             twtrButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-            linkTwitter.isHidden = false
-
         }  else if User.currentUser?.socialSources[.twitter] == true {
             twtrButton.alpha = 1.0
             twtrButton.backgroundColor = UIColor(red: 58/255, green: 185/255, blue: 228/255, alpha: 1.0 )
-            linkTwitter.isHidden = true
         }
         
         if User.currentUser?.socialSources[.linkedin] != true {
             inButton.alpha = 0.5
             inButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-            linkLinkedin.isHidden = false
-
         }  else if User.currentUser?.socialSources[.linkedin] == true {
             inButton.alpha = 1.0
             inButton.backgroundColor = UIColor(red: 2/255, green: 116/255, blue: 179/255, alpha: 1.0 )
-            linkLinkedin.isHidden = true
         }
     }
     
     fileprivate func setupLoading() {
         _loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.black.withAlphaComponent(0.7))
         view.addSubview(_loadingOverlay)
+    }
+    
+    /* CAMERA FUNCTIONS */
+    func handleImageTap() {
+        setupCamera()
+        setupCameraOverlay()
+        setupLoading()
     }
     
     fileprivate func setupCamera() {
@@ -280,12 +319,6 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         _cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
         _cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
         _cameraOverlay.updateQuestion("smile!")
-    }
-    
-    fileprivate func addHeader() {
-        _loginHeader = addHeader(text: "PROFILE")
-        _loginHeader.addSettingsButton()
-        _loginHeader._settings.addTarget(self, action: #selector(ClickedSettings), for: UIControlEvents.touchUpInside)
     }
     
     func flipCamera() {
@@ -335,5 +368,196 @@ class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 })
             }
         })
+    }
+    
+    /* LAYOUT FUNCTION */
+    fileprivate func addHeader() {
+        _loginHeader = addHeader(text: "PROFILE")
+        _loginHeader.addSettingsButton()
+        _loginHeader._settings.addTarget(self, action: #selector(clickedSettings), for: UIControlEvents.touchUpInside)
+    }
+    
+    fileprivate func updateProfileSummaryLayout() {
+        
+    }
+    
+    fileprivate func setupProfileSummaryLayout() {
+        view.addSubview(profileSummary)
+        
+        profileSummary.translatesAutoresizingMaskIntoConstraints = false
+        profileSummary.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.85).isActive = true
+        profileSummary.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        profileSummary.heightAnchor.constraint(equalToConstant: view.frame.height * 0.2).isActive = true
+        profileSummary.topAnchor.constraint(equalTo: _loginHeader.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        profileSummary.layoutIfNeeded()
+        
+        profileSummary.addSubview(uProfilePic)
+        profileSummary.addSubview(uName)
+        profileSummary.addSubview(uShortBio)
+        profileSummary.addSubview(uMessages)
+        
+        uProfilePic.translatesAutoresizingMaskIntoConstraints = false
+        uProfilePic.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        uProfilePic.heightAnchor.constraint(equalTo: uProfilePic.widthAnchor).isActive = true
+        uProfilePic.centerXAnchor.constraint(equalTo: profileSummary.centerXAnchor).isActive = true
+        uProfilePic.topAnchor.constraint(equalTo: profileSummary.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        uProfilePic.layoutIfNeeded()
+        
+        uName.translatesAutoresizingMaskIntoConstraints = false
+        uName.topAnchor.constraint(equalTo: uProfilePic.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        uName.widthAnchor.constraint(equalTo: profileSummary.widthAnchor).isActive = true
+        uName.centerXAnchor.constraint(equalTo: profileSummary.centerXAnchor).isActive = true
+        uName.heightAnchor.constraint(equalToConstant: Spacing.s.rawValue).isActive = true
+        uName.layoutIfNeeded()
+        uName.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)
+
+        uShortBio.translatesAutoresizingMaskIntoConstraints = false
+        uShortBio.topAnchor.constraint(equalTo: uName.bottomAnchor).isActive = true
+        uShortBio.widthAnchor.constraint(equalTo: profileSummary.widthAnchor).isActive = true
+        uShortBio.centerXAnchor.constraint(equalTo: profileSummary.centerXAnchor).isActive = true
+        uShortBio.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        uShortBio.layoutIfNeeded()
+        uShortBio.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)
+
+        uMessages.translatesAutoresizingMaskIntoConstraints = false
+        uMessages.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue * 0.8).isActive = true
+        uMessages.heightAnchor.constraint(equalTo: uMessages.widthAnchor).isActive = true
+        uMessages.leadingAnchor.constraint(equalTo: uProfilePic.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        uMessages.bottomAnchor.constraint(equalTo: uProfilePic.topAnchor, constant: Spacing.s.rawValue).isActive = true
+        uMessages.layoutIfNeeded()
+        
+        uMessages.titleEdgeInsets = UIEdgeInsetsMake(0, 0, uMessages.frame.height / 4, 0)
+        uMessages.titleLabel!.font = UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightHeavy)
+        uMessages.titleLabel!.textColor = UIColor.white
+        uMessages.titleLabel!.textAlignment = .center
+        uMessages.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
+        uMessages.imageView?.contentMode = .scaleAspectFit
+        uMessages.titleLabel?.sizeToFit()
+        
+        uProfilePic.layer.cornerRadius = 5
+        uProfilePic.clipsToBounds = true
+        uProfilePic.layer.masksToBounds = true
+
+        uName.textAlignment = .center
+        uShortBio.textAlignment = .center
+    }
+    
+    fileprivate func setupSocialButtonsLayout() {
+        view.addSubview(socialLinks)
+        
+        socialLinks.translatesAutoresizingMaskIntoConstraints = false
+        socialLinks.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue * 3 + Spacing.m.rawValue * 2).isActive = true
+        socialLinks.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        socialLinks.bottomAnchor.constraint(equalTo: _icon.topAnchor).isActive = true
+        socialLinks.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        socialLinks.layoutIfNeeded()
+    
+        fbButton.setImage(UIImage(named: "facebook-icon"), for: UIControlState())
+        twtrButton.setImage(UIImage(named: "twitter-icon"), for: UIControlState())
+        inButton.setImage(UIImage(named: "linkedin-icon"), for: UIControlState())
+        
+        fbButton.backgroundColor = UIColor(red: 78/255, green: 99/255, blue: 152/255, alpha: 1.0)
+        twtrButton.backgroundColor = UIColor(red: 58/255, green: 185/255, blue: 228/255, alpha: 1.0)
+        inButton.backgroundColor = UIColor(red: 2/255, green: 116/255, blue: 179/255, alpha: 1.0)
+        
+        socialLinks.addArrangedSubview(fbButton)
+        socialLinks.addArrangedSubview(twtrButton)
+        socialLinks.addArrangedSubview(inButton)
+        
+        fbButton.translatesAutoresizingMaskIntoConstraints = false
+        fbButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        fbButton.widthAnchor.constraint(equalTo: fbButton.heightAnchor).isActive = true
+        
+        twtrButton.translatesAutoresizingMaskIntoConstraints = false
+        twtrButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        twtrButton.widthAnchor.constraint(equalTo: twtrButton.heightAnchor).isActive = true
+        
+        inButton.translatesAutoresizingMaskIntoConstraints = false
+        inButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        inButton.widthAnchor.constraint(equalTo: inButton.heightAnchor).isActive = true
+        
+        socialLinks.alignment = .center
+        socialLinks.distribution = .fillEqually
+        socialLinks.spacing = Spacing.m.rawValue
+        
+        fbButton.layoutIfNeeded()
+        twtrButton.layoutIfNeeded()
+        inButton.layoutIfNeeded()
+        
+        fbButton.makeRound()
+        twtrButton.makeRound()
+        inButton.makeRound()
+    }
+    
+    fileprivate func setupSettingsMenuLayout() {
+        view.addSubview(settingsLinks)
+        
+        settingsLinks.translatesAutoresizingMaskIntoConstraints = false
+        settingsLinks.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.1).isActive = true
+        settingsLinks.topAnchor.constraint(equalTo: _loginHeader.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        settingsLinks.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        settingsLinks.layoutIfNeeded()
+        
+//        let logoutImage = UIImage(cgImage: UIImage(named: "login")!.cgImage!, scale: CGFloat(1.0), orientation: .downMirrored)
+
+        sAboutButton.setImage(UIImage(named: "profile"), for: UIControlState())
+        sMessagesButton.setImage(UIImage(named: "messenger"), for: UIControlState())
+        sActivityButton.setImage(UIImage(named: "messenger"), for: UIControlState())
+        sAnswersButton.setImage(UIImage(named: "messenger"), for: UIControlState())
+        sLogoutButton.setImage(UIImage(named: "login"), for: UIControlState())
+        
+        sAboutButton.setTitle("PROFILE", for: UIControlState())
+        sMessagesButton.setTitle("MESSAGES", for: UIControlState())
+        sActivityButton.setTitle("ACTIVITY", for: UIControlState())
+        sAnswersButton.setTitle("ANSWERS", for: UIControlState())
+        sLogoutButton.setTitle("LOGOUT", for: UIControlState())
+        
+        sAboutButton.addTarget(self, action: #selector(clickedProfile), for: .touchUpInside)
+        sMessagesButton.addTarget(self, action: #selector(clickedMessages), for: .touchUpInside)
+        sActivityButton.addTarget(self, action: #selector(clickedActivity), for: .touchUpInside)
+        sActivityButton.addTarget(self, action: #selector(clickedAnswers), for: .touchUpInside)
+        sLogoutButton.addTarget(self, action: #selector(clickedLogout), for: .touchUpInside)
+        
+        sAboutButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+        sMessagesButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+        sActivityButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+        sAnswersButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+        sLogoutButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+
+        sAboutButton.translatesAutoresizingMaskIntoConstraints = false
+        sAboutButton.widthAnchor.constraint(equalTo: sAboutButton.heightAnchor).isActive = true
+        sMessagesButton.translatesAutoresizingMaskIntoConstraints = false
+        sMessagesButton.widthAnchor.constraint(equalTo: sMessagesButton.heightAnchor).isActive = true
+        sActivityButton.translatesAutoresizingMaskIntoConstraints = false
+        sActivityButton.widthAnchor.constraint(equalTo: sActivityButton.heightAnchor).isActive = true
+        sAnswersButton.translatesAutoresizingMaskIntoConstraints = false
+        sAnswersButton.widthAnchor.constraint(equalTo: sAnswersButton.heightAnchor).isActive = true
+        sLogoutButton.translatesAutoresizingMaskIntoConstraints = false
+        sLogoutButton.widthAnchor.constraint(equalTo: sLogoutButton.heightAnchor).isActive = true
+        
+        sAboutButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, Spacing.xs.rawValue, Spacing.xs.rawValue)
+        sMessagesButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, Spacing.xs.rawValue, Spacing.xs.rawValue)
+        sActivityButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, Spacing.xs.rawValue, Spacing.xs.rawValue)
+        sAnswersButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, Spacing.xs.rawValue, Spacing.xs.rawValue)
+        sLogoutButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, Spacing.xs.rawValue, Spacing.xs.rawValue)
+        
+        settingsLinks.addArrangedSubview(sAboutButton)
+        settingsLinks.addArrangedSubview(sMessagesButton)
+        settingsLinks.addArrangedSubview(sActivityButton)
+        settingsLinks.addArrangedSubview(sAnswersButton)
+        settingsLinks.addArrangedSubview(sLogoutButton)
+        
+        sAboutButton.titleEdgeInsets = UIEdgeInsetsMake(0, -settingsLinks.frame.width - Spacing.xxs.rawValue, -settingsLinks.frame.width, 0)
+        sMessagesButton.titleEdgeInsets = UIEdgeInsetsMake(0, -settingsLinks.frame.width - Spacing.xxs.rawValue, -settingsLinks.frame.width, 0)
+        sActivityButton.titleEdgeInsets = UIEdgeInsetsMake(0, -settingsLinks.frame.width - Spacing.xxs.rawValue, -settingsLinks.frame.width, 0)
+        sAnswersButton.titleEdgeInsets = UIEdgeInsetsMake(0, -settingsLinks.frame.width - Spacing.xxs.rawValue, -settingsLinks.frame.width, 0)
+        sLogoutButton.titleEdgeInsets = UIEdgeInsetsMake(0, -settingsLinks.frame.width - Spacing.xxs.rawValue, -settingsLinks.frame.width, 0)
+        
+        settingsLinks.axis = .vertical
+        settingsLinks.alignment = .top
+        settingsLinks.distribution = .fillEqually
+        settingsLinks.spacing = Spacing.m.rawValue
+        
+        settingsLinks.isHidden = true
     }
 }

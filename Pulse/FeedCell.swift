@@ -100,11 +100,11 @@ class FeedCell: UICollectionViewCell {
     }
     
     func updateImage( image : UIImage?) {
-        if let image = image {
-            previewImage!.image = image
-            previewImage!.layer.cornerRadius = previewImage!.bounds.height / 2
-            previewImage!.layer.masksToBounds = true
-            previewImage!.clipsToBounds = true
+        if let image = image, let previewImage = previewImage {
+            previewImage.image = image
+            previewImage.layer.cornerRadius = previewImage.bounds.height / 2
+            previewImage.layer.masksToBounds = true
+            previewImage.clipsToBounds = true
         }
     }
     
@@ -120,6 +120,11 @@ class FeedCell: UICollectionViewCell {
         if previewAdded {
             removeAnswer()
         }
+        
+        if previewImage != nil {
+            previewImage?.image = nil
+        }
+        super.prepareForReuse()
     }
     
     func deactivateConstraints() {
@@ -199,9 +204,16 @@ class FeedCell: UICollectionViewCell {
         
         showPreviewImage = true
         
-        previewImage = UIImageView()
         if reuseCell {
             deactivateConstraints()
+        }
+        
+        if previewImage == nil {
+            print("creating new image view")
+            previewImage = UIImageView()
+        } else {
+            print("reuse cell setting image to nil")
+            previewImage!.image = nil
         }
 
         addSubview(previewImage!)

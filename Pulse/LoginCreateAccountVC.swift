@@ -45,10 +45,12 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+    }
+    
+    override func viewDidLayoutSubviews() {
         if !isLoaded {
             hideKeyboardWhenTappedAround()
-
+            
             userEmail.delegate = self
             userPassword.delegate = self
             
@@ -59,7 +61,6 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
             userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
             userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
             userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-
             
             userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
             userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
@@ -67,24 +68,23 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
             
             userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
             userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-
+            
             signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
             signupButton.setDisabled()
+            
+            addHeader()
+
             isLoaded = true
         }
+
     }
     
     override func viewDidAppear(_ animated : Bool) {
         super.viewDidAppear(true)
-        addHeader()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-    }
-    
-    override var prefersStatusBarHidden : Bool {
-        return true
     }
     
     func addHeader() {

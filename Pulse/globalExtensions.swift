@@ -224,6 +224,7 @@ enum IconSizes: CGFloat {
     case small = 25
     case medium = 50
     case large = 75
+    case xLarge = 100
 }
 
 enum IconThickness: CGFloat {

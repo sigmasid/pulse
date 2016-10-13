@@ -10,8 +10,8 @@ import UIKit
 
 class AccountLoginManagerVC: UIViewController {
     
-    fileprivate weak var loginVC : LoginVC?
-    fileprivate weak var accountVC : AccountPageVC?
+    fileprivate var loginVC : LoginVC?
+    fileprivate var accountVC : AccountPageVC?
     let _storyboard = UIStoryboard(name: "Main", bundle: nil)
     fileprivate var _currentLoadedView : currentLoadedView?
     
@@ -51,7 +51,7 @@ class AccountLoginManagerVC: UIViewController {
             _currentLoadedView = .account
         } else if User.isLoggedIn() && _currentLoadedView != .account {
             if loginVC?._currentLoadedView != .createAccount {
-                accountVC = _storyboard.instantiateViewController(withIdentifier: "AccountPageVC") as? AccountPageVC
+                accountVC = AccountPageVC()
                 GlobalFunctions.addNewVC(accountVC!, parentVC: self)
                 NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
@@ -78,7 +78,7 @@ class AccountLoginManagerVC: UIViewController {
         }  else if User.isLoggedIn() && _currentLoadedView == .account {
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
         } else if User.isLoggedIn() && _currentLoadedView == .login {
-            accountVC = _storyboard.instantiateViewController(withIdentifier: "AccountPageVC") as? AccountPageVC
+            accountVC = AccountPageVC()
             GlobalFunctions.cycleBetweenVC(loginVC!, newVC: accountVC!, parentVC: self)
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
         }

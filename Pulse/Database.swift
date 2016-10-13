@@ -181,7 +181,7 @@ class Database {
     static func checkExistingConversation(to : User, completion: @escaping (Bool, String?) -> Void) {
         if let _user = FIRAuth.auth()?.currentUser {
             usersRef.child(_user.uid).child("conversations").child(to.uID!).observeSingleEvent(of: .value, with: { snapshot in
-                snapshot.exists() ? completion(true, snapshot.value as? String) : completion(false, nil)
+                snapshot.exists() ? completion(true, snapshot.childSnapshot(forPath: "conversationID").value as? String) : completion(false, nil)
             })
         }
     }
@@ -206,8 +206,15 @@ class Database {
         conversationsRef.child(conversationID).removeAllObservers()
     }
     
-    //Retrieve all conversation
-    static func getConversation(conversationID : String, completion: @escaping ([Message], String?) -> Void) {
+    //Get message
+    static func getMessage(mID : String, completion: @escaping (Message?) -> Void) {
+        messagesRef.child(mID).observeSingleEvent(of: .value, with: { snapshot in
+            snapshot.exists() ? completion(Message(snapshot: snapshot)) : completion(nil)
+        })
+    }
+    
+    //Retrieve all messages in conversation
+    static func getConversationMessages(conversationID : String, completion: @escaping ([Message], String?) -> Void) {
         var messages = [Message]()
         
         conversationsRef.child(conversationID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
@@ -225,10 +232,24 @@ class Database {
         })
     }
     
+    //Get all conversations for given user - can only do for auth user
+    static func getConversations(completion: @escaping ([Conversation]) -> Void) {
+        var conversations = [Conversation]()
+        if let _user = FIRAuth.auth()?.currentUser {
+            usersRef.child(_user.uid).child("conversations").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
+                for conversation in snapshot.children {
+                    let _conversation = Conversation(snapshot: conversation as! FIRDataSnapshot)
+                    conversations.append(_conversation)
+                }
+                
+                completion(conversations)
+            })
+        }
+    }
+    
     ///Send message
     static func sendMessage(existing : Bool, message: Message, completion: @escaping (_ success : Bool, _ conversationID : String?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
-
         let messagePost : [ String : AnyObject ] = ["fromID": _user!.uid as AnyObject,
                                                     "toID": message.to.uID! as AnyObject,
                                                     "body": message.body as AnyObject,
@@ -240,9 +261,13 @@ class Database {
         
         //check if user has this user in existing conversations [toID : conversationID]
         if existing {
-            //append to existing conversation if it already exists
+            //append to existing conversation if it already exists - message.mID has conversationID saved
             let conversationPost : [AnyHashable: Any] =
                 ["conversations/\(message.mID!)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
@@ -252,8 +277,12 @@ class Database {
             //start new conversation
             let conversationPost : [AnyHashable: Any] =
                 ["conversations/\(messageKey)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)" : messageKey,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)" : messageKey,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/conversationID" : messageKey,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/conversationID" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in

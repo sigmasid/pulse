@@ -28,7 +28,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     
     fileprivate var _loginHeader : LoginHeaderView?
-    fileprivate var _loaded = false
+    fileprivate var _isLoaded = false
     var _currentLoadedView : currentLoadedView?
 
     enum currentLoadedView {
@@ -61,10 +61,8 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        if !_loaded {
+    override func viewDidLayoutSubviews() {
+        if !_isLoaded {
             hideKeyboardWhenTappedAround()
             setupView()
             emailButton.setDisabled()
@@ -73,7 +71,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             
             NotificationCenter.default.addObserver(self, selector: #selector(onFBProfileUpdated), name:NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
             
-            _loaded = true
+            _isLoaded = true
         }
         
         _loginHeader?.updateStatusMessage(_message: "get logged in")
