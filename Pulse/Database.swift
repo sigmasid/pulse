@@ -12,6 +12,7 @@ import FirebaseStorage
 import FirebaseAuth
 import TwitterKit
 import FBSDKLoginKit
+import GeoFire
 
 let storage = FIRStorage.storage()
 let storageRef = storage.reference(forURL: "gs://pulse-84022.appspot.com")
@@ -236,15 +237,19 @@ class Database {
     static func getConversations(completion: @escaping ([Conversation]) -> Void) {
         var conversations = [Conversation]()
         if let _user = FIRAuth.auth()?.currentUser {
-            usersRef.child(_user.uid).child("conversations").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
+            usersRef.child(_user.uid).child("conversations").queryLimited(toLast: querySize).queryOrdered(byChild: "lastMessageID").observeSingleEvent(of: .value, with: { snapshot in
                 for conversation in snapshot.children {
                     let _conversation = Conversation(snapshot: conversation as! FIRDataSnapshot)
                     conversations.append(_conversation)
                 }
-                
                 completion(conversations)
             })
         }
+    }
+    
+    //Keep conversation updated
+    static func keepConversationUpdate(to : String?) {
+        
     }
     
     ///Send message
@@ -271,6 +276,7 @@ class Database {
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
+                print("completion error \(completionError)")
                 completionError != nil ? completion(false, nil) : completion(true, message.mID)
             })
         } else {
@@ -290,11 +296,14 @@ class Database {
             })
         }
     }
-    
-    /** MARK : DATABASE PATHS **/
+    /*** MARK END : MESSAGING ***/
+
+    /*** MARK START : DATABASE PATHS ***/
     static func setCurrentUserPaths() {
-        currentUserRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!)
-        currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(User.currentUser!.uID!).child(Item.Feed.rawValue)
+        if let _user = User.currentUser {
+            currentUserRef = databaseRef.child(Item.Users.rawValue).child(_user.uID!)
+            currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(_user.uID!).child(Item.Feed.rawValue)
+        }
     }
     
     static func getDatabasePath(_ type : Item, itemID : String) -> FIRDatabaseReference {
@@ -304,7 +313,9 @@ class Database {
     static func getStoragePath(_ type : Item, itemID : String) -> FIRStorageReference {
         return storageRef.child(type.rawValue).child(itemID)
     }
+    /*** MARK END : DATABASE PATHS ***/
 
+    /*** MARK START : EXPLORE FEED ***/
     static func getExploreTags(_ completion: @escaping (_ tags : [Tag], _ error : NSError?) -> Void) {
         var allTags = [Tag]()
         
@@ -341,6 +352,20 @@ class Database {
         })
     }
     
+    static func getExploreUsers(_ completion: @escaping (_ users : [User], _ error : NSError?) -> Void) {
+        var allUsers = [User]()
+        
+        usersPublicSummaryRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
+            for item in snapshot.children {
+                let child = item as! FIRDataSnapshot
+                allUsers.append(User(uID: child.key, snapshot: child))
+            }
+            completion(allUsers, nil)
+        })
+    }
+    /*** MARK END : EXPLORE FEED ***/
+
+    /*** MARK START : SETTINGS ***/
     static func getSections(_ completion: @escaping (_ sections : [SettingSection], _ error : NSError?) -> Void) {
         var _sections = [SettingSection]()
         
@@ -354,22 +379,55 @@ class Database {
         })
     }
     
+    static func getSectionsSection(sectionName : String, completion: @escaping (_ section : SettingSection, _ error : NSError?) -> Void) {
+        
+        settingSectionsRef.child(sectionName).queryOrderedByValue().observeSingleEvent(of: .value, with: { snapshot in
+            let section = SettingSection(sectionID: snapshot.key, snapshot: snapshot)
+            completion(section, nil)
+        })
+    }
+    
     static func getSetting(_ settingID : String, completion: @escaping (_ setting : Setting, _ error : NSError?) -> Void) {
         settingsRef.child(settingID).observeSingleEvent(of: .value, with: { snapshot in
             let _setting = Setting(snap: snapshot)
             completion(_setting, nil)
         })
     }
-    
-//    static func getSettings(sectionID: String, completion: (settings : [Setting], error : NSError?) -> Void) {
-//        let _settings = (ref.child("user-posts").child(getUid())).queryOrderedByChild("starCount")
-//
-//    }
+    /*** MARK END : SETTINGS ***/
  
+    /*** MARK START : GET FEED ITEMS ***/
     static func getTag(_ tagID : String, completion: @escaping (_ tag : Tag, _ error : NSError?) -> Void) {
         tagsRef.child(tagID).observeSingleEvent(of: .value, with: { snap in
             let _currentTag = Tag(tagID: tagID, snapshot: snap)
             completion(_currentTag, nil)
+        })
+    }
+    
+    static func getRelatedTags(_ tagID : String, completion: @escaping (_ tags : [Tag]) -> Void) {
+        var allTags = [Tag]()
+        
+        tagsRef.child(tagID).child("related").observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    let _currentTag = Tag(tagID: (child as AnyObject).key)
+                    allTags.append(_currentTag)
+                }
+                completion(allTags)
+            }
+        })
+    }
+
+    static func getRelatedQuestions(_ qID : String, completion: @escaping (_ questions : [Question]) -> Void) {
+        var allQuestions = [Question]()
+        
+        questionsRef.child(qID).child("related").observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    let _currentQuestion = Question(qID: (child as AnyObject).key)
+                    allQuestions.append(_currentQuestion)
+                }
+                completion(allQuestions)
+            }
         })
     }
     
@@ -400,7 +458,9 @@ class Database {
             }
         })
     }
-    
+    /*** MARK END : GET INDIVIDUAL ITEMS ***/
+
+    /*** MARK START : GET USER ITEMS ***/
     static func getUser(_ uID : String, completion: @escaping (_ user : User, _ error : NSError?) -> Void) {
         usersPublicSummaryRef.child(uID).observeSingleEvent(of: .value, with: { snap in
             let _returnUser = User(uID: uID, snapshot: snap)
@@ -431,6 +491,22 @@ class Database {
             }
         })
     }
+    
+    static func getUserAnswerIDs(uID: String, completion: @escaping (_ answers : [Answer]) -> Void) {
+        var allAnswers = [Answer]()
+        usersRef.child(uID).child("answers").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    let currentAnswer = Answer(aID: (child as AnyObject).key, qID: (child as AnyObject).value)
+                    allAnswers.append(currentAnswer)
+                }
+                completion(allAnswers)
+            } else {
+                completion(allAnswers)
+            }
+        })
+    }
+    /*** MARK END : GET USER ITEMS ***/
     
     /* CREATE / UPDATE FEED */
     static func createExploreFeed(_ feedItemType: FeedItemType, completedFeed: @escaping (_ feed : [AnyObject?]) -> Void) {
@@ -833,7 +909,7 @@ class Database {
     }
     
     ///Update user profile to Pulse database from settings
-    static func updateUserProfile(_ setting : Setting, newValue : String, completion: @escaping (Bool, NSError?) -> Void) {
+    static func updateUserProfile(_ setting : Setting, newValue : String, completion: @escaping (Bool, Error?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         
         var userPost = [String : String]()
@@ -841,25 +917,86 @@ class Database {
             switch setting.type! {
             case .email:
                 _user?.updateEmail(newValue) { completionError in
-                    completionError != nil ? completion(false, completionError as NSError?) : completion(true, nil)
+                    completionError != nil ? completion(false, completionError) : completion(true, nil)
                 }
             case .password:
                 _user?.updatePassword(newValue) { completionError in
-                    completionError != nil ? completion(false, completionError as NSError?) : completion(true, nil)
+                    completionError != nil ? completion(false, completionError) : completion(true, nil)
                 }
             case .shortBio, .name, .profilePic, .thumbPic:
                 userPost[setting.settingID] = newValue
                 usersPublicSummaryRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
-                    completionError != nil ? completion(false, completionError as NSError?) : completion(true, nil)
+                    completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             default:
                 userPost[setting.settingID] = newValue
                 usersRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
-                    completionError != nil ? completion(false, completionError as NSError?) : completion(true, nil)
+                    completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             }
         }
     }
+    
+    static func updateUserLocation(newValue : CLLocation, completion: @escaping (Bool, Error?) -> Void) {
+        let _user = FIRAuth.auth()?.currentUser
+        let geoFire = GeoFire(firebaseRef: databaseRef.child("userLocations"))
+        
+        if let _user = _user {
+            geoFire?.setLocation(newValue, forKey: _user.uid) { (error) in
+                if (error != nil) {
+                    completion(false, error)
+                } else {
+                    completion(true, nil)
+                }
+            }
+        }
+    }
+    
+    static func getUserLocation(completion: @escaping (CLLocation?, Error?) -> Void) {
+        let _user = FIRAuth.auth()?.currentUser
+        let geoFire = GeoFire(firebaseRef: databaseRef.child("userLocations"))
+
+        if let _user = _user {
+            geoFire?.getLocationForKey(_user.uid, withCallback: { (location, error) in
+                if (error != nil) {
+                    let userInfo = [ NSLocalizedDescriptionKey : "error getting location" ]
+                    completion(nil, NSError.init(domain: "NoLocation", code: 404, userInfo: userInfo))
+                } else if (location != nil) {
+                    let location = CLLocation(latitude: location!.coordinate.latitude, longitude: location!.coordinate.longitude)
+                    completion(location, nil)
+                } else {
+                    let userInfo = [ NSLocalizedDescriptionKey : "no location found" ]
+                    completion(nil, NSError.init(domain: "NoLocation", code: 404, userInfo: userInfo))
+                }
+            })
+        }
+    }
+    
+    static func getCityFromLocation(location: CLLocation, completion: @escaping (String?, Error?) -> Void) {
+        
+        CLGeocoder().reverseGeocodeLocation(location, completionHandler: {(placemarks, error)-> Void in
+            if (error != nil) {
+                return
+            }
+            
+            if let allPlacemarks = placemarks {
+                if allPlacemarks.count != 0 {
+                    let pm = allPlacemarks[0] as CLPlacemark
+                    
+                    if let city = pm.locality {
+                        completion(city, nil)
+                    } else {
+                        completion(nil, error)
+                    }
+                } else {
+                    completion(nil, error)
+                }
+            } else {
+                completion(nil, error)
+            }
+        })
+    }
+    
     
     ///Save user to Pulse database after Auth
     static func saveUserToDatabase(_ user: FIRUser, completion: @escaping (Bool, NSError?) -> Void) {
@@ -882,11 +1019,11 @@ class Database {
         var answersPost : [ String : AnyObject ] = ["qID": answer.qID as AnyObject, "uID": _user!.uid as AnyObject, "createdAt" : FIRServerValue.timestamp() as AnyObject]
         
         if answer.aLocation != nil {
-            answersPost["location"] = answer.aLocation! as AnyObject?
+            answersPost["location"] = answer.aLocation! as AnyObject
         }
         
         if answer.aType != nil {
-            answersPost["type"] = answer.aType! as AnyObject?
+            answersPost["type"] = answer.aType!.rawValue as AnyObject?
         }
         
         let post : [String: Any] = ["answers/\(answer.aID)" : answersPost] //NEED TO CHECK THIS
@@ -905,7 +1042,7 @@ class Database {
     static func addAnswerCollectionToDatabase(_ firstAnswer : Answer, post : [String : Bool], completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         
-        let collectionPost : [AnyHashable: Any] = ["users/\(_user!.uid)/answers/\(firstAnswer.aID)": "true", "users/\(_user!.uid)/answeredQuestions/\(firstAnswer.qID)" : "true","questions/\(firstAnswer.qID)/answers/\(firstAnswer.aID)" : true, "answerCollections/\(firstAnswer.aID)" : post]
+        let collectionPost : [AnyHashable: Any] = ["users/\(_user!.uid)/answers/\(firstAnswer.aID)": firstAnswer.qID, "users/\(_user!.uid)/answeredQuestions/\(firstAnswer.qID)" : "true","questions/\(firstAnswer.qID)/answers/\(firstAnswer.aID)" : true, "answerCollections/\(firstAnswer.aID)" : post]
         
         if _user != nil {
             databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
@@ -983,6 +1120,7 @@ class Database {
         }
     }
     
+    //Save a question for a user
     static func saveQuestion(_ questionID : String, completion: @escaping (Bool, Error?) -> Void) {
         if User.isLoggedIn() {
             if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[questionID] != nil { //remove question

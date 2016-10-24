@@ -11,300 +11,524 @@ import UIKit
 class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     
     fileprivate var iconContainer : IconContainer!
-    fileprivate var headerContainer : ExploreHeader!
     fileprivate var exploreContainer : FeedVC!
+    fileprivate var loadingView : LoadingView?
+
+    fileprivate var headerNav : NavVC?
+    fileprivate var searchButton : UIButton!
+    fileprivate var closeButton : UIButton!
+    fileprivate var followButton : UIButton!
+    fileprivate var unfollowButton : UIButton!
+    fileprivate var backButton : UIButton!
+    fileprivate var messageButton : UIButton!
     
-    fileprivate var questionSelectedConstaint : NSLayoutConstraint!
-    fileprivate var tagSelectedConstaint : NSLayoutConstraint!
-    fileprivate var minimalHeaderHeightConstraint : NSLayoutConstraint!
-    fileprivate var regularHeaderHeightConstraint : NSLayoutConstraint!
+    var searchController = UISearchController(searchResultsController: nil)
     
+    /* STACK TO KEEP WINDOW SYNC'D / REFRESH AS NEEDED */
+    struct Explore {
+        
+        enum Options { case tags, questions, people, experts, related, answers }
+        enum Modes { case root, tag, question, search, people }
+    
+        struct scopeBar {
+            var titles = [String]()
+            var icons : [UIImage]!
+        }
+        
+        private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "profile")!, UIImage(named: "related")!]
+        private let tagIcons = [UIImage(named: "question")!, UIImage(named: "profile")!, UIImage(named: "related")!]
+        private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        
+        /* PROPERTIES */
+        var currentMode : Modes = .root
+        var currentModeOptions : [Options] {
+            switch currentMode {
+            case .root: return [.tags, .questions, .people]
+            case .tag: return [.questions, .experts, .related]
+            case .question: return [.answers, .experts, .related]
+            case .people: return [ .answers ]
+            case .search: return [.tags, .questions, .people]
+            }
+        }
+
+        var currentSelection : Int = 0
+        var currentScopeBar : scopeBar? {
+            switch currentMode {
+            case .root: return scopeBar(titles: getOptionTitles(), icons: rootIcons)
+            case .tag: return scopeBar(titles: getOptionTitles(), icons: tagIcons)
+            case .question: return scopeBar(titles: getOptionTitles(), icons: questionIcons)
+            case .people: return nil
+            case .search: return scopeBar(titles: getOptionTitles(), icons: searchIcons)
+            }
+        }
+        
+        /* FUNCTIONS */
+        
+        //Return mapped titles if total options > 1 else return empty array i.e. no scope bar
+        private func getOptionTitles() -> [String] {
+            return currentModeOptions.count > 1 ? currentModeOptions.map{ (option) -> String in return "\(option)" } : []
+        }
+        
+        func currentSelectionValue() -> Options {
+            return currentModeOptions[currentSelection]
+        }
+        
+        func getFeedType() -> FeedItemType? {
+            switch currentModeOptions[currentSelection] {
+            case .people, .experts: return .people
+            case .answers: return .answer
+            case .tags: return .tag
+            case .questions: return .question
+            case .related:
+                switch currentMode {
+                case .tag: return .tag
+                case .question: return .question
+                default: return nil
+                }
+            }
+        }
+        
+        func getModeTitle() -> String {
+            switch currentMode {
+            case .root: return "Explore"
+            case .tag: return "Tag"
+            case .question: return "Question"
+            case .people: return "People"
+            case .search: return "Search"
+            }
+        }
+    }
+    
+    fileprivate var exploreStack = [Explore]()
+    var currentExploreMode : Explore! {
+        didSet {
+            updateScopeBar()
+            updateModes()
+            print("current explore mode and selection are \(currentExploreMode.currentMode, currentExploreMode.currentSelection)")
+        }
+    }
+    /* END EXPLORE STACK */
     fileprivate var isFollowingSelectedTag : Bool = false {
         didSet {
-            isFollowingSelectedTag ? headerContainer.updateFollowButton(.unfollow) : headerContainer.updateFollowButton(.follow)
+            navigationItem.rightBarButtonItem = isFollowingSelectedTag ? UIBarButtonItem(customView: followButton) : UIBarButtonItem(customView: unfollowButton)
         }
     }
     
     fileprivate var isLoaded = false
-    fileprivate var isSearchActive = false {
-        didSet {
-            if isSearchActive {
-                if tapGesture == nil {
-                    tapGesture = UITapGestureRecognizer(target: exploreContainer.view, action: #selector(dismissSearchKeyboard))
-                }
-                
-                tapGesture.isEnabled = true
-            } else {
-                if tapGesture != nil {
-                    tapGesture.isEnabled = false
-                }
-            }
-        }
-    }
-    fileprivate var viewStack : String!
     fileprivate var tapGesture : UIGestureRecognizer!
-
-    fileprivate var selectedExploreType : FeedItemType? {
-        didSet {
-            if isSearchActive {
-                self.headerContainer.updateScopeBar(type: .search)
-                updateSearchResults(for: headerContainer.searchController)
-                switch selectedExploreType! {
-                case .question:
-                    self.headerContainer.updateHeader(title: "SEARCH QUESTIONS", subtitle: nil, image: nil)
-                case .tag:
-                    self.headerContainer.updateHeader(title: "SEARCH TAGS", subtitle: nil, image: nil)
-                case .answer:
-                    self.headerContainer.updateHeader(title: "SEARCH ANSWERS", subtitle: nil, image: nil)
-                case .people:
-                    self.headerContainer.updateHeader(title: "SEARCH PEOPLE", subtitle: nil, image: nil)
-                }
-            } else if selectedExploreType != nil {
-                self.headerContainer.updateScopeBar(type: .explore)
-
-                switch selectedExploreType! {
-                case .question:
-                    Database.getExploreQuestions({ questions, error in
-                        if error == nil {
-                            self.exploreContainer.allQuestions = questions
-                            self.exploreContainer.feedItemType = self.selectedExploreType
-                        }
-                    })
-                case .tag:
-                    Database.getExploreTags({ tags, error in
-                        if error == nil {
-                            self.exploreContainer.allTags = tags
-                            self.exploreContainer.feedItemType = self.selectedExploreType
-                        }
-                    })
-                case .answer:
-                    Database.getExploreAnswers({ answers, error in
-                        if error == nil {
-                            self.exploreContainer.allAnswers = answers
-                            self.exploreContainer.feedItemType = self.selectedExploreType
-                        }
-                    })
-                case .people:
-                    break
-                }
-            }
-        }
-    }
     
-    fileprivate var selectedTagDetail : Tag! {
-        didSet {
-            if !selectedTagDetail.tagCreated {
-                Database.getTag(selectedTagDetail.tagID!, completion: { tag, error in
-                    if error == nil && tag.totalQuestionsForTag() > 0 {
-                        self.exploreContainer.clearSelected()
-                        self.exploreContainer.allQuestions = tag.questions!
-                        self.exploreContainer.feedItemType = .question
-                    }
-                })
-            } else {
-                self.exploreContainer.clearSelected()
-                self.exploreContainer.allQuestions = selectedTagDetail.questions
-                self.exploreContainer.feedItemType = .question
-            }
-        }
-    }
-    
+    fileprivate var selectedTag : Tag!
     fileprivate var selectedQuestion : Question!
-    
+    fileprivate var selectedUser : User!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
+            if let nav = navigationController as? NavVC {
+                headerNav = nav
+            }
+            getButtons()
             setupExplore()
+            setupSearch()
             iconContainer = addIcon(text: "EXPLORE")
+            automaticallyAdjustsScrollViewInsets = false
         }
+    }
+    
+    fileprivate func updateScopeBar() {
+        if let scopeBar = currentExploreMode.currentScopeBar {
+            headerNav?.toggleScopeBar(show: true)
+            headerNav?.updateScopeBar(titles: scopeBar.titles,
+                                      icons: scopeBar.icons,
+                                      selected: currentExploreMode.currentSelection )
+        } else {
+            headerNav?.toggleScopeBar(show: false)
+        }
+    }
+    
+    fileprivate func updateModes() {
+        toggleLoading(show: true, message : "Loading...")
+        headerNav?.toggleSearch(show: currentExploreMode.currentMode == .search ? true : false)
+        
+        switch currentExploreMode.currentMode {
+        case .root:
+            updateHeader(_title: "Explore", leftButton: searchButton, rightButton: nil, logoMode: .full)
+            updateRootScopeSelection()
+        case .tag:
+            updateHeader(_title: selectedTag.tagID!, leftButton: backButton, rightButton: nil, logoMode: .line)
+            isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTags[selectedTag.tagID!] != nil ? true : false
+            updateTagScopeSelection()
+        case .search:
+            updateHeader(_title: currentExploreMode.getModeTitle(), leftButton: closeButton, rightButton: nil, logoMode: .none)
+            updateSearchResults(for: searchController)
+        case .question:
+            updateHeader(_title: currentExploreMode.getModeTitle(), leftButton: backButton, rightButton: followButton, logoMode: .line)
+            updateQuestionScopeSelection()
+        case .people:
+            updateHeader(_title: currentExploreMode.getModeTitle(), leftButton: backButton, rightButton: messageButton, logoMode : .line)
+            updatePeopleScopeSelection()
+        }
+    }
+    
+    
+    fileprivate func updateRootScopeSelection() {
+        switch currentExploreMode.currentSelectionValue() {
+        case .tags:
+            Database.getExploreTags({ tags, error in
+                if error == nil {
+                    self.exploreContainer.allTags = tags
+                    self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+                    self.toggleLoading(show: false, message : nil)
+                }
+            })
+        case .questions:
+            Database.getExploreQuestions({ questions, error in
+                if error == nil {
+                    self.exploreContainer.allQuestions = questions
+                    self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+                    self.toggleLoading(show: false, message : nil)
+                }
+            })
+        case .people:
+            Database.getExploreUsers({ users, error in
+                if error == nil {
+                    self.exploreContainer.allUsers = users
+                    self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+                    self.toggleLoading(show: false, message : nil)
+                }
+            })
+        default: return
+        }
+    }
+    
+    fileprivate func updateTagScopeSelection() {
+        switch currentExploreMode.currentSelectionValue() {
+        case .questions:
+            if !selectedTag.tagCreated {
+                print("getting tag from database")
+                Database.getTag(selectedTag.tagID!, completion: { tag, error in
+                    if error == nil && tag.totalQuestionsForTag() > 0 {
+                        self.exploreContainer.setSelectedIndex(index: nil)
+                        self.exploreContainer.allQuestions = tag.questions!
+                        self.exploreContainer.feedItemType = .question
+                        self.toggleLoading(show: false, message : nil)
+                    }  else {
+                        self.toggleLoading(show: true, message : "No questions found")
+                    }
+                })
+            } else {
+                print("getting existing tag")
+                exploreContainer.setSelectedIndex(index: nil)
+                exploreContainer.allQuestions = selectedTag.questions!
+                exploreContainer.feedItemType = .question
+                toggleLoading(show: false, message : nil)
+            }
+        case .experts: return
+        case .related:
+            Database.getRelatedTags(selectedTag.tagID!, completion: { tags in
+                self.exploreContainer.setSelectedIndex(index: nil)
+                self.exploreContainer.allTags = tags
+                self.exploreContainer.feedItemType = .tag
+                
+                if tags.count > 0 {
+                    self.toggleLoading(show: false, message : nil)
+                } else {
+                    self.toggleLoading(show: true, message : "No related tags found")
+                }
+
+            })
+        default: return
+        }
+    }
+    
+    fileprivate func updateQuestionScopeSelection() {
+        self.toggleLoading(show: true, message : "Loading...")
+        
+        switch currentExploreMode.currentSelectionValue() {
+        case .answers:
+            if !selectedQuestion.qCreated {
+                Database.getQuestion(selectedQuestion.qID, completion: { question, error in
+                    if error == nil && question.hasAnswers() {
+                        self.exploreContainer.setSelectedIndex(index : nil)
+                        self.exploreContainer.allAnswers = question.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
+                        self.exploreContainer.selectedQuestion = self.selectedQuestion
+                        
+                        self.exploreContainer.feedItemType = .answer
+                        self.toggleLoading(show: false, message : nil)
+                    } else {
+                        self.toggleLoading(show: true, message : "No answers found")
+                    }
+                })
+            } else {
+                if selectedQuestion.hasAnswers() {
+                    exploreContainer.setSelectedIndex(index : nil)
+                    exploreContainer.allAnswers = selectedQuestion.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
+                    exploreContainer.selectedQuestion = selectedQuestion
+
+                    exploreContainer.feedItemType = .answer
+                    toggleLoading(show: false, message : nil)
+                } else {
+                    self.toggleLoading(show: true, message : "No answers found")
+                }
+            }
+        case .experts: return
+        case .related:
+            Database.getRelatedTags(selectedTag.tagID!, completion: { tags in
+                self.exploreContainer.setSelectedIndex(index: nil)
+                self.exploreContainer.allTags = tags
+                self.exploreContainer.feedItemType = .tag
+                
+                if tags.count > 0 {
+                    self.toggleLoading(show: false, message : nil)
+                } else {
+                    self.toggleLoading(show: true, message : "No related tags found")
+                }
+                
+            })
+        default: return
+        }
+    }
+    
+    fileprivate func updatePeopleScopeSelection() {
+        self.toggleLoading(show: true, message : "Loading...")
+        
+        Database.getUserAnswerIDs(uID: selectedUser.uID!, completion: { answers in
+            if answers.count > 0 {
+                self.exploreContainer.selectedUser = self.selectedUser
+                self.exploreContainer.allAnswers = answers
+                self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+
+                self.toggleLoading(show: false, message : nil)
+            }
+        })
+    }
+    
+    func userSelected(type : FeedItemType, item : Any) {
+        switch type {
+        case .tag:
+            selectedTag = item as! Tag //didSet method pulls questions from database in case of search else assigns questions from existing tag
+            currentExploreMode = Explore(currentMode: .tag, currentSelection: 0)
+            exploreStack.append(currentExploreMode)
+            exploreContainer.updateDataSource = true
+        case .question:
+            selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
+            currentExploreMode = Explore(currentMode: .question, currentSelection: 0)
+            exploreStack.append(currentExploreMode)
+            exploreContainer.selectedTag = currentExploreMode.currentMode == .search ? Tag(tagID: "SEARCH") : Tag(tagID : "EXPLORE")
+        case .people:
+            selectedUser = item as! User //didSet method pulls questions from database in case of search else assigns questions from existing tag
+            currentExploreMode = Explore(currentMode: .people, currentSelection: 0)
+            exploreStack.append(currentExploreMode)
+            
+            headerNav?.updateStatusImage(image: selectedUser.thumbPicImage)
+            
+        default: break
+        }
+    }
+    
+    //Update Nav Header
+    fileprivate func updateHeader(_title : String, leftButton : UIButton?, rightButton : UIButton?, logoMode : LogoModes) {
+        navigationItem.leftBarButtonItem = leftButton != nil ? UIBarButtonItem(customView: leftButton!) : nil
+        navigationItem.rightBarButtonItem = rightButton != nil ? UIBarButtonItem(customView: rightButton!) : nil
+
+        if headerNav != nil {
+            headerNav?.updateTitle(title: _title)
+            headerNav?.toggleLogo(mode: logoMode)
+        } else {
+            title = _title
+        }
+    }
+    
+    //Initial setup for search - controller is set to active when user clicks search
+    fileprivate func setupSearch() {
+        searchController.searchResultsUpdater = self
+        searchController.searchBar.delegate = self
+        searchController.delegate = self
+        
+        searchController.searchBar.tintColor = .clear
+        searchController.searchBar.layer.cornerRadius = 0
+        searchController.dimsBackgroundDuringPresentation = false
+        searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.highlighted)
+        searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.normal)
+        
+        headerNav?.getSearchContainer()?.addSubview(searchController.searchBar)
+        
+        searchController.hidesNavigationBarDuringPresentation = false
+        searchController.searchBar.sizeToFit()
+        headerNav?.toggleSearch(show: false)
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    /* DELEGATE METHODS */
-    
-    //feedVCDelegate methods
-    func userSelected(type : FeedItemType, item : Any) {
-        
-        switch type {
-        case .tag:
-            isSearchActive = false
-
-            selectedTagDetail = item as! Tag //didSet method pulls questions from database in case of search else assigns questions from existing tag
-            selectedExploreType = nil
-            
-            headerContainer.updateScopeBar(type: .tag)
-            headerContainer.segmentedControl.selectedSegment = 0
-            
-            if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[selectedTagDetail.tagID!] != nil {
-                isFollowingSelectedTag = true
-            } else {
-                isFollowingSelectedTag = false
-            }
-            
-            if let _tagImage = selectedTagDetail.previewImage {
-                self.headerContainer.updateHeader(title: self.selectedTagDetail.tagID!, subtitle: self.selectedTagDetail.tagDescription, image : nil)
-                Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-                    if error != nil {
-                        print (error?.localizedDescription)
-                    } else {
-                        self.headerContainer.updateHeader(title: self.selectedTagDetail.tagID!, subtitle: self.selectedTagDetail.tagDescription, image : UIImage(data: data!))
-                    }
-                })
-            } else {
-                headerContainer.updateHeader(title: selectedTagDetail.tagID!, subtitle: selectedTagDetail.tagDescription, image : nil)
-            }
-        case .question:
-            selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
-            headerContainer.segmentedControl.selectedSegment = -1
-
-            exploreContainer.selectedTag = isSearchActive ? Tag(tagID: "SEARCH") : Tag(tagID : "EXPLORE")
-            headerContainer.updateHeader(title: "QUESTION", subtitle: selectedQuestion.qTitle, image : nil)
-            headerContainer.updateScopeBar(type: .question)
-
-        case .people:
-            headerContainer.updateScopeBar(type: .people)
-
-        default: break
-        }
-    }
-    
+    /* SEARCH FUNCTIONS */
     func userClickedSearch() {
-        headerContainer.updateHeader(title: "SEARCH", subtitle: nil, image: nil)
-        headerContainer.updateScopeBar(type: .search)
-
-        isSearchActive = true
-        exploreContainer.clearSelected()
+        searchController.isActive = true
+        currentExploreMode = Explore(currentMode: .search, currentSelection: 0)
+        exploreStack.append(currentExploreMode)
+        
+        headerNav?.toggleStatus(show: false)
+        toggleLoading(show: true, message : "Searching...")
     }
     
     func userCancelledSearch() {
-        isSearchActive = false
-        headerContainer.updateHeader(title: "EXPLORE", subtitle: nil, image: nil)
-        headerContainer.updateScopeBar(type: .explore)
-        
-        exploreContainer.clearSelected()
-        selectedExploreType = (selectedExploreType)
+        searchController.isActive = false
+        headerNav?.toggleStatus(show: true)
+        goBack()
     }
     
-    // UPDATE TAGS / QUESTIONS IN FEED
-    internal func backToExplore() {
-        selectedExploreType = (selectedExploreType)
-        headerContainer.segmentedControl.selectedSegment = selectedExploreType != nil ? getSelectedExploreValue(type : selectedExploreType!) : -1
-        headerContainer.updateScopeBar(type: .explore)
-        headerContainer.updateHeader(title: "EXPLORE", subtitle: nil, image: nil)
+    func dismissSearchKeyboard() {
+        searchController.resignFirstResponder()
+    }
+    
+    //UPDATE TAGS / QUESTIONS IN FEED
+    internal func goBack() {
+        let _ = exploreStack.popLast()
+        currentExploreMode = exploreStack.last
     }
     
     //FOLLOW / UNFOLLOW QUESTIONS AND UPDATE BUTTONS
     internal func follow() {
-        Database.pinTagForUser(selectedTagDetail, completion: {(success, error) in
+        Database.pinTagForUser(selectedTag, completion: {(success, error) in
             if !success {
-                GlobalFunctions.showErrorBlock("Error Pinning / Unpinning Tag", erMessage: error!.localizedDescription)
+                GlobalFunctions.showErrorBlock("Error Saving Tag", erMessage: error!.localizedDescription)
             } else {
                 self.isFollowingSelectedTag = self.isFollowingSelectedTag ? false : true
             }
         })
     }
     
-    override var prefersStatusBarHidden : Bool {
-        return false
+    ///Launch messenger for selected user
+    func userClickedSendMessage() {
+        let messageVC = MessageVC()
+        messageVC.toUser = selectedUser
+        
+        if let selectedUserImage = selectedUser.thumbPicImage {
+            messageVC.toUserImage = selectedUserImage
+        }
+        
+        navigationController?.pushViewController(messageVC, animated: true)
     }
     
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
-        switch selectedSegment {
-        case 0: selectedExploreType = .tag
-        case 1: selectedExploreType = .question
-        case 2: selectedExploreType = .people
-        default: selectedExploreType = nil
-        }
+        currentExploreMode.currentSelection = selectedSegment
+        exploreStack[exploreStack.count - 1].currentSelection = selectedSegment
+
+        updateModes()
     }
     
-    fileprivate func getSelectedExploreValue(type : FeedItemType) -> Int {
-        switch type {
-        case .tag: return 0
-        case .question: return 1
-        case .people: return 2
-        default: return -1
-        }
-    }
-    
-    func dismissSearchKeyboard() {
-    
+    fileprivate func toggleLoading(show: Bool, message: String?) {
+        loadingView?.isHidden = show ? false : true
+        loadingView?.addMessage(message)
     }
     
     /* MARK : LAYOUT VIEW FUNCTIONS */
     fileprivate func setupExplore() {
         view.backgroundColor = UIColor.white
 
-        headerContainer = ExploreHeader(frame: CGRect(x: 0, y: statusBarHeight, width: view.bounds.width, height: view.bounds.height * 0.175))
-        view.addSubview(headerContainer)
-        
-        headerContainer.backButton.addTarget(self, action: #selector(backToExplore), for: UIControlEvents.touchDown)
-        headerContainer.followButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchDown)
-        headerContainer.searchButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchDown)
-        headerContainer.closeButton.addTarget(self, action: #selector(userCancelledSearch), for: UIControlEvents.touchDown)
-
-        headerContainer.updateHeader(title: "EXPLORE", subtitle : nil, image: nil)
-        headerContainer.updateScopeBar(type: .explore)
-        
-        headerContainer.segmentedControl.delegate = self
-        headerContainer.searchController.searchResultsUpdater = self
-        headerContainer.searchController.searchBar.delegate = self
-        headerContainer.searchController.delegate = self
+        headerNav?.getScopeBar()?.delegate = self
 
         exploreContainer = FeedVC()
-        exploreContainer.feedDelegate = self
-        selectedExploreType = .tag
         
         GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
         exploreContainer.view.translatesAutoresizingMaskIntoConstraints = false
-        exploreContainer.view.topAnchor.constraint(equalTo: headerContainer.bottomAnchor).isActive = true
+        exploreContainer.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         exploreContainer.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         exploreContainer.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         exploreContainer.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         exploreContainer.view.layoutIfNeeded()
+        exploreContainer.feedDelegate = self
+
+        currentExploreMode = Explore(currentMode: .root, currentSelection: 0)
+        exploreStack.append(currentExploreMode)
+
+        loadingView = LoadingView(frame: exploreContainer.view.frame, backgroundColor: UIColor.white)
+        loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
+        toggleLoading(show: true, message: "Loading...")
         
-        definesPresentationContext = true
+        view.addSubview(loadingView!)
+        
+        definesPresentationContext = false
+    }
+    
+    //Get all buttons for the controller to use
+    fileprivate func getButtons() {
+        searchButton = NavVC.getButton(type: .search)
+        searchButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
+        
+        closeButton = NavVC.getButton(type: .close)
+        closeButton.addTarget(self, action: #selector(userCancelledSearch), for: UIControlEvents.touchUpInside)
+        
+        followButton = NavVC.getButton(type: .add)
+        followButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
+        
+        unfollowButton = NavVC.getButton(type: .remove)
+        unfollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
+        
+        backButton = NavVC.getButton(type: .back)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        
+        messageButton = NavVC.getButton(type: .message)
+        messageButton.addTarget(self, action: #selector(userClickedSendMessage), for: UIControlEvents.touchUpInside)
     }
 }
 
 extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchControllerDelegate {
     // MARK: - Search controller delegate methods
     func updateSearchResults(for searchController: UISearchController) {
+        toggleLoading(show: true, message: "Searching...")
+
         let _searchText = searchController.searchBar.text!
         
         if _searchText != "" && _searchText.characters.count > 1 {
-            switch selectedExploreType! {
-            case .tag:
+            switch currentExploreMode.currentSelectionValue() {
+            case .tags:
                 Database.searchTags(searchText: _searchText.lowercased(), completion:  { searchResults in
-                    self.exploreContainer.allTags = searchResults
-                    self.exploreContainer.feedItemType = self.selectedExploreType
-                    self.exploreContainer.updateDataSource = true
+                    if searchResults.count > 0 {
+                        self.exploreContainer.allTags = searchResults
+                        self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+                        self.toggleLoading(show: false, message : nil)
+                    } else {
+                        self.toggleLoading(show: true, message : "Sorry no tags found")
+                    }
                 })
-            case .question:
+            case .questions:
                 Database.searchQuestions(searchText: _searchText.lowercased(), completion:  { searchResults in
-                    self.exploreContainer.allQuestions = searchResults
-                    self.exploreContainer.selectedTag = Tag(tagID: "SEARCH")
-                    self.exploreContainer.feedItemType = self.selectedExploreType
-                    self.exploreContainer.updateDataSource = true
+                    if searchResults.count > 0 {
+                        self.exploreContainer.allQuestions = searchResults
+                        self.exploreContainer.selectedTag = Tag(tagID: "SEARCH")
+                        self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+                        self.toggleLoading(show: false, message : nil)
+                    } else {
+                        self.toggleLoading(show: true, message : "Sorry no questions found")
+                    }
                 })
             case .people:
                 Database.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
-                    self.exploreContainer.allUsers = searchResults
-                    self.exploreContainer.feedItemType = self.selectedExploreType
-                    self.exploreContainer.updateDataSource = true
+                    if searchResults.count > 0 {
+                        self.exploreContainer.allUsers = searchResults
+                        self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+                        self.toggleLoading(show: false, message : nil)
+                    } else {
+                        self.toggleLoading(show: true, message : "Sorry no users found")
+                    }
+
                 })
-            default: break
+            default: self.toggleLoading(show: true, message : "Sorry no results found")
             }
         } else if _searchText == "" {
-            //empty the dictionary
+            self.toggleLoading(show: true, message : "Searching")
         }
     }
     
     func didPresentSearchController(_ searchController: UISearchController) {
-        searchController.searchBar.showsCancelButton = false
-        searchController.searchBar.becomeFirstResponder()
+        DispatchQueue.main.async { [unowned self] in
+            searchController.searchBar.becomeFirstResponder()
+            searchController.searchBar.showsCancelButton = false
+            searchController.searchBar.tintColor = pulseBlue
+        }
         searchController.searchBar.placeholder = "enter search text"
     }
 
@@ -321,4 +545,15 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     }
 }
 
+//if let _tagImage = selectedTag.previewImage {
+//    Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
+//        if error != nil {
+//            print (error?.localizedDescription)
+//        } else {
+//            if let backgroundImage = UIImage(data: data!) {
+//                self.headerNav?.updateBackgroundImage(image: backgroundImage)
+//            }
+//        }
+//    })
+//}
 

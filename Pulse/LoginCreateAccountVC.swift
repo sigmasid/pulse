@@ -19,8 +19,6 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var signupButton: UIButton!
     weak var returnToParentDelegate : ParentDelegate!
     
-    fileprivate var _headerView : UIView!
-    fileprivate var _loginHeader : LoginHeaderView!
     fileprivate var isLoaded = false
     
     fileprivate var emailValidated = false {
@@ -43,8 +41,9 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         }
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
     }
     
     override func viewDidLayoutSubviews() {
@@ -72,27 +71,25 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
             signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
             signupButton.setDisabled()
             
-            addHeader()
-
             isLoaded = true
         }
 
-    }
-    
-    override func viewDidAppear(_ animated : Bool) {
-        super.viewDidAppear(true)
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    func addHeader() {
-        _loginHeader = addHeader(text: "ACCOUNT")
-        
-        _loginHeader.updateStatusMessage(_message: "create account")
-        _loginHeader.addGoBack()
-        _loginHeader._goBack.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+    fileprivate func updateHeader() {
+        let backButton = NavVC.getButton(type: .back)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+
+        if let nav = navigationController as? NavVC {
+            nav.updateTitle(title: "Create Account")
+        } else {
+            title = "Create Account"
+        }
     }
     
     @IBAction func createEmailAccount(_ sender: UIButton) {
@@ -115,8 +112,8 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loading)
 
-                if let AddNameVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginAddNameVC") as? LoginAddNameVC {
-                    GlobalFunctions.addNewVC(AddNameVC, parentVC: self)
+                if let addNameVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginAddNameVC") as? LoginAddNameVC {
+                    self.navigationController?.pushViewController(addNameVC, animated: true)
                 }
             }
         })
@@ -159,9 +156,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         }
     }
     
-    func goBack(_ sender: UIButton) {
-        if returnToParentDelegate != nil {
-            returnToParentDelegate.returnToParent(self)
-        }
+    func goBack() {
+        let _ = self.navigationController?.popViewController(animated: true)
     }
 }

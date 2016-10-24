@@ -10,6 +10,7 @@ import Foundation
 import FirebaseDatabase
 import FirebaseAuth
 import UIKit
+import CoreLocation
 
 class User {
     var uID : String?
@@ -18,6 +19,7 @@ class User {
     var shortBio : String?
     var gender : String?
     var birthday : String?
+    var location : CLLocation?
     var answers : [String]?
     var answeredQuestions : [String]?
     var profilePic : String?

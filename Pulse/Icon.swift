@@ -10,7 +10,9 @@ import Foundation
 import UIKit
 
 class Icon : UIView {
-    
+    let heartLine = CAShapeLayer()
+    let pulseDot = UIView(frame: CGRect(x: 0.0, y: 0.0, width: 6, height: 6))
+
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
@@ -23,10 +25,34 @@ class Icon : UIView {
         _drawIcon(color, iconThickness: iconThickness, flatLine: _flatLine)
     }
     
+    func drawLineOnly(_ color : UIColor, iconThickness : CGFloat) {
+        let _flatLine = bounds.width - IconSizes.large.rawValue
+        let startX = CGFloat(0)
+        let startY = frame.height / 2
+        
+        heartLine.strokeColor = color.cgColor
+        heartLine.lineWidth = iconThickness
+        
+        let heartLineBezier = UIBezierPath()
+        heartLineBezier.move(to: CGPoint(x: startX, y: startY))
+        heartLineBezier.addLine(to: CGPoint(x: startX + _flatLine, y: startY)) //15
+
+        heartLine.fillColor = UIColor.clear.cgColor
+        heartLine.path = heartLineBezier.cgPath
+        
+        let heartLineStroke = CABasicAnimation(keyPath: "strokeEnd")
+        heartLineStroke.fromValue = 0.0
+        heartLineStroke.toValue = 1.0
+        heartLineStroke.duration = Double(2)
+        
+        heartLine.add(heartLineStroke, forKey: nil)
+        layer.addSublayer(heartLine)
+    }
+    
     func drawIcon(_ color : UIColor, iconThickness : CGFloat) {
         _drawIcon(color, iconThickness: iconThickness, flatLine: 0)
     }
-    
+
     fileprivate func _drawIcon(_ color : UIColor, iconThickness : CGFloat, flatLine : CGFloat) {
         let startX = CGFloat(0)
         let startY = frame.height / 2
@@ -35,7 +61,6 @@ class Icon : UIView {
         
         let yStep = startY / 5
         
-        let heartLine = CAShapeLayer()
         heartLine.strokeColor = color.cgColor
         
         let heartLineBezier = UIBezierPath()
@@ -49,12 +74,10 @@ class Icon : UIView {
         heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY)) //45
         heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + 2 * firstXStep + 6 * restXStep, y: startY)) //60
 
-        
         heartLine.lineWidth = iconThickness
         heartLine.fillColor = UIColor.clear.cgColor
         heartLine.path = heartLineBezier.cgPath
         
-        let pulseDot = UIView(frame: CGRect(x: 0.0, y: 0.0, width: 6, height: 6))
         pulseDot.layer.cornerRadius = 3
         pulseDot.backgroundColor = UIColor.white
         
@@ -71,9 +94,8 @@ class Icon : UIView {
         pulseDotBezier.addLine(to: CGPoint(x: startX + flatLine + (firstXStep * 2) + 6 * restXStep, y: startY))
         
         //Animations
-        
         let heartLineOpactiy = CABasicAnimation(keyPath: "opacity")
-        heartLineOpactiy.fromValue = 0.6
+        heartLineOpactiy.fromValue = 0.5
         heartLineOpactiy.toValue = 1.0
         heartLineOpactiy.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
         heartLineOpactiy.autoreverses = true

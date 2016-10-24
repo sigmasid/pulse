@@ -23,6 +23,9 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     fileprivate var initialLoadComplete = false
 
+    var accountNavVC : NavVC!
+    var exploreNavVC : NavVC!
+
     var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     var exploreVC : ExploreVC = ExploreVC()
     lazy var homeVC : HomeVC = HomeVC()
@@ -42,7 +45,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
             Database.checkCurrentUser { success in
             // get feed and show initial view controller
             if success && !self.initialLoadComplete {
-                self.setupControllers(2)
+                self.setupControllers(1)
                 self.initialLoadComplete = true
             } else if !success && !self.initialLoadComplete {
                 self.setupControllers(1)
@@ -52,18 +55,20 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
             }
         }
     }
-    
-    override var prefersStatusBarHidden : Bool {
-        return true
-    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
     func setupControllers(_ initialIndex : Int) {
-        viewControllers = [accountVC, exploreVC, homeVC]
+        accountNavVC = NavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        accountNavVC.viewControllers = [accountVC]
 
+        exploreNavVC = NavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        exploreNavVC.viewControllers = [exploreVC]
+
+        viewControllers = [accountNavVC, exploreNavVC, homeVC]
+        
         let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "profile"))
         let tabExplore = UITabBarItem(title: "Explore", image: UIImage(named: "search"), selectedImage: UIImage(named: "search"))
         let tabHome = UITabBarItem(title: "Home", image: UIImage(named: "browse"), selectedImage: UIImage(named: "explore"))

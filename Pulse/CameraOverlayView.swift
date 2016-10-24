@@ -61,17 +61,16 @@ class CameraOverlayView: UIView {
     /* PUBLIC ACCESSIBLE FUNCTIONS */
     
     ///Update question text
-    func updateQuestion(_ question : String) {
-        _questionBackground.text = question
+    public func updateTitle(_ title : String?) {
+        _questionBackground.text = title
     }
     
-    
-    func stopCountdown() {
+    public func stopCountdown() {
         timeLeftShapeLayer.removeAllAnimations()
     }
     
     // Add Video Countdown Animation
-    func countdownTimer(_ videoDuration : Double) {
+    public func countdownTimer(_ videoDuration : Double) {
         // draw the countdown
         let bgShapeLayer = drawBgShape()
         timeLeftShapeLayer = drawTimeLeftShape()
@@ -96,7 +95,7 @@ class CameraOverlayView: UIView {
         _countdownTimer.heightAnchor.constraint(equalToConstant: _countdownTimerRadius * 2 + _countdownTimerRadiusStroke).isActive = true
     }
     
-    func getButton(_ buttonName : CameraButtonSelector) -> UIButton {
+    public func getButton(_ buttonName : CameraButtonSelector) -> UIButton {
         switch buttonName {
             case .flash: return _flashModeButton
             case .flip: return _flipCameraButton

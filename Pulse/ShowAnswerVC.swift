@@ -390,7 +390,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             messageVC.toUserImage = currentUserImage
         }
         
-        GlobalFunctions.addNewVC(messageVC, parentVC: self)
+        navigationController?.pushViewController(messageVC, animated: true)
     }
     
     func votedAnswer(_ _vote : AnswerVoteType) {        
@@ -432,6 +432,11 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             if let currentUserImage = currentUserImage {
                 miniProfile!.setProfileImage(currentUserImage)
             }
+            
+            if !User.isLoggedIn() || User.currentUser?.uID == _userForCurrentAnswer.uID {
+                miniProfile?.setMessageButton(disabled: true)
+            }
+            
             view.addSubview(miniProfile!)
             _isMiniProfileShown = true
         }

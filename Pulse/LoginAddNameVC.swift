@@ -18,43 +18,50 @@ class LoginAddNameVC: UIViewController {
     @IBOutlet weak var _firstNameError: UILabel!
     @IBOutlet weak var _lastNameError: UILabel!
     
-    weak var loginVCDelegate : childVCDelegate?
-    fileprivate var _headerView : UIView!
-    fileprivate var _loginHeader : LoginHeaderView!
+//    weak var loginVCDelegate : childVCDelegate?    
+    fileprivate var isLoaded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
-    }
-    
-    override func viewDidAppear(_ animated : Bool) {
-        super.viewDidAppear(true)
         hideKeyboardWhenTappedAround()
 
-        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        
-        firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        
-        doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        doneButton.setEnabled()
-        addHeader()
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        if !isLoaded {
+            firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+            lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+            
+            firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            
+            doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
+            doneButton.setEnabled()
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
+    fileprivate func updateHeader() {
+        let checkButton = NavVC.getButton(type: .check)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
+        
+        if let nav = navigationController as? NavVC {
+            nav.updateTitle(title: "could we get a name with that?")
+        } else {
+            title = "Add Name"
+        }
     }
     
-    func addHeader() {
-        _loginHeader = addHeader(text: "ADD NAME")
-        _loginHeader.addEmptyButton(image: UIImage(named: "check")!)
-        _loginHeader.updateStatusMessage(_message: "and could we get a name with that?")
-    }
-
     @IBAction func addNameTouchDown(_ sender: UIButton) {
         
     }
@@ -81,6 +88,7 @@ class LoginAddNameVC: UIViewController {
                                 sender.setEnabled()
                             }
                             else {
+                                print("went into login success")
                                 NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
                                 sender.setEnabled()
                                 self._loggedInSuccess()
@@ -93,9 +101,17 @@ class LoginAddNameVC: UIViewController {
     }
     
     func _loggedInSuccess() {
-        if loginVCDelegate != nil {
-            self.loginVCDelegate!.loginSuccess(self)
-        }
+//        if loginVCDelegate != nil {
+//            if navigationController != nil {
+//                print("found nav controller")
+                let _ = navigationController?.popToRootViewController(animated: true)
+//            } else {
+//                print("no nav controller found")
+//            }
+//            self.loginVCDelegate!.loginSuccess(self)
+//        } else {
+//            print("login delegate nil")
+//        }
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {

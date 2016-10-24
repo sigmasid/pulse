@@ -38,7 +38,8 @@ class Question : NSObject {
     
     var qFilters : [String]?
     var qAnswers : [String]?
-    
+    var qAllAnswers : [Answer]?
+
     init(qID: String) {
         self.qID = qID
     }

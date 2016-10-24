@@ -12,7 +12,6 @@ class InboxVC: UITableViewController {
     let reuseIdentifier = "InboxTableCell"
     var conversations = [Conversation]() {
         didSet {
-            print("should be reloading data with conversation count \(conversations.count)")
             DispatchQueue.main.async {
                 self.tableView.reloadData()
             }
@@ -21,8 +20,13 @@ class InboxVC: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("view did load fired")
         tableView.register(InboxTableCell.self, forCellReuseIdentifier: reuseIdentifier)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.isNavigationBarHidden = false
+        updateHeader()
     }
 
     override func didReceiveMemoryWarning() {
@@ -30,18 +34,43 @@ class InboxVC: UITableViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    fileprivate func addImage(cell : InboxTableCell, url : String) {
+    fileprivate func addImage(cell : InboxTableCell, url : String, user : User) {
         DispatchQueue.global(qos: .background).async {
             if let _userImageData = try? Data(contentsOf: URL(string: url)!) {
                 DispatchQueue.main.async {
-                    cell.updateImage(image : UIImage(data: _userImageData))
+                    let image = UIImage(data: _userImageData)
+                    cell.updateImage(image : image)
+                    user.thumbPicImage = image
                 }
             }
         }
     }
+    
+    fileprivate func addListenerForSelected(conversationID : String) {
+        
+    }
+    
+    //Update Nav Header
+    fileprivate func updateHeader() {
+        let backButton = NavVC.getButton(type: .back)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        
+        if let nav = navigationController as? NavVC {
+            nav.updateTitle(title: "Conversations")
+            nav.toggleLogo(mode: .full)
+        } else {
+            title = "Conversations"
+        }
+    }
+    
+    ///Pop self from stack
+    func goBack() {
+        let _ = self.navigationController?.popViewController(animated: true)
+    }
+    
     // MARK: - Table view data source
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        print("returned conversation count of \(conversations.count)")
         return conversations.count
     }
     
@@ -50,21 +79,19 @@ class InboxVC: UITableViewController {
         let user = conversations[indexPath.row].cUser!
         
         if !user.uCreated {
-            print("going to get user from database")
             Database.getUser(user.uID!, completion: { (user, error) in
                 if error == nil {
                     self.conversations[indexPath.row].cUser = user
                     cell.updateName(name: user.name)
                     if let _uPic = user.thumbPic {
-                        print("going to try and add pic")
-                        self.addImage(cell: cell, url: _uPic)
+                        self.addImage(cell: cell, url: _uPic, user: user)
                     }
                 }
             })
         } else {
             cell.updateName(name: user.name)
             if let _uPic = user.thumbPic {
-                addImage(cell: cell, url: _uPic)
+                addImage(cell: cell, url: _uPic, user: user)
             }
         }
         
@@ -75,6 +102,15 @@ class InboxVC: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let conversation = conversations[indexPath.row]
+        
+        let messageVC = MessageVC()
+        messageVC.toUser = conversation.cUser
+        
+        if let currentUserImage = conversation.cUser.thumbPicImage {
+            messageVC.toUserImage = currentUserImage
+        }
+        
+        self.navigationController?.pushViewController(messageVC, animated: true)
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

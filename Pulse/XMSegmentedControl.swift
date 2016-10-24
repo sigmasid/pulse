@@ -191,7 +191,7 @@ open class XMSegmentedControl: UIView {
      Sets the font for the text displayed in the segmented control if `contentType` is `Text`
      - Note: Changes only take place if `contentType` is `Text`
      */
-    open var font = UIFont(name: "AvenirNext-DemiBold", size: 15)!
+    open var font = UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightRegular)
     
     /// Sets the segmented control selected item highlight style to `Background`, `TopEdge` or `BottomEdge`.
     open var selectedItemHighlightStyle: XMSelectedItemHighlightStyle = .background
@@ -410,7 +410,7 @@ open class XMSegmentedControl: UIView {
     
     /// Scales an Image to the size provided. It takes into account alpha. And it uses the screen's scale to resize.
     fileprivate func resizeImage(_ image:UIImage) -> UIImage {
-        let maxSize = CGSize(width: frame.height / 2, height: frame.height / 2)
+        let maxSize = CGSize(width: frame.height, height: frame.height)
         let ratio = image.size.width / image.size.height
         let size = CGSize(width: maxSize.width*ratio, height: maxSize.height)
         UIGraphicsBeginImageContextWithOptions(size, false, 0)

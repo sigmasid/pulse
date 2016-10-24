@@ -18,6 +18,7 @@ class Answer : NSObject {
     var thumbImage : UIImage?
     var aType : CreatedAssetType?
     dynamic var aURL : URL! //used to indicate local file location or when upload is completed - do not remove dynamic keyword to allow notification observers
+    dynamic var aCreated = false
     
     init(aID: String, qID:String, uID : String, aType : CreatedAssetType, aLocation : String?, aImage : UIImage?, aURL : URL?) {
         self.aID = aID
@@ -60,5 +61,7 @@ class Answer : NSObject {
         if snapshot.hasChild("location") {
             self.aLocation = snapshot.childSnapshot(forPath: "location").value as? String
         }
+        
+        aCreated = true
     }
 }

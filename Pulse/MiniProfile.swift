@@ -16,7 +16,6 @@ class MiniProfile: UIView {
     fileprivate var bioLabel : UILabel!
     fileprivate var messageButton : UIButton!
     fileprivate var closeButton : UIButton!
-    fileprivate var selectedUser : User!
     
     var delegate : answerDetailDelegate!
 
@@ -98,7 +97,12 @@ class MiniProfile: UIView {
         
         messageButton.layoutIfNeeded()
         messageButton.addTarget(self, action: #selector(messageButtonClicked), for: UIControlEvents.touchDown)
-
+    }
+    
+    public func setMessageButton(disabled : Bool) {
+        if disabled {
+            messageButton.setDisabled()
+        }
     }
     
     fileprivate func addCloseButton() {
@@ -157,7 +161,6 @@ class MiniProfile: UIView {
         bioLabel.textAlignment = .center
         bioLabel.textColor = UIColor.white
         bioLabel.backgroundColor = UIColor.black.withAlphaComponent(0.2)
-
     }
     
     func setProfileImage(_ image : UIImage) {

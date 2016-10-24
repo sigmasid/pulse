@@ -1029,18 +1029,17 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             return nil
         }
     }
-    /* Location vars */
     
+    /* Location vars */
     /// setup the location tracking defaults
     fileprivate func _setupLocation() {
         
         if CLLocationManager.authorizationStatus() != .authorizedWhenInUse {
-            self.locationManager.requestWhenInUseAuthorization()
+            locationManager.requestWhenInUseAuthorization()
         }
-        self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        self.locationManager.distanceFilter = 100.0
-        self.locationManager.startUpdatingLocation()
-        
+        locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        locationManager.distanceFilter = 100.0
+        locationManager.startUpdatingLocation()
     }
     
     open func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {

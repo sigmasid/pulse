@@ -9,6 +9,7 @@
 import UIKit
 
 class SettingsTableCell: UITableViewCell {
+    let _settingNameLabel = UILabel()
     let _detailTextLabel = UILabel()
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
@@ -25,17 +26,29 @@ class SettingsTableCell: UITableViewCell {
     }
     
     fileprivate func setupCellLayout() {
-        addSubview(_detailTextLabel)
+        contentView.addSubview(_settingNameLabel)
+        contentView.addSubview(_detailTextLabel)
+
+        _settingNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        _settingNameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        _settingNameLabel.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.3).isActive = true
+        _settingNameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _settingNameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        _settingNameLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .left)
+        _settingNameLabel.layoutIfNeeded()
         
         _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
-        _detailTextLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.5).isActive = true
-        _detailTextLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.m.rawValue).isActive = true
-        _detailTextLabel.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
-        _detailTextLabel.setPreferredFont(UIColor.black, alignment : .right)
+        _detailTextLabel.leadingAnchor.constraint(equalTo: _settingNameLabel.trailingAnchor).isActive = true
+        _detailTextLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        _detailTextLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _detailTextLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        _detailTextLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .right)
+        _detailTextLabel.layoutIfNeeded()
+
+        _detailTextLabel.numberOfLines = 0
+        _detailTextLabel.lineBreakMode = .byWordWrapping
         
         backgroundColor = UIColor.clear
-        textLabel?.textColor = UIColor.black
-        textLabel?.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
     }
 
 }

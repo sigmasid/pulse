@@ -9,18 +9,20 @@
 import UIKit
 import MobileCoreServices
 
+protocol cameraDelegate : class {
+    func doneRecording(_: URL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?)
+    func userDismissedCamera()
+    func showAlbumPicker(_: UIViewController)
+}
+
 protocol childVCDelegate: class {
     func noAnswersToShow(_ : UIViewController)
     func removeQuestionPreview()
-    func doneRecording(_: URL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?)
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
-//    func userDismissedCamera(_: UIViewController)
 
-    func userDismissedCamera()
     func userDismissedRecording(_: UIViewController, _currentAnswers : [Answer])
-    func showAlbumPicker(_: UIViewController)
     func minAnswersShown()
     func askUserQuestion()
     func showNextQuestion()
@@ -29,7 +31,7 @@ protocol childVCDelegate: class {
     func userClickedAddMoreToAnswer(_ : UIViewController, _currentAnswers : [Answer])
 }
 
-class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     // delegate vars
     var selectedTag : Tag!
     var allQuestions = [Question?]()
@@ -84,8 +86,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControl
             rectToRight = view.frame
             rectToRight.origin.x = view.frame.maxX
             
-
-            loadingView = LoadingView(frame: self.view.bounds, backgroundColor: UIColor.white)
+            loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white)
             loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
             loadingView?.addMessage("Loading...")
             
@@ -93,10 +94,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControl
         
             isLoaded = true
         }
-    }
-    
-    override var prefersStatusBarHidden : Bool {
-        return true
     }
     
     override func didReceiveMemoryWarning() {
@@ -298,8 +295,8 @@ class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControl
     
     func showCamera(_ animated : Bool) {
         cameraVC = CameraVC()
-        cameraVC.childDelegate = self
-        cameraVC.questionToShow = currentQuestion
+        cameraVC.delegate = self
+        cameraVC.screenTitle = currentQuestion.qTitle
         
         cameraVC.transitioningDelegate = self
         
@@ -437,7 +434,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, UIImagePickerControl
 extension QAManagerVC: UIViewControllerTransitioningDelegate {
     
     func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        
         if presented is CameraVC {
             let animator = FadeAnimationController()
             animator.transitionType = .present

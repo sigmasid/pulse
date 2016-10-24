@@ -14,17 +14,17 @@ protocol CameraManagerProtocol: class {
 }
 
 class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProtocol {
-    fileprivate let _Camera = CameraManager()
-    fileprivate var _CameraOverlay : CameraOverlayView!
-    fileprivate var _loadingOverlay : LoadingView!
-    fileprivate var _isLoaded = false
+    fileprivate let camera = CameraManager()
+    fileprivate var cameraOverlay : CameraOverlayView!
+    fileprivate var loadingOverlay : LoadingView!
+    fileprivate var isLoaded = false
     
     /* duration set in milliseconds */
     fileprivate let videoDuration : Double = 60
     fileprivate var countdownTimer : CALayer!
     
-    var questionToShow : Question! //set by delegate
-    weak var childDelegate : childVCDelegate?
+    var screenTitle : String? //set by delegate
+    weak var delegate : cameraDelegate?
     
     fileprivate var tap : UITapGestureRecognizer!
     fileprivate var longTap : UILongPressGestureRecognizer!
@@ -34,24 +34,24 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        if !_isLoaded {
+        if !isLoaded {
             let zoomPinch = UIPinchGestureRecognizer()
             zoomPinch.delegate = self
-            _Camera.maxRecordingDelegate = self
+            camera.maxRecordingDelegate = self
             
             view.isUserInteractionEnabled = true
             view.isMultipleTouchEnabled = true
             view.addGestureRecognizer(zoomPinch)
             
-            _CameraOverlay = CameraOverlayView(frame: UIScreen.main.bounds)
+            cameraOverlay = CameraOverlayView(frame: UIScreen.main.bounds)
             
             setupLoading()
             setupCamera()
             setupCameraOverlay()
             
-            _isLoaded = true
+            isLoaded = true
         } else {
-            _Camera.resumeCaptureSession()
+            camera.resumeCaptureSession()
         }
     }
     
@@ -65,26 +65,26 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     fileprivate func takeImage() {
-        _Camera.startRecordingVideo()
+        camera.startRecordingVideo()
     }
     
     fileprivate func startVideoCapture() {
-        _CameraOverlay.countdownTimer(videoDuration / 10) //convert to seconds
-        _Camera.startRecordingVideo()
+        cameraOverlay.countdownTimer(videoDuration / 10) //convert to seconds
+        camera.startRecordingVideo()
     }
     
     fileprivate func stopVideoCapture() {
-        _CameraOverlay.stopCountdown()
-        _Camera.stopRecordingVideo({ (videoURL, image, error) -> Void in
+        cameraOverlay.stopCountdown()
+        camera.stopRecordingVideo({ (videoURL, image, error) -> Void in
             if let errorOccured = error {
-                self._Camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
+                self.camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
                 if image != nil {
-                    self.childDelegate!.doneRecording(nil, image: image, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedImage)
+                    self.delegate!.doneRecording(nil, image: image, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedImage)
                 } else if videoURL != nil {
-                    self.childDelegate!.doneRecording(videoURL, image: nil, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
+                    self.delegate!.doneRecording(videoURL, image: nil, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedVideo)
                 }
-                self._Camera.stopCaptureSession()
+                self.camera.stopCaptureSession()
 //                self._Camera.stopAndRemoveCaptureSession()
             }
         })
@@ -93,70 +93,70 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     func didReachMaxRecording(_ fileURL : URL?, image: UIImage?, error : NSError?) {
         if image != nil {
             //it's an image
-            _Camera.cameraVideoDuration = videoDuration //reset the duration
+            camera.cameraVideoDuration = videoDuration //reset the duration
 
             if let errorOccured = error {
-                _Camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
+                camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                childDelegate!.doneRecording(nil, image: image, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedImage)
-                _Camera.stopCaptureSession()
+                delegate!.doneRecording(nil, image: image, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedImage)
+                camera.stopCaptureSession()
 //                _Camera.stopAndRemoveCaptureSession()
             }
         } else {
             //it's a video
-            _CameraOverlay.stopCountdown()
+            cameraOverlay.stopCountdown()
             
             if let errorOccured = error {
-                _Camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
+                camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                childDelegate!.doneRecording(fileURL, image: nil, currentVC: self, location: self._Camera.recordedLocation, assetType: .recordedVideo)
-                _Camera.stopCaptureSession()
+                delegate!.doneRecording(fileURL, image: nil, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedVideo)
+                camera.stopCaptureSession()
 //                _Camera.stopAndRemoveCaptureSession()
             }
         }
     }
     
     func cycleFlash(_ oldButton : UIButton) {
-        let newFlashMode = _Camera.changeFlashMode()
+        let newFlashMode = camera.changeFlashMode()
         
         switch newFlashMode {
-        case .off: _CameraOverlay._flashMode =  .off
-        case .on: _CameraOverlay._flashMode = .on
-        case .auto: _CameraOverlay._flashMode = .auto
+        case .off: cameraOverlay._flashMode =  .off
+        case .on: cameraOverlay._flashMode = .on
+        case .auto: cameraOverlay._flashMode = .auto
         }
     }
     
     func flipCamera() {
-        if _Camera.cameraDevice == .front {
-            _Camera.cameraDevice = .back
+        if camera.cameraDevice == .front {
+            camera.cameraDevice = .back
         } else {
-            _Camera.cameraDevice = .front
+            camera.cameraDevice = .front
         }
     }
     
     fileprivate func setupLoading() {
-        _loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.black)
-        view.addSubview(_loadingOverlay)
+        loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.black)
+        view.addSubview(loadingOverlay)
     }
     
     fileprivate func setupCamera() {
-        _Camera.showAccessPermissionPopupAutomatically = true
-        _Camera.shouldRespondToOrientationChanges = false
-        _Camera.cameraDevice = .front
-        _Camera.cameraVideoDuration = videoDuration
+        camera.showAccessPermissionPopupAutomatically = true
+        camera.shouldRespondToOrientationChanges = false
+        camera.cameraDevice = .front
+        camera.cameraVideoDuration = videoDuration
 
-        let _ = _Camera.addPreviewLayerToView(view, newCameraOutputMode: .videoWithMic, completition: {() in
+        let _ = camera.addPreviewLayerToView(view, newCameraOutputMode: .videoWithMic, completition: {() in
             DispatchQueue.main.async {
-                UIView.animate(withDuration: 0.2, animations: { self._loadingOverlay.alpha = 0.0 } ,
+                UIView.animate(withDuration: 0.2, animations: { self.loadingOverlay.alpha = 0.0 } ,
                     completion: {(value: Bool) in
-                        self._loadingOverlay.removeFromSuperview()
+                        self.loadingOverlay.removeFromSuperview()
                 })
                 self.tap.isEnabled = true //enables tap when camera is ready
                 self.longTap.isEnabled = true
             }
         })
         
-        _Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
+        camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
             
             let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
@@ -166,31 +166,31 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     fileprivate func setupCameraOverlay() {
-        view.addSubview(_CameraOverlay)
-        _CameraOverlay.updateQuestion(self.questionToShow.qTitle!)
+        view.addSubview(cameraOverlay)
+        cameraOverlay.updateTitle(screenTitle)
         
-        switch _Camera.flashMode {
-        case .off: _CameraOverlay._flashMode =  .off
-        case .on: _CameraOverlay._flashMode = .on
-        case .auto: _CameraOverlay._flashMode = .auto
+        switch camera.flashMode {
+        case .off: cameraOverlay._flashMode =  .off
+        case .on: cameraOverlay._flashMode = .on
+        case .auto: cameraOverlay._flashMode = .auto
         }
         
         tap = UITapGestureRecognizer(target: self, action: #selector(respondToShutterTap))
-        _CameraOverlay.getButton(.shutter).addGestureRecognizer(tap)
+        cameraOverlay.getButton(.shutter).addGestureRecognizer(tap)
         tap.isEnabled = false
         
         longTap = UILongPressGestureRecognizer(target: self, action: #selector(respondToShutterLongTap))
         longTap.minimumPressDuration = 0.3
-        _CameraOverlay.getButton(.shutter).addGestureRecognizer(longTap)
+        cameraOverlay.getButton(.shutter).addGestureRecognizer(longTap)
         longTap.isEnabled = false
         
-        _CameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
-        _CameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
-        _CameraOverlay.getButton(.album).addTarget(self, action: #selector(showAlbumPicker), for: UIControlEvents.touchUpInside)
+        cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
+        cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
+        cameraOverlay.getButton(.album).addTarget(self, action: #selector(showAlbumPicker), for: UIControlEvents.touchUpInside)
     }
     
     func respondToShutterTap() {
-        _Camera.cameraVideoDuration = 0.1
+        camera.cameraVideoDuration = 0.1
         takeImage()
     }
     
@@ -203,7 +203,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     func showAlbumPicker() {
-        if let childDelegate = childDelegate {
+        if let childDelegate = delegate {
             childDelegate.showAlbumPicker(self)
         }
     }

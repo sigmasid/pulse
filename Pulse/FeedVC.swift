@@ -10,7 +10,6 @@ import UIKit
 
 protocol feedVCDelegate: class {
     func userSelected(type : FeedItemType, item : Any)
-    func userClickedSearch()
 }
 
 class FeedVC: UIViewController {
@@ -26,7 +25,6 @@ class FeedVC: UIViewController {
     
     fileprivate var searchScope : FeedItemType? = .question
     var feedDelegate : feedVCDelegate!
-    fileprivate var headerView : SearchHeaderCell!
     fileprivate var searchTap : UIGestureRecognizer!
     
     var feedItemType : FeedItemType! {
@@ -48,17 +46,16 @@ class FeedVC: UIViewController {
 
                 gettingImageForCell = [Bool](repeating: false, count: totalItemCount)
                 gettingInfoForCell = [Bool](repeating: false, count: totalItemCount)
-                browseAnswerPreviewImages = [UIImage?](repeating: nil, count: totalItemCount)
                 usersForAnswerPreviews = [User?](repeating: nil, count: totalItemCount)
+                questionsForAnswerPreviews = [Question?](repeating: nil, count: totalItemCount)
             case .people:
                 totalItemCount = allUsers.count
-
             }
             
             FeedCollectionView?.delegate = self
             FeedCollectionView?.dataSource = self
             FeedCollectionView?.reloadData()
-            FeedCollectionView?.layoutIfNeeded()
+            FeedCollectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
         }
     }
     
@@ -67,10 +64,7 @@ class FeedVC: UIViewController {
     fileprivate var selectedIndex : IndexPath? {
         didSet {
             if selectedIndex != nil && feedItemType! == .question {
-                FeedCollectionView?.reloadItems(at: [selectedIndex!])
-                if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                    FeedCollectionView?.reloadItems(at: [deselectedIndex!])
-                }
+                selectedIndex = nil
                 if feedDelegate != nil {
                     feedDelegate.userSelected(type : .question, item : selectedQuestion)
                 }
@@ -84,7 +78,16 @@ class FeedVC: UIViewController {
                 if feedDelegate != nil {
                     feedDelegate.userSelected(type : .people, item : selectedUser)
                 }
+            } else if selectedIndex != nil && feedItemType! == .answer {
+                FeedCollectionView?.reloadItems(at: [selectedIndex!])
+                if deselectedIndex != nil && deselectedIndex != selectedIndex {
+                    FeedCollectionView?.reloadItems(at: [deselectedIndex!])
+                }
+                if feedDelegate != nil {
+                    feedDelegate.userSelected(type : .answer, item : selectedAnswer)
+                }
             }
+            
         }
         willSet {
             if selectedIndex != nil {
@@ -102,22 +105,24 @@ class FeedVC: UIViewController {
     var selectedUser : User!
     var selectedTag : Tag!
     var selectedQuestion : Question!
+    var selectedAnswer: Answer!
     
     fileprivate var totalItemCount = 0
 
     /* cache questions & answers that have been shown */
     fileprivate var gettingImageForCell : [Bool]!
     fileprivate var gettingInfoForCell : [Bool]!
-    fileprivate var browseAnswerPreviewImages : [UIImage?]!
     fileprivate var usersForAnswerPreviews : [User?]!
-    
+    fileprivate var questionsForAnswerPreviews : [Question?]!
+
     let collectionReuseIdentifier = "FeedCell"
-    let collectionHeaderReuseIdentifier = "SearchHeaderCell"
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         if !isLoaded {
+            view.backgroundColor = .white
+            
             rectToLeft = view.frame
             rectToLeft.origin.x = view.frame.minX - view.frame.size.width
             
@@ -131,16 +136,8 @@ class FeedVC: UIViewController {
         }
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(true)
-    }
-    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-    }
-    
-    override var prefersStatusBarHidden : Bool {
-        return true
     }
     
     fileprivate func setupScreenLayout() {
@@ -153,15 +150,13 @@ class FeedVC: UIViewController {
         FeedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         FeedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
-
         view.addSubview(FeedCollectionView!)
         
         FeedCollectionView?.translatesAutoresizingMaskIntoConstraints = false
-        FeedCollectionView?.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        FeedCollectionView?.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         FeedCollectionView?.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         FeedCollectionView?.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         FeedCollectionView?.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        
         FeedCollectionView?.layoutIfNeeded()
         
         FeedCollectionView?.backgroundColor = UIColor.clear
@@ -182,8 +177,12 @@ class FeedVC: UIViewController {
         present(QAVC, animated: true, completion: nil)
     }
     
-    func clearSelected() {
-        selectedIndex = nil
+    func setSelectedIndex(index : IndexPath?) {
+        if let index = index {
+            selectedIndex = index
+        } else {
+            selectedIndex = nil
+        }
     }
 }
 
@@ -243,26 +242,25 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 })
             }
-            
-            if indexPath == selectedIndex && indexPath == deselectedIndex {
-                showQuestion(selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: selectedTag)
-                
-            } else if indexPath == selectedIndex, let _selectedQuestion = allQuestions[indexPath.row] {
-                if !_selectedQuestion.qCreated { //search case - get question from database
-                    Database.getQuestion(_selectedQuestion.qID, completion: { (question, error) in
-                    if error == nil {
-                        print("got question from database with answers \(question.totalAnswers())")
-                        self.selectedQuestion = question
-                        cell.showQuestion(question)
-                    }
-                    })
-                } else if _selectedQuestion.hasAnswers() {
-                    self.selectedQuestion = _selectedQuestion
-                    cell.showQuestion(_selectedQuestion)
-                }
-            } else if indexPath == deselectedIndex {
-                cell.removeAnswer()
-            }
+//            
+//            if indexPath == selectedIndex && indexPath == deselectedIndex {
+//                showQuestion(selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: selectedTag)
+//                
+//            } else if indexPath == selectedIndex, let _selectedQuestion = allQuestions[indexPath.row] {
+//                if !_selectedQuestion.qCreated { //search case - get question from database
+//                    Database.getQuestion(_selectedQuestion.qID, completion: { (question, error) in
+//                    if error == nil {
+//                        self.selectedQuestion = question
+//                        cell.showQuestion(question)
+//                    }
+//                    })
+//                } else if _selectedQuestion.hasAnswers() {
+//                    self.selectedQuestion = _selectedQuestion
+//                    cell.showQuestion(_selectedQuestion)
+//                }
+//            } else if indexPath == deselectedIndex {
+//                cell.removeAnswer()
+//            }
             
         /** FEED ITEM: TAG **/
         case .tag:
@@ -271,10 +269,18 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             }
             cell.updateLabel(nil, _subtitle: nil)
             
-            if allTags.count > indexPath.row {
+            if allTags.count > indexPath.row && allTags[indexPath.row].tagCreated {
                 let _currentTag = allTags[indexPath.row]
                 cell.updateLabel(_currentTag.tagID, _subtitle: _currentTag.tagDescription)
                 cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), for: UIControlState())
+            } else if allTags.count > indexPath.row {
+                Database.getTag(self.allTags[indexPath.row].tagID!, completion: { (tag, error) in
+                    if error == nil {
+                        self.allTags[indexPath.row] = tag
+                        cell.updateLabel(tag.tagID, _subtitle: tag.tagDescription)
+                        cell.answerCount.setTitle(String(tag.totalQuestionsForTag()), for: UIControlState())
+                    }
+                })
             }
             
         /** FEED ITEM: ANSWER **/
@@ -283,18 +289,21 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.itemType = .answer
             }
             
+            let _answer = allAnswers[indexPath.row]
+
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
-            if browseAnswerPreviewImages[indexPath.row] != nil && gettingImageForCell[indexPath.row] == true {
-                cell.updateImage(image: browseAnswerPreviewImages[indexPath.row]!)
+            if _answer.thumbImage != nil && gettingImageForCell[indexPath.row] == true {
+                cell.updateImage(image: _answer.thumbImage!)
             } else if gettingImageForCell[indexPath.row] {
                 //ignore if already fetching the image, so don't refetch if already getting
             } else {
                 gettingImageForCell[indexPath.row] = true
                 cell.updateImage(image: nil)
                 
-                Database.getImage(.AnswerThumbs, fileID: selectedQuestion!.qAnswers![indexPath.row], maxImgSize: maxImgSize, completion: {(_data, error) in
+                Database.getImage(.AnswerThumbs, fileID: allAnswers[indexPath.row].aID, maxImgSize: maxImgSize, completion: {(_data, error) in
                     if error == nil {
                         let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
+                        self.allAnswers[indexPath.row].thumbImage = _answerPreviewImage
                         cell.updateImage(image: _answerPreviewImage)
                     } else {
                         cell.updateImage(image: nil)
@@ -302,8 +311,34 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 })
             }
             
+            /* GET QUESTION FROM DATABASE - USER PROFILE ANSWERS CASE*/
+            if selectedUser != nil {
+                if questionsForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
+                    if let _question = questionsForAnswerPreviews[indexPath.row] {
+                        cell.titleLabel.text = _question.qTitle
+                        cell.subtitleLabel.text = nil
+                    }
+                } else if gettingInfoForCell[indexPath.row] {
+                    //ignore if already fetching the image, so don't refetch if already getting
+                } else {
+                    cell.titleLabel.text = nil
+                    cell.subtitleLabel.text = nil
+                    gettingInfoForCell[indexPath.row] = true
+                    
+                    Database.getQuestion(allAnswers[indexPath.row].qID, completion: { (question, error) in
+                        if error != nil {
+                            cell.titleLabel.text = nil
+                            cell.subtitleLabel.text = nil
+                            self.questionsForAnswerPreviews[indexPath.row] = nil
+                        } else {
+                            cell.titleLabel.text = question.qTitle
+                            self.questionsForAnswerPreviews[indexPath.row] = question
+                        }
+                    })
+                }
+            }
             /* GET NAME & BIO FROM DATABASE */
-            if usersForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
+            else if usersForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
                 if let _user = usersForAnswerPreviews[indexPath.row] {
                     cell.titleLabel.text = _user.name
                     cell.subtitleLabel.text = _user.shortBio
@@ -315,7 +350,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.subtitleLabel.text = nil
                 gettingInfoForCell[indexPath.row] = true
                 
-                Database.getUserSummaryForAnswer(selectedQuestion!.qAnswers![indexPath.row], completion: { (user, error) in
+                Database.getUserSummaryForAnswer(allAnswers[indexPath.row].aID, completion: { (user, error) in
                     if error != nil {
                         cell.titleLabel.text = nil
                         cell.subtitleLabel.text = nil
@@ -329,11 +364,13 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                let _selectedAnswerID = selectedQuestion.qAnswers![indexPath.row]
-                //  showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
+                let _selectedQuestion = selectedUser != nil ? questionsForAnswerPreviews[indexPath.row] : selectedQuestion
+                let _currentTag = selectedUser != nil ? Tag(tagID: "ANSWERS") : selectedTag
+
+                showQuestion(_selectedQuestion, _allQuestions: [_selectedQuestion], _questionIndex: 0, _selectedTag: _currentTag!)
             } else if indexPath == selectedIndex {
-                let _selectedAnswerID = selectedQuestion.qAnswers![indexPath.row]
-                cell.showAnswer(_selectedAnswerID)
+                print("should show answer")
+                cell.showAnswer(selectedAnswer.aID)
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()
             }
@@ -341,13 +378,11 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .people
             }
-            cell.updateLabel(nil, _subtitle: nil)
+            cell.updateLabel(nil, _subtitle: nil, _image : nil)
             
             let _user = allUsers[indexPath.row]
             
             if !_user.uCreated { //search case - get question from database
-                cell.updateImage(image: nil)
-
                 Database.getUser(_user.uID!, completion: { (user, error) in
                     if error == nil {
                         cell.titleLabel.text = user.name
@@ -359,12 +394,15 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             } else {
                 cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio)
                 cell.updateImage(image: nil)
-                
-                if let _uPic = _user.thumbPic {
+                if _user.thumbPicImage != nil {
+                    cell.updateImage(image : _user.thumbPicImage, isThumbnail : true)
+                }
+                else if let _uPic = _user.thumbPic {
                     DispatchQueue.global(qos: .background).async {
                         if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
                             DispatchQueue.main.async {
-                                cell.updateImage(image : UIImage(data: _userImageData))
+                                self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+                                cell.updateImage(image : UIImage(data: _userImageData), isThumbnail : true)
                             }
                         }
                     }
@@ -391,7 +429,8 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             selectedQuestion = allQuestions[indexPath.row]
         case .people:
             selectedUser = allUsers[indexPath.row]
-        default: break
+        case .answer:
+            selectedAnswer = allAnswers[indexPath.row]
         }
         
         selectedIndex = indexPath
@@ -414,8 +453,9 @@ extension FeedVC: UICollectionViewDelegateFlowLayout {
 }
 
 extension FeedVC: UIViewControllerTransitioningDelegate {
-    
-    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    func animationController(forPresented presented: UIViewController,
+                             presenting: UIViewController,
+                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is QAManagerVC {
             panDismissInteractionController.wireToViewController(QAVC, toViewController: nil, edge: UIRectEdge.left)

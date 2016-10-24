@@ -20,7 +20,6 @@ class HomeVC: UIViewController {
             view.backgroundColor = UIColor.white
 
             displayHomeFeed()
-
             isLoaded = true
         }
     }

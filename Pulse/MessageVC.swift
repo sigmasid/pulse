@@ -35,7 +35,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
     fileprivate var conversationHistory = UITableView()
     fileprivate var sendContainer = UIView()
     fileprivate var msgSend = UIButton()
-    fileprivate var _loginHeader : LoginHeaderView?
     
     fileprivate var sendBottomConstraint : NSLayoutConstraint!
 
@@ -51,12 +50,21 @@ class MessageVC: UIViewController, UITextViewDelegate{
         super.viewDidLoad()
         view.backgroundColor = UIColor.white
         
+        self.navigationController?.isNavigationBarHidden = false
+//        if let pulseNav = navigationController as? NavVC {
+//            toUserImage != nil ? pulseNav.updateStatusImage(image: toUserImage) : pulseNav.updateStatusMessage(message: msgToUserName.text)
+//        }
+
         hideKeyboardWhenTappedAround()
-        addHeader()
         setupLayout()
         
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -71,18 +79,27 @@ class MessageVC: UIViewController, UITextViewDelegate{
         super.didReceiveMemoryWarning()
     }
     
-    fileprivate func addHeader() {
-        _loginHeader = addHeader(text: "MESSAGE")
-        _loginHeader?.addGoBack()
-        _loginHeader?._goBack.addTarget(self, action: #selector(goBack), for: .touchUpInside)
-        
-        toUserImage != nil ? _loginHeader?.updateStatusBackground(_image: toUserImage) : _loginHeader?.updateStatusMessage(_message: "conversation history")
-
-        _loginHeader?.layoutIfNeeded()
+    override func viewWillDisappear(_ animated: Bool) {
+        self.navigationController?.isNavigationBarHidden = true
     }
     
+    //Update Nav Header
+    fileprivate func updateHeader() {
+        let backButton = NavVC.getButton(type: .back)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        
+        if let nav = navigationController as? NavVC {
+            toUserImage != nil ? nav.updateStatusImage(image: toUserImage) : nav.updateTitle(title: msgToUserName.text)
+            nav.toggleLogo(mode: .full)
+        } else {
+            title = "Conversations"
+        }
+    }
+
+    
     func goBack() {
-        GlobalFunctions.dismissVC(self)
+        let _ = self.navigationController?.popViewController(animated: true)
     }
     
     func keyboardWillShow(notification: NSNotification) {
@@ -96,7 +113,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 let indexPath : IndexPath = IndexPath(row:(messages.count - 1), section:0)
                 conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: false)
             }
-
         }
     }
     
@@ -154,7 +170,8 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 
                 self.conversationID = _conversationID!
                 self.keepConversationUpdated()
-
+            } else {
+                print("error sending message")
             }
         })
     }
@@ -165,7 +182,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
         view.addSubview(conversationHistory)
 
         msgTo.translatesAutoresizingMaskIntoConstraints = false
-        msgTo.topAnchor.constraint(equalTo: _loginHeader!.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        msgTo.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         msgTo.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         msgTo.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         msgTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true

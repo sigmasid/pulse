@@ -48,7 +48,6 @@ class SearchVC: UIViewController, XMSegmentedControlDelegate {
             isSetupComplete = true
             
             addSearchBar()
-//            addScopeBar()
             setupTableView()
         }
     }

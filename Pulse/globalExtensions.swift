@@ -67,30 +67,30 @@ extension UIViewController {
 //        self.view.layer.addSublayer(gradientLayer)
     }
     
-    func addHeader(text : String) -> LoginHeaderView {
-        let _headerView = UIView()
-        
-        view.addSubview(_headerView)
-        
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        
-        if self.prefersStatusBarHidden {
-            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).isActive = true
-        } else {
-            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
-        }
-        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        _headerView.layoutIfNeeded()
-        
-        let _loginHeader = LoginHeaderView(frame: _headerView.bounds)
-        _loginHeader.setAppTitleLabel(_message: "PULSE")
-        _loginHeader.setScreenTitleLabel(_message: text)
-        _headerView.addSubview(_loginHeader)
-        
-        return _loginHeader
-    }
+//    func addHeader(text : String) -> LoginHeaderView {
+//        let _headerView = UIView()
+//        
+//        view.addSubview(_headerView)
+//        
+//        _headerView.translatesAutoresizingMaskIntoConstraints = false
+//        
+//        if self.prefersStatusBarHidden {
+//            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).isActive = true
+//        } else {
+//            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
+//        }
+//        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+//        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+//        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+//        _headerView.layoutIfNeeded()
+//        
+//        let _loginHeader = LoginHeaderView(frame: _headerView.bounds)
+//        _loginHeader.setAppTitleLabel(_message: "PULSE")
+//        _loginHeader.setScreenTitleLabel(_message: text)
+//        _headerView.addSubview(_loginHeader)
+//        
+//        return _loginHeader
+//    }
     
     func addIcon(text : String) -> IconContainer {
         let iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
@@ -167,6 +167,15 @@ extension UIButton {
         self.titleLabel?.font = UIFont.systemFont(ofSize: size, weight: weight)
         self.setTitleColor(color, for: UIControlState())
     }
+    
+    func changeTint(color : UIColor, state : UIControlState) {
+        let image = self.imageView?.image?.withRenderingMode(.alwaysTemplate)
+
+        if let image = image {
+            self.setImage(image, for: state)
+            self.tintColor = color
+        }
+    }
 }
 
 extension UIImage
@@ -221,7 +230,7 @@ enum FollowToggle {
 enum IconSizes: CGFloat {
     case xxSmall = 10
     case xSmall = 20
-    case small = 25
+    case small = 35
     case medium = 50
     case large = 75
     case xLarge = 100
@@ -361,7 +370,8 @@ enum SettingTypes : String{
     case gender = "gender"
     case profilePic = "profilePic"
     case thumbPic = "thumbPic"
-    case array = "array"
+    case location = "location"
+    case array = "array" //for saved tags / questions
     
     static func getSettingType(_ index : String) -> SettingTypes? {
         switch index {
@@ -372,17 +382,17 @@ enum SettingTypes : String{
         case "birthday": return .birthday
         case "password": return .password
         case "array": return .array
-        case "gender": return .array
+        case "gender": return .gender
         case "profilePic": return .profilePic
         case "thumbPic": return .thumbPic
-
+        case "location": return .location
 
         default: return nil
         }
     }
 }
 
-enum CreatedAssetType {
+enum CreatedAssetType: String {
     case recordedImage
     case albumImage
     case recordedVideo

@@ -47,6 +47,7 @@ class Setting {
     let section : String?
     let longDescription : String?
     let placeholder : String?
+    let options : [String]?
     
     init(_settingID : String, _display: String, _type: SettingTypes, _editable : Bool, _section : String) {
         self.settingID = _settingID
@@ -56,6 +57,7 @@ class Setting {
         self.section = _section
         self.longDescription = nil
         self.placeholder = nil
+        self.options = nil
     }
     
     init(snap : FIRDataSnapshot) {
@@ -98,6 +100,15 @@ class Setting {
             self.placeholder = snap.childSnapshot(forPath: "placeholder").value as? String
         } else {
             self.placeholder = nil
+        }
+        
+        if snap.hasChild("choices") {
+            self.options = [String]()
+            for option in snap.childSnapshot(forPath: "choices").children {
+                self.options?.append((option as AnyObject).key)
+            }
+        } else {
+            self.options = nil
         }
     }
 }

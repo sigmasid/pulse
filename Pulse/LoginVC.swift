@@ -27,7 +27,6 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     
-    fileprivate var _loginHeader : LoginHeaderView?
     fileprivate var _isLoaded = false
     var _currentLoadedView : currentLoadedView?
 
@@ -66,28 +65,39 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             hideKeyboardWhenTappedAround()
             setupView()
             emailButton.setDisabled()
-            addHeader()
             _currentLoadedView = .login
             
             NotificationCenter.default.addObserver(self, selector: #selector(onFBProfileUpdated), name:NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
             
             _isLoaded = true
         }
-        
-        _loginHeader?.updateStatusMessage(_message: "get logged in")
     }
     
-    override func viewDidAppear(_ animated : Bool) {
-        super.viewDidAppear(true)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
     }
     
     override func viewDidDisappear(_ animated : Bool) {
         super.viewDidDisappear(true)
-        _loginHeader?.updateStatusMessage(_message: "")
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    
+    fileprivate func updateHeader() {
+        if parent?.navigationController != nil {
+            let loginButton = NavVC.getButton(type: .login)
+            parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
+        }
+        
+        if let nav = navigationController as? NavVC {
+            nav.updateTitle(title: "Login")
+            nav.toggleLogo(mode: .full)
+        } else {
+            parent?.title = "Login"
+        }
     }
     
     fileprivate func setupView() {
@@ -117,15 +127,10 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
 
     }
     
-    fileprivate func addHeader() {
-        _loginHeader = addHeader(text: "LOGIN")
-        _loginHeader?.addEmptyButton(image: UIImage(named: "login")!)
-    }
-    
     func textFieldDidBeginEditing(_ textField: UITextField) {
         if !_hasMovedUp {
             UIView.animate(withDuration: 0.25, animations: {
-                self.view.frame.origin.y -= 100
+                self.view.frame.origin.y -= 60
             }) 
             _hasMovedUp = true
         }
@@ -134,7 +139,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         if _hasMovedUp {
             UIView.animate(withDuration: 0.25, animations: {
-                self.view.frame.origin.y += 100
+                self.view.frame.origin.y += 60
             }) 
             _hasMovedUp = false
         }
@@ -186,13 +191,13 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
                 case FIRAuthErrorCode.errorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
 
-                default: self._loginHeader!.updateStatusMessage(_message: "error signing in")
+                default: (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "error signing in")
                 }
             }
             else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                self._loginHeader!.updateStatusMessage(_message: "welcome!")
+                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "welcome!")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
@@ -201,10 +206,9 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     }
     
     @IBAction func createAccount(_ sender: UIButton) {
-        if let CreateAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
-            CreateAccountVC.returnToParentDelegate = self
+        if let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
             _currentLoadedView = .createAccount
-            GlobalFunctions.addNewVC(CreateAccountVC, parentVC: self)
+            self.parent?.navigationController?.pushViewController(createAccountVC, animated: true)
         }
     }
     
@@ -247,7 +251,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             }
             else {
                 self.removeLoading()
-                self._loginHeader!.updateStatusMessage(_message: aUser!.displayName)
+                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: aUser!.displayName)
                 self._loggedInSuccess()
                 print("posted facebook login success update")
             }
@@ -264,7 +268,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
                     if let blockError = blockError as? NSError {
                         self.removeLoading()
-                        self._loginHeader!.updateStatusMessage(_message: blockError.description)
+                        (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: blockError.description)
                     } else {
                         self.removeLoading()
                         self._loggedInSuccess()
@@ -272,16 +276,16 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 }
             } else {
                 self.removeLoading()
-                self._loginHeader!.updateStatusMessage(_message: "Uh oh! That didn't work: \(error!.localizedDescription)")
+                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "Uh oh! That didn't work")
             }
         }
     }
     
     func _loggedInSuccess() {
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
-        if let _ = loginVCDelegate {
-            loginVCDelegate!.loginSuccess(self)
-        }
+//        if let _ = loginVCDelegate {
+//            loginVCDelegate!.loginSuccess(self)
+//        }
     }
     
     func addLoading() {

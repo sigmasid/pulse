@@ -26,7 +26,7 @@ class LoadingView: UIView {
         super.init(coder: aDecoder)
     }
     
-    func addMessage(_ _text : String) {
+    func addMessage(_ _text : String?) {
         self.addSubview(_messageLabel)
         _messageLabel.text = _text
         _messageLabel.adjustsFontSizeToFitWidth = true
