@@ -882,17 +882,6 @@ class Database {
                     User.currentUser!.savedTags[(_tag as AnyObject).key] = (_tag as AnyObject).value
                 }
             }
-
-//            ** GETS UPDATED WHEN FEED IS LOADED ** //
-//            if snap.hasChild("savedQuestions") {
-//                User.currentUser!.savedQuestions = [ : ]
-//                for question in snap.childSnapshotForPath("savedQuestions").children {
-//                    if let _answerID = snap.childSnapshotForPath("savedQuestions/\(question)/lastAnswerID").value as? String {
-//                        User.currentUser!.savedQuestions[question.key] = _answerID
-//                        Database.keepQuestionsAnswersUpdated(question.key, lastAnswerID: _answerID)
-//                    }
-//                }
-//            }
             
             for profile in user.providerData {
                 let providerID = profile.providerID
@@ -963,6 +952,7 @@ class Database {
                     completion(nil, NSError.init(domain: "NoLocation", code: 404, userInfo: userInfo))
                 } else if (location != nil) {
                     let location = CLLocation(latitude: location!.coordinate.latitude, longitude: location!.coordinate.longitude)
+                    User.currentUser?.location = location
                     completion(location, nil)
                 } else {
                     let userInfo = [ NSLocalizedDescriptionKey : "no location found" ]
@@ -972,8 +962,7 @@ class Database {
         }
     }
     
-    static func getCityFromLocation(location: CLLocation, completion: @escaping (String?, Error?) -> Void) {
-        
+    static func getCityFromLocation(location: CLLocation, completion: @escaping (String?) -> Void) {
         CLGeocoder().reverseGeocodeLocation(location, completionHandler: {(placemarks, error)-> Void in
             if (error != nil) {
                 return
@@ -982,17 +971,12 @@ class Database {
             if let allPlacemarks = placemarks {
                 if allPlacemarks.count != 0 {
                     let pm = allPlacemarks[0] as CLPlacemark
-                    
-                    if let city = pm.locality {
-                        completion(city, nil)
-                    } else {
-                        completion(nil, error)
-                    }
+                    pm.locality != nil ? completion(pm.locality) : completion(nil)
                 } else {
-                    completion(nil, error)
+                    completion(nil)
                 }
             } else {
-                completion(nil, error)
+                completion(nil)
             }
         })
     }

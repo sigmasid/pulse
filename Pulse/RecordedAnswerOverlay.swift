@@ -17,6 +17,7 @@ class RecordedAnswerOverlay: UIView {
     fileprivate var _progressBar = UIProgressView()
     
     fileprivate var _pagers = [UIView]()
+    fileprivate lazy var _answerPagers = UIStackView()
     fileprivate var _iconSize : CGFloat = IconSizes.xSmall.rawValue
     
     var tap : UITapGestureRecognizer!
@@ -31,6 +32,7 @@ class RecordedAnswerOverlay: UIView {
         addFooterButtons()
         addCloseButton()
         addSaveButton()
+        setupAnswerPagers()
     }
     
     func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
@@ -96,35 +98,22 @@ class RecordedAnswerOverlay: UIView {
     }
     
     fileprivate func addSaveButton() {
-        if let saveToDiskImage = UIImage(named: "download-to-disk") {
-            _saveToDiskButton.setImage(saveToDiskImage, for: UIControlState())
-        }
+        _saveToDiskButton = NavVC.getButton(type: .save)
+
         addSubview(_saveToDiskButton)
-        
         _saveToDiskButton.translatesAutoresizingMaskIntoConstraints = false
-        
         _saveToDiskButton.topAnchor.constraint(equalTo: _closeButton.topAnchor).isActive = true
         _saveToDiskButton.leadingAnchor.constraint(equalTo: _closeButton.trailingAnchor, constant: Spacing.m.rawValue).isActive = true
-        _saveToDiskButton.widthAnchor.constraint(equalToConstant: _iconSize).isActive = true
-        _saveToDiskButton.heightAnchor.constraint(equalToConstant: _iconSize).isActive = true
     }
     
     fileprivate func addCloseButton() {
-        if let closeButtonImage = UIImage(named: "close") {
-            _closeButton.setImage(closeButtonImage, for: UIControlState())
-        } else {
-            _closeButton.titleLabel?.text = "Close"
-        }
+        _closeButton = NavVC.getButton(type: .close)
+        
         addSubview(_closeButton)
         
         _closeButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        _closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + IconSizes.xSmall.rawValue).isActive = true
+        _closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
         _closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.m.rawValue).isActive = true
-        _closeButton.widthAnchor.constraint(equalToConstant: _iconSize).isActive = true
-        _closeButton.heightAnchor.constraint(equalToConstant: _iconSize).isActive = true
-        _closeButton.imageEdgeInsets = UIEdgeInsetsMake(2, 2, 2, 2)
-
     }
     
     func addSavingLabel(_ label : String) {
@@ -144,25 +133,47 @@ class RecordedAnswerOverlay: UIView {
         _savingLabel.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
     }
     
-    func addAnswerPagers(_ count : Int) {
-        _pagers.append(UIView())
-        addSubview(_pagers.last!)
+    func setupAnswerPagers() {
+        addSubview(_answerPagers)
+        
+        _answerPagers.translatesAutoresizingMaskIntoConstraints = false
+        _answerPagers.widthAnchor.constraint(equalToConstant: Spacing.xs.rawValue).isActive = true
+        _answerPagers.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
+        _answerPagers.trailingAnchor.constraint(equalTo: trailingAnchor, constant : -Spacing.s.rawValue).isActive = true
+        
+        _answerPagers.axis = .vertical
+        _answerPagers.distribution = .fillEqually
+        _answerPagers.spacing = Spacing.s.rawValue
+    }
 
-        _pagers.last!.translatesAutoresizingMaskIntoConstraints = false
-        _pagers.last!.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -(CGFloat(count) * Spacing.m.rawValue) ).isActive = true
-        _pagers.last!.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + IconSizes.xSmall.rawValue).isActive = true
-        _pagers.last!.widthAnchor.constraint(equalToConstant: IconSizes.xxSmall.rawValue).isActive = true
-        _pagers.last!.heightAnchor.constraint(equalTo: _pagers.last!.widthAnchor).isActive = true
+    
+    func addAnswerPagers() {
+        let _pager = UIView()
+        _pager.translatesAutoresizingMaskIntoConstraints = false
+        _pager.heightAnchor.constraint(equalTo: _pager.widthAnchor).isActive = true
+        _pager.backgroundColor = pulseBlue
         
-        _pagers.last!.layoutIfNeeded()
-        _pagers.last!.layer.cornerRadius = _pagers.last!.frame.width / 2
-        _pagers.last!.backgroundColor = UIColor.white
+        if _answerPagers.arrangedSubviews.last != nil {
+            _answerPagers.arrangedSubviews.last!.backgroundColor = .white
+        }
         
+        _answerPagers.addArrangedSubview(_pager)
+        
+        _pager.layoutIfNeeded()
+        _pager.layer.cornerRadius = _pager.frame.width / 2
+        _pager.layer.masksToBounds = true
     }
     
     func removeAnswerPager() {
-        _pagers.last?.removeFromSuperview()
-        _pagers.removeLast()
+        if _answerPagers.arrangedSubviews.last != nil {
+            let lastView = _answerPagers.arrangedSubviews.last!
+            _answerPagers.removeArrangedSubview(lastView)
+            lastView.removeFromSuperview()
+        }
+        
+        if _answerPagers.arrangedSubviews.last != nil {
+            _answerPagers.arrangedSubviews.last!.backgroundColor = pulseBlue
+        }
     }
     
     func hideSavingLabel(_ label : String) {

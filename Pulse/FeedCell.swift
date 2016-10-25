@@ -208,12 +208,12 @@ class FeedCell: UICollectionViewCell {
         subtitleLabelConstraint1 = subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue)
         subtitleLabelConstraint2 = subtitleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue)
         subtitleLabelConstraint3 = subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
-        subtitleLabelConstraint4 = subtitleLabel.heightAnchor.constraint(equalToConstant: IconSizes.xxSmall.rawValue)
+        subtitleLabelConstraint4 = subtitleLabel.heightAnchor.constraint(equalToConstant: Spacing.xs.rawValue)
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabelConstraint1 = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue)
         titleLabelConstraint2 = titleLabel.bottomAnchor.constraint(equalTo: subtitleLabel.topAnchor)
-        titleLabelConstraint3 = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
+        titleLabelConstraint3 = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue)
         titleLabelConstraint4 = titleLabel.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue)
         
         previewImage!.translatesAutoresizingMaskIntoConstraints = false
@@ -227,7 +227,7 @@ class FeedCell: UICollectionViewCell {
         previewImage!.layoutIfNeeded()
         
         titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
+        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
 
         subtitleLabel.sizeToFit()
         activateConstraints()

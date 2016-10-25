@@ -7,7 +7,7 @@
 //
 
 import UIKit
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu }
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save }
 
 class NavVC: UINavigationController {
 
@@ -191,7 +191,13 @@ class NavVC: UINavigationController {
             button.tintColor = UIColor.black
             
             return button
-
+            
+        case .save:
+            let tintedTimage = UIImage(named: "download-to-disk")?.withRenderingMode(.alwaysTemplate)
+            button.setImage(tintedTimage, for: UIControlState())
+            button.tintColor = UIColor.black
+            
+            return button
         }
     
 

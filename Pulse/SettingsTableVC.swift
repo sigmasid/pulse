@@ -11,6 +11,7 @@ import UIKit
 class SettingsTableVC: UIViewController {
     fileprivate var _sections : [SettingSection]?
     fileprivate var _settings = [[Setting]]()
+    fileprivate var _selectedSettingRow : IndexPath?
 
     fileprivate var settingsTable = UITableView()
     fileprivate let _reuseIdentifier = "SettingsTableCell"
@@ -35,6 +36,12 @@ class SettingsTableVC: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
+        //force refresh of the selected row
+        if _selectedSettingRow != nil {
+            settingsTable.reloadRows(at: [_selectedSettingRow!], with: .fade)
+            _selectedSettingRow = nil
+        }
     }
     
     override func viewDidLayoutSubviews() {
@@ -128,11 +135,15 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
             let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
             cell._settingNameLabel.text = _setting.display!
             if _setting.type == .location {
-                
+                User.currentUser?.getLocation(completion: {(city) in
+                    cell._detailTextLabel.text = city
+                })
             }
-            if _setting.type != nil {
+                
+            else if _setting.type != nil {
                 cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
             }
+            
             if _setting.editable {
                 cell.accessoryType = .disclosureIndicator
             }
@@ -153,6 +164,7 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
+        _selectedSettingRow = indexPath
         showSettingDetail(_setting)
         tableView.deselectRow(at: indexPath, animated: true)
     }

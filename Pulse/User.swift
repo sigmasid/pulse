@@ -118,6 +118,25 @@ class User {
         return FIRAuth.auth()?.currentUser?.email
     }
     
+    func getLocation(completion: @escaping (String?) -> Void) {
+        if let location = self.location {
+            Database.getCityFromLocation(location: location, completion: {(city) in
+                city != nil ? completion(city!) : completion(nil)
+            })
+        } else {
+            Database.getUserLocation(completion: {(location, error) in
+                if let _location = location {
+                    self.location = _location
+                    Database.getCityFromLocation(location: _location, completion: {(city) in
+                        city != nil ? completion(city!) : completion(nil)
+                    })
+                } else {
+                    completion(nil)
+                }
+            })
+        }
+    }
+    
     func getValueForStringProperty(_ property : String) -> String? {
         switch property {
         case "name": return User.currentUser!.name

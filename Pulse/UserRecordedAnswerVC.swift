@@ -60,7 +60,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             if newValue < currentAnswerIndex {
                 isNewEntry = false
             } else {
-                _controlsOverlay.addAnswerPagers(newValue)
+                _controlsOverlay.addAnswerPagers()
             }
         }
     }
@@ -217,9 +217,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate func uploadAnswer() {
         
         if let _image = currentAnswers.first?.thumbImage  {
-            
             Database.uploadImage(.AnswerThumbs, fileID: currentAnswers.first!.aID, image: _image, completion: { (success, error) in } )
-            
         }
         
         for answer in currentAnswers {

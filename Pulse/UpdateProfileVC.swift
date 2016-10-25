@@ -283,25 +283,16 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
     }
     
     fileprivate func getLocationOrPlaceholder() {
-        if let location = User.currentUser?.location{
-            Database.getCityFromLocation(location: location, completion: {(city, error) in
+        User.currentUser?.getLocation(completion: {(city) in
+            if let city = city {
                 self.shortTextField.text = city
-            })
-        } else {
-            Database.getUserLocation(completion: { (location, error) in
-                if let location = location {
-                    User.currentUser?.location = location
-                    Database.getCityFromLocation(location: location, completion: {(city, error) in
-                        self.shortTextField.text = city
-                    })
-                } else if let _placeholder = self._currentSetting.placeholder {
-                    self.shortTextField.text = _placeholder
-                    self.setupLocation()
-                } else {
-                    self.shortTextField.text = nil
-                }
-            })
-        }
+            } else if let _placeholder = self._currentSetting.placeholder {
+                self.shortTextField.text = _placeholder
+                self.setupLocation()
+            } else {
+                self.shortTextField.text = nil
+            }
+        })
     }
     
     /* Location vars */

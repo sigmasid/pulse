@@ -32,7 +32,6 @@ class AnswerMenu: UIView {
         if  isHidden {
             return false
         } else {
-            print("expanded bounds fired")
             let expandedBounds = bounds.insetBy(dx: -50, dy: -50)
             return expandedBounds.contains(point)
         }

@@ -19,7 +19,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     fileprivate var profileSummary = ProfileSummary()
     fileprivate var profileSettingsVC : SettingsTableVC!
     fileprivate var settingsLinks : AccountPageMenu!
-    fileprivate var answersVC : FeedVC!
+    fileprivate lazy var answersVC : FeedVC = FeedVC()
 
     fileprivate lazy var cameraView = UIView()
     fileprivate lazy var Camera = CameraManager()
@@ -44,10 +44,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     
     override func viewDidLayoutSubviews() {
         if !isLoaded {
-            
             view.backgroundColor = UIColor.white
-            automaticallyAdjustsScrollViewInsets = false
-
             icon = addIcon(text: "ACCOUNT")
             
             setupProfileSummary()
@@ -70,8 +67,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        print("view will appear fired")
-        updateHeader(title: "PROFILE", leftButton: .menu)
+        updateHeader(title: "Account", leftButton: .menu)
     }
     
     override func didReceiveMemoryWarning() {
@@ -133,8 +129,6 @@ class AccountPageVC: UIViewController, accountDelegate {
     
     func clickedAnswers() {
         settingsLinks.setSelectedButton(type: .answers)
-        
-        answersVC = FeedVC()
         GlobalFunctions.addNewVC(answersVC, parentVC: self)
         isShowingAnswers = true
 
@@ -143,8 +137,7 @@ class AccountPageVC: UIViewController, accountDelegate {
         answersVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         answersVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         answersVC.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        answersVC.view.layoutIfNeeded()
-        
+
         toggleLoading(show: true, message: "Loading your answers...")
         updateHeader(title: "Your Answers", leftButton: .back)
 
@@ -166,6 +159,9 @@ class AccountPageVC: UIViewController, accountDelegate {
                 }
             })
         }
+        
+        automaticallyAdjustsScrollViewInsets = false
+        answersVC.view.setNeedsLayout()
     }
     
     func clickedLogout() {
@@ -188,6 +184,8 @@ class AccountPageVC: UIViewController, accountDelegate {
     
     func goBack() {
         GlobalFunctions.dismissVC(answersVC)
+        updateHeader(title: "Account", leftButton: .menu)
+        settingsLinks.setSelectedButton(type: nil)
         isShowingAnswers = false
     }
     
@@ -323,7 +321,6 @@ class AccountPageVC: UIViewController, accountDelegate {
                 button.addTarget(self, action: #selector(clickedMenu), for: UIControlEvents.touchUpInside)
                 parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
             } else if leftButton == .back {
-                print("left button is back)")
                 let button = NavVC.getButton(type: .back)
                 button.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
                 parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
@@ -331,8 +328,6 @@ class AccountPageVC: UIViewController, accountDelegate {
         }
         
         if let nav = navigationController as? NavVC {
-            print("got nav with title \(title)")
-            nav.updateBackgroundImage(image: GlobalFunctions.imageWithColor(.red))
             nav.updateTitle(title: title)
             nav.toggleLogo(mode: .full)
         } else {
@@ -365,12 +360,12 @@ class AccountPageVC: UIViewController, accountDelegate {
         
         settingsLinks.setupSettingsMenuLayout()
         
-        settingsLinks.getButton(type: .profile).addTarget(self, action: #selector(clickedProfile), for: .touchUpInside)
-        settingsLinks.getButton(type: .messages).addTarget(self, action: #selector(clickedMessages), for: .touchUpInside)
-        settingsLinks.getButton(type: .activity).addTarget(self, action: #selector(clickedActivity), for: .touchUpInside)
-        settingsLinks.getButton(type: .answers).addTarget(self, action: #selector(clickedAnswers), for: .touchUpInside)
-        settingsLinks.getButton(type: .settings).addTarget(self, action: #selector(clickedSettings), for: .touchUpInside)
-        settingsLinks.getButton(type: .logout).addTarget(self, action: #selector(clickedLogout), for: .touchUpInside)
+        settingsLinks.getButton(type: .profile).addTarget(self, action: #selector(clickedProfile), for: .touchDown)
+        settingsLinks.getButton(type: .messages).addTarget(self, action: #selector(clickedMessages), for: .touchDown)
+        settingsLinks.getButton(type: .activity).addTarget(self, action: #selector(clickedActivity), for: .touchDown)
+        settingsLinks.getButton(type: .answers).addTarget(self, action: #selector(clickedAnswers), for: .touchDown)
+        settingsLinks.getButton(type: .settings).addTarget(self, action: #selector(clickedSettings), for: .touchDown)
+        settingsLinks.getButton(type: .logout).addTarget(self, action: #selector(clickedLogout), for: .touchDown)
         
         clickedMenu()
 

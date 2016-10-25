@@ -222,7 +222,7 @@ class ProfileSummary: UIView, UITextFieldDelegate {
         uProfilePic.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         uProfilePic.heightAnchor.constraint(equalTo: uProfilePic.widthAnchor).isActive = true
         uProfilePic.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        uProfilePic.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        uProfilePic.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.m.rawValue).isActive = true
         uProfilePic.layoutIfNeeded()
         
         uName.translatesAutoresizingMaskIntoConstraints = false

@@ -37,6 +37,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     var allQuestions = [Question?]()
     var questionCounter = 0
     var currentQuestion : Question!
+    var answerIndex = 0
     fileprivate var currentAnswers = [Answer]()
     
     /* CHILD VIEW CONTROLLERS */
@@ -48,7 +49,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     fileprivate var questionPreviewVC : QuestionPreviewVC?
     
     fileprivate var _hasMoreAnswers = false
-//    private var _isShowingUserRecordedVideo = false
+    fileprivate var _isCameraLoaded = false
     fileprivate var _isAddingMoreAnswers = false
     fileprivate var _isShowingQuestionPreview = false
     
@@ -105,6 +106,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         
         answerVC.currentQuestion = currentQuestion
         answerVC.currentTag = selectedTag
+        answerVC.answerIndex = answerIndex
         answerVC.delegate = self
         
         pushViewController(answerVC, animated: false)
@@ -290,7 +292,10 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func showCamera() {
-        showCamera(true)
+        if !_isCameraLoaded {
+            showCamera(true)
+            _isCameraLoaded = true
+        }
     }
     
     func showCamera(_ animated : Bool) {
@@ -298,7 +303,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         cameraVC.delegate = self
         cameraVC.screenTitle = currentQuestion.qTitle
         
-        cameraVC.transitioningDelegate = self
+//        cameraVC.transitioningDelegate = self - was used when we were presenting the camera vs. pushing
         
         panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: self)
         panDismissInteractionController.delegate = self
@@ -334,7 +339,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     func userDismissedRecording(_ currentVC : UIViewController, _currentAnswers : [Answer]) {
         currentAnswers = _currentAnswers
         
-        popViewController(animated: false)
+        popViewController(animated: true)
         _isAddingMoreAnswers = false
         showCamera()
     }
@@ -352,6 +357,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                     }
                 } else {
                     self.popViewController(animated: false)
+                    self._isCameraLoaded = false
                     self.showQuestionPreviewOverlay()
                     self.currentQuestion = question
                     self.answerVC.currentQuestion = question
@@ -411,15 +417,28 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                 animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
 
                 return animator
+            } else if fromVC is UserRecordedAnswerVC && toVC is CameraVC {
+                let animator = FadeAnimationController()
+                animator.transitionType = .dismiss
+                return animator
             } else {
                 return nil
             }
         case .push:
-            print("is push operation")
-            return nil
+            if toVC is UserRecordedAnswerVC {
+                let animator = FadeAnimationController()
+                animator.transitionType = .present
+                
+                return animator
+            } else if toVC is CameraVC && fromVC is UserRecordedAnswerVC {
+                let animator = FadeAnimationController()
+                animator.transitionType = .present
+                
+                return animator
+            } else {
+                return nil
+            }
         case .none:
-            print("is no operation")
-
             return nil
         }
     }
@@ -431,36 +450,39 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
 }
 
 /** OLD - STILL USED FOR CAMERA? **/
-extension QAManagerVC: UIViewControllerTransitioningDelegate {
-    
-    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if presented is CameraVC {
-            let animator = FadeAnimationController()
-            animator.transitionType = .present
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-    
-    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is CameraVC {
-            let animator = ShrinkDismissController()
-            animator.transitionType = .dismiss
-            animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-    
-    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return nil
-    }
-    
-    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
-    }
-}
+//extension QAManagerVC: UIViewControllerTransitioningDelegate {
+//    
+//    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+//        if presented is CameraVC {
+//            print("transitioning delegate fired or present")
+//            let animator = FadeAnimationController()
+//            animator.transitionType = .present
+//            
+//            return animator
+//        } else {
+//            return nil
+//        }
+//    }
+//    
+//    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+//        if dismissed is CameraVC {
+//            print("transitioning delegate fired for dismiss")
+//
+//            let animator = ShrinkDismissController()
+//            animator.transitionType = .dismiss
+//            animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
+//            
+//            return animator
+//        } else {
+//            return nil
+//        }
+//    }
+//    
+//    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+//        return nil
+//    }
+//    
+//    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+//        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
+//    }
+//}

@@ -79,7 +79,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         super.viewDidLoad()
         
         if !isLoaded {
-            print("went into view will appear")
             view.backgroundColor = UIColor.white
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             view.addGestureRecognizer(tap)
@@ -193,11 +192,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     fileprivate func _addClip(_ answerID : String) {
         Database.getAnswer(answerID, completion: { (answer, error) in
-            if error != nil {
-                print("error getting question")
-            } else {
-                self._addClip(answer)
-            }
+            error == nil ? self._addClip(answer) : GlobalFunctions.showErrorBlock("Error", erMessage: "Sorry there was an error getting this question")
         })
     }
     
@@ -395,13 +390,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     func votedAnswer(_ _vote : AnswerVoteType) {        
         if let _currentAnswer = currentAnswer {
-            Database.addAnswerVote( _vote, aID: _currentAnswer.aID, completion: { (success, error) in
-                if success {
-                    print("vote registered")
-                } else {
-                    print(error!.localizedDescription)
-                }
-            })
+            Database.addAnswerVote( _vote, aID: _currentAnswer.aID, completion: { (success, error) in })
         }
     }
     

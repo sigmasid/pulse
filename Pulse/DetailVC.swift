@@ -472,7 +472,7 @@ extension DetailVC : UICollectionViewDataSource, UICollectionViewDelegate {
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                let _selectedAnswerID = currentQuestion.qAnswers![(indexPath as NSIndexPath).row]
+//                let _selectedAnswerID = currentQuestion.qAnswers![(indexPath as NSIndexPath).row]
 //                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
             } else if indexPath == selectedIndex {
                 let _selectedAnswerID = currentQuestion.qAnswers![(indexPath as NSIndexPath).row]

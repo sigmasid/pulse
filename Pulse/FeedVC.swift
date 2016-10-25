@@ -165,12 +165,13 @@ class FeedVC: UIViewController {
         FeedCollectionView?.isPagingEnabled = true
     }
     
-    func showQuestion(_ _selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag) {
+    func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
         QAVC = QAManagerVC()
-        QAVC.selectedTag = _selectedTag
-        QAVC.allQuestions = _allQuestions
-        QAVC.currentQuestion = _selectedQuestion
-        QAVC.questionCounter = _questionIndex
+        QAVC.selectedTag = selectedTag
+        QAVC.allQuestions = allQuestions
+        QAVC.currentQuestion = selectedQuestion
+        QAVC.questionCounter = questionIndex
+        QAVC.answerIndex = answerIndex
         selectedIndex = nil
         
         QAVC.transitioningDelegate = self
@@ -287,6 +288,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         case .answer:
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .answer
+                cell.hideAnswerCount()
             }
             
             let _answer = allAnswers[indexPath.row]
@@ -339,6 +341,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             }
             /* GET NAME & BIO FROM DATABASE */
             else if usersForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
+                cell.hideAnswerCount()
                 if let _user = usersForAnswerPreviews[indexPath.row] {
                     cell.titleLabel.text = _user.name
                     cell.subtitleLabel.text = _user.shortBio
@@ -364,31 +367,36 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                let _selectedQuestion = selectedUser != nil ? questionsForAnswerPreviews[indexPath.row] : selectedQuestion
-                let _currentTag = selectedUser != nil ? Tag(tagID: "ANSWERS") : selectedTag
-
-                showQuestion(_selectedQuestion, _allQuestions: [_selectedQuestion], _questionIndex: 0, _selectedTag: _currentTag!)
+                //only show answer by selected user - removes other answers from qAnswers array and creates blank tag
+                if selectedUser != nil {
+                    let selectedQuestion = questionsForAnswerPreviews[indexPath.row]
+                    let currentTag = Tag(tagID: "ANSWERS")
+                    selectedQuestion?.qAnswers = [allAnswers[indexPath.row].aID]
+                    showQuestion(selectedQuestion, allQuestions: [selectedQuestion], questionIndex: 0, answerIndex: 0, selectedTag: currentTag)
+                } else {
+                    showQuestion(selectedQuestion, allQuestions: [selectedQuestion], questionIndex: 0, answerIndex: indexPath.row, selectedTag: selectedTag)
+                }
             } else if indexPath == selectedIndex {
-                print("should show answer")
                 cell.showAnswer(selectedAnswer.aID)
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()
             }
+            
         case .people:
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .people
             }
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
-            
+            cell.hideAnswerCount()
+
             let _user = allUsers[indexPath.row]
-            
+
             if !_user.uCreated { //search case - get question from database
                 Database.getUser(_user.uID!, completion: { (user, error) in
                     if error == nil {
                         cell.titleLabel.text = user.name
                         cell.subtitleLabel.text = user.shortBio
                         self.allUsers[indexPath.row] = user
-                        cell.hideAnswerCount()
                     }
                 })
             } else {
@@ -407,7 +415,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         }
                     }
                 }
-                cell.hideAnswerCount()
             }
         }
         return cell

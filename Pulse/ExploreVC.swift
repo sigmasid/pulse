@@ -136,6 +136,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        navigationController?.isNavigationBarHidden = false
+    }
+    
     fileprivate func updateScopeBar() {
         if let scopeBar = currentExploreMode.currentScopeBar {
             headerNav?.toggleScopeBar(show: true)
@@ -300,6 +304,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
                 self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
 
                 self.toggleLoading(show: false, message : nil)
+            } else {
+                self.toggleLoading(show: true, message : "No answers found!")
             }
         })
     }
@@ -346,8 +352,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         searchController.searchBar.delegate = self
         searchController.delegate = self
         
-        searchController.searchBar.tintColor = .clear
-        searchController.searchBar.layer.cornerRadius = 0
+//        let greyImage = GlobalFunctions.imageWithColor(.lightGray).resizableImage(withCapInsets: UIEdgeInsetsMake(-15, 0, -15, 0))
+//        searchController.searchBar.setSearchFieldBackgroundImage(greyImage, for: .normal)
+        searchController.searchBar.barTintColor = .white
+//        searchController.searchBar.layer.cornerRadius = 0
         searchController.dimsBackgroundDuringPresentation = false
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.highlighted)
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.normal)
@@ -368,6 +376,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         searchController.isActive = true
         currentExploreMode = Explore(currentMode: .search, currentSelection: 0)
         exploreStack.append(currentExploreMode)
+        
+        tapGesture = UITapGestureRecognizer()
         
         headerNav?.toggleStatus(show: false)
         toggleLoading(show: true, message : "Searching...")
