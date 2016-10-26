@@ -11,12 +11,12 @@ import UIKit
 class AccountPageMenu: UIStackView {
     enum menuOptions { case profile, messages, activity, answers, logout, settings }
 
-    fileprivate var sAboutButton = UIButton()
-    fileprivate var sMessagesButton = UIButton()
-    fileprivate var sSettingsButton = UIButton()
-    fileprivate var sActivityButton = UIButton()
-    fileprivate var sLogoutButton = UIButton()
-    fileprivate var sAnswersButton = UIButton()
+    fileprivate var sAboutButton = PulseButton()
+    fileprivate var sMessagesButton = PulseButton()
+    fileprivate var sSettingsButton = PulseButton()
+    fileprivate var sActivityButton = PulseButton()
+    fileprivate var sLogoutButton = PulseButton()
+    fileprivate var sAnswersButton = PulseButton()
     
     fileprivate var selectedButton : menuOptions?
     
@@ -40,7 +40,7 @@ class AccountPageMenu: UIStackView {
         }
     }
     
-    fileprivate func updateButton(button : UIButton, title : String, image : UIImage) -> UIButton {
+    fileprivate func updatePulseButton(button : PulseButton, title : String, image : UIImage) -> PulseButton {
         button.setTitle(title, for: UIControlState())
         button.setImage(image, for: UIControlState())
         button.changeTint(color: .black, state: UIControlState())
@@ -67,12 +67,12 @@ class AccountPageMenu: UIStackView {
     public func setupSettingsMenuLayout() {
         //        let logoutImage = UIImage(cgImage: UIImage(named: "login")!.cgImage!, scale: CGFloat(1.0), orientation: .downMirrored)
         
-        sAboutButton = updateButton(button: sAboutButton, title: "profile", image: UIImage(named: "profile")!)
-        sMessagesButton = updateButton(button: sMessagesButton, title: "messaging", image: UIImage(named: "messenger")!)
-        sActivityButton = updateButton(button: sActivityButton, title: "activity", image: UIImage(named: "profile")!)
-        sAnswersButton = updateButton(button: sAnswersButton, title: "answers", image: UIImage(named: "messenger")!)
-        sSettingsButton = updateButton(button: sSettingsButton, title: "account", image: UIImage(named: "settings")!)
-        sLogoutButton = updateButton(button: sLogoutButton, title: "logout", image: UIImage(named: "login")!)
+        sAboutButton = updatePulseButton(button: sAboutButton, title: "profile", image: UIImage(named: "profile")!)
+        sMessagesButton = updatePulseButton(button: sMessagesButton, title: "messaging", image: UIImage(named: "messenger")!)
+        sActivityButton = updatePulseButton(button: sActivityButton, title: "activity", image: UIImage(named: "profile")!)
+        sAnswersButton = updatePulseButton(button: sAnswersButton, title: "answers", image: UIImage(named: "messenger")!)
+        sSettingsButton = updatePulseButton(button: sSettingsButton, title: "account", image: UIImage(named: "settings")!)
+        sLogoutButton = updatePulseButton(button: sLogoutButton, title: "logout", image: UIImage(named: "login")!)
 
         addArrangedSubview(sAboutButton)
         addArrangedSubview(sMessagesButton)

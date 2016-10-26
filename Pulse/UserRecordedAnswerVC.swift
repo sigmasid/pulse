@@ -109,6 +109,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             
             avPlayerLayer = AVPlayerLayer(player: aPlayer)
             avPlayerLayer.frame = view.bounds
+            avPlayerLayer.backgroundColor = UIColor.darkGray.cgColor
             
             _isVideoLoaded = true
         }
@@ -117,52 +118,30 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         view.layer.addSublayer(avPlayerLayer)
         arrangeViews()
         
-        if isNewEntry {
-            if currentAnswer.aType == .recordedVideo {
-                aPlayer.replaceCurrentItem(with: nil)
-                
-                let currentVideo = AVPlayerItem(url: currentAnswer.aURL)
-                self.aPlayer.replaceCurrentItem(with: currentVideo)
-                self.aPlayer.play()
-
-                DispatchQueue.global(qos: .background).async {
-                    processVideo(self.currentAnswer.aURL) { (resultURL, thumbnailImage, error) in
-                        if let resultURL = resultURL {
-    //                        let currentVideo = AVPlayerItem(url: resultURL)
-                            self.currentAnswer.aURL = resultURL
-                            self.currentAnswer.thumbImage = thumbnailImage
-                            self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
-
-    //                        self.aPlayer.replaceCurrentItem(with: currentVideo)
-    //                        self.aPlayer.play()
-                        } else {
-                            GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
-                        }
-                    }
-                }
-            } else if currentAnswer.aType == .albumVideo {
-                aPlayer.replaceCurrentItem(with: nil)
-
-                compressVideo(currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
+        aPlayer.replaceCurrentItem(with: nil)
+        
+        let currentVideo = AVPlayerItem(url: currentAnswer.aURL)
+        aPlayer.replaceCurrentItem(with: currentVideo)
+        aPlayer.play()
+        
+        if isNewEntry && currentAnswer.aType == .albumVideo || currentAnswer.aType == .recordedVideo {
+            DispatchQueue.global(qos: .background).async {
+                compressVideo(self.currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
                     if let resultURL = resultURL {
-                        let currentVideo = AVPlayerItem(url: resultURL)
+                        print("went into resultURL")
                         self.currentAnswer.aURL = resultURL
                         self.currentAnswer.thumbImage = thumbnailImage
                         self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
-                        
-                        self.aPlayer.replaceCurrentItem(with: currentVideo)
-                        self.aPlayer.play()
                     } else {
-                        GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                        print("went into else")
+                        let videoAsset = AVAsset(url: self.currentAnswer.aURL)
+                        let thumbImage = thumbnailForVideoAtURL(videoAsset, orientation: .left)
+                        
+                        self.currentAnswer.thumbImage = thumbImage
+                        self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
                     }
                 })
             }
-        } else {
-            aPlayer.replaceCurrentItem(with: nil)
-
-            let currentVideo = AVPlayerItem(url: currentAnswer.aURL as URL)
-            aPlayer.replaceCurrentItem(with: currentVideo)
-            aPlayer.play()
         }
     }
     
@@ -280,21 +259,25 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             uploadTask = path.putFile(localFile, metadata: _metadata)
             
             uploadTask.observe(.success) { snapshot in
+                print("success uploading answer")
+                
                 self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
                 
                 Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
                     if !success {
                         GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                        completion(false, nil)
                     } else {
-                        
+                        print("success adding answer to database")
                         self.uploadTask.removeAllObservers()
+                        completion(true, answer.aID)
                     }
                 })
 
-                completion(true, answer.aID)
             }
             
             uploadTask.observe(.failure) { snapshot in
+                print("upload task failed")
                 if let _error = snapshot.error {
                     GlobalFunctions.showErrorBlock("Error Posting Video", erMessage: _error.localizedDescription)
                 }

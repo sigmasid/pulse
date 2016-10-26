@@ -15,13 +15,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     fileprivate var loadingView : LoadingView?
 
     fileprivate var headerNav : NavVC?
-    fileprivate var searchButton : UIButton!
-    fileprivate var closeButton : UIButton!
-    fileprivate var followButton : UIButton!
-    fileprivate var unfollowButton : UIButton!
-    fileprivate var backButton : UIButton!
-    fileprivate var blankButton : UIButton!
-    fileprivate var messageButton : UIButton!
+    fileprivate var searchButton : PulseButton!
+    fileprivate var closeButton : PulseButton!
+    fileprivate var followButton : PulseButton!
+    fileprivate var unfollowButton : PulseButton!
+    fileprivate var backButton : PulseButton!
+    fileprivate var blankButton : PulseButton!
+    fileprivate var messageButton : PulseButton!
     
     fileprivate var logoMode : LogoModes = .full
     var tapGesture = UITapGestureRecognizer()
@@ -503,25 +503,25 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     
     //Get all buttons for the controller to use
     fileprivate func getButtons() {
-        searchButton = NavVC.getButton(type: .search)
+        searchButton = PulseButton(size: .small, type: .search, isRound : true, hasBackground: true)
         searchButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
         
-        closeButton = NavVC.getButton(type: .close)
+        closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: true)
         closeButton.addTarget(self, action: #selector(userCancelledSearch), for: UIControlEvents.touchUpInside)
         
-        followButton = NavVC.getButton(type: .add)
+        followButton = PulseButton(size: .small, type: .add, isRound : true, hasBackground: true)
         followButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         
-        unfollowButton = NavVC.getButton(type: .remove)
+        unfollowButton = PulseButton(size: .small, type: .remove, isRound : true, hasBackground: true)
         unfollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         
-        backButton = NavVC.getButton(type: .back)
+        backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         
-        messageButton = NavVC.getButton(type: .message)
+        messageButton = PulseButton(size: .small, type: .message, isRound : true, hasBackground: true)
         messageButton.addTarget(self, action: #selector(userClickedSendMessage), for: UIControlEvents.touchUpInside)
         
-        blankButton = NavVC.getButton(type: .blank)
+        blankButton = PulseButton(size: .small, type: .blank, isRound : true, hasBackground: true)
     }
 }
 

@@ -15,7 +15,7 @@ class MiniProfile: UIView {
     fileprivate var tagLine : UILabel!
     fileprivate var bioLabel : UILabel!
     fileprivate var messageButton : UIButton!
-    fileprivate var closeButton : UIButton!
+    fileprivate var closeButton : PulseButton!
     
     var delegate : answerDetailDelegate!
 
@@ -107,7 +107,7 @@ class MiniProfile: UIView {
     }
     
     fileprivate func addCloseButton() {
-        closeButton = NavVC.getButton(type: .close)
+        closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: true)
         closeButton.addTarget(self, action: #selector(closeButtonClicked), for: UIControlEvents.touchDown)
 
         addSubview(closeButton)

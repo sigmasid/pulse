@@ -60,7 +60,6 @@ class AccountPageVC: UIViewController, accountDelegate {
                 
                 notificationsSetup = true
             }
-            
             isLoaded = true
         }
     }
@@ -317,13 +316,13 @@ class AccountPageVC: UIViewController, accountDelegate {
     /* LAYOUT FUNCTION */
     fileprivate func updateHeader(title : String, leftButton : ButtonType) {
         if parent?.navigationController != nil {
-            
+
             if leftButton == .menu {
-                let button = NavVC.getButton(type: .menu)
+                let button = PulseButton(size: .small, type: .menu, isRound : true, hasBackground: true)
                 button.addTarget(self, action: #selector(clickedMenu), for: UIControlEvents.touchUpInside)
                 parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
             } else if leftButton == .back {
-                let button = NavVC.getButton(type: .back)
+                let button = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
                 button.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
                 parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
             }

@@ -7,7 +7,6 @@
 //
 
 import UIKit
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank }
 enum LogoModes { case full, line, none }
 
 class NavVC: UINavigationController {
@@ -137,99 +136,6 @@ class NavVC: UINavigationController {
         if let navBar = self.navigationBar as? PulseNavBar {
             navBar.toggleStatus(show: show)
         }
-    }
-
-    static func getButton(type : ButtonType) -> UIButton {
-        let buttonFrame = CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue)
-        let button = UIButton(frame: buttonFrame)
-        button.backgroundColor = pulseBlue
-        button.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
-        button.makeRound()
-        
-        switch type {
-        case .search:
-            let tintedTimage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = .black
-            return button
-            
-        case .back:
-            let tintedTimage = UIImage(named: "back")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = .black
-
-            return button
-            
-        case .add:
-            let tintedTimage = UIImage(named: "add")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-
-            return button
-
-        case.remove:
-            let tintedTimage = UIImage(named: "remove")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-
-            return button
-            
-        case .close:
-            let tintedTimage = UIImage(named: "close")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-
-            return button
-            
-        case .settings:
-            let tintedTimage = UIImage(named: "settings")?.withRenderingMode(.alwaysTemplate)
-            button.imageEdgeInsets = UIEdgeInsetsMake(7, 7, 7, 7)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-            
-            return button
-            
-        case .login:
-            let tintedTimage = UIImage(named: "login")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-
-            return button
-            
-        case .check:
-            let tintedTimage = UIImage(named: "check")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-            button.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
-
-            return button
-            
-        case .message:
-            let tintedTimage = UIImage(named: "message")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-            
-            return button
-            
-        case .menu:
-            let tintedTimage = UIImage(named: "table-list")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-            
-            return button
-            
-        case .save:
-            let tintedTimage = UIImage(named: "download-to-disk")?.withRenderingMode(.alwaysTemplate)
-            button.setImage(tintedTimage, for: UIControlState())
-            button.tintColor = UIColor.black
-            
-            return button
-            
-        case . blank:
-            return button
-        }
-    
-
     }
 
     override public func pushViewController(_ viewController: UIViewController, animated: Bool) {

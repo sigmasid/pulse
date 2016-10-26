@@ -52,7 +52,7 @@ class LoginAddNameVC: UIViewController {
     }
     
     fileprivate func updateHeader() {
-        let checkButton = NavVC.getButton(type: .check)
+        let checkButton = PulseButton(size: .small, type: .check, isRound : true, hasBackground: true)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
         
         if let nav = navigationController as? NavVC {

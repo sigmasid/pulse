@@ -98,7 +98,7 @@ class RecordedAnswerOverlay: UIView {
     }
     
     fileprivate func addSaveButton() {
-        _saveToDiskButton = NavVC.getButton(type: .save)
+        _saveToDiskButton = PulseButton(size: .small, type: .save, isRound : true, hasBackground: true)
 
         addSubview(_saveToDiskButton)
         _saveToDiskButton.translatesAutoresizingMaskIntoConstraints = false
@@ -107,7 +107,7 @@ class RecordedAnswerOverlay: UIView {
     }
     
     fileprivate func addCloseButton() {
-        _closeButton = NavVC.getButton(type: .close)
+        _closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: true)
         
         addSubview(_closeButton)
         

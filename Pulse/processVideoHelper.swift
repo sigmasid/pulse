@@ -122,29 +122,35 @@ func thumbnailForVideoAtURL(_ asset: AVAsset, orientation: UIImageOrientation) -
 
 func compressVideo(_ inputURL: URL, completion: @escaping (_ result: URL?, _ thumbnail : UIImage?, _ error : NSError?) -> Void) {
     let outputURL = tempFileURL()
-    
     let urlAsset = AVURLAsset(url: inputURL, options: nil)
     let _thumbnail = thumbnailForVideoAtURL(urlAsset, orientation: .left)
 
     if let exporter = AVAssetExportSession(asset: urlAsset, presetName: AVAssetExportPresetMediumQuality) {
+        print("went into session exporter")
         exporter.outputURL = outputURL
         exporter.outputFileType = AVFileTypeQuickTimeMovie
         exporter.shouldOptimizeForNetworkUse = true
         exporter.exportAsynchronously { () -> Void in
             switch exporter.status {
             case  AVAssetExportSessionStatus.failed:
+                print("export failed")
                 let userInfo = [ NSLocalizedDescriptionKey : "export failed" ]
                 completion(nil, nil, NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
             case AVAssetExportSessionStatus.cancelled:
+                print("export cancelled")
                 let userInfo = [ NSLocalizedDescriptionKey : "export cancelled" ]
                 completion(nil, nil, NSError.init(domain: "Cancelled", code: 0, userInfo: userInfo))
             case AVAssetExportSessionStatus.completed:
+                print("export completed")
                 completion(exporter.outputURL!, _thumbnail, nil)
             default:
+                print("export default")
                 let userInfo = [ NSLocalizedDescriptionKey : "unknown error occured" ]
                 completion(nil, nil, NSError.init(domain: "Unknown", code: 0, userInfo: userInfo))
             }
         }
+    } else {
+        print("could not start session")
     }
 }
 

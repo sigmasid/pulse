@@ -15,7 +15,7 @@ class HomeVC: UIViewController, feedVCDelegate {
     fileprivate var loadingView : LoadingView?
     
     fileprivate var feed : Tag!
-    fileprivate var backButton : UIButton!
+    fileprivate var backButton : PulseButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -93,7 +93,7 @@ class HomeVC: UIViewController, feedVCDelegate {
     }
     
     fileprivate func addButtons() {
-        backButton = NavVC.getButton(type: .back)
+        backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
         backButton.addTarget(self, action: #selector(returnHome), for: .touchUpInside)
 
         view.addSubview(backButton)

@@ -88,7 +88,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     
     fileprivate func updateHeader() {
         if parent?.navigationController != nil {
-            let loginButton = NavVC.getButton(type: .login)
+            let loginButton = PulseButton(size: .small, type: .login, isRound : true, hasBackground: true)
             parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
         }
         

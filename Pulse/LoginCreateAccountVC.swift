@@ -81,7 +81,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     }
     
     fileprivate func updateHeader() {
-        let backButton = NavVC.getButton(type: .back)
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
 
