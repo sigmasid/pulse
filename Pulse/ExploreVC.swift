@@ -20,8 +20,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     fileprivate var followButton : UIButton!
     fileprivate var unfollowButton : UIButton!
     fileprivate var backButton : UIButton!
+    fileprivate var blankButton : UIButton!
     fileprivate var messageButton : UIButton!
     
+    fileprivate var logoMode : LogoModes = .full
+    var tapGesture = UITapGestureRecognizer()
     var searchController = UISearchController(searchResultsController: nil)
     
     /* STACK TO KEEP WINDOW SYNC'D / REFRESH AS NEEDED */
@@ -111,12 +114,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     /* END EXPLORE STACK */
     fileprivate var isFollowingSelectedTag : Bool = false {
         didSet {
-            navigationItem.rightBarButtonItem = isFollowingSelectedTag ? UIBarButtonItem(customView: followButton) : UIBarButtonItem(customView: unfollowButton)
+            navigationItem.rightBarButtonItem = isFollowingSelectedTag ?
+                                                UIBarButtonItem(customView: unfollowButton) :
+                                                UIBarButtonItem(customView: followButton)
         }
     }
     
     fileprivate var isLoaded = false
-    fileprivate var tapGesture : UIGestureRecognizer!
     
     fileprivate var selectedTag : Tag!
     fileprivate var selectedQuestion : Question!
@@ -133,11 +137,23 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
             setupSearch()
             iconContainer = addIcon(text: "EXPLORE")
             automaticallyAdjustsScrollViewInsets = false
+            
+            tapGesture.addTarget(self, action: #selector(dismissSearchTap))
+            loadingView?.addGestureRecognizer(tapGesture)
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         navigationController?.isNavigationBarHidden = false
+        
+        if let headerNav = headerNav {
+            headerNav.toggleLogo(mode: logoMode)
+        }
+        
+    }
+    
+    func dismissSearchTap() {
+        searchController.searchBar.resignFirstResponder()
     }
     
     fileprivate func updateScopeBar() {
@@ -154,23 +170,25 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     fileprivate func updateModes() {
         toggleLoading(show: true, message : "Loading...")
         headerNav?.toggleSearch(show: currentExploreMode.currentMode == .search ? true : false)
-        
+
         switch currentExploreMode.currentMode {
         case .root:
-            updateHeader(_title: "Explore", leftButton: searchButton, rightButton: nil, logoMode: .full)
+            updateHeader(_title: "Explore", _subtitle : nil, leftButton: searchButton, rightButton: nil, statusImage: nil)
             updateRootScopeSelection()
         case .tag:
-            updateHeader(_title: selectedTag.tagID!, leftButton: backButton, rightButton: nil, logoMode: .line)
+            updateHeader(_title: selectedTag.tagID!, _subtitle : nil, leftButton: backButton, rightButton: blankButton, statusImage: nil)
             isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTags[selectedTag.tagID!] != nil ? true : false
             updateTagScopeSelection()
         case .search:
-            updateHeader(_title: currentExploreMode.getModeTitle(), leftButton: closeButton, rightButton: nil, logoMode: .none)
+            updateHeader(_title: nil, _subtitle : nil, leftButton: closeButton, rightButton: nil, statusImage: nil)
             updateSearchResults(for: searchController)
         case .question:
-            updateHeader(_title: currentExploreMode.getModeTitle(), leftButton: backButton, rightButton: followButton, logoMode: .line)
+            updateHeader(_title: currentExploreMode.getModeTitle(), _subtitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: blankButton, statusImage: nil)
             updateQuestionScopeSelection()
         case .people:
-            updateHeader(_title: currentExploreMode.getModeTitle(), leftButton: backButton, rightButton: messageButton, logoMode : .line)
+            updateHeader(_title: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
+                         _subtitle : selectedUser.thumbPicImage != nil ? selectedUser.name : nil,
+                         leftButton: backButton, rightButton: messageButton, statusImage: selectedUser.thumbPicImage)
             updatePeopleScopeSelection()
         }
     }
@@ -210,7 +228,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         switch currentExploreMode.currentSelectionValue() {
         case .questions:
             if !selectedTag.tagCreated {
-                print("getting tag from database")
                 Database.getTag(selectedTag.tagID!, completion: { tag, error in
                     if error == nil && tag.totalQuestionsForTag() > 0 {
                         self.exploreContainer.setSelectedIndex(index: nil)
@@ -222,13 +239,24 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
                     }
                 })
             } else {
-                print("getting existing tag")
                 exploreContainer.setSelectedIndex(index: nil)
                 exploreContainer.allQuestions = selectedTag.questions!
                 exploreContainer.feedItemType = .question
                 toggleLoading(show: false, message : nil)
             }
-        case .experts: return
+        case .experts:
+            Database.getExpertsForTag(tagID: selectedTag.tagID!, completion: { experts in
+                self.exploreContainer.setSelectedIndex(index: nil)
+                self.exploreContainer.allUsers = experts
+                self.exploreContainer.feedItemType = .people
+                
+                if experts.count > 0 {
+                    self.toggleLoading(show: false, message : nil)
+                } else {
+                    self.toggleLoading(show: true, message : "No experts for this tag yet")
+                }
+                
+            })
         case .related:
             Database.getRelatedTags(selectedTag.tagID!, completion: { tags in
                 self.exploreContainer.setSelectedIndex(index: nil)
@@ -254,23 +282,24 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
             if !selectedQuestion.qCreated {
                 Database.getQuestion(selectedQuestion.qID, completion: { question, error in
                     if error == nil && question.hasAnswers() {
-                        self.exploreContainer.setSelectedIndex(index : nil)
                         self.exploreContainer.allAnswers = question.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                         self.exploreContainer.selectedQuestion = self.selectedQuestion
-                        
                         self.exploreContainer.feedItemType = .answer
+                        
                         self.toggleLoading(show: false, message : nil)
+                        self.exploreContainer.setSelectedIndex(index: IndexPath(row: 0, section: 0))
                     } else {
                         self.toggleLoading(show: true, message : "No answers found")
                     }
                 })
             } else {
                 if selectedQuestion.hasAnswers() {
-                    exploreContainer.setSelectedIndex(index : nil)
                     exploreContainer.allAnswers = selectedQuestion.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
                     exploreContainer.selectedQuestion = selectedQuestion
 
                     exploreContainer.feedItemType = .answer
+                    exploreContainer.setSelectedIndex(index: IndexPath(row: 0, section: 0))
+                    
                     toggleLoading(show: false, message : nil)
                 } else {
                     self.toggleLoading(show: true, message : "No answers found")
@@ -278,17 +307,16 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
             }
         case .experts: return
         case .related:
-            Database.getRelatedTags(selectedTag.tagID!, completion: { tags in
+            Database.getRelatedQuestions(selectedQuestion.qID, completion: { questions in
                 self.exploreContainer.setSelectedIndex(index: nil)
-                self.exploreContainer.allTags = tags
-                self.exploreContainer.feedItemType = .tag
+                self.exploreContainer.allQuestions = questions
+                self.exploreContainer.feedItemType = .question
                 
-                if tags.count > 0 {
+                if questions.count > 0 {
                     self.toggleLoading(show: false, message : nil)
                 } else {
-                    self.toggleLoading(show: true, message : "No related tags found")
+                    self.toggleLoading(show: true, message : "No related questions found")
                 }
-                
             })
         default: return
         }
@@ -311,6 +339,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     }
     
     func userSelected(type : FeedItemType, item : Any) {
+        dismissSearchTap()
+        
         switch type {
         case .tag:
             selectedTag = item as! Tag //didSet method pulls questions from database in case of search else assigns questions from existing tag
@@ -326,21 +356,31 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
             selectedUser = item as! User //didSet method pulls questions from database in case of search else assigns questions from existing tag
             currentExploreMode = Explore(currentMode: .people, currentSelection: 0)
             exploreStack.append(currentExploreMode)
-            
-            headerNav?.updateStatusImage(image: selectedUser.thumbPicImage)
-            
         default: break
         }
     }
     
     //Update Nav Header
-    fileprivate func updateHeader(_title : String, leftButton : UIButton?, rightButton : UIButton?, logoMode : LogoModes) {
+    fileprivate func updateHeader(_title : String?,
+                                  _subtitle : String?,
+                                  leftButton : UIButton?,
+                                  rightButton : UIButton?,
+                                  statusImage : UIImage?) {
+        
         navigationItem.leftBarButtonItem = leftButton != nil ? UIBarButtonItem(customView: leftButton!) : nil
         navigationItem.rightBarButtonItem = rightButton != nil ? UIBarButtonItem(customView: rightButton!) : nil
-
-        if headerNav != nil {
-            headerNav?.updateTitle(title: _title)
-            headerNav?.toggleLogo(mode: logoMode)
+        
+        if rightButton != nil && _title != nil || statusImage != nil {
+            logoMode = .line
+        } else if _title == nil {
+            logoMode = .none
+        } else {
+            logoMode = .full
+        }
+        
+        if let headerNav = headerNav {
+            headerNav.setNav(title: _title, subtitle: _subtitle, statusImage: statusImage)
+            headerNav.toggleLogo(mode: logoMode)
         } else {
             title = _title
         }
@@ -354,8 +394,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         
 //        let greyImage = GlobalFunctions.imageWithColor(.lightGray).resizableImage(withCapInsets: UIEdgeInsetsMake(-15, 0, -15, 0))
 //        searchController.searchBar.setSearchFieldBackgroundImage(greyImage, for: .normal)
-        searchController.searchBar.barTintColor = .white
+//        searchController.searchBar.barTintColor = .white
 //        searchController.searchBar.layer.cornerRadius = 0
+
+        searchController.searchBar.setBackgroundImage(GlobalFunctions.imageWithColor(.white), for: .any , barMetrics: UIBarMetrics.default)
+
         searchController.dimsBackgroundDuringPresentation = false
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.highlighted)
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.normal)
@@ -376,21 +419,18 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         searchController.isActive = true
         currentExploreMode = Explore(currentMode: .search, currentSelection: 0)
         exploreStack.append(currentExploreMode)
+        tapGesture.isEnabled = true
         
-        tapGesture = UITapGestureRecognizer()
-        
-        headerNav?.toggleStatus(show: false)
         toggleLoading(show: true, message : "Searching...")
     }
     
     func userCancelledSearch() {
+        tapGesture.isEnabled = false
         searchController.isActive = false
-        headerNav?.toggleStatus(show: true)
         goBack()
     }
     
     func dismissSearchKeyboard() {
-        searchController.resignFirstResponder()
     }
     
     //UPDATE TAGS / QUESTIONS IN FEED
@@ -425,8 +465,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
         currentExploreMode.currentSelection = selectedSegment
         exploreStack[exploreStack.count - 1].currentSelection = selectedSegment
-
-        updateModes()
     }
     
     fileprivate func toggleLoading(show: Bool, message: String?) {
@@ -460,7 +498,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         
         view.addSubview(loadingView!)
         
-        definesPresentationContext = false
+        definesPresentationContext = true
     }
     
     //Get all buttons for the controller to use
@@ -482,6 +520,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         
         messageButton = NavVC.getButton(type: .message)
         messageButton.addTarget(self, action: #selector(userClickedSendMessage), for: UIControlEvents.touchUpInside)
+        
+        blankButton = NavVC.getButton(type: .blank)
     }
 }
 
@@ -534,7 +574,7 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     }
     
     func didPresentSearchController(_ searchController: UISearchController) {
-        DispatchQueue.main.async { [unowned self] in
+        DispatchQueue.main.async { [] in
             searchController.searchBar.becomeFirstResponder()
             searchController.searchBar.showsCancelButton = false
             searchController.searchBar.tintColor = pulseBlue
@@ -547,6 +587,7 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     }
     
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchController.searchBar.resignFirstResponder()
         searchBar.endEditing(true)
     }
     

@@ -8,9 +8,6 @@
 
 import UIKit
 
-enum LogoModes { case full, line, none }
-enum BarModes {case full, minimal, none}
-
 class PulseNavBar: UINavigationBar {
     fileprivate let appTitleLabel = UILabel()
     fileprivate let screenTitleLabel = UILabel()
@@ -29,16 +26,18 @@ class PulseNavBar: UINavigationBar {
     
     override func sizeThatFits(_ size: CGSize) -> CGSize {
         if !isScopeBarVisible && !isSubtitleVisible { //neither visible
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.s.rawValue)
+            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xs.rawValue)
             return newSize
         } else if isScopeBarVisible && !isSubtitleVisible { //only scope bar visible
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.m.rawValue + Spacing.s.rawValue)
+            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue)
+            segmentedControl.frame.origin.y = IconSizes.large.rawValue + Spacing.xs.rawValue
             return newSize
         } else if !isScopeBarVisible && isSubtitleVisible { //only subtitle bar visible
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.s.rawValue)
+            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.s.rawValue + Spacing.xs.rawValue)
             return newSize
         } else { //both visible
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.m.rawValue + Spacing.s.rawValue + Spacing.s.rawValue)
+            segmentedControl.frame.origin.y = IconSizes.large.rawValue + Spacing.s.rawValue + Spacing.xs.rawValue
+            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.s.rawValue + Spacing.m.rawValue  + Spacing.xs.rawValue)
             return newSize
         }
     }
@@ -50,8 +49,8 @@ class PulseNavBar: UINavigationBar {
         self.contentMode = .redraw
         
         addIcon()
-        addScreenTitleLabel()
-        addAppTitleLabel()
+//        addScreenTitleLabel()
+//        addAppTitleLabel()
         addStatus()
         addSubtitle()
         
@@ -65,8 +64,10 @@ class PulseNavBar: UINavigationBar {
         for view in self.subviews {
             if view.isKind(of: UIButton.self) {
                 view.frame.origin.y = (IconSizes.large.rawValue - IconSizes.small.rawValue) / 2
-            } else if view.isKind(of: UILabel.self) {
+            } else if view.tag == statusLabel.tag {
                 view.frame.origin.y = 0
+            } else if view.tag == subtitle.tag {
+                view.frame.origin.y = IconSizes.large.rawValue + Spacing.xs.rawValue
             }
         }
     }
@@ -170,6 +171,8 @@ class PulseNavBar: UINavigationBar {
         
         statusLabel.textAlignment = .center
         statusLabel.layer.masksToBounds = true
+        
+        statusLabel.tag = 5
     }
     
     fileprivate func addSubtitle() {
@@ -179,15 +182,14 @@ class PulseNavBar: UINavigationBar {
         subtitle.topAnchor.constraint(equalTo: statusLabel.bottomAnchor).isActive = true
         subtitle.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         subtitle.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        
         subtitle.layoutIfNeeded()
-        subtitle.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .center)
-        subtitle.textColor = UIColor.black
         
+        subtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
+        subtitle.textColor = UIColor.black
         subtitle.minimumScaleFactor = 0.5
-        subtitle.numberOfLines = 2
         subtitle.sizeToFit()
-        subtitle.textAlignment = .center
+        
+        subtitle.tag = 10
         
         toggleSubtitle(show: false)
     }

@@ -66,14 +66,14 @@ class RecordedAnswerOverlay: UIView {
         addSubview(_addMoreButton)
 
         _postButton.backgroundColor = UIColor( red: 35/255, green: 31/255, blue:32/255, alpha: 1.0 )
-        _postButton.setTitle("DONE", for: UIControlState())
+        _postButton.setTitle("Post", for: UIControlState())
         _postButton.titleLabel!.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightRegular)
         _postButton.setTitleColor(UIColor.white, for: UIControlState())
         _postButton.setImage(UIImage(named: "check"), for: UIControlState())
         _postButton.imageView?.contentMode = .scaleAspectFit
 
         _addMoreButton.backgroundColor = UIColor( red: 35/255, green: 31/255, blue:32/255, alpha: 1.0 )
-        _addMoreButton.setTitle("ADD MORE", for: UIControlState())
+        _addMoreButton.setTitle("Add More", for: UIControlState())
         _addMoreButton.titleLabel!.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightRegular)
         _addMoreButton.setTitleColor(UIColor.white, for: UIControlState())
         _addMoreButton.setImage(UIImage(named: "add"), for: UIControlState())

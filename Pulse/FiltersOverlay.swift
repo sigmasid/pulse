@@ -67,9 +67,7 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
             let _filterID = currentQuestion!.qFilters![(indexPath as NSIndexPath).row]
 
             Database.getImage(.Filters, fileID: _filterID+".png", maxImgSize: maxImgSize, completion: {(_data, error) in
-                if error != nil {
-                    print(error?.localizedDescription)
-                } else {
+                if error == nil {
                     let _filterImage = UIImage(data: _data!)
                     self.FilterChoices[(indexPath as NSIndexPath).row] = _filterImage
                     cell.filterImageView!.image = _filterImage

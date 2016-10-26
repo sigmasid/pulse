@@ -93,7 +93,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
         
         if let nav = navigationController as? NavVC {
-            nav.updateTitle(title: "Login")
+            nav.setNav(title: "Login", subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
         } else {
             parent?.title = "Login"

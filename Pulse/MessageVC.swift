@@ -90,7 +90,9 @@ class MessageVC: UIViewController, UITextViewDelegate{
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? NavVC {
-            toUserImage != nil ? nav.updateStatusImage(image: toUserImage) : nav.updateTitle(title: msgToUserName.text)
+            toUserImage != nil ?
+                nav.setNav(title: nil, subtitle: nil, statusImage: toUserImage) :
+                nav.setNav(title: msgToUserName.text, subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
         } else {
             title = "Conversations"

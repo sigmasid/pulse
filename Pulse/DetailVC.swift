@@ -198,9 +198,7 @@ class DetailVC: UIViewController, ParentDelegate {
         
         if let _tagImage = currentTag.tagImage {
             Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-                if error != nil {
-                    print (error?.localizedDescription)
-                } else {
+                if error == nil {
                     self.backgroundImage.image = UIImage(data: data!)
                 }
             })

@@ -121,17 +121,23 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             if currentAnswer.aType == .recordedVideo {
                 aPlayer.replaceCurrentItem(with: nil)
                 
-                processVideo(currentAnswer.aURL) { (resultURL, thumbnailImage, error) in
-                    if let resultURL = resultURL {
-                        let currentVideo = AVPlayerItem(url: resultURL)
-                        self.currentAnswer.aURL = resultURL
-                        self.currentAnswer.thumbImage = thumbnailImage
-                        self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
+                let currentVideo = AVPlayerItem(url: currentAnswer.aURL)
+                self.aPlayer.replaceCurrentItem(with: currentVideo)
+                self.aPlayer.play()
 
-                        self.aPlayer.replaceCurrentItem(with: currentVideo)
-                        self.aPlayer.play()
-                    } else {
-                        GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                DispatchQueue.global(qos: .background).async {
+                    processVideo(self.currentAnswer.aURL) { (resultURL, thumbnailImage, error) in
+                        if let resultURL = resultURL {
+    //                        let currentVideo = AVPlayerItem(url: resultURL)
+                            self.currentAnswer.aURL = resultURL
+                            self.currentAnswer.thumbImage = thumbnailImage
+                            self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
+
+    //                        self.aPlayer.replaceCurrentItem(with: currentVideo)
+    //                        self.aPlayer.play()
+                        } else {
+                            GlobalFunctions.showErrorBlock(error!.domain, erMessage: error!.localizedDescription)
+                        }
                     }
                 }
             } else if currentAnswer.aType == .albumVideo {
@@ -241,7 +247,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                         
                         Database.addUserAnswersToDatabase(answer, completion: {(success, error) in
                             if !success {
-                                print(error)
+                                GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                             }
                         })
                     }
@@ -278,7 +284,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 
                 Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
                     if !success {
-                        print(error)
+                        GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                     } else {
                         
                         self.uploadTask.removeAllObservers()

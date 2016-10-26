@@ -7,7 +7,8 @@
 //
 
 import UIKit
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save }
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank }
+enum LogoModes { case full, line, none }
 
 class NavVC: UINavigationController {
 
@@ -36,34 +37,25 @@ class NavVC: UINavigationController {
         }
     }
     
-    public func updateStatusImage(image : UIImage?) {
+    public func setNav(title: String?, subtitle: String?, statusImage : UIImage?) {
         if let navBar = self.navigationBar as? PulseNavBar {
-            navBar.toggleStatus(show: false) //hides both status label and image if visible
-            navBar.updateStatusImage(_image: image)
-        }
-    }
-    
-    public func updateTitle(title : String?) {
-        if let navBar = self.navigationBar as? PulseNavBar {
-            navBar.toggleStatus(show: false) //hides both status label and image if visible
-            navBar.updateStatusMessage(_message : title) //unhides lable within call
-        } else {
-            self.title = title
-        }
-    }
-    
-    public func updateSubtitle(title : String?) {
-        if let navBar = self.navigationBar as? PulseNavBar {
-            navBar.toggleSubtitle(show: false)
-            navBar.updateStatusMessage(_message : title)
-        } else {
-            self.title = title
-        }
-    }
 
-    public func updateBackgroundImage(image : UIImage?) {
-        if let navBar = self.navigationBar as? PulseNavBar, let image = image {
-            navBar.setBackgroundImage(image, for: .default)
+            if let statusImage = statusImage {
+                navBar.toggleStatus(show: true)
+                navBar.updateStatusImage(_image: statusImage)
+            } else if let title = title {
+                navBar.toggleStatus(show: true)
+                navBar.updateStatusMessage(_message : title) //unhides lable within call
+            } else {
+                navBar.toggleStatus(show: false)
+            }
+            
+            if let subtitle = subtitle {
+                navBar.toggleSubtitle(show: true)
+                navBar.setSubtitle(text: subtitle)
+            } else {
+                navBar.toggleSubtitle(show: false)
+            }
         }
     }
     
@@ -79,15 +71,49 @@ class NavVC: UINavigationController {
         }
     }
     
+    public func updateScopeBar(titles : [String], icons : [UIImage]?, selected: Int) {
+        if let navBar = self.navigationBar as? PulseNavBar {
+            navBar.updateScopeBarTitles(titles : titles, icons : icons, selected: selected)
+        }
+    }
+    
     public func toggleSearch(show : Bool) {
         if let navBar = self.navigationBar as? PulseNavBar {
             navBar.toggleSearch(show : show)
         }
     }
     
-    public func updateScopeBar(titles : [String], icons : [UIImage]?, selected: Int) {
+    
+    fileprivate func updateStatusImage(image : UIImage?) {
         if let navBar = self.navigationBar as? PulseNavBar {
-            navBar.updateScopeBarTitles(titles : titles, icons : icons, selected: selected)
+            navBar.toggleStatus(show: false) //hides both status label and image if visible
+            navBar.updateStatusImage(_image: image)
+        }
+    }
+    
+    fileprivate func updateTitle(title : String?) {
+        if let navBar = self.navigationBar as? PulseNavBar {
+            navBar.toggleStatus(show: false) //hides both status label and image if visible
+            navBar.updateStatusMessage(_message : title) //unhides lable within call
+        } else {
+            self.title = title
+        }
+    }
+    
+    fileprivate func updateSubtitle(title : String?) {
+        if let navBar = self.navigationBar as? PulseNavBar {
+            if let subtitle = title {
+                navBar.toggleSubtitle(show: true)
+                navBar.setSubtitle(text: subtitle)
+            } else {
+                navBar.toggleSubtitle(show: false)
+            }
+        }
+    }
+
+    fileprivate func updateBackgroundImage(image : UIImage?) {
+        if let navBar = self.navigationBar as? PulseNavBar, let image = image {
+            navBar.setBackgroundImage(image, for: .default)
         }
     }
     
@@ -107,7 +133,7 @@ class NavVC: UINavigationController {
         }
     }
 
-    public func toggleStatus(show : Bool) {
+    fileprivate func toggleStatus(show : Bool) {
         if let navBar = self.navigationBar as? PulseNavBar {
             navBar.toggleStatus(show: show)
         }
@@ -197,6 +223,9 @@ class NavVC: UINavigationController {
             button.setImage(tintedTimage, for: UIControlState())
             button.tintColor = UIColor.black
             
+            return button
+            
+        case . blank:
             return button
         }
     

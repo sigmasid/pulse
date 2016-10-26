@@ -253,7 +253,7 @@ class FeedCell: UICollectionViewCell {
         
         previewImage!.translatesAutoresizingMaskIntoConstraints = false
         previewImageConstraint1 = previewImage!.topAnchor.constraint(equalTo: contentView.topAnchor, constant : Spacing.m.rawValue)
-        previewImageConstraint2 = previewImage!.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
+        previewImageConstraint2 = previewImage!.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue)
         previewImageConstraint3 = previewImage!.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
         previewImageConstraint4 = previewImage!.heightAnchor.constraint(equalTo: previewImage!.widthAnchor)
         previewImage!.layoutIfNeeded()

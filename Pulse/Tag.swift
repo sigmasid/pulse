@@ -7,32 +7,12 @@
 //
 
 import Foundation
-
 import Firebase
-fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
-  switch (lhs, rhs) {
-  case let (l?, r?):
-    return l < r
-  case (nil, _?):
-    return true
-  default:
-    return false
-  }
-}
-
-fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
-  switch (lhs, rhs) {
-  case let (l?, r?):
-    return l > r
-  default:
-    return rhs < lhs
-  }
-}
-
 
 class Tag : NSObject {
     var tagID: String?
     var questions: [Question?]?
+    var experts: [User?]?
     var tagImage : String?
     var tagDescription : String?
     var previewImage : String?
@@ -61,10 +41,17 @@ class Tag : NSObject {
                 self.questions = [_question]
             }
         }
+        
+        for user in snapshot.childSnapshot(forPath: "experts").children {
+            let _user = User(uID: (user as AnyObject).key)
+            if (self.experts?.append(_user) == nil) {
+                self.experts = [_user]
+            }
+        }
         self.tagCreated = true
     }
     
     func totalQuestionsForTag() -> Int {
-        return self.questions?.count > 0 ? self.questions!.count : 0
+        return self.questions != nil ? self.questions!.count : 0
     }
 }

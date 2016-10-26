@@ -56,7 +56,7 @@ class LoginAddNameVC: UIViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
         
         if let nav = navigationController as? NavVC {
-            nav.updateTitle(title: "could we get a name with that?")
+            nav.setNav(title: "Create Profile", subtitle: "could we get a name with that?", statusImage: nil)
         } else {
             title = "Add Name"
         }

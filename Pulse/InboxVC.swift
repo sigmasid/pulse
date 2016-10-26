@@ -57,7 +57,7 @@ class InboxVC: UITableViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? NavVC {
-            nav.updateTitle(title: "Conversations")
+            nav.setNav(title: "Conversations", subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
         } else {
             title = "Conversations"

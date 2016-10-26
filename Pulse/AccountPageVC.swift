@@ -210,7 +210,9 @@ class AccountPageVC: UIViewController, accountDelegate {
     }
     
     func updateNav(title : String) {
-        nav?.updateTitle(title: title)
+        if let nav = nav {
+            nav.setNav(title: title, subtitle: nil, statusImage: nil)
+        }
     }
     
     /* CAMERA FUNCTIONS */
@@ -218,7 +220,7 @@ class AccountPageVC: UIViewController, accountDelegate {
         cameraView = UIView(frame: view.bounds)
         cameraView.backgroundColor = UIColor.white
         nav?.toggleLogo(mode: .none)
-        nav?.toggleStatus(show: false)
+        nav?.setNav(title: nil, subtitle: nil, statusImage: nil)
         view.addSubview(cameraView)
         
         Camera.showAccessPermissionPopupAutomatically = true
@@ -303,7 +305,7 @@ class AccountPageVC: UIViewController, accountDelegate {
                                 self.toggleLoading(show: false, message: nil)
                                 self.cameraView.removeFromSuperview()
                                 self.nav?.toggleLogo(mode: .full)
-                                self.nav?.toggleStatus(show: true)
+                                self.updateHeader(title: "Account", leftButton: .menu)
                                 self.profileSummary.updateLabels()
                         })
                     }
@@ -328,7 +330,7 @@ class AccountPageVC: UIViewController, accountDelegate {
         }
         
         if let nav = navigationController as? NavVC {
-            nav.updateTitle(title: title)
+            nav.setNav(title: title, subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
         } else {
             parent?.title = title

@@ -89,7 +89,6 @@ func processVideo(_ videoURL : URL, completion: @escaping (_ result: URL?, _ thu
     exporter!.exportAsynchronously(completionHandler: {
         switch exporter!.status {
         case  AVAssetExportSessionStatus.failed:
-            print(exporter?.error)
             let userInfo = [ NSLocalizedDescriptionKey : "export failed" ]
             completion(nil, nil, NSError.init(domain: "Failed", code: 0, userInfo: userInfo))
         case AVAssetExportSessionStatus.cancelled:

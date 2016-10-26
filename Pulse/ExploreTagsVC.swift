@@ -271,9 +271,7 @@ extension ExploreTagsVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             if let _tagImage = _currentTag.previewImage {
                 Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-                    if error != nil {
-                        print (error?.localizedDescription)
-                    } else {
+                    if error == nil {
                         cell.tagImage.image = UIImage(data: data!)
                         cell.tagImage.contentMode = UIViewContentMode.scaleAspectFill
                     }

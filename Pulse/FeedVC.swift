@@ -24,14 +24,15 @@ class FeedVC: UIViewController {
     fileprivate var QAVC : QAManagerVC!
     
     fileprivate var searchScope : FeedItemType? = .question
-    var feedDelegate : feedVCDelegate!
-    fileprivate var searchTap : UIGestureRecognizer!
     
+    /* SET BY PARENT */
+    var feedDelegate : feedVCDelegate!
     var feedItemType : FeedItemType! {
         didSet {
             self.updateDataSource = true
         }
     }
+    /* END SET BY PARENT */
     
     var updateDataSource : Bool = false {
         didSet {
@@ -52,15 +53,17 @@ class FeedVC: UIViewController {
                 totalItemCount = allUsers.count
             }
             
-            FeedCollectionView?.delegate = self
-            FeedCollectionView?.dataSource = self
-            FeedCollectionView?.reloadData()
-            FeedCollectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
+            feedCollectionView?.delegate = self
+            feedCollectionView?.dataSource = self
+            feedCollectionView?.reloadData()
+            
+            if totalItemCount > 0 {
+                feedCollectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
+            }
         }
     }
     
-    fileprivate var FeedCollectionView : UICollectionView?
-    
+    fileprivate var feedCollectionView : UICollectionView?
     fileprivate var selectedIndex : IndexPath? {
         didSet {
             if selectedIndex != nil && feedItemType! == .question {
@@ -79,15 +82,14 @@ class FeedVC: UIViewController {
                     feedDelegate.userSelected(type : .people, item : selectedUser)
                 }
             } else if selectedIndex != nil && feedItemType! == .answer {
-                FeedCollectionView?.reloadItems(at: [selectedIndex!])
+                feedCollectionView?.reloadItems(at: [selectedIndex!])
                 if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                    FeedCollectionView?.reloadItems(at: [deselectedIndex!])
+                    feedCollectionView?.reloadItems(at: [deselectedIndex!])
                 }
                 if feedDelegate != nil {
                     feedDelegate.userSelected(type : .answer, item : selectedAnswer)
                 }
             }
-            
         }
         willSet {
             if selectedIndex != nil {
@@ -131,7 +133,8 @@ class FeedVC: UIViewController {
             
             setupScreenLayout()
             definesPresentationContext = true
-
+            feedCollectionView?.isMultipleTouchEnabled = true
+            
             isLoaded = true
         }
     }
@@ -147,22 +150,22 @@ class FeedVC: UIViewController {
         layout.minimumInteritemSpacing = 1
         layout.sectionInset = UIEdgeInsetsMake(0, 0, 0, 0)
         
-        FeedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        FeedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        feedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
+        feedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
-        view.addSubview(FeedCollectionView!)
+        view.addSubview(feedCollectionView!)
         
-        FeedCollectionView?.translatesAutoresizingMaskIntoConstraints = false
-        FeedCollectionView?.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-        FeedCollectionView?.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        FeedCollectionView?.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        FeedCollectionView?.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        FeedCollectionView?.layoutIfNeeded()
+        feedCollectionView?.translatesAutoresizingMaskIntoConstraints = false
+        feedCollectionView?.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        feedCollectionView?.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        feedCollectionView?.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        feedCollectionView?.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        feedCollectionView?.layoutIfNeeded()
         
-        FeedCollectionView?.backgroundColor = UIColor.clear
-        FeedCollectionView?.backgroundView = nil
-        FeedCollectionView?.showsVerticalScrollIndicator = false
-        FeedCollectionView?.isPagingEnabled = true
+        feedCollectionView?.backgroundColor = UIColor.clear
+        feedCollectionView?.backgroundView = nil
+        feedCollectionView?.showsVerticalScrollIndicator = false
+        feedCollectionView?.isPagingEnabled = true
     }
     
     func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
@@ -179,10 +182,12 @@ class FeedVC: UIViewController {
     }
     
     func setSelectedIndex(index : IndexPath?) {
-        if let index = index {
-            selectedIndex = index
+        if index != nil && feedItemType! == .answer {
+            selectedAnswer = allAnswers[index!.row]
+            selectedIndex = index!
         } else {
             selectedIndex = nil
+            deselectedIndex = nil
         }
     }
 }
@@ -191,10 +196,6 @@ class FeedVC: UIViewController {
 extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return totalItemCount
-    }
-    
-    func numberOfSections(in collectionView: UICollectionView) -> Int{
-        return 1
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -397,6 +398,17 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         cell.titleLabel.text = user.name
                         cell.subtitleLabel.text = user.shortBio
                         self.allUsers[indexPath.row] = user
+
+                        if let _uPic = user.thumbPic {
+                            DispatchQueue.global(qos: .background).async {
+                                if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
+                                    DispatchQueue.main.async {
+                                        self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+                                        cell.updateImage(image : UIImage(data: _userImageData), isThumbnail : true)
+                                    }
+                                }
+                            }
+                        }
                     }
                 })
             } else {
@@ -454,8 +466,8 @@ extension FeedVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (FeedCollectionView!.frame.width / 2 - 0.5),
-                      height: max(minCellHeight , FeedCollectionView!.frame.height / 3))
+        return CGSize(width: (feedCollectionView!.frame.width / 2 - 0.5),
+                      height: max(minCellHeight , feedCollectionView!.frame.height / 3))
     }
 }
 

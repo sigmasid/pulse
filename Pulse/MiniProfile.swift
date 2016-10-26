@@ -84,9 +84,8 @@ class MiniProfile: UIView {
         messageButton = UIButton()
         addSubview(messageButton)
         
-        messageButton.setTitle("message", for: UIControlState())
+        messageButton.setTitle("send a message", for: UIControlState())
         messageButton.backgroundColor = iconBackgroundColor
-        messageButton.layer.cornerRadius = buttonCornerRadius.radius(.small)
         
         messageButton.titleLabel?.setPreferredFont(UIColor.white, alignment : .center)
         messageButton.translatesAutoresizingMaskIntoConstraints = false
@@ -96,6 +95,8 @@ class MiniProfile: UIView {
         messageButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         
         messageButton.layoutIfNeeded()
+        messageButton.layer.cornerRadius = messageButton.frame.height / 2
+
         messageButton.addTarget(self, action: #selector(messageButtonClicked), for: UIControlEvents.touchDown)
     }
     
@@ -106,24 +107,17 @@ class MiniProfile: UIView {
     }
     
     fileprivate func addCloseButton() {
-        closeButton = UIButton()
-        addSubview(closeButton)
+        closeButton = NavVC.getButton(type: .close)
+        closeButton.addTarget(self, action: #selector(closeButtonClicked), for: UIControlEvents.touchDown)
 
-        if let closeButtonImage = UIImage(named: "close") {
-            closeButton.setImage(closeButtonImage, for: UIControlState())
-        } else {
-            closeButton.titleLabel?.text = "close"
-        }
+        addSubview(closeButton)
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
-        
         closeButton.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor).isActive = true
         closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        closeButton.addTarget(self, action: #selector(closeButtonClicked), for: UIControlEvents.touchDown)
         
-        closeButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
         closeButton.layoutIfNeeded()
     }
     

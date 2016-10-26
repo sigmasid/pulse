@@ -413,7 +413,33 @@ class Database {
                     allTags.append(_currentTag)
                 }
                 completion(allTags)
+            } else {
+                completion(allTags)
             }
+        })
+    }
+    
+    static func getExpertsForTag(tagID : String, completion: @escaping (_ experts : [User]) -> Void) {
+        var allExperts = [User]()
+        
+        tagsRef.child(tagID).child("experts").observeSingleEvent(of: .value, with: { snap in
+            for child in snap.children {
+                let _currentUser = User(uID: (child as AnyObject).key)
+                allExperts.append(_currentUser)
+            }
+            completion(allExperts)
+        })
+    }
+    
+    static func getExpertsForQuestion(qID : String, completion: @escaping (_ experts : [User]) -> Void) {
+        var allExperts = [User]()
+        
+        databaseRef.child("expertsForQuestion").observeSingleEvent(of: .value, with: { snap in
+            for child in snap.children {
+                let _currentUser = User(uID: (child as AnyObject).key)
+                allExperts.append(_currentUser)
+            }
+            completion(allExperts)
         })
     }
 
@@ -422,10 +448,14 @@ class Database {
         
         questionsRef.child(qID).child("related").observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
+                print("snap exists - allquestions count is \(allQuestions.count)")
                 for child in snap.children {
                     let _currentQuestion = Question(qID: (child as AnyObject).key)
                     allQuestions.append(_currentQuestion)
                 }
+                completion(allQuestions)
+            } else {
+                print("snap empty - allquestions count is \(allQuestions.count)")
                 completion(allQuestions)
             }
         })
@@ -535,6 +565,7 @@ class Database {
         }
     }
     
+    //Create Feed for current user from followed tags
     static func createFeed(_ completedFeed: @escaping (_ feed : Tag) -> Void) {
         Database.keepUserTagsUpdated()
         
@@ -759,7 +790,7 @@ class Database {
             let credential = FIRFacebookAuthProvider.credential(withAccessToken: token!)
             FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
                 if error != nil {
-                    print(error?.localizedDescription)
+                    GlobalFunctions.showErrorBlock("Error logging in", erMessage: error!.localizedDescription)
                 } else {
                     completion(true)
                 }
