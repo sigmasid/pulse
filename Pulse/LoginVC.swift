@@ -27,9 +27,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     
-    private var _headerView : UIView?
-    private var _loginHeader : LoginHeaderView?
-    private var _loaded = false
+    fileprivate var _isLoaded = false
     var _currentLoadedView : currentLoadedView?
 
     enum currentLoadedView {
@@ -39,10 +37,10 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     
     var currentTWTRSession : TWTRSession?
     
-    private var loadingView : LoadingView?
-    private var _hasMovedUp = false
+    fileprivate var loadingView : LoadingView?
+    fileprivate var _hasMovedUp = false
     
-    private var emailValidated = false {
+    fileprivate var emailValidated = false {
         didSet {
             if emailValidated && passwordValidated {
                 emailButton.setEnabled()
@@ -52,7 +50,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
     }
     
-    private var passwordValidated = false {
+    fileprivate var passwordValidated = false {
         didSet {
             if emailValidated && passwordValidated {
                 emailButton.setEnabled()
@@ -62,53 +60,58 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-    }
-    
-    override func viewDidAppear(animated : Bool) {
-        super.viewDidAppear(true)
-        
-        if !_loaded {
+    override func viewDidLayoutSubviews() {
+        if !_isLoaded {
             hideKeyboardWhenTappedAround()
             setupView()
             emailButton.setDisabled()
-            addHeader()
             _currentLoadedView = .login
-
-            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(onFBProfileUpdated), name:FBSDKAccessTokenDidChangeNotification, object: nil)
-
-            _loaded = true
-        } else {
-            view.layoutIfNeeded()
+            
+            NotificationCenter.default.addObserver(self, selector: #selector(onFBProfileUpdated), name:NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
+            
+            _isLoaded = true
         }
-        _loginHeader?.updateStatusMessage("get logged in")
-
     }
     
-    override func viewDidDisappear(animated : Bool) {
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
+    
+    override func viewDidDisappear(_ animated : Bool) {
         super.viewDidDisappear(true)
-        _loginHeader?.updateStatusMessage("")
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    func setupView() {
-        setDarkBackground()
+    fileprivate func updateHeader() {
+        if parent?.navigationController != nil {
+            let loginButton = PulseButton(size: .small, type: .login, isRound : true, hasBackground: true)
+            parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
+        }
         
+        if let nav = navigationController as? PulseNavVC {
+            nav.setNav(title: "Login", subtitle: nil, statusImage: nil)
+            nav.toggleLogo(mode: .full)
+        } else {
+            parent?.title = "Login"
+        }
+    }
+    
+    fileprivate func setupView() {
         userEmail.delegate = self
         userPassword.delegate = self
-        userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), forControlEvents: UIControlEvents.EditingChanged)
+        userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
 
         userEmail.layer.addSublayer(GlobalFunctions.addBorders(userEmail))
         userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
         userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
         
-        userEmail.attributedPlaceholder = NSAttributedString(string: "email", attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
-        userPassword.attributedPlaceholder = NSAttributedString(string: "password", attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
+        userEmail.attributedPlaceholder = NSAttributedString(string: "email", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        userPassword.attributedPlaceholder = NSAttributedString(string: "password", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         userEmail.tag = 100
         userPassword.tag = 200
         
@@ -118,48 +121,26 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         
         emailButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         
-        let _footerDividerLine = UIView(frame:CGRectMake(forgotPassword.frame.width - 1, 0 , 1 , forgotPassword.frame.height))
-        _footerDividerLine.backgroundColor = UIColor.whiteColor()
+        let _footerDividerLine = UIView(frame:CGRect(x: forgotPassword.frame.width - 1, y: 0 , width: 1 , height: forgotPassword.frame.height))
+        _footerDividerLine.backgroundColor = UIColor.black
         forgotPassword.addSubview(_footerDividerLine)
 
     }
     
-    func addHeader() {
-        _headerView = UIView()
-        
-        if let _headerView = _headerView {
-            view.addSubview(_headerView)
-            
-            _headerView.translatesAutoresizingMaskIntoConstraints = false
-            _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-            _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-            _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-            _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-            _headerView.layoutIfNeeded()
-            
-            _loginHeader = LoginHeaderView(frame: _headerView.frame)
-            if let _loginHeader = _loginHeader {
-                _loginHeader.setAppTitleLabel("PULSE")
-                _loginHeader.setScreenTitleLabel("LOGIN")
-                _headerView.addSubview(_loginHeader)
-            }
-        }
-    }
-    
-    func textFieldDidBeginEditing(textField: UITextField) {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
         if !_hasMovedUp {
-            UIView.animateWithDuration(0.25) {
-                self.view.frame.origin.y -= 100
-            }
+            UIView.animate(withDuration: 0.25, animations: {
+                self.view.frame.origin.y -= 60
+            }) 
             _hasMovedUp = true
         }
     }
     
-    func textFieldDidEndEditing(textField: UITextField) {
+    func textFieldDidEndEditing(_ textField: UITextField) {
         if _hasMovedUp {
-            UIView.animateWithDuration(0.25) {
-                self.view.frame.origin.y += 100
-            }
+            UIView.animate(withDuration: 0.25, animations: {
+                self.view.frame.origin.y += 60
+            }) 
             _hasMovedUp = false
         }
         
@@ -167,7 +148,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             GlobalFunctions.validateEmail(userEmail.text, completion: {(verified, error) in
                 if !verified {
                     self.emailValidated = false
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                         self._emailErrorLabel.text = error!.localizedDescription
                     }
                 } else {
@@ -178,12 +159,12 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
     }
     
-    func textFieldDidChange(textField: UITextField) {
+    func textFieldDidChange(_ textField: UITextField) {
         if textField.tag == userPassword.tag {
             GlobalFunctions.validatePassword(userPassword.text, completion: {(verified, error) in
                 if !verified {
                     self.passwordValidated = false
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                         self._passwordErrorLabel.text = error!.localizedDescription
                     }
                 }  else {
@@ -194,53 +175,52 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
     }
     
-    @IBAction func emailLogin(sender: UIButton) {
+    @IBAction func emailLogin(_ sender: UIButton) {
         sender.setDisabled()
         let _loadingIndicator = sender.addLoadingIndicator()
         dismissKeyboard()
         
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-        FIRAuth.auth()?.signInWithEmail(self.userEmail.text!, password: self.userPassword.text!) { (aUser, error) in
-            if let error = error {
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
+        FIRAuth.auth()?.signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) { (aUser, blockError) in
+            if let blockError = blockError as? NSError {
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                switch error.code {
-                case FIRAuthErrorCode.ErrorCodeWrongPassword.rawValue: self._passwordErrorLabel.text = "incorrect password"
-                case FIRAuthErrorCode.ErrorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
-                case FIRAuthErrorCode.ErrorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
+                switch blockError.code {
+                case FIRAuthErrorCode.errorCodeWrongPassword.rawValue: self._passwordErrorLabel.text = "incorrect password"
+                case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
+                case FIRAuthErrorCode.errorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
 
-                default: self._loginHeader!.updateStatusMessage("error signing in")
+                default: (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "error signing in")
                 }
             }
             else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                self._loginHeader!.updateStatusMessage("welcome!")
+                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "welcome!")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
         }
     }
     
-    @IBAction func createAccount(sender: UIButton) {
-        if let CreateAccountVC = storyboard?.instantiateViewControllerWithIdentifier("LoginCreateAccountVC") as? LoginCreateAccountVC {
-            CreateAccountVC.returnToParentDelegate = self
+    @IBAction func createAccount(_ sender: UIButton) {
+        if let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
             _currentLoadedView = .createAccount
-            GlobalFunctions.addNewVC(CreateAccountVC, parentVC: self)
+            self.parent?.navigationController?.pushViewController(createAccountVC, animated: true)
         }
     }
     
-    @IBAction func fbLogin(sender: UIButton) {
+    @IBAction func fbLogin(_ sender: UIButton) {
         addLoading()
         let facebookReadPermissions = ["public_profile", "email", "user_friends"]
         let loginButton = FBSDKLoginManager()
-        loginButton.logInWithReadPermissions(facebookReadPermissions, fromViewController: self, handler: { (result:FBSDKLoginManagerLoginResult!, error:NSError!) -> Void in
-            if error != nil {
+        loginButton.logIn(withReadPermissions: facebookReadPermissions, from: self, handler: { (result, blockError) -> Void in
+            if blockError != nil {
                 self.removeLoading()
-                GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: error.localizedDescription)
-            } else if result.isCancelled {
+                GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
+            } else if result!.isCancelled {
                 self.removeLoading()
             } else {
                 print("fb login done - success")
@@ -250,47 +230,45 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         
     }
     
-    func onFBProfileUpdated(notification: NSNotification) {
+    func onFBProfileUpdated(_ notification: Notification) {
 
-        guard let _accessToken = FBSDKAccessToken.currentAccessToken() else {
+        guard let _accessToken = FBSDKAccessToken.current() else {
             return
         }
         var dict : NSDictionary!
-
-        FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, first_name, last_name, picture.type(large), email"]).startWithCompletionHandler({ (connection, result, error) -> Void in
+        FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, first_name, last_name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
             if (error == nil){
                 dict = result as! NSDictionary
                 print(dict)
-                NSLog(dict.objectForKey("picture")?.objectForKey("data")?.objectForKey("url") as! String)
             }
         })
         
-        let credential = FIRFacebookAuthProvider.credentialWithAccessToken(_accessToken.tokenString)
-        FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
+        let credential = FIRFacebookAuthProvider.credential(withAccessToken: _accessToken.tokenString)
+        FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
             if error != nil {
                 self.removeLoading()
                 GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
             }
             else {
                 self.removeLoading()
-                self._loginHeader!.updateStatusMessage(aUser!.displayName)
+                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: aUser!.displayName)
                 self._loggedInSuccess()
                 print("posted facebook login success update")
             }
         }
-        NSNotificationCenter.defaultCenter().removeObserver(self, name: FBSDKProfileDidChangeNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.FBSDKProfileDidChange, object: nil)
     }
     
-    @IBAction func twtrLogin(sender: UIButton) {
+    @IBAction func twtrLogin(_ sender: UIButton) {
         addLoading()
-        Twitter.sharedInstance().logInWithCompletion { session, error in
+        Twitter.sharedInstance().logIn { session, error in
             if (session != nil) {
                 self.currentTWTRSession = session
-                let credential = FIRTwitterAuthProvider.credentialWithToken(session!.authToken, secret: session!.authTokenSecret)
-                FIRAuth.auth()?.signInWithCredential(credential) { (aUser, error) in
-                    if error != nil {
+                let credential = FIRTwitterAuthProvider.credential(withToken: session!.authToken, secret: session!.authTokenSecret)
+                FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
+                    if let blockError = blockError as? NSError {
                         self.removeLoading()
-                        self._loginHeader!.updateStatusMessage(error?.description)
+                        (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: blockError.description)
                     } else {
                         self.removeLoading()
                         self._loggedInSuccess()
@@ -298,32 +276,32 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 }
             } else {
                 self.removeLoading()
-                self._loginHeader!.updateStatusMessage("Uh oh! That didn't work: \(error!.localizedDescription)")
+                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "Uh oh! That didn't work")
             }
         }
     }
     
     func _loggedInSuccess() {
-        NSNotificationCenter.defaultCenter().postNotificationName("LoginSuccess", object: self)
-        if let _ = loginVCDelegate {
-            loginVCDelegate!.loginSuccess(self)
-        }
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
+//        if let _ = loginVCDelegate {
+//            loginVCDelegate!.loginSuccess(self)
+//        }
     }
     
     func addLoading() {
-        loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.whiteColor())
-        loadingView?.addIcon(IconSizes.Medium, _iconColor: UIColor.blackColor(), _iconBackgroundColor: nil)
+        loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white)
+        loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
         loadingView?.addMessage("Signing in...")
         view.addSubview(loadingView!)
     }
     
-    func returnToParent(currentVC : UIViewController) {
+    func returnToParent(_ currentVC : UIViewController) {
         GlobalFunctions.dismissVC(currentVC)
     }
     
     func removeLoading() {
         if loadingView != nil {
-            UIView.animateWithDuration(0.2, animations: { self.loadingView!.alpha = 0.0 } ,
+            UIView.animate(withDuration: 0.2, animations: { self.loadingView!.alpha = 0.0 } ,
                                        completion: {(value: Bool) in
                                         self.loadingView!.removeFromSuperview()
             })

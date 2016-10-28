@@ -18,66 +18,58 @@ class LoginAddNameVC: UIViewController {
     @IBOutlet weak var _firstNameError: UILabel!
     @IBOutlet weak var _lastNameError: UILabel!
     
-    weak var loginVCDelegate : childVCDelegate?
-    private var _headerView : UIView!
-    private var _loginHeader : LoginHeaderView?
+//    weak var loginVCDelegate : childVCDelegate?    
+    fileprivate var isLoaded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        hideKeyboardWhenTappedAround()
+
     }
     
-    override func viewDidAppear(animated : Bool) {
-        super.viewDidAppear(true)
-        hideKeyboardWhenTappedAround()
-        setDarkBackground()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
 
-        firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.whiteColor()))
-        lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.whiteColor()))
-        
-        firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
-        lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
-        
-        doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        doneButton.setEnabled()
-        addHeader()
+        if !isLoaded {
+            firstName.layer.addSublayer(GlobalFunctions.addBorders(self.firstName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+            lastName.layer.addSublayer(GlobalFunctions.addBorders(self.lastName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+            
+            firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            
+            doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
+            doneButton.setEnabled()
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    override func viewDidDisappear(animated: Bool) {
-        super.viewDidDisappear(animated)
-    }
-    
-    func addHeader() {
-        _headerView = UIView()
-        view.addSubview(_headerView)
+    fileprivate func updateHeader() {
+        let checkButton = PulseButton(size: .small, type: .check, isRound : true, hasBackground: true)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
         
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel("PULSE")
-            _loginHeader.setScreenTitleLabel("ADD NAME")
-            _loginHeader.updateStatusMessage("could we get a name with that?")
-            _headerView.addSubview(_loginHeader)
+        if let nav = navigationController as? PulseNavVC {
+            nav.setNav(title: "Create Profile", subtitle: "could we get a name with that?", statusImage: nil)
+        } else {
+            title = "Add Name"
         }
     }
-
-    @IBAction func addNameTouchDown(sender: UIButton) {
+    
+    @IBAction func addNameTouchDown(_ sender: UIButton) {
         
     }
     
-    @IBAction func addName(sender: UIButton) {
+    @IBAction func addName(_ sender: UIButton) {
         dismissKeyboard()
         sender.setDisabled()
-        sender.addLoadingIndicator()
+        let _ = sender.addLoadingIndicator()
         
         GlobalFunctions.validateName(firstName.text, completion: {(verified, error) in
             if !verified {
@@ -96,7 +88,8 @@ class LoginAddNameVC: UIViewController {
                                 sender.setEnabled()
                             }
                             else {
-                                NSNotificationCenter.defaultCenter().postNotificationName("LoginSuccess", object: self)
+                                print("went into login success")
+                                NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
                                 sender.setEnabled()
                                 self._loggedInSuccess()
                             }
@@ -108,12 +101,20 @@ class LoginAddNameVC: UIViewController {
     }
     
     func _loggedInSuccess() {
-        if loginVCDelegate != nil {
-            self.loginVCDelegate!.loginSuccess(self)
-        }
+//        if loginVCDelegate != nil {
+//            if navigationController != nil {
+//                print("found nav controller")
+                let _ = navigationController?.popToRootViewController(animated: true)
+//            } else {
+//                print("no nav controller found")
+//            }
+//            self.loginVCDelegate!.loginSuccess(self)
+//        } else {
+//            print("login delegate nil")
+//        }
     }
     
-    func textFieldDidBeginEditing(textField: UITextField) {
+    func textFieldDidBeginEditing(_ textField: UITextField) {
         _firstNameError.text = ""
         _lastNameError.text = ""
     }

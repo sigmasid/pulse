@@ -8,178 +8,168 @@
 
 import UIKit
 
-class SettingsTableVC: UIViewController, ParentDelegate {
-    weak var returnToParentDelegate : ParentDelegate!
+class SettingsTableVC: UIViewController {
+    fileprivate var _sections : [SettingSection]?
+    fileprivate var _settings = [[Setting]]()
+    fileprivate var _selectedSettingRow : IndexPath?
 
-    private var _sections : [SettingSection]?
-    private var _settings = [[Setting]]()
+    fileprivate var settingsTable = UITableView()
+    fileprivate let _reuseIdentifier = "SettingsTableCell"
     
-    private lazy var _headerView = UIView()
-    private var _loginHeader : LoginHeaderView?
-
-    private var settingsTable = UITableView()
-    private let _reuseIdentifier = "SettingsTableCell"
+    fileprivate var isLoaded = false
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        settingsTable.registerClass(SettingsTableCell.self, forCellReuseIdentifier: _reuseIdentifier)
+    public var settingSection : String! {
+        didSet {
+            Database.getSectionsSection(sectionName: settingSection, completion: { (section , error) in
+                if error == nil {
+                    self._sections = [section]
+                    for _ in self._sections! {
+                        self._settings.append([])
+                    }
+                    self.settingsTable.delegate = self
+                    self.settingsTable.dataSource = self
+                    self.settingsTable.reloadData()                }
+            })
+        }
     }
     
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(animated)
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         
-        setDarkBackground()
-        addHeader(appTitle: "PULSE", screenTitle: "SETTINGS")
-        
-        Database.getSections({ (sections , error) in
-            self._sections = sections
-            for _ in sections {
-                self._settings.append([])
-            }
-            self.sectionsCreated()
-        })
+        //force refresh of the selected row
+        if _selectedSettingRow != nil {
+            settingsTable.reloadRows(at: [_selectedSettingRow!], with: .fade)
+            _selectedSettingRow = nil
+        }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        if !isLoaded {
+            updateHeader()
+            setupTable()
+            
+            view.backgroundColor = UIColor.white
+            settingsTable.register(SettingsTableCell.self, forCellReuseIdentifier: _reuseIdentifier)
+        }
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    func sectionsCreated() {
-        view.addSubview(settingsTable)
-
-        settingsTable.translatesAutoresizingMaskIntoConstraints = false
-        settingsTable.topAnchor.constraintEqualToAnchor(_headerView.bottomAnchor, constant: Spacing.s.rawValue).active = true
-        settingsTable.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
-        settingsTable.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor, constant: Spacing.s.rawValue).active = true
-        settingsTable.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+    fileprivate func updateHeader() {
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
-        settingsTable.backgroundView = nil
-        settingsTable.backgroundColor = UIColor.clearColor()
-        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
-        settingsTable.separatorColor = UIColor.grayColor().colorWithAlphaComponent(0.7)
-        settingsTable.tableFooterView = UIView()
-        settingsTable.showsVerticalScrollIndicator = false
-
-        settingsTable.delegate = self
-        settingsTable.dataSource = self
-        settingsTable.reloadData()
-    }
-    
-    private func addHeader(appTitle appTitle : String, screenTitle : String) {
-         view.addSubview(_headerView)
-        
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(appTitle)
-            _loginHeader.setScreenTitleLabel(screenTitle)
-            _loginHeader.updateStatusMessage("PROFILE SETTINGS")
-
-            _loginHeader.addGoBack()
-            _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
-            
-            _headerView.addSubview(_loginHeader)
+        if let nav = navigationController as? PulseNavVC {
+            nav.setNav(title: "Update Profile", subtitle: nil, statusImage: nil)
+        } else {
+            title = "Update Profile"
         }
     }
+    
     
     func goBack() {
-        if returnToParentDelegate != nil {
-            returnToParentDelegate.returnToParent(self)
-        }
+        let _ = navigationController?.popViewController(animated: true)
     }
     
-    func showSettingDetail(selectedSetting : Setting) {
-        if selectedSetting.settingID == "logout" {
-            Database.signOut({ success in
-                if !success {
-                    GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
-                }
-            })
-        } else {
-            let updateSetting = UpdateProfileVC()
-            updateSetting.returnToParentDelegate = self
-            updateSetting._currentSetting = selectedSetting 
-            GlobalFunctions.addNewVC(updateSetting, parentVC: self)
-        }
+    func setupTable() {
+        view.addSubview(settingsTable)
+        
+        settingsTable.translatesAutoresizingMaskIntoConstraints = false
+        settingsTable.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        settingsTable.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        settingsTable.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        settingsTable.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        settingsTable.layoutIfNeeded()
+        
+        settingsTable.backgroundView = nil
+        settingsTable.backgroundColor = UIColor.clear
+        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.singleLine
+        settingsTable.separatorColor = UIColor.lightGray
+        settingsTable.tableFooterView = UIView() //removes extra rows at bottom
+        settingsTable.showsVerticalScrollIndicator = false
+        
+        settingsTable.isScrollEnabled = false
+        automaticallyAdjustsScrollViewInsets = false
+        //        settingsTable.rowHeight = UITableViewAutomaticDimension //supposed to give dynamic height but doesn't work
+
     }
     
-    func returnToParent(currentVC : UIViewController) {
-        GlobalFunctions.dismissVC(currentVC)
+    func showSettingDetail(_ selectedSetting : Setting) {
+        let updateSetting = UpdateProfileVC()
+        updateSetting._currentSetting = selectedSetting
+        navigationController?.pushViewController(updateSetting, animated: true)
     }
 }
 
 extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     // MARK: - Table view data source
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+    func numberOfSections(in tableView: UITableView) -> Int {
         return _sections?.count ?? 0
     }
 
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return _sections?[section].sectionSettingsCount ?? 0
     }
     
-    func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         let _sectionID = _sections![section].sectionID
         return SectionTypes.getSectionDisplayName(_sectionID)
     }
     
-    func tableView(tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
+    func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
-            header.backgroundView?.backgroundColor = UIColor.clearColor()
-            header.textLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-            header.textLabel!.textColor = UIColor.orangeColor()
+            header.backgroundView?.backgroundColor = UIColor.clear
+            header.textLabel!.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: pulseBlue, alignment: .left)
         }
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let _settingID = _sections![indexPath.section].settings![indexPath.row]
-        let cell = tableView.dequeueReusableCellWithIdentifier(_reuseIdentifier) as! SettingsTableCell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let _settingID = _sections![(indexPath as NSIndexPath).section].settings![(indexPath as NSIndexPath).row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: _reuseIdentifier) as! SettingsTableCell
 
-        if _settings[indexPath.section].count > indexPath.row {
-            let _setting = _settings[indexPath.section][indexPath.row]
-            cell.textLabel!.text = _setting.display!
-            if _setting.type != nil {
+        if _settings[(indexPath as NSIndexPath).section].count > (indexPath as NSIndexPath).row {
+            let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
+            cell._settingNameLabel.text = _setting.display!
+            if _setting.type == .location {
+                User.currentUser?.getLocation(completion: {(city) in
+                    cell._detailTextLabel.text = city
+                })
+            }
+                
+            else if _setting.type != nil {
                 cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
             }
+            
             if _setting.editable {
-                cell.accessoryType = .DisclosureIndicator
+                cell.accessoryType = .disclosureIndicator
             }
         } else {
             Database.getSetting(_settingID, completion: {(_setting, error) in
-                cell.textLabel!.text = _setting.display!
+                cell._settingNameLabel.text = _setting.display!
                 if _setting.type != nil {
                     cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
                 }
-                self._settings[indexPath.section].append(_setting)
+                self._settings[(indexPath as NSIndexPath).section].append(_setting)
                 if _setting.editable {
-                    cell.accessoryType = .DisclosureIndicator
+                    cell.accessoryType = .disclosureIndicator
                 }
             })
         }
         return cell
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        let _setting = _settings[indexPath.section][indexPath.row]
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
+        _selectedSettingRow = indexPath
         showSettingDetail(_setting)
-        tableView.deselectRowAtIndexPath(indexPath, animated: true)
+        tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return IconSizes.medium.rawValue
     }
 }
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
-

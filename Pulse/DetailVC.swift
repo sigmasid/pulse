@@ -14,15 +14,15 @@ class DetailVC: UIViewController, ParentDelegate {
             switch currentLoadedItem! {
             case .Questions:
                 if !returningToExplore {
-                    _allQuestions = [Question?](count: self.currentTag!.totalQuestionsForTag(), repeatedValue: nil)
+                    _allQuestions = [Question?](repeating: nil, count: self.currentTag!.totalQuestionsForTag())
                     setupScreenLayout()
                 }
             case .Answers:
                 if !returningToExplore {
-                    gettingImageForCell = [Bool](count: self.currentQuestion!.totalAnswers(), repeatedValue: false)
-                    gettingInfoForCell = [Bool](count: self.currentQuestion!.totalAnswers(), repeatedValue: false)
-                    browseAnswerPreviewImages = [UIImage?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
-                    usersForAnswerPreviews = [User?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
+                    gettingImageForCell = [Bool](repeating: false, count: self.currentQuestion!.totalAnswers())
+                    gettingInfoForCell = [Bool](repeating: false, count: self.currentQuestion!.totalAnswers())
+                    browseAnswerPreviewImages = [UIImage?](repeating: nil, count: currentQuestion!.totalAnswers())
+                    usersForAnswerPreviews = [User?](repeating: nil, count: currentQuestion!.totalAnswers())
                     setupScreenLayout()
                 }
             case .Tags: return
@@ -35,18 +35,18 @@ class DetailVC: UIViewController, ParentDelegate {
     var currentQuestion : Question!
     
     /* save questions & answers that have been shown */
-    private var _allQuestions : [Question?]!
-    private var gettingImageForCell : [Bool]!
-    private var gettingInfoForCell : [Bool]!
-    private var browseAnswerPreviewImages : [UIImage?]!
-    private var usersForAnswerPreviews : [User?]!
+    fileprivate var _allQuestions : [Question?]!
+    fileprivate var gettingImageForCell : [Bool]!
+    fileprivate var gettingInfoForCell : [Bool]!
+    fileprivate var browseAnswerPreviewImages : [UIImage?]!
+    fileprivate var usersForAnswerPreviews : [User?]!
 
-    private enum currentLoadedView : String {
+    fileprivate enum currentLoadedView : String {
         case tableview = "tableView"
         case collectionview = "collectionView"
     }
     
-    private var _currentView : currentLoadedView? {
+    fileprivate var _currentView : currentLoadedView? {
         didSet {
             toggleView()
         }
@@ -57,18 +57,18 @@ class DetailVC: UIViewController, ParentDelegate {
     
     var questionCount = 1
 
-    private var titleLabel = UILabel()
-    private var rotatedView = UIView()
-    private var backgroundImage = UIImageView()
-    private var toggleButton = UIButton()
+    fileprivate var titleLabel = UILabel()
+    fileprivate var rotatedView = UIView()
+    fileprivate var backgroundImage = UIImageView()
+    fileprivate var toggleButton = UIButton()
     
-    private var DetailTableView: UITableView?
-    private var DetailCollectionView : UICollectionView?
-    private var selectedIndex : NSIndexPath? {
+    fileprivate var DetailTableView: UITableView?
+    fileprivate var DetailCollectionView : UICollectionView?
+    fileprivate var selectedIndex : IndexPath? {
         didSet {
-            DetailCollectionView?.reloadItemsAtIndexPaths([selectedIndex!])
+            DetailCollectionView?.reloadItems(at: [selectedIndex!])
             if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                DetailCollectionView?.reloadItemsAtIndexPaths([deselectedIndex!])
+                DetailCollectionView?.reloadItems(at: [deselectedIndex!])
             }
         }
         willSet {
@@ -77,13 +77,13 @@ class DetailVC: UIViewController, ParentDelegate {
             }
         }
     }
-    private var deselectedIndex : NSIndexPath?
+    fileprivate var deselectedIndex : IndexPath?
     
     var returningToExplore = false
     weak var returnToParentDelegate : ParentDelegate!
     
-    private var panStartingPointX : CGFloat = 0
-    private var panStartingPointY : CGFloat = 0
+    fileprivate var panStartingPointX : CGFloat = 0
+    fileprivate var panStartingPointY : CGFloat = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -93,7 +93,7 @@ class DetailVC: UIViewController, ParentDelegate {
         view.addGestureRecognizer(_panGesture)
     }
     
-    override func viewDidAppear(animated: Bool) {
+    override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
     }
     
@@ -102,7 +102,7 @@ class DetailVC: UIViewController, ParentDelegate {
         // Dispose of any resources that can be recreated.
     }
     
-    override func prefersStatusBarHidden() -> Bool {
+    override var prefersStatusBarHidden : Bool {
         return true
     }
     
@@ -117,48 +117,48 @@ class DetailVC: UIViewController, ParentDelegate {
     func toggleView() {
         if _currentView == .tableview {
             
-            toggleButton.setImage(UIImage(named: "collection-list"), forState: .Normal)
+            toggleButton.setImage(UIImage(named: "collection-list"), for: UIControlState())
             
             if DetailTableView == nil {
                 setupTableView()
             } else {
-                DetailTableView?.hidden = false
+                DetailTableView?.isHidden = false
             }
             
-            DetailCollectionView?.hidden = true
+            DetailCollectionView?.isHidden = true
             
         } else {
             
-            toggleButton.setImage(UIImage(named: "table-list"), forState: .Normal)
+            toggleButton.setImage(UIImage(named: "table-list"), for: UIControlState())
             
             if DetailCollectionView == nil {
                 setupCollectionView()
             } else {
-                DetailCollectionView?.hidden = false
+                DetailCollectionView?.isHidden = false
             }
-            DetailTableView?.hidden = true
+            DetailTableView?.isHidden = true
         }
     }
     
-    private func setupScreenLayout() {
+    fileprivate func setupScreenLayout() {
         backgroundImage = UIImageView()
         view.addSubview(backgroundImage)
         
         backgroundImage.translatesAutoresizingMaskIntoConstraints = false
-        backgroundImage.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        backgroundImage.centerYAnchor.constraintEqualToAnchor(view.centerYAnchor).active = true
-        backgroundImage.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-        backgroundImage.heightAnchor.constraintEqualToAnchor(view.heightAnchor).active = true
+        backgroundImage.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        backgroundImage.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+        backgroundImage.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        backgroundImage.heightAnchor.constraint(equalTo: view.heightAnchor).isActive = true
         
         view.addSubview(toggleButton)
-        toggleButton.addTarget(self, action: #selector(setCurrentView), forControlEvents: UIControlEvents.TouchDown)
-        toggleButton.backgroundColor = UIColor.darkGrayColor()
+        toggleButton.addTarget(self, action: #selector(setCurrentView), for: UIControlEvents.touchDown)
+        toggleButton.backgroundColor = UIColor.darkGray
         
         toggleButton.translatesAutoresizingMaskIntoConstraints = false
-        toggleButton.bottomAnchor.constraintEqualToAnchor(backgroundImage.bottomAnchor, constant: -Spacing.s.rawValue).active = true
-        toggleButton.trailingAnchor.constraintEqualToAnchor(backgroundImage.trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        toggleButton.heightAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-        toggleButton.widthAnchor.constraintEqualToAnchor(toggleButton.heightAnchor).active = true
+        toggleButton.bottomAnchor.constraint(equalTo: backgroundImage.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        toggleButton.trailingAnchor.constraint(equalTo: backgroundImage.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        toggleButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        toggleButton.widthAnchor.constraint(equalTo: toggleButton.heightAnchor).isActive = true
         toggleButton.contentEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15)
 
         toggleButton.layoutIfNeeded()
@@ -166,41 +166,39 @@ class DetailVC: UIViewController, ParentDelegate {
         
         view.addSubview(rotatedView)
         rotatedView.translatesAutoresizingMaskIntoConstraints = false
-        rotatedView.bottomAnchor.constraintEqualToAnchor(toggleButton.topAnchor).active = true
-        rotatedView.leadingAnchor.constraintEqualToAnchor(view.leadingAnchor, constant: Spacing.xs.rawValue).active = true
-        rotatedView.topAnchor.constraintEqualToAnchor(view.leadingAnchor, constant: -Spacing.xs.rawValue).active = true
-        rotatedView.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.2).active = true
+        rotatedView.bottomAnchor.constraint(equalTo: toggleButton.topAnchor).isActive = true
+        rotatedView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+//        rotatedView.topAnchor.constraint(equalTo: view.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        rotatedView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.2).isActive = true
         rotatedView.layoutIfNeeded()
         
         rotatedView.addSubview(titleLabel)
         
         if currentLoadedItem == .Questions {
-            titleLabel.text = "#"+(currentTag.tagID!).uppercaseString
-            titleLabel.font = UIFont.systemFontOfSize(FontSizes.Mammoth.rawValue, weight: UIFontWeightHeavy)
+            titleLabel.text = "#"+(currentTag.tagID!).uppercased()
+            titleLabel.font = UIFont.systemFont(ofSize: FontSizes.mammoth.rawValue, weight: UIFontWeightHeavy)
         } else if currentLoadedItem  == .Answers {
             titleLabel.text = currentQuestion.qTitle
-            titleLabel.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightBold)
+            titleLabel.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightBold)
         }
         
-        titleLabel.textColor = UIColor.whiteColor()
-        titleLabel.transform = CGAffineTransformIdentity
-        titleLabel.frame = CGRect(origin: CGPointZero, size: CGSize(width: rotatedView.bounds.height, height: rotatedView.bounds.width))
+        titleLabel.textColor = UIColor.white
+        titleLabel.transform = CGAffineTransform.identity
+        titleLabel.frame = CGRect(origin: CGPoint.zero, size: CGSize(width: rotatedView.bounds.height, height: rotatedView.bounds.width))
 
-        var transform = CGAffineTransformIdentity
+        var transform = CGAffineTransform.identity
         
         // translate to new center
-        transform = CGAffineTransformTranslate(transform, (rotatedView.bounds.width / 2)-(rotatedView.bounds.height / 2), (rotatedView.bounds.height / 2)-(rotatedView.bounds.width / 2))
+        transform = transform.translatedBy(x: (rotatedView.bounds.width / 2)-(rotatedView.bounds.height / 2), y: (rotatedView.bounds.height / 2)-(rotatedView.bounds.width / 2))
         // rotate counterclockwise around center
-        transform = CGAffineTransformRotate(transform, CGFloat(-M_PI_2))
+        transform = transform.rotated(by: CGFloat(-M_PI_2))
         
         titleLabel.transform = transform
         titleLabel.numberOfLines = 0
         
         if let _tagImage = currentTag.tagImage {
             Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-                if error != nil {
-                    print (error?.localizedDescription)
-                } else {
+                if error == nil {
                     self.backgroundImage.image = UIImage(data: data!)
                 }
             })
@@ -210,81 +208,81 @@ class DetailVC: UIViewController, ParentDelegate {
 
     }
     
-    private func setupCollectionView() {
+    fileprivate func setupCollectionView() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.scrollDirection = UICollectionViewScrollDirection.Vertical
+        layout.scrollDirection = UICollectionViewScrollDirection.vertical
         layout.minimumLineSpacing = Spacing.xs.rawValue
         layout.minimumInteritemSpacing = Spacing.xs.rawValue
         
-        DetailCollectionView = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
-        DetailCollectionView?.registerClass(DetailCollectionCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        DetailCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
+        DetailCollectionView?.register(DetailCollectionCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
         view.addSubview(DetailCollectionView!)
         
         DetailCollectionView?.translatesAutoresizingMaskIntoConstraints = false
-        DetailCollectionView?.topAnchor.constraintEqualToAnchor(backgroundImage.topAnchor, constant: Spacing.s.rawValue).active = true
-        DetailCollectionView?.bottomAnchor.constraintEqualToAnchor(toggleButton.topAnchor, constant: -Spacing.s.rawValue).active = true
-        DetailCollectionView?.leadingAnchor.constraintEqualToAnchor(rotatedView.trailingAnchor,  constant: Spacing.xs.rawValue).active = true
-        DetailCollectionView?.trailingAnchor.constraintEqualToAnchor(backgroundImage.trailingAnchor, constant: -Spacing.xs.rawValue).active = true
+        DetailCollectionView?.topAnchor.constraint(equalTo: backgroundImage.topAnchor, constant: Spacing.s.rawValue).isActive = true
+        DetailCollectionView?.bottomAnchor.constraint(equalTo: toggleButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        DetailCollectionView?.leadingAnchor.constraint(equalTo: rotatedView.trailingAnchor,  constant: Spacing.xs.rawValue).isActive = true
+        DetailCollectionView?.trailingAnchor.constraint(equalTo: backgroundImage.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         DetailCollectionView?.layoutIfNeeded()
         
         DetailCollectionView?.backgroundView = nil
-        DetailCollectionView?.backgroundColor = UIColor.clearColor()
+        DetailCollectionView?.backgroundColor = UIColor.clear
         DetailCollectionView?.showsVerticalScrollIndicator = false
-        DetailCollectionView?.pagingEnabled = true
+        DetailCollectionView?.isPagingEnabled = true
         
         DetailCollectionView?.delegate = self
         DetailCollectionView?.dataSource = self
         DetailCollectionView?.reloadData()
     }
     
-    private func setupTableView() {
+    fileprivate func setupTableView() {
         DetailTableView = UITableView()
-        DetailTableView?.registerClass(DetailTableCell.self, forCellReuseIdentifier: tableReuseIdentifier)
+        DetailTableView?.register(DetailTableCell.self, forCellReuseIdentifier: tableReuseIdentifier)
         
         view.addSubview(DetailTableView!)
 
         DetailTableView?.translatesAutoresizingMaskIntoConstraints = false
-        DetailTableView?.topAnchor.constraintEqualToAnchor(backgroundImage.topAnchor, constant: Spacing.s.rawValue).active = true
-        DetailTableView?.bottomAnchor.constraintEqualToAnchor(toggleButton.topAnchor, constant: -Spacing.s.rawValue).active = true
-        DetailTableView?.widthAnchor.constraintEqualToAnchor(backgroundImage.widthAnchor, multiplier: 0.75).active = true
-        DetailTableView?.trailingAnchor.constraintEqualToAnchor(backgroundImage.trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        DetailTableView?.topAnchor.constraint(equalTo: backgroundImage.topAnchor, constant: Spacing.s.rawValue).isActive = true
+        DetailTableView?.bottomAnchor.constraint(equalTo: toggleButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        DetailTableView?.widthAnchor.constraint(equalTo: backgroundImage.widthAnchor, multiplier: 0.75).isActive = true
+        DetailTableView?.trailingAnchor.constraint(equalTo: backgroundImage.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         
         DetailTableView?.backgroundView = nil
-        DetailTableView?.backgroundColor = UIColor.clearColor()
-        DetailTableView?.separatorStyle = .None
+        DetailTableView?.backgroundColor = UIColor.clear
+        DetailTableView?.separatorStyle = .none
         DetailTableView?.tableFooterView = UIView()
         DetailTableView?.showsVerticalScrollIndicator = false
-        DetailTableView?.pagingEnabled = true
+        DetailTableView?.isPagingEnabled = true
         
         DetailTableView?.delegate = self
         DetailTableView?.dataSource = self
         DetailTableView?.reloadData()
     }
     
-    func showQuestion(_selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag, _frame : CGRect?) {
+    func showQuestion(_ _selectedQuestion : Question?, _allQuestions : [Question?], _questionIndex : Int, _selectedTag : Tag, _frame : CGRect?) {
         let QAVC = QAManagerVC()
         QAVC.selectedTag = _selectedTag
         QAVC.allQuestions = _allQuestions
         QAVC.currentQuestion = _selectedQuestion
         QAVC.questionCounter = _questionIndex
-        QAVC.returnToParentDelegate = self
+//        QAVC.returnToParentDelegate = self
         QAVC.view.frame = view.bounds
         GlobalFunctions.addNewVC(QAVC, parentVC: self)
     }
     
-    func returnToParent(currentVC : UIViewController) {
+    func returnToParent(_ currentVC : UIViewController) {
         returningToExplore = true
         GlobalFunctions.dismissVC(currentVC)
     }
     
-    func handlePan(pan : UIPanGestureRecognizer) {
+    func handlePan(_ pan : UIPanGestureRecognizer) {
         
-        if (pan.state == UIGestureRecognizerState.Began) {
+        if (pan.state == UIGestureRecognizerState.began) {
             panStartingPointX = pan.view!.center.x
             panStartingPointY = pan.view!.center.y
             
-        } else if (pan.state == UIGestureRecognizerState.Ended) {
+        } else if (pan.state == UIGestureRecognizerState.ended) {
             let panFinishingPointX = pan.view!.center.x
             _ = pan.view!.center.y
             
@@ -292,13 +290,13 @@ class DetailVC: UIViewController, ParentDelegate {
                 returnToParentDelegate.returnToParent(self)
             } else {
                 view.center = CGPoint(x: view.bounds.width / 2, y: pan.view!.center.y)
-                pan.setTranslation(CGPointZero, inView: view)
+                pan.setTranslation(CGPoint.zero, in: view)
             }
         } else {
-            let translation = pan.translationInView(view)
+            let translation = pan.translation(in: view)
             if translation.x > 0 {
                 view.center = CGPoint(x: pan.view!.center.x + translation.x, y: pan.view!.center.y)
-                pan.setTranslation(CGPointZero, inView: view)
+                pan.setTranslation(CGPoint.zero, in: view)
             }
         }
     }
@@ -306,7 +304,7 @@ class DetailVC: UIViewController, ParentDelegate {
 
 /* SETUP TABLEVIEW */
 extension DetailVC : UITableViewDataSource, UITableViewDelegate {
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if currentLoadedItem == .Questions {
             return currentTag.totalQuestionsForTag()
         } else if currentLoadedItem == .Answers {
@@ -316,43 +314,43 @@ extension DetailVC : UITableViewDataSource, UITableViewDelegate {
         }
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(tableReuseIdentifier) as! DetailTableCell
-        cell.backgroundColor = UIColor.clearColor()
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: tableReuseIdentifier) as! DetailTableCell
+        cell.backgroundColor = UIColor.clear
         
         if currentLoadedItem == .Questions {
-            if _allQuestions.count > indexPath.row && _allQuestions[indexPath.row] != nil{
-                let _currentQuestion = _allQuestions[indexPath.row]
+            if _allQuestions.count > (indexPath as NSIndexPath).row && _allQuestions[(indexPath as NSIndexPath).row] != nil{
+                let _currentQuestion = _allQuestions[(indexPath as NSIndexPath).row]
                 cell.titleLabel.text = _currentQuestion?.qTitle
             } else {
-                Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+                Database.getQuestion(currentTag.questions![(indexPath as NSIndexPath).row]!.qID, completion: { (question, error) in
                     if error == nil {
-                        self._allQuestions[indexPath.row] =  question
+                        self._allQuestions[(indexPath as NSIndexPath).row] =  question
                         cell.titleLabel.text = question.qTitle
                     }
                 })
             }
         } else if currentLoadedItem == .Answers {
             /* GET NAME & BIO FROM DATABASE */
-            if usersForAnswerPreviews.count > indexPath.row {
-                cell.titleLabel.text = usersForAnswerPreviews[indexPath.row]?.name
-                cell.subtitleLabel.text = usersForAnswerPreviews[indexPath.row]?.shortBio
-            } else if gettingInfoForCell[indexPath.row] {
+            if usersForAnswerPreviews.count > (indexPath as NSIndexPath).row {
+                cell.titleLabel.text = usersForAnswerPreviews[(indexPath as NSIndexPath).row]?.name
+                cell.subtitleLabel.text = usersForAnswerPreviews[(indexPath as NSIndexPath).row]?.shortBio
+            } else if gettingInfoForCell[(indexPath as NSIndexPath).row] {
                 //ignore if already fetching the image, so don't refetch if already getting
             } else {
                 cell.titleLabel.text = nil
                 cell.subtitleLabel.text = nil
-                gettingInfoForCell[indexPath.row] = true
+                gettingInfoForCell[(indexPath as NSIndexPath).row] = true
                 
-                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![indexPath.row], completion: { (user, error) in
+                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], completion: { (user, error) in
                     if error != nil {
                         cell.titleLabel.text = nil
                         cell.subtitleLabel.text = nil
-                        self.usersForAnswerPreviews[indexPath.row] = nil
+                        self.usersForAnswerPreviews[(indexPath as NSIndexPath).row] = nil
                     } else {
                         cell.titleLabel.text = user?.name
                         cell.subtitleLabel.text = user?.shortBio
-                        self.usersForAnswerPreviews[indexPath.row] = user
+                        self.usersForAnswerPreviews[(indexPath as NSIndexPath).row] = user
                     }
                 })
             }
@@ -361,20 +359,20 @@ extension DetailVC : UITableViewDataSource, UITableViewDelegate {
         return cell
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        if let _selectedQuestion = _allQuestions[indexPath.row] {
-            showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame: nil)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if let _selectedQuestion = _allQuestions[(indexPath as NSIndexPath).row] {
+            showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: (indexPath as NSIndexPath).row, _selectedTag: currentTag, _frame: nil)
         }
     }
     
-    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return Spacing.l.rawValue * 2
     }
 }
 
 /* COLLECTION VIEW */
-extension DetailVC : UICollectionViewDataSource {
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+extension DetailVC : UICollectionViewDataSource, UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if currentLoadedItem == .Questions {
             return currentTag.totalQuestionsForTag()
         } else if currentLoadedItem == .Answers {
@@ -384,37 +382,37 @@ extension DetailVC : UICollectionViewDataSource {
         }
     }
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
+    func numberOfSections(in collectionView: UICollectionView) -> Int{
         return 1
     }
     
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(collectionReuseIdentifier, forIndexPath: indexPath) as! DetailCollectionCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! DetailCollectionCell
         let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].colorWithAlphaComponent(0.4)
+        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(0.4)
         
         if currentLoadedItem == .Questions {
-            cell.itemType = .Questions
+            cell.feedItemType = .question
             
-            if _allQuestions.count > indexPath.row && _allQuestions[indexPath.row] != nil {
-                let _currentQuestion = _allQuestions[indexPath.row]
+            if _allQuestions.count > (indexPath as NSIndexPath).row && _allQuestions[(indexPath as NSIndexPath).row] != nil {
+                let _currentQuestion = _allQuestions[(indexPath as NSIndexPath).row]
                 cell.titleLabel!.text = _currentQuestion?.qTitle
             } else {
-                Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+                Database.getQuestion(currentTag.questions![(indexPath as NSIndexPath).row]!.qID, completion: { (question, error) in
                     if error == nil {
-                        self._allQuestions[indexPath.row] = question
+                        self._allQuestions[(indexPath as NSIndexPath).row] = question
                         cell.titleLabel!.text = question.qTitle
                     }
                 })
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                if let _selectedQuestion = _allQuestions[indexPath.row] {
-                    let _translatedFrame = cell.convertRect(cell.frame, toView: self.view)
-                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
+                if let _selectedQuestion = _allQuestions[(indexPath as NSIndexPath).row] {
+                    let _translatedFrame = cell.convert(cell.frame, to: self.view)
+                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: (indexPath as NSIndexPath).row, _selectedTag: currentTag, _frame : _translatedFrame)
                 }
             } else if indexPath == selectedIndex {
-                if let _selectedQuestion = _allQuestions[indexPath.row] {
+                if let _selectedQuestion = _allQuestions[(indexPath as NSIndexPath).row] {
                     if _selectedQuestion.hasAnswers() {
                         cell.showQuestion(_selectedQuestion)
                     }
@@ -424,20 +422,20 @@ extension DetailVC : UICollectionViewDataSource {
             }
             
         } else if currentLoadedItem == .Answers {
-            cell.itemType = .Answers
+            cell.feedItemType = .answer
 
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
-            if browseAnswerPreviewImages[indexPath.row] != nil && gettingImageForCell[indexPath.row] == true {
-                cell.previewImage.image = browseAnswerPreviewImages[indexPath.row]!
-            } else if gettingImageForCell[indexPath.row] {
+            if browseAnswerPreviewImages[(indexPath as NSIndexPath).row] != nil && gettingImageForCell[(indexPath as NSIndexPath).row] == true {
+                cell.previewImage.image = browseAnswerPreviewImages[(indexPath as NSIndexPath).row]!
+            } else if gettingImageForCell[(indexPath as NSIndexPath).row] {
                 //ignore if already fetching the image, so don't refetch if already getting
             } else {
-                gettingImageForCell[indexPath.row] = true
+                gettingImageForCell[(indexPath as NSIndexPath).row] = true
                 cell.previewImage.image = nil
 
-                Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![indexPath.row], maxImgSize: maxImgSize, completion: {(_data, error) in
+                Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], maxImgSize: maxImgSize, completion: {(_data, error) in
                     if error != nil {
-                        cell.previewImage?.backgroundColor = UIColor.redColor()
+                        cell.previewImage?.backgroundColor = UIColor.red
                     } else {
                         let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
                         cell.previewImage.image = _answerPreviewImage
@@ -446,36 +444,36 @@ extension DetailVC : UICollectionViewDataSource {
             }
             
             /* GET NAME & BIO FROM DATABASE */
-            if usersForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
-                if let _user = usersForAnswerPreviews[indexPath.row] {
+            if usersForAnswerPreviews.count > (indexPath as NSIndexPath).row && gettingInfoForCell[(indexPath as NSIndexPath).row] == true {
+                if let _user = usersForAnswerPreviews[(indexPath as NSIndexPath).row] {
                     cell.titleLabel.text = _user.name
                     cell.subtitleLabel.text = _user.shortBio
                 }
-            } else if gettingInfoForCell[indexPath.row] {
+            } else if gettingInfoForCell[(indexPath as NSIndexPath).row] {
                 //ignore if already fetching the image, so don't refetch if already getting
             } else {
                 cell.titleLabel.text = nil
                 cell.subtitleLabel.text = nil
-                gettingInfoForCell[indexPath.row] = true
+                gettingInfoForCell[(indexPath as NSIndexPath).row] = true
                 
-                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![indexPath.row], completion: { (user, error) in
+                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], completion: { (user, error) in
                     if error != nil {
                         cell.titleLabel.text = nil
                         cell.subtitleLabel.text = nil
-                        self.usersForAnswerPreviews[indexPath.row] = nil
+                        self.usersForAnswerPreviews[(indexPath as NSIndexPath).row] = nil
                     } else {
                         cell.titleLabel.text = user?.name
                         cell.subtitleLabel.text = user?.shortBio
-                        self.usersForAnswerPreviews[indexPath.row] = user
+                        self.usersForAnswerPreviews[(indexPath as NSIndexPath).row] = user
                     }
                 })
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                let _selectedAnswerID = currentQuestion.qAnswers![indexPath.row]
+//                let _selectedAnswerID = currentQuestion.qAnswers![(indexPath as NSIndexPath).row]
 //                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
             } else if indexPath == selectedIndex {
-                let _selectedAnswerID = currentQuestion.qAnswers![indexPath.row]
+                let _selectedAnswerID = currentQuestion.qAnswers![(indexPath as NSIndexPath).row]
                 cell.showAnswer(_selectedAnswerID)
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()
@@ -485,17 +483,17 @@ extension DetailVC : UICollectionViewDataSource {
         return cell
     }
     
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         selectedIndex = indexPath
     }
     
-    func collectionView(collectionView: UICollectionView, shouldSelectItemAtIndexPath indexPath: NSIndexPath) -> Bool {
+    func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
         return true
     }
 }
 
 extension DetailVC: UICollectionViewDelegateFlowLayout {
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: (DetailCollectionView!.frame.width - (Spacing.xs.rawValue * 2)) / 2, height: DetailCollectionView!.frame.height / 3)
     }
 }

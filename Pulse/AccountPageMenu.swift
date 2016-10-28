@@ -1,0 +1,106 @@
+//
+//  AccountPageMenu.swift
+//  Pulse
+//
+//  Created by Sidharth Tiwari on 10/18/16.
+//  Copyright © 2016 Think Apart. All rights reserved.
+//
+
+import UIKit
+
+class AccountPageMenu: UIStackView {
+    enum menuOptions { case profile, messages, activity, answers, logout, settings }
+
+    fileprivate var sAboutButton = PulseButton()
+    fileprivate var sMessagesButton = PulseButton()
+    fileprivate var sSettingsButton = PulseButton()
+    fileprivate var sActivityButton = PulseButton()
+    fileprivate var sLogoutButton = PulseButton()
+    fileprivate var sAnswersButton = PulseButton()
+    
+    fileprivate var selectedButton : menuOptions?
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        selectedButton = nil
+    }
+    
+    required init(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
+    public func getButton(type: menuOptions ) -> UIButton {
+        switch type {
+        case .profile: return sAboutButton
+        case .messages: return sMessagesButton
+        case .activity: return sActivityButton
+        case .answers: return sAnswersButton
+        case .settings: return sSettingsButton
+        case .logout: return sLogoutButton
+        }
+    }
+    
+    fileprivate func updatePulseButton(button : PulseButton, title : String, image : UIImage) -> PulseButton {
+        button.setTitle(title, for: UIControlState())
+        button.setImage(image, for: UIControlState())
+        button.changeTint(color: .black, state: UIControlState())
+        button.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+        button.imageView?.contentMode = .scaleAspectFit
+        return button
+    }
+    
+    public func setSelectedButton(type : menuOptions?) {
+        if let selectedButton = selectedButton {
+            getButton(type: selectedButton).backgroundColor = .clear
+            getButton(type: selectedButton).changeTint(color: .black, state: UIControlState())
+            getButton(type: selectedButton).setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
+        }
+        
+        selectedButton = type
+        if let type = type {
+            getButton(type: type).backgroundColor = pulseBlue
+            getButton(type: type).changeTint(color: .white, state: UIControlState())
+            getButton(type: type).setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightHeavy, color: pulseBlue, alignment: .center)
+        }
+    }
+    
+    public func setupSettingsMenuLayout() {
+        //        let logoutImage = UIImage(cgImage: UIImage(named: "login")!.cgImage!, scale: CGFloat(1.0), orientation: .downMirrored)
+        
+        sAboutButton = updatePulseButton(button: sAboutButton, title: "profile", image: UIImage(named: "profile")!)
+        sMessagesButton = updatePulseButton(button: sMessagesButton, title: "messaging", image: UIImage(named: "messenger")!)
+        sActivityButton = updatePulseButton(button: sActivityButton, title: "activity", image: UIImage(named: "profile")!)
+        sAnswersButton = updatePulseButton(button: sAnswersButton, title: "answers", image: UIImage(named: "messenger")!)
+        sSettingsButton = updatePulseButton(button: sSettingsButton, title: "account", image: UIImage(named: "settings")!)
+        sLogoutButton = updatePulseButton(button: sLogoutButton, title: "logout", image: UIImage(named: "login")!)
+
+        addArrangedSubview(sAboutButton)
+        addArrangedSubview(sMessagesButton)
+        addArrangedSubview(sActivityButton)
+        addArrangedSubview(sAnswersButton)
+        addArrangedSubview(sSettingsButton)
+        addArrangedSubview(sLogoutButton)
+        
+        let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
+        sAboutButton.imageEdgeInsets = imageInset
+        sMessagesButton.imageEdgeInsets = imageInset
+        sActivityButton.imageEdgeInsets = imageInset
+        sAnswersButton.imageEdgeInsets = imageInset
+        sSettingsButton.imageEdgeInsets = imageInset
+        sLogoutButton.imageEdgeInsets = imageInset
+        
+        let titleInset = UIEdgeInsetsMake(IconSizes.medium.rawValue, -sAboutButton.titleLabel!.frame.width, 0, 0)
+        sAboutButton.titleEdgeInsets = titleInset
+        sMessagesButton.titleEdgeInsets = titleInset
+        sActivityButton.titleEdgeInsets = titleInset
+        sAnswersButton.titleEdgeInsets = titleInset
+        sSettingsButton.titleEdgeInsets = titleInset
+        sLogoutButton.titleEdgeInsets = titleInset
+        
+        axis = .vertical
+        alignment = .top
+        distribution = .fillEqually
+        spacing = Spacing.m.rawValue
+    }
+
+}

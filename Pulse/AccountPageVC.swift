@@ -8,339 +8,367 @@
 
 import UIKit
 
-class AccountPageVC: UIViewController, UITextFieldDelegate, ParentDelegate {
+protocol accountDelegate: class {
+    func userClickedCamera()
+    func updateNav(title : String)
+}
 
-    @IBOutlet weak var uProfilePic: UIImageView!
-    @IBOutlet weak var uNameLabel: UITextField!
-    @IBOutlet weak var numAnswersLabel: UILabel!
-    @IBOutlet weak var inButton: UIButton!
-    @IBOutlet weak var twtrButton: UIButton!
-    @IBOutlet weak var fbButton: UIButton!
-    @IBOutlet weak var savedTags: UITextView!
-    private lazy var settingsButton = UIButton()
+class AccountPageVC: UIViewController, accountDelegate {
     
-    @IBOutlet weak var linkLinkedin: UILabel!
-    @IBOutlet weak var linkTwitter: UILabel!
-    @IBOutlet weak var linkFacebook: UILabel!
+    fileprivate var nav : PulseNavVC?
+    fileprivate var profileSummary = ProfileSummary()
+    fileprivate var profileSettingsVC : SettingsTableVC!
+    fileprivate var settingsLinks : AccountPageMenu!
+    fileprivate lazy var answersVC : FeedVC = FeedVC()
+
+    fileprivate lazy var cameraView = UIView()
+    fileprivate lazy var Camera = CameraManager()
+    fileprivate var cameraOverlay : CameraOverlayView!
     
-    weak var returnToParentDelegate : ParentDelegate!
-    private var _nameErrorLabel = UILabel()
+    fileprivate var loadingOverlay : LoadingView!
+    fileprivate var icon : IconContainer!
     
-    private lazy var _defaultProfileOverlay = UILabel()
-    private lazy var _cameraView = UIView()
-    private lazy var _Camera = CameraManager()
-    private var _cameraOverlay : CameraOverlayView!
+    fileprivate var isLoaded = false
+    fileprivate var notificationsSetup = false
+    fileprivate var isShowingAnswers = false
     
-    private var _loadingOverlay : LoadingView!
-    private var _tapGesture : UITapGestureRecognizer?
-    
-    private lazy var _headerView = UIView()
-    private var _loginHeader : LoginHeaderView?
-    private var _loaded = false
-    
+    fileprivate var leadingProfileConstraint : NSLayoutConstraint!
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        hideKeyboardWhenTappedAround()
         
-        if !_loaded {
-            setDarkBackground()
-            addHeader()
-            
-            fbButton.makeRound()
-            twtrButton.makeRound()
-            inButton.makeRound()
-            
-            uNameLabel.delegate = self
-            uNameLabel.clearsOnBeginEditing = true
-            
-            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateLabels), name: "UserUpdated", object: nil)
-            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(updateLabels), name: "AccountPageLoaded", object: nil)
-
-            _tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleImageTap))
-            uProfilePic.addGestureRecognizer(_tapGesture!)
-            uProfilePic.userInteractionEnabled = true
-            uProfilePic.contentMode = UIViewContentMode.ScaleAspectFill
-            
-            _loaded = true
+        if let _nav = navigationController as? PulseNavVC {
+            nav = _nav
         }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        if !isLoaded {
+            view.backgroundColor = UIColor.white
+            icon = addIcon(text: "ACCOUNT")
+            
+            setupProfileSummary()
+            setupSettingsMenuLayout() //needs to be top layer
+            setupLoading()
+            
+            profileSummary.delegate = self
+            profileSummary.updateLabels()
 
+            if !notificationsSetup {
+                NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+                NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "AccountPageLoaded"), object: nil)
+                
+                notificationsSetup = true
+            }
+            isLoaded = true
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader(title: "Account", leftButton: .menu)
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    func textFieldDidBeginEditing(textField: UITextField) {
-        _nameErrorLabel.text = ""
+    override func viewWillDisappear(_ animated: Bool) {
+        if settingsLinks != nil {
+            settingsLinks.setSelectedButton(type: nil)
+            settingsLinks.isHidden = true
+        }
+        
+        if isShowingAnswers {
+            GlobalFunctions.dismissVC(answersVC)
+            isShowingAnswers = false
+        }
     }
     
-    func textFieldShouldReturn(textField: UITextField) -> Bool {
-        dismissKeyboard()
-        GlobalFunctions.validateName(uNameLabel.text, completion: {(verified, error) in
-            if verified {
-                Database.updateUserData(UserProfileUpdateType.displayName, value: self.uNameLabel.text!, completion: { (success, error) in
-                    if success {
-                        //print("updated name in DB")
-                    } else {
-                        self.setupErrorLabel()
-                        self.updateErrorLabelText(error!.localizedDescription)
-                    }
-                })
-            } else {
-                self.setupErrorLabel()
-                self.updateErrorLabelText(error!.localizedDescription)
-            }
+    func updateLabels(_ notification: Notification) {
+        profileSummary.updateLabels()
+    }
+    
+    
+    /* HANDLE SETTINGS MENU SELECTIONS */
+    func clickedMenu() {
+        settingsLinks.isHidden = settingsLinks.isHidden ? false : true
+    }
+    
+    func clickedSettings() {
+        settingsLinks.setSelectedButton(type: .settings)
+        
+        profileSettingsVC = SettingsTableVC()
+        profileSettingsVC.settingSection = "account"
+        navigationController?.pushViewController(profileSettingsVC, animated: true)
+    }
+    
+    func clickedProfile() {
+        settingsLinks.setSelectedButton(type: .profile)
+        
+        profileSettingsVC = SettingsTableVC()
+        profileSettingsVC.settingSection = "personalInfo"
+        navigationController?.pushViewController(profileSettingsVC, animated: true)
+    }
+    
+    func clickedMessages() {
+        settingsLinks.setSelectedButton(type: .messages)
+
+        Database.getConversations(completion: { conversations in
+            let inboxVC = InboxVC()
+            inboxVC.conversations = conversations
+            self.navigationController?.pushViewController(inboxVC, animated: true)
         })
-        return true
     }
     
-    
-    func ClickedSettings() {
-        let settingsVC = SettingsTableVC()
-        settingsVC.returnToParentDelegate = self
-        GlobalFunctions.addNewVC(settingsVC, parentVC: self)
-    }
-    
-    func returnToParent(currentVC : UIViewController) {
-        GlobalFunctions.dismissVC(currentVC)
-    }
-
-    @IBAction func LinkAccount(sender: UIButton) {
-        //check w/ social source and connect to user profile on firebase
-    }
-    
-    private func setupErrorLabel() {
-        view.addSubview(_nameErrorLabel)
-        
-        _nameErrorLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        _nameErrorLabel.topAnchor.constraintEqualToAnchor(uNameLabel.topAnchor).active = true
-        _nameErrorLabel.trailingAnchor.constraintEqualToAnchor(view.trailingAnchor).active = true
-        _nameErrorLabel.heightAnchor.constraintEqualToAnchor(uNameLabel.heightAnchor).active = true
-        _nameErrorLabel.leadingAnchor.constraintEqualToAnchor(uNameLabel.trailingAnchor, constant: 10).active = true
-        
-        _nameErrorLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
-        _nameErrorLabel.backgroundColor = UIColor.grayColor()
-        _nameErrorLabel.textColor = UIColor.blackColor()
-        _nameErrorLabel.textAlignment = .Left
-    }
-    
-    private func updateErrorLabelText(_errorText : String) {
-        _nameErrorLabel.text = _errorText
-    }
-    
-    func updateLabels(notification: NSNotification) {
-        if let _userName = User.currentUser!.name {
-            _loginHeader?.updateStatusMessage("Welcome \(_userName)")
-            uNameLabel.text = _userName
-            uNameLabel.userInteractionEnabled = false
-        } else {
-            _loginHeader?.updateStatusMessage("please login")
-            uNameLabel.text = "tap to edit name"
-            uNameLabel.userInteractionEnabled = true
-        }
-        
-        if let _uPic = User.currentUser!.profilePic {
-            _defaultProfileOverlay.hidden = true
-            addUserProfilePic(NSURL(string: _uPic))
-        } else {
-            uProfilePic.image = UIImage(named: "default-profile")
-            _defaultProfileOverlay.hidden = false
-            _defaultProfileOverlay = UILabel(frame: CGRectMake(0, 0, uProfilePic.frame.width, uProfilePic.frame.height))
-            _defaultProfileOverlay.backgroundColor = UIColor.blackColor().colorWithAlphaComponent(0.5)
-            _defaultProfileOverlay.text = "tap to add image"
-            _defaultProfileOverlay.setPreferredFont(UIColor.whiteColor(), alignment : .Center)
-            uProfilePic.addSubview(_defaultProfileOverlay)
-        }
-        
-        if User.currentUser!.hasSavedTags() {
-            addSavedTags(User.currentUser!.savedTags!)
-        }
-        
-        highlightConnectedSocialSources()
-        numAnswersLabel.text = String(User.currentUser!.totalAnswers())
-        view.setNeedsLayout()
-    }
-    
-    private func addSavedTags(tagList : [String]) {
-        let _msg = tagList.map {"#"+$0 }.joinWithSeparator("\u{0085}")
-        
-        savedTags.textAlignment = .Left
-        savedTags.text = _msg
-        savedTags.textColor = UIColor.whiteColor()
-        savedTags.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+    func clickedActivity() {
+        settingsLinks.setSelectedButton(type: .activity)
 
     }
     
-    private func addUserProfilePic(_userImageURL : NSURL?) {
-        if let _ = _userImageURL {
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-                let _userImageData = NSData(contentsOfURL: _userImageURL!)
-                dispatch_async(dispatch_get_main_queue(), {
-                    self.uProfilePic.image = UIImage(data: _userImageData!)
-                    self.uProfilePic.clipsToBounds = true
-                })
-            }
+    func clickedAnswers() {
+        settingsLinks.setSelectedButton(type: .answers)
+        GlobalFunctions.addNewVC(answersVC, parentVC: self)
+        isShowingAnswers = true
+
+        answersVC.view.translatesAutoresizingMaskIntoConstraints = false
+        answersVC.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        answersVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        answersVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        answersVC.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+
+        toggleLoading(show: true, message: "Loading your answers...")
+        updateHeader(title: "Your Answers", leftButton: .back)
+
+        if let _user = User.currentUser {
+            Database.getUserAnswerIDs(uID: _user.uID!, completion: { answers in
+                if answers.count > 0 {
+                    self.answersVC.selectedUser = _user
+                    self.answersVC.allAnswers = answers
+                    self.answersVC.feedItemType = .answer
+
+                    self.toggleLoading(show: false, message: nil)
+                }
+                else {
+                    self.toggleLoading(show: true, message: "You haven't shared any answers yet")
+                    UIView.animate(withDuration: 0.1, animations: { self.loadingOverlay.alpha = 0.0 } ,
+                                   completion: {(value: Bool) in
+                                    self.toggleLoading(show: false, message: nil)
+                    })
+                }
+            })
         }
+        
+        automaticallyAdjustsScrollViewInsets = false
+        answersVC.view.setNeedsLayout()
     }
     
-    func handleImageTap() {
+    func clickedLogout() {
+        let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
+        
+        confirmLogout.addAction(UIAlertAction(title: "logout", style: .default, handler: { (action: UIAlertAction!) in
+            Database.signOut({ success in
+                if !success {
+                    GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
+                }
+            })
+        }))
+        
+        confirmLogout.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            confirmLogout.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(confirmLogout, animated: true, completion: nil)
+    }
+    
+    func goBack() {
+        GlobalFunctions.dismissVC(answersVC)
+        updateHeader(title: "Account", leftButton: .menu)
+        settingsLinks.setSelectedButton(type: nil)
+        isShowingAnswers = false
+    }
+    
+    fileprivate func setupLoading() {
+        loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.white.withAlphaComponent(0.7))
+        loadingOverlay.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
+        loadingOverlay.isHidden = true
+
+        view.addSubview(loadingOverlay)
+    }
+    
+    fileprivate func toggleLoading(show: Bool, message: String?) {
+        loadingOverlay?.isHidden = show ? false : true
+        loadingOverlay?.addMessage(message)
+    }
+
+    /* DELEGATE METHODS */
+    func userClickedCamera() {
         setupCamera()
         setupCameraOverlay()
-        setupLoading()
+        toggleLoading(show: true, message: "Smile!")
     }
     
-    private func highlightConnectedSocialSources() {
-        if User.currentUser?.socialSources[.facebook] != true {
-            fbButton.alpha = 0.5
-            fbButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-            linkFacebook.hidden = false
-        } else if User.currentUser?.socialSources[.facebook] == true {
-            fbButton.alpha = 1.0
-            fbButton.backgroundColor = UIColor(red: 78/255, green: 99/255, blue: 152/255, alpha: 1.0 )
-            linkFacebook.hidden = true
-        }
-        
-        if User.currentUser?.socialSources[.twitter] != true {
-            twtrButton.alpha = 0.5
-            twtrButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-            linkTwitter.hidden = false
-
-        }  else if User.currentUser?.socialSources[.twitter] == true {
-            twtrButton.alpha = 1.0
-            twtrButton.backgroundColor = UIColor(red: 58/255, green: 185/255, blue: 228/255, alpha: 1.0 )
-            linkTwitter.hidden = true
-        }
-        
-        if User.currentUser?.socialSources[.linkedin] != true {
-            inButton.alpha = 0.5
-            inButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-            linkLinkedin.hidden = false
-
-        }  else if User.currentUser?.socialSources[.linkedin] == true {
-            inButton.alpha = 1.0
-            inButton.backgroundColor = UIColor(red: 2/255, green: 116/255, blue: 179/255, alpha: 1.0 )
-            linkLinkedin.hidden = true
+    func updateNav(title : String) {
+        if let nav = nav {
+            nav.setNav(title: title, subtitle: nil, statusImage: nil)
         }
     }
     
-    private func setupLoading() {
-        _loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.blackColor().colorWithAlphaComponent(0.7))
-        view.addSubview(_loadingOverlay)
-    }
-    
-    private func setupCamera() {
-        _cameraView = UIView(frame: view.bounds)
-        _cameraView.backgroundColor = UIColor.whiteColor()
-        view.addSubview(_cameraView)
+    /* CAMERA FUNCTIONS */
+    fileprivate func setupCamera() {
+        cameraView = UIView(frame: view.bounds)
+        cameraView.backgroundColor = UIColor.white
+        nav?.toggleLogo(mode: .none)
+        nav?.setNav(title: nil, subtitle: nil, statusImage: nil)
+        view.addSubview(cameraView)
         
-        _Camera.showAccessPermissionPopupAutomatically = true
-        _Camera.shouldRespondToOrientationChanges = false
-        _Camera.cameraDevice = .Front
+        Camera.showAccessPermissionPopupAutomatically = true
+        Camera.shouldRespondToOrientationChanges = false
+        Camera.cameraDevice = .front
         
-        _Camera.addPreviewLayerToView(_cameraView, newCameraOutputMode: .StillImage, completition: {() in
-            dispatch_async(dispatch_get_main_queue()) {
-                UIView.animateWithDuration(0.2, animations: { self._loadingOverlay.alpha = 0.0 } ,
+        _ = Camera.addPreviewLayerToView(cameraView, newCameraOutputMode: .stillImage, completition: {() in
+            DispatchQueue.main.async {
+                UIView.animate(withDuration: 0.2, animations: { self.loadingOverlay.alpha = 0.0 } ,
                     completion: {(value: Bool) in
-                        self._loadingOverlay.removeFromSuperview()
+                        self.toggleLoading(show: false, message: nil)
                 })
-                self._cameraOverlay.getButton(.Shutter).enabled = true
+                self.cameraOverlay.getButton(.shutter).isEnabled = true
             }
         })
         
-        _Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
+        Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
             
-            let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
-            alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))
+            let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
             
-            self?.presentViewController(alertController, animated: true, completion: nil)
+            self?.present(alertController, animated: true, completion: nil)
         }
     }
     
-    private func setupCameraOverlay() {
-        _cameraOverlay = CameraOverlayView(frame: view.bounds)
-        _cameraView.addSubview(_cameraOverlay)
+    fileprivate func setupCameraOverlay() {
+        cameraOverlay = CameraOverlayView(frame: view.bounds)
+        cameraView.addSubview(cameraOverlay)
         
-        switch _Camera.flashMode {
-        case .Off: _cameraOverlay._flashMode =  .Off
-        case .On: _cameraOverlay._flashMode = .On
-        case .Auto: _cameraOverlay._flashMode = .Auto
+        switch Camera.flashMode {
+        case .off: cameraOverlay._flashMode =  .off
+        case .on: cameraOverlay._flashMode = .on
+        case .auto: cameraOverlay._flashMode = .auto
         }
         
-        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(gotImage), forControlEvents: UIControlEvents.TouchUpInside)
-        _cameraOverlay.getButton(.Shutter).enabled = false
+        cameraOverlay.getButton(.shutter).addTarget(self, action: #selector(gotImage), for: UIControlEvents.touchUpInside)
+        cameraOverlay.getButton(.shutter).isEnabled = false
         
-        _cameraOverlay.getButton(.Flip).addTarget(self, action: #selector(flipCamera), forControlEvents: UIControlEvents.TouchUpInside)
-        _cameraOverlay.getButton(.Flash).addTarget(self, action: #selector(cycleFlash), forControlEvents: UIControlEvents.TouchUpInside)
-        _cameraOverlay.updateQuestion("smile!")
-    }
-    
-    private func addHeader() {
-        view.addSubview(_headerView)
-        
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel("PULSE")
-            _loginHeader.setScreenTitleLabel("PROFILE")
-            _loginHeader.addSettingsButton()
-            _loginHeader._settings.addTarget(self, action: #selector(ClickedSettings), forControlEvents: UIControlEvents.TouchUpInside)
-
-            _headerView.addSubview(_loginHeader)
-        }
+        cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
+        cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
+        cameraOverlay.updateTitle("smile!")
     }
     
     func flipCamera() {
-        if _Camera.cameraDevice == .Front {
-            _Camera.cameraDevice = .Back
+        if Camera.cameraDevice == .front {
+            Camera.cameraDevice = .back
         } else {
-            _Camera.cameraDevice = .Front
+            Camera.cameraDevice = .front
         }
     }
     
-    func cycleFlash(oldButton : UIButton) {
-        _Camera.changeFlashMode()
+    func cycleFlash(_ oldButton : UIButton) {
+        let newFlashMode = Camera.changeFlashMode()
         
-        switch _Camera.flashMode {
-        case .Off: _cameraOverlay._flashMode =  .Off
-        case .On: _cameraOverlay._flashMode = .On
-        case .Auto: _cameraOverlay._flashMode = .Auto
+        switch newFlashMode {
+        case .off: cameraOverlay._flashMode =  .off
+        case .on: cameraOverlay._flashMode = .on
+        case .auto: cameraOverlay._flashMode = .auto
         }
     }
     
     func gotImage() {
-        _cameraOverlay.getButton(.Shutter).enabled = false
         setupLoading()
-        _loadingOverlay.addIcon(IconSizes.Medium, _iconColor: UIColor.whiteColor(), _iconBackgroundColor: nil)
-        _loadingOverlay.addMessage("saving! just a sec...", _color: UIColor.whiteColor())
+
+        cameraOverlay.getButton(.shutter).isEnabled = false
+        toggleLoading(show: true, message: "saving! just a sec...")
         
-        _Camera.capturePictureDataWithCompletition({ (imageData, error) -> Void in
+        Camera.capturePictureDataWithCompletition({ (imageData, error) -> Void in
             if let errorOccured = error {
-                self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: errorOccured.localizedDescription)
-                self._cameraOverlay.getButton(.Shutter).enabled = true
+                self.Camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
+                self.cameraOverlay.getButton(.shutter).isEnabled = true
             } else {
                 Database.uploadProfileImage(imageData!, completion: {(URL, error) in
                     if error != nil {
-                        self._Camera.showErrorBlock(erTitle: "Error occurred", erMessage: error!.localizedDescription)
-                        self._cameraOverlay.getButton(.Shutter).enabled = true
-                        self._loadingOverlay.removeFromSuperview()
+                        self.Camera.showErrorBlock("Error occurred", error!.localizedDescription)
+                        self.cameraOverlay.getButton(.shutter).isEnabled = true
+                        self.toggleLoading(show: false, message: nil)
                     } else {
-                        self._Camera.stopAndRemoveCaptureSession()
-                        UIView.animateWithDuration(0.2, animations: { self._cameraView.alpha = 0.0 } ,
+                        self.Camera.stopAndRemoveCaptureSession()
+                        UIView.animate(withDuration: 0.2, animations: { self.cameraView.alpha = 0.0 } ,
                             completion: {(value: Bool) in
-                                self._defaultProfileOverlay.hidden = true
-                                self._loadingOverlay.hidden = true
-                                self._cameraView.removeFromSuperview()
+                                self.toggleLoading(show: false, message: nil)
+                                self.cameraView.removeFromSuperview()
+                                self.nav?.toggleLogo(mode: .full)
+                                self.updateHeader(title: "Account", leftButton: .menu)
+                                self.profileSummary.updateLabels()
                         })
                     }
                 })
             }
         })
+    }
+    
+    /* LAYOUT FUNCTION */
+    fileprivate func updateHeader(title : String, leftButton : ButtonType) {
+        if parent?.navigationController != nil {
+
+            if leftButton == .menu {
+                let button = PulseButton(size: .small, type: .menu, isRound : true, hasBackground: true)
+                button.addTarget(self, action: #selector(clickedMenu), for: UIControlEvents.touchUpInside)
+                parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
+            } else if leftButton == .back {
+                let button = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+                button.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+                parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
+            }
+        }
+        
+        if let nav = navigationController as? PulseNavVC {
+            nav.setNav(title: title, subtitle: nil, statusImage: nil)
+            nav.toggleLogo(mode: .full)
+        } else {
+            parent?.title = title
+        }
+    }
+    
+    fileprivate func setupProfileSummary() {
+        view.addSubview(profileSummary)
+        
+        profileSummary.translatesAutoresizingMaskIntoConstraints = false
+        leadingProfileConstraint = profileSummary.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0)
+        leadingProfileConstraint.isActive = true
+        
+        profileSummary.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        profileSummary.bottomAnchor.constraint(equalTo: icon.topAnchor).isActive = true
+        profileSummary.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        profileSummary.layoutIfNeeded()
+    }
+    
+    fileprivate func setupSettingsMenuLayout() {
+        settingsLinks = AccountPageMenu(frame: CGRect.zero)
+        view.addSubview(settingsLinks)
+        
+        settingsLinks.translatesAutoresizingMaskIntoConstraints = false
+        settingsLinks.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.15).isActive = true
+        settingsLinks.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        settingsLinks.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        settingsLinks.layoutIfNeeded()
+        
+        settingsLinks.setupSettingsMenuLayout()
+        
+        settingsLinks.getButton(type: .profile).addTarget(self, action: #selector(clickedProfile), for: .touchUpInside)
+        settingsLinks.getButton(type: .messages).addTarget(self, action: #selector(clickedMessages), for: .touchUpInside)
+        settingsLinks.getButton(type: .activity).addTarget(self, action: #selector(clickedActivity), for: .touchUpInside)
+        settingsLinks.getButton(type: .answers).addTarget(self, action: #selector(clickedAnswers), for: .touchUpInside)
+        settingsLinks.getButton(type: .settings).addTarget(self, action: #selector(clickedSettings), for: .touchUpInside)
+        settingsLinks.getButton(type: .logout).addTarget(self, action: #selector(clickedLogout), for: .touchUpInside)
+        
+        clickedMenu()
+
     }
 }

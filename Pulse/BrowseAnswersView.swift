@@ -10,31 +10,31 @@ import UIKit
 
 class BrowseAnswersView: UIView {
     
-    private var browseAnswers: UICollectionView!
-    private var reuseIdentifier = "BrowseAnswersCell"
-    private var browseAnswerPreviewImages : [UIImage?]!
-    private var usersForAnswerPreviews : [User?]!
-    private var answersForQuestion : [Answer?]!
+    fileprivate var browseAnswers: UICollectionView!
+    fileprivate var reuseIdentifier = "BrowseAnswersCell"
+    fileprivate var browseAnswerPreviewImages : [UIImage?]!
+    fileprivate var usersForAnswerPreviews : [User?]!
+    fileprivate var answersForQuestion : [Answer?]!
 
-    private var gettingImageForCell : [Bool]!
-    private var gettingInfoForCell : [Bool]!
-    private var isfirstTimeTransform = true
+    fileprivate var gettingImageForCell : [Bool]!
+    fileprivate var gettingInfoForCell : [Bool]!
+    fileprivate var isfirstTimeTransform = true
     
-    private var cellWidth : CGFloat = 0
-    private var spacerBetweenCells : CGFloat = 0
+    fileprivate var cellWidth : CGFloat = 0
+    fileprivate var spacerBetweenCells : CGFloat = 0
     
     /* set by parent */
     var currentQuestion : Question?
     var currentTag : Tag?
     weak var delegate : answerDetailDelegate!
     
-    private var topHeaderView = UIView()
-    private var addAnswerButton = UIButton()
-    private var sortAnswersButton = UIButton()
+    fileprivate var topHeaderView = UIView()
+    fileprivate var addAnswerButton = UIButton()
+    fileprivate var sortAnswersButton = UIButton()
     
-    private var _questionLabel = UILabel()
-    private var _tagLabel = UILabel()
-    private var _answerCount = UIButton()
+    fileprivate var _questionLabel = UILabel()
+    fileprivate var _tagLabel = UILabel()
+    fileprivate var _answerCount = UIButton()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -46,10 +46,10 @@ class BrowseAnswersView: UIView {
         currentQuestion = _currentQuestion
         currentTag = _currentTag
         
-        gettingImageForCell = [Bool](count: currentQuestion!.totalAnswers(), repeatedValue: false)
-        gettingInfoForCell = [Bool](count: currentQuestion!.totalAnswers(), repeatedValue: false)
-        browseAnswerPreviewImages = [UIImage?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
-        usersForAnswerPreviews = [User?](count: currentQuestion!.totalAnswers(), repeatedValue: nil)
+        gettingImageForCell = [Bool](repeating: false, count: currentQuestion!.totalAnswers())
+        gettingInfoForCell = [Bool](repeating: false, count: currentQuestion!.totalAnswers())
+        browseAnswerPreviewImages = [UIImage?](repeating: nil, count: currentQuestion!.totalAnswers())
+        usersForAnswerPreviews = [User?](repeating: nil, count: currentQuestion!.totalAnswers())
         
         backgroundColor = UIColor.init(red: 35 / 255, green: 31 / 255, blue: 32 / 255, alpha: 0.9)
         
@@ -63,126 +63,126 @@ class BrowseAnswersView: UIView {
         super.init(coder: aDecoder)
     }
     
-    private func setupTopHeader() {
+    fileprivate func setupTopHeader() {
         addSubview(topHeaderView)
         
         topHeaderView.translatesAutoresizingMaskIntoConstraints = false
-        topHeaderView.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        topHeaderView.heightAnchor.constraintEqualToAnchor(heightAnchor, multiplier: 0.15).active = true
-        topHeaderView.topAnchor.constraintEqualToAnchor(topAnchor).active = true
-        topHeaderView.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
+        topHeaderView.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        topHeaderView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.15).isActive = true
+        topHeaderView.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        topHeaderView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         topHeaderView.layoutIfNeeded()
         
-        topHeaderView.backgroundColor = UIColor.whiteColor()
+        topHeaderView.backgroundColor = UIColor.white
         
         addSubview(_answerCount)
         addSubview(_questionLabel)
         addSubview(_tagLabel)
 
         _answerCount.translatesAutoresizingMaskIntoConstraints = false
-        _answerCount.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-        _answerCount.heightAnchor.constraintEqualToAnchor(_answerCount.widthAnchor).active = true
-        _answerCount.centerYAnchor.constraintEqualToAnchor(topHeaderView.centerYAnchor).active = true
-        _answerCount.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
+        _answerCount.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        _answerCount.heightAnchor.constraint(equalTo: _answerCount.widthAnchor).isActive = true
+        _answerCount.centerYAnchor.constraint(equalTo: topHeaderView.centerYAnchor).isActive = true
+        _answerCount.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         _answerCount.layoutIfNeeded()
         
         _answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
-        _answerCount.titleLabel!.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightBold)
-        _answerCount.titleLabel!.textColor = UIColor.whiteColor()
-        _answerCount.titleLabel!.textAlignment = .Center
-        _answerCount.setBackgroundImage(UIImage(named: "count-label"), forState: .Normal)
-        _answerCount.imageView?.contentMode = .ScaleAspectFit
+        _answerCount.titleLabel!.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightBold)
+        _answerCount.titleLabel!.textColor = UIColor.white
+        _answerCount.titleLabel!.textAlignment = .center
+        _answerCount.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
+        _answerCount.imageView?.contentMode = .scaleAspectFit
         
         _questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        _questionLabel.leadingAnchor.constraintEqualToAnchor(topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).active = true
-        _questionLabel.topAnchor.constraintEqualToAnchor(_answerCount.topAnchor, constant: -Spacing.xs.rawValue).active = true
-        _questionLabel.trailingAnchor.constraintEqualToAnchor(_answerCount.leadingAnchor, constant: -Spacing.s.rawValue).active = true
+        _questionLabel.leadingAnchor.constraint(equalTo: topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        _questionLabel.topAnchor.constraint(equalTo: _answerCount.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        _questionLabel.trailingAnchor.constraint(equalTo: _answerCount.leadingAnchor, constant: -Spacing.s.rawValue).isActive = true
         
-        _questionLabel.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightRegular)
-        _questionLabel.textColor = UIColor.blackColor()
-        _questionLabel.textAlignment = .Left
+        _questionLabel.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightRegular)
+        _questionLabel.textColor = UIColor.black
+        _questionLabel.textAlignment = .left
         _questionLabel.text = currentQuestion?.qTitle
         _questionLabel.numberOfLines = 0
         _questionLabel.layoutIfNeeded()
         
         _tagLabel.translatesAutoresizingMaskIntoConstraints = false
-        _tagLabel.leadingAnchor.constraintEqualToAnchor(topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).active = true
-        _tagLabel.topAnchor.constraintEqualToAnchor(_questionLabel.bottomAnchor).active = true
-        _tagLabel.trailingAnchor.constraintEqualToAnchor(_answerCount.leadingAnchor, constant: -Spacing.s.rawValue).active = true
-        _tagLabel.font = UIFont.systemFontOfSize(FontSizes.Body.rawValue, weight: UIFontWeightBold)
-        _tagLabel.textColor = UIColor.blackColor()
-        _tagLabel.textAlignment = .Left
+        _tagLabel.leadingAnchor.constraint(equalTo: topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        _tagLabel.topAnchor.constraint(equalTo: _questionLabel.bottomAnchor).isActive = true
+        _tagLabel.trailingAnchor.constraint(equalTo: _answerCount.leadingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        _tagLabel.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightBold)
+        _tagLabel.textColor = UIColor.black
+        _tagLabel.textAlignment = .left
         
         if let _currentTagTile = currentTag?.tagID {
             _tagLabel.text = "#\(_currentTagTile)"
         }
         
         if let _answerCountText = currentQuestion?.totalAnswers() {
-            _answerCount.setTitle(String(_answerCountText), forState: .Normal)
+            _answerCount.setTitle(String(_answerCountText), for: UIControlState())
         }
     }
     
-    private func setupAddAnswerButton() {
+    fileprivate func setupAddAnswerButton() {
         addSubview(addAnswerButton)
         
         addAnswerButton.translatesAutoresizingMaskIntoConstraints = false
-        addAnswerButton.widthAnchor.constraintEqualToConstant(IconSizes.Medium.rawValue).active = true
-        addAnswerButton.heightAnchor.constraintEqualToAnchor(addAnswerButton.widthAnchor).active = true
-        addAnswerButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        addAnswerButton.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.s.rawValue).active = true
+        addAnswerButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        addAnswerButton.heightAnchor.constraint(equalTo: addAnswerButton.widthAnchor).isActive = true
+        addAnswerButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        addAnswerButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
         addAnswerButton.layoutIfNeeded()
         
         addAnswerButton.makeRound()
         addAnswerButton.backgroundColor = iconBackgroundColor
-        addAnswerButton.setTitle("ADD ANSWER", forState: .Normal)
+        addAnswerButton.setTitle("ADD ANSWER", for: UIControlState())
         addAnswerButton.titleLabel?.numberOfLines = 0
-        addAnswerButton.titleLabel?.lineBreakMode = .ByWordWrapping
-        addAnswerButton.titleLabel?.textAlignment = .Center
-        addAnswerButton.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Caption2.rawValue, weight: UIFontWeightBold)
-        addAnswerButton.addTarget(self, action: #selector(userClickedAddAnswer), forControlEvents: UIControlEvents.TouchDown)
+        addAnswerButton.titleLabel?.lineBreakMode = .byWordWrapping
+        addAnswerButton.titleLabel?.textAlignment = .center
+        addAnswerButton.titleLabel?.font = UIFont.systemFont(ofSize: FontSizes.caption2.rawValue, weight: UIFontWeightBold)
+        addAnswerButton.addTarget(self, action: #selector(userClickedAddAnswer), for: UIControlEvents.touchDown)
 
     }
     
-    private func setupSortAnswersButton() {
+    fileprivate func setupSortAnswersButton() {
         addSubview(sortAnswersButton)
         
         sortAnswersButton.translatesAutoresizingMaskIntoConstraints = false
-        sortAnswersButton.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        sortAnswersButton.topAnchor.constraintEqualToAnchor(topHeaderView.bottomAnchor, constant: Spacing.s.rawValue).active = true
+        sortAnswersButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        sortAnswersButton.topAnchor.constraint(equalTo: topHeaderView.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         sortAnswersButton.layoutIfNeeded()
         
-        sortAnswersButton.backgroundColor = UIColor.clearColor()
-        sortAnswersButton.setImage(UIImage(named: "down-arrow"), forState: .Normal)
+        sortAnswersButton.backgroundColor = UIColor.clear
+        sortAnswersButton.setImage(UIImage(named: "down-arrow"), for: UIControlState())
         sortAnswersButton.imageEdgeInsets = UIEdgeInsetsMake(5, -10, 5, 5)
 
-        sortAnswersButton.titleLabel?.textColor = UIColor.whiteColor()
-        sortAnswersButton.titleLabel?.textAlignment = .Right
+        sortAnswersButton.titleLabel?.textColor = UIColor.white
+        sortAnswersButton.titleLabel?.textAlignment = .right
 
-        sortAnswersButton.setTitle("newest", forState: .Normal)
-        sortAnswersButton.imageView?.contentMode = UIViewContentMode.ScaleAspectFit
-        sortAnswersButton.titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Headline.rawValue, weight: UIFontWeightBlack)
+        sortAnswersButton.setTitle("newest", for: UIControlState())
+        sortAnswersButton.imageView?.contentMode = UIViewContentMode.scaleAspectFit
+        sortAnswersButton.titleLabel?.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightBlack)
     }
     
-    private func setupCollectionView() {
+    fileprivate func setupCollectionView() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.scrollDirection = UICollectionViewScrollDirection.Horizontal
+        layout.scrollDirection = UICollectionViewScrollDirection.horizontal
         
-        browseAnswers = UICollectionView(frame: CGRectZero, collectionViewLayout: layout)
-        browseAnswers?.registerClass(BrowseAnswersCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        browseAnswers = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
+        browseAnswers?.register(BrowseAnswersCell.self, forCellWithReuseIdentifier: reuseIdentifier)
         
         addSubview(browseAnswers!)
         
         browseAnswers?.translatesAutoresizingMaskIntoConstraints = false
-        browseAnswers?.topAnchor.constraintEqualToAnchor(sortAnswersButton.bottomAnchor, constant: Spacing.m.rawValue).active = true
-        browseAnswers?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        browseAnswers?.leadingAnchor.constraintEqualToAnchor(leadingAnchor).active = true
-        browseAnswers?.bottomAnchor.constraintEqualToAnchor(addAnswerButton.topAnchor, constant: -Spacing.m.rawValue).active = true
+        browseAnswers?.topAnchor.constraint(equalTo: sortAnswersButton.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        browseAnswers?.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        browseAnswers?.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        browseAnswers?.bottomAnchor.constraint(equalTo: addAnswerButton.topAnchor, constant: -Spacing.m.rawValue).isActive = true
         browseAnswers?.layoutIfNeeded()
         
         cellWidth = browseAnswers.bounds.width * 0.6
         spacerBetweenCells = browseAnswers.bounds.width * 0.05
         
-        browseAnswers?.backgroundColor = UIColor.clearColor()
+        browseAnswers?.backgroundColor = UIColor.clear
         browseAnswers?.showsHorizontalScrollIndicator = false
         
         browseAnswers?.delegate = self
@@ -196,64 +196,64 @@ class BrowseAnswersView: UIView {
 }
 
 extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelegate {
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         collectionView.collectionViewLayout.invalidateLayout()
         return currentQuestion!.totalAnswers()
     }
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
+    func numberOfSections(in collectionView: UICollectionView) -> Int{
         return 1
     }
 
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! BrowseAnswersCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell{
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseAnswersCell
         
-        if (indexPath.row == 0 && isfirstTimeTransform) {
+        if ((indexPath as NSIndexPath).row == 0 && isfirstTimeTransform) {
             // make a bool and set YES initially, this check will prevent fist load transform
             isfirstTimeTransform = false
         } else {
-            cell.transform = CGAffineTransformMakeScale(0.8, 0.8)
+            cell.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
         }
             
         /* GET QUESTION PREVIEW IMAGE FROM STORAGE */
-        if browseAnswerPreviewImages[indexPath.row] != nil && gettingImageForCell[indexPath.row] == true {
-            cell.answerPreviewImage!.image = browseAnswerPreviewImages[indexPath.row]!
-        } else if gettingImageForCell[indexPath.row] {
+        if browseAnswerPreviewImages[(indexPath as NSIndexPath).row] != nil && gettingImageForCell[(indexPath as NSIndexPath).row] == true {
+            cell.answerPreviewImage!.image = browseAnswerPreviewImages[(indexPath as NSIndexPath).row]!
+        } else if gettingImageForCell[(indexPath as NSIndexPath).row] {
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
-            gettingImageForCell[indexPath.row] = true
+            gettingImageForCell[(indexPath as NSIndexPath).row] = true
 
-            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![indexPath.row], maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error != nil {
-                    cell.answerPreviewImage?.backgroundColor = UIColor.redColor() /* NEED TO CHANGE */
+                    cell.answerPreviewImage?.backgroundColor = UIColor.red /* NEED TO CHANGE */
                 } else {
                     
                     let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
-                    self.browseAnswerPreviewImages.insert(_answerPreviewImage, atIndex: indexPath.row)
+                    self.browseAnswerPreviewImages.insert(_answerPreviewImage, at: (indexPath as NSIndexPath).row)
                     cell.answerPreviewImage!.image = _answerPreviewImage
                 }
             })
         }
         
         /* GET NAME & BIO FROM DATABASE */
-        if usersForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
-            cell.answerPreviewName!.text = usersForAnswerPreviews[indexPath.row]!.name
-            cell.answerPreviewBio!.text = usersForAnswerPreviews[indexPath.row]!.shortBio
+        if usersForAnswerPreviews.count > (indexPath as NSIndexPath).row && gettingInfoForCell[(indexPath as NSIndexPath).row] == true {
+            cell.answerPreviewName!.text = usersForAnswerPreviews[(indexPath as NSIndexPath).row]!.name
+            cell.answerPreviewBio!.text = usersForAnswerPreviews[(indexPath as NSIndexPath).row]!.shortBio
 
-        } else if gettingInfoForCell[indexPath.row] {
+        } else if gettingInfoForCell[(indexPath as NSIndexPath).row] {
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
-            gettingInfoForCell[indexPath.row] = true
+            gettingInfoForCell[(indexPath as NSIndexPath).row] = true
             
-            Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![indexPath.row], completion: { (user, error) in
+            Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], completion: { (user, error) in
                 if error != nil {
                     cell.answerPreviewName!.text = nil
                     cell.answerPreviewBio!.text = nil
-                    self.usersForAnswerPreviews.insert(nil, atIndex: indexPath.row)
+                    self.usersForAnswerPreviews.insert(nil, at: (indexPath as NSIndexPath).row)
                 } else {
                     cell.answerPreviewName!.text = user?.name
                     cell.answerPreviewBio!.text = user?.shortBio
-                    self.usersForAnswerPreviews.insert(user, atIndex: indexPath.row)
+                    self.usersForAnswerPreviews.insert(user, at: (indexPath as NSIndexPath).row)
                 }
             })
         }
@@ -261,34 +261,34 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         return cell
     }
     
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         delegate.userSelectedFromExploreQuestions(indexPath)
     }
     
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: IndexPath) -> CGSize {
         return CGSize(width: CGFloat(cellWidth), height: collectionView.bounds.height)
     }
     
-    func collectionView(collectionView: UICollectionView,
+    func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                                minimumLineSpacingForSectionAtIndex section: Int) -> CGFloat {
         return spacerBetweenCells
     }
     
-    func collectionView(collectionView: UICollectionView,
+    func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                                insetForSectionAtIndex section: Int) -> UIEdgeInsets {
         return UIEdgeInsetsMake(0, collectionView.bounds.width * 0.2, 0, collectionView.bounds.width * 0.2)
     }
     
     //center the incoming cell -- doesn't work w/ paging enabled
-    func scrollViewWillEndDragging(scrollView: UIScrollView,
+    func scrollViewWillEndDragging(_ scrollView: UIScrollView,
                                    withVelocity velocity: CGPoint,
                                                 targetContentOffset: UnsafeMutablePointer<CGPoint>) {
         let pageWidth : Float = Float(cellWidth + spacerBetweenCells) // width + space
         
         let currentOffset = Float(scrollView.contentOffset.x)
-        let targetOffset = Float(targetContentOffset.memory.x)
+        let targetOffset = Float(targetContentOffset.pointee.x)
         var newTargetOffset : Float = 0
         
         if (targetOffset > currentOffset) {
@@ -303,38 +303,38 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
             newTargetOffset = Float(scrollView.contentSize.width)
         }
 
-        targetContentOffset.memory.x = CGFloat(currentOffset)
-        scrollView.setContentOffset(CGPointMake(CGFloat(newTargetOffset), scrollView.contentOffset.y), animated: true)
+        targetContentOffset.pointee.x = CGFloat(currentOffset)
+        scrollView.setContentOffset(CGPoint(x: CGFloat(newTargetOffset), y: scrollView.contentOffset.y), animated: true)
         
         let index : Int = Int(newTargetOffset / pageWidth)
         
         if (index == 0) { // If first index
-            let cell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index, inSection: 0))
-            UIView.animateWithDuration(0.2) {
-                cell!.transform = CGAffineTransformIdentity
-            }
+            let cell = browseAnswers.cellForItem(at: IndexPath(item: index, section: 0))
+            UIView.animate(withDuration: 0.2, animations: {
+                cell!.transform = CGAffineTransform.identity
+            }) 
             
-            let nextCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index + 1, inSection: 0))
-            UIView.animateWithDuration(0.2) {
-                nextCell!.transform = CGAffineTransformMakeScale(0.8, 0.8)
-            }
+            let nextCell = browseAnswers.cellForItem(at: IndexPath(item: index + 1, section: 0))
+            UIView.animate(withDuration: 0.2, animations: {
+                nextCell!.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+            }) 
         } else {
-            if let cell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index, inSection: 0)) {
-                UIView.animateWithDuration(0.2) {
-                    cell.transform = CGAffineTransformIdentity
-                }
+            if let cell = browseAnswers.cellForItem(at: IndexPath(item: index, section: 0)) {
+                UIView.animate(withDuration: 0.2, animations: {
+                    cell.transform = CGAffineTransform.identity
+                }) 
             }
 
-            if let priorCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index - 1, inSection: 0)) {
-                UIView.animateWithDuration(0.2) {
-                    priorCell.transform = CGAffineTransformMakeScale(0.8, 0.8)
-                }
+            if let priorCell = browseAnswers.cellForItem(at: IndexPath(item: index - 1, section: 0)) {
+                UIView.animate(withDuration: 0.2, animations: {
+                    priorCell.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+                }) 
             }
             
-            if let nextCell = browseAnswers.cellForItemAtIndexPath(NSIndexPath(forItem: index + 1, inSection: 0)) {
-                UIView.animateWithDuration(0.2) {
-                    nextCell.transform = CGAffineTransformMakeScale(0.8, 0.8)
-                }
+            if let nextCell = browseAnswers.cellForItem(at: IndexPath(item: index + 1, section: 0)) {
+                UIView.animate(withDuration: 0.2, animations: {
+                    nextCell.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+                }) 
             }
         }
     }

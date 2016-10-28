@@ -28,8 +28,20 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
+    @IBAction func updateFeed(_ sender: UIButton) {
+        Database.keepUserTagsUpdated()
+
+        for (offset : index, (key : tagID, value : _)) in User.currentUser!.savedTags.enumerated() {
+            print("current tag is \(tagID)")
+            Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
+                if index + 1 == User.currentUser?.savedTags.count {
+                    initialFeedUpdateComplete = true
+                }
+            })
+        }
+    }
     
-    @IBAction func loadQuestions(sender: UIButton) {
+    @IBAction func loadQuestions(_ sender: UIButton) {
         // get all answers from database
         // for each answer get answer key -> use that as child value for answerUserSummary
         // get uID -> add child
@@ -38,17 +50,17 @@ class ViewController: UIViewController {
         // get uTag -> add child
         let summaryAnswerPath = databaseRef.child("userPublicSummary")
 
-        databaseRef.child("users").observeSingleEventOfType(.Value, withBlock: { snapshot in
+        databaseRef.child("users").observeSingleEvent(of: .value, with: { snapshot in
 
             for user in snapshot.children {
                 let child = user as! FIRDataSnapshot
                 let _uID = child.key
                 
-                let _uName = child.childSnapshotForPath("name").value as! String
-                let _uBio = child.childSnapshotForPath("shortBio").value as! String
+                let _uName = child.childSnapshot(forPath: "name").value as! String
+                let _uBio = child.childSnapshot(forPath: "shortBio").value as! String
                 
                 if child.hasChild("profilePic") {
-                    let _uProfilePic = child.childSnapshotForPath("profilePic").value as! String
+                    let _uProfilePic = child.childSnapshot(forPath: "profilePic").value as! String
                     let post = ["name": _uName, "shortBio" : _uBio, "profilePic" : _uProfilePic]
                     
                     summaryAnswerPath.child(_uID).updateChildValues(post)
@@ -81,7 +93,7 @@ class ViewController: UIViewController {
     }
     
     
-    @IBAction func loadTags(sender: UIButton) {
+    @IBAction func loadTags(_ sender: UIButton) {
 //        let tags = ["relationships", "finance"]
 //        let topicsPath = databaseRef.child("tags")
 //        

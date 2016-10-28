@@ -9,6 +9,7 @@
 import UIKit
 
 class SettingsTableCell: UITableViewCell {
+    let _settingNameLabel = UILabel()
     let _detailTextLabel = UILabel()
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
@@ -20,22 +21,34 @@ class SettingsTableCell: UITableViewCell {
         super.init(coder: aDecoder)
     }
     
-    override func setSelected(selected: Bool, animated: Bool) {
+    override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
     }
     
-    private func setupCellLayout() {
-        addSubview(_detailTextLabel)
+    fileprivate func setupCellLayout() {
+        contentView.addSubview(_settingNameLabel)
+        contentView.addSubview(_detailTextLabel)
+
+        _settingNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        _settingNameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        _settingNameLabel.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.3).isActive = true
+        _settingNameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _settingNameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        _settingNameLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .left)
+        _settingNameLabel.layoutIfNeeded()
         
         _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
-        _detailTextLabel.widthAnchor.constraintEqualToAnchor(widthAnchor, multiplier: 0.5).active = true
-        _detailTextLabel.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.m.rawValue).active = true
-        _detailTextLabel.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
-        _detailTextLabel.setPreferredFont(UIColor.whiteColor(), alignment : .Right)
+        _detailTextLabel.leadingAnchor.constraint(equalTo: _settingNameLabel.trailingAnchor).isActive = true
+        _detailTextLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        _detailTextLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        _detailTextLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        _detailTextLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .right)
+        _detailTextLabel.layoutIfNeeded()
+
+        _detailTextLabel.numberOfLines = 0
+        _detailTextLabel.lineBreakMode = .byWordWrapping
         
-        backgroundColor = UIColor.clearColor()
-        textLabel?.textColor = UIColor.whiteColor()
-        textLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        backgroundColor = UIColor.clear
     }
 
 }

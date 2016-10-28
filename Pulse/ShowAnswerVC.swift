@@ -17,16 +17,17 @@ protocol answerDetailDelegate : class {
     func userClickedExploreAnswers()
     func userClickedAddAnswer()
     func userClickedShowMenu()
-    func userSelectedFromExploreQuestions(index : NSIndexPath)
+    func userSelectedFromExploreQuestions(_ index : IndexPath)
     func userClickedExpandAnswer()
+    func votedAnswer(_ _vote : AnswerVoteType)
+    func userClickedSendMessage()
 }
 
 class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerDelegate {
     internal var currentQuestion : Question! {
         didSet {
-            if self.isViewLoaded() {
+            if self.isViewLoaded {
                 removeObserverIfNeeded()
-                delegate.showQuestionPreviewOverlay()
                 answerIndex = 0
                 _hasUserBeenAskedQuestion = false
                 _loadAnswer(currentQuestion, index: answerIndex)
@@ -39,79 +40,84 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     internal var currentTag : Tag!
     internal var currentAnswer : Answer?
-    private var nextAnswer : Answer?
-    private var userForCurrentAnswer : User?
+    fileprivate var nextAnswer : Answer?
+    fileprivate var userForCurrentAnswer : User?
     
-    private var currentUserImage : UIImage?
-    private var _avPlayerLayer: AVPlayerLayer!
-    private var _answerOverlay : AnswerOverlay!
-    private var qPlayer = AVQueuePlayer()
-    private var currentPlayerItem : AVPlayerItem?
-    private var imageView : UIImageView!
+    fileprivate var currentUserImage : UIImage?
+    fileprivate var _avPlayerLayer: AVPlayerLayer!
+    fileprivate var _answerOverlay : AnswerOverlay!
+    fileprivate var qPlayer = AVQueuePlayer()
+    fileprivate var currentPlayerItem : AVPlayerItem?
+    fileprivate var imageView : UIImageView!
     
     /* bools to make sure can click next video and no errors from unhandled observers */
-    private var _tapReady = false
-    private var _nextItemReady = false
-    private var _canAdvanceReady = false
-    private var _canAdvanceDetailReady = false
-    private var _hasUserBeenAskedQuestion = false
-    private var isObserving = false
-    private var isLoaded = false
-    private var _isMenuShowing = false
-    private var _isMiniProfileShown = false
-    private var _isImageViewShown = false
+    fileprivate var _tapReady = false
+    fileprivate var _nextItemReady = false
+    fileprivate var _canAdvanceReady = false
+    fileprivate var _canAdvanceDetailReady = false
+    fileprivate var _hasUserBeenAskedQuestion = false
+    fileprivate var isObserving = false
+    fileprivate var isLoaded = false
+    fileprivate var _isMenuShowing = false
+    fileprivate var _isMiniProfileShown = false
+    fileprivate var _isImageViewShown = false
     
     lazy var currentAnswerCollection = [String]()
     lazy var answerCollectionIndex = 0
 
-    private var startObserver : AnyObject!
-    private var miniProfile : MiniProfile?
+    fileprivate var startObserver : AnyObject!
+    fileprivate var miniProfile : MiniProfile?
     lazy var _blurBackground = UIVisualEffectView()
     
-    private var exploreAnswers : BrowseAnswersView?
+    fileprivate var exploreAnswers : BrowseAnswersView?
     
     weak var delegate : childVCDelegate!
-    private var tap : UITapGestureRecognizer!
-    private var answerDetailTap : UITapGestureRecognizer!
+    fileprivate var tap : UITapGestureRecognizer!
+    fileprivate var answerDetailTap : UITapGestureRecognizer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-    }
-    
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(true)
         
         if !isLoaded {
+            view.backgroundColor = UIColor.white
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             view.addGestureRecognizer(tap)
-        
+            
             if (currentQuestion != nil){
                 _loadAnswer(currentQuestion, index: answerIndex)
-                _answerOverlay = AnswerOverlay(frame: view.bounds, iconColor: UIColor.blackColor(), iconBackground: UIColor.whiteColor())
+                _answerOverlay = AnswerOverlay(frame: view.bounds, iconColor: UIColor.black, iconBackground: UIColor.white)
                 _answerOverlay.addClipTimerCountdown()
                 _answerOverlay.delegate = self
                 
                 _avPlayerLayer = AVPlayerLayer(player: qPlayer)
-                view.layer.insertSublayer(_avPlayerLayer, atIndex: 0)
-                view.insertSubview(_answerOverlay, atIndex: 2)
+                view.layer.insertSublayer(_avPlayerLayer, at: 0)
+                view.insertSubview(_answerOverlay, at: 2)
                 _avPlayerLayer.frame = view.bounds
-                qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.None
+                qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.none
             }
             
-            NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(_startCountdownTimer), name: "PlaybackStartedNotification", object: currentPlayerItem)
-        
-            startObserver = qPlayer.addBoundaryTimeObserverForTimes([NSValue(CMTime: CMTimeMake(1, 20))], queue: nil, usingBlock: {
-                NSNotificationCenter.defaultCenter().postNotificationName("PlaybackStartedNotification", object: self)
-            })
+            NotificationCenter.default.addObserver(self, selector: #selector(_startCountdownTimer), name: NSNotification.Name(rawValue: "PlaybackStartedNotification"), object: currentPlayerItem)
+            
+            startObserver = qPlayer.addBoundaryTimeObserver(forTimes: [NSValue(time: CMTimeMake(1, 20))], queue: nil, using: {
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "PlaybackStartedNotification"), object: self)
+            }) as AnyObject!
             isLoaded = true
         }
     }
     
-    override func viewDidDisappear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
     }
     
-    func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+    override var prefersStatusBarHidden : Bool {
+        return true
+    }
+    
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         if _isMiniProfileShown {
             return true
         } else {
@@ -119,8 +125,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
     }
     
-    private func _loadAnswer(currentQuestion : Question, index: Int) {
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+    fileprivate func _loadAnswer(_ currentQuestion : Question, index: Int) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
         _canAdvanceReady = false
         
         if let _answerID = currentQuestion.qAnswers?[index] {
@@ -141,7 +147,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     self.answerIndex += 1
                     self._canAdvanceReady = false
                 }
-                UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+                UIApplication.shared.isNetworkActivityIndicatorVisible = false
 
             })
         } else {
@@ -151,13 +157,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
     }
     
-    private func _loadAnswerCollections(index : Int) {
-        tap.enabled = false
+    fileprivate func _loadAnswerCollections(_ index : Int) {
+        tap.isEnabled = false
         
         answerDetailTap = UITapGestureRecognizer(target: self, action: #selector(handleAnswerDetailTap))
         view.addGestureRecognizer(answerDetailTap)
         
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
         _canAdvanceDetailReady = false
         answerCollectionIndex = index
 
@@ -169,10 +175,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             answerCollectionIndex += 1
             _canAdvanceDetailReady = true
         }
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+        UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
     
-    private func _addExploreAnswerDetail(_answerID : String) {
+    fileprivate func _addExploreAnswerDetail(_ _answerID : String) {
         
         Database.getAnswerCollection(_answerID, completion: {(hasDetail, answerCollection) in
             if hasDetail {
@@ -184,17 +190,14 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         })
     }
     
-    private func _addClip(answerID : String) {
+    fileprivate func _addClip(_ answerID : String) {
         Database.getAnswer(answerID, completion: { (answer, error) in
-            if error != nil {
-                print("error getting question")
-            } else {
-                self._addClip(answer)
-            }
+            error == nil ? self._addClip(answer) : GlobalFunctions.showErrorBlock("Error", erMessage: "Sorry there was an error getting this question")
         })
     }
     
-    private func _addClip(answer : Answer) {
+    //adds the first clip to the answers
+    fileprivate func _addClip(_ answer : Answer) {
         guard let _answerType = answer.aType else {
             return
         }
@@ -203,12 +206,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             Database.getAnswerURL(answer.aID, completion: { (URL, error) in
                 if (error != nil) {
                     GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please go to next answer")
+                    self.delegate.removeQuestionPreview()
+                    self.handleTap()
                 } else {
-                    self.currentPlayerItem = AVPlayerItem(URL: URL!)
+                    self.currentPlayerItem = AVPlayerItem(url: URL!)
                     self.removeImageView()
                     if let _currentPlayerItem = self.currentPlayerItem {
-                        self.qPlayer.replaceCurrentItemWithPlayerItem(_currentPlayerItem)
-                        self.delegate.hasAnswersToShow()
+                        self.qPlayer.replaceCurrentItem(with: _currentPlayerItem)
                         self.addObserverForStatusReady()
                     }
                 }
@@ -217,9 +221,15 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
                 if error != nil {
                     print("error getting image")
+                    self.delegate.removeQuestionPreview()
+                    self.handleTap()
                 } else {
                     if let _image = GlobalFunctions.createImageFromData(data!) {
                         self.showImageView(_image)
+                    } else {
+                        print("error creating image from data")
+                        self.delegate.removeQuestionPreview()
+                        self.handleTap()
                     }
                 }
             })
@@ -233,7 +243,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
     }
     
-    private func _updateOverlayData(answer : Answer) {
+    fileprivate func _updateOverlayData(_ answer : Answer) {
         Database.getUser(answer.uID!, completion: { (user, error) in
             if error == nil {
                 self.userForCurrentAnswer = user
@@ -241,10 +251,20 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 if let _uName = user.name {
                     self._answerOverlay.setUserName(_uName)
                 }
+                
+                if let _uBio = user.shortBio {
+                    self._answerOverlay.setUserSubtitle(_uBio)
+                } else if let _location = answer.aLocation {
+                    self._answerOverlay.setUserSubtitle(_location)
+                }
+                
                 if let _uPic = user.thumbPic {
-                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)) {
-                        let _userImageData = NSData(contentsOfURL: NSURL(string: _uPic)!)
-                        dispatch_async(dispatch_get_main_queue(), {
+                    self.currentUserImage = nil
+                    self._answerOverlay.setUserImage(self.currentUserImage)
+                    
+                    DispatchQueue.main.async {
+                        let _userImageData = try? Data(contentsOf: URL(string: _uPic)!)
+                        DispatchQueue.main.async(execute: {
                             if _userImageData != nil {
                                 self.currentUserImage = UIImage(data: _userImageData!)
                                 self._answerOverlay.setUserImage(self.currentUserImage)
@@ -264,12 +284,9 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         if let _qTitle = currentQuestion.qTitle {
             self._answerOverlay.setQuestion(_qTitle)
         }
-        if let _location = answer.aLocation {
-            self._answerOverlay.setUserLocation(_location)
-        }
     }
     
-    private func _addNextClipToQueue(nextAnswerID : String) {
+    fileprivate func _addNextClipToQueue(_ nextAnswerID : String) {
         _nextItemReady = false
         
         Database.getAnswer(nextAnswerID, completion: { (answer, error) in
@@ -282,10 +299,11 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     Database.getAnswerURL(nextAnswerID, completion: { (URL, error) in
                         if (error != nil) {
                             GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
+                            self.handleTap()
                         } else {
-                            let nextPlayerItem = AVPlayerItem(URL: URL!)
-                            if self.qPlayer.canInsertItem(nextPlayerItem, afterItem: nil) {
-                                self.qPlayer.insertItem(nextPlayerItem, afterItem: nil)
+                            let nextPlayerItem = AVPlayerItem(url: URL!)
+                            if self.qPlayer.canInsert(nextPlayerItem, after: nil) {
+                                self.qPlayer.insert(nextPlayerItem, after: nil)
                                 self._nextItemReady = true
                             }
                         }
@@ -294,6 +312,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     Database.getImage(.Answers, fileID: nextAnswerID, maxImgSize: maxImgSize, completion: {(data, error) in
                         if error != nil {
                             GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
+                            self.handleTap()
                         } else {
                             self._nextItemReady = true
                             self.nextAnswer?.aImage = UIImage(data: data!)
@@ -304,14 +323,16 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         })
     }
     
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "status" {
             switch self.qPlayer.status {
-            case AVPlayerStatus.ReadyToPlay:
+            case AVPlayerStatus.readyToPlay:
                 qPlayer.play()
                 if !_tapReady {
                     _tapReady = true
                 }
+                
+                delegate.removeQuestionPreview()
                 break
             default: break
             }
@@ -322,43 +343,43 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         removeObserverIfNeeded()
     }
     
-    private func removeObserverIfNeeded() {
+    fileprivate func removeObserverIfNeeded() {
         if isObserving {
             qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
             isObserving = false
         }
     }
     
-    private func addObserverForStatusReady() {
+    fileprivate func addObserverForStatusReady() {
         if qPlayer.currentItem != nil {
-            qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.New, context: nil)
+            qPlayer.currentItem!.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
             isObserving = true
         }
     }
     
-    private func _canAdvance(index: Int) -> Bool{
+    fileprivate func _canAdvance(_ index: Int) -> Bool{
         return index < currentQuestion.totalAnswers() ? true : false
     }
     
-    private func _canAdvanceAnswerDetail(index: Int) -> Bool{
+    fileprivate func _canAdvanceAnswerDetail(_ index: Int) -> Bool{
         print("checking if can can advance with index \(index) and total count \(currentAnswerCollection.count)")
         return index < currentAnswerCollection.count ? true : false
     }
     
     //move the controls and filters to top layer
-    private func showImageView(image : UIImage) {
+    fileprivate func showImageView(_ image : UIImage) {
         if _isImageViewShown {
             imageView.image = image
         } else {
             imageView = UIImageView(frame: view.bounds)
             imageView.image = image
-            imageView.contentMode = .ScaleAspectFill
-            view.insertSubview(imageView, atIndex: 1)
+            imageView.contentMode = .scaleAspectFill
+            view.insertSubview(imageView, at: 1)
             _isImageViewShown = true
         }
     }
     
-    private func removeImageView() {
+    fileprivate func removeImageView() {
         if _isImageViewShown {
             imageView.image = nil
             imageView.removeFromSuperview()
@@ -367,28 +388,31 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     /* DELEGATE METHODS */
-    func votedAnswer(_vote : AnswerVoteType) {
-        _answerOverlay.addVote(_vote)
+    func userClickedSendMessage() {
+        let messageVC = MessageVC()
+        messageVC.toUser = userForCurrentAnswer
         
+        if let currentUserImage = currentUserImage {
+            messageVC.toUserImage = currentUserImage
+        }
+        
+        navigationController?.pushViewController(messageVC, animated: true)
+    }
+    
+    func votedAnswer(_ _vote : AnswerVoteType) {        
         if let _currentAnswer = currentAnswer {
-            Database.addAnswerVote( _vote, aID: _currentAnswer.aID, completion: { (success, error) in
-                if success {
-                    print("vote registered")
-                } else {
-                    print(error!.localizedDescription)
-                }
-            })
+            Database.addAnswerVote( _vote, aID: _currentAnswer.aID, completion: { (success, error) in })
         }
     }
     
     func userClickedProfile() {
-        let _profileFrame = CGRectMake(view.bounds.width * (1/5), view.bounds.height * (1/4), view.bounds.width * (3/5), view.bounds.height * (1/2))
+        let _profileFrame = CGRect(x: view.bounds.width * (1/5), y: view.bounds.height * (1/4), width: view.bounds.width * (3/5), height: view.bounds.height * (1/2))
         
         /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
-        _blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .Dark))
+        _blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
         _blurBackground.frame = view.bounds
         view.addSubview(_blurBackground)
-        tap.enabled = false
+        tap.isEnabled = false
         
         if let _userForCurrentAnswer = userForCurrentAnswer {
             miniProfile = MiniProfile(frame: _profileFrame)
@@ -408,27 +432,32 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             if let currentUserImage = currentUserImage {
                 miniProfile!.setProfileImage(currentUserImage)
             }
+            
+            if !User.isLoggedIn() || User.currentUser?.uID == _userForCurrentAnswer.uID {
+                miniProfile?.setMessageButton(disabled: true)
+            }
+            
             view.addSubview(miniProfile!)
             _isMiniProfileShown = true
         }
     }
     
-    func userClosedMiniProfile(_profileView : UIView) {
+    func userClosedMiniProfile(_ _profileView : UIView) {
         _profileView.removeFromSuperview()
         _blurBackground.removeFromSuperview()
         _isMiniProfileShown = false
-        tap.enabled = true
+        tap.isEnabled = true
     }
     
     func userClickedAddAnswer() {
-        tap.enabled = true
+        tap.isEnabled = true
         exploreAnswers?.removeFromSuperview()
         delegate.askUserQuestion()
     }
     
     func userClickedExploreAnswers() {
         removeObserverIfNeeded()
-        tap.enabled = false
+        tap.isEnabled = false
         
         exploreAnswers = BrowseAnswersView(frame: view.bounds, _currentQuestion: currentQuestion, _currentTag: currentTag)
         exploreAnswers!.delegate = self
@@ -436,10 +465,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         //add browse answers view and set question
     }
     
-    func userSelectedFromExploreQuestions(index : NSIndexPath) {
-        tap.enabled = true
+    func userSelectedFromExploreQuestions(_ index : IndexPath) {
+        tap.isEnabled = true
         exploreAnswers?.removeFromSuperview()
-        _loadAnswer(currentQuestion, index: index.row)
+        _loadAnswer(currentQuestion, index: (index as NSIndexPath).row)
     }
     
     func userClickedShowMenu() {
@@ -473,7 +502,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         
         else if _canAdvanceReady {
             guard let _nextAnswer = nextAnswer else {
-                print("invalid next answer")
                 return
             }
             
@@ -482,12 +510,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             _addExploreAnswerDetail(_nextAnswer.aID)
             
             if _nextAnswer.aType == .recordedImage || _nextAnswer.aType == .albumImage {
-                print("next answer is image")
                 if let _image = _nextAnswer.aImage {
                     showImageView(_image)
                 }
             } else if _nextAnswer.aType == .recordedVideo || _nextAnswer.aType == .albumVideo  {
-                print("next answer is video")
 
                 removeImageView()
                 _tapReady = false
@@ -510,8 +536,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         
         else {
             if (delegate != nil) {
-                print("no answers to show")
-
                 delegate.noAnswersToShow(self)
             }
         }

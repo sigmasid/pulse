@@ -17,9 +17,10 @@ class Answer : NSObject {
     var aImage : UIImage?
     var thumbImage : UIImage?
     var aType : CreatedAssetType?
-    dynamic var aURL : NSURL! //used to indicate local file location or when upload is completed - do not remove dynamic keyword to allow notification observers
+    dynamic var aURL : URL! //used to indicate local file location or when upload is completed - do not remove dynamic keyword to allow notification observers
+    dynamic var aCreated = false
     
-    init(aID: String, qID:String, uID : String, aType : CreatedAssetType, aLocation : String?, aImage : UIImage?, aURL : NSURL?) {
+    init(aID: String, qID:String, uID : String, aType : CreatedAssetType, aLocation : String?, aImage : UIImage?, aURL : URL?) {
         self.aID = aID
         self.qID = qID
         self.uID = uID
@@ -48,17 +49,19 @@ class Answer : NSObject {
     
     init(aID: String, snapshot: FIRDataSnapshot) {
         self.aID = aID
-        self.qID = snapshot.childSnapshotForPath("qID").value as! String
+        self.qID = snapshot.childSnapshot(forPath: "qID").value as! String
         if snapshot.hasChild("uID") {
-            self.uID = snapshot.childSnapshotForPath("uID").value as? String
+            self.uID = snapshot.childSnapshot(forPath: "uID").value as? String
         }
         
         if snapshot.hasChild("type") {
-            self.aType = CreatedAssetType.getAssetType(snapshot.childSnapshotForPath("type").value as? String)
+            self.aType = CreatedAssetType.getAssetType(snapshot.childSnapshot(forPath: "type").value as? String)
         }
         
         if snapshot.hasChild("location") {
-            self.aLocation = snapshot.childSnapshotForPath("location").value as? String
+            self.aLocation = snapshot.childSnapshot(forPath: "location").value as? String
         }
+        
+        aCreated = true
     }
 }

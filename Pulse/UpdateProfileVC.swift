@@ -7,42 +7,41 @@
 //
 
 import UIKit
+import CoreLocation
 
-class UpdateProfileVC: UIViewController {
+class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
     
     var _currentSetting : Setting! //set by delegate
-    private var _loaded = false
-    private var _reuseIdentifier = "activityCell"
+    fileprivate var isLoaded = false
+    fileprivate var reuseIdentifier = "activityCell"
     
-    weak var returnToParentDelegate : ParentDelegate!
+    fileprivate var settingDescription = UILabel()
+    fileprivate var settingSection = UIView()
     
-    private var _headerView = UIView()
-    private var _loginHeader : LoginHeaderView?
-    private var _settingDescription = UILabel()
-    private var _settingSection = UIView()
+    fileprivate lazy var shortTextField = UITextField()
+    fileprivate lazy var longTextField = UITextView()
+    fileprivate lazy var birthdayPicker = UIDatePicker()
+    fileprivate lazy var genderPicker = UIPickerView()
+    fileprivate lazy var settingsTable = UITableView()
+    fileprivate lazy var options = [String]()
+    fileprivate lazy var statusLabel = UILabel()
+    fileprivate lazy var locationManager = CLLocationManager()
+    fileprivate var location : CLLocation?
     
-    private lazy var _shortTextField = UITextField()
-    private lazy var _longTextField = UITextView()
-    private lazy var _birthdayPicker = UIDatePicker()
-    private lazy var settingsTable = UITableView()
-    private lazy var _entries = [String]()
-    private lazy var _statusLabel = UILabel()
-    
-    private var updateButton = UIButton()
+    fileprivate var updateButton = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        settingsTable.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
 
-        settingsTable.registerClass(UITableViewCell.self, forCellReuseIdentifier: _reuseIdentifier)
-
-        if !_loaded {
-            setDarkBackground()
+        if !isLoaded {
             hideKeyboardWhenTappedAround()
-            addHeader(appTitle: "PULSE", screenTitle: "PROFILE")
             addSettingDescription()
             addSettingSection()
+            view.backgroundColor = UIColor.white
 
-            _loaded = true
+            isLoaded = true
         }
     }
 
@@ -51,105 +50,98 @@ class UpdateProfileVC: UIViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    private func addHeader(appTitle appTitle : String, screenTitle : String) {
-        view.addSubview(_headerView)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
+    
+    fileprivate func updateHeader() {
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        navigationItem.rightBarButtonItem = nil
         
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        _headerView.topAnchor.constraintEqualToAnchor(view.topAnchor, constant: Spacing.xs.rawValue).active = true
-        _headerView.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _headerView.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/12).active = true
-        _headerView.widthAnchor.constraintEqualToAnchor(view.widthAnchor).active = true
-        _headerView.layoutIfNeeded()
-        
-        _loginHeader = LoginHeaderView(frame: _headerView.frame)
-        if let _loginHeader = _loginHeader {
-            _loginHeader.setAppTitleLabel(appTitle)
-            _loginHeader.setScreenTitleLabel(screenTitle)
-            _loginHeader.updateStatusMessage(_currentSetting.display?.uppercaseString)
-            _loginHeader.addGoBack()
-            _loginHeader._goBack.addTarget(self, action: #selector(goBack), forControlEvents: UIControlEvents.TouchUpInside)
-            
-            _headerView.addSubview(_loginHeader)
+        if let nav = navigationController as? PulseNavVC {
+            nav.setNav(title: "Update Profile", subtitle: nil, statusImage: nil)
+        } else {
+            title = "Update Profile"
         }
     }
     
-    private func addSettingDescription() {
-        view.addSubview(_settingDescription)
+    fileprivate func addSettingDescription() {
+        view.addSubview(settingDescription)
         
-        _settingDescription.translatesAutoresizingMaskIntoConstraints = false
-        _settingDescription.topAnchor.constraintEqualToAnchor(_headerView.bottomAnchor, constant: Spacing.l.rawValue).active = true
-        _settingDescription.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _settingDescription.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/10).active = true
-        _settingDescription.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.8).active = true
+        settingDescription.translatesAutoresizingMaskIntoConstraints = false
+        settingDescription.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        settingDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        settingDescription.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/10).isActive = true
+        settingDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         
-        _settingDescription.text = _currentSetting.longDescription
-        _settingDescription.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        _settingDescription.numberOfLines = 0
-        _settingDescription.textColor = .whiteColor()
-        _settingDescription.textAlignment = .Center
+        settingDescription.text = _currentSetting.longDescription
+        settingDescription.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        settingDescription.numberOfLines = 0
+        settingDescription.textColor = UIColor.black
+        settingDescription.textAlignment = .center
     }
     
-    private func addSettingSection() {
-        view.addSubview(_settingSection)
+    fileprivate func addSettingSection() {
+        view.addSubview(settingSection)
         
-        _settingSection.translatesAutoresizingMaskIntoConstraints = false
-        _settingSection.topAnchor.constraintEqualToAnchor(_settingDescription.bottomAnchor, constant: Spacing.l.rawValue).active = true
-        _settingSection.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        let widthConstraint = _settingSection.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.7)
-        widthConstraint.active = true
+        settingSection.translatesAutoresizingMaskIntoConstraints = false
+        settingSection.topAnchor.constraint(equalTo: settingDescription.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        settingSection.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        let widthConstraint = settingSection.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7)
+        widthConstraint.isActive = true
         
         switch _currentSetting.type! {
         case .array:
-            widthConstraint.active = false
-            _settingSection.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.9).active = true
-            _settingSection.bottomAnchor.constraintEqualToAnchor(view.bottomAnchor).active = true
-            _settingSection.layoutIfNeeded()
-            addTableView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
+            widthConstraint.isActive = false
+            settingSection.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
+            settingSection.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            settingSection.layoutIfNeeded()
+            addTableView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         case .bio, .shortBio:
-            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/8).active = true
-            _settingSection.layoutIfNeeded()
-            showBioUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-            if _currentSetting.editable {
-                addUpdateButton()
-                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
-            }
+            settingSection.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/8).isActive = true
+            settingSection.layoutIfNeeded()
+            showBioUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         case .email:
-            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
-            _settingSection.layoutIfNeeded()
-            showNameUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-            if _currentSetting.editable {
-                addUpdateButton()
-                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
-            }
-        case .gender, .name, .password:
-            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
-            _settingSection.layoutIfNeeded()
-            showNameUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-            if _currentSetting.editable {
-                addUpdateButton()
-                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
-            }
+            settingSection.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+            settingSection.layoutIfNeeded()
+            showNameUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        case .name, .password:
+            settingSection.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+            settingSection.layoutIfNeeded()
+            showNameUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        case .gender:
+            settingSection.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+            settingSection.layoutIfNeeded()
+            showGenderUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         case .birthday:
-            _settingSection.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
-            _settingSection.layoutIfNeeded()
-            showBirthdayUpdateView(CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-            if _currentSetting.editable {
-                addUpdateButton()
-                updateButton.addTarget(self, action: #selector(updateProfile), forControlEvents: UIControlEvents.TouchUpInside)
-            }
+            settingSection.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+            settingSection.layoutIfNeeded()
+            showBirthdayUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        case .location:
+            settingSection.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+            settingSection.layoutIfNeeded()
+            showLocationUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         default:
             return
         }
+        
+        if _currentSetting.editable {
+            addUpdateButton()
+            updateButton.addTarget(self, action: #selector(updateProfile), for: UIControlEvents.touchUpInside)
+        }
     }
     
-    private func addTableView(_frame: CGRect) {
+    fileprivate func addTableView(_ _frame: CGRect) {
         settingsTable.frame = _frame
-        _settingSection.addSubview(settingsTable)
+        settingSection.addSubview(settingsTable)
         
         settingsTable.backgroundView = nil
-        settingsTable.backgroundColor = UIColor.clearColor()
-        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.SingleLine
-        settingsTable.separatorColor = UIColor.grayColor().colorWithAlphaComponent(0.7)
+        settingsTable.backgroundColor = UIColor.clear
+        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.singleLine
+        settingsTable.separatorColor = UIColor.gray.withAlphaComponent(0.7)
         
         settingsTable.showsVerticalScrollIndicator = false
         settingsTable.layoutIfNeeded()
@@ -160,92 +152,126 @@ class UpdateProfileVC: UIViewController {
         settingsTable.reloadData()
     }
     
-    private func showNameUpdateView(_frame: CGRect) {
-        _shortTextField = UITextField(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-        _settingSection.addSubview(_shortTextField)
+    fileprivate func showNameUpdateView(_ _frame: CGRect) {
+        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        settingSection.addSubview(shortTextField)
         
-        _shortTextField.borderStyle = .None
-        _shortTextField.backgroundColor = UIColor.clearColor()
-        _shortTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        _shortTextField.textColor = .whiteColor()
-        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
-        _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
+        shortTextField.borderStyle = .none
+        shortTextField.backgroundColor = UIColor.clear
+        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        shortTextField.textColor = UIColor.black
+        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         if _currentSetting.type == .password {
-            _shortTextField.secureTextEntry = true
+            shortTextField.isSecureTextEntry = true
         } else if _currentSetting.type == .email {
-            _shortTextField.keyboardType = UIKeyboardType.EmailAddress
+            shortTextField.keyboardType = UIKeyboardType.emailAddress
         }
     }
     
-    private func showBioUpdateView(_frame: CGRect) {
-        _longTextField = UITextView(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-        _settingSection.addSubview(_longTextField)
+    fileprivate func showBioUpdateView(_ _frame: CGRect) {
+        longTextField = UITextView(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        settingSection.addSubview(longTextField)
         
-        _longTextField.backgroundColor = UIColor.clearColor()
-        _longTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        _longTextField.textColor = .whiteColor()
-        _longTextField.layer.borderColor = UIColor.whiteColor().CGColor
-        _longTextField.layer.borderWidth = 1.0
-        _longTextField.text = getValueOrPlaceholder()
+        longTextField.backgroundColor = UIColor.clear
+        longTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        longTextField.textColor = UIColor.black
+        longTextField.layer.borderColor = UIColor.black.cgColor
+        longTextField.layer.borderWidth = 1.0
+        longTextField.text = getValueOrPlaceholder()
     }
     
-    private func showBirthdayUpdateView(_frame: CGRect) {
-        _shortTextField = UITextField(frame: CGRectMake(0, 0, _settingSection.frame.width, _settingSection.frame.height))
-        _settingSection.addSubview(_shortTextField)
+    fileprivate func showGenderUpdateView(_ _frame : CGRect) {
+        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        settingSection.addSubview(shortTextField)
         
-        _birthdayPicker.datePickerMode = .Date
-        _birthdayPicker.minimumDate = NSCalendar.currentCalendar().dateByAddingUnit(.Year, value: -100, toDate: NSDate(), options: [])
-        _birthdayPicker.maximumDate = NSDate()
-        _birthdayPicker.addTarget(self, action: #selector(onDatePickerValueChanged), forControlEvents: UIControlEvents.ValueChanged)
-        
-        _shortTextField.borderStyle = .None
-        _shortTextField.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        _shortTextField.textColor = .whiteColor()
-        _shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self._shortTextField, _color: UIColor.whiteColor()))
-        _shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        
-        _shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.whiteColor().colorWithAlphaComponent(0.7)])
-        _shortTextField.inputView = _birthdayPicker
+        shortTextField.borderStyle = .none
+        shortTextField.backgroundColor = UIColor.clear
+        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        shortTextField.textColor = UIColor.black
+        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        shortTextField.inputView = genderPicker
+
+        genderPicker.dataSource = self
+        genderPicker.delegate = self
+        genderPicker.backgroundColor = .clear
     }
     
-    private func addUpdateButton() {
+    fileprivate func showLocationUpdateView(_ _frame : CGRect) {
+        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        settingSection.addSubview(shortTextField)
+        
+        shortTextField.borderStyle = .none
+        shortTextField.backgroundColor = UIColor.clear
+        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        shortTextField.textColor = UIColor.black
+        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        getLocationOrPlaceholder()
+        
+        setupLocation()
+    }
+    
+    fileprivate func showBirthdayUpdateView(_ _frame: CGRect) {
+        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        settingSection.addSubview(shortTextField)
+        
+        birthdayPicker.datePickerMode = .date
+        birthdayPicker.minimumDate = (Calendar.current as NSCalendar).date(byAdding: .year, value: -100, to: Date(), options: [])
+        birthdayPicker.maximumDate = Date()
+        birthdayPicker.addTarget(self, action: #selector(onDatePickerValueChanged), for: UIControlEvents.valueChanged)
+        birthdayPicker.backgroundColor = .clear
+
+        shortTextField.borderStyle = .none
+        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        shortTextField.textColor = UIColor.black
+        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        
+        shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        shortTextField.inputView = birthdayPicker
+    }
+    
+    fileprivate func addUpdateButton() {
         view.addSubview(updateButton)
         
         updateButton.translatesAutoresizingMaskIntoConstraints = false
-        updateButton.topAnchor.constraintEqualToAnchor(_settingSection.bottomAnchor, constant: Spacing.l.rawValue).active = true
-        updateButton.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        updateButton.heightAnchor.constraintEqualToAnchor(view.heightAnchor, multiplier: 1/16).active = true
-        updateButton.widthAnchor.constraintEqualToAnchor(view.widthAnchor, multiplier: 0.7).active = true
+        updateButton.topAnchor.constraint(equalTo: settingSection.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        updateButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        updateButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+        updateButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
         
         updateButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        updateButton.setTitle("Save", forState: UIControlState.Normal)
-        updateButton.titleLabel!.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
+        updateButton.setTitle("Save", for: UIControlState())
+        updateButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         updateButton.setEnabled()
     }
     
-    private func addStatusLabel() {
-        view.addSubview(_statusLabel)
+    fileprivate func addStatusLabel() {
+        view.addSubview(statusLabel)
         
-        _statusLabel.translatesAutoresizingMaskIntoConstraints = false
-        _statusLabel.topAnchor.constraintEqualToAnchor(updateButton.bottomAnchor, constant: Spacing.xs.rawValue).active = true
-        _statusLabel.centerXAnchor.constraintEqualToAnchor(view.centerXAnchor).active = true
-        _statusLabel.widthAnchor.constraintEqualToAnchor(updateButton.widthAnchor, multiplier: 0.7).active = true
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        statusLabel.topAnchor.constraint(equalTo: updateButton.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        statusLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        statusLabel.widthAnchor.constraint(equalTo: updateButton.widthAnchor, multiplier: 0.7).isActive = true
         
-        _statusLabel.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        _statusLabel.textAlignment = .Center
-        _statusLabel.textColor = UIColor.whiteColor()
-        _statusLabel.numberOfLines = 0
+        statusLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        statusLabel.textAlignment = .center
+        statusLabel.textColor = UIColor.black
+        statusLabel.numberOfLines = 0
     }
 
-    private func getValueOrPlaceholder() -> String {
+    fileprivate func getValueOrPlaceholder() -> String {
         if let _existingValue = User.currentUser?.getValueForStringProperty(_currentSetting.type!.rawValue) {
             if _currentSetting.type == .birthday {
-                let formatter = NSDateFormatter()
-                formatter.dateStyle = NSDateFormatterStyle.MediumStyle
-                if let _placeholderDate = formatter.dateFromString(_existingValue) {
-                    _birthdayPicker.date = _placeholderDate
+                let formatter = DateFormatter()
+                formatter.dateStyle = DateFormatter.Style.medium
+                if let _placeholderDate = formatter.date(from: _existingValue) {
+                    birthdayPicker.date = _placeholderDate
                 }
             }
             return _existingValue
@@ -256,28 +282,59 @@ class UpdateProfileVC: UIViewController {
         }
     }
     
-    private func getValueOrPlaceholder(indexRow : Int, cell : UITableViewCell) {
-        switch _currentSetting.settingID {
-        case "answers":
-            cell.textLabel!.text = nil
-        case "savedQuestions":
-            Database.getQuestion(User.currentUser!.savedQuestions![indexRow], completion: {(question, error) in
-                if error != nil {
-                    cell.textLabel!.text = nil
-                } else {
-                    cell.textLabel!.text = question.qTitle
-                }
-            })
-        case "savedTags":
-            Database.getTag(User.currentUser!.savedTags![indexRow], completion: {(tag, error) in
-                if error != nil {
-                    cell.textLabel!.text = nil
-                } else {
-                    cell.textLabel!.text = tag.tagID
-                }
-            })
-        default: return
+    fileprivate func getLocationOrPlaceholder() {
+        User.currentUser?.getLocation(completion: {(city) in
+            if let city = city {
+                self.shortTextField.text = city
+            } else if let _placeholder = self._currentSetting.placeholder {
+                self.shortTextField.text = _placeholder
+                self.setupLocation()
+            } else {
+                self.shortTextField.text = nil
+            }
+        })
+    }
+    
+    /* Location vars */
+    /// setup the location tracking defaults
+    func setupLocation() {
+        if CLLocationManager.authorizationStatus() != .authorizedWhenInUse {
+            locationManager.requestWhenInUseAuthorization()
         }
+        locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+        locationManager.distanceFilter = 100.0
+        locationManager.delegate = self
+        locationManager.startUpdatingLocation()
+    }
+    
+    open func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        GlobalFunctions.showErrorBlock("Location Error", erMessage: "Error while updating location " + error.localizedDescription)
+    }
+    
+    open func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {(placemarks, error)-> Void in
+            if (error != nil) {
+                return
+            }
+            if let _location = manager.location {
+                self.location = _location
+            }
+            
+            if let allPlacemarks = placemarks {
+                if allPlacemarks.count != 0 {
+                    let pm = allPlacemarks[0] as CLPlacemark
+                    self.locationManager.stopUpdatingLocation()
+                    self.shortTextField.text = pm.locality
+                }
+            } else {
+                self.shortTextField.text = nil
+                GlobalFunctions.showErrorBlock("Location Error", erMessage: "Sorry - there was an error getting your location!")
+            }
+        })
+    }
+    
+    func goBack() {
+        let _ = navigationController?.popViewController(animated: true)
     }
 
     func updateProfile() {
@@ -286,42 +343,45 @@ class UpdateProfileVC: UIViewController {
         
         switch _currentSetting.type! {
         case .birthday:
-            let _birthday = _shortTextField.text
+            let _birthday = shortTextField.text
             addStatusLabel()
             Database.updateUserProfile(_currentSetting, newValue: _birthday!, completion: {(success, error) in
                 if success {
-                    self._statusLabel.text = "Profile Updated!"
+                    self.statusLabel.text = "Profile Updated!"
+                    self.goBack()
                 } else {
-                    self._statusLabel.text = error?.localizedDescription
+                    self.statusLabel.text = error?.localizedDescription
                 }
                 self.updateButton.setEnabled()
                 self.updateButton.removeLoadingIndicator(_loading)
             })
         case .bio, .shortBio:
-            let _bio = _longTextField.text
+            let _bio = longTextField.text
             addStatusLabel()
-            Database.updateUserProfile(_currentSetting, newValue: _bio, completion: {(success, error) in
+            Database.updateUserProfile(_currentSetting, newValue: _bio!, completion: {(success, error) in
                 if success {
-                    self._statusLabel.text = "Profile Updated!"
+                    self.statusLabel.text = "Profile Updated!"
+                    self.goBack()
                 } else {
-                    self._statusLabel.text = error?.localizedDescription
+                    self.statusLabel.text = error?.localizedDescription
                 }
                 self.updateButton.setEnabled()
                 self.updateButton.removeLoadingIndicator(_loading)
             })
         case .name:
-            let _name = _shortTextField.text
+            let _name = shortTextField.text
             addStatusLabel()
 
             GlobalFunctions.validateName(_name, completion: {(verified, error) in
                 if !verified {
-                    self._statusLabel.text = error?.localizedDescription
+                    self.statusLabel.text = error?.localizedDescription
                 } else {
                     Database.updateUserData(UserProfileUpdateType.displayName, value: _name!, completion: { (success, error) in
                         if success {
-                            self._statusLabel.text = "Profile Updated!"
+                            self.statusLabel.text = "Profile Updated!"
+                            self.goBack()
                         } else {
-                            self._statusLabel.text = error?.localizedDescription
+                            self.statusLabel.text = error?.localizedDescription
                         }
                     })
                 }
@@ -329,18 +389,19 @@ class UpdateProfileVC: UIViewController {
                 self.updateButton.removeLoadingIndicator(_loading)
             })
         case .email:
-            let _email = _shortTextField.text
+            let _email = shortTextField.text
             addStatusLabel()
             
             GlobalFunctions.validateEmail(_email, completion: {(verified, error) in
                 if !verified {
-                    self._statusLabel.text = error?.localizedDescription
+                    self.statusLabel.text = error?.localizedDescription
                 } else {
                     Database.updateUserProfile(self._currentSetting, newValue: _email!, completion: {(success, error) in
                         if success {
-                            self._statusLabel.text = "Profile Updated!"
+                            self.statusLabel.text = "Profile Updated!"
+                            self.goBack()
                         } else {
-                            self._statusLabel.text = error?.localizedDescription
+                            self.statusLabel.text = error?.localizedDescription
                         }
                     })
                 }
@@ -348,24 +409,71 @@ class UpdateProfileVC: UIViewController {
                 self.updateButton.removeLoadingIndicator(_loading)
             })
         case .password:
-            let _password = _shortTextField.text
+            let _password = shortTextField.text
             addStatusLabel()
             
             GlobalFunctions.validatePassword(_password, completion: {(verified, error) in
                 if !verified {
-                    self._statusLabel.text = error?.localizedDescription
+                    self.statusLabel.text = error?.localizedDescription
                 } else {
                     Database.updateUserProfile(self._currentSetting, newValue: _password!, completion: {(success, error) in
                         if success {
-                            self._statusLabel.text = "Profile Updated!"
+                            self.statusLabel.text = "Profile Updated!"
+                            self.goBack()
                         } else {
-                            self._statusLabel.text = error?.localizedDescription
+                            self.statusLabel.text = error?.localizedDescription
                         }
                     })
                 }
                 self.updateButton.setEnabled()
                 self.updateButton.removeLoadingIndicator(_loading)
             })
+            
+        case .gender:
+            let _gender = shortTextField.text
+            addStatusLabel()
+            
+            Database.updateUserProfile(self._currentSetting, newValue: _gender!, completion: {(success, error) in
+                if success {
+                    self.statusLabel.text = "Profile Updated!"
+                    self.goBack()
+                } else {
+                    self.statusLabel.text = error?.localizedDescription
+                }
+                self.updateButton.setEnabled()
+                self.updateButton.removeLoadingIndicator(_loading)
+
+            })
+            
+        case .location:
+            if let location = location {
+                Database.updateUserLocation(newValue: location, completion: {(success, error) in
+                    if success {
+                        self.statusLabel.text = "Profile Updated!"
+                        self.goBack()
+                    } else {
+                        self.statusLabel.text = error?.localizedDescription
+                    }
+                    
+                    self.updateButton.setEnabled()
+                    self.updateButton.removeLoadingIndicator(_loading)
+                })
+            }
+            else if let _location = shortTextField.text {
+                addStatusLabel()
+                
+                Database.updateUserProfile(self._currentSetting, newValue: _location, completion: {(success, error) in
+                    if success {
+                        self.statusLabel.text = "Profile Updated!"
+                        self.goBack()
+                    } else {
+                        self.statusLabel.text = error?.localizedDescription
+                    }
+                    
+                    self.updateButton.setEnabled()
+                    self.updateButton.removeLoadingIndicator(_loading)
+                })
+            }
         default:
             updateButton.setEnabled()
             updateButton.removeLoadingIndicator(_loading)
@@ -373,45 +481,59 @@ class UpdateProfileVC: UIViewController {
         }
     }
     
-    func onDatePickerValueChanged(datePicker : UIDatePicker) {
-        let formatter = NSDateFormatter()
-        formatter.dateStyle = NSDateFormatterStyle.MediumStyle
+    func onDatePickerValueChanged(_ datePicker : UIDatePicker) {
+        let formatter = DateFormatter()
+        formatter.dateStyle = DateFormatter.Style.medium
         
-        _shortTextField.text = formatter.stringFromDate(datePicker.date)
+        shortTextField.text = formatter.string(from: datePicker.date)
+    }
+}
+
+extension UpdateProfileVC : UIPickerViewDataSource, UIPickerViewDelegate {
+    //MARK: Data Sources
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+
+    func pickerView(_ pickerView: UIPickerView,
+                    numberOfRowsInComponent component: Int) -> Int {
+        return _currentSetting.options != nil ? _currentSetting.options!.count : 0
     }
     
-    func goBack() {
-        if returnToParentDelegate != nil {
-            returnToParentDelegate.returnToParent(self)
-        }
+    //MARK: Delegates
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return _currentSetting.options?[row]
     }
     
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        shortTextField.text = _currentSetting.options?[row]
+    }
 }
 
 extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
 
     // MARK: - Table view data source
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch _currentSetting.settingID {
         case "answers":
             return User.currentUser!.answers?.count ?? 0
         case "savedQuestions":
-            return User.currentUser!.savedQuestions?.count ?? 0
+            return User.currentUser!.savedQuestions.count
         case "savedTags":
-            return User.currentUser!.savedTags?.count ?? 0
+            return User.currentUser!.savedTags.count
         default: return 0
         }
     }
     
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCellWithIdentifier(_reuseIdentifier)! as UITableViewCell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier)! as UITableViewCell
         
-        cell.backgroundColor = UIColor.clearColor()
-        cell.textLabel?.textColor = UIColor.whiteColor()
-        cell.textLabel?.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption1)
-        getValueOrPlaceholder(indexPath.row, cell : cell)
+        cell.backgroundColor = UIColor.clear
+        cell.textLabel?.textColor = UIColor.black
+        cell.textLabel?.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+//        getValueOrPlaceholder((indexPath as NSIndexPath).row, cell : cell)
         
         return cell
     }

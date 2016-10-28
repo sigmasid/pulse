@@ -8,32 +8,58 @@
 
 import Foundation
 import Firebase
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l > r
+  default:
+    return rhs < lhs
+  }
+}
+
 
 class Question : NSObject {
     var qID : String
-    var channelTags : [String]?
+    var qTagID : String?
     var qTitle : String?
     
     dynamic var qCreated = false
     
     var qFilters : [String]?
     var qAnswers : [String]?
-    
+    var qAllAnswers : [Answer]?
+
     init(qID: String) {
         self.qID = qID
     }
     
+    init(qID: String, qTagID : String?) {
+        self.qID = qID
+        self.qTagID = qTagID
+    }
+    
     init(qID: String, snapshot: FIRDataSnapshot) {
         self.qID = qID
-        self.qTitle = snapshot.childSnapshotForPath("title").value as? String
-        for choice in snapshot.childSnapshotForPath("choices").children {
-            if (self.qFilters?.append(choice.key) == nil) {
-                self.qFilters = [choice.key]
-            }
-        }
-        for answer in snapshot.childSnapshotForPath("answers").children {
-            if (self.qAnswers?.append(answer.key) == nil) {
-                self.qAnswers = [answer.key]
+        self.qTitle = snapshot.childSnapshot(forPath: "title").value as? String
+//        for choice in snapshot.childSnapshotForPath("choices").children {
+//            if (self.qFilters?.append(choice.key) == nil) {
+//                self.qFilters = [choice.key]
+//            }
+//        }
+        for answer in snapshot.childSnapshot(forPath: "answers").children {
+            if (self.qAnswers?.append((answer as AnyObject).key) == nil) {
+                self.qAnswers = [(answer as AnyObject).key]
             }
         }
         self.qCreated = true

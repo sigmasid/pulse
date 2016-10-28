@@ -13,25 +13,25 @@ class DetailCollectionCell: UICollectionViewCell {
     var subtitleLabel: UILabel!
     var previewImage : UIImageView!
     
-    private var previewVC : PreviewVC?
-    private var previewAdded = false
-    private var reuseCell = false
+    fileprivate var previewVC : PreviewVC?
+    fileprivate var previewAdded = false
+    fileprivate var reuseCell = false
     
-    var itemType : Item? {
+    var feedItemType : FeedItemType? {
         didSet {
-            switch itemType! {
-            case .Questions:
+            switch feedItemType! {
+            case .question:
                 if !reuseCell {
                     setupQuestionPreview()
                     reuseCell = true
                 }
-            case .Answers:
+            case .answer:
                 if !reuseCell {
                     setupAnswerPreview()
                     reuseCell = true
                 }
-            case .Tags: return
-            default: return
+            case .tag: return
+            case .people: return
             }
         }
     }
@@ -44,31 +44,31 @@ class DetailCollectionCell: UICollectionViewCell {
         super.init(coder: aDecoder)
     }
     
-    func showQuestion(_question : Question) {
+    func showQuestion(_ _question : Question) {
         previewVC = PreviewVC(frame: contentView.bounds)
         previewVC?.currentQuestion = _question
-        titleLabel?.hidden = true
-        UIView.transitionWithView( contentView, duration: 0.5, options: .TransitionFlipFromLeft, animations: { _ in self.contentView.addSubview(self.previewVC!) }, completion: nil)
+        titleLabel?.isHidden = true
+        UIView.transition( with: contentView, duration: 0.5, options: .transitionFlipFromLeft, animations: { _ in self.contentView.addSubview(self.previewVC!) }, completion: nil)
         previewAdded = true
     }
     
-    func showAnswer(_answerID : String) {
+    func showAnswer(_ _answerID : String) {
         previewVC = PreviewVC(frame: contentView.bounds)
         previewVC!.currentAnswerID = _answerID
-        previewImage?.hidden = true
-        titleLabel?.hidden = true
-        subtitleLabel?.hidden = true
-        UIView.transitionWithView( contentView, duration: 0.5, options: .TransitionFlipFromLeft, animations: { _ in self.contentView.addSubview(self.previewVC!) }, completion: nil)
+        previewImage?.isHidden = true
+        titleLabel?.isHidden = true
+        subtitleLabel?.isHidden = true
+        UIView.transition( with: contentView, duration: 0.5, options: .transitionFlipFromLeft, animations: { _ in self.contentView.addSubview(self.previewVC!) }, completion: nil)
         previewAdded = true
     }
     
     func removeAnswer() {
-        if itemType == .Questions {
-             titleLabel?.hidden = false
-        } else if itemType == .Answers {
-            previewImage?.hidden = false
-            titleLabel?.hidden = false
-            subtitleLabel?.hidden = false
+        if feedItemType == .question {
+             titleLabel?.isHidden = false
+        } else if feedItemType == .answer {
+            previewImage?.isHidden = false
+            titleLabel?.isHidden = false
+            subtitleLabel?.isHidden = false
         }
         previewVC?.removeFromSuperview()
     }
@@ -84,30 +84,30 @@ class DetailCollectionCell: UICollectionViewCell {
         addSubview(previewImage)
         
         titleLabel = UILabel()
-        titleLabel?.font = UIFont.systemFontOfSize(FontSizes.Caption2.rawValue, weight: UIFontWeightBold)
+        titleLabel?.font = UIFont.systemFont(ofSize: FontSizes.caption2.rawValue, weight: UIFontWeightBold)
         addSubview(titleLabel!)
         
         subtitleLabel = UILabel()
-        subtitleLabel?.font = UIFont.systemFontOfSize(FontSizes.Caption2.rawValue, weight: UIFontWeightRegular)
+        subtitleLabel?.font = UIFont.systemFont(ofSize: FontSizes.caption2.rawValue, weight: UIFontWeightRegular)
         addSubview(subtitleLabel!)
         
         subtitleLabel!.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel?.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.xxs.rawValue).active = true
-        subtitleLabel?.bottomAnchor.constraintEqualToAnchor(bottomAnchor, constant: -Spacing.xxs.rawValue).active = true
-        subtitleLabel?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        subtitleLabel?.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        subtitleLabel?.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        subtitleLabel?.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         subtitleLabel?.layoutIfNeeded()
         
         titleLabel!.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel?.leadingAnchor.constraintEqualToAnchor(leadingAnchor, constant: Spacing.xxs.rawValue).active = true
-        titleLabel?.bottomAnchor.constraintEqualToAnchor(subtitleLabel.topAnchor).active = true
-        titleLabel?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        titleLabel?.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        titleLabel?.bottomAnchor.constraint(equalTo: subtitleLabel.topAnchor).isActive = true
+        titleLabel?.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         titleLabel?.layoutIfNeeded()
         
         previewImage.translatesAutoresizingMaskIntoConstraints = false
-        previewImage.bottomAnchor.constraintEqualToAnchor(titleLabel.topAnchor, constant: -Spacing.xxs.rawValue).active = true
-        previewImage.topAnchor.constraintEqualToAnchor(topAnchor).active = true
-        previewImage.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
-        previewImage.contentMode = UIViewContentMode.ScaleAspectFill
+        previewImage.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        previewImage.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        previewImage.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        previewImage.contentMode = UIViewContentMode.scaleAspectFill
         previewImage.clipsToBounds = true
         previewImage.layoutIfNeeded()
 
@@ -115,14 +115,14 @@ class DetailCollectionCell: UICollectionViewCell {
     
     func setupQuestionPreview() {
         titleLabel = UILabel()
-        titleLabel?.setPreferredFont(UIColor.whiteColor(), alignment : .Center)
+        titleLabel?.setPreferredFont(UIColor.white, alignment : .center)
         addSubview(titleLabel!)
         
         titleLabel!.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel?.centerXAnchor.constraintEqualToAnchor(centerXAnchor).active = true
-        titleLabel?.centerYAnchor.constraintEqualToAnchor(centerYAnchor).active = true
-        titleLabel?.heightAnchor.constraintEqualToAnchor(heightAnchor).active = true
-        titleLabel?.widthAnchor.constraintEqualToAnchor(widthAnchor).active = true
+        titleLabel?.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        titleLabel?.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+        titleLabel?.heightAnchor.constraint(equalTo: heightAnchor).isActive = true
+        titleLabel?.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         titleLabel?.layoutIfNeeded()
     }
 }

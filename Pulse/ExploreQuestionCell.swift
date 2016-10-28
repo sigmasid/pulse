@@ -13,14 +13,14 @@ class ExploreQuestionCell: UICollectionViewCell {
     @IBOutlet weak var qTitle: UILabel!
     var saveIcon : Save?
     
-    func toggleSaveIcon(mode : SaveType) {
-        saveIcon = Save(frame: CGRectMake(0, 0, IconSizes.XSmall.rawValue / 2, IconSizes.XSmall.rawValue / 2))
+    func toggleSaveIcon(_ mode : SaveType) {
+        saveIcon = Save(frame: CGRect(x: 0, y: 0, width: IconSizes.xSmall.rawValue / 2, height: IconSizes.xSmall.rawValue / 2))
         saveIcon?.toggle(mode)
         addSubview(saveIcon!)
 
         saveIcon!.translatesAutoresizingMaskIntoConstraints = false
-        saveIcon!.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        saveIcon!.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.xs.rawValue).active = true
+        saveIcon!.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        saveIcon!.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
         saveIcon?.layoutIfNeeded()
     }
     

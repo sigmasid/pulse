@@ -30,17 +30,17 @@ class FiltersOverlay: UIView, UIGestureRecognizerDelegate {
     func setupFilters() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
 //        layout.itemSize = CGSize(width: self.bounds.width, height: self.bounds.height)
-        layout.scrollDirection = UICollectionViewScrollDirection.Horizontal
+        layout.scrollDirection = UICollectionViewScrollDirection.horizontal
         layout.minimumLineSpacing = 0.0
         layout.minimumInteritemSpacing = 0.0
         layout.itemSize = CGSize(width: self.frame.width, height: self.frame.height)
         
         Filters = UICollectionView(frame: self.frame, collectionViewLayout: layout)
-        Filters.registerClass(FiltersCell.self, forCellWithReuseIdentifier: self.reuseIdentifier)
-        Filters.backgroundColor = UIColor.clearColor()
+        Filters.register(FiltersCell.self, forCellWithReuseIdentifier: self.reuseIdentifier)
+        Filters.backgroundColor = UIColor.clear
         Filters.delegate = self
         Filters.dataSource = self
-        Filters.pagingEnabled = true
+        Filters.isPagingEnabled = true
         Filters.showsHorizontalScrollIndicator = false
         Filters.canCancelContentTouches = true
         
@@ -50,28 +50,26 @@ class FiltersOverlay: UIView, UIGestureRecognizerDelegate {
 }
 
 extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return currentQuestion!.qFilters!.count ?? 0
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return currentQuestion!.qFilters?.count ?? 0
     }
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
+    func numberOfSections(in collectionView: UICollectionView) -> Int{
         return 1
     }
     
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! FiltersCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell{
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! FiltersCell
         
-        if FilterChoices.count > indexPath.row && cell.filterImageView != nil {
-            cell.filterImageView!.image = FilterChoices[indexPath.row]!
+        if FilterChoices.count > (indexPath as NSIndexPath).row && cell.filterImageView != nil {
+            cell.filterImageView!.image = FilterChoices[(indexPath as NSIndexPath).row]!
         } else {
-            let _filterID = currentQuestion!.qFilters![indexPath.row]
+            let _filterID = currentQuestion!.qFilters![(indexPath as NSIndexPath).row]
 
             Database.getImage(.Filters, fileID: _filterID+".png", maxImgSize: maxImgSize, completion: {(_data, error) in
-                if error != nil {
-                    print(error?.localizedDescription)
-                } else {
+                if error == nil {
                     let _filterImage = UIImage(data: _data!)
-                    self.FilterChoices[indexPath.row] = _filterImage
+                    self.FilterChoices[(indexPath as NSIndexPath).row] = _filterImage
                     cell.filterImageView!.image = _filterImage
                 }
             })
@@ -79,7 +77,7 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
         return cell
     }
     
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: collectionView.frame.width, height: collectionView.frame.height)
     }
 }

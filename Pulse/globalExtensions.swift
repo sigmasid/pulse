@@ -13,20 +13,20 @@ class PaddingLabel: UILabel {
     
     let padding = UIEdgeInsets(top: 2.5, left: 5, bottom: 2.5, right: 5)
     
-    override func drawTextInRect(rect: CGRect) {
-        super.drawTextInRect(UIEdgeInsetsInsetRect(rect, padding))
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: UIEdgeInsetsInsetRect(rect, padding))
     }
     
     // Override -intrinsicContentSize: for Auto layout code
-    override func intrinsicContentSize() -> CGSize {
-        let superContentSize = super.intrinsicContentSize()
+    override var intrinsicContentSize : CGSize {
+        let superContentSize = super.intrinsicContentSize
         let width = superContentSize.width + padding.left + padding.right
         let heigth = superContentSize.height + padding.top + padding.bottom
         return CGSize(width: width, height: heigth)
     }
     
     // Override -sizeThatFits: for Springs & Struts code
-    override func sizeThatFits(size: CGSize) -> CGSize {
+    override func sizeThatFits(_ size: CGSize) -> CGSize {
         let superSizeThatFits = super.sizeThatFits(size)
         let width = superSizeThatFits.width + padding.left + padding.right
         let heigth = superSizeThatFits.height + padding.top + padding.bottom
@@ -66,18 +66,66 @@ extension UIViewController {
 //        // 5
 //        self.view.layer.addSublayer(gradientLayer)
     }
+    
+//    func addHeader(text : String) -> LoginHeaderView {
+//        let _headerView = UIView()
+//        
+//        view.addSubview(_headerView)
+//        
+//        _headerView.translatesAutoresizingMaskIntoConstraints = false
+//        
+//        if self.prefersStatusBarHidden {
+//            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).isActive = true
+//        } else {
+//            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
+//        }
+//        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+//        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+//        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+//        _headerView.layoutIfNeeded()
+//        
+//        let _loginHeader = LoginHeaderView(frame: _headerView.bounds)
+//        _loginHeader.setAppTitleLabel(_message: "PULSE")
+//        _loginHeader.setScreenTitleLabel(_message: text)
+//        _headerView.addSubview(_loginHeader)
+//        
+//        return _loginHeader
+//    }
+    
+    func addIcon(text : String) -> IconContainer {
+        let iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
+        iconContainer.setViewTitle(text)
+        view.addSubview(iconContainer)
+        
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        iconContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        iconContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
+        iconContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        iconContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        iconContainer.layoutIfNeeded()
+        
+        return iconContainer
+    }
 }
 
 extension UILabel {
-    func setPreferredFont(color : UIColor, alignment : NSTextAlignment) {
+    func setFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
-        self.font = UIFont.preferredFontForTextStyle(UIFontTextStyleCaption2)
+        self.font = UIFont.systemFont(ofSize: size, weight: weight)
         self.textColor = color
         self.numberOfLines = 0
-        self.lineBreakMode = .ByWordWrapping
+        self.lineBreakMode = .byWordWrapping
     }
     
-    func addTextSpacing(spacing: CGFloat){
+    func setPreferredFont(_ color : UIColor, alignment : NSTextAlignment) {
+        self.textAlignment = alignment
+        self.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
+        self.textColor = color
+        self.numberOfLines = 0
+        self.lineBreakMode = .byWordWrapping
+    }
+    
+    func addTextSpacing(_ spacing: CGFloat){
         if let _text = self.text {
             let attributedString = NSMutableAttributedString(string: _text)
             attributedString.addAttribute(NSKernAttributeName, value: spacing, range: NSRange(location: 0, length: self.text!.characters.count))
@@ -88,40 +136,71 @@ extension UILabel {
 
 extension UIButton {
     func setEnabled() {
-        self.enabled = true
+        self.isEnabled = true
         self.alpha = 1.0
         self.backgroundColor = UIColor(red: 245/255, green: 44/255, blue: 90/255, alpha: 1.0 )
     }
     
     func setDisabled() {
-        self.enabled = false
+        self.isEnabled = false
         self.alpha = 0.5
         self.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
     }
     
     func addLoadingIndicator() -> UIView {
-        let _loadingIndicatorFrame = CGRectMake(5, 0, self.frame.height, self.frame.height)
-        let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.whiteColor())
+        let _loadingIndicatorFrame = CGRect(x: 5, y: 0, width: self.frame.height, height: self.frame.height)
+        let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.white)
         self.addSubview(_loadingIndicator)
         return _loadingIndicator
     }
     
-    func removeLoadingIndicator(indicator : UIView) {
+    func removeLoadingIndicator(_ indicator : UIView) {
         indicator.removeFromSuperview()
     }
     
     func makeRound() {
-        self.layer.cornerRadius = self.frame.width / 2
+        self.layer.cornerRadius = self.frame.width > self.frame.height ?  self.frame.height / 2 : self.frame.width / 2
+    }
+    
+    func setButtonFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
+        self.titleLabel?.textAlignment = alignment
+        self.titleLabel?.font = UIFont.systemFont(ofSize: size, weight: weight)
+        self.setTitleColor(color, for: UIControlState())
+    }
+    
+    func changeTint(color : UIColor, state : UIControlState) {
+        let image = self.imageView?.image?.withRenderingMode(.alwaysTemplate)
+
+        if let image = image {
+            self.setImage(image, for: state)
+            self.tintColor = color
+        }
     }
 }
 
 extension UIImage
 {
-    var highestQualityJPEGNSData: NSData { return UIImageJPEGRepresentation(self, 1.0)! }
-    var highQualityJPEGNSData: NSData    { return UIImageJPEGRepresentation(self, 0.75)!}
-    var mediumQualityJPEGNSData: NSData  { return UIImageJPEGRepresentation(self, 0.5)! }
-    var lowQualityJPEGNSData: NSData     { return UIImageJPEGRepresentation(self, 0.25)!}
-    var lowestQualityJPEGNSData: NSData  { return UIImageJPEGRepresentation(self, 0.0)! }
+    var highestQualityJPEGNSData: Data { return UIImageJPEGRepresentation(self, 1.0)! }
+    var highQualityJPEGNSData: Data    { return UIImageJPEGRepresentation(self, 0.75)!}
+    var mediumQualityJPEGNSData: Data  { return UIImageJPEGRepresentation(self, 0.5)! }
+    var lowQualityJPEGNSData: Data     { return UIImageJPEGRepresentation(self, 0.25)!}
+    var lowestQualityJPEGNSData: Data  { return UIImageJPEGRepresentation(self, 0.0)! }
+    
+    var circle: UIImage? {
+        let square = CGSize(width: min(size.width, size.height), height: min(size.width, size.height))
+        let imageView = UIImageView(frame: CGRect(origin: .zero, size: square))
+        imageView.backgroundColor = UIColor.black
+        imageView.contentMode = .scaleAspectFill
+        imageView.image = self
+        imageView.layer.cornerRadius = square.width/2
+        imageView.layer.masksToBounds = true
+        UIGraphicsBeginImageContextWithOptions(imageView.bounds.size, false, scale)
+        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+        imageView.layer.render(in: context)
+        let result = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return result
+    }
 }
 
 extension Double {
@@ -130,31 +209,38 @@ extension Double {
     }
 }
 
-extension NSTimeInterval {
+extension TimeInterval {
     var time:String {
-        return String(format:"%02d:%02d", Int(self/60.0),  Int(ceil(self%60)) )
+        return String(format:"%02d:%02d", Int(self/60.0),  Int(ceil(self.truncatingRemainder(dividingBy: 60))) )
     }
 }
 
 enum AnimationStyle {
-    case VerticalUp
-    case VerticalDown
-    case Horizontal
-    case HorizontalFlip
+    case verticalUp
+    case verticalDown
+    case horizontal
+    case horizontalFlip
+}
+
+enum FollowToggle {
+    case follow
+    case unfollow
 }
 
 enum IconSizes: CGFloat {
-    case XXSmall = 10
-    case XSmall = 20
-    case Small = 25
-    case Medium = 50
-    case Large = 75
+    case xxSmall = 10
+    case xSmall = 20
+    case small = 35
+    case medium = 50
+    case large = 75
+    case xLarge = 100
 }
 
 enum IconThickness: CGFloat {
-    case Thin = 1.0
-    case Medium = 2.0
-    case Thick = 3.0
+    case thin = 1.0
+    case medium = 2.0
+    case thick = 3.0
+    case extraThick = 5.0
 }
 
 enum UserProfileUpdateType {
@@ -163,13 +249,13 @@ enum UserProfileUpdateType {
 }
 
 enum AnswerVoteType {
-    case Upvote
-    case Downvote
+    case upvote
+    case downvote
 }
 
 enum SaveType {
-    case Save
-    case Unsave
+    case save
+    case unsave
 }
 
 enum Spacing: CGFloat {
@@ -186,7 +272,7 @@ enum buttonCornerRadius : CGFloat {
     case small = 10
     case round = 0
     
-    static func radius(type : buttonCornerRadius, width: Int) -> CGFloat {
+    static func radius(_ type : buttonCornerRadius, width: Int) -> CGFloat {
         switch type {
         case .regular: return buttonCornerRadius.regular.rawValue
         case .small: return buttonCornerRadius.small.rawValue
@@ -194,7 +280,7 @@ enum buttonCornerRadius : CGFloat {
         }
     }
     
-    static func radius(type : buttonCornerRadius) -> CGFloat {
+    static func radius(_ type : buttonCornerRadius) -> CGFloat {
         switch type {
         case .regular: return buttonCornerRadius.regular.rawValue
         case .small: return buttonCornerRadius.small.rawValue
@@ -205,18 +291,19 @@ enum buttonCornerRadius : CGFloat {
 
 
 enum FontSizes: CGFloat {
-    case Caption2 = 8
-    case Caption = 10
-    case Body = 14
-    case Title = 16
-    case Headline = 20
-    case Headline2 = 30
-    case Mammoth = 40
+    case caption2 = 8
+    case caption = 10
+    case body2 = 12
+    case body = 14
+    case title = 16
+    case headline = 20
+    case headline2 = 30
+    case mammoth = 40
 }
 
-enum UserErrors: ErrorType {
-    case NotLoggedIn
-    case InvalidData
+enum UserErrors: Error {
+    case notLoggedIn
+    case invalidData
 }
 
 /* CORE DATABASE */
@@ -225,7 +312,7 @@ enum SectionTypes : String {
     case personalInfo = "personalInfo"
     case account = "account"
     
-    static func getSectionDisplayName(index : String) -> String? {
+    static func getSectionDisplayName(_ index : String) -> String? {
         switch index {
         case "activity": return "Activity"
         case "personalInfo": return "Personal Info"
@@ -234,7 +321,7 @@ enum SectionTypes : String {
         }
     }
     
-    static func getSectionType(index : String) -> SectionTypes? {
+    static func getSectionType(_ index : String) -> SectionTypes? {
         switch index {
         case "account": return .account
         case "activity": return .activity
@@ -244,6 +331,19 @@ enum SectionTypes : String {
     }
 }
 
+enum FeedItemType {
+    case tag
+    case question
+    case answer
+    case people
+}
+
+enum PageType {
+    case home
+    case detail
+    case explore
+}
+
 enum Item : String {
     case Tags = "tags"
     case Questions = "questions"
@@ -251,10 +351,13 @@ enum Item : String {
     case Users = "users"
     case Filters = "filters"
     case Settings = "settings"
+    case Feed = "savedQuestions"
     case SettingSections = "settingsSections"
     case AnswerThumbs = "answerThumbnails"
     case AnswerCollections = "answerCollections"
     case UserSummary = "userPublicSummary"
+    case Messages = "messages"
+    case Conversations = "conversations"
 }
 
 enum SettingTypes : String{
@@ -267,9 +370,10 @@ enum SettingTypes : String{
     case gender = "gender"
     case profilePic = "profilePic"
     case thumbPic = "thumbPic"
-    case array = "array"
+    case location = "location"
+    case array = "array" //for saved tags / questions
     
-    static func getSettingType(index : String) -> SettingTypes? {
+    static func getSettingType(_ index : String) -> SettingTypes? {
         switch index {
         case "bio": return .bio
         case "shortBio": return .shortBio
@@ -278,23 +382,23 @@ enum SettingTypes : String{
         case "birthday": return .birthday
         case "password": return .password
         case "array": return .array
-        case "gender": return .array
+        case "gender": return .gender
         case "profilePic": return .profilePic
         case "thumbPic": return .thumbPic
-
+        case "location": return .location
 
         default: return nil
         }
     }
 }
 
-enum CreatedAssetType {
+enum CreatedAssetType: String {
     case recordedImage
     case albumImage
     case recordedVideo
     case albumVideo
     
-    static func getAssetType(value : String?) -> CreatedAssetType? {
+    static func getAssetType(_ value : String?) -> CreatedAssetType? {
         if let _value = value {
             switch _value {
             case "recordedImage": return .recordedImage
@@ -307,7 +411,6 @@ enum CreatedAssetType {
         } else {
             return nil
         }
-        
     }
 }
 
@@ -316,7 +419,7 @@ enum MediaAssetType {
     case image
     case unknown
     
-    static func getAssetType(metadata : String) -> MediaAssetType? {
+    static func getAssetType(_ metadata : String) -> MediaAssetType? {
         switch metadata {
         case "video/mp4": return .video
         case "video/mpeg": return .video

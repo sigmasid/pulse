@@ -8,12 +8,32 @@
 
 import UIKit
 import FirebaseDatabase
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
+fileprivate func <= <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l <= r
+  default:
+    return !(rhs < lhs)
+  }
+}
+
 
 class ExploreTagCell: UICollectionViewCell {
     
     @IBOutlet weak var tagLabel: UILabel!
     @IBOutlet weak var tagImage: UIImageView!
-    private var saveIcon : Save?
+    fileprivate var saveIcon : Save?
 
     @IBOutlet weak var ExploreQuestions: UICollectionView!
     weak var delegate : ExploreDelegate!
@@ -27,11 +47,11 @@ class ExploreTagCell: UICollectionViewCell {
     var _reachedEnd : CGFloat! {
         didSet {
             if (_reachedEnd <= 0 ) {
-                footerView.hidden = true
+                footerView.isHidden = true
                 delegate.showTagDetail(currentTag)
             } else if (_reachedEnd <= 20 ){
-                footerView.hidden = true
-                ExploreQuestions.scrollToItemAtIndexPath(ExploreQuestions.indexPathsForVisibleItems().first!, atScrollPosition: UICollectionViewScrollPosition.Left, animated: true)
+                footerView.isHidden = true
+                ExploreQuestions.scrollToItem(at: ExploreQuestions.indexPathsForVisibleItems.first!, at: UICollectionViewScrollPosition.left, animated: true)
             }
         }
     }
@@ -42,7 +62,7 @@ class ExploreTagCell: UICollectionViewCell {
                 _totalQuestions = currentTag.totalQuestionsForTag()
                 ExploreQuestions.dataSource = self
                 ExploreQuestions.delegate = self
-                ExploreQuestions.backgroundColor = UIColor.clearColor()
+                ExploreQuestions.backgroundColor = UIColor.clear
                 
                 let _longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
                 _longPress.minimumPressDuration = 0.5
@@ -51,37 +71,37 @@ class ExploreTagCell: UICollectionViewCell {
         }
     }
     
-    private var currentSavedQuestionIndex : NSIndexPath? {
+    fileprivate var currentSavedQuestionIndex : IndexPath? {
         didSet {
             if (savedQuestions?.append(currentSavedQuestionIndex!) == nil) {
                 savedQuestions = [currentSavedQuestionIndex!]
             }
-            ExploreQuestions.reloadItemsAtIndexPaths([currentSavedQuestionIndex!])
+            ExploreQuestions.reloadItems(at: [currentSavedQuestionIndex!])
         }
     }
     
-    private var currentRemovedQuestionIndex : NSIndexPath? {
+    fileprivate var currentRemovedQuestionIndex : IndexPath? {
         didSet {
-            if let _removalIndex = savedQuestions?.indexOf(currentRemovedQuestionIndex!) {
-                savedQuestions?.removeAtIndex(_removalIndex)
+            if let _removalIndex = savedQuestions?.index(of: currentRemovedQuestionIndex!) {
+                savedQuestions?.remove(at: _removalIndex)
             }
-            ExploreQuestions.reloadItemsAtIndexPaths([currentRemovedQuestionIndex!])
+            ExploreQuestions.reloadItems(at: [currentRemovedQuestionIndex!])
         }
     }
     
-    private var savedQuestions : [NSIndexPath]?
-    private let questionReuseIdentifier = "questionCell"
-    private let questionFooterReuseIdentifier = "questionCellFooter"
+    fileprivate var savedQuestions : [IndexPath]?
+    fileprivate let questionReuseIdentifier = "questionCell"
+    fileprivate let questionFooterReuseIdentifier = "questionCellFooter"
     
-    func handleLongPress(longPress : UIPanGestureRecognizer) {
-        if longPress.state == UIGestureRecognizerState.Began {
-            let point = longPress.locationInView(ExploreQuestions)
-            let index = ExploreQuestions.indexPathForItemAtPoint(point)
+    func handleLongPress(_ longPress : UIPanGestureRecognizer) {
+        if longPress.state == UIGestureRecognizerState.began {
+            let point = longPress.location(in: ExploreQuestions)
+            let index = ExploreQuestions.indexPathForItem(at: point)
             
             if let _index = index {
-                if let question = _allQuestions[_index.row] {
-                    if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) {
-                        Database.pinQuestionForUser(question, completion: {(success, error) in
+                if let question = _allQuestions[(_index as NSIndexPath).row] {
+                    if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[question.qID] != nil {
+                        Database.saveQuestion(question.qID, completion: {(success, error) in
                             if !success {
                                 GlobalFunctions.showErrorBlock("Error Saving Question", erMessage: error!.localizedDescription)
                             } else {
@@ -89,7 +109,7 @@ class ExploreTagCell: UICollectionViewCell {
                             }
                         })
                     } else {
-                        Database.pinQuestionForUser(question, completion: {(success, error) in
+                        Database.saveQuestion(question.qID, completion: {(success, error) in
                             if !success {
                                 GlobalFunctions.showErrorBlock("Error Removing Question", erMessage: error!.localizedDescription)
                             } else {
@@ -102,14 +122,14 @@ class ExploreTagCell: UICollectionViewCell {
         }
     }
     
-    func toggleSaveTagIcon(mode : SaveType) {
-        saveIcon = Save(frame: CGRectMake(0, 0, IconSizes.XSmall.rawValue / 2, IconSizes.XSmall.rawValue / 2))
+    func toggleSaveTagIcon(_ mode : SaveType) {
+        saveIcon = Save(frame: CGRect(x: 0, y: 0, width: IconSizes.xSmall.rawValue / 2, height: IconSizes.xSmall.rawValue / 2))
         saveIcon?.toggle(mode)
         addSubview(saveIcon!)
         
         saveIcon!.translatesAutoresizingMaskIntoConstraints = false
-        saveIcon!.trailingAnchor.constraintEqualToAnchor(trailingAnchor, constant: -Spacing.s.rawValue).active = true
-        saveIcon!.topAnchor.constraintEqualToAnchor(topAnchor, constant: Spacing.xs.rawValue).active = true
+        saveIcon!.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        saveIcon!.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
         saveIcon?.layoutIfNeeded()
     }
     
@@ -122,34 +142,34 @@ class ExploreTagCell: UICollectionViewCell {
 }
 
 extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate {
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return min(_totalQuestions, questionToShow)
     }
     
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell{
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(questionReuseIdentifier, forIndexPath: indexPath) as! ExploreQuestionCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell{
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: questionReuseIdentifier, for: indexPath) as! ExploreQuestionCell
         cell.backgroundColor = UIColor(red: 0/255, green: 0/255, blue: 0/255, alpha: 0.3 )
 
-        if _allQuestions.count > indexPath.row {
-            let _currentQuestion = _allQuestions[indexPath.row]
+        if _allQuestions.count > (indexPath as NSIndexPath).row {
+            let _currentQuestion = _allQuestions[(indexPath as NSIndexPath).row]
             cell.qTitle.text = _currentQuestion?.qTitle
             if savedQuestions != nil && savedQuestions!.contains(indexPath) {
-                cell.toggleSaveIcon(.Save)
-            } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(_currentQuestion!.qID) {
-                cell.toggleSaveIcon(.Save)
+                cell.toggleSaveIcon(.save)
+            } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[_currentQuestion!.qID] != nil {
+                cell.toggleSaveIcon(.save)
             }
             else {
                 cell.keepSaveHidden()
             }
         } else {
-            Database.getQuestion(currentTag.questions![indexPath.row], completion: { (question, error) in
+            Database.getQuestion(currentTag.questions![(indexPath as NSIndexPath).row]!.qID, completion: { (question, error) in
                 if error == nil {
                     self._allQuestions.append(question)
                     cell.qTitle.text = question.qTitle
                     if self.savedQuestions != nil && self.savedQuestions!.contains(indexPath) {
-                        cell.toggleSaveIcon(.Save)
-                    } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions!.contains(question.qID) {
-                        cell.toggleSaveIcon(.Save)
+                        cell.toggleSaveIcon(.save)
+                    } else if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[question.qID] != nil {
+                        cell.toggleSaveIcon(.save)
                     }
                     else {
                         cell.keepSaveHidden()
@@ -160,24 +180,24 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         return cell
     }
     
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        let _selectedQuestion = _allQuestions[indexPath.row]
-        delegate.showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag : currentTag)
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let _selectedQuestion = _allQuestions[(indexPath as NSIndexPath).row]
+        delegate.showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: (indexPath as NSIndexPath).row, _selectedTag : currentTag)
     }
     
-    func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView   {
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView   {
         if (kind ==  UICollectionElementKindSectionFooter) {
-            footerView = collectionView.dequeueReusableSupplementaryViewOfKind(kind, withReuseIdentifier: questionFooterReuseIdentifier, forIndexPath: indexPath) as! QuestionFooterCellView
-            footerView.hidden = false
+            footerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: questionFooterReuseIdentifier, for: indexPath) as! QuestionFooterCellView
+            footerView.isHidden = false
         }
         return footerView
     }
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int{
+    func numberOfSections(in collectionView: UICollectionView) -> Int{
         return 1
     }
     
-    func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         let currentOffset = scrollView.contentOffset.x
         let maximumOffset = scrollView.contentSize.width - scrollView.frame.size.width
         
@@ -186,7 +206,7 @@ extension ExploreTagCell: UICollectionViewDataSource, UICollectionViewDelegate, 
 }
 
 extension ExploreTagCell: UICollectionViewDelegateFlowLayout {
-    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: collectionView.frame.width / 3, height: collectionView.frame.height)
     }
 }

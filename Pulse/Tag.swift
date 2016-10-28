@@ -7,23 +7,23 @@
 //
 
 import Foundation
-
 import Firebase
 
 class Tag : NSObject {
     var tagID: String?
-    var questions: [String]?
+    var questions: [Question?]?
+    var experts: [User?]?
     var tagImage : String?
+    var tagDescription : String?
     var previewImage : String?
     
     dynamic var tagCreated = false
     
     init(tagID: String) {
         self.tagID = tagID
-        self.questions = nil
     }
     
-    init(tagID: String, questions : [String]?) {
+    init(tagID: String, questions : [Question]?) {
         self.tagID = tagID
         self.questions = questions
     }
@@ -31,18 +31,27 @@ class Tag : NSObject {
     init(tagID: String, snapshot: FIRDataSnapshot) {
         self.tagID = tagID
         super.init()
-        self.tagImage = snapshot.childSnapshotForPath("tagImage").value as? String
-        self.previewImage = snapshot.childSnapshotForPath("previewImage").value as? String
+        
+        self.tagDescription  = snapshot.childSnapshot(forPath: "description").value as? String
+        self.previewImage = snapshot.childSnapshot(forPath: "previewImage").value as? String
 
-        for question in snapshot.childSnapshotForPath("questions").children {
-            if (self.questions?.append(question.key) == nil) {
-                self.questions = [question.key]
+        for question in snapshot.childSnapshot(forPath: "questions").children {
+            let _question = Question(qID: (question as AnyObject).key)
+            if (self.questions?.append(_question) == nil) {
+                self.questions = [_question]
+            }
+        }
+        
+        for user in snapshot.childSnapshot(forPath: "experts").children {
+            let _user = User(uID: (user as AnyObject).key)
+            if (self.experts?.append(_user) == nil) {
+                self.experts = [_user]
             }
         }
         self.tagCreated = true
     }
     
     func totalQuestionsForTag() -> Int {
-        return self.questions?.count > 0 ? self.questions!.count : 0
+        return self.questions != nil ? self.questions!.count : 0
     }
 }
