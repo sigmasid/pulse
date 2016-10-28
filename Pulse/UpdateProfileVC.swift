@@ -61,7 +61,7 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         navigationItem.rightBarButtonItem = nil
         
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Update Profile", subtitle: nil, statusImage: nil)
         } else {
             title = "Update Profile"

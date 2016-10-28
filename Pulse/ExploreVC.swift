@@ -8,13 +8,14 @@
 
 import UIKit
 
-class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
+class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate {
     
     fileprivate var iconContainer : IconContainer!
     fileprivate var exploreContainer : FeedVC!
     fileprivate var loadingView : LoadingView?
 
-    fileprivate var headerNav : NavVC?
+    fileprivate var headerNav : PulseNavVC?
+    
     fileprivate var searchButton : PulseButton!
     fileprivate var closeButton : PulseButton!
     fileprivate var followButton : PulseButton!
@@ -24,91 +25,20 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     fileprivate var messageButton : PulseButton!
     
     fileprivate var logoMode : LogoModes = .full
-    var tapGesture = UITapGestureRecognizer()
-    var searchController = UISearchController(searchResultsController: nil)
-    
-    /* STACK TO KEEP WINDOW SYNC'D / REFRESH AS NEEDED */
-    struct Explore {
-        
-        enum Options { case tags, questions, people, experts, related, answers }
-        enum Modes { case root, tag, question, search, people }
-    
-        struct scopeBar {
-            var titles = [String]()
-            var icons : [UIImage]!
-        }
-        
-        private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
-        private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "profile")!, UIImage(named: "related")!]
-        private let tagIcons = [UIImage(named: "question")!, UIImage(named: "profile")!, UIImage(named: "related")!]
-        private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
-        
-        /* PROPERTIES */
-        var currentMode : Modes = .root
-        var currentModeOptions : [Options] {
-            switch currentMode {
-            case .root: return [.tags, .questions, .people]
-            case .tag: return [.questions, .experts, .related]
-            case .question: return [.answers, .experts, .related]
-            case .people: return [ .answers ]
-            case .search: return [.tags, .questions, .people]
-            }
-        }
-
-        var currentSelection : Int = 0
-        var currentScopeBar : scopeBar? {
-            switch currentMode {
-            case .root: return scopeBar(titles: getOptionTitles(), icons: rootIcons)
-            case .tag: return scopeBar(titles: getOptionTitles(), icons: tagIcons)
-            case .question: return scopeBar(titles: getOptionTitles(), icons: questionIcons)
-            case .people: return nil
-            case .search: return scopeBar(titles: getOptionTitles(), icons: searchIcons)
-            }
-        }
-        
-        /* FUNCTIONS */
-        
-        //Return mapped titles if total options > 1 else return empty array i.e. no scope bar
-        private func getOptionTitles() -> [String] {
-            return currentModeOptions.count > 1 ? currentModeOptions.map{ (option) -> String in return "\(option)" } : []
-        }
-        
-        func currentSelectionValue() -> Options {
-            return currentModeOptions[currentSelection]
-        }
-        
-        func getFeedType() -> FeedItemType? {
-            switch currentModeOptions[currentSelection] {
-            case .people, .experts: return .people
-            case .answers: return .answer
-            case .tags: return .tag
-            case .questions: return .question
-            case .related:
-                switch currentMode {
-                case .tag: return .tag
-                case .question: return .question
-                default: return nil
-                }
-            }
-        }
-        
-        func getModeTitle() -> String {
-            switch currentMode {
-            case .root: return "Explore"
-            case .tag: return "Tag"
-            case .question: return "Question"
-            case .people: return "People"
-            case .search: return "Search"
-            }
+    fileprivate var hideStatusBar = false {
+        didSet {
+            self.setNeedsStatusBarAppearanceUpdate()
         }
     }
+    
+    var tapGesture = UITapGestureRecognizer()
+    var searchController = UISearchController(searchResultsController: nil)
     
     fileprivate var exploreStack = [Explore]()
     var currentExploreMode : Explore! {
         didSet {
             updateScopeBar()
             updateModes()
-            print("current explore mode and selection are \(currentExploreMode.currentMode, currentExploreMode.currentSelection)")
         }
     }
     /* END EXPLORE STACK */
@@ -129,7 +59,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
-            if let nav = navigationController as? NavVC {
+            if let nav = navigationController as? PulseNavVC {
                 headerNav = nav
             }
             getButtons()
@@ -148,8 +78,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         
         if let headerNav = headerNav {
             headerNav.toggleLogo(mode: logoMode)
+//            headerNav.scrollingNavbarDelegate = self
+//            headerNav.followScrollView(exploreContainer.view, delay: 20.0)
         }
-        
+    }
+    
+    override var prefersStatusBarHidden: Bool {
+        return false
     }
     
     func dismissSearchTap() {
@@ -158,14 +93,25 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
     
     fileprivate func updateScopeBar() {
         if let scopeBar = currentExploreMode.currentScopeBar {
-            headerNav?.toggleScopeBar(show: true)
+//            headerNav?.shouldShowScope = true
             headerNav?.updateScopeBar(titles: scopeBar.titles,
                                       icons: scopeBar.icons,
                                       selected: currentExploreMode.currentSelection )
         } else {
-            headerNav?.toggleScopeBar(show: false)
+//            headerNav?.shouldShowScope = false
         }
     }
+    
+//    func scrollingNavigationControllerWillSet(_ controller: PulseNavVC, state: NavigationBarState) {
+//        switch state {
+//        case .collapsed:
+//            hideStatusBar = true
+//        case .expanded:
+//            hideStatusBar = false
+//        case .scrolling:
+//            hideStatusBar = true
+//        }
+//    }
     
     fileprivate func updateModes() {
         toggleLoading(show: true, message : "Loading...")
@@ -479,14 +425,15 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate {
         headerNav?.getScopeBar()?.delegate = self
 
         exploreContainer = FeedVC()
-        
+        exploreContainer.view.frame = view.bounds
         GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
-        exploreContainer.view.translatesAutoresizingMaskIntoConstraints = false
-        exploreContainer.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-        exploreContainer.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        exploreContainer.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        exploreContainer.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        exploreContainer.view.layoutIfNeeded()
+        
+//        exploreContainer.view.translatesAutoresizingMaskIntoConstraints = false
+//        exploreContainer.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+//        exploreContainer.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+//        exploreContainer.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+//        exploreContainer.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+//        exploreContainer.view.layoutIfNeeded()
         exploreContainer.feedDelegate = self
 
         currentExploreMode = Explore(currentMode: .root, currentSelection: 0)
@@ -593,6 +540,84 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
         return true
+    }
+}
+
+extension ExploreVC {
+    /* STACK TO KEEP WINDOW SYNC'D / REFRESH AS NEEDED */
+    struct Explore {
+        
+        enum Options { case tags, questions, people, experts, related, answers }
+        enum Modes { case root, tag, question, search, people }
+        
+        struct scopeBar {
+            var titles = [String]()
+            var icons : [UIImage]!
+        }
+        
+        private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "profile")!, UIImage(named: "related")!]
+        private let tagIcons = [UIImage(named: "question")!, UIImage(named: "profile")!, UIImage(named: "related")!]
+        private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        
+        /* PROPERTIES */
+        var currentMode : Modes = .root
+        var currentModeOptions : [Options] {
+            switch currentMode {
+            case .root: return [.tags, .questions, .people]
+            case .tag: return [.questions, .experts, .related]
+            case .question: return [.answers, .experts, .related]
+            case .people: return [ .answers ]
+            case .search: return [.tags, .questions, .people]
+            }
+        }
+        
+        var currentSelection : Int = 0
+        var currentScopeBar : scopeBar? {
+            switch currentMode {
+            case .root: return scopeBar(titles: getOptionTitles(), icons: rootIcons)
+            case .tag: return scopeBar(titles: getOptionTitles(), icons: tagIcons)
+            case .question: return scopeBar(titles: getOptionTitles(), icons: questionIcons)
+            case .people: return nil
+            case .search: return scopeBar(titles: getOptionTitles(), icons: searchIcons)
+            }
+        }
+        
+        /* FUNCTIONS */
+        
+        //Return mapped titles if total options > 1 else return empty array i.e. no scope bar
+        private func getOptionTitles() -> [String] {
+            return currentModeOptions.count > 1 ? currentModeOptions.map{ (option) -> String in return "\(option)" } : []
+        }
+        
+        func currentSelectionValue() -> Options {
+            return currentModeOptions[currentSelection]
+        }
+        
+        func getFeedType() -> FeedItemType? {
+            switch currentModeOptions[currentSelection] {
+            case .people, .experts: return .people
+            case .answers: return .answer
+            case .tags: return .tag
+            case .questions: return .question
+            case .related:
+                switch currentMode {
+                case .tag: return .tag
+                case .question: return .question
+                default: return nil
+                }
+            }
+        }
+        
+        func getModeTitle() -> String {
+            switch currentMode {
+            case .root: return "Explore"
+            case .tag: return "Tag"
+            case .question: return "Question"
+            case .people: return "People"
+            case .search: return "Search"
+            }
+        }
     }
 }
 

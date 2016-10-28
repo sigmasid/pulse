@@ -56,7 +56,7 @@ class InboxVC: UITableViewController {
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Conversations", subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
         } else {
@@ -66,6 +66,7 @@ class InboxVC: UITableViewController {
     
     ///Pop self from stack
     func goBack() {
+        print("go back fired")
         let _ = self.navigationController?.popViewController(animated: true)
     }
     

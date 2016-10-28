@@ -89,7 +89,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             toUserImage != nil ?
                 nav.setNav(title: nil, subtitle: nil, statusImage: toUserImage) :
                 nav.setNav(title: msgToUserName.text, subtitle: nil, statusImage: nil)

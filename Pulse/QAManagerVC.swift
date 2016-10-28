@@ -302,9 +302,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         cameraVC = CameraVC()
         cameraVC.delegate = self
         cameraVC.screenTitle = currentQuestion.qTitle
-        
-//        cameraVC.transitioningDelegate = self - was used when we were presenting the camera vs. pushing
-        
+                
         panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: self)
         panDismissInteractionController.delegate = self
         pushViewController(cameraVC, animated: animated)

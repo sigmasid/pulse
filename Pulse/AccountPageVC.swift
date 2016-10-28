@@ -15,7 +15,7 @@ protocol accountDelegate: class {
 
 class AccountPageVC: UIViewController, accountDelegate {
     
-    fileprivate var nav : NavVC?
+    fileprivate var nav : PulseNavVC?
     fileprivate var profileSummary = ProfileSummary()
     fileprivate var profileSettingsVC : SettingsTableVC!
     fileprivate var settingsLinks : AccountPageMenu!
@@ -37,7 +37,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let _nav = navigationController as? NavVC {
+        if let _nav = navigationController as? PulseNavVC {
             nav = _nav
         }
     }
@@ -328,7 +328,7 @@ class AccountPageVC: UIViewController, accountDelegate {
             }
         }
         
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: title, subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
         } else {
@@ -361,12 +361,12 @@ class AccountPageVC: UIViewController, accountDelegate {
         
         settingsLinks.setupSettingsMenuLayout()
         
-        settingsLinks.getButton(type: .profile).addTarget(self, action: #selector(clickedProfile), for: .touchDown)
-        settingsLinks.getButton(type: .messages).addTarget(self, action: #selector(clickedMessages), for: .touchDown)
-        settingsLinks.getButton(type: .activity).addTarget(self, action: #selector(clickedActivity), for: .touchDown)
-        settingsLinks.getButton(type: .answers).addTarget(self, action: #selector(clickedAnswers), for: .touchDown)
-        settingsLinks.getButton(type: .settings).addTarget(self, action: #selector(clickedSettings), for: .touchDown)
-        settingsLinks.getButton(type: .logout).addTarget(self, action: #selector(clickedLogout), for: .touchDown)
+        settingsLinks.getButton(type: .profile).addTarget(self, action: #selector(clickedProfile), for: .touchUpInside)
+        settingsLinks.getButton(type: .messages).addTarget(self, action: #selector(clickedMessages), for: .touchUpInside)
+        settingsLinks.getButton(type: .activity).addTarget(self, action: #selector(clickedActivity), for: .touchUpInside)
+        settingsLinks.getButton(type: .answers).addTarget(self, action: #selector(clickedAnswers), for: .touchUpInside)
+        settingsLinks.getButton(type: .settings).addTarget(self, action: #selector(clickedSettings), for: .touchUpInside)
+        settingsLinks.getButton(type: .logout).addTarget(self, action: #selector(clickedLogout), for: .touchUpInside)
         
         clickedMenu()
 

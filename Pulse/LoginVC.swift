@@ -92,7 +92,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
         }
         
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Login", subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
         } else {

@@ -73,7 +73,6 @@ class FeedCell: UICollectionViewCell {
     }
     
     func showAnswer(_ _answerID : String) {
-        print("show answer fired")
         previewVC = PreviewVC(frame: contentView.bounds)
         previewVC!.currentAnswerID = _answerID
         if previewImage != nil { previewImage!.isHidden = true }

@@ -23,8 +23,8 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     fileprivate var initialLoadComplete = false
 
-    var accountNavVC : NavVC!
-    var exploreNavVC : NavVC!
+    var accountNavVC : PulseNavVC!
+    var exploreNavVC : PulseNavVC!
 
     var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     var exploreVC : ExploreVC = ExploreVC()
@@ -61,10 +61,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     }
     
     func setupControllers(_ initialIndex : Int) {
-        accountNavVC = NavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         accountNavVC.viewControllers = [accountVC]
 
-        exploreNavVC = NavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        exploreNavVC.navigationBar.barTintColor = UIColor(red:0.91, green:0.3, blue:0.24, alpha:1)
         exploreNavVC.viewControllers = [exploreVC]
 
         viewControllers = [accountNavVC, exploreNavVC, homeVC]

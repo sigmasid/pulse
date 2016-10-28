@@ -26,7 +26,7 @@ let color8 = UIColor(red: 97/255, green: 101/255, blue: 111/255, alpha: 1.0)
 
 let minCellHeight : CGFloat = 225
 let searchBarHeight : CGFloat = 44
-let statusBarHeight : CGFloat = 20
+let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
 
 let _backgroundColors = [color1, color2, color3, color4, color5, color6, color7, color8]
 

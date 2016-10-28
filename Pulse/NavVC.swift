@@ -9,7 +9,7 @@
 import UIKit
 enum LogoModes { case full, line, none }
 
-class NavVC: UINavigationController {
+class PulseNavVC: UINavigationController {
 
     override func viewDidLoad() {
         super.viewDidLoad()

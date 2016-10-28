@@ -63,7 +63,7 @@ class SettingsTableVC: UIViewController {
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Update Profile", subtitle: nil, statusImage: nil)
         } else {
             title = "Update Profile"

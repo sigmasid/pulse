@@ -55,7 +55,7 @@ class LoginAddNameVC: UIViewController {
         let checkButton = PulseButton(size: .small, type: .check, isRound : true, hasBackground: true)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
         
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Create Profile", subtitle: "could we get a name with that?", statusImage: nil)
         } else {
             title = "Add Name"

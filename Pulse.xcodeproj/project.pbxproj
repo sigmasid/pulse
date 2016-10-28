@@ -231,9 +231,9 @@
 		BA03C43C1DB5A53900277382 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
+				BA93BD661DC135B5003F13B9 /* PulseButton.swift */,
 				BA06EDEC1DA7081C00F880EE /* XMSegmentedControl.swift */,
 				BAF76D8A1DB05B9B00FB72EE /* NavVC.swift */,
-				BA93BD661DC135B5003F13B9 /* PulseButton.swift */,
 				BA0387071DB1B2BA00A7BB79 /* PulseNavBar.swift */,
 			);
 			name = Navigation;

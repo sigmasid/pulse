@@ -165,7 +165,7 @@ class FeedVC: UIViewController {
         feedCollectionView?.backgroundColor = UIColor.clear
         feedCollectionView?.backgroundView = nil
         feedCollectionView?.showsVerticalScrollIndicator = false
-        feedCollectionView?.isPagingEnabled = true
+//        feedCollectionView?.isPagingEnabled = true
     }
     
     func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {

@@ -85,7 +85,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
 
-        if let nav = navigationController as? NavVC {
+        if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Create Account", subtitle: nil, statusImage: nil)
         } else {
             title = "Create Account"
@@ -157,6 +157,6 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     }
     
     func goBack() {
-        let _ = self.navigationController?.popViewController(animated: true)
+        let _ = navigationController?.popViewController(animated: true)
     }
 }

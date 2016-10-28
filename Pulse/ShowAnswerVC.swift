@@ -196,6 +196,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         })
     }
     
+    //adds the first clip to the answers
     fileprivate func _addClip(_ answer : Answer) {
         guard let _answerType = answer.aType else {
             return
@@ -205,6 +206,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             Database.getAnswerURL(answer.aID, completion: { (URL, error) in
                 if (error != nil) {
                     GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please go to next answer")
+                    self.delegate.removeQuestionPreview()
+                    self.handleTap()
                 } else {
                     self.currentPlayerItem = AVPlayerItem(url: URL!)
                     self.removeImageView()
@@ -218,9 +221,15 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
                 if error != nil {
                     print("error getting image")
+                    self.delegate.removeQuestionPreview()
+                    self.handleTap()
                 } else {
                     if let _image = GlobalFunctions.createImageFromData(data!) {
                         self.showImageView(_image)
+                    } else {
+                        print("error creating image from data")
+                        self.delegate.removeQuestionPreview()
+                        self.handleTap()
                     }
                 }
             })
@@ -290,6 +299,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     Database.getAnswerURL(nextAnswerID, completion: { (URL, error) in
                         if (error != nil) {
                             GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
+                            self.handleTap()
                         } else {
                             let nextPlayerItem = AVPlayerItem(url: URL!)
                             if self.qPlayer.canInsert(nextPlayerItem, after: nil) {
@@ -302,6 +312,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     Database.getImage(.Answers, fileID: nextAnswerID, maxImgSize: maxImgSize, completion: {(data, error) in
                         if error != nil {
                             GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
+                            self.handleTap()
                         } else {
                             self._nextItemReady = true
                             self.nextAnswer?.aImage = UIImage(data: data!)
