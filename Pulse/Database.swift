@@ -463,8 +463,14 @@ class Database {
     
     static func getQuestion(_ qID : String, completion: @escaping (_ question : Question, _ error : NSError?) -> Void) {
         questionsRef.child(qID).observeSingleEvent(of: .value, with: { snap in
-            let _currentQuestion = Question(qID: qID, snapshot: snap)
-            completion(_currentQuestion, nil)
+            if snap.exists() {
+                let _currentQuestion = Question(qID: qID, snapshot: snap)
+                completion(_currentQuestion, nil)
+            }
+//            else {
+//                let userInfo = [ NSLocalizedDescriptionKey : "no question found" ]
+//                completion(nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
+//            }
         })
     }
     

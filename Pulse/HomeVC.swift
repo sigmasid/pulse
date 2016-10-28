@@ -13,6 +13,7 @@ class HomeVC: UIViewController, feedVCDelegate {
     fileprivate var homeFeedVC : FeedVC!
     fileprivate var iconContainer : IconContainer!
     fileprivate var loadingView : LoadingView?
+    fileprivate var titleLabel = UILabel()
     
     fileprivate var feed : Tag!
     fileprivate var backButton : PulseButton!
@@ -24,7 +25,8 @@ class HomeVC: UIViewController, feedVCDelegate {
             view.backgroundColor = UIColor.white
             displayHomeFeed()
             addIcon()
-            addButtons()
+            updateNav()
+            automaticallyAdjustsScrollViewInsets = false
 
             isLoaded = true
         }
@@ -59,7 +61,7 @@ class HomeVC: UIViewController, feedVCDelegate {
     }
     
     func returnHome() {
-        toggleBackButton(show: false)
+        navigationController?.setNavigationBarHidden(true, animated: true)
         
         homeFeedVC.selectedTag = feed
         homeFeedVC.allQuestions = feed.questions
@@ -70,7 +72,8 @@ class HomeVC: UIViewController, feedVCDelegate {
     func userSelected(type : FeedItemType, item : Any) {
         switch type {
         case .question:
-            toggleBackButton(show: true)
+            navigationController?.setNavigationBarHidden(false, animated: true)
+            
             let selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
             
             Database.getQuestion(selectedQuestion.qID, completion: { question, error in
@@ -79,6 +82,11 @@ class HomeVC: UIViewController, feedVCDelegate {
                     self.homeFeedVC.feedItemType = .answer
                     self.homeFeedVC.setSelectedIndex(index: IndexPath(row: 0, section: 0))
                     self.toggleLoading(show: false, message : nil)
+                    self.titleLabel.text = question.qTitle
+                    self.titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
+                    self.titleLabel.adjustsFontSizeToFitWidth = true
+                    self.titleLabel.sizeToFit()
+
                 } else {
                     self.toggleLoading(show: true, message : "No answers found")
                 }
@@ -88,24 +96,18 @@ class HomeVC: UIViewController, feedVCDelegate {
         }
     }
     
-    fileprivate func toggleBackButton( show : Bool ) {
-        backButton.isHidden = show ? false : true
-    }
-    
-    fileprivate func addButtons() {
-        backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+    fileprivate func updateNav() {
+        backButton = PulseButton(size: .xSmall, type: .back, isRound : true, hasBackground: true)
         backButton.addTarget(self, action: #selector(returnHome), for: .touchUpInside)
 
-        view.addSubview(backButton)
+        titleLabel = UILabel(frame: CGRect(x: Spacing.xs.rawValue, y: 0, width: view.bounds.width, height: IconSizes.medium.rawValue))
+        titleLabel.numberOfLines = 2
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.minimumScaleFactor = 0.1
         
-        backButton.translatesAutoresizingMaskIntoConstraints = false
-        backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        backButton.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.s.rawValue).isActive = true
-        backButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        backButton.heightAnchor.constraint(equalTo: backButton.widthAnchor).isActive = true
-
-        backButton.layoutIfNeeded()
-        toggleBackButton(show: false)
+        navigationItem.leftBarButtonItem = backButton != nil ? UIBarButtonItem(customView: backButton!) : nil
+        navigationItem.titleView = titleLabel
+        
     }
     
     fileprivate func toggleLoading(show: Bool, message: String?) {

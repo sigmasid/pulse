@@ -15,6 +15,8 @@ enum ButtonSizes { case xSmall, small, medium, large }
 @IBDesignable
 open class PulseButton: UIButton {
     
+    var size : ButtonSizes!
+    
     @IBInspectable open var ripplePercent: Float = 0.8 {
         didSet {
             setupRippleView()
@@ -106,6 +108,7 @@ open class PulseButton: UIButton {
     
     convenience init(size: ButtonSizes, type : ButtonType, isRound : Bool, hasBackground : Bool) {
         var frame = CGRect()
+        
         switch size {
         case .xSmall: frame = CGRect(x: 0, y: 0, width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
         case .small: frame = CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue)
@@ -115,7 +118,7 @@ open class PulseButton: UIButton {
         self.init(frame: frame)
         
         setupRipple()
-        setupButtonType(type: type)
+        setupButtonType(size: size, type: type)
         
         if isRound {
             makeRound()
@@ -167,9 +170,13 @@ open class PulseButton: UIButton {
         }
     }
     
-    fileprivate func setupButtonType(type : ButtonType) {
-        imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //standard insets
-
+    fileprivate func setupButtonType(size: ButtonSizes, type : ButtonType) {
+        
+        switch size {
+        case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) //smaller insets for xSmall button
+        default: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //standard insets
+        }
+        
         switch type {
         case .search:
         let tintedTimage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)

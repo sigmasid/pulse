@@ -68,7 +68,9 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         exploreNavVC.navigationBar.barTintColor = UIColor(red:0.91, green:0.3, blue:0.24, alpha:1)
         exploreNavVC.viewControllers = [exploreVC]
 
-        viewControllers = [accountNavVC, exploreNavVC, homeVC]
+        let homeNavVC = UINavigationController(rootViewController: homeVC)
+        homeNavVC.isNavigationBarHidden = true
+        viewControllers = [accountNavVC, exploreNavVC, homeNavVC]
         
         let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "profile"))
         let tabExplore = UITabBarItem(title: "Explore", image: UIImage(named: "search"), selectedImage: UIImage(named: "search"))
