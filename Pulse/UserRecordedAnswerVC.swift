@@ -252,7 +252,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
-    private func uploadVideo(answer : Answer, completion: (success : Bool, _answerID : String?) -> Void) {
+    private func uploadVideo(answer : Answer, completion: (_ success : Bool, _ _answerID : String?) -> Void) {
         var fileSize = UInt64()
         _controlsOverlay.addUploadProgressBar()
         
