@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate {
+class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate {
     
     fileprivate var iconContainer : IconContainer!
     fileprivate var exploreContainer : FeedVC!
@@ -23,7 +23,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var backButton : PulseButton!
     fileprivate var blankButton : PulseButton!
     fileprivate var messageButton : PulseButton!
-    
+
     fileprivate var logoMode : LogoModes = .full
     fileprivate var hideStatusBar = false {
         didSet {
@@ -41,6 +41,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updateModes()
         }
     }
+    
     /* END EXPLORE STACK */
     fileprivate var isFollowingSelectedTag : Bool = false {
         didSet {
@@ -59,9 +60,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
-            if let nav = navigationController as? PulseNavVC {
-                headerNav = nav
-            }
+            
+            if let nav = navigationController as? PulseNavVC { headerNav = nav }
+            
             getButtons()
             setupExplore()
             setupSearch()
@@ -74,18 +75,27 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        navigationController?.isNavigationBarHidden = false
+        super.viewWillAppear(animated)
+
+        // navigationController?.isNavigationBarHidden = false
         
-        if let headerNav = headerNav {
-            headerNav.toggleLogo(mode: logoMode)
-//            headerNav.scrollingNavbarDelegate = self
-//            headerNav.followScrollView(exploreContainer.view, delay: 20.0)
-        }
+        guard let headerNav = headerNav else { return }
+        headerNav.toggleLogo(mode: logoMode)
+        headerNav.followScrollView(exploreContainer.view, delay: 20.0)
+        headerNav.scrollingNavbarDelegate = self
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        guard let headerNav = headerNav else { return }
+        headerNav.stopFollowingScrollView()
     }
     
     override var prefersStatusBarHidden: Bool {
-        return false
+        return hideStatusBar
     }
+    
     
     func dismissSearchTap() {
         searchController.searchBar.resignFirstResponder()
@@ -93,25 +103,26 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     fileprivate func updateScopeBar() {
         if let scopeBar = currentExploreMode.currentScopeBar {
-//            headerNav?.shouldShowScope = true
+            headerNav?.shouldShowScope = true
             headerNav?.updateScopeBar(titles: scopeBar.titles,
                                       icons: scopeBar.icons,
                                       selected: currentExploreMode.currentSelection )
         } else {
-//            headerNav?.shouldShowScope = false
+            headerNav?.shouldShowScope = false
         }
     }
     
-//    func scrollingNavigationControllerWillSet(_ controller: PulseNavVC, state: NavigationBarState) {
-//        switch state {
-//        case .collapsed:
-//            hideStatusBar = true
-//        case .expanded:
-//            hideStatusBar = false
-//        case .scrolling:
-//            hideStatusBar = true
-//        }
-//    }
+    func scrollingNavWillSet(_ controller: PulseNavVC, state: NavBarState, size: NavBarSize) {
+        print("scolling nav will set fired with state \(state)")
+        switch state {
+        case .collapsed:
+            hideStatusBar = true
+        case .expanded:
+            hideStatusBar = false
+        case .scrolling:
+            hideStatusBar = true
+        }
+    }
     
     fileprivate func updateModes() {
         toggleLoading(show: true, message : "Loading...")
@@ -138,7 +149,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updatePeopleScopeSelection()
         }
     }
-    
     
     fileprivate func updateRootScopeSelection() {
         switch currentExploreMode.currentSelectionValue() {
@@ -427,13 +437,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         exploreContainer = FeedVC()
         exploreContainer.view.frame = view.bounds
         GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
-        
-//        exploreContainer.view.translatesAutoresizingMaskIntoConstraints = false
-//        exploreContainer.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-//        exploreContainer.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-//        exploreContainer.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-//        exploreContainer.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-//        exploreContainer.view.layoutIfNeeded()
         exploreContainer.feedDelegate = self
 
         currentExploreMode = Explore(currentMode: .root, currentSelection: 0)

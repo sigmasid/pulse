@@ -94,6 +94,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 nav.setNav(title: nil, subtitle: nil, statusImage: toUserImage) :
                 nav.setNav(title: msgToUserName.text, subtitle: nil, statusImage: nil)
             nav.toggleLogo(mode: .full)
+            nav.navBarSize = .expanded
         } else {
             title = "Conversations"
         }

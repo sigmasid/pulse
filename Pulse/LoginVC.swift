@@ -14,6 +14,7 @@ import FBSDKLoginKit
 
 class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     weak var loginVCDelegate : childVCDelegate?
+    var nav : PulseNavVC!
     
     @IBOutlet weak var emailLabelButton: UIButton!
     @IBOutlet weak var fbButton: UIButton!
@@ -93,8 +94,9 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         }
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Login", subtitle: nil, statusImage: nil)
-            nav.toggleLogo(mode: .full)
+            self.nav = nav
+            self.nav.setNav(title: "Login", subtitle: nil, statusImage: nil)
+            self.nav.toggleLogo(mode: .full)
         } else {
             parent?.title = "Login"
         }
@@ -191,13 +193,13 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
                 case FIRAuthErrorCode.errorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
 
-                default: (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "error signing in")
+                default: self.nav?.setTitle(title: "error signing in")
                 }
             }
             else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "welcome!")
+                self.nav?.setTitle(title: "welcome")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
@@ -251,7 +253,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             }
             else {
                 self.removeLoading()
-                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: aUser!.displayName)
+                self.nav?.setTitle(title: aUser!.displayName)
                 self._loggedInSuccess()
                 print("posted facebook login success update")
             }
@@ -268,7 +270,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
                     if let blockError = blockError as? NSError {
                         self.removeLoading()
-                        (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: blockError.description)
+                        self.nav?.setTitle(title: blockError.description)
                     } else {
                         self.removeLoading()
                         self._loggedInSuccess()
@@ -276,7 +278,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 }
             } else {
                 self.removeLoading()
-                (self.navigationController?.navigationBar as? PulseNavBar)?.updateStatusMessage(_message: "Uh oh! That didn't work")
+                self.nav?.setTitle(title: "Uh oh! That didn't work")
             }
         }
     }

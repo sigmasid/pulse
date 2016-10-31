@@ -62,6 +62,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     
     func setupControllers(_ initialIndex : Int) {
         accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        accountNavVC.navBarSize = .expanded
         accountNavVC.viewControllers = [accountVC]
 
         exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)

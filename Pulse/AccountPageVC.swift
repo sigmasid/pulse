@@ -330,6 +330,7 @@ class AccountPageVC: UIViewController, accountDelegate {
         
         if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: title, subtitle: nil, statusImage: nil)
+            nav.navBarSize = .expanded
             nav.toggleLogo(mode: .full)
         } else {
             parent?.title = title

@@ -8,105 +8,99 @@
 
 import UIKit
 
-class PulseNavBar: UINavigationBar {
-    fileprivate let appTitleLabel = UILabel()
-    fileprivate let screenTitleLabel = UILabel()
+public class PulseNavBar: UINavigationBar {
     fileprivate var logoView : Icon!
     
-    fileprivate var statusLabel = UILabel()
-    fileprivate var statusImage : UIImageView?
-    fileprivate var subtitle = UILabel()
-    
+    public var expandedContainer = UIView()
+    fileprivate var expandedTitleLabel = UILabel()
+    fileprivate var expandedTitleImage : UIImageView?
+    fileprivate var expandedSubtitleLabel = UILabel()
     fileprivate var scopeBarContainer = UIView()
     fileprivate var segmentedControl : XMSegmentedControl!
-    fileprivate var isScopeBarVisible = false
-    fileprivate var isSubtitleVisible = false
     
+    public var collapsedTitleLabel = UILabel()
     fileprivate var searchContainer : UIView!
     
-    override func sizeThatFits(_ size: CGSize) -> CGSize {
-        if !isScopeBarVisible && !isSubtitleVisible { //neither visible
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xs.rawValue)
-            return newSize
-        } else if isScopeBarVisible && !isSubtitleVisible { //only scope bar visible
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue)
-            segmentedControl.frame.origin.y = IconSizes.large.rawValue + Spacing.xs.rawValue
-            return newSize
-        } else if !isScopeBarVisible && isSubtitleVisible { //only subtitle bar visible
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.s.rawValue + Spacing.xs.rawValue)
-            return newSize
-        } else { //both visible
-            segmentedControl.frame.origin.y = IconSizes.large.rawValue + Spacing.s.rawValue + Spacing.xs.rawValue
-            let newSize:CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.s.rawValue + Spacing.m.rawValue  + Spacing.xs.rawValue)
-            return newSize
+    public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expandedScope.rawValue)
+    
+    /**
+    public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expandedScope.rawValue) {
+        didSet {
+            let oldFrame = expandedContainer.frame
+            let newFrame = CGRect(x: oldFrame.minX, y: oldFrame.minY, width: oldFrame.width, height: navBarSize.height)
+            
+            expandedContainer.frame = newFrame
+            expandedContainer.layoutIfNeeded()
         }
-    }
+    } **/
+    
+    override public func sizeThatFits(_ size: CGSize) -> CGSize {
+        return navBarSize
+     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
         self.clipsToBounds = false
         self.contentMode = .redraw
+
+        expandedContainer.frame = CGRect(x: 0, y: 0, width: navBarSize.width, height: navBarSize.height)
+        expandedContainer.tag = 25
+        expandedContainer.isUserInteractionEnabled = true
+        expandedContainer.backgroundColor = .yellow
         
+        addSubview(expandedContainer)
+        
+        collapsedTitleLabel.frame = CGRect(x: 0, y: navBarSize.height - NavBarSize.collapsed.rawValue, width: navBarSize.width, height: NavBarSize.collapsed.rawValue)
+        collapsedTitleLabel.alpha = 0.0
+        collapsedTitleLabel.backgroundColor = .green
+        expandedTitleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
+        
+        addSubview(collapsedTitleLabel)
+
         addIcon()
-//        addScreenTitleLabel()
-//        addAppTitleLabel()
-        addStatus()
+        addExpandedTitle()
         addSubtitle()
         
         setBackgroundImage(UIImage(), for: .default)
         shadowImage = UIImage()
-        isTranslucent = true
+        isTranslucent = false
     }
     
-    override func layoutSubviews() {
+    override public func layoutSubviews() {
         super.layoutSubviews()
         for view in self.subviews {
             if view.isKind(of: UIButton.self) {
                 view.frame.origin.y = (IconSizes.large.rawValue - IconSizes.small.rawValue) / 2
-            } else if view.tag == statusLabel.tag {
-                view.frame.origin.y = 0
-            } else if view.tag == subtitle.tag {
-                view.frame.origin.y = IconSizes.large.rawValue + Spacing.xs.rawValue
             }
         }
     }
     
-    required init(coder aDecoder: NSCoder) {
+    required public init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)!
     }
     
-    public func updateStatusMessage(_message : String?) {
+    public func setExpandedTitle(_message : String?) {
         if _message != nil {
-            statusLabel.isHidden = false
-            statusImage?.isHidden = true
-            statusLabel.text = _message
+            expandedTitleLabel.isHidden = false
+            expandedTitleImage?.isHidden = true
+            expandedTitleLabel.text = _message
+            collapsedTitleLabel.text = _message
         }
     }
     
-    func updateStatusImage(_image : UIImage?) {
-        if statusImage == nil {
-            addStatusImage()
+    func setExpandedTitleImage(_image : UIImage?) {
+        if expandedTitleImage == nil {
+            addexpandedTitleImage()
         }
         
-        statusImage?.isHidden = false
-        statusLabel.isHidden = true
-        statusImage?.image = _image
+        expandedTitleImage?.isHidden = false
+        expandedTitleLabel.isHidden = true
+        expandedTitleImage?.image = _image
     }
     
-    func setAppTitleLabel(_message : String) {
-        appTitleLabel.text = _message
-        appTitleLabel.addTextSpacing(2.5)
-    }
-    
-    func setScreenTitleLabel(_message : String) {
-        screenTitleLabel.text = _message
-        screenTitleLabel.addTextSpacing(2.5)
-        screenTitleLabel.adjustsFontSizeToFitWidth = true
-    }
-    
-    func setSubtitle(text : String) {
-        subtitle.text = text
+    func setExpandedSubtitle(text : String) {
+        expandedSubtitleLabel.text = text
     }
     
     fileprivate func toggleLogo(show : Bool) {
@@ -114,8 +108,8 @@ class PulseNavBar: UINavigationBar {
     }
     
     func toggleStatus(show : Bool) {
-        statusImage?.isHidden = show ? false :  true
-        statusLabel.isHidden = show ? false :  true
+        expandedTitleImage?.isHidden = show ? false :  true
+        expandedTitleLabel.isHidden = show ? false :  true
     }
     
     func toggleSearch(show: Bool) {
@@ -123,13 +117,11 @@ class PulseNavBar: UINavigationBar {
     }
     
     func toggleSubtitle(show: Bool) {
-        subtitle.isHidden = show ? false :  true
-        isSubtitleVisible = show ? true : false
+        expandedSubtitleLabel.isHidden = show ? false :  true
     }
     
     public func toggleScopeBar(show : Bool) {
         segmentedControl.isHidden = show ? false : true
-        isScopeBarVisible = show ? true : false
     }
     
     func updateLogo(mode : LogoModes) {
@@ -147,71 +139,60 @@ class PulseNavBar: UINavigationBar {
     
     fileprivate func addIcon() {
         logoView = Icon(frame: CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: IconSizes.medium.rawValue + statusBarHeight))
-        addSubview(logoView)
+        expandedContainer.addSubview(logoView)
     }
     
-    fileprivate func addStatus() {
-        addSubview(statusLabel)
+    fileprivate func addExpandedTitle() {
+        expandedContainer.addSubview(expandedTitleLabel)
         
-        statusLabel.translatesAutoresizingMaskIntoConstraints = false
-        statusLabel.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
-        statusLabel.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        statusLabel.heightAnchor.constraint(equalTo: statusLabel.widthAnchor).isActive = true
-        statusLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        expandedTitleLabel.frame = CGRect(x: expandedContainer.bounds.midX - (IconSizes.large.rawValue / 2), y: expandedContainer.bounds.origin.y, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
         
-        statusLabel.layoutIfNeeded()
-        statusLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
-        statusLabel.backgroundColor = UIColor.black
-        statusLabel.textColor = UIColor.white
-        statusLabel.layer.cornerRadius = statusLabel.bounds.width / 2
+        expandedTitleLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
+        expandedTitleLabel.backgroundColor = UIColor.black
+        expandedTitleLabel.textColor = UIColor.white
+        expandedTitleLabel.layer.cornerRadius = expandedTitleLabel.bounds.width / 2
         
-        statusLabel.lineBreakMode = .byWordWrapping
-        statusLabel.minimumScaleFactor = 0.1
-        statusLabel.numberOfLines = 0
+        expandedTitleLabel.lineBreakMode = .byWordWrapping
+        expandedTitleLabel.minimumScaleFactor = 0.1
+        expandedTitleLabel.numberOfLines = 0
         
-        statusLabel.textAlignment = .center
-        statusLabel.layer.masksToBounds = true
+        expandedTitleLabel.textAlignment = .center
+        expandedTitleLabel.layer.masksToBounds = true
         
-        statusLabel.tag = 5
+        expandedTitleLabel.tag = 5
     }
     
     fileprivate func addSubtitle() {
-        addSubview(subtitle)
+        expandedContainer.addSubview(expandedSubtitleLabel)
+
+        expandedSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        expandedSubtitleLabel.topAnchor.constraint(equalTo: expandedTitleLabel.bottomAnchor).isActive = true
+        expandedSubtitleLabel.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        expandedSubtitleLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        expandedSubtitleLabel.layoutIfNeeded()
         
-        subtitle.translatesAutoresizingMaskIntoConstraints = false
-        subtitle.topAnchor.constraint(equalTo: statusLabel.bottomAnchor).isActive = true
-        subtitle.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
-        subtitle.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        subtitle.layoutIfNeeded()
+        expandedSubtitleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
+        expandedSubtitleLabel.textColor = UIColor.black
+        expandedSubtitleLabel.minimumScaleFactor = 0.5
+        expandedSubtitleLabel.sizeToFit()
         
-        subtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
-        subtitle.textColor = UIColor.black
-        subtitle.minimumScaleFactor = 0.5
-        subtitle.sizeToFit()
-        
-        subtitle.tag = 10
+        expandedSubtitleLabel.tag = 10
         
         toggleSubtitle(show: false)
     }
     
-    fileprivate func addStatusImage() {
-        statusImage = UIImageView()
-        if let statusImage = statusImage {
-            addSubview(statusImage)
-            
-            statusImage.translatesAutoresizingMaskIntoConstraints = false
-            statusImage.centerYAnchor.constraint(equalTo: logoView.centerYAnchor).isActive = true
-            statusImage.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-            statusImage.heightAnchor.constraint(equalTo: statusImage.widthAnchor).isActive = true
-            statusImage.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-            statusImage.layoutIfNeeded()
-            
-            statusImage.layer.cornerRadius = statusImage.bounds.width / 2
-            statusImage.layer.masksToBounds = true
-            statusImage.layer.shouldRasterize = true
-            statusImage.layer.rasterizationScale = UIScreen.main.scale
-            statusImage.backgroundColor = UIColor.lightGray
-            statusImage.contentMode = .scaleAspectFill
+    fileprivate func addexpandedTitleImage() {
+        expandedTitleImage = UIImageView()
+        if let expandedTitleImage = expandedTitleImage {
+            addSubview(expandedTitleImage)
+            expandedTitleImage.frame = CGRect(x: expandedContainer.bounds.midX - (IconSizes.large.rawValue / 2), y: expandedContainer.bounds.origin.y, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+
+            expandedTitleImage.layer.cornerRadius = expandedTitleImage.bounds.width / 2
+            expandedTitleImage.layer.masksToBounds = true
+            expandedTitleImage.layer.shouldRasterize = true
+            expandedTitleImage.layer.rasterizationScale = UIScreen.main.scale
+            expandedTitleImage.backgroundColor = UIColor.lightGray
+            expandedTitleImage.contentMode = .scaleAspectFill
         }
     }
     
@@ -223,40 +204,15 @@ class PulseNavBar: UINavigationBar {
         addSubview(searchContainer)
         toggleSearch(show: false)
     }
-    
-    fileprivate func addAppTitleLabel() {
-        addSubview(appTitleLabel)
-        
-        appTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        appTitleLabel.topAnchor.constraint(equalTo: logoView.topAnchor).isActive = true
-        appTitleLabel.leadingAnchor.constraint(equalTo: logoView.leadingAnchor).isActive = true
-        
-        appTitleLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
-        appTitleLabel.textColor = UIColor.black
-        appTitleLabel.textAlignment = .left
-        appTitleLabel.addTextSpacing(10)
-    }
-    
-    fileprivate func addScreenTitleLabel() {
-        addSubview(screenTitleLabel)
-        
-        screenTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        screenTitleLabel.bottomAnchor.constraint(equalTo: logoView.bottomAnchor).isActive = true
-        screenTitleLabel.leadingAnchor.constraint(equalTo: logoView.leadingAnchor).isActive = true
-        
-        screenTitleLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
-        screenTitleLabel.textColor = UIColor.black
-        screenTitleLabel.textAlignment = .left
-    }
 
     fileprivate func addScopeBar() {
-        let frame = CGRect(x: 0, y: IconSizes.medium.rawValue + statusBarHeight + Spacing.s.rawValue, width: UIScreen.main.bounds.width, height: Spacing.l.rawValue)
+        let frame = CGRect(x: 0, y: expandedContainer.bounds.maxY - 40, width: UIScreen.main.bounds.width, height: 40)
         let titles = [" ", " ", " "]
         
         segmentedControl = XMSegmentedControl(frame: frame,
                                               segmentTitle: titles,
                                               selectedItemHighlightStyle: XMSelectedItemHighlightStyle.bottomEdge)
-        addSubview(segmentedControl)
+        expandedContainer.addSubview(segmentedControl)
 
         segmentedControl.backgroundColor = color7
         segmentedControl.highlightColor = pulseBlue
@@ -282,8 +238,6 @@ class PulseNavBar: UINavigationBar {
         if segmentedControl == nil {
             addScopeBar()
         }
-        
-        isScopeBarVisible = true
         
         if icons != nil {
             segmentedControl.segmentContent = (titles, icons!)

@@ -58,6 +58,7 @@ class InboxVC: UITableViewController {
         
         if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Conversations", subtitle: nil, statusImage: nil)
+            nav.navBarSize = .expanded
             nav.toggleLogo(mode: .full)
         } else {
             title = "Conversations"
