@@ -7,13 +7,6 @@
 //
 
 import UIKit
-public enum LogoModes { case full, line, none }
-public enum NavBarSize : CGFloat {
-    case expandedScope = 135
-    case expanded = 95
-    case collapsed = 40
-    case none = 0
-}
 
 public enum NavBarState { case expanded, collapsed, scrolling }
 
@@ -26,30 +19,20 @@ public enum NavBarState { case expanded, collapsed, scrolling }
 
 public protocol PulseNavControllerDelegate: NSObjectProtocol {
     /** Called when the state of the navigation bar is about to change */
-    func scrollingNavWillSet(_ controller: PulseNavVC, state: NavBarState, size: NavBarSize)
+    func scrollingNavWillSet(_ controller: PulseNavVC, state: NavBarState)
 }
 
 public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
 
     public var navBar : PulseNavBar!
-    public var navBarSize : NavBarSize = .expandedScope {
-        didSet {
-            setNavSize(size: navBarSize)
-        }
-    }
     
     public var shouldShowScope : Bool = false {
         didSet {
-            navBarSize = shouldShowScope ? .expandedScope : .expanded
-            toggleScopeBar(show: shouldShowScope)
+            guard navBar != nil else { return }
+            navBar.shouldShowScope = shouldShowScope
         }
     }
-    
-    public var logoMode : LogoModes = .full {
-        didSet {
-            navBar.updateLogo(mode : logoMode)
-        }
-    }
+
     override public func viewDidLoad() {
         super.viewDidLoad()
         navBar = self.navigationBar as? PulseNavBar
@@ -65,17 +48,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         super.didReceiveMemoryWarning()
     }
     
-    fileprivate func setNavSize(size : NavBarSize) {
-        guard navBar != nil else { return }
-        
-        switch size {
-        case .expandedScope: navBar.navBarSize =  CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expandedScope.rawValue)
-        case .expanded: navBar.navBarSize =  CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expanded.rawValue)
-        case .collapsed: navBar.navBarSize =  CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.collapsed.rawValue)
-        case .none: navBar.navBarSize =  CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.none.rawValue)
-        }
-    }
-    
     /** SCROLLING NAV IMPLEMENTATION **/
 
     
@@ -83,7 +55,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     open fileprivate(set) var navBarState: NavBarState = .expanded {
         willSet {
             if newValue != navBarState {
-                scrollingNavbarDelegate?.scrollingNavWillSet(self, state: newValue, size: navBarSize)
+                scrollingNavbarDelegate?.scrollingNavWillSet(self, state: newValue)
             }
         }
     }
@@ -141,7 +113,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         if navBarState == .expanded {
             self.navBarState = .scrolling
             UIView.animate(withDuration: animated ? 0.1 : 0, animations: { () -> Void in
-                self.scrollWithDelta(self.navBarSize.rawValue)
+                self.scrollWithDelta(40) //UPDATE
                 visibleViewController.view.setNeedsLayout()
             }) { _ in
                 self.navBarState = .collapsed
@@ -165,12 +137,12 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
             self.navBarState = .scrolling
             UIView.animate(withDuration: animated ? 0.1 : 0, animations: {
                 self.lastContentOffset = 0;
-                self.delayDistance =  self.navBarSize.rawValue
-                self.scrollWithDelta(-self.navBarSize.rawValue)
+                self.delayDistance =  40  //UPDATE
+                self.scrollWithDelta(-40) //UPDATE
                 visibleViewController.view.setNeedsLayout()
                 if self.navigationBar.isTranslucent {
                     let currentOffset = self.contentOffset
-                    self.scrollView()?.contentOffset = CGPoint(x: currentOffset.x, y: currentOffset.y - self.navBarSize.rawValue)
+                    self.scrollView()?.contentOffset = CGPoint(x: currentOffset.x, y: currentOffset.y - 40) //UPDATE
                 }
             }) { _ in
                 self.navBarState = .expanded
@@ -185,7 +157,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
      Stop observing the view and reset the navigation bar
      */
     public func stopFollowingScrollView() {
-        print("stop following scroll view fired")
         showNavbar(animated: false)
         if let gesture = gestureRecognizer {
             scrollableView?.removeGestureRecognizer(gesture)
@@ -198,10 +169,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         let center = NotificationCenter.default
         center.removeObserver(self, name: NSNotification.Name.UIApplicationDidBecomeActive, object: nil)
         center.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
-
-        guard let pulseNavBar = navigationBar as? PulseNavBar else { return }
-        pulseNavBar.collapsedTitleLabel.alpha = 0.0
-
     }
     
     // MARK: - Gesture recognizer
@@ -364,10 +331,9 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         if let pulseNavBar = navigationBar as? PulseNavBar {
             let frame = pulseNavBar.frame
             let alpha = (frame.origin.y + deltaLimit) / deltaLimit
-            pulseNavBar.expandedContainer.alpha = alpha
+            pulseNavBar.navContainer.alpha = alpha
             pulseNavBar.getScopeBar()?.alpha = alpha
-            pulseNavBar.collapsedTitleLabel.alpha = 1 - alpha
-            print("collapsed title label alpha is \(pulseNavBar.collapsedTitleLabel.alpha)")
+            pulseNavBar.screenTitle.alpha = 1 - alpha
         }
     }
     
@@ -438,21 +404,9 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     }
     
     
-    public func setNav(title: String?, subtitle: String?, statusImage : UIImage?) {
+    public func setNav(navTitle: String?, screenTitle: String?, screenImage : UIImage?) {
         guard navBar != nil else { return }
-        
-        if let statusImage = statusImage {
-            navBar.toggleStatus(show: true)
-            navBar.setExpandedTitleImage(_image: statusImage)
-            navBar.setExpandedTitles(_title: nil, _subtitle: subtitle)
-        } else {
-            navBar.setExpandedTitles(_title: title, _subtitle: subtitle)
-        }
-    }
-    
-    public func toggleScopeBar(show : Bool) {
-        guard navBar != nil else { return }
-        navBar.toggleScopeBar(show : show)
+        navBar.setTitles(_navTitle: navTitle, _screenTitle: screenTitle, _navImage: screenImage)
     }
     
     public func updateScopeBar(titles : [String], icons : [UIImage]?, selected: Int) {
@@ -463,28 +417,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     public func toggleSearch(show : Bool) {
         guard navBar != nil else { return }
         navBar.toggleSearch(show : show)
-    }
-    
-    public func toggleLogo(mode : LogoModes) {
-        if let navBar = self.navigationBar as? PulseNavBar {
-            navBar.updateLogo(mode : mode)
-        }
-    }
-    
-    fileprivate func setStatusImage(image : UIImage?) {
-        guard navBar != nil else { return }
-        
-        navBar.toggleStatus(show: false) //hides both status label and image if visible
-        navBar.setExpandedTitleImage(_image: image)
-    }
-    
-    public func setTitle(title : String?) {
-        guard navBar != nil else { return }
-
-        if navBarState == .expanded {
-            navBar.toggleStatus(show: false) //hides both status label and image if visible
-            navBar.setExpandedTitles(_title : title, _subtitle: nil) //unhides lable within call
-        }
     }
 
     fileprivate func updateBackgroundImage(image : UIImage?) {
@@ -539,6 +471,6 @@ extension PulseNavVC {
     }
     
     var deltaLimit: CGFloat {
-        return self.navBarSize.rawValue - NavBarSize.collapsed.rawValue
+        return 40
     }
 }

@@ -91,10 +91,8 @@ class MessageVC: UIViewController, UITextViewDelegate{
         
         if let nav = navigationController as? PulseNavVC {
             toUserImage != nil ?
-                nav.setNav(title: nil, subtitle: nil, statusImage: toUserImage) :
-                nav.setNav(title: msgToUserName.text, subtitle: nil, statusImage: nil)
-            nav.toggleLogo(mode: .full)
-            nav.navBarSize = .expanded
+                nav.setNav(navTitle: nil, screenTitle: nil, screenImage: toUserImage) :
+                nav.setNav(navTitle: msgToUserName.text, screenTitle: nil, screenImage: nil)
         } else {
             title = "Conversations"
         }

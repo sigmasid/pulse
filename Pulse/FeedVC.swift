@@ -244,7 +244,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 })
             }
-//            
 //            if indexPath == selectedIndex && indexPath == deselectedIndex {
 //                showQuestion(selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: selectedTag)
 //                
@@ -314,54 +313,45 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 })
             }
             
-            /* GET QUESTION FROM DATABASE - USER PROFILE ANSWERS CASE*/
+            /* GET QUESTION FROM DATABASE - SHOWING ALL ANSWERS FOR ONE USER CASE */
             if selectedUser != nil {
                 if questionsForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
                     if let _question = questionsForAnswerPreviews[indexPath.row] {
-                        cell.titleLabel.text = _question.qTitle
-                        cell.subtitleLabel.text = nil
+                        cell.updateLabel(_question.qTitle, _subtitle: nil)
                     }
                 } else if gettingInfoForCell[indexPath.row] {
                     //ignore if already fetching the image, so don't refetch if already getting
                 } else {
-                    cell.titleLabel.text = nil
-                    cell.subtitleLabel.text = nil
+                    cell.updateLabel(nil, _subtitle: nil)
                     gettingInfoForCell[indexPath.row] = true
                     
                     Database.getQuestion(allAnswers[indexPath.row].qID, completion: { (question, error) in
                         if error != nil {
-                            cell.titleLabel.text = nil
-                            cell.subtitleLabel.text = nil
                             self.questionsForAnswerPreviews[indexPath.row] = nil
                         } else {
-                            cell.titleLabel.text = question.qTitle
+                            cell.updateLabel(question.qTitle, _subtitle: nil)
                             self.questionsForAnswerPreviews[indexPath.row] = question
                         }
                     })
                 }
             }
-            /* GET NAME & BIO FROM DATABASE */
+            /* GET NAME & BIO FROM DATABASE - SHOWING MANY ANSWERS CASE */
             else if usersForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
                 cell.hideAnswerCount()
                 if let _user = usersForAnswerPreviews[indexPath.row] {
-                    cell.titleLabel.text = _user.name
-                    cell.subtitleLabel.text = _user.shortBio
+                    cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio?.capitalized)
                 }
             } else if gettingInfoForCell[indexPath.row] {
                 //ignore if already fetching the image, so don't refetch if already getting
             } else {
-                cell.titleLabel.text = nil
-                cell.subtitleLabel.text = nil
+                cell.updateLabel(nil, _subtitle: nil)
                 gettingInfoForCell[indexPath.row] = true
                 
                 Database.getUserSummaryForAnswer(allAnswers[indexPath.row].aID, completion: { (user, error) in
                     if error != nil {
-                        cell.titleLabel.text = nil
-                        cell.subtitleLabel.text = nil
                         self.usersForAnswerPreviews[indexPath.row] = nil
                     } else {
-                        cell.titleLabel.text = user?.name
-                        cell.subtitleLabel.text = user?.shortBio
+                        cell.updateLabel(user?.name?.capitalized, _subtitle: user?.shortBio?.capitalized)
                         self.usersForAnswerPreviews[indexPath.row] = user
                     }
                 })

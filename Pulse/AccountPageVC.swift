@@ -210,7 +210,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     
     func updateNav(title : String) {
         if let nav = nav {
-            nav.setNav(title: title, subtitle: nil, statusImage: nil)
+            nav.setNav(navTitle: title, screenTitle: nil, screenImage: nil)
         }
     }
     
@@ -218,8 +218,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     fileprivate func setupCamera() {
         cameraView = UIView(frame: view.bounds)
         cameraView.backgroundColor = UIColor.white
-        nav?.toggleLogo(mode: .none)
-        nav?.setNav(title: nil, subtitle: nil, statusImage: nil)
+        nav?.setNav(navTitle: nil, screenTitle: nil, screenImage: nil)
         view.addSubview(cameraView)
         
         Camera.showAccessPermissionPopupAutomatically = true
@@ -303,7 +302,6 @@ class AccountPageVC: UIViewController, accountDelegate {
                             completion: {(value: Bool) in
                                 self.toggleLoading(show: false, message: nil)
                                 self.cameraView.removeFromSuperview()
-                                self.nav?.toggleLogo(mode: .full)
                                 self.updateHeader(title: "Account", leftButton: .menu)
                                 self.profileSummary.updateLabels()
                         })
@@ -329,9 +327,7 @@ class AccountPageVC: UIViewController, accountDelegate {
         }
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: title, subtitle: nil, statusImage: nil)
-            nav.navBarSize = .expanded
-            nav.toggleLogo(mode: .full)
+            nav.setNav(navTitle: title, screenTitle: nil, screenImage: nil)
         } else {
             parent?.title = title
         }

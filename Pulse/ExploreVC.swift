@@ -24,7 +24,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var blankButton : PulseButton!
     fileprivate var messageButton : PulseButton!
 
-    fileprivate var logoMode : LogoModes = .full
     fileprivate var hideStatusBar = false {
         didSet {
             self.setNeedsStatusBarAppearanceUpdate()
@@ -66,6 +65,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             getButtons()
             setupExplore()
             setupSearch()
+            
             iconContainer = addIcon(text: "EXPLORE")
             automaticallyAdjustsScrollViewInsets = false
             
@@ -80,7 +80,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         // navigationController?.isNavigationBarHidden = false
         
         guard let headerNav = headerNav else { return }
-        headerNav.toggleLogo(mode: logoMode)
         headerNav.followScrollView(exploreContainer.view, delay: 20.0)
         headerNav.scrollingNavbarDelegate = self
     }
@@ -112,7 +111,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
     }
     
-    func scrollingNavWillSet(_ controller: PulseNavVC, state: NavBarState, size: NavBarSize) {
+    func scrollingNavWillSet(_ controller: PulseNavVC, state: NavBarState) {
         print("scolling nav will set fired with state \(state)")
         switch state {
         case .collapsed:
@@ -133,14 +132,14 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updateHeader(_title: "Explore", _subtitle : nil, leftButton: searchButton, rightButton: nil, statusImage: nil)
             updateRootScopeSelection()
         case .tag:
-            updateHeader(_title: selectedTag.tagID!, _subtitle : nil, leftButton: backButton, rightButton: blankButton, statusImage: nil)
+            updateHeader(_title: nil, _subtitle : selectedTag.tagID!, leftButton: backButton, rightButton: nil, statusImage: nil)
             isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTags[selectedTag.tagID!] != nil ? true : false
             updateTagScopeSelection()
         case .search:
             updateHeader(_title: nil, _subtitle : nil, leftButton: closeButton, rightButton: nil, statusImage: nil)
             updateSearchResults(for: searchController)
         case .question:
-            updateHeader(_title: currentExploreMode.getModeTitle(), _subtitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: blankButton, statusImage: nil)
+            updateHeader(_title: currentExploreMode.getModeTitle(), _subtitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: nil, statusImage: nil)
             updateQuestionScopeSelection()
         case .people:
             updateHeader(_title: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
@@ -231,8 +230,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     fileprivate func updateQuestionScopeSelection() {
-        self.toggleLoading(show: true, message : "Loading...")
-        
+        toggleLoading(show: true, message : "Loading...")
+        exploreContainer.setSelectedIndex(index: nil)
+
         switch currentExploreMode.currentSelectionValue() {
         case .answers:
             if !selectedQuestion.qCreated {
@@ -326,17 +326,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         navigationItem.leftBarButtonItem = leftButton != nil ? UIBarButtonItem(customView: leftButton!) : nil
         navigationItem.rightBarButtonItem = rightButton != nil ? UIBarButtonItem(customView: rightButton!) : nil
         
-        if rightButton != nil && _title != nil || statusImage != nil {
-            logoMode = .line
-        } else if _title == nil {
-            logoMode = .none
-        } else {
-            logoMode = .full
-        }
-        
-        if let headerNav = headerNav {
-            headerNav.setNav(title: _title, subtitle: _subtitle, statusImage: statusImage)
-            headerNav.toggleLogo(mode: logoMode)
+        if let nav = headerNav {
+            nav.setNav(navTitle: _title, screenTitle: _subtitle, screenImage: statusImage)
         } else {
             title = _title
         }
@@ -347,12 +338,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         searchController.searchResultsUpdater = self
         searchController.searchBar.delegate = self
         searchController.delegate = self
-        
-//        let greyImage = GlobalFunctions.imageWithColor(.lightGray).resizableImage(withCapInsets: UIEdgeInsetsMake(-15, 0, -15, 0))
-//        searchController.searchBar.setSearchFieldBackgroundImage(greyImage, for: .normal)
-//        searchController.searchBar.barTintColor = .white
-//        searchController.searchBar.layer.cornerRadius = 0
-
         searchController.searchBar.setBackgroundImage(GlobalFunctions.imageWithColor(.white), for: .any , barMetrics: UIBarMetrics.default)
 
         searchController.dimsBackgroundDuringPresentation = false

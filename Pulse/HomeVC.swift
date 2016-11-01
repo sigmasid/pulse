@@ -72,7 +72,6 @@ class HomeVC: UIViewController, feedVCDelegate {
     func userSelected(type : FeedItemType, item : Any) {
         switch type {
         case .question:
-            navigationController?.setNavigationBarHidden(false, animated: true)
             
             let selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
             
@@ -82,10 +81,10 @@ class HomeVC: UIViewController, feedVCDelegate {
                     self.homeFeedVC.feedItemType = .answer
                     self.homeFeedVC.setSelectedIndex(index: IndexPath(row: 0, section: 0))
                     self.toggleLoading(show: false, message : nil)
-                    self.titleLabel.text = question.qTitle
-                    self.titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
-                    self.titleLabel.adjustsFontSizeToFitWidth = true
-                    self.titleLabel.sizeToFit()
+                    
+                    guard let nav = self.navigationController as? PulseNavVC else { return }
+                    nav.setNav(navTitle: nil, screenTitle: question.qTitle, screenImage: nil)
+                    nav.setNavigationBarHidden(false, animated: true)
 
                 } else {
                     self.toggleLoading(show: true, message : "No answers found")
@@ -97,17 +96,10 @@ class HomeVC: UIViewController, feedVCDelegate {
     }
     
     fileprivate func updateNav() {
-        backButton = PulseButton(size: .xSmall, type: .back, isRound : true, hasBackground: true)
+        backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
         backButton.addTarget(self, action: #selector(returnHome), for: .touchUpInside)
-
-        titleLabel = UILabel(frame: CGRect(x: Spacing.xs.rawValue, y: 0, width: view.bounds.width, height: IconSizes.medium.rawValue))
-        titleLabel.numberOfLines = 2
-        titleLabel.lineBreakMode = .byTruncatingTail
-        titleLabel.minimumScaleFactor = 0.1
         
         navigationItem.leftBarButtonItem = backButton != nil ? UIBarButtonItem(customView: backButton!) : nil
-        navigationItem.titleView = titleLabel
-        
     }
     
     fileprivate func toggleLoading(show: Bool, message: String?) {

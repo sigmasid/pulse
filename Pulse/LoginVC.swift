@@ -95,8 +95,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
         
         if let nav = navigationController as? PulseNavVC {
             self.nav = nav
-            self.nav.setNav(title: "Login", subtitle: nil, statusImage: nil)
-            self.nav.toggleLogo(mode: .full)
+            self.nav.setNav(navTitle: "Login", screenTitle: nil, screenImage: nil)
         } else {
             parent?.title = "Login"
         }
@@ -193,13 +192,13 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
                 case FIRAuthErrorCode.errorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
 
-                default: self.nav?.setTitle(title: "error signing in")
+                default: self.nav?.setNav(navTitle: "error signing in", screenTitle: nil, screenImage: nil)
                 }
             }
             else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                self.nav?.setTitle(title: "welcome")
+                self.nav?.setNav(navTitle: "welcome", screenTitle: nil, screenImage: nil)
                 self.view.endEditing(true)
                 self._loggedInSuccess()
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
@@ -253,7 +252,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
             }
             else {
                 self.removeLoading()
-                self.nav?.setTitle(title: aUser!.displayName)
+                self.nav?.setNav(navTitle: aUser!.displayName, screenTitle: nil, screenImage: nil)
                 self._loggedInSuccess()
                 print("posted facebook login success update")
             }
@@ -270,7 +269,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
                     if let blockError = blockError as? NSError {
                         self.removeLoading()
-                        self.nav?.setTitle(title: blockError.description)
+                        self.nav?.setNav(navTitle: blockError.description, screenTitle: nil, screenImage: nil)
                     } else {
                         self.removeLoading()
                         self._loggedInSuccess()
@@ -278,7 +277,7 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
                 }
             } else {
                 self.removeLoading()
-                self.nav?.setTitle(title: "Uh oh! That didn't work")
+                self.nav?.setNav(navTitle: "Uh oh! That didn't work", screenTitle: nil, screenImage: nil)
             }
         }
     }

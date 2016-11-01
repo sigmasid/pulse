@@ -49,9 +49,7 @@ class InboxVC: UITableViewController {
     //Update Nav Header
     fileprivate func updateHeader() {
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Conversations", subtitle: nil, statusImage: nil)
-            nav.navBarSize = .expanded
-            nav.toggleLogo(mode: .full)
+            nav.setNav(navTitle: "Conversations", screenTitle: nil, screenImage: nil)
         } else {
             title = "Conversations"
         }

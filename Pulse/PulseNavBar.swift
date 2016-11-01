@@ -7,65 +7,45 @@
 //
 
 import UIKit
+enum NavMode { case browse, detail, none }
 
 public class PulseNavBar: UINavigationBar {
     fileprivate var logoView : Icon!
     
-    public var expandedContainer = UIView()
-    fileprivate var expandedTitleLabel = UILabel()
-    fileprivate var expandedTitleImage : UIImageView?
-    fileprivate var expandedSubtitleLabel = UILabel()
-    fileprivate var scopeBarContainer = UIView()
-    fileprivate var segmentedControl : XMSegmentedControl!
+    public var navContainer = UIView()
+    public var navTitle = UILabel()
+    public lazy var navImage = UIImageView()
+    public var screenTitle = UILabel()
+    public var screenOptions : XMSegmentedControl!
     
-    public var collapsedTitleLabel = UILabel()
     fileprivate var searchContainer : UIView!
     
-    public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expandedScope.rawValue)
-    /**
-    public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expandedScope.rawValue) {
+    public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xxs.rawValue)
+    
+    /** SCOPE BAR VARS **/
+    fileprivate var scopeBarHeight : CGFloat = 40
+    public var shouldShowScope : Bool = false {
         didSet {
-            let oldFrame = expandedContainer.frame
-            let newFrame = CGRect(x: oldFrame.minX, y: oldFrame.minY, width: oldFrame.width, height: navBarSize.height)
-            
-            expandedContainer.frame = newFrame
-            expandedContainer.layoutIfNeeded()
+            if shouldShowScope && shouldShowScope != oldValue {
+                navBarSize = CGSize(width: navBarSize.width, height: navBarSize.height + scopeBarHeight)
+                UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
+                    self.screenOptions.alpha = 1.0
+                }, completion: { _ in self.layoutIfNeeded() })
+                print("should show screen options")
+            } else if !shouldShowScope && shouldShowScope != oldValue {
+                navBarSize = CGSize(width: navBarSize.width, height: navBarSize.height - scopeBarHeight)
+                UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
+                    self.screenOptions.alpha = 0.0
+                }, completion: { _ in self.layoutIfNeeded() })
+                print("should hide screen options")
+            }
         }
-    } **/
+    }
     
     override public func sizeThatFits(_ size: CGSize) -> CGSize {
+        print("size that fits with \(navBarSize)")
         return navBarSize
      }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        
-        self.clipsToBounds = false
-        self.contentMode = .redraw
-
-        expandedContainer.frame = CGRect(x: 0, y: 0, width: navBarSize.width, height: navBarSize.height)
-        expandedContainer.tag = 25
-        expandedContainer.isUserInteractionEnabled = false
-
-        addSubview(expandedContainer)
-        
-        collapsedTitleLabel.frame = CGRect(x: 0, y: navBarSize.height - NavBarSize.collapsed.rawValue, width: navBarSize.width, height: NavBarSize.collapsed.rawValue)
-        collapsedTitleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
-        collapsedTitleLabel.alpha = 0.0
-        
-        addSubview(collapsedTitleLabel)
-
-        addIcon()
-        addExpandedTitle()
-        addSubtitle()
-        
-        setBackgroundImage(GlobalFunctions.imageWithColor(.white), for: .default)
-        //shadowImage = UIImage()
-        
-        isTranslucent = false
-        tintColor = .white //need to set tint color vs. background color
-        alpha = 1.0
-    }
     
     override public func layoutSubviews() {
         super.layoutSubviews()
@@ -76,119 +56,161 @@ public class PulseNavBar: UINavigationBar {
         }
     }
     
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        
+        self.clipsToBounds = false
+        self.contentMode = .redraw
+
+        isTranslucent = false
+        tintColor = .white //need to set tint color vs. background color
+        
+        setupInitialLayout()
+    }
+    
+    fileprivate func setupInitialLayout() {
+        navContainer.frame = CGRect(x: 0, y: 0, width: navBarSize.width, height: navBarSize.height)
+        navContainer.tag = 25
+        navContainer.isUserInteractionEnabled = false
+        
+        addSubview(navContainer)
+        
+        addIcon()
+        addNavImage()
+        addNavTitle()
+        addScreenTitle()
+        
+        setNavMode(mode: .browse)
+    }
+    
     required public init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)!
     }
     
-    public func setExpandedTitles(_title : String?, _subtitle : String?) {
-        if _title != nil {
-            expandedTitleLabel.isHidden = false
-            expandedTitleImage?.isHidden = true
-            expandedTitleLabel.text = _title
-            collapsedTitleLabel.text = _title?.uppercased()
+    public func setTitles(_navTitle : String?, _screenTitle : String?, _navImage : UIImage?) {
+        if _navImage != nil {
+            print("setting mode to browse with image")
+            setNavMode(mode: .browse)
+            navTitle.isHidden = true
+            navImage.isHidden = false
+        } else if _screenTitle != nil  {
+            print("setting mode to detail")
+            setNavMode(mode: .detail)
+        } else if _navTitle != nil {
+            print("setting mode to browse with nav title")
+            setNavMode(mode: .browse)
+            navTitle.isHidden = false
+            navImage.isHidden = true
+        } else {
+            print("set nav mode to none")
+            setNavMode(mode: .none)
         }
         
-        if _subtitle != nil {
-            expandedSubtitleLabel.text = _subtitle
-            collapsedTitleLabel.text = _subtitle?.uppercased()
+        navImage.image = _navImage
+        navTitle.text = _navTitle
+        screenTitle.text = _screenTitle?.uppercased()
+    }
+    
+    fileprivate func setNavMode(mode : NavMode) {
+        switch mode {
+        case .browse:
+            navContainer.isHidden = false
+            screenTitle.isHidden = true
+        case .detail:
+            navContainer.isHidden = true
+            screenTitle.isHidden = false
+        case .none:
+            navContainer.isHidden = true
+            screenTitle.isHidden = true
         }
     }
     
-    func setExpandedTitleImage(_image : UIImage?) {
-        if expandedTitleImage == nil {
-            addexpandedTitleImage()
-        }
-        
-        expandedTitleImage?.isHidden = false
-        expandedTitleLabel.isHidden = true
-        expandedTitleImage?.image = _image
-    }
-    
-    fileprivate func toggleLogo(show : Bool) {
-        logoView.isHidden = show ? false :  true
-    }
-    
-    func toggleStatus(show : Bool) {
-        expandedTitleImage?.isHidden = show ? false :  true
-        expandedTitleLabel.isHidden = show ? false :  true
-    }
-    
-    func toggleSearch(show: Bool) {
+    public func toggleSearch(show: Bool) {
         searchContainer?.isHidden = show ? false :  true
+        navContainer.isHidden = show ? true : false
     }
     
     public func toggleScopeBar(show : Bool) {
-        segmentedControl.isHidden = show ? false : true
+        screenOptions.isHidden = show ? false : true
     }
     
-    func updateLogo(mode : LogoModes) {
-        switch mode {
-        case .full:
-            toggleLogo(show: true)
-            logoView.drawLongIcon(UIColor.black, iconThickness: IconThickness.medium.rawValue)
-        case .line:
-            toggleLogo(show: true)
-            logoView.drawLineOnly(UIColor.black, iconThickness: IconThickness.medium.rawValue)
-        case .none:
-            toggleLogo(show: false)
+    public func getScopeBar() -> XMSegmentedControl? {
+        if screenOptions == nil {
+            addScopeBar()
         }
+        return screenOptions
     }
     
+    public func getSearchContainer() -> UIView {
+        if searchContainer == nil {
+            addSearch()
+        }
+        return searchContainer
+    }
+    
+    public func updateScopeBarTitles(titles : [String], icons : [UIImage]?, selected : Int) {
+        if screenOptions == nil {
+            addScopeBar()
+        }
+        
+        if icons != nil {
+            screenOptions.segmentContent = (titles, icons!)
+        } else {
+            screenOptions.segmentTitle = titles
+        }
+        
+        screenOptions.selectedSegment = selected
+        screenOptions.layoutIfNeeded()
+    }
+    
+    /** LAYOUT SCREEN **/
     fileprivate func addIcon() {
         logoView = Icon(frame: CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: IconSizes.medium.rawValue + statusBarHeight))
-        expandedContainer.addSubview(logoView)
+        logoView.drawLongIcon(UIColor.black, iconThickness: IconThickness.medium.rawValue)
+        navContainer.addSubview(logoView)
     }
     
-    fileprivate func addExpandedTitle() {
-        expandedContainer.addSubview(expandedTitleLabel)
+    fileprivate func addNavTitle() {
+        navContainer.addSubview(navTitle)
         
-        expandedTitleLabel.frame = CGRect(x: expandedContainer.bounds.midX - (IconSizes.large.rawValue / 2), y: expandedContainer.bounds.origin.y, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+        navTitle.frame = CGRect(x: navContainer.bounds.midX - (IconSizes.large.rawValue / 2), y: navContainer.bounds.origin.y, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
         
-        expandedTitleLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
-        expandedTitleLabel.backgroundColor = UIColor.black
-        expandedTitleLabel.textColor = UIColor.white
-        expandedTitleLabel.layer.cornerRadius = expandedTitleLabel.bounds.width / 2
+        navTitle.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
+        navTitle.backgroundColor = UIColor.black
+        navTitle.textColor = UIColor.white
+        navTitle.layer.cornerRadius = navTitle.bounds.width / 2
         
-        expandedTitleLabel.lineBreakMode = .byWordWrapping
-        expandedTitleLabel.minimumScaleFactor = 0.1
-        expandedTitleLabel.numberOfLines = 0
+        navTitle.lineBreakMode = .byWordWrapping
+        navTitle.minimumScaleFactor = 0.1
+        navTitle.numberOfLines = 0
         
-        expandedTitleLabel.textAlignment = .center
-        expandedTitleLabel.layer.masksToBounds = true
+        navTitle.textAlignment = .center
+        navTitle.layer.masksToBounds = true
         
-        expandedTitleLabel.tag = 5
+        navTitle.tag = 5
     }
     
-    fileprivate func addSubtitle() {
-        expandedContainer.addSubview(expandedSubtitleLabel)
+    fileprivate func addScreenTitle() {
+        addSubview(screenTitle)
+        
+        screenTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+        screenTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
+        
+        screenTitle.lineBreakMode = .byWordWrapping
+        screenTitle.numberOfLines = 0
+        screenTitle.tag = 10
+    }
+    
+    fileprivate func addNavImage() {
+        navContainer.addSubview(navImage)
+        navImage.frame = CGRect(x: navContainer.bounds.midX - (IconSizes.large.rawValue / 2), y: navContainer.bounds.origin.y, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
 
-        expandedSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        expandedSubtitleLabel.topAnchor.constraint(equalTo: expandedTitleLabel.bottomAnchor).isActive = true
-        expandedSubtitleLabel.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
-        expandedSubtitleLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        expandedSubtitleLabel.layoutIfNeeded()
-        
-        expandedSubtitleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
-        expandedSubtitleLabel.textColor = UIColor.black
-        expandedSubtitleLabel.minimumScaleFactor = 0.5
-        expandedSubtitleLabel.sizeToFit()
-        
-        expandedSubtitleLabel.tag = 10        
-    }
-    
-    fileprivate func addexpandedTitleImage() {
-        expandedTitleImage = UIImageView()
-        if let expandedTitleImage = expandedTitleImage {
-            addSubview(expandedTitleImage)
-            expandedTitleImage.frame = CGRect(x: expandedContainer.bounds.midX - (IconSizes.large.rawValue / 2), y: expandedContainer.bounds.origin.y, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
-
-            expandedTitleImage.layer.cornerRadius = expandedTitleImage.bounds.width / 2
-            expandedTitleImage.layer.masksToBounds = true
-            expandedTitleImage.layer.shouldRasterize = true
-            expandedTitleImage.layer.rasterizationScale = UIScreen.main.scale
-            expandedTitleImage.backgroundColor = UIColor.lightGray
-            expandedTitleImage.contentMode = .scaleAspectFill
-        }
+        navImage.layer.cornerRadius = navImage.bounds.width / 2
+        navImage.layer.masksToBounds = true
+        navImage.layer.shouldRasterize = true
+        navImage.layer.rasterizationScale = UIScreen.main.scale
+        navImage.backgroundColor = UIColor.lightGray
+        navImage.contentMode = .scaleAspectFill
     }
     
     fileprivate func addSearch() {
@@ -201,46 +223,17 @@ public class PulseNavBar: UINavigationBar {
     }
 
     fileprivate func addScopeBar() {
-        let frame = CGRect(x: 0, y: expandedContainer.bounds.maxY - 40, width: UIScreen.main.bounds.width, height: 40)
+        let frame = CGRect(x: 0, y: IconSizes.large.rawValue + Spacing.xxs.rawValue, width: UIScreen.main.bounds.width, height: scopeBarHeight)
         let titles = [" ", " ", " "]
         
-        segmentedControl = XMSegmentedControl(frame: frame,
+        screenOptions = XMSegmentedControl(frame: frame,
                                               segmentTitle: titles,
                                               selectedItemHighlightStyle: XMSelectedItemHighlightStyle.bottomEdge)
-        addSubview(segmentedControl)
+        addSubview(screenOptions)
 
-        segmentedControl.backgroundColor = color7
-        segmentedControl.highlightColor = pulseBlue
-        segmentedControl.tint = .white
-        segmentedControl.highlightTint = pulseBlue
-    }
-    
-    public func getScopeBar() -> XMSegmentedControl? {
-        if segmentedControl == nil {
-            addScopeBar()
-        }
-        return segmentedControl
-    }
-    
-    public func getSearchContainer() -> UIView {
-        if searchContainer == nil {
-            addSearch()
-        }
-        return searchContainer
-    }
-    
-    public func updateScopeBarTitles(titles : [String], icons : [UIImage]?, selected : Int) {
-        if segmentedControl == nil {
-            addScopeBar()
-        }
-        
-        if icons != nil {
-            segmentedControl.segmentContent = (titles, icons!)
-        } else {
-            segmentedControl.segmentTitle = titles
-        }
-        
-        segmentedControl.selectedSegment = selected
-        segmentedControl.layoutIfNeeded()
+        screenOptions.backgroundColor = color7
+        screenOptions.highlightColor = pulseBlue
+        screenOptions.tint = .white
+        screenOptions.highlightTint = pulseBlue
     }
 }

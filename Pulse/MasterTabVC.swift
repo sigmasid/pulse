@@ -23,9 +23,6 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     fileprivate var initialLoadComplete = false
 
-    var accountNavVC : PulseNavVC!
-    var exploreNavVC : PulseNavVC!
-
     var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     var exploreVC : ExploreVC = ExploreVC()
     lazy var homeVC : HomeVC = HomeVC()
@@ -61,16 +58,16 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     }
     
     func setupControllers(_ initialIndex : Int) {
-        accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-        accountNavVC.navBarSize = .expanded
+        let accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         accountNavVC.viewControllers = [accountVC]
 
-        exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-        exploreNavVC.navigationBar.barTintColor = UIColor(red:0.91, green:0.3, blue:0.24, alpha:1)
+        let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         exploreNavVC.viewControllers = [exploreVC]
 
-        let homeNavVC = UINavigationController(rootViewController: homeVC)
+        let homeNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         homeNavVC.isNavigationBarHidden = true
+        homeNavVC.viewControllers = [homeVC]
+        
         viewControllers = [accountNavVC, exploreNavVC, homeNavVC]
         
         let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "profile"))
