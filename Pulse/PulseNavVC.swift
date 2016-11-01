@@ -54,6 +54,12 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         super.viewDidLoad()
         navBar = self.navigationBar as? PulseNavBar
     }
+    
+    override public func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navBarState = .expanded
+        
+    }
 
     override public func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -179,6 +185,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
      Stop observing the view and reset the navigation bar
      */
     public func stopFollowingScrollView() {
+        print("stop following scroll view fired")
         showNavbar(animated: false)
         if let gesture = gestureRecognizer {
             scrollableView?.removeGestureRecognizer(gesture)
@@ -191,6 +198,10 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         let center = NotificationCenter.default
         center.removeObserver(self, name: NSNotification.Name.UIApplicationDidBecomeActive, object: nil)
         center.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
+
+        guard let pulseNavBar = navigationBar as? PulseNavBar else { return }
+        pulseNavBar.collapsedTitleLabel.alpha = 0.0
+
     }
     
     // MARK: - Gesture recognizer
@@ -333,7 +344,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         var frame = pulseNavBar.frame
         
         // Move the navigation bar
-        frame.origin = CGPoint(x: frame.origin.x, y: frame.origin.y - delta)
+        frame.origin = CGPoint(x: frame.origin.x, y: min(frame.origin.y - delta, statusBarHeight))
         pulseNavBar.frame = frame
         
         // Resize the view if the navigation bar is not translucent
@@ -352,9 +363,9 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     private func updateNavbarAlpha() {
         if let pulseNavBar = navigationBar as? PulseNavBar {
             let frame = pulseNavBar.frame
-            print("frame origin is \(frame.origin.y) and delta limit is \(deltaLimit)")
             let alpha = (frame.origin.y + deltaLimit) / deltaLimit
             pulseNavBar.expandedContainer.alpha = alpha
+            pulseNavBar.getScopeBar()?.alpha = alpha
             pulseNavBar.collapsedTitleLabel.alpha = 1 - alpha
             print("collapsed title label alpha is \(pulseNavBar.collapsedTitleLabel.alpha)")
         }
@@ -417,9 +428,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         return true
     }
     
-    /**
-     UIGestureRecognizerDelegate function. Only scrolls the navigation bar with the content when `scrollingEnabled` is true
-     */
+    /** UIGestureRecognizerDelegate function. Only scrolls the navigation bar with the content when `scrollingEnabled` is true */
     public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         return scrollingEnabled
     }
@@ -435,18 +444,9 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         if let statusImage = statusImage {
             navBar.toggleStatus(show: true)
             navBar.setExpandedTitleImage(_image: statusImage)
-        } else if let title = title {
-            navBar.toggleStatus(show: true)
-            navBar.setExpandedTitle(_message : title) //unhides lable within call
+            navBar.setExpandedTitles(_title: nil, _subtitle: subtitle)
         } else {
-            navBar.toggleStatus(show: false)
-        }
-        
-        if let subtitle = subtitle {
-            navBar.toggleSubtitle(show: true)
-            navBar.setExpandedSubtitle(text: subtitle)
-        } else {
-            navBar.toggleSubtitle(show: false)
+            navBar.setExpandedTitles(_title: title, _subtitle: subtitle)
         }
     }
     
@@ -483,18 +483,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
 
         if navBarState == .expanded {
             navBar.toggleStatus(show: false) //hides both status label and image if visible
-            navBar.setExpandedTitle(_message : title) //unhides lable within call
-        }
-    }
-    
-    fileprivate func updateSubtitle(title : String?) {
-        guard navBar != nil else { return }
-
-        if let subtitle = title {
-            navBar.toggleSubtitle(show: true)
-            navBar.setExpandedSubtitle(text: subtitle)
-        } else {
-            navBar.toggleSubtitle(show: false)
+            navBar.setExpandedTitles(_title : title, _subtitle: nil) //unhides lable within call
         }
     }
 

@@ -102,7 +102,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
 
     
     func goBack() {
-        let _ = self.navigationController?.popViewController(animated: true)
+        let _ = navigationController?.popViewController(animated: true)
     }
     
     func keyboardWillShow(notification: NSNotification) {

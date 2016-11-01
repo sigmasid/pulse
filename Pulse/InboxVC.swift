@@ -46,16 +46,8 @@ class InboxVC: UITableViewController {
         }
     }
     
-    fileprivate func addListenerForSelected(conversationID : String) {
-        
-    }
-    
     //Update Nav Header
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
         if let nav = navigationController as? PulseNavVC {
             nav.setNav(title: "Conversations", subtitle: nil, statusImage: nil)
             nav.navBarSize = .expanded
@@ -63,12 +55,15 @@ class InboxVC: UITableViewController {
         } else {
             title = "Conversations"
         }
+        
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
     }
     
     ///Pop self from stack
     func goBack() {
-        print("go back fired")
-        let _ = self.navigationController?.popViewController(animated: true)
+        let _ = navigationController?.popViewController(animated: true)
     }
     
     // MARK: - Table view data source
@@ -112,7 +107,7 @@ class InboxVC: UITableViewController {
             messageVC.toUserImage = currentUserImage
         }
         
-        self.navigationController?.pushViewController(messageVC, animated: true)
+        navigationController?.pushViewController(messageVC, animated: true)
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

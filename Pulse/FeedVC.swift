@@ -202,7 +202,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
         let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
     
-        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(0.7)
+        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
         
         switch feedItemType! {
             

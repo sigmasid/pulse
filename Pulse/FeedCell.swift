@@ -202,33 +202,32 @@ class FeedCell: UICollectionViewCell {
         addSubview(previewImage!)
         addSubview(titleLabel)
         addSubview(subtitleLabel)
-
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabelConstraint1 = subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue)
-        subtitleLabelConstraint2 = subtitleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue)
-        subtitleLabelConstraint3 = subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
-        subtitleLabelConstraint4 = subtitleLabel.heightAnchor.constraint(equalToConstant: Spacing.xs.rawValue)
-        
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabelConstraint1 = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue)
-        titleLabelConstraint2 = titleLabel.bottomAnchor.constraint(equalTo: subtitleLabel.topAnchor)
-        titleLabelConstraint3 = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue)
-        titleLabelConstraint4 = titleLabel.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue)
         
         previewImage!.translatesAutoresizingMaskIntoConstraints = false
-        previewImageConstraint1 = previewImage!.bottomAnchor.constraint(equalTo: titleLabel.topAnchor)
+        previewImageConstraint1 = previewImage!.heightAnchor.constraint(equalTo: contentView.heightAnchor, multiplier: 0.80)
         previewImageConstraint2 = previewImage!.topAnchor.constraint(equalTo: contentView.topAnchor)
         previewImageConstraint3 = previewImage!.widthAnchor.constraint(equalTo: contentView.widthAnchor)
         previewImageConstraint4 = previewImage!.leadingAnchor.constraint(equalTo: contentView.leadingAnchor)
+        previewImage!.layoutIfNeeded()
+
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabelConstraint1 = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue)
+        titleLabelConstraint2 = titleLabel.topAnchor.constraint(equalTo: previewImage!.bottomAnchor)
+        titleLabelConstraint3 = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue)
+        titleLabelConstraint4 = titleLabel.heightAnchor.constraint(equalToConstant: titleLabel.intrinsicContentSize.height)
+
+        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        subtitleLabelConstraint1 = subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue)
+        subtitleLabelConstraint2 = subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor)
+        subtitleLabelConstraint3 = subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
+        subtitleLabelConstraint4 = subtitleLabel.heightAnchor.constraint(equalToConstant: subtitleLabel.intrinsicContentSize.height)
         
         previewImage!.contentMode = UIViewContentMode.scaleAspectFill
         previewImage!.clipsToBounds = true
-        previewImage!.layoutIfNeeded()
         
         titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
         subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
 
-        subtitleLabel.sizeToFit()
         activateConstraints()
     }
     

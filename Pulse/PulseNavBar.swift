@@ -22,7 +22,6 @@ public class PulseNavBar: UINavigationBar {
     fileprivate var searchContainer : UIView!
     
     public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expandedScope.rawValue)
-    
     /**
     public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: NavBarSize.expandedScope.rawValue) {
         didSet {
@@ -46,15 +45,13 @@ public class PulseNavBar: UINavigationBar {
 
         expandedContainer.frame = CGRect(x: 0, y: 0, width: navBarSize.width, height: navBarSize.height)
         expandedContainer.tag = 25
-        expandedContainer.isUserInteractionEnabled = true
-        expandedContainer.backgroundColor = .yellow
-        
+        expandedContainer.isUserInteractionEnabled = false
+
         addSubview(expandedContainer)
         
         collapsedTitleLabel.frame = CGRect(x: 0, y: navBarSize.height - NavBarSize.collapsed.rawValue, width: navBarSize.width, height: NavBarSize.collapsed.rawValue)
+        collapsedTitleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
         collapsedTitleLabel.alpha = 0.0
-        collapsedTitleLabel.backgroundColor = .green
-        expandedTitleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
         
         addSubview(collapsedTitleLabel)
 
@@ -62,9 +59,12 @@ public class PulseNavBar: UINavigationBar {
         addExpandedTitle()
         addSubtitle()
         
-        setBackgroundImage(UIImage(), for: .default)
-        shadowImage = UIImage()
+        setBackgroundImage(GlobalFunctions.imageWithColor(.white), for: .default)
+        //shadowImage = UIImage()
+        
         isTranslucent = false
+        tintColor = .white //need to set tint color vs. background color
+        alpha = 1.0
     }
     
     override public func layoutSubviews() {
@@ -80,12 +80,17 @@ public class PulseNavBar: UINavigationBar {
         super.init(coder: aDecoder)!
     }
     
-    public func setExpandedTitle(_message : String?) {
-        if _message != nil {
+    public func setExpandedTitles(_title : String?, _subtitle : String?) {
+        if _title != nil {
             expandedTitleLabel.isHidden = false
             expandedTitleImage?.isHidden = true
-            expandedTitleLabel.text = _message
-            collapsedTitleLabel.text = _message
+            expandedTitleLabel.text = _title
+            collapsedTitleLabel.text = _title?.uppercased()
+        }
+        
+        if _subtitle != nil {
+            expandedSubtitleLabel.text = _subtitle
+            collapsedTitleLabel.text = _subtitle?.uppercased()
         }
     }
     
@@ -99,10 +104,6 @@ public class PulseNavBar: UINavigationBar {
         expandedTitleImage?.image = _image
     }
     
-    func setExpandedSubtitle(text : String) {
-        expandedSubtitleLabel.text = text
-    }
-    
     fileprivate func toggleLogo(show : Bool) {
         logoView.isHidden = show ? false :  true
     }
@@ -114,10 +115,6 @@ public class PulseNavBar: UINavigationBar {
     
     func toggleSearch(show: Bool) {
         searchContainer?.isHidden = show ? false :  true
-    }
-    
-    func toggleSubtitle(show: Bool) {
-        expandedSubtitleLabel.isHidden = show ? false :  true
     }
     
     public func toggleScopeBar(show : Bool) {
@@ -176,9 +173,7 @@ public class PulseNavBar: UINavigationBar {
         expandedSubtitleLabel.minimumScaleFactor = 0.5
         expandedSubtitleLabel.sizeToFit()
         
-        expandedSubtitleLabel.tag = 10
-        
-        toggleSubtitle(show: false)
+        expandedSubtitleLabel.tag = 10        
     }
     
     fileprivate func addexpandedTitleImage() {
@@ -212,7 +207,7 @@ public class PulseNavBar: UINavigationBar {
         segmentedControl = XMSegmentedControl(frame: frame,
                                               segmentTitle: titles,
                                               selectedItemHighlightStyle: XMSelectedItemHighlightStyle.bottomEdge)
-        expandedContainer.addSubview(segmentedControl)
+        addSubview(segmentedControl)
 
         segmentedControl.backgroundColor = color7
         segmentedControl.highlightColor = pulseBlue
