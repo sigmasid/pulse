@@ -23,7 +23,7 @@ public class PulseNavBar: UINavigationBar {
     public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xxs.rawValue)
     
     /** SCOPE BAR VARS **/
-    fileprivate var scopeBarHeight : CGFloat = 40
+    public var scopeBarHeight : CGFloat = 40
     public var shouldShowScope : Bool = false {
         didSet {
             if shouldShowScope && shouldShowScope != oldValue {
@@ -31,19 +31,16 @@ public class PulseNavBar: UINavigationBar {
                 UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
                     self.screenOptions.alpha = 1.0
                 }, completion: { _ in self.layoutIfNeeded() })
-                print("should show screen options")
             } else if !shouldShowScope && shouldShowScope != oldValue {
                 navBarSize = CGSize(width: navBarSize.width, height: navBarSize.height - scopeBarHeight)
                 UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
                     self.screenOptions.alpha = 0.0
                 }, completion: { _ in self.layoutIfNeeded() })
-                print("should hide screen options")
             }
         }
     }
     
     override public func sizeThatFits(_ size: CGSize) -> CGSize {
-        print("size that fits with \(navBarSize)")
         return navBarSize
      }
     
@@ -89,20 +86,16 @@ public class PulseNavBar: UINavigationBar {
     
     public func setTitles(_navTitle : String?, _screenTitle : String?, _navImage : UIImage?) {
         if _navImage != nil {
-            print("setting mode to browse with image")
             setNavMode(mode: .browse)
             navTitle.isHidden = true
             navImage.isHidden = false
         } else if _screenTitle != nil  {
-            print("setting mode to detail")
             setNavMode(mode: .detail)
         } else if _navTitle != nil {
-            print("setting mode to browse with nav title")
             setNavMode(mode: .browse)
             navTitle.isHidden = false
             navImage.isHidden = true
         } else {
-            print("set nav mode to none")
             setNavMode(mode: .none)
         }
         

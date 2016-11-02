@@ -79,7 +79,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         // navigationController?.isNavigationBarHidden = false
         
         guard let headerNav = headerNav else { return }
-        headerNav.followScrollView(exploreContainer.view, delay: 20.0)
+        headerNav.followScrollView(exploreContainer.view, delay: 50.0)
         headerNav.scrollingNavbarDelegate = self
     }
     
@@ -91,9 +91,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     override var prefersStatusBarHidden: Bool {
-        return hideStatusBar
+        return false
     }
-    
     
     func dismissSearchTap() {
         searchController.searchBar.resignFirstResponder()
@@ -110,8 +109,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
     }
     
-    func scrollingNavWillSet(_ controller: PulseNavVC, state: NavBarState) {
-        print("scolling nav will set fired with state \(state)")
+    func scrollingNavDidSet(_ controller: PulseNavVC, state: NavBarState) {
+        print("scolling nav did set fired with state \(state)")
         switch state {
         case .collapsed:
             hideStatusBar = true
@@ -370,8 +369,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         goBack()
     }
     
-    func dismissSearchKeyboard() {
-    }
     
     //UPDATE TAGS / QUESTIONS IN FEED
     internal func goBack() {

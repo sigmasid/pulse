@@ -19,7 +19,7 @@ public enum NavBarState { case expanded, collapsed, scrolling }
 
 public protocol PulseNavControllerDelegate: NSObjectProtocol {
     /** Called when the state of the navigation bar is about to change */
-    func scrollingNavWillSet(_ controller: PulseNavVC, state: NavBarState)
+    func scrollingNavDidSet(_ controller: PulseNavVC, state: NavBarState)
 }
 
 public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
@@ -49,13 +49,11 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     }
     
     /** SCROLLING NAV IMPLEMENTATION **/
-
-    
     /** Returns the `NavigationBarState` of the navigation bar */
     open fileprivate(set) var navBarState: NavBarState = .expanded {
-        willSet {
-            if newValue != navBarState {
-                scrollingNavbarDelegate?.scrollingNavWillSet(self, state: newValue)
+        didSet {
+            if navBarState != oldValue {
+                scrollingNavbarDelegate?.scrollingNavDidSet(self, state: navBarState)
             }
         }
     }
@@ -109,6 +107,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
      */
     public func hideNavbar(animated: Bool = true) {
         guard let _ = self.scrollableView, let visibleViewController = self.visibleViewController else { return }
+        print("hide nav bar fired")
         
         if navBarState == .expanded {
             self.navBarState = .scrolling
@@ -230,9 +229,9 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     
     private func scrollWithDelta(_ delta: CGFloat) {
         var scrollDelta = delta
-        guard let pulseNavBar = navigationBar as? PulseNavBar else { return }
+        guard let navBar = navigationBar as? PulseNavBar else { return }
 
-        let frame = pulseNavBar.frame
+        let frame = navBar.screenOptions.frame
         // View scrolling up, hide the navbar
         if scrollDelta > 0 {
             // Update the delay
@@ -250,20 +249,22 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
             }
             
             // Skip if scrolling down and already collapsed
-            if navBarState == .collapsed {
+            if navBarState == .collapsed && frame.origin.y <= (navBar.navBarSize.height - navBar.scopeBarHeight) - deltaLimit {
                 return
             }
             
             // Compute the bar position
-            if frame.origin.y - scrollDelta < -deltaLimit {
-                scrollDelta = frame.origin.y + deltaLimit
+            if frame.origin.y - scrollDelta < (navBar.navBarSize.height - navBar.scopeBarHeight) - deltaLimit {
+                scrollDelta = frame.origin.y - (navBar.navBarSize.height - navBar.scopeBarHeight - deltaLimit)
             }
             
             // Detect when the bar is completely collapsed
-            if frame.origin.y <= -deltaLimit {
+            if frame.origin.y <= (navBar.navBarSize.height - navBar.scopeBarHeight) - deltaLimit {
+                print("set state to collapsed")
                 navBarState = .collapsed
                 delayDistance = maxDelay
             } else {
+                print("set state to scrolling")
                 navBarState = .scrolling
             }
         }
@@ -279,17 +280,17 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
             }
             
             // Skip if scrolling up and already expanded
-            if navBarState == .expanded {
+            if navBarState == .expanded && frame.origin.y >= navBar.navBarSize.height - navBar.scopeBarHeight {
                 return
             }
             
             // Compute the bar position
-            if frame.origin.y - scrollDelta > statusBarHeight {
-                scrollDelta = frame.origin.y - statusBarHeight
+            if frame.origin.y - scrollDelta > (navBar.navBarSize.height - navBar.scopeBarHeight) {
+                scrollDelta = frame.origin.y - (navBar.navBarSize.height - navBar.scopeBarHeight)
             }
             
             // Detect when the bar is completely expanded
-            if frame.origin.y >= statusBarHeight {
+            if frame.origin.y >= navBar.navBarSize.height - navBar.scopeBarHeight {
                 navBarState = .expanded
                 delayDistance = maxDelay
             } else {
@@ -306,35 +307,38 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     
     private func updateSizing(_ delta: CGFloat) {
         guard let topViewController = self.topViewController else { return }
-        guard let pulseNavBar = navigationBar as? PulseNavBar else { return }
+        guard let navBar = navigationBar as? PulseNavBar else { return }
         
-        var frame = pulseNavBar.frame
+        var screenOptionsFrame = navBar.screenOptions.frame
         
         // Move the navigation bar
-        frame.origin = CGPoint(x: frame.origin.x, y: min(frame.origin.y - delta, statusBarHeight))
-        pulseNavBar.frame = frame
+        screenOptionsFrame.origin = CGPoint(x: screenOptionsFrame.origin.x, y: screenOptionsFrame.origin.y - delta)
+        navBar.screenOptions.frame = screenOptionsFrame
+
+        let navBarFrame = CGRect(x: navBar.frame.origin.x, y: navBar.frame.origin.y, width: navBar.frame.width, height: navBar.frame.height - delta)
+        navBar.frame = navBarFrame
         
         // Resize the view if the navigation bar is not translucent
-        if !pulseNavBar.isTranslucent {
-            let navBarY = pulseNavBar.frame.origin.y + pulseNavBar.frame.size.height
-            frame = topViewController.view.frame
+        if !navBar.isTranslucent {
+            let navBarY = navBar.screenOptions.frame.origin.y + navBar.scopeBarHeight
+            var frame = topViewController.view.frame
             frame.origin = CGPoint(x: frame.origin.x, y: navBarY)
             frame.size = CGSize(width: frame.size.width, height: view.frame.size.height - (navBarY) - tabBarOffset)
             topViewController.view.frame = frame
-            topViewController.view.setNeedsLayout()
+            topViewController.view.layoutIfNeeded()
         } else {
             adjustContentInsets()
         }
     }
     
     private func updateNavbarAlpha() {
-        if let pulseNavBar = navigationBar as? PulseNavBar {
-            let frame = pulseNavBar.frame
-            let alpha = (frame.origin.y + deltaLimit) / deltaLimit
-            pulseNavBar.navContainer.alpha = alpha
-            pulseNavBar.getScopeBar()?.alpha = alpha
-            pulseNavBar.screenTitle.alpha = 1 - alpha
-        }
+        guard navBar != nil else { return }
+
+        let frame = navBar.screenOptions.frame
+        let alpha = (frame.origin.y - deltaLimit) / deltaLimit
+        navBar.navContainer.alpha = alpha
+        navBar.screenOptions.alpha = alpha
+        navBar.screenTitle.alpha = 1 - alpha
     }
     
     private func adjustContentInsets() {
@@ -471,6 +475,7 @@ extension PulseNavVC {
     }
     
     var deltaLimit: CGFloat {
-        return 40
+        guard navBar != nil else { return 0 }
+        return navBar.scopeBarHeight
     }
 }

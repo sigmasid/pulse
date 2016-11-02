@@ -217,7 +217,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qCreated {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { break }
-                print("getting existing question with \(_currentQuestion.qID)")
 
                 if let tagID = _currentQuestion.qTagID {
                     cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(tagID.uppercased())")
@@ -231,10 +230,8 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     cell.hideAnswerCount()
                 }
             } else {
-                print("getting question from database")
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
                     if error == nil {
-                        print("question title is \(question.qID)")
                         if let tagID = question.qTagID {
                             cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercased())")
                         } else {
