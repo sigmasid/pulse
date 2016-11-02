@@ -10,8 +10,8 @@ import UIKit
 
 class LoadingView: UIView {
     
-    fileprivate let _messageLabel = UILabel()
-    fileprivate var _iconManager : Icon!
+    fileprivate let messageLabel = UILabel()
+    fileprivate var iconManager : Icon!
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -27,38 +27,38 @@ class LoadingView: UIView {
     }
     
     func addMessage(_ _text : String?) {
-        self.addSubview(_messageLabel)
-        _messageLabel.text = _text
-        _messageLabel.adjustsFontSizeToFitWidth = true
-        _messageLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        _messageLabel.textAlignment = .center
+        addSubview(messageLabel)
+        messageLabel.text = _text
+        messageLabel.adjustsFontSizeToFitWidth = true
+        messageLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        messageLabel.textAlignment = .center
         
-        _messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        _messageLabel.topAnchor.constraint(equalTo: _iconManager.bottomAnchor, constant: 5).isActive = true
-        _messageLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageLabel.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        messageLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
     }
     
     func addMessage(_ _text : String, _color : UIColor) {
-        _messageLabel.textColor = _color
+        messageLabel.textColor = _color
         addMessage(_text)
     }
     
     func addIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {
         let _iconSize = iconSize.rawValue
-        _iconManager = Icon(frame: CGRect(x: 0, y: 0, width: _iconSize, height: _iconSize))
+        iconManager = Icon(frame: CGRect(x: 0, y: 0, width: _iconSize, height: _iconSize))
 
         if let _iconBackgroundColor = _iconBackgroundColor {
-            _iconManager.drawIconBackground(_iconBackgroundColor)
+            iconManager.drawIconBackground(_iconBackgroundColor)
         }
-        _iconManager.drawIcon(_iconColor, iconThickness: IconThickness.medium.rawValue)
-        self.addSubview(_iconManager)
+        iconManager.drawIcon(_iconColor, iconThickness: IconThickness.medium.rawValue)
+        addSubview(iconManager)
         
-        _iconManager.translatesAutoresizingMaskIntoConstraints = false
-        _iconManager.widthAnchor.constraint(equalToConstant: _iconSize).isActive = true
-        _iconManager.heightAnchor.constraint(equalToConstant: _iconSize).isActive = true
-        _iconManager.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
-        _iconManager.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
+        iconManager.translatesAutoresizingMaskIntoConstraints = false
+        iconManager.widthAnchor.constraint(equalToConstant: _iconSize).isActive = true
+        iconManager.heightAnchor.constraint(equalToConstant: _iconSize).isActive = true
+        iconManager.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+        iconManager.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        iconManager.layoutIfNeeded()
     }
 }
 

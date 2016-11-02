@@ -96,13 +96,14 @@ class FeedCell: UICollectionViewCell {
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?) {
-
         if _title != nil {
             let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightHeavy)]
             let titleHeight = GlobalFunctions.getLabelSize(title: _title!, width: titleLabel.frame.width, fontAttributes: fontAttributes)
 
             titleHeightConstraint.constant = titleHeight
             titleLabel.layoutIfNeeded()
+        } else {
+            titleHeightConstraint.constant = 0
         }
         
         if _subtitle != nil {
@@ -111,17 +112,17 @@ class FeedCell: UICollectionViewCell {
             
             subtitleHeightConstraint.constant = subtitleHeight
             subtitleLabel.layoutIfNeeded()
+        } else {
+            subtitleHeightConstraint.constant = 0
         }
-        
         
         titleLabel.text = _title
         subtitleLabel.text = _subtitle
-        
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?, _image : UIImage?) {
-        titleLabel.text = _title
-        subtitleLabel.text = _subtitle
+        updateLabel(_title, _subtitle: _subtitle)
+        
         if previewImage != nil {
             previewImage?.image = _image
         }
@@ -151,6 +152,7 @@ class FeedCell: UICollectionViewCell {
     
     func showAnswerCount() {
         answerCount.isHidden = false
+        answerCount.setTitle(nil, for: UIControlState())
     }
     
     override func prepareForReuse() {

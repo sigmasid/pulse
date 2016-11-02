@@ -59,7 +59,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
-            
             if let nav = navigationController as? PulseNavVC { headerNav = nav }
             
             getButtons()
@@ -376,6 +375,15 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     //UPDATE TAGS / QUESTIONS IN FEED
     internal func goBack() {
+        guard exploreStack.last != nil else { return }
+        
+        switch exploreStack.last!.currentMode {
+        case .people: selectedUser = nil
+        case .question: selectedQuestion = nil
+        case .tag: selectedTag = nil
+        default: return
+        }
+        
         let _ = exploreStack.popLast()
         currentExploreMode = exploreStack.last
     }
@@ -416,7 +424,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     /* MARK : LAYOUT VIEW FUNCTIONS */
     fileprivate func setupExplore() {
         view.backgroundColor = UIColor.white
-
+        
         headerNav?.getScopeBar()?.delegate = self
 
         exploreContainer = FeedVC()
@@ -426,12 +434,20 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
 
         currentExploreMode = Explore(currentMode: .root, currentSelection: 0)
         exploreStack.append(currentExploreMode)
+        
 
-        loadingView = LoadingView(frame: exploreContainer.view.frame, backgroundColor: UIColor.white)
+        loadingView = LoadingView(frame: CGRect.zero, backgroundColor: UIColor.white)
+        view.addSubview(loadingView!)
+
+        loadingView?.translatesAutoresizingMaskIntoConstraints = false
+        loadingView?.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        loadingView?.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        loadingView?.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        loadingView?.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        loadingView?.layoutIfNeeded()
+
         loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
         toggleLoading(show: true, message: "Loading...")
-        
-        view.addSubview(loadingView!)
         
         definesPresentationContext = true
     }

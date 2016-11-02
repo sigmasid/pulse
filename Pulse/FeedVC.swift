@@ -29,7 +29,7 @@ class FeedVC: UIViewController {
     var feedDelegate : feedVCDelegate!
     var feedItemType : FeedItemType! {
         didSet {
-            self.updateDataSource = true
+            updateDataSource = true
         }
     }
     /* END SET BY PARENT */
@@ -165,7 +165,6 @@ class FeedVC: UIViewController {
         feedCollectionView?.backgroundColor = UIColor.clear
         feedCollectionView?.backgroundView = nil
         feedCollectionView?.showsVerticalScrollIndicator = false
-//        feedCollectionView?.isPagingEnabled = true
     }
     
     func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
@@ -214,54 +213,38 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.itemType = .question
             }
             cell.updateLabel(nil, _subtitle: nil)
-            
-            if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
-                if let _currentQuestion = allQuestions[indexPath.row] {
-                    if let tagID = _currentQuestion.qTagID {
-                        cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(tagID.uppercased())")
-                    } else {
-                        cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
-                    }
-                    
-                    if _currentQuestion.hasAnswers() {
-                        cell.showAnswerCount()
-                        cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
-                    } else {
-                        cell.hideAnswerCount()
-                    }
+            cell.showAnswerCount()
+
+            if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qCreated {
+                guard let _currentQuestion = allQuestions[indexPath.row] else { break }
+                print("getting existing question with \(_currentQuestion.qID)")
+
+                if let tagID = _currentQuestion.qTagID {
+                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(tagID.uppercased())")
+                } else {
+                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
+                }
+                
+                if _currentQuestion.hasAnswers() {
+                    cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
+                } else {
+                    cell.hideAnswerCount()
                 }
             } else {
+                print("getting question from database")
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
                     if error == nil {
+                        print("question title is \(question.qID)")
                         if let tagID = question.qTagID {
                             cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercased())")
                         } else {
                             cell.updateLabel(question.qTitle, _subtitle: nil)
                         }
                         self.allQuestions[indexPath.row] = question
-                        cell.showAnswerCount()
                         cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
                     }
                 })
             }
-//            if indexPath == selectedIndex && indexPath == deselectedIndex {
-//                showQuestion(selectedQuestion, _allQuestions: allQuestions, _questionIndex: indexPath.row, _selectedTag: selectedTag)
-//                
-//            } else if indexPath == selectedIndex, let _selectedQuestion = allQuestions[indexPath.row] {
-//                if !_selectedQuestion.qCreated { //search case - get question from database
-//                    Database.getQuestion(_selectedQuestion.qID, completion: { (question, error) in
-//                    if error == nil {
-//                        self.selectedQuestion = question
-//                        cell.showQuestion(question)
-//                    }
-//                    })
-//                } else if _selectedQuestion.hasAnswers() {
-//                    self.selectedQuestion = _selectedQuestion
-//                    cell.showQuestion(_selectedQuestion)
-//                }
-//            } else if indexPath == deselectedIndex {
-//                cell.removeAnswer()
-//            }
             
         /** FEED ITEM: TAG **/
         case .tag:
@@ -269,13 +252,15 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.itemType = .tag
             }
             cell.updateLabel(nil, _subtitle: nil)
-            
+            cell.showAnswerCount()
+
             if allTags.count > indexPath.row && allTags[indexPath.row].tagCreated {
                 let _currentTag = allTags[indexPath.row]
                 cell.updateLabel(_currentTag.tagID, _subtitle: _currentTag.tagDescription)
                 cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), for: UIControlState())
             } else if allTags.count > indexPath.row {
-                Database.getTag(self.allTags[indexPath.row].tagID!, completion: { (tag, error) in
+
+                Database.getTag(allTags[indexPath.row].tagID!, completion: { (tag, error) in
                     if error == nil {
                         self.allTags[indexPath.row] = tag
                         cell.updateLabel(tag.tagID, _subtitle: tag.tagDescription)
@@ -288,9 +273,9 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         case .answer:
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .answer
-                cell.hideAnswerCount()
             }
             
+            cell.hideAnswerCount()
             let _answer = allAnswers[indexPath.row]
 
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
