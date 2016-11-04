@@ -59,9 +59,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
     
     func setupControllers(_ initialIndex : Int) {
         let accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        accountNavVC.setNav(navTitle: "Account", screenTitle: nil, screenImage: nil)
         accountNavVC.viewControllers = [accountVC]
 
         let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        accountNavVC.setNav(navTitle: nil, screenTitle: "Explore", screenImage: nil)
         exploreNavVC.viewControllers = [exploreVC]
         
         let homeNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)

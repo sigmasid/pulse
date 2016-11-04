@@ -22,19 +22,21 @@ public class PulseNavBar: UINavigationBar {
     
     fileprivate var isBrowseSetup = false
     fileprivate var isDetailSetup = false
+    
     public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xxs.rawValue)
+    public var fullNavHeight : CGFloat = IconSizes.large.rawValue + Spacing.xxs.rawValue
     
     /** SCOPE BAR VARS **/
     public var scopeBarHeight : CGFloat = 40
     public var shouldShowScope : Bool = false {
         didSet {
             if shouldShowScope && shouldShowScope != oldValue {
-                navBarSize = CGSize(width: navBarSize.width, height: navBarSize.height + scopeBarHeight)
+                navBarSize = CGSize(width: navBarSize.width, height: fullNavHeight + scopeBarHeight)
                 UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
                     self.screenOptions.alpha = 1.0
                 }, completion: { _ in self.layoutIfNeeded() })
             } else if !shouldShowScope && shouldShowScope != oldValue {
-                navBarSize = CGSize(width: navBarSize.width, height: navBarSize.height - scopeBarHeight)
+                navBarSize = CGSize(width: navBarSize.width, height: fullNavHeight - scopeBarHeight)
                 UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
                     self.screenOptions.alpha = 0.0
                 }, completion: { _ in self.layoutIfNeeded() })
@@ -110,9 +112,7 @@ public class PulseNavBar: UINavigationBar {
     }
     
     public func toggleSearch(show: Bool) {
-        print("toggling search for \(show), search container was \(searchContainer.isHidden)")
         searchContainer.isHidden = show ? false : true
-        navContainer.isHidden = show ? true : false
         screenTitle.isHidden = show ? true : false
     }
     
@@ -218,12 +218,12 @@ public class PulseNavBar: UINavigationBar {
     
     fileprivate func addSearch() {
         searchContainer = UIView(frame: CGRect(x: IconSizes.large.rawValue,
-                                               y: (IconSizes.large.rawValue - IconSizes.small.rawValue) / 2,
+                                               y: Spacing.s.rawValue,
                                                width: UIScreen.main.bounds.width - IconSizes.large.rawValue,
                                                height: IconSizes.medium.rawValue))
 
-        addSubview(searchContainer)
-        toggleSearch(show: false)
+        self.addSubview(searchContainer)
+        searchContainer.tag = 30
     }
 
     fileprivate func addScopeBar() {

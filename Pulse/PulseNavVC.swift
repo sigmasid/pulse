@@ -127,7 +127,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         guard let _ = self.scrollableView, let visibleViewController = self.visibleViewController, let navBar = navigationBar as? PulseNavBar else {
             return
         }
-        
         if navBarState == .collapsed {
             gestureRecognizer?.isEnabled = false
             self.navBarState = .scrolling
@@ -309,17 +308,16 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         screenOptionsFrame.origin = CGPoint(x: screenOptionsFrame.origin.x, y: screenOptionsFrame.origin.y - delta)
         navBar.screenOptions.frame = screenOptionsFrame
         
-        let navBarHeight = max(scopeBarOriginY, navBar.frame.height - delta) //maintain min frame size once status bar is hidden
-        let navBarFrame = CGRect(x: navBar.frame.origin.x, y: navBar.frame.origin.y, width: navBar.frame.width, height: navBarHeight)
-        navBar.frame = navBarFrame
-                
+        navBar.navBarSize = CGSize(width: navBar.navBarSize.width, height: min(max(navBar.navBarSize.height - delta, navBar.fullNavHeight), navBar.fullNavHeight + navBar.scopeBarHeight))
+    
+        let navBarHeight = max(scopeBarOriginY, navBar.navBarSize.height - delta) //maintain min frame size once status bar is hidden
+
         // Resize the view if the navigation bar is not translucent
         if !navBar.isTranslucent {
             var frame = topViewController.view.frame
             frame.origin = CGPoint(x: frame.origin.x, y: navBarHeight)
             frame.size = CGSize(width: frame.size.width, height: view.frame.size.height - (navBarHeight) - tabBarOffset)
             topViewController.view.frame = frame
-            topViewController.view.layoutIfNeeded()
         } else {
             adjustContentInsets()
         }
@@ -334,8 +332,10 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     }
     
     private func adjustContentInsets() {
+        guard navBar != nil else { return }
+
         if let view = scrollView() as? UICollectionView {
-            view.contentInset.top = navigationBar.frame.origin.y + navigationBar.frame.size.height
+            view.contentInset.top = navBar.frame.origin.y + navBar.frame.size.height
             // When this is called by `hideNavbar(_:)` or `showNavbar(_:)`, the sticky header reamins still
             // even if the content inset changed. This triggers a fake scroll, fixing the header's position
             view.setContentOffset(CGPoint(x: contentOffset.x, y: contentOffset.y - 0.1), animated: false)
@@ -416,9 +416,8 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     }
 
     fileprivate func updateBackgroundImage(image : UIImage?) {
-        if let navBar = self.navigationBar as? PulseNavBar, let image = image {
-            navBar.setBackgroundImage(image, for: .default)
-        }
+        guard navBar != nil, let image = image else { return }
+        navBar.setBackgroundImage(image, for: .default)
     }
     
     public func getSearchContainer() -> UIView? {

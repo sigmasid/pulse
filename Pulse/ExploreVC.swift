@@ -26,7 +26,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
 
     fileprivate var hideStatusBar = false {
         didSet {
-            self.setNeedsStatusBarAppearanceUpdate()
+            setNeedsStatusBarAppearanceUpdate()
         }
     }
     
@@ -61,12 +61,12 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         if !isLoaded {
             if let nav = navigationController as? PulseNavVC {
                 headerNav = nav
-                headerNav?.setNav(navTitle: nil, screenTitle: nil, screenImage: nil)
+                //headerNav?.setNav(navTitle: nil, screenTitle: nil, screenImage: nil)
             }
 
             getButtons()
-            setupExplore()
             setupSearch()
+            setupExplore()
             
             iconContainer = addIcon(text: "EXPLORE")
             automaticallyAdjustsScrollViewInsets = false
@@ -82,14 +82,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         // navigationController?.isNavigationBarHidden = false
         
         guard let headerNav = headerNav else { return }
-        headerNav.followScrollView(exploreContainer.view, delay: 50.0)
+        headerNav.followScrollView(exploreContainer.view, delay: 20.0)
         headerNav.scrollingNavbarDelegate = self
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -104,11 +98,14 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation {
-        return UIStatusBarAnimation.fade
+        return UIStatusBarAnimation.slide
     }
     
     func dismissSearchTap() {
         searchController.searchBar.resignFirstResponder()
+        if currentExploreMode.currentMode == .search {
+            headerNav?.toggleSearch(show: false)
+        }
     }
     
     fileprivate func updateScopeBar() {
@@ -129,7 +126,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         case .expanded:
             hideStatusBar = false
         case .scrolling:
-            hideStatusBar = true
+            hideStatusBar = false
         }
     }
     
@@ -357,12 +354,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+    }
+    
+    /* SEARCH FUNCTIONS */
     //Initial setup for search - controller is set to active when user clicks search
     fileprivate func setupSearch() {
         searchController.searchResultsUpdater = self
         searchController.searchBar.delegate = self
         searchController.delegate = self
-
+        
         searchController.dimsBackgroundDuringPresentation = false
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.highlighted)
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.normal)
@@ -374,11 +376,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         headerNav?.toggleSearch(show: false)
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
-    /* SEARCH FUNCTIONS */
     func userClickedSearch() {
         searchController.isActive = true
         currentExploreMode = Explore(currentMode: .search, currentSelection: 0)
@@ -386,11 +383,14 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         tapGesture.isEnabled = true
         
         toggleLoading(show: true, message : "Searching...")
+        headerNav?.toggleSearch(show: true)
     }
     
     func userCancelledSearch() {
         tapGesture.isEnabled = false
         searchController.isActive = false
+        headerNav?.toggleSearch(show: false)
+
         goBack()
     }
     

@@ -42,11 +42,9 @@ class AccountLoginManagerVC: UIViewController {
     }
     
     func updateLoginOrAccount() {
-        print("user updated fired")
         if User.isLoggedIn() && accountVC != nil && _currentLoadedView != .account {
             if loginVC?._currentLoadedView != .createAccount {
                 GlobalFunctions.addNewVC(accountVC!, parentVC: self)
-                print("went into update login or account - 1")
 
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
                 NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
@@ -54,7 +52,6 @@ class AccountLoginManagerVC: UIViewController {
             }
         } else if User.isLoggedIn() && _currentLoadedView != .account {
             if loginVC?._currentLoadedView != .createAccount {
-                print("went into update login or account - 2")
                 accountVC = AccountPageVC()
                 GlobalFunctions.addNewVC(accountVC!, parentVC: self)
                 NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
@@ -62,7 +59,6 @@ class AccountLoginManagerVC: UIViewController {
                 _currentLoadedView = .account
             }
         } else if !User.isLoggedIn() {
-            print("went into not logged in VC")
             loginVC = _storyboard.instantiateViewController(withIdentifier: "LoginVC") as? LoginVC
             GlobalFunctions.addNewVC(loginVC!, parentVC: self)
             
@@ -76,15 +72,12 @@ class AccountLoginManagerVC: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
         
         if User.isLoggedIn() && accountVC != nil && _currentLoadedView == .login {
-            print("went into 1")
             GlobalFunctions.addNewVC(accountVC!, parentVC: self)
             GlobalFunctions.dismissVC(loginVC!)
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
         }  else if User.isLoggedIn() && _currentLoadedView == .account {
-            print("went into 2")
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
         } else if User.isLoggedIn() && _currentLoadedView == .login {
-            print("went into 3")
             accountVC = AccountPageVC()
             GlobalFunctions.cycleBetweenVC(loginVC!, newVC: accountVC!, parentVC: self)
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
@@ -97,7 +90,6 @@ class AccountLoginManagerVC: UIViewController {
                 GlobalFunctions.addNewVC(loginVC!, parentVC: self)
                 GlobalFunctions.dismissVC(accountVC!)
                 _currentLoadedView = .login
-                print("set current loaded view to login and went into 1")
                 NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
                 NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
             } else if accountVC != nil {
@@ -105,7 +97,6 @@ class AccountLoginManagerVC: UIViewController {
                 GlobalFunctions.addNewVC(loginVC!, parentVC: self)
                 GlobalFunctions.dismissVC(accountVC!)
                 _currentLoadedView = .login
-                print("set current loaded view to login and went into 2")
 
                 NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
                 NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
