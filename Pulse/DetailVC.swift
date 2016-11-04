@@ -326,7 +326,7 @@ extension DetailVC : UITableViewDataSource, UITableViewDelegate {
                 Database.getQuestion(currentTag.questions![(indexPath as NSIndexPath).row]!.qID, completion: { (question, error) in
                     if error == nil {
                         self._allQuestions[(indexPath as NSIndexPath).row] =  question
-                        cell.titleLabel.text = question.qTitle
+                        cell.titleLabel.text = question?.qTitle
                     }
                 })
             }
@@ -401,7 +401,7 @@ extension DetailVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 Database.getQuestion(currentTag.questions![(indexPath as NSIndexPath).row]!.qID, completion: { (question, error) in
                     if error == nil {
                         self._allQuestions[(indexPath as NSIndexPath).row] = question
-                        cell.titleLabel!.text = question.qTitle
+                        cell.titleLabel!.text = question?.qTitle
                     }
                 })
             }

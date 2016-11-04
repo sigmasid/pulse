@@ -63,7 +63,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
 
         let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         exploreNavVC.viewControllers = [exploreVC]
-
+        
         let homeNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         homeNavVC.isNavigationBarHidden = true
         homeNavVC.viewControllers = [homeVC]
@@ -88,7 +88,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         delegate = self
         tabBar.tintColor = UIColor.white.withAlphaComponent(0.5)
         tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clear)
-        tabBar.isHidden = true
+        //tabBar.isHidden = true
         
         panInteractionController.wireToViewController(self)
     }

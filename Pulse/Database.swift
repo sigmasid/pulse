@@ -434,7 +434,7 @@ class Database {
     static func getExpertsForQuestion(qID : String, completion: @escaping (_ experts : [User]) -> Void) {
         var allExperts = [User]()
         
-        databaseRef.child("expertsForQuestion").observeSingleEvent(of: .value, with: { snap in
+        questionsRef.child(qID).child("experts").observeSingleEvent(of: .value, with: { snap in
             for child in snap.children {
                 let _currentUser = User(uID: (child as AnyObject).key)
                 allExperts.append(_currentUser)
@@ -447,30 +447,24 @@ class Database {
         var allQuestions = [Question]()
         
         questionsRef.child(qID).child("related").observeSingleEvent(of: .value, with: { snap in
-            if snap.exists() {
-                print("snap exists - allquestions count is \(allQuestions.count)")
-                for child in snap.children {
-                    let _currentQuestion = Question(qID: (child as AnyObject).key)
-                    allQuestions.append(_currentQuestion)
-                }
-                completion(allQuestions)
-            } else {
-                print("snap empty - allquestions count is \(allQuestions.count)")
-                completion(allQuestions)
+            for child in snap.children {
+                let _currentQuestion = Question(qID: (child as AnyObject).key)
+                allQuestions.append(_currentQuestion)
             }
+            completion(allQuestions)
         })
     }
     
-    static func getQuestion(_ qID : String, completion: @escaping (_ question : Question, _ error : NSError?) -> Void) {
+    static func getQuestion(_ qID : String, completion: @escaping (_ question : Question?, _ error : NSError?) -> Void) {
         questionsRef.child(qID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 let _currentQuestion = Question(qID: qID, snapshot: snap)
                 completion(_currentQuestion, nil)
             }
-//            else {
-//                let userInfo = [ NSLocalizedDescriptionKey : "no question found" ]
-//                completion(nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
-//            }
+            else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no question found" ]
+                completion(nil, NSError.init(domain: "No Question Found", code: 404, userInfo: userInfo))
+            }
         })
     }
     

@@ -117,7 +117,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     
     fileprivate func loadNextQuestion(_ completion: @escaping (_ question : Question?, _ error : NSError?) -> Void) {
         questionCounter += 1
-        
         if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
             Database.getQuestion(selectedTag.questions![questionCounter]!.qID, completion: { (question, error) in
                 if error != nil {
@@ -319,6 +318,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func showQuestionPreviewOverlay() {
+        print("show question preview fired")
         questionPreviewVC = QuestionPreviewVC()
         questionPreviewVC?.questionTitle = currentQuestion.qTitle
         questionPreviewVC?.numAnswers =  currentQuestion.totalAnswers()
@@ -328,6 +328,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func removeQuestionPreview() {
+        print("remove question preview fired")
         if _isShowingQuestionPreview {
             popViewController(animated: true)
             _isShowingQuestionPreview = false
@@ -348,7 +349,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         } else if _hasMoreAnswers {
             returnToAnswers()
         } else {
-            self.loadNextQuestion({ (question, error) in
+            loadNextQuestion({ (question, error) in
                 if error != nil {
                     if error?.domain == "ReachedEnd" {
                         self.dismiss(animated: true, completion: nil)

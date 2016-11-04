@@ -59,8 +59,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
-            if let nav = navigationController as? PulseNavVC { headerNav = nav }
-            
+            if let nav = navigationController as? PulseNavVC {
+                headerNav = nav
+                headerNav?.setNav(navTitle: nil, screenTitle: nil, screenImage: nil)
+            }
+
             getButtons()
             setupExplore()
             setupSearch()
@@ -83,6 +86,12 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         headerNav.scrollingNavbarDelegate = self
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
@@ -91,7 +100,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     override var prefersStatusBarHidden: Bool {
-        return false
+        return hideStatusBar
+    }
+    
+    override var preferredStatusBarUpdateAnimation: UIStatusBarAnimation {
+        return UIStatusBarAnimation.fade
     }
     
     func dismissSearchTap() {
@@ -110,7 +123,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     func scrollingNavDidSet(_ controller: PulseNavVC, state: NavBarState) {
-        print("scolling nav did set fired with state \(state)")
         switch state {
         case .collapsed:
             hideStatusBar = true
@@ -123,26 +135,26 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     fileprivate func updateModes() {
         toggleLoading(show: true, message : "Loading...")
-        headerNav?.toggleSearch(show: currentExploreMode.currentMode == .search ? true : false)
+        //headerNav?.toggleSearch(show: currentExploreMode.currentMode == .search ? true : false)
 
         switch currentExploreMode.currentMode {
         case .root:
-            updateHeader(_title: "Explore", _subtitle : nil, leftButton: searchButton, rightButton: nil, statusImage: nil)
+            updateHeader(navTitle: nil, screentitle : "Explore", leftButton: searchButton, rightButton: nil, navImage: nil)
             updateRootScopeSelection()
         case .tag:
-            updateHeader(_title: nil, _subtitle : selectedTag.tagID!, leftButton: backButton, rightButton: nil, statusImage: nil)
+            updateHeader(navTitle: nil, screentitle : selectedTag.tagID!, leftButton: backButton, rightButton: nil, navImage: nil)
             isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTags[selectedTag.tagID!] != nil ? true : false
             updateTagScopeSelection()
         case .search:
-            updateHeader(_title: nil, _subtitle : nil, leftButton: closeButton, rightButton: nil, statusImage: nil)
+            updateHeader(navTitle: nil, screentitle : nil, leftButton: closeButton, rightButton: nil, navImage: nil)
             updateSearchResults(for: searchController)
         case .question:
-            updateHeader(_title: currentExploreMode.getModeTitle(), _subtitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: nil, statusImage: nil)
+            updateHeader(navTitle: currentExploreMode.getModeTitle(), screentitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: nil, navImage: nil)
             updateQuestionScopeSelection()
         case .people:
-            updateHeader(_title: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
-                         _subtitle : selectedUser.thumbPicImage != nil ? selectedUser.name : nil,
-                         leftButton: backButton, rightButton: messageButton, statusImage: selectedUser.thumbPicImage)
+            updateHeader(navTitle: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
+                         screentitle : selectedUser.thumbPicImage != nil ? selectedUser.name : nil,
+                         leftButton: backButton, rightButton: messageButton, navImage: selectedUser.thumbPicImage)
             updatePeopleScopeSelection()
         }
     }
@@ -150,6 +162,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate func updateRootScopeSelection() {
         switch currentExploreMode.currentSelectionValue() {
         case .tags:
+
             Database.getExploreTags({ tags, error in
                 if error == nil {
                     self.exploreContainer.allTags = tags
@@ -235,8 +248,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         case .answers:
             if !selectedQuestion.qCreated {
                 Database.getQuestion(selectedQuestion.qID, completion: { question, error in
-                    if error == nil && question.hasAnswers() {
+                    if let question = question {
                         self.exploreContainer.allAnswers = question.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
+                        self.exploreContainer.allQuestions = [self.selectedQuestion]
                         self.exploreContainer.selectedQuestion = self.selectedQuestion
                         self.exploreContainer.feedItemType = .answer
                         
@@ -249,6 +263,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             } else {
                 if selectedQuestion.hasAnswers() {
                     exploreContainer.allAnswers = selectedQuestion.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
+                    self.exploreContainer.allQuestions = [self.selectedQuestion]
                     exploreContainer.selectedQuestion = selectedQuestion
 
                     exploreContainer.feedItemType = .answer
@@ -259,7 +274,18 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     self.toggleLoading(show: true, message : "No answers found")
                 }
             }
-        case .experts: return
+        case .experts:
+            Database.getExpertsForQuestion(qID: selectedQuestion.qID, completion: { experts in
+                self.exploreContainer.setSelectedIndex(index: nil)
+                self.exploreContainer.allUsers = experts
+                self.exploreContainer.feedItemType = .people
+                
+                if experts.count > 0 {
+                    self.toggleLoading(show: false, message : nil)
+                } else {
+                    self.toggleLoading(show: true, message : "No experts found")
+                }
+            })
         case .related:
             Database.getRelatedQuestions(selectedQuestion.qID, completion: { questions in
                 self.exploreContainer.setSelectedIndex(index: nil)
@@ -315,19 +341,19 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     //Update Nav Header
-    fileprivate func updateHeader(_title : String?,
-                                  _subtitle : String?,
+    fileprivate func updateHeader(navTitle : String?,
+                                  screentitle : String?,
                                   leftButton : UIButton?,
                                   rightButton : UIButton?,
-                                  statusImage : UIImage?) {
+                                  navImage : UIImage?) {
         
         navigationItem.leftBarButtonItem = leftButton != nil ? UIBarButtonItem(customView: leftButton!) : nil
         navigationItem.rightBarButtonItem = rightButton != nil ? UIBarButtonItem(customView: rightButton!) : nil
         
         if let nav = headerNav {
-            nav.setNav(navTitle: _title, screenTitle: _subtitle, screenImage: statusImage)
+            nav.setNav(navTitle: navTitle, screenTitle: screentitle, screenImage: navImage)
         } else {
-            title = _title
+            title = navTitle
         }
     }
     
@@ -336,7 +362,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         searchController.searchResultsUpdater = self
         searchController.searchBar.delegate = self
         searchController.delegate = self
-        searchController.searchBar.setBackgroundImage(GlobalFunctions.imageWithColor(.white), for: .any , barMetrics: UIBarMetrics.default)
 
         searchController.dimsBackgroundDuringPresentation = false
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.highlighted)
@@ -378,7 +403,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         case .people: selectedUser = nil
         case .question: selectedQuestion = nil
         case .tag: selectedTag = nil
-        default: return
+        default: break
         }
         
         let _ = exploreStack.popLast()
@@ -425,14 +450,19 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         headerNav?.getScopeBar()?.delegate = self
 
         exploreContainer = FeedVC()
-        exploreContainer.view.frame = view.bounds
         GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
+
+        exploreContainer.view.translatesAutoresizingMaskIntoConstraints = false
+        exploreContainer.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        exploreContainer.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        exploreContainer.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        exploreContainer.view.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        exploreContainer.view.layoutIfNeeded()
         exploreContainer.feedDelegate = self
 
         currentExploreMode = Explore(currentMode: .root, currentSelection: 0)
         exploreStack.append(currentExploreMode)
         
-
         loadingView = LoadingView(frame: CGRect.zero, backgroundColor: UIColor.white)
         view.addSubview(loadingView!)
 

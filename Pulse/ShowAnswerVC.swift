@@ -220,14 +220,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         } else if _answerType == .recordedImage || _answerType == .albumImage {
             Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
                 if error != nil {
-                    print("error getting image")
                     self.delegate.removeQuestionPreview()
                     self.handleTap()
                 } else {
                     if let _image = GlobalFunctions.createImageFromData(data!) {
                         self.showImageView(_image)
+                        self.delegate.removeQuestionPreview()
                     } else {
-                        print("error creating image from data")
                         self.delegate.removeQuestionPreview()
                         self.handleTap()
                     }

@@ -74,9 +74,9 @@ class HomeVC: UIViewController, feedVCDelegate {
         case .question:
             
             let selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
-            
+
             Database.getQuestion(selectedQuestion.qID, completion: { question, error in
-                if error == nil && question.hasAnswers() {
+                if let question = question, question.hasAnswers() {
                     self.homeFeedVC.allAnswers = question.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                     self.homeFeedVC.feedItemType = .answer
                     self.homeFeedVC.setSelectedIndex(index: IndexPath(row: 0, section: 0))
@@ -85,7 +85,6 @@ class HomeVC: UIViewController, feedVCDelegate {
                     guard let nav = self.navigationController as? PulseNavVC else { return }
                     nav.setNav(navTitle: nil, screenTitle: question.qTitle, screenImage: nil)
                     nav.setNavigationBarHidden(false, animated: true)
-
                 } else {
                     self.toggleLoading(show: true, message : "No answers found")
                 }

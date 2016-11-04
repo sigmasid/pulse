@@ -14,12 +14,14 @@ public class PulseNavBar: UINavigationBar {
     
     public var navContainer = UIView()
     public var navTitle = UILabel()
-    public lazy var navImage = UIImageView()
+    public var navImage = UIImageView()
     public var screenTitle = UILabel()
     public var screenOptions : XMSegmentedControl!
     
     fileprivate var searchContainer : UIView!
     
+    fileprivate var isBrowseSetup = false
+    fileprivate var isDetailSetup = false
     public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue + Spacing.xxs.rawValue)
     
     /** SCOPE BAR VARS **/
@@ -28,12 +30,12 @@ public class PulseNavBar: UINavigationBar {
         didSet {
             if shouldShowScope && shouldShowScope != oldValue {
                 navBarSize = CGSize(width: navBarSize.width, height: navBarSize.height + scopeBarHeight)
-                UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
+                UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
                     self.screenOptions.alpha = 1.0
                 }, completion: { _ in self.layoutIfNeeded() })
             } else if !shouldShowScope && shouldShowScope != oldValue {
                 navBarSize = CGSize(width: navBarSize.width, height: navBarSize.height - scopeBarHeight)
-                UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut], animations: {
+                UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
                     self.screenOptions.alpha = 0.0
                 }, completion: { _ in self.layoutIfNeeded() })
             }
@@ -48,7 +50,7 @@ public class PulseNavBar: UINavigationBar {
         super.layoutSubviews()
         for view in self.subviews {
             if view.isKind(of: UIButton.self) {
-                view.frame.origin.y = (IconSizes.large.rawValue - IconSizes.small.rawValue) / 2
+                view.frame.origin.y = Spacing.s.rawValue
             }
         }
     }
@@ -62,22 +64,8 @@ public class PulseNavBar: UINavigationBar {
         isTranslucent = false
         tintColor = .white //need to set tint color vs. background color
         
-        setupInitialLayout()
-    }
-    
-    fileprivate func setupInitialLayout() {
-        navContainer.frame = CGRect(x: 0, y: 0, width: navBarSize.width, height: navBarSize.height)
-        navContainer.tag = 25
-        navContainer.isUserInteractionEnabled = false
-        
-        addSubview(navContainer)
-        
-        addIcon()
-        addNavImage()
-        addNavTitle()
-        addScreenTitle()
-        
-        setNavMode(mode: .browse)
+        if !isBrowseSetup { setupBrowseLayout() }
+        if !isDetailSetup { setupDetailLayout() }
     }
     
     required public init(coder aDecoder: NSCoder) {
@@ -115,12 +103,17 @@ public class PulseNavBar: UINavigationBar {
         case .none:
             navContainer.isHidden = true
             screenTitle.isHidden = true
+            navTitle.isHidden = true
+            navImage.isHidden = true
+            logoView.isHidden = true
         }
     }
     
     public func toggleSearch(show: Bool) {
-        searchContainer?.isHidden = show ? false :  true
+        print("toggling search for \(show), search container was \(searchContainer.isHidden)")
+        searchContainer.isHidden = show ? false : true
         navContainer.isHidden = show ? true : false
+        screenTitle.isHidden = show ? true : false
     }
     
     public func toggleScopeBar(show : Bool) {
@@ -157,6 +150,35 @@ public class PulseNavBar: UINavigationBar {
     }
     
     /** LAYOUT SCREEN **/
+    fileprivate func setupBrowseLayout() {
+        navContainer.frame = CGRect(x: 0, y: 0, width: navBarSize.width, height: navBarSize.height)
+        navContainer.tag = 25
+        navContainer.isUserInteractionEnabled = false
+        
+        addSubview(navContainer)
+        
+        addIcon()
+        addNavImage()
+        addNavTitle()
+        
+        navContainer.isHidden = true
+        isBrowseSetup = true
+    }
+    
+    fileprivate func setupDetailLayout() {
+        addSubview(screenTitle)
+        screenTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+        
+        screenTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
+        
+        screenTitle.lineBreakMode = .byTruncatingTail
+        screenTitle.numberOfLines = 3
+        screenTitle.tag = 10
+        
+        screenTitle.isHidden = true
+        isDetailSetup = true
+    }
+    
     fileprivate func addIcon() {
         logoView = Icon(frame: CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: IconSizes.medium.rawValue + statusBarHeight))
         logoView.drawLongIcon(UIColor.black, iconThickness: IconThickness.medium.rawValue)
@@ -165,9 +187,8 @@ public class PulseNavBar: UINavigationBar {
     
     fileprivate func addNavTitle() {
         navContainer.addSubview(navTitle)
-        
         navTitle.frame = CGRect(x: navContainer.bounds.midX - (IconSizes.large.rawValue / 2), y: navContainer.bounds.origin.y, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
-        
+
         navTitle.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
         navTitle.backgroundColor = UIColor.black
         navTitle.textColor = UIColor.white
@@ -181,17 +202,6 @@ public class PulseNavBar: UINavigationBar {
         navTitle.layer.masksToBounds = true
         
         navTitle.tag = 5
-    }
-    
-    fileprivate func addScreenTitle() {
-        addSubview(screenTitle)
-        
-        screenTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: IconSizes.large.rawValue)
-        screenTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
-        
-        screenTitle.lineBreakMode = .byWordWrapping
-        screenTitle.numberOfLines = 0
-        screenTitle.tag = 10
     }
     
     fileprivate func addNavImage() {
@@ -211,6 +221,7 @@ public class PulseNavBar: UINavigationBar {
                                                y: (IconSizes.large.rawValue - IconSizes.small.rawValue) / 2,
                                                width: UIScreen.main.bounds.width - IconSizes.large.rawValue,
                                                height: IconSizes.medium.rawValue))
+
         addSubview(searchContainer)
         toggleSearch(show: false)
     }

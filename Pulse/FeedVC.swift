@@ -109,6 +109,8 @@ class FeedVC: UIViewController {
     var selectedQuestion : Question!
     var selectedAnswer: Answer!
     
+    var selectedQuestionIndex = 0
+    
     fileprivate var totalItemCount = 0
 
     /* cache questions & answers that have been shown */
@@ -231,7 +233,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 }
             } else {
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
-                    if error == nil {
+                    if let question = question {
                         if let tagID = question.qTagID {
                             cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercased())")
                         } else {
@@ -311,7 +313,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         if error != nil {
                             self.questionsForAnswerPreviews[indexPath.row] = nil
                         } else {
-                            cell.updateLabel(question.qTitle, _subtitle: nil)
+                            cell.updateLabel(question?.qTitle, _subtitle: nil)
                             self.questionsForAnswerPreviews[indexPath.row] = question
                         }
                     })
@@ -345,9 +347,10 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     let selectedQuestion = questionsForAnswerPreviews[indexPath.row]
                     let currentTag = Tag(tagID: "ANSWERS")
                     selectedQuestion?.qAnswers = [allAnswers[indexPath.row].aID]
-                    showQuestion(selectedQuestion, allQuestions: [selectedQuestion], questionIndex: 0, answerIndex: 0, selectedTag: currentTag)
+                    showQuestion(selectedQuestion, allQuestions: [selectedQuestion], questionIndex: selectedQuestionIndex, answerIndex: 0, selectedTag: currentTag)
                 } else {
-                    showQuestion(selectedQuestion, allQuestions: [selectedQuestion], questionIndex: 0, answerIndex: indexPath.row, selectedTag: selectedTag)
+                    print("no selected user found")
+                    showQuestion(selectedQuestion, allQuestions: allQuestions, questionIndex: selectedQuestionIndex, answerIndex: indexPath.row, selectedTag: selectedTag)
                 }
             } else if indexPath == selectedIndex {
                 cell.showAnswer(selectedAnswer.aID)
@@ -418,6 +421,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             selectedTag = allTags[indexPath.row]
         case .question:
             selectedQuestion = allQuestions[indexPath.row]
+            selectedQuestionIndex = indexPath.row
         case .people:
             selectedUser = allUsers[indexPath.row]
         case .answer:
@@ -439,7 +443,7 @@ extension FeedVC: UICollectionViewDelegateFlowLayout {
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: (feedCollectionView!.frame.width / 2 - 0.5),
-                      height: max(minCellHeight , feedCollectionView!.frame.height / 3))
+                      height: minCellHeight)
     }
 }
 
