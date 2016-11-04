@@ -217,7 +217,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.updateLabel(nil, _subtitle: nil)
             cell.showAnswerCount()
 
-            if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qCreated {
+            if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { break }
 
                 if let tagID = _currentQuestion.qTagID {

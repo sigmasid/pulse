@@ -103,9 +103,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     func dismissSearchTap() {
         searchController.searchBar.resignFirstResponder()
-        if currentExploreMode.currentMode == .search {
-            headerNav?.toggleSearch(show: false)
-        }
     }
     
     fileprivate func updateScopeBar() {
@@ -132,7 +129,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     fileprivate func updateModes() {
         toggleLoading(show: true, message : "Loading...")
-        //headerNav?.toggleSearch(show: currentExploreMode.currentMode == .search ? true : false)
+        headerNav?.toggleSearch(show: currentExploreMode.currentMode == .search ? true : false)
 
         switch currentExploreMode.currentMode {
         case .root:
@@ -368,7 +365,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         searchController.dimsBackgroundDuringPresentation = false
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.highlighted)
         searchController.searchBar.setImage(UIImage(), for: UISearchBarIcon.clear, state: UIControlState.normal)
-        
+        searchController.searchBar.setBackgroundImage(UIImage(), for: .any, barMetrics: .default)
+
         headerNav?.getSearchContainer()?.addSubview(searchController.searchBar)
         
         searchController.hidesNavigationBarDuringPresentation = false
@@ -383,14 +381,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         tapGesture.isEnabled = true
         
         toggleLoading(show: true, message : "Searching...")
-        headerNav?.toggleSearch(show: true)
     }
     
     func userCancelledSearch() {
         tapGesture.isEnabled = false
         searchController.isActive = false
-        headerNav?.toggleSearch(show: false)
-
         goBack()
     }
     
