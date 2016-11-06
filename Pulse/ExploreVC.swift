@@ -9,8 +9,6 @@
 import UIKit
 
 class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate {
-    
-    fileprivate var iconContainer : IconContainer!
     fileprivate var exploreContainer : FeedVC!
     fileprivate var loadingView : LoadingView?
 
@@ -61,14 +59,12 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         if !isLoaded {
             if let nav = navigationController as? PulseNavVC {
                 headerNav = nav
-                //headerNav?.setNav(navTitle: nil, screenTitle: nil, screenImage: nil)
             }
 
             getButtons()
             setupSearch()
             setupExplore()
             
-            iconContainer = addIcon(text: "EXPLORE")
             automaticallyAdjustsScrollViewInsets = false
             
             tapGesture.addTarget(self, action: #selector(dismissSearchTap))

@@ -12,6 +12,8 @@ class PanAnimationController: BaseAnimator  {
     
     var initialFrame : CGRect!
     var exitFrame : CGRect!
+    var tabIcons : UIStackView!
+    var delegate : tabVCDelegate!
     
     override func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         return 0.5
@@ -20,7 +22,6 @@ class PanAnimationController: BaseAnimator  {
     override func animatePresentingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
         
         let containerView = transitionContext.containerView
-        
         let fromVCRect = transitionContext.initialFrame(for: fromVC)
         toVC.view.frame = fromVCRect
         
@@ -34,6 +35,7 @@ class PanAnimationController: BaseAnimator  {
             
             let duration = transitionDuration(using: transitionContext)
             let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveLinear] : []
+            let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
 
             UIView.animate(
                 withDuration: duration,
@@ -42,10 +44,21 @@ class PanAnimationController: BaseAnimator  {
                 animations: {
                     snapshot.frame = fromVCRect
                     fromVC.view.frame = self.exitFrame
+                    
+                    if self.tabIcons != nil {
+                        self.tabIcons.transform = xScaleUp
+                        self.tabIcons.alpha = 1.0
+                    }
+                    if self.delegate != nil { self.delegate.setTabIcons() }
                 }, completion: { _ in
                     toVC.view.isHidden = false
                     fromVC.view.frame = fromVCRect
                     snapshot.removeFromSuperview()
+                    
+                    if self.tabIcons != nil {
+                        self.tabIcons.transform = CGAffineTransform.identity
+                        self.tabIcons.alpha = 0.5
+                    }
                     transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
             })
         }
@@ -66,7 +79,8 @@ class PanAnimationController: BaseAnimator  {
             
             let duration = transitionDuration(using: transitionContext)
             let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveLinear] : []
-            
+            let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
+
             UIView.animate(
                 withDuration: duration,
                 delay: 0,
@@ -74,11 +88,22 @@ class PanAnimationController: BaseAnimator  {
                 animations: {
                     snapshot.frame = fromVCRect
                     fromVC.view.frame = self.exitFrame
+                    
+                    if self.tabIcons != nil {
+                        self.tabIcons.transform = xScaleUp
+                        self.tabIcons.alpha = 1.0
+                    }
+                    if self.delegate != nil { self.delegate.setTabIcons() }
+
                 }, completion: { _ in
                     fromVC.view.frame = fromVCRect
                     toVC.view.isHidden = false
                     snapshot.removeFromSuperview()
                     
+                    if self.tabIcons != nil {
+                        self.tabIcons.transform = CGAffineTransform.identity
+                        self.tabIcons.alpha = 0.5
+                    }
                     transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
             })
         }

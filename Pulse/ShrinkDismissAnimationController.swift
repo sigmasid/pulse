@@ -33,7 +33,7 @@ class ShrinkDismissController: BaseAnimator {
         
         let duration = transitionDuration(using: transitionContext)        
         let initialFrame = CGRect(x: -fromVC.view.frame.size.width/2,y: 0, width: fromVC.view.frame.size.height, height: fromVC.view.frame.size.height )
-        let endFrame     = shrinkToView.frame
+        let endFrame     = shrinkToView != nil ? shrinkToView.frame : CGRect.zero
         
         let maskPath : UIBezierPath = UIBezierPath(ovalIn: initialFrame)
         let maskLayer = CAShapeLayer()

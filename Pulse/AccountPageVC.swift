@@ -26,7 +26,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     fileprivate var cameraOverlay : CameraOverlayView!
     
     fileprivate var loadingOverlay : LoadingView!
-    fileprivate var icon : IconContainer!
+    //fileprivate var icon : IconContainer!
     
     fileprivate var isLoaded = false
     fileprivate var notificationsSetup = false
@@ -45,7 +45,7 @@ class AccountPageVC: UIViewController, accountDelegate {
     override func viewDidLayoutSubviews() {
         if !isLoaded {
             view.backgroundColor = UIColor.white
-            icon = addIcon(text: "ACCOUNT")
+            //icon = addIcon(text: "ACCOUNT")
             
             setupProfileSummary()
             setupSettingsMenuLayout() //needs to be top layer
@@ -341,7 +341,7 @@ class AccountPageVC: UIViewController, accountDelegate {
         leadingProfileConstraint.isActive = true
         
         profileSummary.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        profileSummary.bottomAnchor.constraint(equalTo: icon.topAnchor).isActive = true
+        profileSummary.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.l.rawValue).isActive = true
         profileSummary.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         profileSummary.layoutIfNeeded()
     }

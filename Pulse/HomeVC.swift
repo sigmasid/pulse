@@ -11,7 +11,6 @@ import UIKit
 class HomeVC: UIViewController, feedVCDelegate {
     fileprivate var isLoaded = false
     fileprivate var homeFeedVC : FeedVC!
-    fileprivate var iconContainer : IconContainer!
     fileprivate var loadingView : LoadingView?
     fileprivate var titleLabel = UILabel()
     
@@ -24,7 +23,6 @@ class HomeVC: UIViewController, feedVCDelegate {
         if !isLoaded {
             view.backgroundColor = UIColor.white
             displayHomeFeed()
-            addIcon()
             updateNav()
             automaticallyAdjustsScrollViewInsets = false
 
@@ -110,9 +108,5 @@ class HomeVC: UIViewController, feedVCDelegate {
         
         loadingView?.isHidden = show ? false : true
         loadingView?.addMessage(message)
-    }
-    
-    internal func addIcon() {
-        iconContainer = addIcon(text: "FEED")
     }
 }

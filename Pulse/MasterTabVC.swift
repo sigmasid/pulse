@@ -19,14 +19,32 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
   }
 }
 
+protocol tabVCDelegate: class {
+    func setTabIcons()
+    func cancelSettingIcons()
+}
 
-class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
+
+class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate {
+    public var currentSelectedIndex : Int = 0
+    public var currentDeselectedIndex : Int = 0
+
     fileprivate var initialLoadComplete = false
-
+    
     var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     var exploreVC : ExploreVC = ExploreVC()
-    lazy var homeVC : HomeVC = HomeVC()
+    var homeVC : HomeVC = HomeVC()
     
+    fileprivate var tabIcons = UIStackView()
+    
+    fileprivate var profileButton = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false)
+    fileprivate var exploreButton = PulseButton(size: .small, type: .search, isRound: true, hasBackground: false)
+    fileprivate var feedButton = PulseButton(size: .small, type: .browse, isRound: true, hasBackground: false)
+    
+    fileprivate var pulseAppButton = IconContainer(frame: CGRect(x: 0,y: 0,
+                                                                width: IconSizes.medium.rawValue,
+                                                                height: IconSizes.small.rawValue + Spacing.s.rawValue))
+
     fileprivate var panInteractionController = PanHorizonInteractionController()
     
     fileprivate var initialFrame : CGRect!
@@ -42,10 +60,16 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
             Database.checkCurrentUser { success in
             // get feed and show initial view controller
             if success && !self.initialLoadComplete {
-                self.setupControllers(1)
+                self.currentSelectedIndex = 2
+                self.setupControllers(index : self.currentSelectedIndex)
+                self.setupIcons(index: self.currentSelectedIndex)
+                self.setSelectedIcon(index: self.currentSelectedIndex)
                 self.initialLoadComplete = true
             } else if !success && !self.initialLoadComplete {
-                self.setupControllers(1)
+                self.currentSelectedIndex = 1
+                self.setupControllers(index : self.currentSelectedIndex)
+                self.setupIcons(index: self.currentSelectedIndex)
+                self.setSelectedIcon(index: self.currentSelectedIndex)
                 self.initialLoadComplete = true
             }
             self.isLoaded = true
@@ -57,7 +81,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         super.didReceiveMemoryWarning()
     }
     
-    func setupControllers(_ initialIndex : Int) {
+    func setupControllers(index : Int) {
         let accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         accountNavVC.setNav(navTitle: "Account", screenTitle: nil, screenImage: nil)
         accountNavVC.viewControllers = [accountVC]
@@ -80,23 +104,114 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         exploreVC.tabBarItem = tabExplore
         homeVC.tabBarItem = tabHome
         
-        selectedIndex = initialIndex
-        
         rectToLeft = view.frame
         rectToLeft.origin.x = view.frame.minX - view.frame.size.width
         rectToRight = view.frame
         rectToRight.origin.x = view.frame.maxX
         
+        selectedIndex = index
+        currentSelectedIndex = index
+        
         delegate = self
-        tabBar.tintColor = UIColor.white.withAlphaComponent(0.5)
         tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clear)
-        //tabBar.isHidden = true
+        tabBar.isHidden = true
         
         panInteractionController.wireToViewController(self)
     }
     
+    fileprivate func setupIcons(index: Int) {
+        view.addSubview(tabIcons)
+        view.addSubview(pulseAppButton)
+        
+        tabIcons.translatesAutoresizingMaskIntoConstraints = false
+        tabIcons.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        tabIcons.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        //tabIcons.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
+
+        pulseAppButton.translatesAutoresizingMaskIntoConstraints = false
+        pulseAppButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        pulseAppButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        pulseAppButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        pulseAppButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+
+        tabIcons.addArrangedSubview(profileButton)
+        tabIcons.addArrangedSubview(exploreButton)
+        tabIcons.addArrangedSubview(feedButton)
+
+        profileButton.setVerticalTitle("Profile", for: UIControlState())
+        exploreButton.setVerticalTitle("Explore", for: UIControlState())
+        feedButton.setVerticalTitle("Feed", for: UIControlState())
+
+        tabIcons.axis = .horizontal
+        tabIcons.alignment = .lastBaseline
+        tabIcons.distribution = .fillEqually
+        tabIcons.spacing = Spacing.xs.rawValue
+        
+        tabIcons.alpha = 0.5
+    }
+    
+    func setTabIcons() { //animated transition
+        setDeselectIcon(index: currentDeselectedIndex)
+        setSelectedIcon(index: currentSelectedIndex)
+    }
+    
+    func cancelSettingIcons() {
+        print("should cancel animation")
+    }
+    
+    fileprivate func setDeselectIcon(index: Int) {
+        switch index {
+        case 0:
+            profileButton.isHighlighted = false
+            profileButton.frame.origin.y += Spacing.xs.rawValue
+
+        case 1:
+            exploreButton.isHighlighted = false
+            exploreButton.frame.origin.y += Spacing.xs.rawValue
+
+        case 2:
+            feedButton.isHighlighted = false
+            feedButton.frame.origin.y += Spacing.xs.rawValue
+            
+        default: break
+        }
+    }
+    
+    fileprivate func setSelectedIcon(index : Int) {
+        print("setting selected icon to \(index)")
+        switch index {
+        case 0:
+            profileButton.isHighlighted = true
+            profileButton.frame.origin.y -= Spacing.xs.rawValue
+            pulseAppButton.setViewTitle("Profile")
+        case 1:
+            exploreButton.isHighlighted = true
+            exploreButton.frame.origin.y -= Spacing.xs.rawValue
+            pulseAppButton.setViewTitle("Explore")
+
+        case 2:
+            print("feed button frame is \(feedButton.frame)")
+            feedButton.isHighlighted = true
+            feedButton.frame.origin.y -= Spacing.xs.rawValue
+            print("feed button new frame is \(feedButton.frame)")
+
+            pulseAppButton.setViewTitle("Feed")
+
+        default: break
+        }
+    }
+    
+    fileprivate func addLogoIcon(text : String) -> IconContainer {
+        let iconContainer = IconContainer(frame: CGRect(x: 0,y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
+        iconContainer.setViewTitle(text)
+        
+        return iconContainer
+    }
+    
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        print("Selected \(viewController.title!)")
+        if let indexOfTab = tabBarController.viewControllers?.index(of: viewController) {
+            currentSelectedIndex = indexOfTab
+        }
     }
     
     func tabBarController(_ tabBarController: UITabBarController,
@@ -109,6 +224,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
         
         let animator = PanAnimationController()
         
+        currentDeselectedIndex = currentSelectedIndex
+        currentSelectedIndex = toVCIndex ?? (currentSelectedIndex)
+        
+        animator.delegate = self
+        animator.tabIcons = self.tabIcons
         if fromVCIndex < toVCIndex {
             animator.initialFrame = rectToRight
             animator.exitFrame = rectToLeft
@@ -126,6 +246,4 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate {
                             interactionControllerFor animationController: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panInteractionController.interactionInProgress ? panInteractionController : nil
     }
-
-
 }

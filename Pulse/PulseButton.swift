@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank }
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse }
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -119,6 +119,7 @@ open class PulseButton: UIButton {
         
         setupRipple()
         setupButtonType(size: size, type: type)
+        adjustsImageWhenHighlighted = false
         
         if isRound {
             makeRound()
@@ -126,11 +127,33 @@ open class PulseButton: UIButton {
         
         if hasBackground {
             backgroundColor = pulseBlue
+            setupRaised(isRaised: true)
         } else {
             rippleBackgroundColor = pulseBlue
+            setupRaised(isRaised: false)
         }
+    }
+    
+    override open var isHighlighted: Bool {
+        didSet {
+            tintColor = isHighlighted ? pulseBlue : .black
+        }
+    }
+    
+    public func setVerticalTitle(_ title: String?, for state: UIControlState) {
+        setTitle(title, for: state)
+        setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
         
-        setupRaised(isRaised: true)
+        setTitleColor(pulseBlue, for: UIControlState.highlighted)
+
+        let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
+        imageEdgeInsets = imageInset
+        
+        let titleInset = UIEdgeInsetsMake(imageView!.frame.height + Spacing.s.rawValue, -imageView!.frame.width, 0, 0)
+        titleEdgeInsets = titleInset
+        
+        print("frame is \(frame), title label is \(titleLabel?.frame), image view frame is \(imageView?.frame)")
+        imageView?.contentMode = .scaleAspectFit
     }
     
     fileprivate func setupRaised(isRaised : Bool) {
@@ -180,53 +203,61 @@ open class PulseButton: UIButton {
         switch type {
         case .search:
         let tintedTimage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         
         case .back:
         let tintedTimage = UIImage(named: "back")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         tintColor = .black
         
         case .add:
         let tintedTimage = UIImage(named: "add")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         
         case.remove:
         let tintedTimage = UIImage(named: "remove")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         
         case .close:
         let tintedTimage = UIImage(named: "close")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         
         case .settings:
         let tintedTimage = UIImage(named: "settings")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         imageEdgeInsets = UIEdgeInsetsMake(7, 7, 7, 7)
 
         case .login:
         let tintedTimage = UIImage(named: "login")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         
         case .check:
         let tintedTimage = UIImage(named: "check")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
             
         case .message:
         let tintedTimage = UIImage(named: "message")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         
         case .menu:
         let tintedTimage = UIImage(named: "table-list")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
+        setImage(tintedTimage, for: UIControlState.normal)
         
         case .save:
         let tintedTimage = UIImage(named: "download-to-disk")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState())
-
+        setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .profile:
+            let tintedTimage = UIImage(named: "profile")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .browse:
+            let tintedTimage = UIImage(named: "browse")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
         case . blank:
-        setImage(nil, for: UIControlState())
+            setImage(nil, for: UIControlState.normal)
         }
         
         
