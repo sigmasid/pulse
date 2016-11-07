@@ -58,30 +58,36 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         
         if !isLoaded {
             Database.checkCurrentUser { success in
-            // get feed and show initial view controller
-            if success && !self.initialLoadComplete {
-                self.currentSelectedIndex = 2
-                self.setupControllers(index : self.currentSelectedIndex)
-                self.setupIcons(index: self.currentSelectedIndex)
-                self.setSelectedIcon(index: self.currentSelectedIndex)
-                self.initialLoadComplete = true
-            } else if !success && !self.initialLoadComplete {
-                self.currentSelectedIndex = 1
-                self.setupControllers(index : self.currentSelectedIndex)
-                self.setupIcons(index: self.currentSelectedIndex)
-                self.setSelectedIcon(index: self.currentSelectedIndex)
-                self.initialLoadComplete = true
-            }
-            self.isLoaded = true
+                // get feed and show initial view controller
+                if success && !self.initialLoadComplete {
+                    self.currentSelectedIndex = 2
+                    self.setupControllers()
+                    self.setupIcons()
+                    
+                    self.initialLoadComplete = true
+                    
+                } else if !success && !self.initialLoadComplete {
+                    self.currentSelectedIndex = 1
+                    self.setupControllers()
+                    self.setupIcons()
+                    self.initialLoadComplete = true
+                }
+                
+                self.selectedIndex = self.currentSelectedIndex
+                self.isLoaded = true
             }
         }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    func setupControllers(index : Int) {
+    func setupControllers() {
         let accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         accountNavVC.setNav(navTitle: "Account", screenTitle: nil, screenImage: nil)
         accountNavVC.viewControllers = [accountVC]
@@ -109,9 +115,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         rectToRight = view.frame
         rectToRight.origin.x = view.frame.maxX
         
-        selectedIndex = index
-        currentSelectedIndex = index
-        
         delegate = self
         tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clear)
         tabBar.isHidden = true
@@ -119,7 +122,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         panInteractionController.wireToViewController(self)
     }
     
-    fileprivate func setupIcons(index: Int) {
+    fileprivate func setupIcons() {
         view.addSubview(tabIcons)
         view.addSubview(pulseAppButton)
         
@@ -148,6 +151,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         tabIcons.spacing = Spacing.xs.rawValue
         
         tabIcons.alpha = 0.5
+        
+        DispatchQueue.main.async { self.setSelectedIcon(index: self.currentSelectedIndex) }
     }
     
     func setTabIcons() { //animated transition
@@ -185,9 +190,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             profileButton.frame.origin.y -= Spacing.xs.rawValue
             pulseAppButton.setViewTitle("Profile")
         case 1:
+            print("explore button frame is \(feedButton.frame)")
             exploreButton.isHighlighted = true
             exploreButton.frame.origin.y -= Spacing.xs.rawValue
             pulseAppButton.setViewTitle("Explore")
+            print("explore button new frame is \(feedButton.frame)")
 
         case 2:
             print("feed button frame is \(feedButton.frame)")
