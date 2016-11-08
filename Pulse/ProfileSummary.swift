@@ -171,7 +171,7 @@ class ProfileSummary: UIView, UITextFieldDelegate {
         socialLinks.translatesAutoresizingMaskIntoConstraints = false
         socialLinks.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue * 3 + Spacing.m.rawValue * 2).isActive = true
         socialLinks.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        socialLinks.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        socialLinks.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -IconSizes.xLarge.rawValue).isActive = true
         socialLinks.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         socialLinks.layoutIfNeeded()
         
@@ -222,7 +222,7 @@ class ProfileSummary: UIView, UITextFieldDelegate {
         uProfilePic.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         uProfilePic.heightAnchor.constraint(equalTo: uProfilePic.widthAnchor).isActive = true
         uProfilePic.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        uProfilePic.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.m.rawValue).isActive = true
+        uProfilePic.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.l.rawValue).isActive = true
         uProfilePic.layoutIfNeeded()
         
         uName.translatesAutoresizingMaskIntoConstraints = false

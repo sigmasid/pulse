@@ -20,26 +20,23 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 }
 
 protocol tabVCDelegate: class {
-    func setTabIcons()
-    func cancelSettingIcons()
+    func cancelledTransition()
 }
 
 
 class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate {
-    public var currentSelectedIndex : Int = 0
-    public var currentDeselectedIndex : Int = 0
-
     fileprivate var initialLoadComplete = false
     
     var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     var exploreVC : ExploreVC = ExploreVC()
     var homeVC : HomeVC = HomeVC()
+    fileprivate var deselectedIndex : Int!
     
     fileprivate var tabIcons = UIStackView()
     
-    fileprivate var profileButton = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false)
-    fileprivate var exploreButton = PulseButton(size: .small, type: .search, isRound: true, hasBackground: false)
-    fileprivate var feedButton = PulseButton(size: .small, type: .browse, isRound: true, hasBackground: false)
+    fileprivate var profileButton = PulseButton(size: .small, type: .tabProfile, isRound: true, hasBackground: false)
+    fileprivate var exploreButton = PulseButton(size: .small, type: .tabExplore, isRound: true, hasBackground: false)
+    fileprivate var feedButton = PulseButton(size: .small, type: .tabHome, isRound: true, hasBackground: false)
     
     fileprivate var pulseAppButton = IconContainer(frame: CGRect(x: 0,y: 0,
                                                                 width: IconSizes.medium.rawValue,
@@ -53,6 +50,16 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     
     fileprivate var isLoaded = false
     
+    override open var selectedIndex: Int {
+        didSet {
+            self.setSelectedIcon(index: selectedIndex)
+        }
+        willSet {
+            self.deselectedIndex = selectedIndex
+            self.setDeselectIcon(index: selectedIndex)
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -60,20 +67,18 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             Database.checkCurrentUser { success in
                 // get feed and show initial view controller
                 if success && !self.initialLoadComplete {
-                    self.currentSelectedIndex = 2
                     self.setupControllers()
-                    self.setupIcons()
-                    
+                    self.setupIcons(_selectedIndex: 2)
+
                     self.initialLoadComplete = true
                     
                 } else if !success && !self.initialLoadComplete {
-                    self.currentSelectedIndex = 1
                     self.setupControllers()
-                    self.setupIcons()
+                    self.setupIcons(_selectedIndex: 1)
+                    
                     self.initialLoadComplete = true
                 }
                 
-                self.selectedIndex = self.currentSelectedIndex
                 self.isLoaded = true
             }
         }
@@ -122,7 +127,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         panInteractionController.wireToViewController(self)
     }
     
-    fileprivate func setupIcons() {
+    fileprivate func setupIcons(_selectedIndex: Int) {
         view.addSubview(tabIcons)
         view.addSubview(pulseAppButton)
         
@@ -140,68 +145,102 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         tabIcons.addArrangedSubview(profileButton)
         tabIcons.addArrangedSubview(exploreButton)
         tabIcons.addArrangedSubview(feedButton)
+        
+        print("profile, explore, feed icons are \(profileButton.frame, exploreButton.frame, feedButton.frame)")
 
         profileButton.setVerticalTitle("Profile", for: UIControlState())
         exploreButton.setVerticalTitle("Explore", for: UIControlState())
-        feedButton.setVerticalTitle("Feed", for: UIControlState())
-
+        feedButton.setVerticalTitle("Home", for: UIControlState())
+        
+        profileButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
+        exploreButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
+        feedButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
+        
         tabIcons.axis = .horizontal
         tabIcons.alignment = .lastBaseline
-        tabIcons.distribution = .fillEqually
+        tabIcons.distribution = .fillProportionally
         tabIcons.spacing = Spacing.xs.rawValue
         
         tabIcons.alpha = 0.5
-        
-        DispatchQueue.main.async { self.setSelectedIcon(index: self.currentSelectedIndex) }
+        selectedIndex = _selectedIndex
     }
     
-    func setTabIcons() { //animated transition
-        setDeselectIcon(index: currentDeselectedIndex)
-        setSelectedIcon(index: currentSelectedIndex)
+    func cancelledTransition() {
+        if deselectedIndex != nil {
+            setSelectedIcon(index: deselectedIndex)
+            setDeselectIcon(index: selectedIndex)
+        }
     }
     
-    func cancelSettingIcons() {
-        print("should cancel animation")
+    func setSelected(_ sender: UIButton) {
+
+        switch sender {
+        case profileButton:
+            selectedIndex = 0
+
+        case exploreButton:
+            selectedIndex = 1
+
+        case feedButton:
+            selectedIndex = 2
+            
+        default: break
+        }
     }
     
     fileprivate func setDeselectIcon(index: Int) {
         switch index {
         case 0:
             profileButton.isHighlighted = false
-            profileButton.frame.origin.y += Spacing.xs.rawValue
+            DispatchQueue.main.async {
+                self.profileButton.frame.origin.y += Spacing.xs.rawValue
+                self.profileButton.transform = CGAffineTransform.identity
+            }
 
         case 1:
             exploreButton.isHighlighted = false
-            exploreButton.frame.origin.y += Spacing.xs.rawValue
+            DispatchQueue.main.async {
+                self.exploreButton.frame.origin.y += Spacing.xs.rawValue
+                self.exploreButton.transform = CGAffineTransform.identity
+            }
 
         case 2:
             feedButton.isHighlighted = false
-            feedButton.frame.origin.y += Spacing.xs.rawValue
-            
+            DispatchQueue.main.async {
+                self.feedButton.frame.origin.y += Spacing.xs.rawValue
+                self.feedButton.transform = CGAffineTransform.identity
+            }
+
         default: break
         }
     }
     
     fileprivate func setSelectedIcon(index : Int) {
-        print("setting selected icon to \(index)")
+        let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
+
+        print("set selected fired with index \(index)")
         switch index {
         case 0:
             profileButton.isHighlighted = true
-            profileButton.frame.origin.y -= Spacing.xs.rawValue
+            DispatchQueue.main.async {
+                self.profileButton.frame.origin.y -= Spacing.xs.rawValue
+                self.profileButton.transform = xScaleUp
+            }
             pulseAppButton.setViewTitle("Profile")
         case 1:
-            print("explore button frame is \(feedButton.frame)")
             exploreButton.isHighlighted = true
-            exploreButton.frame.origin.y -= Spacing.xs.rawValue
+            DispatchQueue.main.async {
+                self.exploreButton.frame.origin.y -= Spacing.xs.rawValue
+                self.exploreButton.transform = xScaleUp
+            }
             pulseAppButton.setViewTitle("Explore")
-            print("explore button new frame is \(feedButton.frame)")
 
         case 2:
-            print("feed button frame is \(feedButton.frame)")
             feedButton.isHighlighted = true
-            feedButton.frame.origin.y -= Spacing.xs.rawValue
-            print("feed button new frame is \(feedButton.frame)")
-
+            DispatchQueue.main.async {
+                self.feedButton.frame.origin.y -= Spacing.xs.rawValue
+                self.feedButton.transform = xScaleUp
+            }
             pulseAppButton.setViewTitle("Feed")
 
         default: break
@@ -216,9 +255,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     }
     
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        if let indexOfTab = tabBarController.viewControllers?.index(of: viewController) {
-            currentSelectedIndex = indexOfTab
-        }
+
     }
     
     func tabBarController(_ tabBarController: UITabBarController,
@@ -230,11 +267,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         let toVCIndex = tabBarController.viewControllers?.index(of: toVC)
         
         let animator = PanAnimationController()
-        
-        currentDeselectedIndex = currentSelectedIndex
-        currentSelectedIndex = toVCIndex ?? (currentSelectedIndex)
-        
         animator.delegate = self
+        
         animator.tabIcons = self.tabIcons
         if fromVCIndex < toVCIndex {
             animator.initialFrame = rectToRight

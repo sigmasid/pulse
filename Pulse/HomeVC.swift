@@ -16,16 +16,20 @@ class HomeVC: UIViewController, feedVCDelegate {
     
     fileprivate var feed : Tag!
     fileprivate var backButton : PulseButton!
+    fileprivate var notificationsSetup : Bool = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         if !isLoaded {
             view.backgroundColor = UIColor.white
-            displayHomeFeed()
+            toggleLoading(show: true, message: "Loading feed...")
+            
             updateNav()
+            loadFeed()
+            
             automaticallyAdjustsScrollViewInsets = false
-
+            
             isLoaded = true
         }
     }
@@ -40,21 +44,41 @@ class HomeVC: UIViewController, feedVCDelegate {
         super.didReceiveMemoryWarning()
     }
     
-    func displayHomeFeed() {
-        homeFeedVC = FeedVC()
-        GlobalFunctions.addNewVC(self.homeFeedVC, parentVC: self)
-
-        Database.createFeed { feed in
-            self.homeFeedVC.view.frame = self.view.bounds
-            self.homeFeedVC.feedDelegate = self
-            
-            self.homeFeedVC.selectedTag = feed
-            self.feed = feed
-            
-            if let allQuestions = feed.questions {
-                self.homeFeedVC.allQuestions = allQuestions
+    func loadFeed() {
+        if User.isLoggedIn() {
+            if homeFeedVC == nil {
+                homeFeedVC = FeedVC()
+                GlobalFunctions.addNewVC(self.homeFeedVC, parentVC: self)
             }
-            self.homeFeedVC.feedItemType = .question
+
+            Database.createFeed { feed in
+                self.homeFeedVC.view.frame = self.view.bounds
+                self.homeFeedVC.feedDelegate = self
+                
+                self.homeFeedVC.selectedTag = feed
+                self.feed = feed
+                
+                if let allQuestions = feed.questions {
+                    self.homeFeedVC.allQuestions = allQuestions
+                } else {
+                    self.homeFeedVC.allQuestions = []
+                }
+                self.homeFeedVC.feedItemType = .question
+                self.toggleLoading(show: false, message: nil)
+            }
+        } else {
+            if homeFeedVC != nil {
+                view.bringSubview(toFront: loadingView!)
+            }
+            
+            toggleLoading(show: true, message: "Please login to see your feed!")
+        }
+        
+        if !notificationsSetup {
+            NotificationCenter.default.addObserver(self, selector: #selector(loadFeed),
+                                                   name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            
+            notificationsSetup = true
         }
     }
     
@@ -103,7 +127,8 @@ class HomeVC: UIViewController, feedVCDelegate {
         if loadingView == nil {
             loadingView = LoadingView(frame: view.frame, backgroundColor: UIColor.white)
             loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
-            toggleLoading(show: true, message: "Loading Feed...")
+            toggleLoading(show: true, message: nil)
+            view.addSubview(loadingView!)
         }
         
         loadingView?.isHidden = show ? false : true

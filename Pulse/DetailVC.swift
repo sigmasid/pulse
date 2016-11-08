@@ -117,7 +117,7 @@ class DetailVC: UIViewController, ParentDelegate {
     func toggleView() {
         if _currentView == .tableview {
             
-            toggleButton.setImage(UIImage(named: "collection-list"), for: UIControlState())
+            toggleButton.setImage(UIImage(named: "feed"), for: UIControlState())
             
             if DetailTableView == nil {
                 setupTableView()

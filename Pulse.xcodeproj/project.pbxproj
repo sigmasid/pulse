@@ -37,7 +37,6 @@
 		BA1DE1471D244DFA004F3ED2 /* QAManagerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1461D244DFA004F3ED2 /* QAManagerVC.swift */; };
 		BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */; };
 		BA2CCC141D4A9618003C94FC /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC131D4A9618003C94FC /* Settings.swift */; };
-		BA3D94EB1DC877AD0001D806 /* PulseFeedNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA3D94EA1DC877AD0001D806 /* PulseFeedNavBar.swift */; };
 		BA48858C1D24390B007333E0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BA48858B1D24390B007333E0 /* GoogleService-Info.plist */; };
 		BA53EAB91D70E08100357E5A /* ExploreVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA53EAB81D70E08100357E5A /* ExploreVC.swift */; };
 		BA6B78B61D2E2620003EE992 /* RecordedAnswerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6B78B51D2E2620003EE992 /* RecordedAnswerOverlay.swift */; };
@@ -124,7 +123,6 @@
 		BA1DE1461D244DFA004F3ED2 /* QAManagerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QAManagerVC.swift; sourceTree = "<group>"; };
 		BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableVC.swift; sourceTree = "<group>"; };
 		BA2CCC131D4A9618003C94FC /* Settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
-		BA3D94EA1DC877AD0001D806 /* PulseFeedNavBar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseFeedNavBar.swift; sourceTree = "<group>"; };
 		BA48858B1D24390B007333E0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BA53EAB81D70E08100357E5A /* ExploreVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreVC.swift; sourceTree = "<group>"; };
 		BA6B78B51D2E2620003EE992 /* RecordedAnswerOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecordedAnswerOverlay.swift; sourceTree = "<group>"; };
@@ -237,7 +235,6 @@
 				BA06EDEC1DA7081C00F880EE /* XMSegmentedControl.swift */,
 				BAF76D8A1DB05B9B00FB72EE /* PulseNavVC.swift */,
 				BA0387071DB1B2BA00A7BB79 /* PulseNavBar.swift */,
-				BA3D94EA1DC877AD0001D806 /* PulseFeedNavBar.swift */,
 			);
 			name = Navigation;
 			sourceTree = "<group>";
@@ -637,7 +634,6 @@
 				BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */,
 				BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */,
 				BAFA88711D59240B00854B12 /* BrowseAnswersCell.swift in Sources */,
-				BA3D94EB1DC877AD0001D806 /* PulseFeedNavBar.swift in Sources */,
 				BAE51E201D87353600677A50 /* MasterTabVC.swift in Sources */,
 				BAE6E14F1DBACA9200951A89 /* ProfileSummary.swift in Sources */,
 				BAB03AC81D80D76300090147 /* PanHorizontalInteraction.swift in Sources */,

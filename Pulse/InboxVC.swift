@@ -69,6 +69,10 @@ class InboxVC: UITableViewController {
         return conversations.count
     }
     
+    override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        return UIView()
+    }
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! InboxTableCell
         let user = conversations[indexPath.row].cUser!

@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse }
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile }
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -127,11 +127,11 @@ open class PulseButton: UIButton {
         
         if hasBackground {
             backgroundColor = pulseBlue
-            setupRaised(isRaised: true)
         } else {
             rippleBackgroundColor = pulseBlue
-            setupRaised(isRaised: false)
         }
+        
+        setupRaised(isRaised: true, hasBackground: hasBackground)
     }
     
     override open var isHighlighted: Bool {
@@ -145,6 +145,7 @@ open class PulseButton: UIButton {
         setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
         
         setTitleColor(pulseBlue, for: UIControlState.highlighted)
+        setTitleColor(pulseBlue, for: UIControlState.selected)
 
         let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
         imageEdgeInsets = imageInset
@@ -152,40 +153,45 @@ open class PulseButton: UIButton {
         let titleInset = UIEdgeInsetsMake(imageView!.frame.height + Spacing.s.rawValue, -imageView!.frame.width, 0, 0)
         titleEdgeInsets = titleInset
         
-        print("frame is \(frame), title label is \(titleLabel?.frame), image view frame is \(imageView?.frame)")
         imageView?.contentMode = .scaleAspectFit
     }
     
-    fileprivate func setupRaised(isRaised : Bool) {
+    fileprivate func setupRaised(isRaised : Bool, hasBackground : Bool) {
         if (isRaised) {
-            self.shadowColor = UIColor.init(white: 0.2, alpha: 1.0)
+            shadowColor = UIColor.init(white: 0.2, alpha: 1.0)
             
-            self.loweredShadowOpacity = 0.5
-            self.loweredShadowRadius  = 1.5
-            self.loweredShadowOffset  = CGSize(width: 0, height: 1)
+            loweredShadowOpacity = 0.5
+            loweredShadowRadius  = 1.5
+            loweredShadowOffset  = CGSize(width: 0, height: 1)
             
             // Shadow (for raised views) - Up:
-            self.liftedShadowOpacity = 0.5
-            self.liftedShadowRadius  = 4.5
-            self.liftedShadowOffset  = CGSize(width: 2, height: 4)
+            liftedShadowOpacity = 0.5
+            liftedShadowRadius  = 4.5
+            liftedShadowOffset  = CGSize(width: 2, height: 4)
             
             // Draw shadow
-            self.downRect = CGRect(x: bounds.origin.x - loweredShadowOffset.width,
-                                   y: bounds.origin.y + loweredShadowOffset.height,
-                                   width: bounds.size.width + (2 * loweredShadowOffset.width),
-                                   height: bounds.size.height + loweredShadowOffset.height);
-            
-            self.upRect = CGRect(x: bounds.origin.x - self.liftedShadowOffset.width,
-                                 y: bounds.origin.y + self.liftedShadowOffset.height,
-                                 width: bounds.size.width + (2 * liftedShadowOffset.width),
-                                 height: bounds.size.height + self.liftedShadowOffset.height);
+            if hasBackground {
+                downRect = CGRect(x: bounds.origin.x - loweredShadowOffset.width,
+                                       y: bounds.origin.y + loweredShadowOffset.height,
+                                       width: bounds.size.width + (2 * loweredShadowOffset.width),
+                                       height: bounds.size.height + loweredShadowOffset.height)
+                
+            } else if let imageView = imageView {
+                upRect = CGRect(x: imageView.bounds.origin.x + liftedShadowOffset.width,
+                                       y: imageView.bounds.origin.y + liftedShadowOffset.height,
+                                       width: imageView.bounds.size.width + (2 * liftedShadowOffset.width),
+                                       height: imageView.bounds.size.height + liftedShadowOffset.height)
+            } else {
+                downRect = CGRect.zero
+                upRect = CGRect.zero
+            }
             
             layer.shadowColor = shadowColor.cgColor
             layer.shadowOpacity = Float(loweredShadowOpacity)
-            layer.shadowRadius = loweredShadowRadius
+            layer.shadowRadius = hasBackground ? loweredShadowRadius : liftedShadowRadius
             
-            layer.shadowPath = UIBezierPath.init(roundedRect: self.downRect, cornerRadius: self.layer.cornerRadius).cgPath
-            layer.shadowOffset = loweredShadowOffset
+            layer.shadowPath = UIBezierPath.init(roundedRect: hasBackground ? downRect : upRect , cornerRadius: self.layer.cornerRadius).cgPath
+            layer.shadowOffset = hasBackground ? loweredShadowOffset : liftedShadowOffset
         }
         else {
             // Erase shadow:
@@ -254,6 +260,18 @@ open class PulseButton: UIButton {
             
         case .browse:
             let tintedTimage = UIImage(named: "browse")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .tabExplore:
+            let tintedTimage = UIImage(named: "tab-explore")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .tabHome:
+            let tintedTimage = UIImage(named: "tab-home")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .tabProfile:
+            let tintedTimage = UIImage(named: "tab-profile")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             
         case . blank:

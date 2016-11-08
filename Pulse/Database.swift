@@ -300,9 +300,12 @@ class Database {
 
     /*** MARK START : DATABASE PATHS ***/
     static func setCurrentUserPaths() {
-        if let _user = User.currentUser {
-            currentUserRef = databaseRef.child(Item.Users.rawValue).child(_user.uID!)
-            currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(_user.uID!).child(Item.Feed.rawValue)
+        if let _user = FIRAuth.auth()?.currentUser {
+            currentUserRef = databaseRef.child(Item.Users.rawValue).child(_user.uid)
+            currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(_user.uid).child(Item.Feed.rawValue)
+        } else {
+            currentUserRef = nil
+            currentUserFeedRef = nil
         }
     }
     
@@ -847,6 +850,8 @@ class Database {
         User.currentUser!.socialSources = [ : ]
         
         print("notification for no current user fired")
+        
+        setCurrentUserPaths()
         NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
     }
     
@@ -923,6 +928,7 @@ class Database {
                 }
             }
             
+            setCurrentUserPaths()
             NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
             completion(true)
         })

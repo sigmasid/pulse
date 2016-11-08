@@ -245,17 +245,17 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
             }
             
             // Skip if scrolling down and already collapsed
-            if navBarState == .collapsed && frame.origin.y <= scopeBarOriginY - deltaLimit {
+            if navBarState == .collapsed && frame.origin.y <= navBar.fullNavHeight - deltaLimit {
                 return
             }
             
             // Compute the bar position - not using delta limit because it includes statusbar height
-            if frame.origin.y - scrollDelta < scopeBarOriginY - deltaLimit {
-                scrollDelta = frame.origin.y - (scopeBarOriginY - deltaLimit)
+            if frame.origin.y - scrollDelta < navBar.fullNavHeight - deltaLimit {
+                scrollDelta = frame.origin.y - (navBar.fullNavHeight - deltaLimit)
             }
             
             // Detect when the bar is completely collapsed
-            if frame.origin.y <= scopeBarOriginY - deltaLimit {
+            if frame.origin.y <= navBar.fullNavHeight - deltaLimit {
                 navBarState = .collapsed
                 delayDistance = maxDelay
             } else {
@@ -274,17 +274,17 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
             }
             
             // Skip if scrolling up and already expanded
-            if navBarState == .expanded && frame.origin.y >= scopeBarOriginY {
+            if navBarState == .expanded && frame.origin.y >= navBar.fullNavHeight {
                 return
             }
             
             // Compute the bar position
-            if frame.origin.y - scrollDelta > scopeBarOriginY {
-                scrollDelta = frame.origin.y - scopeBarOriginY
+            if frame.origin.y - scrollDelta > navBar.fullNavHeight {
+                scrollDelta = frame.origin.y - navBar.fullNavHeight
             }
             
             // Detect when the bar is completely expanded
-            if frame.origin.y >= scopeBarOriginY {
+            if frame.origin.y >= navBar.fullNavHeight {
                 navBarState = .expanded
                 delayDistance = maxDelay
             } else {
@@ -305,12 +305,15 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         var screenOptionsFrame = navBar.screenOptions.frame
         
         // Move the navigation bar
-        screenOptionsFrame.origin = CGPoint(x: screenOptionsFrame.origin.x, y: screenOptionsFrame.origin.y - delta)
+        screenOptionsFrame.origin = CGPoint(x: screenOptionsFrame.origin.x,
+                                            y: max(screenOptionsFrame.origin.y - delta, navBar.fullNavHeight - navBar.scopeBarHeight))
         navBar.screenOptions.frame = screenOptionsFrame
         
-        navBar.navBarSize = CGSize(width: navBar.navBarSize.width, height: min(max(navBar.navBarSize.height - delta, navBar.fullNavHeight), navBar.fullNavHeight + navBar.scopeBarHeight))
-    
-        let navBarHeight = max(scopeBarOriginY, navBar.navBarSize.height - delta) //maintain min frame size once status bar is hidden
+        navBar.navBarSize = CGSize(width: navBar.navBarSize.width,
+                                   height: min(max(navBar.navBarSize.height - delta, navBar.fullNavHeight),
+                                               navBar.fullNavHeight + navBar.scopeBarHeight))
+
+        let navBarHeight = min(max(navBar.fullNavHeight, navBar.navBarSize.height - delta), navBar.fullNavHeight + navBar.scopeBarHeight) //maintain min frame size once status bar is hidden
 
         // Resize the view if the navigation bar is not translucent
         if !navBar.isTranslucent {
@@ -360,17 +363,18 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         var duration = TimeInterval(0)
         var delta = CGFloat(0.0)
         let distance = delta / (frame.size.height / 2)
-        
         // Scroll back down
-        let threshold = (navBar.navBarSize.height - navBar.scopeBarHeight) - (frame.size.height / 2)
+        let threshold = navBar.fullNavHeight - (navBar.scopeBarHeight / 2)
         if frame.origin.y >= threshold {
-            delta = (navBar.navBarSize.height - navBar.scopeBarHeight) - frame.origin.y
-            duration = TimeInterval(abs(distance * 0.2))
+            delta = frame.origin.y - navBar.fullNavHeight
+            duration = TimeInterval(abs(distance * 0.1))
             navBarState = .expanded
+
         } else {
             // Scroll up
-            delta = frame.origin.y - (navBar.navBarSize.height - navBar.scopeBarHeight - deltaLimit)
-            duration = TimeInterval(abs(distance * 0.2))
+
+            delta = navBar.fullNavHeight - frame.origin.y
+            duration = TimeInterval(abs(distance * 0.1))
             navBarState = .collapsed
         }
         
@@ -464,9 +468,5 @@ extension PulseNavVC {
     var deltaLimit: CGFloat {
         guard navBar != nil else { return 0 }
         return navBar.scopeBarHeight
-    }
-    
-    var scopeBarOriginY : CGFloat {
-        return navBar.navBarSize.height - navBar.scopeBarHeight
     }
 }
