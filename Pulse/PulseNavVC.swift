@@ -44,15 +44,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     
     override public func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
-        if let view = scrollableView as? UICollectionView {
-            print("view will disappear fired and set content inset")
-            view.contentInset = UIEdgeInsets.zero
-            view.setContentOffset(CGPoint(x: contentOffset.x, y: contentOffset.y - 0.1), animated: false)
-
-        } else {
-            print("couldn't cast view as collection view")
-        }
     }
 
     override public func didReceiveMemoryWarning() {

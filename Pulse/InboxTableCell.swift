@@ -12,6 +12,7 @@ class InboxTableCell: UITableViewCell {
     fileprivate var userImage = UIImageView()
     fileprivate var userName = UILabel()
     fileprivate var lastMessage = UILabel()
+    fileprivate var lastMessageTime = UILabel()
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -48,6 +49,10 @@ class InboxTableCell: UITableViewCell {
         lastMessage.text = message
     }
     
+    func updateMessageTime(time: String?) {
+        lastMessageTime.text = time
+    }
+    
     fileprivate func setupCellLayout() {
         print("setup cell layout fired")
         contentView.addSubview(userImage)
@@ -58,6 +63,15 @@ class InboxTableCell: UITableViewCell {
         userImage.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         userImage.layoutIfNeeded()
         
+        contentView.addSubview(lastMessageTime)
+        lastMessageTime.translatesAutoresizingMaskIntoConstraints = false
+        lastMessageTime.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        lastMessageTime.topAnchor.constraint(equalTo: userImage.topAnchor).isActive = true
+        lastMessageTime.layoutIfNeeded()
+        
+        lastMessageTime.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .darkGray, alignment: .left)
+        lastMessageTime.lineBreakMode = .byTruncatingTail
+
         contentView.addSubview(userName)
         userName.translatesAutoresizingMaskIntoConstraints = false
         userName.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true

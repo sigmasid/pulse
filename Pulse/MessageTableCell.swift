@@ -13,7 +13,8 @@ class MessageTableCell: UITableViewCell {
     var message : Message! {
         didSet {
             let formatter = DateFormatter()
-            formatter.timeStyle = .long
+            formatter.dateStyle = .short
+            formatter.timeStyle = .short
             let stringDate: String = formatter.string(from: message.time)
             messageTimestamp.text = stringDate
             messageSenderName.text = message.from.name

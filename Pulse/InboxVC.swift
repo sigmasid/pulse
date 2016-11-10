@@ -95,7 +95,7 @@ class InboxVC: UITableViewController {
         }
         
         cell.updateLastMessage(message: conversations[indexPath.row].cLastMessage)
-        
+        cell.updateMessageTime(time: conversations[indexPath.row].getLastMessageTime())
         return cell
     }
     

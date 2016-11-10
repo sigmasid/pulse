@@ -51,10 +51,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
         view.backgroundColor = UIColor.white
         
         self.navigationController?.isNavigationBarHidden = false
-//        if let pulseNav = navigationController as? NavVC {
-//            toUserImage != nil ? pulseNav.updateStatusImage(image: toUserImage) : pulseNav.updateStatusMessage(message: msgToUserName.text)
-//        }
-
+        
         hideKeyboardWhenTappedAround()
         setupLayout()
         

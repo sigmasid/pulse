@@ -163,7 +163,7 @@ class Database {
         }
     }
     
-    //OLD WAY OF DIRECTLY SEARCHING ON DB - NEW WAY DOWNLOADS THE STACK
+    //OLD WAY OF DIRECTLY SEARCHING ON DB - NEW WAY DOWNLOADS THE FULL STACK
 //    static func getSearchTags(searchText : String, completion: @escaping (_ tags : [String], _ error : NSError?) -> Void) {
 //        var allTags = [String]()
 //        let endingString = searchText.appending("\u{f8ff}")
@@ -273,6 +273,8 @@ class Database {
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
@@ -286,9 +288,11 @@ class Database {
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/conversationID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/conversationID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
