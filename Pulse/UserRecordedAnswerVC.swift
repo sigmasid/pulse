@@ -128,12 +128,10 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             DispatchQueue.global(qos: .background).async {
                 compressVideo(self.currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
                     if let resultURL = resultURL {
-                        print("went into resultURL")
                         self.currentAnswer.aURL = resultURL
                         self.currentAnswer.thumbImage = thumbnailImage
                         self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
                     } else {
-                        print("went into else")
                         let videoAsset = AVAsset(url: self.currentAnswer.aURL)
                         let thumbImage = thumbnailForVideoAtURL(videoAsset, orientation: .left)
                         
@@ -213,6 +211,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 uploadVideo(answer, completion: {(success, _answerID) in
                     
                     if answer == self.currentAnswers.last {
+                        print("is last answer - going to done creating answer")
                         self.doneCreatingAnswer()
                     }
                 })

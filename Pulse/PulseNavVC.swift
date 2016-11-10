@@ -41,6 +41,19 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
     }
+    
+    override public func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        if let view = scrollableView as? UICollectionView {
+            print("view will disappear fired and set content inset")
+            view.contentInset = UIEdgeInsets.zero
+            view.setContentOffset(CGPoint(x: contentOffset.x, y: contentOffset.y - 0.1), animated: false)
+
+        } else {
+            print("couldn't cast view as collection view")
+        }
+    }
 
     override public func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -148,9 +161,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         }
     }
     
-    /**
-     Stop observing the view and reset the navigation bar
-     */
+    /** Stop observing the view and reset the navigation bar */
     public func stopFollowingScrollView() {
         showNavbar(animated: false)
         if let gesture = gestureRecognizer {
@@ -311,9 +322,10 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         
         navBar.navBarSize = CGSize(width: navBar.navBarSize.width,
                                    height: min(max(navBar.navBarSize.height - delta, navBar.fullNavHeight),
-                                               navBar.fullNavHeight + navBar.scopeBarHeight))
+                                               navBar.fullNavHeight + navBar.scopeBarHeight  + statusBarHeight))
 
-        let navBarHeight = min(max(navBar.fullNavHeight, navBar.navBarSize.height - delta), navBar.fullNavHeight + navBar.scopeBarHeight) //maintain min frame size once status bar is hidden
+        let navBarHeight = min(max(navBar.fullNavHeight, navBar.navBarSize.height - delta),
+                               navBar.fullNavHeight + navBar.scopeBarHeight + statusBarHeight) //maintain min frame size once status bar is hidden
 
         // Resize the view if the navigation bar is not translucent
         if !navBar.isTranslucent {
@@ -322,7 +334,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
             frame.size = CGSize(width: frame.size.width, height: view.frame.size.height - (navBarHeight) - tabBarOffset)
             topViewController.view.frame = frame
         } else {
-            adjustContentInsets()
+            //adjustContentInsets()
         }
     }
     
@@ -334,14 +346,28 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         navBar.screenOptions.alpha = alpha
     }
     
+    private func adjustExpandedContentOffset() {
+        guard navBar != nil else { return }
+
+        if let view = scrollView() as? UICollectionView {
+            //let statusOffset = CGPoint(x: 0, y: -statusBarHeight)
+            //view.setContentOffset(statusOffset, animated: false)
+            view.contentInset = navBarState == .expanded ? UIEdgeInsetsMake(statusBarHeight, 0, 0, 0) : UIEdgeInsets.zero
+            print("cast it as collection view in expanded content insets and setting insets to \(view.contentInset, view.frame)")
+        } else {
+            print("couldn't cast it as collection view in expanded adjust content insets")
+
+        }
+    }
+    
     private func adjustContentInsets() {
         guard navBar != nil else { return }
 
         if let view = scrollView() as? UICollectionView {
+            print("cast it as collection view in adjust content insets")
             view.contentInset.top = navBar.frame.origin.y + navBar.frame.size.height
             // When this is called by `hideNavbar(_:)` or `showNavbar(_:)`, the sticky header reamins still
             // even if the content inset changed. This triggers a fake scroll, fixing the header's position
-            view.setContentOffset(CGPoint(x: contentOffset.x, y: contentOffset.y - 0.1), animated: false)
         }
     }
     
@@ -372,7 +398,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
 
         } else {
             // Scroll up
-
             delta = navBar.fullNavHeight - frame.origin.y
             duration = TimeInterval(abs(distance * 0.1))
             navBarState = .collapsed
@@ -383,7 +408,9 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         UIView.animate(withDuration: duration, delay: 0, options: UIViewAnimationOptions.beginFromCurrentState, animations: {
             self.updateSizing(delta)
             self.updateNavbarAlpha()
-        }, completion: nil)
+        }, completion: { _ in
+            self.adjustExpandedContentOffset()
+        })
     }
     
     // MARK: - UIGestureRecognizerDelegate
@@ -402,7 +429,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
     
     public func setNav(navTitle: String?, screenTitle: String?, screenImage : UIImage?) {
         guard navBar != nil else { return }

@@ -57,6 +57,17 @@ public class PulseNavBar: UINavigationBar {
         }
     }
     
+    
+    override public func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if let translatedPoint = getScopeBar()?.convert(point, from: self), let scopeBar = getScopeBar() {
+            if (scopeBar.bounds.contains(translatedPoint)) {
+                return scopeBar.hitTest(translatedPoint, with: event)
+                
+            }
+        }
+        return super.hitTest(point, with: event)
+    }
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         

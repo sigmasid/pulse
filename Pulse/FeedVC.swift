@@ -25,6 +25,10 @@ class FeedVC: UIViewController {
     
     fileprivate var searchScope : FeedItemType? = .question
     
+    public func getScrollView() -> UICollectionView? {
+        return feedCollectionView != nil ? feedCollectionView : nil
+    }
+    
     /* SET BY PARENT */
     var feedDelegate : feedVCDelegate!
     var feedItemType : FeedItemType! {
