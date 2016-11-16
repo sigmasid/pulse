@@ -49,7 +49,12 @@ class Answer : NSObject {
     
     init(aID: String, snapshot: FIRDataSnapshot) {
         self.aID = aID
-        self.qID = snapshot.childSnapshot(forPath: "qID").value as! String
+        if snapshot.hasChild("qID") {
+            self.qID = snapshot.childSnapshot(forPath: "qID").value as! String
+        } else {
+            self.qID = ""
+        }
+        
         if snapshot.hasChild("uID") {
             self.uID = snapshot.childSnapshot(forPath: "uID").value as? String
         }

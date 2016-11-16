@@ -341,13 +341,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         guard navBar != nil else { return }
 
         if let view = scrollView() as? UICollectionView {
-            //let statusOffset = CGPoint(x: 0, y: -statusBarHeight)
-            //view.setContentOffset(statusOffset, animated: false)
             view.contentInset = navBarState == .expanded ? UIEdgeInsetsMake(statusBarHeight, 0, 0, 0) : UIEdgeInsets.zero
-            print("cast it as collection view in expanded content insets and setting insets to \(view.contentInset, view.frame)")
-        } else {
-            print("couldn't cast it as collection view in expanded adjust content insets")
-
         }
     }
     
@@ -355,7 +349,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         guard navBar != nil else { return }
 
         if let view = scrollView() as? UICollectionView {
-            print("cast it as collection view in adjust content insets")
             view.contentInset.top = navBar.frame.origin.y + navBar.frame.size.height
             // When this is called by `hideNavbar(_:)` or `showNavbar(_:)`, the sticky header reamins still
             // even if the content inset changed. This triggers a fake scroll, fixing the header's position

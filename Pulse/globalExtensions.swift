@@ -132,6 +132,15 @@ extension UILabel {
             self.attributedText = attributedString
         }
     }
+    
+    func setBlurredBackground() {
+        textColor = .white
+        shadowColor = .black
+        
+        layer.shadowOffset = CGSize(width: 0, height: 0)
+        layer.shadowOpacity = 1
+        layer.shadowRadius = 3
+    }
 }
 
 extension UIButton {

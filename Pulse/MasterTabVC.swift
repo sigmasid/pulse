@@ -146,8 +146,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         tabIcons.addArrangedSubview(exploreButton)
         tabIcons.addArrangedSubview(feedButton)
         
-        print("profile, explore, feed icons are \(profileButton.frame, exploreButton.frame, feedButton.frame)")
-
         profileButton.setVerticalTitle("Profile", for: UIControlState())
         exploreButton.setVerticalTitle("Explore", for: UIControlState())
         feedButton.setVerticalTitle("Home", for: UIControlState())
@@ -218,7 +216,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate func setSelectedIcon(index : Int) {
         let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
 
-        print("set selected fired with index \(index)")
         switch index {
         case 0:
             profileButton.isHighlighted = true

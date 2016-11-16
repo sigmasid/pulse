@@ -28,6 +28,9 @@ class AnswerOverlay: UIView {
     fileprivate var _showMenu : AnswerMenu!
     fileprivate var _isShowingMenu = false
     fileprivate var _iconContainer : IconContainer!
+    
+    fileprivate var addAnswer : PulseButton!
+    fileprivate var browseAnswers : PulseButton!
 
     fileprivate let _footerHeight : CGFloat = Spacing.xl.rawValue
     fileprivate var _iconSize : CGFloat = IconSizes.medium.rawValue
@@ -96,22 +99,19 @@ class AnswerOverlay: UIView {
     fileprivate func addUserTitle() {
         _userBackground.addSubview(_userTitleLabel)
         
-        _userTitleLabel.textColor = UIColor.white
-        _userTitleLabel.shadowColor = UIColor.black.withAlphaComponent(0.2)
-        _userTitleLabel.shadowOffset = CGSize(width: 1, height: 1)
-        _userTitleLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightBlack)
-        
+        _userTitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
+        _userTitleLabel.setBlurredBackground()
+
         _userTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         _userTitleLabel.topAnchor.constraint(equalTo: _userBackground.topAnchor, constant: _footerHeight / 5).isActive = true
         _userTitleLabel.leadingAnchor.constraint(equalTo: _userImage.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
     }
     
     fileprivate func addUserSubtitle() {
-        _userSubtitleLabel.textColor = UIColor.white
-        _userSubtitleLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue)
-        _userSubtitleLabel.shadowColor = UIColor.black.withAlphaComponent(0.2)
-        _userSubtitleLabel.shadowOffset = CGSize(width: 1, height: 1)
         _userBackground.addSubview(_userSubtitleLabel)
+        
+        _userSubtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
+        _userSubtitleLabel.setBlurredBackground()
         
         _userSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         _userSubtitleLabel.bottomAnchor.constraint(equalTo: _userBackground.bottomAnchor, constant: -_footerHeight / 5).isActive = true
@@ -161,16 +161,14 @@ class AnswerOverlay: UIView {
     fileprivate func addQuestion() {
         _questionBackground.addSubview(_questionLabel)
         _questionLabel.adjustsFontSizeToFitWidth = true
-        
-        _questionLabel.textColor = UIColor.white
-        _questionLabel.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        _questionLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.subheadline)
-        _questionLabel.textAlignment = .left
+        _questionLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
+        _questionLabel.setBlurredBackground()
+
         _questionLabel.numberOfLines = 0
         _questionLabel.lineBreakMode = .byWordWrapping
         
         _questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        _questionLabel.bottomAnchor.constraint(equalTo: _tagLabel.topAnchor, constant: 1.0).isActive = true
+        _questionLabel.bottomAnchor.constraint(equalTo: _tagLabel.topAnchor).isActive = true
         _questionLabel.trailingAnchor.constraint(equalTo: _questionBackground.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         _questionLabel.leadingAnchor.constraint(equalTo: _tagLabel.leadingAnchor).isActive = true
     
@@ -179,11 +177,8 @@ class AnswerOverlay: UIView {
     ///Update Tag in header
     fileprivate func addTag() {
         _questionBackground.addSubview(_tagLabel)
-        
-        _tagLabel.textColor = UIColor.white
-        _tagLabel.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        _tagLabel.font = UIFont.boldSystemFont(ofSize: FontSizes.caption.rawValue)
-        _tagLabel.textAlignment = .left
+        _tagLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
+        _tagLabel.setBlurredBackground()
         
         _tagLabel.translatesAutoresizingMaskIntoConstraints = false
         _tagLabel.centerYAnchor.constraint(equalTo: _questionBackground.centerYAnchor, constant: _questionBackground.frame.size.height * (1/6)).isActive = true
@@ -342,17 +337,28 @@ class AnswerOverlay: UIView {
     func toggleMenu() {
         if !_isShowingMenu {
             _showMenu = AnswerMenu()
-            addSubview(_showMenu)
             
+            addAnswer = PulseButton(size: ButtonSizes.small, type: .addCircle, isRound: false, hasBackground: false)
+            browseAnswers = PulseButton(size: ButtonSizes.small, type: .browseCircle, isRound: false, hasBackground: false)
+            addAnswer.tintColor = pulseBlue
+            browseAnswers.tintColor = pulseBlue
+            
+            addSubview(_showMenu)
+
             _showMenu.translatesAutoresizingMaskIntoConstraints = false
             _showMenu.bottomAnchor.constraint(equalTo: _iconContainer.topAnchor).isActive = true
             _showMenu.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 2/5).isActive = true
-            _showMenu.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-            _showMenu.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1/4).isActive = true
+            _showMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
             _showMenu.layoutIfNeeded()
             
-            _showMenu.getButton(.addAnswer).addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchDown)
-            _showMenu.getButton(.browseAnswers).addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchDown)
+            _showMenu.addArrangedSubview(addAnswer)
+            _showMenu.addArrangedSubview(browseAnswers)
+            
+            addAnswer.setReversedTitle("Add Answer", for: UIControlState())
+            browseAnswers.setReversedTitle("Browse Answers", for: UIControlState())
+
+            addAnswer.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchDown)
+            browseAnswers.addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchDown)
             
             _isShowingMenu = true
 
@@ -399,7 +405,7 @@ class AnswerOverlay: UIView {
             _radius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
         bgShapeLayer.strokeColor = UIColor.white.cgColor
         bgShapeLayer.fillColor = UIColor.clear.cgColor
-        bgShapeLayer.opacity = 0.7
+        //bgShapeLayer.opacity = 0.7
         bgShapeLayer.lineWidth = _stroke
         
         return bgShapeLayer
@@ -409,10 +415,10 @@ class AnswerOverlay: UIView {
         let timeLeftShapeLayer = CAShapeLayer()
         timeLeftShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0, y: 0), radius:
             _iconSize / 2, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
-        timeLeftShapeLayer.strokeColor = UIColor.lightGray.cgColor
+        timeLeftShapeLayer.strokeColor = pulseBlue.cgColor
         timeLeftShapeLayer.fillColor = UIColor.clear.cgColor
         timeLeftShapeLayer.lineWidth = _countdownTimerRadiusStroke
-        timeLeftShapeLayer.opacity = 0.7
+        //timeLeftShapeLayer.opacity = 0.7
         
         return timeLeftShapeLayer
     }

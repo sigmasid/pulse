@@ -131,30 +131,24 @@ class MiniProfile: UIView {
     }
     
     func setNameLabel(_ name : String?) {
-        nameLabel.text = name?.uppercased()
-        nameLabel.font = UIFont.systemFont(ofSize: FontSizes.title.rawValue, weight: UIFontWeightHeavy)
-        nameLabel.textAlignment = .left
-        nameLabel.textColor = UIColor.white
-        nameLabel.backgroundColor = UIColor.black.withAlphaComponent(0.2)
+        nameLabel.text = name
+        nameLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .left)
+        nameLabel.setBlurredBackground()
     }
     
     func setTagLabel(_ text : String?) {
         tagLine.text = text
         tagLine.numberOfLines = 0
-        tagLine.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)
-        tagLine.textAlignment = .center
-        tagLine.textColor = UIColor.white
-        tagLine.backgroundColor = UIColor.black.withAlphaComponent(0.2)
-
+        tagLine.setFont(FontSizes.body.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
+        tagLine.setBlurredBackground()
     }
     
     func setBioLabel(_ text : String?) {
         bioLabel.text = text
         bioLabel.numberOfLines = 0
-        bioLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightRegular)
-        bioLabel.textAlignment = .center
-        bioLabel.textColor = UIColor.white
-        bioLabel.backgroundColor = UIColor.black.withAlphaComponent(0.2)
+        
+        bioLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
+        bioLabel.setBlurredBackground()
     }
     
     func setProfileImage(_ image : UIImage) {

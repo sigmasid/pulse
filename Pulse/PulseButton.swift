@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile }
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle }
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -156,6 +156,32 @@ open class PulseButton: UIButton {
         imageView?.contentMode = .scaleAspectFit
     }
     
+    public func setReversedTitle(_ title: String, for state: UIControlState) {
+        guard titleLabel != nil, imageView != nil else { return }
+        
+        contentHorizontalAlignment = .right
+
+        setTitle(title, for: state)
+        setButtonFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .center)
+        
+        setTitleColor(pulseBlue, for: UIControlState.highlighted)
+        setTitleColor(pulseBlue, for: UIControlState.selected)
+        
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)]
+        let labelTextWidth = GlobalFunctions.getLabelWidth(title: title,
+                                                           fontAttributes: fontAttributes)
+
+        let imageInset = UIEdgeInsetsMake(0, labelTextWidth, 0, -labelTextWidth)
+        imageEdgeInsets = imageInset
+        
+        if let imageSize = imageView!.image?.size {
+            let titleInset = UIEdgeInsetsMake(0, -imageSize.width, 0, imageSize.width + Spacing.xxs.rawValue)
+            titleEdgeInsets = titleInset
+        }
+        
+        imageView?.contentMode = .scaleAspectFit
+    }
+    
     fileprivate func setupRaised(isRaised : Bool, hasBackground : Bool) {
         if (isRaised) {
             shadowColor = UIColor.init(white: 0.2, alpha: 1.0)
@@ -272,6 +298,14 @@ open class PulseButton: UIButton {
             
         case .tabProfile:
             let tintedTimage = UIImage(named: "tab-profile")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .addCircle:
+            let tintedTimage = UIImage(named: "add-circle")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .browseCircle:
+            let tintedTimage = UIImage(named: "browse-circle")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             
         case . blank:

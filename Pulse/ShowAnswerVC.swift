@@ -85,7 +85,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             
             if (currentQuestion != nil){
                 _loadAnswer(currentQuestion, index: answerIndex)
-                _answerOverlay = AnswerOverlay(frame: view.bounds, iconColor: UIColor.black, iconBackground: UIColor.white)
+                _answerOverlay = AnswerOverlay(frame: view.bounds, iconColor: .white, iconBackground: .black)
                 _answerOverlay.addClipTimerCountdown()
                 _answerOverlay.delegate = self
                 
@@ -248,13 +248,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 self.userForCurrentAnswer = user
                 
                 if let _uName = user.name {
-                    self._answerOverlay.setUserName(_uName)
+                    self._answerOverlay.setUserName(_uName.capitalized)
                 }
                 
                 if let _uBio = user.shortBio {
-                    self._answerOverlay.setUserSubtitle(_uBio)
+                    self._answerOverlay.setUserSubtitle(_uBio.capitalized)
                 } else if let _location = answer.aLocation {
-                    self._answerOverlay.setUserSubtitle(_location)
+                    self._answerOverlay.setUserSubtitle(_location.capitalized)
                 }
                 
                 if let _uPic = user.thumbPic {

@@ -225,8 +225,10 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { break }
 
                 if let tagID = _currentQuestion.qTagID {
-                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: "#\(tagID.uppercased())")
+                    print("found tagID \(tagID)")
+                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: "\(tagID.uppercased())")
                 } else {
+                    print("no tagID found")
                     cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
                 }
                 
@@ -239,11 +241,23 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
                     if let question = question {
                         if let tagID = question.qTagID {
+                            print("found tagID \(tagID)")
+
                             cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercased())")
+                            self.allQuestions[indexPath.row] = question
+
+                        } else if let tagID = self.allQuestions[indexPath.row]?.qTagID {
+                            print("found tagID \(tagID)")
+
+                            cell.updateLabel(question.qTitle, _subtitle: "#\(tagID.uppercased())")
+                            self.allQuestions[indexPath.row] = question
+                            self.allQuestions[indexPath.row]?.qTagID = tagID
+
                         } else {
                             cell.updateLabel(question.qTitle, _subtitle: nil)
+                            self.allQuestions[indexPath.row] = question
                         }
-                        self.allQuestions[indexPath.row] = question
+                        
                         cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
                     }
                 })

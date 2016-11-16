@@ -69,8 +69,8 @@ class AccountPageMenu: UIStackView {
         
         sAboutButton = updatePulseButton(button: sAboutButton, title: "profile", image: UIImage(named: "profile")!)
         sMessagesButton = updatePulseButton(button: sMessagesButton, title: "messaging", image: UIImage(named: "messenger")!)
-        sActivityButton = updatePulseButton(button: sActivityButton, title: "activity", image: UIImage(named: "profile")!)
-        sAnswersButton = updatePulseButton(button: sAnswersButton, title: "answers", image: UIImage(named: "messenger")!)
+        sActivityButton = updatePulseButton(button: sActivityButton, title: "activity", image: UIImage(named: "notifications")!)
+        sAnswersButton = updatePulseButton(button: sAnswersButton, title: "answers", image: UIImage(named: "answers")!)
         sSettingsButton = updatePulseButton(button: sSettingsButton, title: "account", image: UIImage(named: "settings")!)
         sLogoutButton = updatePulseButton(button: sLogoutButton, title: "logout", image: UIImage(named: "login")!)
 

@@ -458,7 +458,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
 
         currentExploreMode = Explore(currentMode: .root, currentSelection: 0)
         exploreStack.append(currentExploreMode)
-        exploreContainer.view.backgroundColor = .yellow
         
         loadingView = LoadingView(frame: CGRect.zero, backgroundColor: .white)
         view.addSubview(loadingView!)
@@ -474,8 +473,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         toggleLoading(show: true, message: "Loading...")
         
         definesPresentationContext = true
-        
-        print("initial frame is \(exploreContainer.view.frame)")
     }
     
     //Get all buttons for the controller to use

@@ -61,6 +61,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        self.navigationController?.isNavigationBarHidden = false
         updateHeader()
     }
     
@@ -186,7 +187,12 @@ class MessageVC: UIViewController, UITextViewDelegate{
         msgTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
         sendContainer.translatesAutoresizingMaskIntoConstraints = false
-        sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.xs.rawValue)
+        if let _ = navigationController as? PulseNavVC {
+            sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: bottomLayoutGuide.topAnchor,
+                                                                         constant: -IconSizes.large.rawValue - Spacing.xs.rawValue)
+        } else {
+            sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.xs.rawValue)
+        }
         sendBottomConstraint.isActive = true
         sendContainer.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.1).isActive = true
         sendContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true

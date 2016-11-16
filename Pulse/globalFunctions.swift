@@ -120,6 +120,17 @@ class GlobalFunctions {
         return labelHeight
     }
     
+    static func getLabelWidth(title : String, fontAttributes: [String : Any]) -> CGFloat {
+        let tempLabel = UILabel()
+        tempLabel.numberOfLines = 1
+        tempLabel.attributedText = NSMutableAttributedString(string: title , attributes: fontAttributes )
+        let neededSize : CGSize = tempLabel.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: tempLabel.font.capHeight))
+        let labelWidth = neededSize.width
+        
+        return labelWidth
+    }
+    
+    
     ///Validate email
     static func validateEmail(_ enteredEmail:String?, completion: (_ verified: Bool, _ error: NSError?) -> Void) {
         let emailFormat = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
