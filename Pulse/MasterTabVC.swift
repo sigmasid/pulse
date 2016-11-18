@@ -34,9 +34,9 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     
     fileprivate var tabIcons = UIStackView()
     
-    fileprivate var profileButton = PulseButton(size: .small, type: .tabProfile, isRound: true, hasBackground: false)
-    fileprivate var exploreButton = PulseButton(size: .small, type: .tabExplore, isRound: true, hasBackground: false)
-    fileprivate var feedButton = PulseButton(size: .small, type: .tabHome, isRound: true, hasBackground: false)
+    fileprivate var profileButton = PulseButton(size: .small, type: .tabProfile, isRound: false, hasBackground: false)
+    fileprivate var exploreButton = PulseButton(size: .small, type: .tabExplore, isRound: false, hasBackground: false)
+    fileprivate var feedButton = PulseButton(size: .small, type: .tabHome, isRound: false, hasBackground: false)
     
     fileprivate var pulseAppButton = IconContainer(frame: CGRect(x: 0,y: 0,
                                                                 width: IconSizes.medium.rawValue,
@@ -68,12 +68,14 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
                 // get feed and show initial view controller
                 if success && !self.initialLoadComplete {
                     self.setupControllers()
+                    self.setupPulseButton()
                     self.setupIcons(_selectedIndex: 2)
 
                     self.initialLoadComplete = true
                     
                 } else if !success && !self.initialLoadComplete {
                     self.setupControllers()
+                    self.setupPulseButton()
                     self.setupIcons(_selectedIndex: 1)
                     
                     self.initialLoadComplete = true
@@ -82,6 +84,14 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
                 self.isLoaded = true
             }
         }
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
     }
     
     override func viewDidLayoutSubviews() {
@@ -127,28 +137,31 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         panInteractionController.wireToViewController(self)
     }
     
-    fileprivate func setupIcons(_selectedIndex: Int) {
-        view.addSubview(tabIcons)
+    fileprivate func setupPulseButton() {
         view.addSubview(pulseAppButton)
-        
-        tabIcons.translatesAutoresizingMaskIntoConstraints = false
-        tabIcons.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-        tabIcons.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        //tabIcons.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
 
         pulseAppButton.translatesAutoresizingMaskIntoConstraints = false
         pulseAppButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
         pulseAppButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         pulseAppButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         pulseAppButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-
-        tabIcons.addArrangedSubview(profileButton)
-        tabIcons.addArrangedSubview(exploreButton)
-        tabIcons.addArrangedSubview(feedButton)
+    }
+    
+    fileprivate func setupIcons(_selectedIndex: Int) {
+        view.addSubview(tabIcons)
         
+        tabIcons.translatesAutoresizingMaskIntoConstraints = false
+        tabIcons.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        tabIcons.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        //tabIcons.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
+
         profileButton.setVerticalTitle("Profile", for: UIControlState())
         exploreButton.setVerticalTitle("Explore", for: UIControlState())
         feedButton.setVerticalTitle("Home", for: UIControlState())
+        
+        tabIcons.addArrangedSubview(profileButton)
+        tabIcons.addArrangedSubview(exploreButton)
+        tabIcons.addArrangedSubview(feedButton)
         
         profileButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
         exploreButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
@@ -161,6 +174,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         
         tabIcons.alpha = 0.5
         selectedIndex = _selectedIndex
+        
+        tabIcons.layoutIfNeeded()
     }
     
     func cancelledTransition() {
