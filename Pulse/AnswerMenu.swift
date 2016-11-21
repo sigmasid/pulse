@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AnswerMenu: UIStackView {
+class PulseMenu: UIStackView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -20,24 +20,12 @@ class AnswerMenu: UIStackView {
         super.init(coder: aDecoder)
     }
     
-    convenience init(frame: CGRect, buttons : [PulseButton]) {
-        self.init(frame: frame)
-        
-        addButtons(buttons: buttons)
-    }
-    
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         if  isHidden {
             return false
         } else {
             let expandedBounds = bounds.insetBy(dx: -50, dy: -50)
             return expandedBounds.contains(point)
-        }
-    }
-    
-    public func addButtons(buttons : [PulseButton]) {
-        for button in buttons {
-            addArrangedSubview(button)
         }
     }
     

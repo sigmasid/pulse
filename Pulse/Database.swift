@@ -278,7 +278,6 @@ class Database {
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
-                print("completion error \(completionError)")
                 completionError != nil ? completion(false, nil) : completion(true, message.mID)
             })
         } else {
@@ -1111,6 +1110,36 @@ class Database {
                 completion(true, nil)
             }
         }
+    }
+    
+    /** ASK QUESTIONS **/
+    static func askTagQuestion(tagID : String, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to ask a question" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let questionKey = questionsRef.childByAutoId().key
+        
+        let post = ["questions/\(questionKey)/title":qText,
+                    "questions/\(questionKey)/tags/\(tagID)":true,
+                    "tags/\(tagID)/questions/\(questionKey)":true,
+                    "users/\(user.uid)/askedQuestions/\(questionKey)":true] as [String: Any]
+        
+        databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+            if completionError != nil {
+                let errorInfo = [ NSLocalizedDescriptionKey : "error posting question" ]
+                completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
+            } else {
+                completion(true, nil)
+            }
+        })
+    }
+    
+    static func askUserQuestion(uID : String, qText: String, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        
+        
     }
     
     /* STORAGE METHODS */

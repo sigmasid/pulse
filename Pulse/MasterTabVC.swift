@@ -33,10 +33,17 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate var deselectedIndex : Int!
     
     fileprivate var tabIcons = UIStackView()
+    fileprivate var profileStack = UIStackView()
+    fileprivate var exploreStack = UIStackView()
+    fileprivate var feedStack = UIStackView()
     
-    fileprivate var profileButton = PulseButton(size: .small, type: .tabProfile, isRound: false, hasBackground: false)
-    fileprivate var exploreButton = PulseButton(size: .small, type: .tabExplore, isRound: false, hasBackground: false)
-    fileprivate var feedButton = PulseButton(size: .small, type: .tabHome, isRound: false, hasBackground: false)
+    fileprivate var profileButton = PulseButton(size: .small, type: .tabProfile, isRound: true, hasBackground: false)
+    fileprivate var exploreButton = PulseButton(size: .small, type: .tabExplore, isRound: true, hasBackground: false)
+    fileprivate var feedButton = PulseButton(size: .small, type: .tabHome, isRound: true, hasBackground: false)
+    
+    fileprivate var profileLabel = UILabel()
+    fileprivate var exploreLabel = UILabel()
+    fileprivate var feedLabel = UILabel()
     
     fileprivate var pulseAppButton = IconContainer(frame: CGRect(x: 0,y: 0,
                                                                 width: IconSizes.medium.rawValue,
@@ -153,15 +160,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         tabIcons.translatesAutoresizingMaskIntoConstraints = false
         tabIcons.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
         tabIcons.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        //tabIcons.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
+        tabIcons.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
 
-        profileButton.setVerticalTitle("Profile", for: UIControlState())
-        exploreButton.setVerticalTitle("Explore", for: UIControlState())
-        feedButton.setVerticalTitle("Home", for: UIControlState())
-        
-        tabIcons.addArrangedSubview(profileButton)
-        tabIcons.addArrangedSubview(exploreButton)
-        tabIcons.addArrangedSubview(feedButton)
+        //profileButton.setVerticalTitle("Profile", for: UIControlState())
+        //exploreButton.setVerticalTitle("Explore", for: UIControlState())
+        //feedButton.setVerticalTitle("Home", for: UIControlState())
         
         profileButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
         exploreButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
@@ -172,10 +175,47 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         tabIcons.distribution = .fillProportionally
         tabIcons.spacing = Spacing.xs.rawValue
         
+        profileLabel.text = "Profile"
+        exploreLabel.text = "Explore"
+        feedLabel.text = "Feed"
+    
+        profileLabel.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)
+        exploreLabel.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)
+        feedLabel.setFont(FontSizes.caption2.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)
+        
+        profileLabel.setBlurredBackground()
+        exploreLabel.setBlurredBackground()
+        feedLabel.setBlurredBackground()
+        
+        /** INDIVIDUAL STACK VIEWS WITH BUTTON + LABEL **/
+        profileStack.addArrangedSubview(profileButton)
+        profileStack.addArrangedSubview(profileLabel)
+        
+        profileStack.axis = .vertical
+        profileStack.alignment = .center
+        profileStack.distribution = .fillProportionally
+
+        exploreStack.axis = .vertical
+        exploreStack.alignment = .center
+        exploreStack.distribution = .fillProportionally
+        
+        exploreStack.addArrangedSubview(exploreButton)
+        exploreStack.addArrangedSubview(exploreLabel)
+
+        feedStack.axis = .vertical
+        feedStack.alignment = .center
+        feedStack.distribution = .fillProportionally
+        
+        feedStack.addArrangedSubview(feedButton)
+        feedStack.addArrangedSubview(feedLabel)
+        
+        /** ADD TO MASTER STACK **/
+        tabIcons.addArrangedSubview(profileStack)
+        tabIcons.addArrangedSubview(exploreStack)
+        tabIcons.addArrangedSubview(feedStack)
+        
         tabIcons.alpha = 0.5
         selectedIndex = _selectedIndex
-        
-        tabIcons.layoutIfNeeded()
     }
     
     func cancelledTransition() {
@@ -202,11 +242,14 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     }
     
     fileprivate func setDeselectIcon(index: Int) {
+
         switch index {
         case 0:
             profileButton.isHighlighted = false
             DispatchQueue.main.async {
                 self.profileButton.frame.origin.y += Spacing.xs.rawValue
+                self.profileLabel.frame.origin.y += Spacing.xs.rawValue
+                self.profileLabel.textColor = .white
                 self.profileButton.transform = CGAffineTransform.identity
             }
 
@@ -214,6 +257,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             exploreButton.isHighlighted = false
             DispatchQueue.main.async {
                 self.exploreButton.frame.origin.y += Spacing.xs.rawValue
+                self.exploreLabel.frame.origin.y += Spacing.xs.rawValue
+                self.exploreLabel.textColor = .white
                 self.exploreButton.transform = CGAffineTransform.identity
             }
 
@@ -221,6 +266,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             feedButton.isHighlighted = false
             DispatchQueue.main.async {
                 self.feedButton.frame.origin.y += Spacing.xs.rawValue
+                self.feedLabel.frame.origin.y += Spacing.xs.rawValue
+                self.feedLabel.textColor = .white
                 self.feedButton.transform = CGAffineTransform.identity
             }
 
@@ -229,6 +276,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     }
     
     fileprivate func setSelectedIcon(index : Int) {
+
         let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
 
         switch index {
@@ -236,13 +284,18 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             profileButton.isHighlighted = true
             DispatchQueue.main.async {
                 self.profileButton.frame.origin.y -= Spacing.xs.rawValue
+                self.profileLabel.frame.origin.y -= Spacing.xs.rawValue
+                self.profileLabel.textColor = pulseBlue
                 self.profileButton.transform = xScaleUp
             }
             pulseAppButton.setViewTitle("Profile")
+            
         case 1:
             exploreButton.isHighlighted = true
             DispatchQueue.main.async {
                 self.exploreButton.frame.origin.y -= Spacing.xs.rawValue
+                self.exploreLabel.frame.origin.y -= Spacing.xs.rawValue
+                self.exploreLabel.textColor = pulseBlue
                 self.exploreButton.transform = xScaleUp
             }
             pulseAppButton.setViewTitle("Explore")
@@ -251,19 +304,14 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             feedButton.isHighlighted = true
             DispatchQueue.main.async {
                 self.feedButton.frame.origin.y -= Spacing.xs.rawValue
+                self.feedLabel.frame.origin.y -= Spacing.xs.rawValue
+                self.feedLabel.textColor = pulseBlue
                 self.feedButton.transform = xScaleUp
             }
             pulseAppButton.setViewTitle("Feed")
 
         default: break
         }
-    }
-    
-    fileprivate func addLogoIcon(text : String) -> IconContainer {
-        let iconContainer = IconContainer(frame: CGRect(x: 0,y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))
-        iconContainer.setViewTitle(text)
-        
-        return iconContainer
     }
     
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {

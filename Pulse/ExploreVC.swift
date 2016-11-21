@@ -18,10 +18,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var closeButton : PulseButton!
     fileprivate var followButton : PulseButton!
     fileprivate var unfollowButton : PulseButton!
+    fileprivate var toggleFollowButton : PulseButton!
+    
     fileprivate var backButton : PulseButton!
     fileprivate var blankButton : PulseButton!
     fileprivate var messageButton : PulseButton!
 
+    fileprivate var askQuestion : PulseButton!
+    fileprivate var addAnswer : PulseButton!
+    
+    fileprivate var screenMenu = PulseMenu()
+    
     fileprivate var hideStatusBar = false {
         didSet {
             setNeedsStatusBarAppearanceUpdate()
@@ -36,15 +43,20 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         didSet {
             updateScopeBar()
             updateModes()
+            updateMenu()
         }
     }
     
     /* END EXPLORE STACK */
     fileprivate var isFollowingSelectedTag : Bool = false {
         didSet {
-            navigationItem.rightBarButtonItem = isFollowingSelectedTag ?
-                                                UIBarButtonItem(customView: unfollowButton) :
-                                                UIBarButtonItem(customView: followButton)
+            toggleFollowButton = isFollowingSelectedTag ? unfollowButton : followButton
+        }
+    }
+    
+    fileprivate var isFollowingSelectedQuestion : Bool = false {
+        didSet {
+            toggleFollowButton = isFollowingSelectedQuestion ? unfollowButton : followButton
         }
     }
     
@@ -64,6 +76,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             getButtons()
             setupSearch()
             setupExplore()
+            setupMenu()
             
             automaticallyAdjustsScrollViewInsets = false
             
@@ -82,6 +95,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         headerNav.followScrollView(scrollView, delay: 20.0)
         headerNav.scrollingNavbarDelegate = self
+        
+        if exploreStack.last != nil {
+            currentExploreMode = exploreStack.last
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -145,11 +162,12 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updateSearchResults(for: searchController)
         case .question:
             updateHeader(navTitle: currentExploreMode.getModeTitle(), screentitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: nil, navImage: nil)
+            isFollowingSelectedQuestion = User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[selectedQuestion.qID] != nil ? true : false
             updateQuestionScopeSelection()
         case .people:
             updateHeader(navTitle: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
                          screentitle : selectedUser.thumbPicImage != nil ? selectedUser.name : nil,
-                         leftButton: backButton, rightButton: messageButton, navImage: selectedUser.thumbPicImage)
+                         leftButton: backButton, rightButton: nil, navImage: selectedUser.thumbPicImage)
             updatePeopleScopeSelection()
         }
     }
@@ -299,18 +317,23 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     fileprivate func updatePeopleScopeSelection() {
         self.toggleLoading(show: true, message : "Loading...")
-        
-        Database.getUserAnswerIDs(uID: selectedUser.uID!, completion: { answers in
-            if answers.count > 0 {
-                self.exploreContainer.selectedUser = self.selectedUser
-                self.exploreContainer.allAnswers = answers
-                self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+        switch currentExploreMode.currentSelectionValue() {
+        case .answers:
+            Database.getUserAnswerIDs(uID: selectedUser.uID!, completion: { answers in
+                if answers.count > 0 {
+                    self.exploreContainer.selectedUser = self.selectedUser
+                    self.exploreContainer.allAnswers = answers
+                    self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
 
-                self.toggleLoading(show: false, message : nil)
-            } else {
-                self.toggleLoading(show: true, message : "No answers found!")
-            }
-        })
+                    self.toggleLoading(show: false, message : nil)
+                } else {
+                    self.toggleLoading(show: true, message : "No answers found!")
+                }
+            })
+        case .tags:
+            return
+        default: return
+        }
     }
     
     func userSelected(type : FeedItemType, item : Any) {
@@ -349,6 +372,37 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             nav.setNav(navTitle: navTitle, screenTitle: screentitle, screenImage: navImage)
         } else {
             title = navTitle
+        }
+    }
+    
+    fileprivate func updateMenu() {
+        screenMenu.isHidden = false
+        for menu in screenMenu.subviews {
+            screenMenu.removeArrangedSubview(menu)
+            menu.removeFromSuperview()
+        }
+        
+        switch currentExploreMode.currentMode {
+        case .tag:
+            screenMenu.addArrangedSubview(askQuestion)
+            askQuestion.setReversedTitle("Ask Question", for: UIControlState())
+            
+            screenMenu.addArrangedSubview(toggleFollowButton)
+
+        case .question:
+            screenMenu.addArrangedSubview(addAnswer)
+            addAnswer.setReversedTitle("Add Answer", for: UIControlState())
+            addAnswer.addTarget(self, action: #selector(userClickedAddAnswer), for: UIControlEvents.touchUpInside)
+            
+        case .people:
+            screenMenu.addArrangedSubview(askQuestion)
+            askQuestion.setReversedTitle("Ask Question", for: UIControlState())
+
+            screenMenu.addArrangedSubview(messageButton)
+            messageButton.setReversedTitle("Message", for: UIControlState())
+
+        default:
+            screenMenu.isHidden = true
         }
     }
     
@@ -408,13 +462,26 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     //FOLLOW / UNFOLLOW QUESTIONS AND UPDATE BUTTONS
     internal func follow() {
-        Database.pinTagForUser(selectedTag, completion: {(success, error) in
-            if !success {
-                GlobalFunctions.showErrorBlock("Error Saving Tag", erMessage: error!.localizedDescription)
-            } else {
-                self.isFollowingSelectedTag = self.isFollowingSelectedTag ? false : true
-            }
-        })
+        switch currentExploreMode.currentMode {
+        case .question:
+            Database.saveQuestion(selectedQuestion.qID, completion: {(success, error) in
+                if !success {
+                    GlobalFunctions.showErrorBlock("Error Saving Question", erMessage: error!.localizedDescription)
+                } else {
+                    self.isFollowingSelectedQuestion = self.isFollowingSelectedQuestion ? false : true
+                }
+            })
+        case .tag:
+            Database.pinTagForUser(selectedTag, completion: {(success, error) in
+                if !success {
+                    GlobalFunctions.showErrorBlock("Error Saving Tag", erMessage: error!.localizedDescription)
+                } else {
+                    self.isFollowingSelectedTag = self.isFollowingSelectedTag ? false : true
+                }
+            })
+        default: return
+        }
+
     }
     
     ///Launch messenger for selected user
@@ -427,6 +494,24 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
         
         navigationController?.pushViewController(messageVC, animated: true)
+    }
+    
+    func userClickedAddAnswer() {
+        
+    }
+    
+    func userClickedAskQuestion() {
+        let questionVC = AskQuestionVC()
+        
+        switch currentExploreMode.currentMode {
+        case .tag:
+            questionVC.selectedTag = selectedTag
+        case .people:
+            questionVC.selectedUser = selectedUser
+        default: return
+        }
+        
+        navigationController?.pushViewController(questionVC, animated: true)
     }
     
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
@@ -483,19 +568,46 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: true)
         closeButton.addTarget(self, action: #selector(userCancelledSearch), for: UIControlEvents.touchUpInside)
         
-        followButton = PulseButton(size: .small, type: .add, isRound : true, hasBackground: true)
-        followButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
-        
-        unfollowButton = PulseButton(size: .small, type: .remove, isRound : true, hasBackground: true)
-        unfollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
-        
         backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        
-        messageButton = PulseButton(size: .small, type: .message, isRound : true, hasBackground: true)
-        messageButton.addTarget(self, action: #selector(userClickedSendMessage), for: UIControlEvents.touchUpInside)
-        
+
         blankButton = PulseButton(size: .small, type: .blank, isRound : true, hasBackground: true)
+
+        // SIDE MENU OPTIONS //
+        followButton = PulseButton(size: .small, type: .addCircle, isRound : false, hasBackground: false)
+        followButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
+        followButton.tintColor = pulseBlue
+        followButton.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        followButton.setReversedTitle("Follow Tag", for: UIControlState())
+
+        unfollowButton = PulseButton(size: .small, type: .removeCircle, isRound : false, hasBackground: false)
+        unfollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
+        unfollowButton.tintColor = pulseBlue
+        unfollowButton.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        unfollowButton.setReversedTitle("Unfollow Tag", for: UIControlState())
+
+        messageButton = PulseButton(size: .small, type: .messageCircle, isRound : false, hasBackground: false)
+        messageButton.addTarget(self, action: #selector(userClickedSendMessage), for: UIControlEvents.touchUpInside)
+        messageButton.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        messageButton.tintColor = pulseBlue
+        
+        addAnswer = PulseButton(size: .small, type: .addCircle, isRound : false, hasBackground: false)
+        addAnswer.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        addAnswer.tintColor = pulseBlue
+        
+        askQuestion = PulseButton(size: .small, type: .questionCircle, isRound : false, hasBackground: false)
+        askQuestion.addTarget(self, action: #selector(userClickedAskQuestion), for: UIControlEvents.touchUpInside)
+        askQuestion.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        askQuestion.tintColor = pulseBlue
+    }
+    
+    fileprivate func setupMenu() {
+        view.addSubview(screenMenu)
+        
+        screenMenu.translatesAutoresizingMaskIntoConstraints = false
+        screenMenu.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -bottomLogoLayoutHeight).isActive = true
+        screenMenu.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 2/5).isActive = true
+        screenMenu.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true        
     }
 }
 
@@ -586,7 +698,8 @@ extension ExploreVC {
         private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "profile")!, UIImage(named: "related")!]
         private let tagIcons = [UIImage(named: "question")!, UIImage(named: "profile")!, UIImage(named: "related")!]
         private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
-        
+        private let peopleIcons = [UIImage(named: "answers")!, UIImage(named: "tag")!]
+
         /* PROPERTIES */
         var currentMode : Modes = .root
         var currentModeOptions : [Options] {
@@ -594,7 +707,7 @@ extension ExploreVC {
             case .root: return [.tags, .questions, .people]
             case .tag: return [.questions, .experts, .related]
             case .question: return [.answers, .experts, .related]
-            case .people: return [ .answers ]
+            case .people: return [ .answers, .tags ]
             case .search: return [.tags, .questions, .people]
             }
         }
@@ -605,13 +718,12 @@ extension ExploreVC {
             case .root: return scopeBar(titles: getOptionTitles(), icons: rootIcons)
             case .tag: return scopeBar(titles: getOptionTitles(), icons: tagIcons)
             case .question: return scopeBar(titles: getOptionTitles(), icons: questionIcons)
-            case .people: return nil
+            case .people: return scopeBar(titles: getOptionTitles(), icons: peopleIcons)
             case .search: return scopeBar(titles: getOptionTitles(), icons: searchIcons)
             }
         }
         
         /* FUNCTIONS */
-        
         //Return mapped titles if total options > 1 else return empty array i.e. no scope bar
         private func getOptionTitles() -> [String] {
             return currentModeOptions.count > 1 ? currentModeOptions.map{ (option) -> String in return "\(option)" } : []

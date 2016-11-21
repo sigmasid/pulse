@@ -62,6 +62,7 @@
 		BAB03AC41D808DEF00090147 /* ShrinkDismissAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */; };
 		BAB03AC61D80AB0500090147 /* IconContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC51D80AB0500090147 /* IconContainer.swift */; };
 		BAB03AC81D80D76300090147 /* PanHorizontalInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03AC71D80D76300090147 /* PanHorizontalInteraction.swift */; };
+		BAB7B1ED1DDFC30D00EA9DD2 /* AskQuestionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7B1EC1DDFC30D00EA9DD2 /* AskQuestionVC.swift */; };
 		BAB7CD211D4AEB310058AD9C /* UpdateProfileVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */; };
 		BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */; };
 		BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */; };
@@ -148,6 +149,7 @@
 		BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShrinkDismissAnimationController.swift; sourceTree = "<group>"; };
 		BAB03AC51D80AB0500090147 /* IconContainer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IconContainer.swift; sourceTree = "<group>"; };
 		BAB03AC71D80D76300090147 /* PanHorizontalInteraction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanHorizontalInteraction.swift; sourceTree = "<group>"; };
+		BAB7B1EC1DDFC30D00EA9DD2 /* AskQuestionVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AskQuestionVC.swift; sourceTree = "<group>"; };
 		BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UpdateProfileVC.swift; sourceTree = "<group>"; };
 		BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableCell.swift; sourceTree = "<group>"; };
 		BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginHeaderView.swift; sourceTree = "<group>"; };
@@ -284,6 +286,7 @@
 				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
 				BA03C43B1DB5A52900277382 /* Messaging */,
 				BA03C43C1DB5A53900277382 /* Navigation */,
+				BAB7B1EC1DDFC30D00EA9DD2 /* AskQuestionVC.swift */,
 			);
 			path = Pulse;
 			sourceTree = "<group>";
@@ -621,6 +624,7 @@
 				BAFBD1651D81DD7F00911453 /* FadeAnimationController.swift in Sources */,
 				BAD37D601D25ED9D00BACB04 /* ExploreQuestionCell.swift in Sources */,
 				BA2CCC141D4A9618003C94FC /* Settings.swift in Sources */,
+				BAB7B1ED1DDFC30D00EA9DD2 /* AskQuestionVC.swift in Sources */,
 				BA7D677F1D30D0B100883B88 /* LoginAddNameVC.swift in Sources */,
 				BA1DE1391D244A9D004F3ED2 /* CameraManager.swift in Sources */,
 				BA03C43E1DB6095800277382 /* AccountPageMenu.swift in Sources */,

@@ -25,7 +25,7 @@ class AnswerOverlay: UIView {
     fileprivate let _userSubtitleLabel = UILabel()
     fileprivate var _userImage = UIImageView()
     
-    fileprivate var _showMenu : AnswerMenu!
+    fileprivate var _showMenu : PulseMenu!
     fileprivate var _isShowingMenu = false
     fileprivate var _iconContainer : IconContainer!
     
@@ -336,7 +336,7 @@ class AnswerOverlay: UIView {
     
     func toggleMenu() {
         if !_isShowingMenu {
-            _showMenu = AnswerMenu()
+            _showMenu = PulseMenu()
             
             addAnswer = PulseButton(size: ButtonSizes.small, type: .addCircle, isRound: false, hasBackground: false)
             browseAnswers = PulseButton(size: ButtonSizes.small, type: .browseCircle, isRound: false, hasBackground: false)
@@ -364,6 +364,9 @@ class AnswerOverlay: UIView {
 
         } else {
             _showMenu.removeFromSuperview()
+            addAnswer.removeFromSuperview()
+            browseAnswers.removeFromSuperview()
+            
             _isShowingMenu = false
         }
     }

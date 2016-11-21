@@ -54,7 +54,8 @@ class MessageVC: UIViewController, UITextViewDelegate{
         
         hideKeyboardWhenTappedAround()
         setupLayout()
-        
+        updateHeader()
+
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
     }
@@ -62,7 +63,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.isNavigationBarHidden = false
-        updateHeader()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -88,6 +88,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? PulseNavVC {
+            nav.shouldShowScope = false
             toUserImage != nil ?
                 nav.setNav(navTitle: nil, screenTitle: nil, screenImage: toUserImage) :
                 nav.setNav(navTitle: msgToUserName.text, screenTitle: nil, screenImage: nil)

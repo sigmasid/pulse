@@ -131,7 +131,7 @@ class MiniProfile: UIView {
     }
     
     func setNameLabel(_ name : String?) {
-        nameLabel.text = name
+        nameLabel.text = name?.capitalized
         nameLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .left)
         nameLabel.setBlurredBackground()
     }

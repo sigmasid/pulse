@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle }
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle}
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -134,9 +134,10 @@ open class PulseButton: UIButton {
         setupRaised(isRaised: true, hasBackground: hasBackground)
     }
     
+
     override open var isHighlighted: Bool {
         didSet {
-            tintColor = isHighlighted ? pulseBlue : .black
+            tintColor = isHighlighted ? pulseBlue : .white
         }
     }
     
@@ -171,7 +172,7 @@ open class PulseButton: UIButton {
         let labelTextWidth = GlobalFunctions.getLabelWidth(title: title,
                                                            fontAttributes: fontAttributes)
 
-        let imageInset = UIEdgeInsetsMake(0, labelTextWidth, 0, -labelTextWidth)
+        let imageInset = UIEdgeInsetsMake(5, labelTextWidth, 5, -labelTextWidth)
         imageEdgeInsets = imageInset
         
         if let imageSize = imageView!.image?.size {
@@ -180,13 +181,22 @@ open class PulseButton: UIButton {
         }
         
         imageView?.contentMode = .scaleAspectFit
+        titleLabel?.setBlurredBackground()
+        layoutIfNeeded()
+        
+        let shadowRect = CGRect(x: labelTextWidth,
+                          y: bounds.origin.y + loweredShadowOffset.height,
+                          width: imageView!.bounds.size.width,
+                          height: imageView!.bounds.size.height)
+        
+        imageView?.layer.shadowPath = UIBezierPath.init(roundedRect: shadowRect, cornerRadius: self.layer.cornerRadius).cgPath
     }
     
     fileprivate func setupRaised(isRaised : Bool, hasBackground : Bool) {
         if (isRaised) {
             shadowColor = UIColor.init(white: 0.2, alpha: 1.0)
             
-            loweredShadowOpacity = 0.5
+            loweredShadowOpacity = 0.3
             loweredShadowRadius  = 1.5
             loweredShadowOffset  = CGSize(width: 0, height: 1)
             
@@ -240,7 +250,6 @@ open class PulseButton: UIButton {
         case .back:
         let tintedTimage = UIImage(named: "back")?.withRenderingMode(.alwaysTemplate)
         setImage(tintedTimage, for: UIControlState.normal)
-        tintColor = .black
         
         case .add:
         let tintedTimage = UIImage(named: "add")?.withRenderingMode(.alwaysTemplate)
@@ -291,21 +300,36 @@ open class PulseButton: UIButton {
         case .tabExplore:
             let tintedTimage = UIImage(named: "tab-explore")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            
+            imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+
         case .tabHome:
             let tintedTimage = UIImage(named: "tab-home")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            
+            imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+
         case .tabProfile:
             let tintedTimage = UIImage(named: "tab-profile")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            
+            imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+
         case .addCircle:
             let tintedTimage = UIImage(named: "add-circle")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            
+
         case .browseCircle:
             let tintedTimage = UIImage(named: "browse-circle")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+
+        case .messageCircle:
+            let tintedTimage = UIImage(named: "message-circle")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+
+        case .removeCircle:
+            let tintedTimage = UIImage(named: "remove-circle")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+
+        case .questionCircle:
+            let tintedTimage = UIImage(named: "question-circle")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             
         case . blank:
@@ -313,7 +337,7 @@ open class PulseButton: UIButton {
         }
         
         
-        tintColor = UIColor.black
+        tintColor = .white
     }
 
     fileprivate func setupRipple() {
