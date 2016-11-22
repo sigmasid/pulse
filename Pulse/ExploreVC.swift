@@ -210,7 +210,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 Database.getTag(selectedTag.tagID!, completion: { tag, error in
                     if error == nil && tag.totalQuestionsForTag() > 0 {
                         self.exploreContainer.setSelectedIndex(index: nil)
-                        self.exploreContainer.allQuestions = tag.questions!
+                        self.exploreContainer.allQuestions = tag.questions
                         self.exploreContainer.feedItemType = .question
                         self.toggleLoading(show: false, message : nil)
                     }  else {
@@ -219,7 +219,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 })
             } else {
                 exploreContainer.setSelectedIndex(index: nil)
-                exploreContainer.allQuestions = selectedTag.questions!
+                exploreContainer.allQuestions = selectedTag.questions
                 exploreContainer.feedItemType = .question
                 toggleLoading(show: false, message : nil)
             }
@@ -261,7 +261,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         case .answers:
             if !selectedQuestion.qCreated {
                 Database.getQuestion(selectedQuestion.qID, completion: { question, error in
-                    if let question = question {
+                    if let question = question, question.hasAnswers() {
                         self.exploreContainer.allAnswers = question.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                         self.exploreContainer.allQuestions = [self.selectedQuestion]
                         self.exploreContainer.selectedQuestion = self.selectedQuestion

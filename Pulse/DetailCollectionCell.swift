@@ -46,7 +46,7 @@ class DetailCollectionCell: UICollectionViewCell {
     
     func showQuestion(_ _question : Question) {
         previewVC = PreviewVC(frame: contentView.bounds)
-        previewVC?.currentQuestion = _question
+        //previewVC?.currentQuestion = _question
         titleLabel?.isHidden = true
         UIView.transition( with: contentView, duration: 0.5, options: .transitionFlipFromLeft, animations: { _ in self.contentView.addSubview(self.previewVC!) }, completion: nil)
         previewAdded = true
@@ -54,7 +54,7 @@ class DetailCollectionCell: UICollectionViewCell {
     
     func showAnswer(_ _answerID : String) {
         previewVC = PreviewVC(frame: contentView.bounds)
-        previewVC!.currentAnswerID = _answerID
+        //previewVC!.currentAnswerID = _answerID
         previewImage?.isHidden = true
         titleLabel?.isHidden = true
         subtitleLabel?.isHidden = true

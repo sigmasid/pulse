@@ -11,7 +11,7 @@ import Firebase
 
 class Tag : NSObject {
     var tagID: String?
-    var questions: [Question?]?
+    var questions = [Question?]()
     var experts: [User?]?
     var tagImage : String?
     var tagDescription : String?
@@ -25,7 +25,7 @@ class Tag : NSObject {
     
     init(tagID: String, questions : [Question]?) {
         self.tagID = tagID
-        self.questions = questions
+        self.questions = questions!
     }
     
     init(tagID: String, snapshot: FIRDataSnapshot) {
@@ -37,9 +37,7 @@ class Tag : NSObject {
 
         for question in snapshot.childSnapshot(forPath: "questions").children {
             let _question = Question(qID: (question as AnyObject).key)
-            if (self.questions?.append(_question) == nil) {
-                self.questions = [_question]
-            }
+            self.questions.append(_question)
         }
         
         for user in snapshot.childSnapshot(forPath: "experts").children {
@@ -52,6 +50,6 @@ class Tag : NSObject {
     }
     
     func totalQuestionsForTag() -> Int {
-        return self.questions != nil ? self.questions!.count : 0
+        return self.questions.count
     }
 }

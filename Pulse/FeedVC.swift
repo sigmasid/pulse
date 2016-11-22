@@ -124,7 +124,8 @@ class FeedVC: UIViewController {
     fileprivate var questionsForAnswerPreviews : [Question?]!
 
     let collectionReuseIdentifier = "FeedCell"
-    
+    let collectionPeopleReuseIdentifier = "FeedPeopleCell"
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -158,6 +159,7 @@ class FeedVC: UIViewController {
         
         feedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         feedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        feedCollectionView?.register(FeedPeopleCell.self, forCellWithReuseIdentifier: collectionPeopleReuseIdentifier)
 
         view.addSubview(feedCollectionView!)
         
@@ -206,16 +208,16 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
-        let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-    
-        cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
         
         switch feedItemType! {
             
         /** FEED ITEM: QUESTION **/
         case .question:
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
+            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
+            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+
             //clear the cells and set the item type first
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .question
@@ -224,7 +226,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.showAnswerCount()
 
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
-                guard let _currentQuestion = allQuestions[indexPath.row] else { break }
+                guard let _currentQuestion = allQuestions[indexPath.row] else { return cell }
 
                 if let tagID = _currentQuestion.qTagID {
                     cell.updateLabel(_currentQuestion.qTitle, _subtitle: tagID.capitalized)
@@ -258,9 +260,15 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 })
             }
-            
+            return cell
+
         /** FEED ITEM: TAG **/
         case .tag:
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
+            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
+            
+            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .tag
             }
@@ -281,9 +289,15 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 })
             }
-            
+            return cell
+
         /** FEED ITEM: ANSWER **/
         case .answer:
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
+            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
+            
+            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+
             if cell.itemType == nil || cell.itemType != feedItemType {
                 cell.itemType = .answer
             }
@@ -363,19 +377,22 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     selectedQuestion?.qAnswers = [allAnswers[indexPath.row].aID]
                     showQuestion(selectedQuestion, allQuestions: [selectedQuestion], questionIndex: selectedQuestionIndex, answerIndex: 0, selectedTag: currentTag)
                 } else {
-                    print("no selected user found")
                     showQuestion(selectedQuestion, allQuestions: allQuestions, questionIndex: selectedQuestionIndex, answerIndex: indexPath.row, selectedTag: selectedTag)
                 }
             } else if indexPath == selectedIndex {
-                cell.showAnswer(selectedAnswer.aID)
+                cell.showAnswer(answer: selectedAnswer)
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()
             }
             
+            return cell
+        
         case .people:
-            if cell.itemType == nil || cell.itemType != feedItemType {
-                cell.itemType = .people
-            }
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionPeopleReuseIdentifier, for: indexPath) as! FeedPeopleCell
+            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
+            
+            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
             cell.hideAnswerCount()
 
@@ -384,8 +401,8 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if !_user.uCreated { //search case - get question from database
                 Database.getUser(_user.uID!, completion: { (user, error) in
                     if error == nil {
-                        cell.titleLabel.text = user.name
-                        cell.subtitleLabel.text = user.shortBio
+                        cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio)
+
                         self.allUsers[indexPath.row] = user
 
                         if let _uPic = user.thumbPic {
@@ -393,7 +410,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                 if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
                                     DispatchQueue.main.async {
                                         self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                                        cell.updateImage(image : UIImage(data: _userImageData), isThumbnail : true)
+                                        cell.updateImage(image : UIImage(data: _userImageData))
                                     }
                                 }
                             }
@@ -404,21 +421,21 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio)
                 cell.updateImage(image: nil)
                 if _user.thumbPicImage != nil {
-                    cell.updateImage(image : _user.thumbPicImage, isThumbnail : true)
+                    cell.updateImage(image : _user.thumbPicImage)
                 }
                 else if let _uPic = _user.thumbPic {
                     DispatchQueue.global(qos: .background).async {
                         if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
                             DispatchQueue.main.async {
                                 self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                                cell.updateImage(image : UIImage(data: _userImageData), isThumbnail : true)
+                                cell.updateImage(image : UIImage(data: _userImageData))
                             }
                         }
                     }
                 }
             }
+            return cell
         }
-        return cell
     }
     
     //Did select item at index path

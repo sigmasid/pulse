@@ -127,11 +127,11 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     fileprivate func loadNextQuestion(_ completion: @escaping (_ question : Question?, _ error : NSError?) -> Void) {
         questionCounter += 1
         if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
-            Database.getQuestion(selectedTag.questions![questionCounter]!.qID, completion: { (question, error) in
+            Database.getQuestion(selectedTag.questions[questionCounter]!.qID, completion: { (question, error) in
                 if error != nil {
                     completion(nil, error)
                 } else {
-                    self.allQuestions.append(question)
+                    self.allQuestions[self.questionCounter] = question
                     self.currentQuestion = question
                     completion(question, nil)
                 }
@@ -366,8 +366,9 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                 } else {
                     self.popViewController(animated: false)
                     self._isCameraLoaded = false
+                    //self.currentQuestion = question
+
                     self.showQuestionPreviewOverlay()
-                    self.currentQuestion = question
                     self.answerVC.currentQuestion = question
                 }
             })

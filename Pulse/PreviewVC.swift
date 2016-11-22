@@ -12,17 +12,14 @@ import AVFoundation
 class PreviewVC: UIView, PreviewPlayerItemDelegate {
     fileprivate var _loadingIndicator : LoadingIndicatorView?
     fileprivate var aPlayer = AVPlayer()
+    fileprivate var imageView : UIImageView!
+    fileprivate var isImageViewShown = false
     
-    var currentQuestion : Question! {
-        didSet {
-            loadQuestion()
-            addLoadingIndicator()
-        }
-    }
+    var currentQuestion : Question!
     
-    var currentAnswerID : String! {
+    var currentAnswer : Answer! {
         didSet {
-            setupAnswer(currentAnswerID)
+            addAnswer(answer: currentAnswer)
             addLoadingIndicator()
         }
     }
@@ -41,12 +38,6 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         super.init(coder: aDecoder)
     }
     
-    fileprivate func loadQuestion() {
-        if currentQuestion.hasAnswers() {
-            setupAnswer(currentQuestion.qAnswers!.first!)
-        }
-    }
-    
     func itemStatusReady() {
         switch aPlayer.status {
         case AVPlayerStatus.readyToPlay:
@@ -57,17 +48,66 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         }
     }
     
-    fileprivate func setupAnswer(_ answerID : String) {
-        Database.getAnswerURL(answerID, completion: {(URL, error) in
-            if (error != nil) {
-                print(error.debugDescription)
-            } else {
-                let aPlayerItem = PreviewPlayerItem(url: URL!)
-                aPlayerItem.delegate = self
-                self.aPlayer.replaceCurrentItem(with: aPlayerItem)
+    //adds the first clip to the answers
+    fileprivate func addAnswer(answer : Answer) {
+        Database.getAnswer(answer.aID, completion: { (answer, error) in
+            
+            guard let answerType = answer.aType else {
+                GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
+                return
+            }
+            
+            if answerType == .recordedVideo || answerType == .albumVideo {
+                print("answer is video \(answerType)")
+                Database.getAnswerURL(answer.aID, completion: { (URL, error) in
+                    if (error != nil) {
+                        GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
+                    } else {
+                        let aPlayerItem = PreviewPlayerItem(url: URL!)
+                        self.removeImageView()
+                        aPlayerItem.delegate = self
+                        self.aPlayer.replaceCurrentItem(with: aPlayerItem)
+                    }
+                })
+            } else if answerType == .recordedImage || answerType == .albumImage {
+                print("answer is image \(answerType)")
+                Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
+                    if error != nil {
+                        GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
+                    } else {
+                        if let _image = GlobalFunctions.createImageFromData(data!) {
+                            self.showImageView(_image)
+                            self.removeLoadingIndicator()
+                        } else {
+                            GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
+                        }
+                    }
+                })
             }
         })
     }
+    
+    fileprivate func showImageView(_ image : UIImage) {
+        if isImageViewShown {
+            imageView.image = image
+        } else {
+            imageView = UIImageView(frame: bounds)
+            imageView.image = image
+            imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
+            insertSubview(imageView, at: 1)
+            isImageViewShown = true
+        }
+    }
+    
+    fileprivate func removeImageView() {
+        if isImageViewShown {
+            imageView.image = nil
+            imageView.removeFromSuperview()
+            isImageViewShown = false
+        }
+    }
+
     
     func addLoadingIndicator() {
         let _loadingIndicatorFrame = CGRect(x: bounds.midX - (IconSizes.medium.rawValue / 2), y: bounds.midY - (IconSizes.medium.rawValue / 2), width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)

@@ -73,8 +73,10 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     }
     
     func askQuestion() {
+        postButton.setDisabled()
+        let _loadingIndicator = postButton.addLoadingIndicator()
+        dismissKeyboard()
         
-
         if selectedTag != nil {
             Database.askTagQuestion(tagID: selectedTag.tagID!, qText: questionBody.text, completion: {(success, error) in
                 if success {
@@ -86,7 +88,9 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
 
-                    
+                    self.postButton.setEnabled()
+                    self.postButton.removeLoadingIndicator(_loadingIndicator)
+
                 } else {
                     let questionConfirmation = UIAlertController(title: "Error Posting Question", message: error?.localizedDescription, preferredStyle: .actionSheet)
                     
@@ -95,7 +99,9 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
-                    
+                    self.postButton.setEnabled()
+                    self.postButton.removeLoadingIndicator(_loadingIndicator)
+
                 }
             })
         } else if selectedUser != nil {
@@ -108,7 +114,8 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
-                    
+                    self.postButton.setEnabled()
+                    self.postButton.removeLoadingIndicator(_loadingIndicator)
                     
                 } else {
                     let questionConfirmation = UIAlertController(title: "Error Posting Question", message: error?.localizedDescription, preferredStyle: .actionSheet)
@@ -118,7 +125,9 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
-                    
+                    self.postButton.setEnabled()
+                    self.postButton.removeLoadingIndicator(_loadingIndicator)
+
                 }
             })
         }

@@ -57,12 +57,7 @@ class HomeVC: UIViewController, feedVCDelegate {
                 
                 self.homeFeedVC.selectedTag = feed
                 self.feed = feed
-                
-                if let allQuestions = feed.questions {
-                    self.homeFeedVC.allQuestions = allQuestions
-                } else {
-                    self.homeFeedVC.allQuestions = []
-                }
+                self.homeFeedVC.allQuestions = feed.questions
                 self.homeFeedVC.feedItemType = .question
                 self.toggleLoading(show: false, message: nil)
             }

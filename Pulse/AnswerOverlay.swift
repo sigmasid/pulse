@@ -237,10 +237,10 @@ class AnswerOverlay: UIView {
         
         _downvoteButton.addTarget(self, action: #selector(handleDownvote), for: UIControlEvents.touchDown)
         _upvoteButton.addTarget(self, action: #selector(handleUpvote), for: UIControlEvents.touchDown)
-        _saveButton.addTarget(self, action: #selector(handleSave), for: UIControlEvents.touchDown)
+        _saveButton.addTarget(self, action: #selector(handleFavorite), for: UIControlEvents.touchDown)
     }
     
-    func handleSave() {
+    func handleFavorite() {
 
     }
     

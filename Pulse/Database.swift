@@ -595,7 +595,6 @@ class Database {
     }
     
     static func getFeed(_ completion: @escaping (_ feed : Tag) -> Void) {
-        print("get feed fired")
         let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
         let feedPath = currentUserFeedRef.queryOrdered(byChild: "lastAnswerID").queryLimited(toLast: querySize)
         homeFeed.questions = [Question]()
@@ -603,7 +602,7 @@ class Database {
         feedPath.observeSingleEvent(of: .value, with: {(snap) in
             for question in snap.children {
                 let _question = Question(qID: (question as AnyObject).key, qTagID: (question as AnyObject).childSnapshot(forPath: "tagID").value as? String)
-                homeFeed.questions!.insert(_question, at: 0)
+                homeFeed.questions.insert(_question, at: 0)
             }
             completion(homeFeed)
         })
@@ -1215,7 +1214,7 @@ class Database {
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
-                let errorInfo = [ NSLocalizedDescriptionKey : "error posting question" ]
+                let errorInfo = [ NSLocalizedDescriptionKey : "error posting question, please try again!" ]
                 completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
             } else {
                 completion(true, nil)
@@ -1238,7 +1237,7 @@ class Database {
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
-                let errorInfo = [ NSLocalizedDescriptionKey : "error posting question" ]
+                let errorInfo = [ NSLocalizedDescriptionKey : "error posting question, please try again!" ]
                 completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
             } else {
                 completion(true, nil)

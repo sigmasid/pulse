@@ -64,7 +64,7 @@ class FeedCell: UICollectionViewCell {
     
     func showQuestion(_ _question : Question) {
         previewVC = PreviewVC(frame: contentView.bounds)
-        previewVC?.currentQuestion = _question
+        //previewVC?.currentQuestion = _question
         titleLabel.isHidden = true
         subtitleLabel.isHidden = true
 
@@ -72,9 +72,9 @@ class FeedCell: UICollectionViewCell {
         previewAdded = true
     }
     
-    func showAnswer(_ _answerID : String) {
+    func showAnswer(answer : Answer) {
         previewVC = PreviewVC(frame: contentView.bounds)
-        previewVC!.currentAnswerID = _answerID
+        previewVC!.currentAnswer = answer
         if previewImage != nil { previewImage!.isHidden = true }
         titleLabel.isHidden = true
         subtitleLabel.isHidden = true
