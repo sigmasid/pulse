@@ -375,8 +375,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
     }
     
+    public func appButtonTapped() {
+        screenMenu.isHidden = screenMenu.isHidden ? false : true
+    }
+    
     fileprivate func updateMenu() {
-        screenMenu.isHidden = false
         for menu in screenMenu.subviews {
             screenMenu.removeArrangedSubview(menu)
             menu.removeFromSuperview()
@@ -497,7 +500,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     func userClickedAddAnswer() {
+        let addAnswerVC = QAManagerVC()
+        addAnswerVC.allQuestions = [selectedQuestion]
+        addAnswerVC.currentQuestion = selectedQuestion
+        addAnswerVC.selectedTag = selectedTag != nil ? Tag(tagID: selectedTag.tagID!) : Tag(tagID: "Add Answer")
+        addAnswerVC.openingScreen = .camera
         
+        present(addAnswerVC, animated: true, completion: nil)
     }
     
     func userClickedAskQuestion() {
@@ -592,6 +601,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         messageButton.tintColor = pulseBlue
         
         addAnswer = PulseButton(size: .small, type: .addCircle, isRound : false, hasBackground: false)
+        addAnswer.addTarget(self, action: #selector(userClickedAddAnswer), for: UIControlEvents.touchUpInside)
         addAnswer.backgroundColor = UIColor.white.withAlphaComponent(0.3)
         addAnswer.tintColor = pulseBlue
         
@@ -607,7 +617,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         screenMenu.translatesAutoresizingMaskIntoConstraints = false
         screenMenu.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -bottomLogoLayoutHeight).isActive = true
         screenMenu.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 2/5).isActive = true
-        screenMenu.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true        
+        screenMenu.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        screenMenu.layoutIfNeeded()
+        
+        screenMenu.isHidden = true
     }
 }
 

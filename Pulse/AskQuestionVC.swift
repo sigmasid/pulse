@@ -98,6 +98,29 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     
                 }
             })
+        } else if selectedUser != nil {
+            Database.askUserQuestion(askUserID: selectedUser.uID!, qText: questionBody.text, completion: {(success, error) in
+                if success {
+                    let questionConfirmation = UIAlertController(title: "Question Posted!", message: "Thanks for your question. You will get a notification as soon as \(self.selectedUser.name) responds", preferredStyle: .actionSheet)
+                    
+                    questionConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+                        self.goBack()
+                    }))
+                    
+                    self.present(questionConfirmation, animated: true, completion: nil)
+                    
+                    
+                } else {
+                    let questionConfirmation = UIAlertController(title: "Error Posting Question", message: error?.localizedDescription, preferredStyle: .actionSheet)
+                    
+                    questionConfirmation.addAction(UIAlertAction(title: "okay", style: .default, handler: { (action: UIAlertAction!) in
+                        questionConfirmation.dismiss(animated: true, completion: nil)
+                    }))
+                    
+                    self.present(questionConfirmation, animated: true, completion: nil)
+                    
+                }
+            })
         }
     }
     

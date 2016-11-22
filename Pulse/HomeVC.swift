@@ -75,8 +75,8 @@ class HomeVC: UIViewController, feedVCDelegate {
         }
         
         if !notificationsSetup {
-            NotificationCenter.default.addObserver(self, selector: #selector(loadFeed),
-                                                   name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(updateFeed),
+                                                   name: NSNotification.Name(rawValue: "FeedUpdated"), object: nil)
             
             notificationsSetup = true
         }
@@ -89,6 +89,13 @@ class HomeVC: UIViewController, feedVCDelegate {
         homeFeedVC.allQuestions = feed.questions
         homeFeedVC.feedItemType = .question
         homeFeedVC.setSelectedIndex(index: nil)
+    }
+    
+    func updateFeed() {
+        Database.getFeed { feed in
+            self.homeFeedVC.allQuestions = feed.questions
+            self.homeFeedVC.updateDataSource = true
+        }
     }
     
     func userSelected(type : FeedItemType, item : Any) {

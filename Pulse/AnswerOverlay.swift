@@ -14,9 +14,9 @@ class AnswerOverlay: UIView {
     fileprivate var _userBackground = UIView()
     
     fileprivate var _exploreAnswer = UIButton()
-    fileprivate var _upvoteButton = UIButton()
-    fileprivate var _downvoteButton = UIButton()
-    fileprivate var _saveButton = UIButton()
+    fileprivate var _upvoteButton : PulseButton!
+    fileprivate var _downvoteButton : PulseButton!
+    fileprivate var _saveButton : PulseButton!
     
     fileprivate let _tagLabel = PaddingLabel()
     fileprivate let _questionLabel = PaddingLabel()
@@ -205,13 +205,13 @@ class AnswerOverlay: UIView {
     }
     
     fileprivate func addRestIcons() {
+        _upvoteButton = PulseButton(size: .small, type: .upvote, isRound: true, hasBackground: false)
+        _downvoteButton = PulseButton(size: .small, type: .downvote, isRound: true, hasBackground: false)
+        _saveButton = PulseButton(size: .small, type: .favorite, isRound: true, hasBackground: false)
+        
         addSubview(_upvoteButton)
         addSubview(_downvoteButton)
         addSubview(_saveButton)
-        
-        _upvoteButton.setImage(UIImage(named: "upvote"), for: UIControlState())
-        _downvoteButton.setImage(UIImage(named: "downvote"), for: UIControlState())
-        _saveButton.setImage(UIImage(named: "save"), for: UIControlState())
         
         _upvoteButton.alpha = 0.5
         _downvoteButton.alpha = 0.5

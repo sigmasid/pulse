@@ -48,6 +48,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate var pulseAppButton = IconContainer(frame: CGRect(x: 0,y: 0,
                                                                 width: IconSizes.medium.rawValue,
                                                                 height: IconSizes.small.rawValue + Spacing.s.rawValue))
+    fileprivate var pulseAppButtonTap = UITapGestureRecognizer()
 
     fileprivate var panInteractionController = PanHorizonInteractionController()
     
@@ -152,6 +153,22 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         pulseAppButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         pulseAppButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         pulseAppButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        pulseAppButton.isUserInteractionEnabled = true
+        
+        pulseAppButtonTap = UITapGestureRecognizer(target: self, action: #selector(handleAppButtonTap))
+        pulseAppButton.addGestureRecognizer(pulseAppButtonTap)
+    }
+    
+    func handleAppButtonTap() {
+        switch selectedIndex  {
+        case 0:
+            break
+        case 1:
+            exploreVC.appButtonTapped()
+        case 2:
+            break
+        default: break
+        }
     }
     
     fileprivate func setupIcons(_selectedIndex: Int) {

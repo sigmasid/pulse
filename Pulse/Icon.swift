@@ -142,6 +142,12 @@ class Icon : UIView {
             circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.maxX - (frame.height / 2), y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
         }
         circleShape.fillColor = color.cgColor
+        
         layer.addSublayer(circleShape)
+        
+        layer.shadowColor = pulseBlue.cgColor
+        layer.shadowOpacity = 0.5
+        layer.shadowRadius = 1.5
+        layer.shadowPath = circleShape.path
     }
 }

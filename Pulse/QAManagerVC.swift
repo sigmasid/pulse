@@ -38,6 +38,9 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     var questionCounter = 0
     var currentQuestion : Question!
     var answerIndex = 0
+    var openingScreen : OpeningScreenOptions = .question
+    enum OpeningScreenOptions { case camera, question }
+
     fileprivate var currentAnswers = [Answer]()
     
     /* CHILD VIEW CONTROLLERS */
@@ -61,6 +64,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     fileprivate var rectToLeft : CGRect!
     fileprivate var isLoaded = false
     
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
@@ -79,7 +83,12 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         
         if !isLoaded {
             delegate = self // set the navigation controller delegate
-            displayQuestion()
+            
+            if openingScreen == .question {
+                displayQuestion()
+            } else {
+                showCamera()
+            }
             
             rectToLeft = view.frame
             rectToLeft.origin.x = view.frame.minX - view.frame.size.width
@@ -411,12 +420,14 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         switch operation {
         case .pop:
             if fromVC is CameraVC {
+                print("should use camera dismiss")
                 let animator = ShrinkDismissController()
                 animator.transitionType = .dismiss
                 animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
 
                 return animator
             } else if fromVC is UserRecordedAnswerVC && toVC is CameraVC {
+                print("should use fade dismiss")
                 let animator = FadeAnimationController()
                 animator.transitionType = .dismiss
                 return animator
