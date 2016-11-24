@@ -73,6 +73,11 @@ class InboxVC: UITableViewController {
         return UIView()
     }
     
+    //must be implemented for viewForFooterInSection to fire
+    override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return Spacing.xs.rawValue
+    }
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! InboxTableCell
         let user = conversations[indexPath.row].cUser!

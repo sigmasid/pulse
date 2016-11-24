@@ -21,7 +21,7 @@ class SettingsTableVC: UIViewController {
     public var settingSection : String! {
         didSet {
             Database.getSectionsSection(sectionName: settingSection, completion: { (section , error) in
-                if error == nil {
+                if error == nil, let section = section{
                     self._sections = [section]
                     for _ in self._sections! {
                         self._settings.append([])
@@ -149,13 +149,19 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
             }
         } else {
             Database.getSetting(_settingID, completion: {(_setting, error) in
-                cell._settingNameLabel.text = _setting.display!
-                if _setting.type != nil {
-                    cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
-                }
-                self._settings[(indexPath as NSIndexPath).section].append(_setting)
-                if _setting.editable {
-                    cell.accessoryType = .disclosureIndicator
+                if error == nil, let _setting = _setting {
+                    cell._settingNameLabel.text = _setting.display!
+                    if _setting.type != nil && _setting.type != .location {
+                        cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                    } else if _setting.type == .location {
+                        User.currentUser?.getLocation(completion: { location in
+                            cell._detailTextLabel.text = location
+                        })
+                    }
+                    self._settings[(indexPath as NSIndexPath).section].append(_setting)
+                    if _setting.editable {
+                        cell.accessoryType = .disclosureIndicator
+                    }
                 }
             })
         }

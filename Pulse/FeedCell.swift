@@ -47,9 +47,8 @@ class FeedCell: UICollectionViewCell {
             case .tag:
                 setupTagPreview()
                 reuseCell = true
-            case .people:
-                setupUserPreview()
-                reuseCell = true
+            default:
+                break
             }
         }
     }
@@ -256,54 +255,6 @@ class FeedCell: UICollectionViewCell {
 
     }
     
-    fileprivate func setupUserPreview() {
-        
-        showPreviewImage = true
-        
-        if reuseCell {
-            deactivateConstraints()
-        }
-        
-        if previewImage == nil {
-            previewImage = UIImageView()
-        } else {
-            previewImage!.image = nil
-        }
-
-        addSubview(previewImage!)
-        addSubview(titleLabel)
-        addSubview(subtitleLabel)
-        
-        previewImage!.translatesAutoresizingMaskIntoConstraints = false
-        previewImageConstraint1 = previewImage!.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
-        previewImageConstraint2 = previewImage!.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue)
-        previewImageConstraint3 = previewImage!.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
-        previewImageConstraint4 = previewImage!.heightAnchor.constraint(equalTo: previewImage!.widthAnchor)
-        
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleHeightConstraint = titleLabel.heightAnchor.constraint(equalToConstant: titleLabel.intrinsicContentSize.height)
-        titleLabelConstraint2 = titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue)
-        titleLabelConstraint3 = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue)
-        titleLabelConstraint4 = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue)
-        
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleHeightConstraint = subtitleLabel.heightAnchor.constraint(equalToConstant: subtitleLabel.intrinsicContentSize.height)
-        subtitleLabelConstraint2 = subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor)
-        subtitleLabelConstraint3 = subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor)
-        subtitleLabelConstraint4 = subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor)
-        
-        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBlack, color: .white, alignment: .left)
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
-        subtitleLabel.numberOfLines =  3
-        
-        previewImage!.contentMode = UIViewContentMode.scaleAspectFill
-        activateConstraints()
-        
-        previewImage!.setNeedsLayout()
-        titleLabel.setNeedsLayout()
-        subtitleLabel.setNeedsLayout()
-    }
-    
     fileprivate func setupQuestionPreview() {
         
         showPreviewImage = false
@@ -322,7 +273,7 @@ class FeedCell: UICollectionViewCell {
         titleLabelConstraint3 = titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
         titleLabelConstraint4 = titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue)
 
-        titleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.white, alignment: .left)
+        titleLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightRegular, color: UIColor.white, alignment: .left)
 
         answerCount.translatesAutoresizingMaskIntoConstraints = false
         answerCount.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.15).isActive = true

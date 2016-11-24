@@ -73,6 +73,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         
         if !isLoaded {
             Database.checkCurrentUser { success in
+                
                 // get feed and show initial view controller
                 if success && !self.initialLoadComplete {
                     self.setupControllers()
@@ -179,10 +180,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         tabIcons.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         tabIcons.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
 
-        //profileButton.setVerticalTitle("Profile", for: UIControlState())
-        //exploreButton.setVerticalTitle("Explore", for: UIControlState())
-        //feedButton.setVerticalTitle("Home", for: UIControlState())
-        
         profileButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
         exploreButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
         feedButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)

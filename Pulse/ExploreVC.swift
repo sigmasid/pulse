@@ -224,28 +224,32 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 toggleLoading(show: false, message : nil)
             }
         case .experts:
-            Database.getExpertsForTag(tagID: selectedTag.tagID!, completion: { experts in
-                self.exploreContainer.setSelectedIndex(index: nil)
-                self.exploreContainer.allUsers = experts
-                self.exploreContainer.feedItemType = .people
-                
-                if experts.count > 0 {
-                    self.toggleLoading(show: false, message : nil)
-                } else {
-                    self.toggleLoading(show: true, message : "No experts for this tag yet")
+            Database.getExpertsForTag(tagID: selectedTag.tagID!, completion: { (experts, error) in
+                if error == nil {
+                    self.exploreContainer.setSelectedIndex(index: nil)
+                    self.exploreContainer.allUsers = experts
+                    self.exploreContainer.feedItemType = .people
+                    
+                    if experts.count > 0 {
+                        self.toggleLoading(show: false, message : nil)
+                    } else {
+                        self.toggleLoading(show: true, message : "No experts for this tag yet")
+                    }
                 }
                 
             })
         case .related:
-            Database.getRelatedTags(selectedTag.tagID!, completion: { tags in
-                self.exploreContainer.setSelectedIndex(index: nil)
-                self.exploreContainer.allTags = tags
-                self.exploreContainer.feedItemType = .tag
-                
-                if tags.count > 0 {
-                    self.toggleLoading(show: false, message : nil)
-                } else {
-                    self.toggleLoading(show: true, message : "No related tags found")
+            Database.getRelatedTags(selectedTag.tagID!, completion: { (tags, error) in
+                if error == nil {
+                    self.exploreContainer.setSelectedIndex(index: nil)
+                    self.exploreContainer.allTags = tags
+                    self.exploreContainer.feedItemType = .tag
+                    
+                    if tags.count > 0 {
+                        self.toggleLoading(show: false, message : nil)
+                    } else {
+                        self.toggleLoading(show: true, message : "No related tags found")
+                    }
                 }
 
             })
@@ -300,15 +304,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 }
             })
         case .related:
-            Database.getRelatedQuestions(selectedQuestion.qID, completion: { questions in
-                self.exploreContainer.setSelectedIndex(index: nil)
-                self.exploreContainer.allQuestions = questions
-                self.exploreContainer.feedItemType = .question
-                
-                if questions.count > 0 {
-                    self.toggleLoading(show: false, message : nil)
-                } else {
-                    self.toggleLoading(show: true, message : "No related questions found")
+            Database.getRelatedQuestions(selectedQuestion.qID, completion: { (questions, error) in
+                if error == nil {
+                    self.exploreContainer.setSelectedIndex(index: nil)
+                    self.exploreContainer.allQuestions = questions
+                    self.exploreContainer.feedItemType = .question
+                    
+                    if questions.count > 0 {
+                        self.toggleLoading(show: false, message : nil)
+                    } else {
+                        self.toggleLoading(show: true, message : "No related questions found")
+                    }
                 }
             })
         default: return
@@ -453,9 +459,15 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         guard exploreStack.last != nil else { return }
         
         switch exploreStack.last!.currentMode {
-        case .people: selectedUser = nil
-        case .question: selectedQuestion = nil
-        case .tag: selectedTag = nil
+        case .people:
+            selectedUser = nil
+            exploreContainer.selectedUser = nil
+        case .question:
+            selectedQuestion = nil
+            exploreContainer.selectedQuestion = nil
+        case .tag:
+            selectedTag = nil
+            exploreContainer.selectedTag = nil
         default: break
         }
         
@@ -500,13 +512,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     func userClickedAddAnswer() {
-        let addAnswerVC = QAManagerVC()
-        addAnswerVC.allQuestions = [selectedQuestion]
-        addAnswerVC.currentQuestion = selectedQuestion
-        addAnswerVC.selectedTag = selectedTag != nil ? Tag(tagID: selectedTag.tagID!) : Tag(tagID: "Add Answer")
-        addAnswerVC.openingScreen = .camera
-        
-        present(addAnswerVC, animated: true, completion: nil)
+        if !User.currentUser!.hasAnsweredQuestion(selectedQuestion.qID) {
+            let addAnswerVC = QAManagerVC()
+            addAnswerVC.allQuestions = [selectedQuestion]
+            addAnswerVC.currentQuestion = selectedQuestion
+            addAnswerVC.selectedTag = selectedTag != nil ? Tag(tagID: selectedTag.tagID!) : Tag(tagID: "Add Answer")
+            addAnswerVC.openingScreen = .camera
+            
+            present(addAnswerVC, animated: true, completion: nil)
+        } else {
+            GlobalFunctions.showErrorBlock("Already Answered!", erMessage: "Sorry you can only post one answer for any question.")
+        }
     }
     
     func userClickedAskQuestion() {

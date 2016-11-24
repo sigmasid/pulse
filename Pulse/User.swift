@@ -20,8 +20,9 @@ class User {
     var gender : String?
     var birthday : String?
     var location : CLLocation?
-    var answers : [String]?
-    var answeredQuestions : [String]?
+    var sLocation : String?
+    var answers = [String]()
+    var answeredQuestions = [String]()
     var profilePic : String?
     var thumbPic : String?
     var thumbPicImage : UIImage?
@@ -55,7 +56,6 @@ class User {
     init() {
         self.uID = nil
         self.name = nil
-        self.answers = nil
     }
     
     init(uID: String?) {
@@ -99,11 +99,8 @@ class User {
     }
     
     func hasAnsweredQuestion(_ qID : String) -> Bool {
-        if let _answeredQuestions = answeredQuestions {
-            return _answeredQuestions.contains(qID) ? true : false
-        } else {
-            return false
-        }
+        print(answeredQuestions)
+        return answeredQuestions.contains(qID) ? true : false
     }
     
     func hasSavedTags() -> Bool {
@@ -111,7 +108,7 @@ class User {
     }
     
     func totalAnswers() -> Int {
-        return _totalAnswers ?? 0
+        return answers.count
     }
     
     func getEmail() -> String? {
@@ -119,15 +116,20 @@ class User {
     }
     
     func getLocation(completion: @escaping (String?) -> Void) {
-        if let location = self.location {
+        if let sLocation = self.sLocation {
+            completion(sLocation)
+        } else if let location = self.location {
             Database.getCityFromLocation(location: location, completion: {(city) in
+                self.sLocation = city != nil ? city : nil
                 city != nil ? completion(city!) : completion(nil)
             })
-        } else {
+        }
+        else {
             Database.getUserLocation(completion: {(location, error) in
                 if let _location = location {
                     self.location = _location
                     Database.getCityFromLocation(location: _location, completion: {(city) in
+                        self.sLocation = city != nil ? city : nil
                         city != nil ? completion(city!) : completion(nil)
                     })
                 } else {

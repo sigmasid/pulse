@@ -270,8 +270,8 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
             if _currentSetting.type == .birthday {
                 let formatter = DateFormatter()
                 formatter.dateStyle = DateFormatter.Style.medium
-                if let _placeholderDate = formatter.date(from: _existingValue) {
-                    birthdayPicker.date = _placeholderDate
+                if let placeholderDate = formatter.date(from: _existingValue) {
+                    birthdayPicker.date = placeholderDate
                 }
             }
             return _existingValue
@@ -517,7 +517,7 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch _currentSetting.settingID {
         case "answers":
-            return User.currentUser!.answers?.count ?? 0
+            return User.currentUser!.answers.count
         case "savedQuestions":
             return User.currentUser!.savedQuestions.count
         case "savedTags":

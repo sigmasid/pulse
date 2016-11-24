@@ -54,7 +54,6 @@ class InboxTableCell: UITableViewCell {
     }
     
     fileprivate func setupCellLayout() {
-        print("setup cell layout fired")
         contentView.addSubview(userImage)
         userImage.translatesAutoresizingMaskIntoConstraints = false
         userImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true

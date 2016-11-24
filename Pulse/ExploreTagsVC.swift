@@ -96,7 +96,7 @@ class ExploreTagsVC: UIViewController, ExploreDelegate, ParentDelegate {
         
         Database.getExploreTags() { (tags , error) in
             if error != nil {
-                print(error!.description)
+                print(error!.localizedDescription)
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             } else {
                 self._allTags = tags

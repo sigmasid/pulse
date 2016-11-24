@@ -17,6 +17,7 @@ class HomeVC: UIViewController, feedVCDelegate {
     fileprivate var feed : Tag!
     fileprivate var backButton : PulseButton!
     fileprivate var notificationsSetup : Bool = false
+    fileprivate var initialLoadComplete = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,7 +46,8 @@ class HomeVC: UIViewController, feedVCDelegate {
     }
     
     func loadFeed() {
-        if User.isLoggedIn() {
+        if User.isLoggedIn() && !initialLoadComplete {
+            print("load feed fired")
             if homeFeedVC == nil {
                 homeFeedVC = FeedVC()
                 GlobalFunctions.addNewVC(self.homeFeedVC, parentVC: self)
@@ -58,20 +60,31 @@ class HomeVC: UIViewController, feedVCDelegate {
                 self.homeFeedVC.selectedTag = feed
                 self.feed = feed
                 self.homeFeedVC.allQuestions = feed.questions
-                self.homeFeedVC.feedItemType = .question
-                self.toggleLoading(show: false, message: nil)
+                
+                if self.homeFeedVC.allQuestions.count > 0 {
+                    self.homeFeedVC.feedItemType = .question
+                    self.toggleLoading(show: false, message: nil)
+                } else {
+                    self.view.bringSubview(toFront: self.loadingView!)
+                    self.toggleLoading(show: true, message: "Explore new channels to add to your feed")
+                }
+                self.initialLoadComplete = true
             }
         } else {
             if homeFeedVC != nil {
                 view.bringSubview(toFront: loadingView!)
             }
-            
+            initialLoadComplete = false
             toggleLoading(show: true, message: "Please login to see your feed!")
         }
         
         if !notificationsSetup {
             NotificationCenter.default.addObserver(self, selector: #selector(updateFeed),
                                                    name: NSNotification.Name(rawValue: "FeedUpdated"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(loadFeed),
+                                                   name: NSNotification.Name(rawValue: "FeedUpdateLogin"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(updateFeed),
+                                                   name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
             
             notificationsSetup = true
         }
@@ -87,9 +100,17 @@ class HomeVC: UIViewController, feedVCDelegate {
     }
     
     func updateFeed() {
-        Database.getFeed { feed in
-            self.homeFeedVC.allQuestions = feed.questions
-            self.homeFeedVC.updateDataSource = true
+        if User.isLoggedIn() {
+            Database.getFeed { feed in
+                self.homeFeedVC.allQuestions = feed.questions
+                self.homeFeedVC.updateDataSource = true
+            }
+        } else {
+            if homeFeedVC != nil {
+                view.bringSubview(toFront: loadingView!)
+            }
+            initialLoadComplete = false
+            toggleLoading(show: true, message: "Please login to see your feed!")
         }
     }
     

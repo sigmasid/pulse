@@ -10,18 +10,20 @@ import UIKit
 
 class QuestionPreviewVC: UIViewController {
     
-    fileprivate let _questionLabel = UILabel()
-    fileprivate let _answerCount = UIButton()
+    fileprivate let questionLabel = UILabel()
+    fileprivate let answerCount = UIButton()
     
     var questionTitle : String! {
         didSet {
-            _questionLabel.text = questionTitle.uppercased()
+            if questionTitle != nil {
+                questionLabel.text = questionTitle.uppercased()
+            }
         }
     }
     
     var numAnswers : Int! {
         didSet {
-            _answerCount.setTitle(String(numAnswers), for: UIControlState())
+            answerCount.setTitle(String(numAnswers), for: UIControlState())
         }
     }
     
@@ -45,37 +47,37 @@ class QuestionPreviewVC: UIViewController {
     }
     
     fileprivate func addQuestionLabel() {
-        view.addSubview(_questionLabel)
+        view.addSubview(questionLabel)
         
-        _questionLabel.backgroundColor = UIColor.clear
-        _questionLabel.font = UIFont.systemFont(ofSize: 40, weight: UIFontWeightBlack)
-        _questionLabel.numberOfLines = 0
-        _questionLabel.textAlignment = .center
-        _questionLabel.lineBreakMode = .byWordWrapping
+        questionLabel.backgroundColor = UIColor.clear
+        questionLabel.font = UIFont.systemFont(ofSize: 40, weight: UIFontWeightBlack)
+        questionLabel.numberOfLines = 0
+        questionLabel.textAlignment = .center
+        questionLabel.lineBreakMode = .byWordWrapping
         
-        _questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        _questionLabel.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        _questionLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        _questionLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
+        questionLabel.translatesAutoresizingMaskIntoConstraints = false
+        questionLabel.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        questionLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        questionLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
     }
     
     ///Add icon in top left
     fileprivate func addAnswerCount() {
-        view.addSubview(_answerCount)
+        view.addSubview(answerCount)
         
-        _answerCount.translatesAutoresizingMaskIntoConstraints = false
-        _answerCount.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        _answerCount.heightAnchor.constraint(equalTo: _answerCount.widthAnchor).isActive = true
-        _answerCount.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.m.rawValue).isActive = true
-        _answerCount.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.m.rawValue).isActive = true
-        _answerCount.layoutIfNeeded()
+        answerCount.translatesAutoresizingMaskIntoConstraints = false
+        answerCount.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        answerCount.heightAnchor.constraint(equalTo: answerCount.widthAnchor).isActive = true
+        answerCount.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.m.rawValue).isActive = true
+        answerCount.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.m.rawValue).isActive = true
+        answerCount.layoutIfNeeded()
         
-        _answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
-        _answerCount.titleLabel!.font = UIFont.systemFont(ofSize: 25, weight: UIFontWeightBold)
-        _answerCount.titleLabel!.textColor = UIColor.white
-        _answerCount.titleLabel!.textAlignment = .center
-        _answerCount.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
-        _answerCount.imageView?.contentMode = .scaleAspectFit
+        answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
+        answerCount.titleLabel!.font = UIFont.systemFont(ofSize: 25, weight: UIFontWeightBold)
+        answerCount.titleLabel!.textColor = UIColor.white
+        answerCount.titleLabel!.textAlignment = .center
+        answerCount.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
+        answerCount.imageView?.contentMode = .scaleAspectFit
     }
     
     func setQuestionLabel(_ qTitle : String?) {

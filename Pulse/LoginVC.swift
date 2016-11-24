@@ -284,9 +284,6 @@ class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
     
     func _loggedInSuccess() {
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
-//        if let _ = loginVCDelegate {
-//            loginVCDelegate!.loginSuccess(self)
-//        }
     }
     
     func addLoading() {

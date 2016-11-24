@@ -241,7 +241,6 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         _controlsOverlay.addUploadProgressBar()
         
         if let localFile: URL = answer.aURL as URL? {
-            print("file path is \(localFile)")
             let _metadata = FIRStorageMetadata()
             _metadata.contentType = "video/mp4"
             
@@ -288,7 +287,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
-    ///Called after user has completed sharing the answer
+    ///Called after user has uploaded full answer
     fileprivate func doneCreatingAnswer() {
         Database.addAnswerCollectionToDatabase(currentAnswers.first!, post: answerCollectionPost, completion: {(success, error) in
             if let delegate = self.delegate {

@@ -33,6 +33,7 @@ class Database {
     static var currentUserFeedRef : FIRDatabaseReference!
 
     static let usersRef = databaseRef.child(Item.Users.rawValue)
+    static let usersPublicDetailedRef = databaseRef.child(Item.UserDetailedSummary.rawValue)
     static let usersPublicSummaryRef = databaseRef.child(Item.UserSummary.rawValue)
 
     static let filtersRef = databaseRef.child(Item.Filters.rawValue)
@@ -48,6 +49,7 @@ class Database {
 
     static let querySize : UInt = 20
     static var activeListeners = [FIRDatabaseReference]()
+    static var profileListenersAdded = false
     
     /** MARK : SEARCH **/
     static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
@@ -212,6 +214,8 @@ class Database {
     static func getMessage(mID : String, completion: @escaping (Message?) -> Void) {
         messagesRef.child(mID).observeSingleEvent(of: .value, with: { snapshot in
             snapshot.exists() ? completion(Message(snapshot: snapshot)) : completion(nil)
+        }, withCancel: { error in
+            completion(nil)
         })
     }
     
@@ -231,6 +235,8 @@ class Database {
                     }
                 })
             }
+        }, withCancel: { error in
+            print("error getting conversation \(error)")
         })
     }
     
@@ -323,7 +329,7 @@ class Database {
     /*** MARK END : DATABASE PATHS ***/
 
     /*** MARK START : EXPLORE FEED ***/
-    static func getExploreTags(_ completion: @escaping (_ tags : [Tag], _ error : NSError?) -> Void) {
+    static func getExploreTags(_ completion: @escaping (_ tags : [Tag], _ error : Error?) -> Void) {
         var allTags = [Tag]()
         
         tagsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
@@ -332,10 +338,12 @@ class Database {
                 allTags.append(Tag(tagID: child.key, snapshot: child))
             }
             completion(allTags, nil)
+        }, withCancel: { error in
+            completion(allTags, error)
         })
     }
     
-    static func getExploreQuestions(_ completion: @escaping (_ questions : [Question?], _ error : NSError?) -> Void) {
+    static func getExploreQuestions(_ completion: @escaping (_ questions : [Question?], _ error : Error?) -> Void) {
         var allQuestions = [Question?]()
         
         questionsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
@@ -344,10 +352,12 @@ class Database {
                 allQuestions.append(Question(qID: child.key, snapshot: child))
             }
             completion(allQuestions, nil)
+        }, withCancel: { error in
+            completion(allQuestions, error)
         })
     }
     
-    static func getExploreAnswers(_ completion: @escaping (_ answers : [Answer], _ error : NSError?) -> Void) {
+    static func getExploreAnswers(_ completion: @escaping (_ answers : [Answer], _ error : Error?) -> Void) {
         var allAnswers = [Answer]()
         
         answersRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
@@ -356,10 +366,12 @@ class Database {
                 allAnswers.append(Answer(aID: child.key, snapshot: child))
             }
             completion(allAnswers, nil)
+        }, withCancel: { error in
+            completion(allAnswers,error)
         })
     }
     
-    static func getExploreUsers(_ completion: @escaping (_ users : [User], _ error : NSError?) -> Void) {
+    static func getExploreUsers(_ completion: @escaping (_ users : [User], _ error : Error?) -> Void) {
         var allUsers = [User]()
         
         usersPublicSummaryRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
@@ -368,12 +380,14 @@ class Database {
                 allUsers.append(User(uID: child.key, snapshot: child))
             }
             completion(allUsers, nil)
+        }, withCancel: { error in
+            completion(allUsers, error)
         })
     }
     /*** MARK END : EXPLORE FEED ***/
 
     /*** MARK START : SETTINGS ***/
-    static func getSections(_ completion: @escaping (_ sections : [SettingSection], _ error : NSError?) -> Void) {
+    static func getSections(_ completion: @escaping (_ sections : [SettingSection], _ error : Error?) -> Void) {
         var _sections = [SettingSection]()
         
         settingSectionsRef.observeSingleEvent(of: .value, with: { snapshot in
@@ -383,21 +397,27 @@ class Database {
                 _sections.append(SettingSection(sectionID: _section.key, snapshot: _section))
             }
             completion(_sections, nil)
+        }, withCancel: { error in
+            completion(_sections, error)
         })
     }
     
-    static func getSectionsSection(sectionName : String, completion: @escaping (_ section : SettingSection, _ error : NSError?) -> Void) {
-        
+    static func getSectionsSection(sectionName : String, completion: @escaping (_ section : SettingSection?, _ error : Error?) -> Void) {
+
         settingSectionsRef.child(sectionName).queryOrderedByValue().observeSingleEvent(of: .value, with: { snapshot in
             let section = SettingSection(sectionID: snapshot.key, snapshot: snapshot)
             completion(section, nil)
+        }, withCancel: { error in
+            completion(nil, error)
         })
     }
     
-    static func getSetting(_ settingID : String, completion: @escaping (_ setting : Setting, _ error : NSError?) -> Void) {
+    static func getSetting(_ settingID : String, completion: @escaping (_ setting : Setting?, _ error : Error?) -> Void) {
         settingsRef.child(settingID).observeSingleEvent(of: .value, with: { snapshot in
             let _setting = Setting(snap: snapshot)
             completion(_setting, nil)
+        }, withCancel: { error in
+            completion(nil, error)
         })
     }
     /*** MARK END : SETTINGS ***/
@@ -407,10 +427,12 @@ class Database {
         tagsRef.child(tagID).observeSingleEvent(of: .value, with: { snap in
             let _currentTag = Tag(tagID: tagID, snapshot: snap)
             completion(_currentTag, nil)
+        }, withCancel: { error in
+            print("error gettings tag \(error)")
         })
     }
     
-    static func getRelatedTags(_ tagID : String, completion: @escaping (_ tags : [Tag]) -> Void) {
+    static func getRelatedTags(_ tagID : String, completion: @escaping (_ tags : [Tag], _ error: Error?) -> Void) {
         var allTags = [Tag]()
         
         tagsRef.child(tagID).child("related").observeSingleEvent(of: .value, with: { snap in
@@ -419,14 +441,16 @@ class Database {
                     let _currentTag = Tag(tagID: (child as AnyObject).key)
                     allTags.append(_currentTag)
                 }
-                completion(allTags)
+                completion(allTags, nil)
             } else {
-                completion(allTags)
+                completion(allTags, nil)
             }
+        }, withCancel: { error in
+            completion(allTags, error)
         })
     }
     
-    static func getExpertsForTag(tagID : String, completion: @escaping (_ experts : [User]) -> Void) {
+    static func getExpertsForTag(tagID : String, completion: @escaping (_ experts : [User], _ error: Error?) -> Void) {
         var allExperts = [User]()
         
         tagsRef.child(tagID).child("experts").observeSingleEvent(of: .value, with: { snap in
@@ -434,7 +458,9 @@ class Database {
                 let _currentUser = User(uID: (child as AnyObject).key)
                 allExperts.append(_currentUser)
             }
-            completion(allExperts)
+            completion(allExperts, nil)
+        }, withCancel: { error in
+            completion(allExperts, error)
         })
     }
     
@@ -450,7 +476,7 @@ class Database {
         })
     }
 
-    static func getRelatedQuestions(_ qID : String, completion: @escaping (_ questions : [Question]) -> Void) {
+    static func getRelatedQuestions(_ qID : String, completion: @escaping (_ questions : [Question], _ error: Error?) -> Void) {
         var allQuestions = [Question]()
         
         questionsRef.child(qID).child("related").observeSingleEvent(of: .value, with: { snap in
@@ -458,7 +484,9 @@ class Database {
                 let _currentQuestion = Question(qID: (child as AnyObject).key)
                 allQuestions.append(_currentQuestion)
             }
-            completion(allQuestions)
+            completion(allQuestions, nil)
+        }, withCancel: { error in
+            completion(allQuestions, error)
         })
     }
     
@@ -498,6 +526,8 @@ class Database {
     /*** MARK END : GET INDIVIDUAL ITEMS ***/
 
     /*** MARK START : GET USER ITEMS ***/
+    
+    ///Returns the shortest public profile
     static func getUser(_ uID : String, completion: @escaping (_ user : User, _ error : NSError?) -> Void) {
         usersPublicSummaryRef.child(uID).observeSingleEvent(of: .value, with: { snap in
             let _returnUser = User(uID: uID, snapshot: snap)
@@ -505,7 +535,17 @@ class Database {
         })
     }
     
-    static func getUserProperty(_ uID : String, property: String, completion: @escaping (_ property : String?) -> Void) {
+    static func getUserPublicProperty(_ uID : String, property: String, completion: @escaping (_ property : String?) -> Void) {
+        usersPublicDetailedRef.child("\(uID)/\(property)").observeSingleEvent(of: .value, with: { snap in
+            if let _property = snap.value as? String {
+                completion(_property)
+            } else {
+                completion(nil)
+            }
+        })
+    }
+    
+    static func getUserPrivateProperty(_ uID : String, property: String, completion: @escaping (_ property : String?) -> Void) {
         usersRef.child("\(uID)/\(property)").observeSingleEvent(of: .value, with: { snap in
             if let _property = snap.value as? String {
                 completion(_property)
@@ -531,7 +571,7 @@ class Database {
     
     static func getUserAnswerIDs(uID: String, completion: @escaping (_ answers : [Answer]) -> Void) {
         var allAnswers = [Answer]()
-        usersRef.child(uID).child("answers").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        usersPublicDetailedRef.child(uID).child("answers").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
                     let currentAnswer = Answer(aID: (child as AnyObject).key, qID: (child as AnyObject).value)
@@ -574,23 +614,36 @@ class Database {
     
     //Create Feed for current user from followed tags
     static func createFeed(_ completedFeed: @escaping (_ feed : Tag) -> Void) {
-        Database.keepUserTagsUpdated()
         
-        //monitor updates to existing questions
-        updateAnswersForExistingFeedQuestions()
+        if User.currentUser!.savedTags.count == 0 && !initialFeedUpdateComplete {
+            
+            let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
+            keepUserTagsUpdated()
+            completedFeed(homeFeed)
+            initialFeedUpdateComplete = true
+
+        } else if User.currentUser!.savedTags.count > 0 && !initialFeedUpdateComplete {
+            keepUserTagsUpdated()
         
-        //add in new posts before returning feed
-        for (offset : index, (key : tagID, value : _)) in User.currentUser!.savedTags.enumerated() {
-            Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
-                if index + 1 == User.currentUser?.savedTags.count && success {
-                    initialFeedUpdateComplete = true
-                    
-                    //once feed is updated get the feed to return
-                    getFeed({ homeFeed in
-                        completedFeed(homeFeed)
-                    })
-                }
-            })
+            //monitor updates to existing questions
+            updateAnswersForExistingFeedQuestions()
+        
+            //add in new posts before returning feed
+            for (offset : index, (key : tagID, value : _)) in User.currentUser!.savedTags.enumerated() {
+                Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
+                    print("went into completion block with index \(index)")
+                    if index + 1 == User.currentUser?.savedTags.count && success {
+                        print("setting initialfeedupdate to complete")
+                        initialFeedUpdateComplete = true
+                        
+                        //once feed is updated get the feed to return
+                        getFeed({ homeFeed in
+                            print("got completed feed")
+                            completedFeed(homeFeed)
+                        })
+                    }
+                })
+            }
         }
     }
     
@@ -618,7 +671,7 @@ class Database {
                     User.currentUser!.savedQuestions[(question as AnyObject).key] = "true"
                 }
             }
-            updateFeedQuestions(nil, questions: User.currentUser!.savedQuestions)
+            //updateFeedQuestions(nil, questions: User.currentUser!.savedQuestions, completion: { _ in })
         })
     }
     
@@ -637,74 +690,103 @@ class Database {
     
     static func addNewQuestionsFromTagToFeed(_ tagID : String, completion: @escaping (_ success: Bool) -> Void) {
         var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
-        
         currentUserRef.child("savedTags").child(tagID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() && (snap.value! as AnyObject).isKind(of: NSString.self) {
-            //first get the last sync'd question for a tag
-            let lastQuestionID = snap.value as! String
-                
-            if lastQuestionID != "true" {
-                tagQuestions = tagQuestions.queryOrderedByKey().queryStarting(atValue: lastQuestionID)
-            }
-            
-            var newQuestions = [String : String?]()
-            
-            tagQuestions.observeSingleEvent(of: .value, with: { questionSnap in
-                for (questionIndex, questionID) in questionSnap.children.enumerated() {
-                    //print("current index is \(questionIndex) and questionID is \(questionID)")
+                print("snap exists and is \(snap)")
+
+                //first get the last sync'd question for a tag
+                let lastQuestionID = snap.value as! String
                     
-                    let lastQuestionKey = (questionID as! FIRDataSnapshot).key
-                    
-                    if lastQuestionKey != lastQuestionID {
-                        newQuestions[(questionID as AnyObject).key] = "true"
-                    }
-                    
-                    if questionIndex + 1 == Int(questionSnap.childrenCount) && lastQuestionKey != lastQuestionID { //at the last question in tag query
-                        currentUserRef.child("savedTags").updateChildValues([tagID : (questionID as! FIRDataSnapshot).key]) // update last sync'd question ID
-                        keepTagQuestionsUpdated(tagID, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
-                    }
+                if lastQuestionID != "true" {
+                    tagQuestions = tagQuestions.queryOrderedByKey().queryStarting(atValue: lastQuestionID)
                 }
                 
-                // adds the questions to the feed once we have iterated through all the questions
-                updateFeedQuestions(tagID, questions: newQuestions)
-                completion(true)
-            })
-        }
+                var newQuestions = [String : String?]()
+                
+                tagQuestions.observeSingleEvent(of: .value, with: { questionSnap in
+                    print("question snap is \(questionSnap)")
+                    for (questionIndex, questionID) in questionSnap.children.enumerated() {
+                        
+                        let lastQuestionKey = (questionID as! FIRDataSnapshot).key
+                        
+                        if lastQuestionKey != lastQuestionID {
+                            newQuestions[(questionID as AnyObject).key] = "true"
+                        }
+                        
+                        if questionIndex + 1 == Int(questionSnap.childrenCount) && lastQuestionKey != lastQuestionID { //at the last question in tag query
+                            currentUserRef.child("savedTags").updateChildValues([tagID : (questionID as! FIRDataSnapshot).key]) // update last sync'd question ID
+                            keepTagQuestionsUpdated(tagID, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
+                        } else if questionIndex + 1 == Int(questionSnap.childrenCount) && lastQuestionKey == lastQuestionID {
+                            keepTagQuestionsUpdated(tagID, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
+                        }
+                    }
+                    
+                    // adds the questions to the feed once we have iterated through all the questions
+                    updateFeedQuestions(tagID, questions: newQuestions, completion: { added in
+                        completion(true)
+                    })
+                })
+            } else if snap.exists() {
+                print("snap value is not of kind string")
+            }
         })
     }
     
-    static func updateFeedQuestions(_ tagID : String?, questions : [String : String?]) {
+    static func updateFeedQuestions(_ tagID : String?, questions : [String : String?], completion: @escaping (_ added: Bool) -> Void) {
         //add new questions to feed
         let _updatePath = currentUserRef.child(Item.Feed.rawValue)
         var post = [String : AnyObject]()
         
-        for (questionID, lastAnswerID) in questions {
-            var newAnswersForQuestion : FIRDatabaseQuery = questionsRef.child(questionID).child("answers")
+        if questions.count == 0 {
+            completion(true)
+        } else {
+            for (offset : index, (key : questionID, value : lastAnswerID)) in questions.enumerated() {
+                var newAnswersForQuestion : FIRDatabaseQuery = questionsRef.child(questionID).child("answers")
 
-            if lastAnswerID != "true" {
-                newAnswersForQuestion = newAnswersForQuestion.queryOrderedByKey().queryStarting(atValue: lastAnswerID)
-            }
-            
-            newAnswersForQuestion.observeSingleEvent(of: .value, with: { snap in
-                let totalNewAnswers = snap.childrenCount
-
-                for (answerIndex, answerID) in snap.children.enumerated() {
-                    
-                    if answerIndex + 1 == Int(totalNewAnswers) && (answerID as AnyObject).key != lastAnswerID {
-                        
-                        //if last answer then update value for last sync'd answer in database and add listener
-                        post["lastAnswerID"] = (answerID as AnyObject).key
-                        post["newAnswerCount"] = totalNewAnswers as AnyObject?
-                        
-                        if let _tagID = tagID {
-                            post["tagID"] = _tagID as AnyObject?
-                        }
-                        
-                        _updatePath.updateChildValues([questionID : post])
-//                        keepQuestionsAnswersUpdated(questionID, lastAnswerID: answerID.key)
-                    }
+                if lastAnswerID != "true" {
+                    newAnswersForQuestion = newAnswersForQuestion.queryOrderedByKey().queryStarting(atValue: lastAnswerID)
                 }
-            })
+                
+                //snap is a specific question's answers
+                newAnswersForQuestion.observeSingleEvent(of: .value, with: { snap in
+                    let totalNewAnswers = snap.childrenCount
+                    for (answerIndex, answerID) in snap.children.enumerated() {
+                        if answerIndex + 1 == Int(totalNewAnswers) && (answerID as AnyObject).key != lastAnswerID {
+                            
+                            //if last answer then update value for last sync'd answer in database and add listener
+                            post["lastAnswerID"] = (answerID as AnyObject).key
+                            post["newAnswerCount"] = totalNewAnswers as AnyObject?
+                            
+                            if let _tagID = tagID {
+                                post["tagID"] = _tagID as AnyObject?
+                            }
+                            _updatePath.updateChildValues([questionID : post], withCompletionBlock: { (error, ref) in
+                                
+                                print("current index is \(index, questions.count, totalNewAnswers)")
+                                if index + 1 == questions.count {
+                                    completion(true)
+                                }
+                            })
+    //                        keepQuestionsAnswersUpdated(questionID, lastAnswerID: answerID.key)
+                        } else if answerIndex + 1 == Int(totalNewAnswers) && (answerID as AnyObject).key == lastAnswerID {
+                            if index + 1 == questions.count {
+                                completion(true)
+                            }
+                        }
+                        else if totalNewAnswers == 0 {
+                            post["lastAnswerID"] = (answerID as AnyObject).key
+                            post["newAnswerCount"] = totalNewAnswers as AnyObject?
+                            
+                            _updatePath.updateChildValues([questionID : post], withCompletionBlock: { (error, ref) in
+                                if index + 1 == questions.count {
+                                    completion(true)
+                                }
+                            })
+                        }
+                    }
+                    
+                })
+            }
         }
     }
     
@@ -746,13 +828,13 @@ class Database {
             if snap.key != lastQuestionID {
                 print("observer fired for new question added to tag, tagID : questionID \(tagID, lastQuestionID)")
                 currentUserRef.child("savedTags").updateChildValues([tagID : snap.key]) //update last sync'd question for user
-                updateFeedQuestions(tagID, questions: [snap.key : "true"]) //add question to feed
+                updateFeedQuestions(tagID, questions: [snap.key : "true"], completion: { _ in })
+                    //add question to feed
             }
         })
     }
     
     static func cleanupListeners() {
-        print("clean up listeners fired with \(activeListeners)")
         for listener in activeListeners {
             listener.removeAllObservers()
         }
@@ -817,6 +899,8 @@ class Database {
                 if FBSDKAccessToken.current() != nil {
                     FBSDKLoginManager().logOut()
                 }
+                cleanupListeners()
+                removeCurrentUser()
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "LogoutSuccess"), object: self)
                 completion(true)
             } catch {
@@ -859,16 +943,22 @@ class Database {
     
     ///Check if user is logged in
     static func checkCurrentUser(_ completion: @escaping (Bool) -> Void) {
-        Database.checkSocialTokens({(result) in print(result)})
+        Database.checkSocialTokens({(result) in print("found token \(result)")})
 
         FIRAuth.auth()?.addStateDidChangeListener { auth, user in
             if let _user = user {
+                print("auth change changed fired with current user")
+
+                setCurrentUserPaths()
                 populateCurrentUser(_user, completion: { (success) in
-                    setCurrentUserPaths()
-                    completion(true)
+                    if success {
+                        completion(true)
+                        NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdateLogin"), object: self)
+                    }
                 })
             } else {
-                Database.removeCurrentUser()
+                print("auth change changed fired with no user")
+                removeCurrentUser()
                 completion(false)
             }
         }
@@ -878,8 +968,8 @@ class Database {
     static func removeCurrentUser() {
         User.currentUser!.uID = nil
         User.currentUser!.name = nil
-        User.currentUser!.answers = nil
-        User.currentUser!.answeredQuestions = nil
+        User.currentUser!.answers = []
+        User.currentUser!.answeredQuestions = []
         User.currentUser!.savedTags = [ : ]
         User.currentUser!.profilePic = nil
         User.currentUser!.thumbPic = nil
@@ -889,8 +979,6 @@ class Database {
         User.currentUser!.gender = nil
         User.currentUser!.savedQuestions = [ : ]
         User.currentUser!.socialSources = [ : ]
-        
-        print("notification for no current user fired")
         
         setCurrentUserPaths()
         NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
@@ -923,10 +1011,11 @@ class Database {
             if snap.hasChild(SettingTypes.shortBio.rawValue) {
                 User.currentUser!.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
             }
+        }, withCancel: { error in
+            print("error getting user public summary \(error)")
         })
-
-        usersRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
-
+        
+        usersPublicDetailedRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
             if snap.hasChild(SettingTypes.birthday.rawValue) {
                 User.currentUser!.birthday = snap.childSnapshot(forPath: SettingTypes.birthday.rawValue).value as? String
             }
@@ -937,23 +1026,29 @@ class Database {
                 User.currentUser!.gender = snap.childSnapshot(forPath: SettingTypes.gender.rawValue).value as? String
             }
             if snap.hasChild("answeredQuestions") {
-                User.currentUser!.answeredQuestions = nil
+                User.currentUser!.answeredQuestions.removeAll()
                 for _answeredQuestion in snap.childSnapshot(forPath: "answeredQuestions").children {
-                    if (User.currentUser!.answeredQuestions?.append((_answeredQuestion as AnyObject).key) == nil) {
-                        User.currentUser!.answeredQuestions = [(_answeredQuestion as AnyObject).key]
-                    }
+                    User.currentUser!.answeredQuestions.append((_answeredQuestion as AnyObject).key)
                 }
             }
             if snap.hasChild("answers") {
-                User.currentUser!.answers = nil
+                User.currentUser!.answers = []
+                print("user's answers are \(User.currentUser!.answers)")
                 User.currentUser?._totalAnswers = Int(snap.childSnapshot(forPath: "answers").childrenCount)
                 for _answer in snap.childSnapshot(forPath: "answers").children {
-                    if (User.currentUser!.answers?.append((_answer as AnyObject).key) == nil) {
-                        User.currentUser!.answers = [(_answer as AnyObject).key]
-                    }
+                    User.currentUser!.answers.append((_answer as AnyObject).key)
                 }
             }
             
+            setCurrentUserPaths()
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
+            addUserProfileListener(uID: user.uid)
+            
+        }, withCancel: { error in
+            print("error getting user public detailed summary \(error)")
+        })
+
+        usersRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
             if snap.hasChild("savedTags") {
                 for _tag in snap.childSnapshot(forPath: "savedTags").children {
                     User.currentUser!.savedTags[(_tag as AnyObject).key] = (_tag as AnyObject).value
@@ -969,57 +1064,33 @@ class Database {
                 }
             }
             
-            setCurrentUserPaths()
-            print("notification for user updated fired")
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-            addUserProfileListener(uID: user.uid)
             completion(true)
+            
+        }, withCancel: { error in
+            print("error getting user public summary \(error)")
         })
     }
     
     static func addUserProfileListener(uID : String) {
-        usersRef.child(uID).removeAllObservers()
-        
-        usersRef.child(uID).child(SettingTypes.birthday.rawValue).observe(.value, with: { snap in
-            User.currentUser!.birthday = snap.value as? String
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-        })
-        activeListeners.append(usersRef.child(uID).child(SettingTypes.birthday.rawValue))
-
-        usersRef.child(uID).child(SettingTypes.bio.rawValue).observe(.value, with: { snap in
-            User.currentUser!.birthday = snap.value as? String
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-        })
-        activeListeners.append(usersRef.child(uID).child(SettingTypes.bio.rawValue))
-
-        usersRef.child(uID).child(SettingTypes.gender.rawValue).observe(.value, with: { snap in
-            User.currentUser!.gender = snap.value as? String
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-        })
-        activeListeners.append(usersRef.child(uID).child(SettingTypes.gender.rawValue))
-        
-        usersRef.child(uID).child("answeredQuestions").observe(.value, with: { snap in
-            User.currentUser!.answeredQuestions = nil
-            for _answeredQuestion in snap.childSnapshot(forPath: "answeredQuestions").children {
-                if (User.currentUser!.answeredQuestions?.append((_answeredQuestion as AnyObject).key) == nil) {
-                    User.currentUser!.answeredQuestions = [(_answeredQuestion as AnyObject).key]
+        if !profileListenersAdded {
+            usersPublicDetailedRef.child(uID).child("answeredQuestions").observe(.childAdded, with: { snap in
+                if !User.currentUser!.answeredQuestions.contains(snap.key) {
+                    print("adding child added for answered questions \(snap)")
+                    User.currentUser!.answeredQuestions.append(snap.key)
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
                 }
-            }
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-        })
-        activeListeners.append(usersRef.child(uID).child("answeredQuestions"))
+            })
+            activeListeners.append(usersPublicDetailedRef.child(uID).child("answeredQuestions"))
 
-        usersRef.child(uID).child("answers").observe(.value, with: { snap in
-            User.currentUser!.answers = nil
-            User.currentUser?._totalAnswers = Int(snap.childSnapshot(forPath: "answers").childrenCount)
-            for _answer in snap.childSnapshot(forPath: "answers").children {
-                if (User.currentUser!.answers?.append((_answer as AnyObject).key) == nil) {
-                    User.currentUser!.answers = [(_answer as AnyObject).key]
+            usersPublicDetailedRef.child(uID).child("answers").observe(.childAdded, with: { snap in
+                if !User.currentUser!.answers.contains(snap.key) {
+                    User.currentUser!.answers.append(snap.key)
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
                 }
-            }
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-        })
-        activeListeners.append(usersRef.child(uID).child("answers"))
+            })
+            activeListeners.append(usersPublicDetailedRef.child(uID).child("answers"))
+            profileListenersAdded = true
+        }
     }
     
     ///Update user profile to Pulse database from settings
@@ -1040,6 +1111,11 @@ class Database {
             case .shortBio, .name, .profilePic, .thumbPic:
                 userPost[setting.settingID] = newValue
                 usersPublicSummaryRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
+                    completionError != nil ? completion(false, completionError) : completion(true, nil)
+                })
+            case .birthday, .gender, .location, .bio:
+                userPost[setting.settingID] = newValue
+                usersPublicDetailedRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             default:
@@ -1122,7 +1198,7 @@ class Database {
     }
     
     ///Save individual answer to Pulse database after Auth
-    static func addUserAnswersToDatabase( _ answer : Answer, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+    static func addUserAnswersToDatabase( _ answer : Answer, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         
         var answersPost : [ String : AnyObject ] = ["qID": answer.qID as AnyObject, "uID": _user!.uid as AnyObject, "createdAt" : FIRServerValue.timestamp() as AnyObject]
@@ -1139,7 +1215,7 @@ class Database {
 
         if _user != nil {
             databaseRef.updateChildValues(post , withCompletionBlock: { (blockError, ref) in
-                blockError != nil ? completion(false, blockError as NSError?) : completion(true, nil)
+                blockError != nil ? completion(false, blockError as Error?) : completion(true, nil)
             })
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
@@ -1151,7 +1227,10 @@ class Database {
     static func addAnswerCollectionToDatabase(_ firstAnswer : Answer, post : [String : Bool], completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         let _user = FIRAuth.auth()?.currentUser
         
-        let collectionPost : [AnyHashable: Any] = ["users/\(_user!.uid)/answers/\(firstAnswer.aID)": firstAnswer.qID, "users/\(_user!.uid)/answeredQuestions/\(firstAnswer.qID)" : "true","questions/\(firstAnswer.qID)/answers/\(firstAnswer.aID)" : true, "answerCollections/\(firstAnswer.aID)" : post]
+        let collectionPost : [AnyHashable: Any] = ["userDetailedPublicSummary/\(_user!.uid)/answers/\(firstAnswer.aID)": firstAnswer.qID,
+                                                   "userDetailedPublicSummary/\(_user!.uid)/answeredQuestions/\(firstAnswer.qID)" : "true",
+                                                   "questions/\(firstAnswer.qID)/answers/\(firstAnswer.aID)" : true,
+                                                   "answerCollections/\(firstAnswer.aID)" : post]
         
         if _user != nil {
             databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in

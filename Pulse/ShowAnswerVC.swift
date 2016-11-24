@@ -421,7 +421,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             if _userForCurrentAnswer.bio != nil {
                 miniProfile!.setBioLabel(_userForCurrentAnswer.bio)
             } else {
-                Database.getUserProperty(_userForCurrentAnswer.uID!, property: "bio", completion: {(bio) in
+                Database.getUserPublicProperty(_userForCurrentAnswer.uID!, property: "bio", completion: {(bio) in
                     self.miniProfile!.setBioLabel(bio)
                 })
             }
