@@ -11,9 +11,14 @@ import UIKit
 class PulseMenu: UIStackView {
     
     override init(frame: CGRect) {
-        super.init(frame: frame)
+        super.init(frame: frame)        
+    }
+    
+    convenience init(_axis : UILayoutConstraintAxis, _spacing: CGFloat ) {
+        self.init()
         
-        setupMenu()
+        axis = _axis
+        spacing = _spacing
     }
     
     required init(coder aDecoder: NSCoder) {
@@ -28,11 +33,5 @@ class PulseMenu: UIStackView {
             return expandedBounds.contains(point)
         }
     }
-    
-    fileprivate func setupMenu() {
-        axis = .vertical
-        alignment = .fill
-        distribution = .fill
-        spacing = Spacing.s.rawValue
-    }
+
 }

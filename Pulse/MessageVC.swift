@@ -50,7 +50,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
         super.viewDidLoad()
         view.backgroundColor = UIColor.white
         
-        self.navigationController?.isNavigationBarHidden = false
+        navigationController?.isNavigationBarHidden = false
         
         hideKeyboardWhenTappedAround()
         setupLayout()
@@ -62,7 +62,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.isNavigationBarHidden = false
+        navigationController?.isNavigationBarHidden = false
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -78,7 +78,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
     }
     
     override func viewWillDisappear(_ animated: Bool) {
-        self.navigationController?.isNavigationBarHidden = true
+        navigationController?.isNavigationBarHidden = true
     }
     
     //Update Nav Header
@@ -105,9 +105,9 @@ class MessageVC: UIViewController, UITextViewDelegate{
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
-            self.sendBottomConstraint.constant = -(keyboardHeight + Spacing.xs.rawValue)
-            self.sendContainer.layoutIfNeeded()
-            self.conversationHistory.layoutIfNeeded()
+            sendBottomConstraint.constant = -(keyboardHeight + Spacing.xs.rawValue)
+            sendContainer.layoutIfNeeded()
+            conversationHistory.layoutIfNeeded()
             
             if messages.count > 0 {
                 let indexPath : IndexPath = IndexPath(row:(messages.count - 1), section:0)
@@ -127,12 +127,13 @@ class MessageVC: UIViewController, UITextViewDelegate{
         Database.checkExistingConversation(to: toUser, completion: {(success, _conversationID) in
             if success {
                 self.conversationID = _conversationID!
-                Database.getConversationMessages(conversationID: _conversationID!, completion: { messages, lastMessageID in
-                    self.messages = messages
-                    self.lastMessageID = lastMessageID
-                    let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
-                    self.conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: true)
-
+                Database.getConversationMessages(conversationID: _conversationID!, completion: { messages, lastMessageID, error in
+                    if error == nil {
+                        self.messages = messages
+                        self.lastMessageID = lastMessageID
+                        let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
+                        self.conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: true)
+                    }
                 })
             }
         })
@@ -171,7 +172,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 self.conversationID = _conversationID!
                 self.keepConversationUpdated()
             } else {
-                print("error sending message")
+                GlobalFunctions.showErrorBlock("Error Sending Message", erMessage: "Sorry we had a problem sending your message. Please try again!")
             }
         })
     }

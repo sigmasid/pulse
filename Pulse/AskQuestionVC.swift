@@ -136,9 +136,9 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     fileprivate func setAskUser() {
         guard selectedUser != nil else { return }
         
-        questionToTitle.text = selectedUser.name!.capitalized
+        questionToTitle.text = selectedUser.name?.capitalized
         questionToSubtitle.text = selectedUser.shortBio
-        questionBody.text = "ask \(selectedUser.name!.capitalized) your question"
+        questionBody.text = "ask \(selectedUser.name?.capitalized) your question"
     }
     
     fileprivate func setAskTag() {

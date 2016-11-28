@@ -342,7 +342,7 @@ extension DetailVC : UITableViewDataSource, UITableViewDelegate {
                 cell.subtitleLabel.text = nil
                 gettingInfoForCell[(indexPath as NSIndexPath).row] = true
                 
-                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], completion: { (user, error) in
+                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], completion: { (user, error) in
                     if error != nil {
                         cell.titleLabel.text = nil
                         cell.subtitleLabel.text = nil
@@ -433,7 +433,7 @@ extension DetailVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 gettingImageForCell[(indexPath as NSIndexPath).row] = true
                 cell.previewImage.image = nil
 
-                Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], maxImgSize: maxImgSize, completion: {(_data, error) in
+                Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], maxImgSize: maxImgSize, completion: {(_data, error) in
                     if error != nil {
                         cell.previewImage?.backgroundColor = UIColor.red
                     } else {
@@ -456,7 +456,7 @@ extension DetailVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.subtitleLabel.text = nil
                 gettingInfoForCell[(indexPath as NSIndexPath).row] = true
                 
-                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], completion: { (user, error) in
+                Database.getUserSummaryForAnswer(currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], completion: { (user, error) in
                     if error != nil {
                         cell.titleLabel.text = nil
                         cell.subtitleLabel.text = nil
@@ -473,7 +473,7 @@ extension DetailVC : UICollectionViewDataSource, UICollectionViewDelegate {
 //                let _selectedAnswerID = currentQuestion.qAnswers![(indexPath as NSIndexPath).row]
 //                    showQuestion(_selectedQuestion, _allQuestions: _allQuestions, _questionIndex: indexPath.row, _selectedTag: currentTag, _frame : _translatedFrame)
             } else if indexPath == selectedIndex {
-                let _selectedAnswerID = currentQuestion.qAnswers![(indexPath as NSIndexPath).row]
+                let _selectedAnswerID = currentQuestion.qAnswers[(indexPath as NSIndexPath).row]
                 cell.showAnswer(_selectedAnswerID)
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()

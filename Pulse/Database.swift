@@ -220,7 +220,7 @@ class Database {
     }
     
     //Retrieve all messages in conversation
-    static func getConversationMessages(conversationID : String, completion: @escaping ([Message], String?) -> Void) {
+    static func getConversationMessages(conversationID : String, completion: @escaping ([Message], String?, Error?) -> Void) {
         var messages = [Message]()
         
         conversationsRef.child(conversationID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
@@ -231,12 +231,12 @@ class Database {
                     
                     if messages.count == Int(snapshot.childrenCount) {
                         let lastMessageID = snap.key
-                        completion(messages, lastMessageID)
+                        completion(messages, lastMessageID, nil)
                     }
                 })
             }
         }, withCancel: { error in
-            print("error getting conversation \(error)")
+            completion(messages, nil, error)
         })
     }
     
@@ -255,7 +255,7 @@ class Database {
     }
     
     //Keep conversation updated
-    static func keepConversationUpdate(to : String?) {
+    static func keepConversationUpdated(to : String?) {
         
     }
     
@@ -631,14 +631,11 @@ class Database {
             //add in new posts before returning feed
             for (offset : index, (key : tagID, value : _)) in User.currentUser!.savedTags.enumerated() {
                 Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
-                    print("went into completion block with index \(index)")
                     if index + 1 == User.currentUser?.savedTags.count && success {
-                        print("setting initialfeedupdate to complete")
                         initialFeedUpdateComplete = true
                         
                         //once feed is updated get the feed to return
                         getFeed({ homeFeed in
-                            print("got completed feed")
                             completedFeed(homeFeed)
                         })
                     }
@@ -692,8 +689,6 @@ class Database {
         var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
         currentUserRef.child("savedTags").child(tagID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() && (snap.value! as AnyObject).isKind(of: NSString.self) {
-                print("snap exists and is \(snap)")
-
                 //first get the last sync'd question for a tag
                 let lastQuestionID = snap.value as! String
                     
@@ -704,7 +699,6 @@ class Database {
                 var newQuestions = [String : String?]()
                 
                 tagQuestions.observeSingleEvent(of: .value, with: { questionSnap in
-                    print("question snap is \(questionSnap)")
                     for (questionIndex, questionID) in questionSnap.children.enumerated() {
                         
                         let lastQuestionKey = (questionID as! FIRDataSnapshot).key
@@ -726,8 +720,6 @@ class Database {
                         completion(true)
                     })
                 })
-            } else if snap.exists() {
-                print("snap value is not of kind string")
             }
         })
     }
@@ -762,7 +754,6 @@ class Database {
                             }
                             _updatePath.updateChildValues([questionID : post], withCompletionBlock: { (error, ref) in
                                 
-                                print("current index is \(index, questions.count, totalNewAnswers)")
                                 if index + 1 == questions.count {
                                     completion(true)
                                 }
@@ -798,7 +789,6 @@ class Database {
             
             userTagsPath.observe(.childAdded, with: { tagSnap in
                 if initialFeedUpdateComplete {
-                    print("observer for child added to tag fired with tag : \(tagSnap.key)")
                     addNewQuestionsFromTagToFeed(tagSnap.key, completion: { success in
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdated"), object: self)
                     })
@@ -809,7 +799,6 @@ class Database {
             
             userTagsPath.observe(.childRemoved, with: { tagSnap in
                 if initialFeedUpdateComplete {
-                    print("observer for child removed fired with tag : \(tagSnap.key)")
                     removeQuestionsFromTagInFeed(tagSnap.key, completion: { success in
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdated"), object: self)
                     })
@@ -826,7 +815,6 @@ class Database {
         
         tagsRef.observe(.childAdded, with: { (snap) in
             if snap.key != lastQuestionID {
-                print("observer fired for new question added to tag, tagID : questionID \(tagID, lastQuestionID)")
                 currentUserRef.child("savedTags").updateChildValues([tagID : snap.key]) //update last sync'd question for user
                 updateFeedQuestions(tagID, questions: [snap.key : "true"], completion: { _ in })
                     //add question to feed
@@ -847,7 +835,6 @@ class Database {
         
         activeListeners.append(getDatabasePath(Item.Questions, itemID: questionID).child("answers"))
         _observePath.observe(.childAdded, with: { snap in
-            print("this should fire once for each last answer with questionID : lastAnswerID \(questionID, lastAnswerID)")
             _updatePath.setValue(snap.key)
         })
     }
@@ -901,10 +888,10 @@ class Database {
                 }
                 cleanupListeners()
                 removeCurrentUser()
+                initialFeedUpdateComplete = false
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "LogoutSuccess"), object: self)
                 completion(true)
             } catch {
-                print(error)
                 completion(false)
             }
         }
@@ -912,8 +899,6 @@ class Database {
     
     static func checkSocialTokens(_ completion: @escaping (_ result: Bool) -> Void) {
         if FBSDKAccessToken.current() != nil {
-            print("found fb token")
-
             let token = FBSDKAccessToken.current().tokenString
             let credential = FIRFacebookAuthProvider.credential(withAccessToken: token!)
             FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
@@ -924,19 +909,15 @@ class Database {
                 }
             }
         } else if let session = Twitter.sharedInstance().sessionStore.session() {
-            print("found twtr token")
-
             let credential = FIRTwitterAuthProvider.credential(withToken: session.authToken, secret: session.authTokenSecret)
             FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
                 if error != nil {
                     completion(false)
                 } else {
-                    print("logged in with twtr")
                     completion(true)
                 }
             }
         } else {
-            print("no token found")
             completion(false)
         }
     }
@@ -947,7 +928,6 @@ class Database {
 
         FIRAuth.auth()?.addStateDidChangeListener { auth, user in
             if let _user = user {
-                print("auth change changed fired with current user")
 
                 setCurrentUserPaths()
                 populateCurrentUser(_user, completion: { (success) in
@@ -957,7 +937,6 @@ class Database {
                     }
                 })
             } else {
-                print("auth change changed fired with no user")
                 removeCurrentUser()
                 completion(false)
             }
@@ -989,9 +968,8 @@ class Database {
         let userPicPath = User.currentUser!.profilePic != nil ? User.currentUser!.profilePic : User.currentUser!.thumbPic
         
         if let userPicPath = userPicPath {
-            if let userPicURL = URL(string: userPicPath) {
-                let _userImageData = try? Data(contentsOf: userPicURL)
-                User.currentUser?.thumbPicImage = UIImage(data: _userImageData!)
+            if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
+                User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
             }
         }
     }
@@ -1033,7 +1011,6 @@ class Database {
             }
             if snap.hasChild("answers") {
                 User.currentUser!.answers = []
-                print("user's answers are \(User.currentUser!.answers)")
                 User.currentUser?._totalAnswers = Int(snap.childSnapshot(forPath: "answers").childrenCount)
                 for _answer in snap.childSnapshot(forPath: "answers").children {
                     User.currentUser!.answers.append((_answer as AnyObject).key)
@@ -1075,7 +1052,6 @@ class Database {
         if !profileListenersAdded {
             usersPublicDetailedRef.child(uID).child("answeredQuestions").observe(.childAdded, with: { snap in
                 if !User.currentUser!.answeredQuestions.contains(snap.key) {
-                    print("adding child added for answered questions \(snap)")
                     User.currentUser!.answeredQuestions.append(snap.key)
                     NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
                 }
@@ -1288,6 +1264,7 @@ class Database {
         
         let post = ["questions/\(questionKey)/title":qText,
                     "questions/\(questionKey)/tags/\(tagID)":true,
+                    "questions/\(questionKey)/uID/":user.uid,
                     "tags/\(tagID)/questions/\(questionKey)":true,
                     "users/\(user.uid)/askedQuestions/\(questionKey)":true] as [String: Any]
         
@@ -1311,6 +1288,7 @@ class Database {
         let questionKey = questionsRef.childByAutoId().key
 
         let post = ["questions/\(questionKey)/title":qText,
+                    "questions/\(questionKey)/uID/":user.uid,
                     "users/\(user.uid)/askedQuestions/\(questionKey)":true,
                     "users/\(askUserID)/unansweredQuestions/\(questionKey)":true] as [String: Any]
         

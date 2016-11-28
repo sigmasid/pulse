@@ -25,12 +25,7 @@ class AnswerOverlay: UIView {
     fileprivate let userSubtitleLabel = UILabel()
     fileprivate var userImage = UIImageView()
     
-    fileprivate var showMenu : PulseMenu!
-    fileprivate var isShowingMenu = false
     fileprivate var iconContainer : IconContainer!
-    
-    fileprivate var addAnswer : PulseButton!
-    fileprivate var browseAnswers : PulseButton!
 
     fileprivate let footerHeight : CGFloat = Spacing.xl.rawValue
     fileprivate var iconSize : CGFloat = IconSizes.medium.rawValue
@@ -42,6 +37,20 @@ class AnswerOverlay: UIView {
     
     weak var delegate : answerDetailDelegate!
     
+    /** VARS FOR SIDE MENU **/
+    fileprivate var showMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.s.rawValue)
+    fileprivate var isShowingMenu = false
+    fileprivate var showMenuCreated = false
+
+    fileprivate lazy var addAnswer : PulseButton = PulseButton(size: ButtonSizes.medium, type: .addCircle, isRound: true, hasBackground: false)
+    fileprivate lazy var addAnswerLabel = PulseButton(title: "Add Answer", isRound: false)
+    fileprivate lazy var addAnswerStack = UIStackView()
+    
+    fileprivate lazy var browseAnswers : PulseButton = PulseButton(size: ButtonSizes.medium, type: .browseCircle, isRound: true, hasBackground: false)
+    fileprivate lazy var browseAnswersLabel = PulseButton(title: "Browse Answers", isRound: false)
+    fileprivate lazy var browseAnswersStack = UIStackView()
+    /** END VARS FOR SIDE MENU **/
+
     internal enum AnswersButtonSelector: Int {
         case upvote, downvote, save, album
     }
@@ -73,7 +82,6 @@ class AnswerOverlay: UIView {
         
         addTag()
         addQuestion()
-
     }
     
     fileprivate func addUserBackground() {
@@ -290,14 +298,14 @@ class AnswerOverlay: UIView {
     
     func handleExploreTap() {
         if delegate != nil {
-            toggleMenu()
+            toggleMenu(show: false)
             delegate.userClickedExploreAnswers()
         }
     }
     
     func handleAddAnswerTap() {
         if delegate != nil {
-            toggleMenu()
+            toggleMenu(show: false)
             delegate.userClickedAddAnswer()
         }
     }
@@ -352,40 +360,45 @@ class AnswerOverlay: UIView {
         tagLabel.text = "#" + tagName.uppercased()
     }
     
-    func toggleMenu() {
-        if !isShowingMenu {
-            showMenu = PulseMenu()
-            
-            addAnswer = PulseButton(size: ButtonSizes.small, type: .addCircle, isRound: false, hasBackground: false)
-            browseAnswers = PulseButton(size: ButtonSizes.small, type: .browseCircle, isRound: false, hasBackground: false)
-            addAnswer.tintColor = pulseBlue
-            browseAnswers.tintColor = pulseBlue
-            
-            addSubview(showMenu)
-
-            showMenu.translatesAutoresizingMaskIntoConstraints = false
-            showMenu.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
-            showMenu.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 2/5).isActive = true
-            showMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-            showMenu.layoutIfNeeded()
-            
-            showMenu.addArrangedSubview(addAnswer)
-            showMenu.addArrangedSubview(browseAnswers)
-            
-            addAnswer.setReversedTitle("Add Answer", for: UIControlState())
-            browseAnswers.setReversedTitle("Browse Answers", for: UIControlState())
-
-            addAnswer.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchDown)
-            browseAnswers.addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchDown)
-            
-            isShowingMenu = true
-
-        } else {
-            showMenu.removeFromSuperview()
-            addAnswer.removeFromSuperview()
-            browseAnswers.removeFromSuperview()
-            
-            isShowingMenu = false
+    func createMenu() {
+        addSubview(showMenu)
+        
+        showMenu.translatesAutoresizingMaskIntoConstraints = false
+        showMenu.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
+        showMenu.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1/2).isActive = true
+        showMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        showMenu.layoutIfNeeded()
+        
+        addAnswerStack.spacing = Spacing.s.rawValue
+        browseAnswersStack.spacing = Spacing.s.rawValue
+        
+        addAnswerStack.addArrangedSubview(addAnswerLabel)
+        addAnswerStack.addArrangedSubview(addAnswer)
+        
+        browseAnswersStack.addArrangedSubview(browseAnswersLabel)
+        browseAnswersStack.addArrangedSubview(browseAnswers)
+        
+        showMenu.addArrangedSubview(addAnswerStack)
+        showMenu.addArrangedSubview(browseAnswersStack)
+        
+        addAnswer.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchUpInside)
+        addAnswerLabel.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchUpInside)
+        
+        browseAnswers.addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchUpInside)
+        browseAnswersLabel.addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchUpInside)
+        
+        showMenuCreated = true
+        showMenu.isHidden = true
+    }
+    
+    func toggleMenu(show : Bool) {
+        if show && !showMenuCreated {
+            createMenu()
+            showMenu.isHidden = false
+        } else if show {
+            showMenu.isHidden = false
+        } else if !show {
+            showMenu.isHidden = true
         }
     }
     

@@ -167,7 +167,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 1:
             exploreVC.appButtonTapped()
         case 2:
-            break
+            homeVC.appButtonTapped()
         default: break
         }
     }

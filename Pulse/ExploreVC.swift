@@ -16,18 +16,29 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     fileprivate var searchButton : PulseButton!
     fileprivate var closeButton : PulseButton!
-    fileprivate var followButton : PulseButton!
-    fileprivate var unfollowButton : PulseButton!
-    fileprivate var toggleFollowButton : PulseButton!
-    
-    fileprivate var backButton : PulseButton!
     fileprivate var blankButton : PulseButton!
-    fileprivate var messageButton : PulseButton!
-
-    fileprivate var askQuestion : PulseButton!
-    fileprivate var addAnswer : PulseButton!
+    fileprivate var backButton : PulseButton!
     
-    fileprivate var screenMenu = PulseMenu()
+    
+    /* SIDE MENU VARS */
+    fileprivate var screenMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.m.rawValue)
+
+    fileprivate var messageButton = PulseButton(size: .medium, type: .messageCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var messageLabel = PulseButton(title: "Send Message", isRound: false)
+    fileprivate var messageStack = UIStackView()
+    
+    fileprivate var askQuestionButton = PulseButton(size: .medium, type: .questionCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var askQuestionLabel = PulseButton(title: "Ask Question", isRound: false)
+    fileprivate var askQuestionStack = UIStackView()
+    
+    fileprivate var addAnswerButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var addAnswerLabel = PulseButton(title: "Add Answer", isRound: false)
+    fileprivate var addAnswerStack = UIStackView()
+    
+    fileprivate var toggleFollowButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var toggleFollowLabel = PulseButton(title: "Follow Tag", isRound: false)
+    fileprivate var toggleFollowStack = UIStackView()
+    /* END SIDE MENU VARS */
     
     fileprivate var hideStatusBar = false {
         didSet {
@@ -50,13 +61,19 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     /* END EXPLORE STACK */
     fileprivate var isFollowingSelectedTag : Bool = false {
         didSet {
-            toggleFollowButton = isFollowingSelectedTag ? unfollowButton : followButton
+            isFollowingSelectedTag ?
+                toggleFollowButton.setImage(UIImage(named: "remove-circle")?.withRenderingMode(.alwaysTemplate), for: UIControlState()) :
+                toggleFollowButton.setImage(UIImage(named: "add-circle")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
+            toggleFollowLabel.setTitle(isFollowingSelectedTag ? "Unfollow Tag" : "Follow Tag", for: UIControlState())
         }
     }
     
     fileprivate var isFollowingSelectedQuestion : Bool = false {
         didSet {
-            toggleFollowButton = isFollowingSelectedQuestion ? unfollowButton : followButton
+            isFollowingSelectedQuestion ?
+                toggleFollowButton.setImage(UIImage(named: "remove-circle")?.withRenderingMode(.alwaysTemplate), for: UIControlState()) :
+                toggleFollowButton.setImage(UIImage(named: "add-circle")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
+            toggleFollowLabel.setTitle(isFollowingSelectedTag ? "Unfollow Question" : "Follow Question", for: UIControlState())
         }
     }
     
@@ -88,7 +105,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        // navigationController?.isNavigationBarHidden = false
+        navigationController?.isNavigationBarHidden = false //neeed in case coming back from messageVC
         
         guard let headerNav = headerNav else { return }
         guard let scrollView = exploreContainer.getScrollView() else { return }
@@ -266,7 +283,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             if !selectedQuestion.qCreated {
                 Database.getQuestion(selectedQuestion.qID, completion: { question, error in
                     if let question = question, question.hasAnswers() {
-                        self.exploreContainer.allAnswers = question.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
+                        self.exploreContainer.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                         self.exploreContainer.allQuestions = [self.selectedQuestion]
                         self.exploreContainer.selectedQuestion = self.selectedQuestion
                         self.exploreContainer.feedItemType = .answer
@@ -279,8 +296,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 })
             } else {
                 if selectedQuestion.hasAnswers() {
-                    exploreContainer.allAnswers = selectedQuestion.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
-                    self.exploreContainer.allQuestions = [self.selectedQuestion]
+                    exploreContainer.allAnswers = selectedQuestion.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
+                    exploreContainer.allQuestions = [self.selectedQuestion]
                     exploreContainer.selectedQuestion = selectedQuestion
 
                     exploreContainer.feedItemType = .answer
@@ -382,7 +399,21 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     public func appButtonTapped() {
+        if screenMenu.isHidden {
+            toggleLoading(show: true, message: nil)
+            loadingView?.alpha = 0.9
+        } else {
+            toggleLoading(show: false, message: nil)
+            loadingView?.alpha = 1.0
+        }
+        
         screenMenu.isHidden = screenMenu.isHidden ? false : true
+    }
+    
+    fileprivate func hideMenu() {
+        screenMenu.isHidden = true
+        toggleLoading(show: false, message: nil)
+        loadingView?.alpha = 1.0
     }
     
     fileprivate func updateMenu() {
@@ -393,22 +424,15 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         switch currentExploreMode.currentMode {
         case .tag:
-            screenMenu.addArrangedSubview(askQuestion)
-            askQuestion.setReversedTitle("Ask Question", for: UIControlState())
-            
-            screenMenu.addArrangedSubview(toggleFollowButton)
+            screenMenu.addArrangedSubview(askQuestionStack)
+            screenMenu.addArrangedSubview(toggleFollowStack)
 
         case .question:
-            screenMenu.addArrangedSubview(addAnswer)
-            addAnswer.setReversedTitle("Add Answer", for: UIControlState())
-            addAnswer.addTarget(self, action: #selector(userClickedAddAnswer), for: UIControlEvents.touchUpInside)
+            screenMenu.addArrangedSubview(addAnswerStack)
             
         case .people:
-            screenMenu.addArrangedSubview(askQuestion)
-            askQuestion.setReversedTitle("Ask Question", for: UIControlState())
-
-            screenMenu.addArrangedSubview(messageButton)
-            messageButton.setReversedTitle("Message", for: UIControlState())
+            screenMenu.addArrangedSubview(askQuestionStack)
+            screenMenu.addArrangedSubview(messageStack)
 
         default:
             screenMenu.isHidden = true
@@ -477,6 +501,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     //FOLLOW / UNFOLLOW QUESTIONS AND UPDATE BUTTONS
     internal func follow() {
+        hideMenu()
+        
         switch currentExploreMode.currentMode {
         case .question:
             Database.saveQuestion(selectedQuestion.qID, completion: {(success, error) in
@@ -501,6 +527,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     ///Launch messenger for selected user
     func userClickedSendMessage() {
+        hideMenu()
+        
         let messageVC = MessageVC()
         messageVC.toUser = selectedUser
         
@@ -512,6 +540,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     func userClickedAddAnswer() {
+        hideMenu()
+        
         if !User.currentUser!.hasAnsweredQuestion(selectedQuestion.qID) {
             let addAnswerVC = QAManagerVC()
             addAnswerVC.allQuestions = [selectedQuestion]
@@ -526,6 +556,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     func userClickedAskQuestion() {
+        hideMenu()
+        
         let questionVC = AskQuestionVC()
         
         switch currentExploreMode.currentMode {
@@ -599,32 +631,35 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         blankButton = PulseButton(size: .small, type: .blank, isRound : true, hasBackground: true)
 
         // SIDE MENU OPTIONS //
-        followButton = PulseButton(size: .small, type: .addCircle, isRound : false, hasBackground: false)
-        followButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
-        followButton.tintColor = pulseBlue
-        followButton.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        followButton.setReversedTitle("Follow Tag", for: UIControlState())
+    
+        toggleFollowStack.spacing = Spacing.s.rawValue
+        messageStack.spacing = Spacing.s.rawValue
+        addAnswerStack.spacing = Spacing.s.rawValue
+        askQuestionStack.spacing = Spacing.s.rawValue
 
-        unfollowButton = PulseButton(size: .small, type: .removeCircle, isRound : false, hasBackground: false)
-        unfollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
-        unfollowButton.tintColor = pulseBlue
-        unfollowButton.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        unfollowButton.setReversedTitle("Unfollow Tag", for: UIControlState())
-
-        messageButton = PulseButton(size: .small, type: .messageCircle, isRound : false, hasBackground: false)
+        toggleFollowStack.addArrangedSubview(toggleFollowLabel)
+        toggleFollowStack.addArrangedSubview(toggleFollowButton)
+        
+        messageStack.addArrangedSubview(messageLabel)
+        messageStack.addArrangedSubview(messageButton)
+        
+        addAnswerStack.addArrangedSubview(addAnswerLabel)
+        addAnswerStack.addArrangedSubview(addAnswerButton)
+        
+        askQuestionStack.addArrangedSubview(askQuestionLabel)
+        askQuestionStack.addArrangedSubview(askQuestionButton)
+        
+        toggleFollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
+        toggleFollowLabel.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
+        
         messageButton.addTarget(self, action: #selector(userClickedSendMessage), for: UIControlEvents.touchUpInside)
-        messageButton.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        messageButton.tintColor = pulseBlue
-        
-        addAnswer = PulseButton(size: .small, type: .addCircle, isRound : false, hasBackground: false)
-        addAnswer.addTarget(self, action: #selector(userClickedAddAnswer), for: UIControlEvents.touchUpInside)
-        addAnswer.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        addAnswer.tintColor = pulseBlue
-        
-        askQuestion = PulseButton(size: .small, type: .questionCircle, isRound : false, hasBackground: false)
-        askQuestion.addTarget(self, action: #selector(userClickedAskQuestion), for: UIControlEvents.touchUpInside)
-        askQuestion.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        askQuestion.tintColor = pulseBlue
+        messageLabel.addTarget(self, action: #selector(userClickedSendMessage), for: UIControlEvents.touchUpInside)
+
+        addAnswerButton.addTarget(self, action: #selector(userClickedAddAnswer), for: UIControlEvents.touchUpInside)
+        addAnswerLabel.addTarget(self, action: #selector(userClickedAddAnswer), for: UIControlEvents.touchUpInside)
+
+        askQuestionButton.addTarget(self, action: #selector(userClickedAskQuestion), for: UIControlEvents.touchUpInside)
+        askQuestionLabel.addTarget(self, action: #selector(userClickedAskQuestion), for: UIControlEvents.touchUpInside)
     }
     
     fileprivate func setupMenu() {
@@ -632,7 +667,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         screenMenu.translatesAutoresizingMaskIntoConstraints = false
         screenMenu.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -bottomLogoLayoutHeight).isActive = true
-        screenMenu.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 2/5).isActive = true
+        screenMenu.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
         screenMenu.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         screenMenu.layoutIfNeeded()
         

@@ -45,13 +45,13 @@ class FiltersOverlay: UIView, UIGestureRecognizerDelegate {
         Filters.canCancelContentTouches = true
         
         Filters.contentInset = UIEdgeInsetsMake(0, 0, 0, 0)
-        addSubview(self.Filters)
+        addSubview(Filters)
     }
 }
 
 extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return currentQuestion!.qFilters?.count ?? 0
+        return currentQuestion!.qFilters.count 
     }
     
     func numberOfSections(in collectionView: UICollectionView) -> Int{
@@ -64,7 +64,7 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
         if FilterChoices.count > (indexPath as NSIndexPath).row && cell.filterImageView != nil {
             cell.filterImageView!.image = FilterChoices[(indexPath as NSIndexPath).row]!
         } else {
-            let _filterID = currentQuestion!.qFilters![(indexPath as NSIndexPath).row]
+            let _filterID = currentQuestion!.qFilters[(indexPath as NSIndexPath).row]
 
             Database.getImage(.Filters, fileID: _filterID+".png", maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {

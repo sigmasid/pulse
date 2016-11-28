@@ -19,16 +19,6 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
   }
 }
 
-fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
-  switch (lhs, rhs) {
-  case let (l?, r?):
-    return l > r
-  default:
-    return rhs < lhs
-  }
-}
-
-
 class Question : NSObject {
     var qID : String
     var qTagID : String?
@@ -36,8 +26,8 @@ class Question : NSObject {
     
     dynamic var qCreated = false
     
-    var qFilters : [String]?
-    var qAnswers : [String]?
+    var qFilters = [String]()
+    var qAnswers = [String]()
     var qAllAnswers : [Answer]?
 
     init(qID: String) {
@@ -52,28 +42,31 @@ class Question : NSObject {
     init(qID: String, snapshot: FIRDataSnapshot) {
         self.qID = qID
         self.qTitle = snapshot.childSnapshot(forPath: "title").value as? String
-//        for choice in snapshot.childSnapshotForPath("choices").children {
-//            if (self.qFilters?.append(choice.key) == nil) {
-//                self.qFilters = [choice.key]
-//            }
-//        }
-        for answer in snapshot.childSnapshot(forPath: "answers").children {
-            if (self.qAnswers?.append((answer as AnyObject).key) == nil) {
-                self.qAnswers = [(answer as AnyObject).key]
+        
+        if snapshot.hasChild("choices") {
+            for choice in snapshot.childSnapshot(forPath: "choices").children {
+                self.qFilters.append((choice as AnyObject).key)
             }
         }
+        
+        if snapshot.hasChild("answers") {
+            for answer in snapshot.childSnapshot(forPath: "answers").children {
+                self.qAnswers.append((answer as AnyObject).key)
+            }
+        }
+        
         self.qCreated = true
     }
     
     func totalAnswers() -> Int {
-        return self.qAnswers?.count ?? 0
+        return self.qAnswers.count
     }
     
     func hasAnswers() -> Bool {
-        return self.qAnswers?.count > 0 ? true : false
+        return self.qAnswers.count > 0 ? true : false
     }
     
     func hasFilters() -> Bool {
-        return self.qFilters?.count > 0 ? true : false
+        return self.qFilters.count > 0 ? true : false
     }
 }

@@ -223,7 +223,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             gettingImageForCell[(indexPath as NSIndexPath).row] = true
 
-            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error != nil {
                     cell.answerPreviewImage?.backgroundColor = UIColor.red /* NEED TO CHANGE */
                 } else {
@@ -245,7 +245,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             gettingInfoForCell[(indexPath as NSIndexPath).row] = true
             
-            Database.getUserSummaryForAnswer(currentQuestion!.qAnswers![(indexPath as NSIndexPath).row], completion: { (user, error) in
+            Database.getUserSummaryForAnswer(currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], completion: { (user, error) in
                 if error != nil {
                     cell.answerPreviewName!.text = nil
                     cell.answerPreviewBio!.text = nil

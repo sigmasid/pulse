@@ -19,6 +19,8 @@ class HomeVC: UIViewController, feedVCDelegate {
     fileprivate var notificationsSetup : Bool = false
     fileprivate var initialLoadComplete = false
     
+    fileprivate var screenMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.m.rawValue)
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -109,6 +111,7 @@ class HomeVC: UIViewController, feedVCDelegate {
             if homeFeedVC != nil {
                 view.bringSubview(toFront: loadingView!)
             }
+            print("setting initial load complete to false")
             initialLoadComplete = false
             toggleLoading(show: true, message: "Please login to see your feed!")
         }
@@ -122,7 +125,7 @@ class HomeVC: UIViewController, feedVCDelegate {
 
             Database.getQuestion(selectedQuestion.qID, completion: { question, error in
                 if let question = question, question.hasAnswers() {
-                    self.homeFeedVC.allAnswers = question.qAnswers!.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
+                    self.homeFeedVC.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                     self.homeFeedVC.feedItemType = .answer
                     self.homeFeedVC.setSelectedIndex(index: IndexPath(row: 0, section: 0))
                     self.toggleLoading(show: false, message : nil)
@@ -137,6 +140,18 @@ class HomeVC: UIViewController, feedVCDelegate {
 
         default: break
         }
+    }
+    
+    public func appButtonTapped() {
+        if screenMenu.isHidden {
+            toggleLoading(show: true, message: nil)
+            loadingView?.alpha = 0.9
+        } else {
+            toggleLoading(show: false, message: nil)
+            loadingView?.alpha = 1.0
+        }
+        
+        screenMenu.isHidden = screenMenu.isHidden ? false : true
     }
     
     fileprivate func updateNav() {
@@ -156,5 +171,17 @@ class HomeVC: UIViewController, feedVCDelegate {
         
         loadingView?.isHidden = show ? false : true
         loadingView?.addMessage(message)
+    }
+    
+    fileprivate func setupMenu() {
+        view.addSubview(screenMenu)
+        
+        screenMenu.translatesAutoresizingMaskIntoConstraints = false
+        screenMenu.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -bottomLogoLayoutHeight).isActive = true
+        screenMenu.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
+        screenMenu.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        screenMenu.layoutIfNeeded()
+        
+        screenMenu.isHidden = true
     }
 }

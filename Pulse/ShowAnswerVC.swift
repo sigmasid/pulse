@@ -129,10 +129,12 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         _canAdvanceReady = false
         
-        if let _answerID = currentQuestion.qAnswers?[index] {
+        if index < currentQuestion.totalAnswers(), currentQuestion.qAnswers[index] != ""  {
+            let _answerID = currentQuestion.qAnswers[index]
             _addExploreAnswerDetail(_answerID)
             
             Database.getAnswer(_answerID, completion: { (answer, error) in
+                
                 self.currentAnswer = answer
                 self._addClip(answer)
                 self._updateOverlayData(answer)
@@ -140,7 +142,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 self.answerIndex = index
 
                 if self._canAdvance(self.answerIndex + 1) {
-                    self._addNextClipToQueue(self.currentQuestion.qAnswers![self.answerIndex + 1])
+                    self._addNextClipToQueue(self.currentQuestion.qAnswers[self.answerIndex + 1])
                     self.answerIndex += 1
                     self._canAdvanceReady = true
                 } else {
@@ -369,12 +371,16 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     fileprivate func showImageView(_ image : UIImage) {
         if _isImageViewShown {
             imageView.image = image
+            _tapReady = true
+
         } else {
             imageView = UIImageView(frame: view.bounds)
             imageView.image = image
             imageView.contentMode = .scaleAspectFill
             view.insertSubview(imageView, at: 1)
             _isImageViewShown = true
+            _tapReady = true
+
         }
     }
     
@@ -471,7 +477,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     func userClickedShowMenu() {
-        _answerOverlay.toggleMenu()
+        _answerOverlay.toggleMenu(show: _isMenuShowing ? false : true)
+        _isMenuShowing = _isMenuShowing ? false : true
     }
     
     func userClickedExpandAnswer() {
@@ -496,6 +503,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
             
         else if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
+            print("went into ignore tap")
             //ignore tap
         }
         
@@ -526,7 +534,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             answerIndex += 1
             
             if _canAdvance(answerIndex) {
-                _addNextClipToQueue(currentQuestion.qAnswers![answerIndex])
+                _addNextClipToQueue(currentQuestion.qAnswers[answerIndex])
                 _canAdvanceReady = true
             } else {
                 _canAdvanceReady = false
@@ -534,6 +542,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
         
         else {
+            print("should go into no answers to show")
             if (delegate != nil) {
                 delegate.noAnswersToShow(self)
             }
@@ -576,7 +585,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 
                 // done w/ answer detail - queue up next answer if it exists
                 if _canAdvance(answerIndex) {
-                    _addNextClipToQueue(currentQuestion.qAnswers![answerIndex])
+                    _addNextClipToQueue(currentQuestion.qAnswers[answerIndex])
                     _canAdvanceReady = true
                 } else {
                     _canAdvanceReady = false

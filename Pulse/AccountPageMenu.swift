@@ -46,6 +46,7 @@ class AccountPageMenu: UIStackView {
         button.changeTint(color: .black, state: UIControlState())
         button.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
         button.imageView?.contentMode = .scaleAspectFit
+        button.regularTint = .black
         return button
     }
     

@@ -11,25 +11,28 @@ import UIKit
 
 class PaddingLabel: UILabel {
     
-    let padding = UIEdgeInsets(top: 2.5, left: 5, bottom: 2.5, right: 5)
+    @IBInspectable var topInset: CGFloat = 2.5
+    @IBInspectable var bottomInset: CGFloat = 2.5
+    @IBInspectable var leftInset: CGFloat = 5.0
+    @IBInspectable var rightInset: CGFloat = 5.0
     
     override func drawText(in rect: CGRect) {
-        super.drawText(in: UIEdgeInsetsInsetRect(rect, padding))
+        super.drawText(in: UIEdgeInsetsInsetRect(rect, UIEdgeInsets(top: topInset, left: leftInset, bottom: bottomInset, right: rightInset)))
     }
     
     // Override -intrinsicContentSize: for Auto layout code
     override var intrinsicContentSize : CGSize {
         let superContentSize = super.intrinsicContentSize
-        let width = superContentSize.width + padding.left + padding.right
-        let heigth = superContentSize.height + padding.top + padding.bottom
+        let width = superContentSize.width + leftInset + rightInset
+        let heigth = superContentSize.height + topInset + bottomInset
         return CGSize(width: width, height: heigth)
     }
     
     // Override -sizeThatFits: for Springs & Struts code
     override func sizeThatFits(_ size: CGSize) -> CGSize {
         let superSizeThatFits = super.sizeThatFits(size)
-        let width = superSizeThatFits.width + padding.left + padding.right
-        let heigth = superSizeThatFits.height + padding.top + padding.bottom
+        let width = superSizeThatFits.width + leftInset + rightInset
+        let heigth = superSizeThatFits.height  + topInset + bottomInset
         return CGSize(width: width, height: heigth)
     }
 }
