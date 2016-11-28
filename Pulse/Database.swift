@@ -793,7 +793,7 @@ class Database {
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdated"), object: self)
                     })
                 } else {
-                    print("ignoring child added)")
+                    //print("ignoring child added)")
                 }
             })
             
