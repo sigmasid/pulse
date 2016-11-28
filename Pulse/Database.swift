@@ -428,7 +428,7 @@ class Database {
             let _currentTag = Tag(tagID: tagID, snapshot: snap)
             completion(_currentTag, nil)
         }, withCancel: { error in
-            print("error gettings tag \(error)")
+            //print("error gettings tag \(error)")
         })
     }
     
