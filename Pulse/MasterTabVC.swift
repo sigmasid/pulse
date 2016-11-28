@@ -94,18 +94,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             }
         }
     }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-    }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

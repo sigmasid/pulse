@@ -24,6 +24,13 @@ class IconContainer: UIView {
         setupContainer(_iconWidth, iconColor: iconColor, iconBackgroundColor: iconBackgroundColor)
     }
     
+    override public func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let relativeFrame = bounds
+        let hitTestEdgeInsets = UIEdgeInsetsMake(-44, -44, -44, -44)
+        let hitFrame = UIEdgeInsetsInsetRect(relativeFrame, hitTestEdgeInsets)
+        return hitFrame.contains(point)
+    }
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }

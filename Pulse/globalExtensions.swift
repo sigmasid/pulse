@@ -378,6 +378,7 @@ enum Item : String {
     case SettingSections = "settingsSections"
     case AnswerThumbs = "answerThumbnails"
     case AnswerCollections = "answerCollections"
+    case AnswerVotes = "answerVotes"
     case UserSummary = "userPublicSummary"
     case Messages = "messages"
     case Conversations = "conversations"

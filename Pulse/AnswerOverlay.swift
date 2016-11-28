@@ -14,9 +14,11 @@ class AnswerOverlay: UIView {
     fileprivate var userBackground = UIView()
     
     fileprivate var exploreAnswer : PulseButton!
-    fileprivate var upVoteButton : PulseButton!
-    fileprivate var downVoteButton : PulseButton!
-    fileprivate var saveButton : PulseButton!
+    
+    fileprivate var answerMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.s.rawValue)
+    fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .small, type: .upvote, isRound: true, hasBackground: false)
+    fileprivate lazy var downVoteButton : PulseButton = PulseButton(size: .small, type: .downvote, isRound: true, hasBackground: false)
+    fileprivate lazy var saveButton : PulseButton = PulseButton(size: .small, type: .favorite, isRound: true, hasBackground: false)
     
     fileprivate let tagLabel = PaddingLabel()
     fileprivate let questionLabel = PaddingLabel()
@@ -38,15 +40,15 @@ class AnswerOverlay: UIView {
     weak var delegate : answerDetailDelegate!
     
     /** VARS FOR SIDE MENU **/
-    fileprivate var showMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.s.rawValue)
+    fileprivate var detailMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.s.rawValue)
     fileprivate var isShowingMenu = false
     fileprivate var showMenuCreated = false
 
-    fileprivate lazy var addAnswer : PulseButton = PulseButton(size: ButtonSizes.medium, type: .addCircle, isRound: true, hasBackground: false)
+    fileprivate lazy var addAnswer : PulseButton = PulseButton(size: ButtonSizes.medium, type: .addCircle, isRound: true, hasBackground: false, tint: .black)
     fileprivate lazy var addAnswerLabel = PulseButton(title: "Add Answer", isRound: false)
     fileprivate lazy var addAnswerStack = UIStackView()
     
-    fileprivate lazy var browseAnswers : PulseButton = PulseButton(size: ButtonSizes.medium, type: .browseCircle, isRound: true, hasBackground: false)
+    fileprivate lazy var browseAnswers : PulseButton = PulseButton(size: ButtonSizes.medium, type: .browseCircle, isRound: true, hasBackground: false, tint: .black)
     fileprivate lazy var browseAnswersLabel = PulseButton(title: "Browse Answers", isRound: false)
     fileprivate lazy var browseAnswersStack = UIStackView()
     /** END VARS FOR SIDE MENU **/
@@ -231,39 +233,23 @@ class AnswerOverlay: UIView {
     }
     
     fileprivate func addRestIcons() {
-        upVoteButton = PulseButton(size: .small, type: .upvote, isRound: true, hasBackground: false)
-        downVoteButton = PulseButton(size: .small, type: .downvote, isRound: true, hasBackground: false)
-        saveButton = PulseButton(size: .small, type: .favorite, isRound: true, hasBackground: false)
+        addSubview(answerMenu)
         
-        addSubview(upVoteButton)
-        addSubview(downVoteButton)
-        addSubview(saveButton)
+        answerMenu.translatesAutoresizingMaskIntoConstraints = false
+        answerMenu.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
+        answerMenu.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        answerMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        answerMenu.layoutIfNeeded()
         
-        upVoteButton.alpha = 0.5
-        downVoteButton.alpha = 0.5
-        saveButton.alpha = 0.5
-        
-        downVoteButton.translatesAutoresizingMaskIntoConstraints = false
-        downVoteButton.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
-        downVoteButton.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor).isActive = true
-        downVoteButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        downVoteButton.heightAnchor.constraint(equalTo: downVoteButton.widthAnchor).isActive = true
-        
-        upVoteButton.translatesAutoresizingMaskIntoConstraints = false
-        upVoteButton.bottomAnchor.constraint(equalTo: downVoteButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
-        upVoteButton.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor).isActive = true
-        upVoteButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        upVoteButton.heightAnchor.constraint(equalTo: upVoteButton.widthAnchor).isActive = true
-        
-        saveButton.translatesAutoresizingMaskIntoConstraints = false
-        saveButton.bottomAnchor.constraint(equalTo: upVoteButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
-        saveButton.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor).isActive = true
-        saveButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        saveButton.heightAnchor.constraint(equalTo: saveButton.widthAnchor).isActive = true
+        answerMenu.addArrangedSubview(saveButton)
+        answerMenu.addArrangedSubview(upVoteButton)
+        answerMenu.addArrangedSubview(downVoteButton)
         
         downVoteButton.addTarget(self, action: #selector(handleDownvote), for: UIControlEvents.touchDown)
         upVoteButton.addTarget(self, action: #selector(handleUpvote), for: UIControlEvents.touchDown)
         saveButton.addTarget(self, action: #selector(handleFavorite), for: UIControlEvents.touchDown)
+        
+        answerMenu.alpha = 0.7
     }
     
     func handleFavorite() {
@@ -361,13 +347,13 @@ class AnswerOverlay: UIView {
     }
     
     func createMenu() {
-        addSubview(showMenu)
+        addSubview(detailMenu)
         
-        showMenu.translatesAutoresizingMaskIntoConstraints = false
-        showMenu.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
-        showMenu.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1/2).isActive = true
-        showMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        showMenu.layoutIfNeeded()
+        detailMenu.translatesAutoresizingMaskIntoConstraints = false
+        detailMenu.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
+        detailMenu.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1/2).isActive = true
+        detailMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        detailMenu.layoutIfNeeded()
         
         addAnswerStack.spacing = Spacing.s.rawValue
         browseAnswersStack.spacing = Spacing.s.rawValue
@@ -378,8 +364,8 @@ class AnswerOverlay: UIView {
         browseAnswersStack.addArrangedSubview(browseAnswersLabel)
         browseAnswersStack.addArrangedSubview(browseAnswers)
         
-        showMenu.addArrangedSubview(addAnswerStack)
-        showMenu.addArrangedSubview(browseAnswersStack)
+        detailMenu.addArrangedSubview(addAnswerStack)
+        detailMenu.addArrangedSubview(browseAnswersStack)
         
         addAnswer.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchUpInside)
         addAnswerLabel.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchUpInside)
@@ -388,17 +374,20 @@ class AnswerOverlay: UIView {
         browseAnswersLabel.addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchUpInside)
         
         showMenuCreated = true
-        showMenu.isHidden = true
+        detailMenu.isHidden = true
     }
     
     func toggleMenu(show : Bool) {
         if show && !showMenuCreated {
             createMenu()
-            showMenu.isHidden = false
+            detailMenu.isHidden = false
+            answerMenu.isHidden = true
         } else if show {
-            showMenu.isHidden = false
+            detailMenu.isHidden = false
+            answerMenu.isHidden = true
         } else if !show {
-            showMenu.isHidden = true
+            detailMenu.isHidden = true
+            answerMenu.isHidden = false
         }
     }
     
