@@ -12,7 +12,7 @@ import FirebaseDatabase
 import TwitterKit
 import FBSDKLoginKit
 
-class LoginVC: UIViewController, UITextFieldDelegate, ParentDelegate {
+class LoginVC: UIViewController, UITextFieldDelegate {
     weak var loginVCDelegate : childVCDelegate?
     var nav : PulseNavVC!
     

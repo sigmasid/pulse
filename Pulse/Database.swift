@@ -927,7 +927,7 @@ class Database {
     ///Check if user is logged in
     static func checkCurrentUser(_ completion: @escaping (Bool) -> Void) {
         Database.checkSocialTokens({(result) in
-            result ? completion(true) : completion(false)
+            //result ? completion(true) : completion(false) //user not populated yet - so shouldn't fire completion block - wait till auth listener fires
         })
 
         FIRAuth.auth()?.addStateDidChangeListener { auth, user in

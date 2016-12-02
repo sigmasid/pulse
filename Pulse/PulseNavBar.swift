@@ -7,7 +7,7 @@
 //
 
 import UIKit
-enum NavMode { case browse, detail, none }
+enum NavMode { case browseImage, browse, detail, none }
 
 public class PulseNavBar: UINavigationBar {
     fileprivate var logoView : Icon!
@@ -98,7 +98,10 @@ public class PulseNavBar: UINavigationBar {
     }
     
     public func setTitles(_navTitle : String?, _screenTitle : String?, _navImage : UIImage?) {
-        if _navImage != nil {
+        if _navImage != nil, _screenTitle != nil {
+            setNavMode(mode: .browseImage)
+            navImage.isHidden = false
+        } else if _navImage != nil {
             setNavMode(mode: .browse)
             navTitle.isHidden = true
             navImage.isHidden = false
@@ -119,9 +122,14 @@ public class PulseNavBar: UINavigationBar {
     
     fileprivate func setNavMode(mode : NavMode) {
         switch mode {
+        case .browseImage:
+            navContainer.isHidden = false
+            screenTitle.isHidden = false
+            moveNavImageRight()
         case .browse:
             navContainer.isHidden = false
             screenTitle.isHidden = true
+            moveNavImageCenter()
         case .detail:
             navContainer.isHidden = true
             screenTitle.isHidden = false
@@ -237,6 +245,19 @@ public class PulseNavBar: UINavigationBar {
         navImage.layer.rasterizationScale = UIScreen.main.scale
         navImage.backgroundColor = UIColor.lightGray
         navImage.contentMode = .scaleAspectFill
+    }
+    
+    func moveNavImageRight() {
+        navImage.frame.origin.x = navContainer.bounds.maxX - IconSizes.large.rawValue - Spacing.s.rawValue
+        navTitle.isHidden = true
+        logoView.isHidden = true
+
+    }
+    
+    func moveNavImageCenter() {
+        navImage.frame.origin.x = navContainer.bounds.midX - (IconSizes.large.rawValue / 2)
+        navTitle.isHidden = false
+        logoView.isHidden = false
     }
     
     fileprivate func addSearch() {

@@ -186,7 +186,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updateQuestionScopeSelection()
         case .people:
             updateHeader(navTitle: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
-                         screentitle : selectedUser.thumbPicImage != nil ? selectedUser.name : nil,
+                         screentitle : selectedUser.name,
                          leftButton: backButton, rightButton: nil, navImage: selectedUser.thumbPicImage)
             updatePeopleScopeSelection()
         }
@@ -233,6 +233,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                         if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
                         self.isLoaded = true
                     }
+
                 }
             })
         default: return

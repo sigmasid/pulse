@@ -8,7 +8,7 @@
 
 import UIKit
 
-class Save: UIView {
+class Saved: UIView {
 
     fileprivate var _saveImage = UIImageView()
     

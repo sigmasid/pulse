@@ -17,7 +17,6 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     @IBOutlet weak var signupButton: UIButton!
-    weak var returnToParentDelegate : ParentDelegate!
     
     fileprivate var isLoaded = false
     

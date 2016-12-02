@@ -11,6 +11,7 @@ import Firebase
 
 class Tag : NSObject {
     var tagID: String?
+    
     var questions = [Question?]()
     var experts: [User?]?
     var tagImage : String?
