@@ -67,7 +67,6 @@ public class PulseNavBar: UINavigationBar {
             }
         }
     }
-    
  
     override public func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         if screenOptions != nil, !screenOptions.isHidden {

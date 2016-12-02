@@ -292,7 +292,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         
         Database.getAnswer(nextAnswerID, completion: { (answer, error) in
             if error != nil {
-                print("error getting answer")
+                self.handleTap()
             } else {
                 self.nextAnswer = answer
                 
@@ -363,7 +363,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     fileprivate func _canAdvanceAnswerDetail(_ index: Int) -> Bool{
-        print("checking if can can advance with index \(index) and total count \(currentAnswerCollection.count)")
         return index < currentAnswerCollection.count ? true : false
     }
     
@@ -503,7 +502,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
             
         else if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
-            print("went into ignore tap")
             //ignore tap
         }
         
@@ -526,7 +524,11 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 _tapReady = false
                 qPlayer.pause()
                 removeObserverIfNeeded()
-                qPlayer.advanceToNextItem()
+                if qPlayer.items().count > 1 {
+                    qPlayer.advanceToNextItem()
+                } else {
+                    print("total items in qPlayer is \(qPlayer.items().count)")
+                }
                 addObserverForStatusReady()
             }
         
@@ -542,7 +544,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
         
         else {
-            print("should go into no answers to show")
             if (delegate != nil) {
                 delegate.noAnswersToShow(self)
             }
@@ -554,6 +555,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             return
         }
         
+        print("answer index is \(answerIndex), can advance \(_canAdvanceReady), tap ready \(_tapReady), next item ready \(_nextItemReady) in detail tap")
+
         if (!_tapReady || (!_nextItemReady && _canAdvanceDetailReady)) {
             //ignore tap
         }
@@ -570,7 +573,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 qPlayer.pause()
                 
                 removeObserverIfNeeded()
-                qPlayer.advanceToNextItem()
+                
+                if qPlayer.items().count > 1 {
+                    qPlayer.advanceToNextItem()
+                }
                 addObserverForStatusReady()
             }
             

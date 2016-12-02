@@ -21,15 +21,17 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 
 protocol tabVCDelegate: class {
     func cancelledTransition()
+    func removeLoading()
 }
 
 
 class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate {
     fileprivate var initialLoadComplete = false
-    
-    var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
-    var exploreVC : ExploreVC = ExploreVC()
-    var homeVC : HomeVC = HomeVC()
+    fileprivate var loadingView : LoadingView!
+
+    var accountVC : AccountLoginManagerVC! 
+    var exploreVC : ExploreVC!
+    var homeVC : HomeVC!
     fileprivate var deselectedIndex : Int!
     
     fileprivate var tabIcons = UIStackView()
@@ -70,6 +72,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupLoading()
         
         if !isLoaded {
             Database.checkCurrentUser { success in
@@ -81,7 +84,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
                     self.setupIcons(_selectedIndex: 2)
 
                     self.initialLoadComplete = true
-                    
+
                 } else if !success && !self.initialLoadComplete {
                     self.setupControllers()
                     self.setupPulseButton()
@@ -94,24 +97,44 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             }
         }
     }
+    
+    //DELEGATE METHOD TO REMOVE INITIAL LOADING SCREEN WHEN THE FEED IS LOADED
+    func removeLoading() {
+        UIView.animate(withDuration: 0.25, animations: { self.loadingView.alpha = 0 } , completion: {(value: Bool) in
+            self.loadingView.isHidden = true
+        })
+    }
+    
+    //DELEGATE METHOD TO RESET ICONS IF THE TRANSITION IS CANCELLED HALF WAY
+    func cancelledTransition() {
+        if deselectedIndex != nil {
+            setSelectedIcon(index: deselectedIndex)
+            setDeselectIcon(index: selectedIndex)
+        }
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
     func setupControllers() {
+        accountVC = AccountLoginManagerVC()
         let accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         accountNavVC.setNav(navTitle: "Account", screenTitle: nil, screenImage: nil)
         accountNavVC.viewControllers = [accountVC]
 
+        exploreVC = ExploreVC()
         let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         accountNavVC.setNav(navTitle: nil, screenTitle: "Explore", screenImage: nil)
         exploreNavVC.viewControllers = [exploreVC]
+        exploreVC.tabDelegate = self
         
+        homeVC = HomeVC()
         let homeNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         homeNavVC.isNavigationBarHidden = true
         homeNavVC.viewControllers = [homeVC]
-        
+        homeVC.tabDelegate = self
+
         viewControllers = [accountNavVC, exploreNavVC, homeNavVC]
         
         let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "profile"))
@@ -220,11 +243,12 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         selectedIndex = _selectedIndex
     }
     
-    func cancelledTransition() {
-        if deselectedIndex != nil {
-            setSelectedIcon(index: deselectedIndex)
-            setDeselectIcon(index: selectedIndex)
-        }
+    fileprivate func setupLoading() {
+        loadingView = LoadingView(frame: view.bounds, backgroundColor: .white)
+        view.addSubview(loadingView!)
+        
+        loadingView?.addLongIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
+        loadingView?.addMessage("P U L S E", _color: .black)
     }
     
     func setSelected(_ sender: UIButton) {

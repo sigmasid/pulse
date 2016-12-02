@@ -12,7 +12,8 @@ import UIKit
 class Icon : UIView {
     let heartLine = CAShapeLayer()
     let pulseDot = UIView(frame: CGRect(x: 0.0, y: 0.0, width: 6, height: 6))
-
+    var tillEnd = false
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
@@ -22,6 +23,12 @@ class Icon : UIView {
     }
     func drawLongIcon(_ color : UIColor, iconThickness : CGFloat) {
         let _flatLine = bounds.width - bounds.height
+        _drawIcon(color, iconThickness: iconThickness, flatLine: _flatLine)
+    }
+    
+    func drawLongIcon(_ color : UIColor, iconThickness : CGFloat, tillEnd : Bool) {
+        let _flatLine = bounds.width / 2 - bounds.height / 2
+        self.tillEnd = tillEnd
         _drawIcon(color, iconThickness: iconThickness, flatLine: _flatLine)
     }
     
@@ -72,7 +79,14 @@ class Icon : UIView {
         heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 4 * restXStep, y: startY + yStep * 2)) //35
         heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 5 * restXStep, y: startY - yStep * 2)) //40
         heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + firstXStep + 6 * restXStep, y: startY)) //45
-        heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + 2 * firstXStep + 6 * restXStep, y: startY)) //60
+        
+        if tillEnd {
+            heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + 2 * firstXStep + 6 * restXStep +
+                                                    (frame.width - startX + flatLine + 2 * firstXStep + 6 * restXStep),
+                                                y: startY)) //60
+        } else {
+            heartLineBezier.addLine(to: CGPoint(x: startX + flatLine + 2 * firstXStep + 6 * restXStep, y: startY)) //60
+        }
 
         heartLine.lineWidth = iconThickness
         heartLine.fillColor = UIColor.clear.cgColor

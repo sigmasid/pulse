@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle}
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -156,6 +156,7 @@ open class PulseButton: UIButton {
         setupRipple()
         setupButtonType(size: size, type: type)
         adjustsImageWhenHighlighted = false
+        self.size = size
         
         if isRound {
             makeRound()
@@ -183,13 +184,21 @@ open class PulseButton: UIButton {
         
         setTitleColor(pulseBlue, for: UIControlState.highlighted)
         setTitleColor(pulseBlue, for: UIControlState.selected)
+        switch size! {
+        case .xSmall, .small:
+            let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
+            imageEdgeInsets = imageInset
+            
+            let titleInset = UIEdgeInsetsMake(imageView!.frame.height + Spacing.s.rawValue, -imageView!.frame.width, 0, 0)
+            titleEdgeInsets = titleInset
+        case .medium, .large:
+            let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
+            imageEdgeInsets = imageInset
+            
+            let titleInset = UIEdgeInsetsMake(imageView!.frame.height + Spacing.l.rawValue, -imageView!.frame.width, 0, 0)
+            titleEdgeInsets = titleInset
+        }
 
-        let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
-        imageEdgeInsets = imageInset
-        
-        let titleInset = UIEdgeInsetsMake(imageView!.frame.height + Spacing.s.rawValue, -imageView!.frame.width, 0, 0)
-        titleEdgeInsets = titleInset
-        
         imageView?.contentMode = .scaleAspectFit
     }
     
@@ -320,12 +329,16 @@ open class PulseButton: UIButton {
         setImage(tintedTimage, for: UIControlState.normal)
         
         case .menu:
-        let tintedTimage = UIImage(named: "table-list")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
-        
+            let tintedTimage = UIImage(named: "table-list")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .post:
+            let tintedTimage = UIImage(named: "post")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
         case .save:
-        let tintedTimage = UIImage(named: "download-to-disk")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
+            let tintedTimage = UIImage(named: "download-to-disk")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
             
         case .profile:
             let tintedTimage = UIImage(named: "profile")?.withRenderingMode(.alwaysTemplate)
@@ -372,6 +385,11 @@ open class PulseButton: UIButton {
 
         case .questionCircle:
             let tintedTimage = UIImage(named: "question-circle")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+            
+        case .postCircle:
+            let tintedTimage = UIImage(named: "post-circle")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
             

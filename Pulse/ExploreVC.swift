@@ -9,9 +9,11 @@
 import UIKit
 
 class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate {
+    public var tabDelegate : tabVCDelegate!
+    
     fileprivate var exploreContainer : FeedVC!
     fileprivate var loadingView : LoadingView?
-
+    
     fileprivate var headerNav : PulseNavVC?
     
     fileprivate var searchButton : PulseButton!
@@ -99,6 +101,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             
             tapGesture.addTarget(self, action: #selector(dismissSearchTap))
             loadingView?.addGestureRecognizer(tapGesture)
+            
         }
     }
     
@@ -198,6 +201,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     self.exploreContainer.allTags = tags
                     self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
                     self.toggleLoading(show: false, message : nil)
+                    
+                    if !self.isLoaded {
+                        if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
+                        self.isLoaded = true
+                    }
                 }
             })
         case .questions:
@@ -206,6 +214,12 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     self.exploreContainer.allQuestions = questions
                     self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
                     self.toggleLoading(show: false, message : nil)
+                    
+                    if !self.isLoaded {
+                        if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
+                        self.isLoaded = true
+                    }
+
                 }
             })
         case .people:
@@ -214,6 +228,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     self.exploreContainer.allUsers = users
                     self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
                     self.toggleLoading(show: false, message : nil)
+                    
+                    if !self.isLoaded {
+                        if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
+                        self.isLoaded = true
+                    }
                 }
             })
         default: return

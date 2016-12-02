@@ -94,7 +94,7 @@ class User {
     }
     
     static func isLoggedIn() -> Bool {
-        return (User.currentUser?.uID != nil ? true : false)
+        return (FIRAuth.auth()?.currentUser != nil ? true : false)
     }
     
     func hasAnsweredQuestion(_ qID : String) -> Bool {

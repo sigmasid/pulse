@@ -926,7 +926,9 @@ class Database {
     
     ///Check if user is logged in
     static func checkCurrentUser(_ completion: @escaping (Bool) -> Void) {
-        Database.checkSocialTokens({(result) in print("found token \(result)")})
+        Database.checkSocialTokens({(result) in
+            result ? completion(true) : completion(false)
+        })
 
         FIRAuth.auth()?.addStateDidChangeListener { auth, user in
             if let _user = user {

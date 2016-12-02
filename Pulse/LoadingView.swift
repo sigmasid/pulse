@@ -60,6 +60,22 @@ class LoadingView: UIView {
         iconManager.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         iconManager.layoutIfNeeded()
     }
+    
+    func addLongIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {
+        let _iconSize = iconSize.rawValue
+        iconManager = Icon(frame: CGRect(x: 0, y: 0, width: frame.width, height: _iconSize))
+        addSubview(iconManager)
+        
+        iconManager.translatesAutoresizingMaskIntoConstraints = false
+        iconManager.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        iconManager.heightAnchor.constraint(equalToConstant: _iconSize).isActive = true
+        iconManager.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+        iconManager.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        iconManager.layoutIfNeeded()
+
+        iconManager.drawLongIcon(.black, iconThickness: IconThickness.medium.rawValue, tillEnd : true)
+
+    }
 }
 
 class LoadingIndicatorView: UIView {

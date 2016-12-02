@@ -275,6 +275,7 @@
 				BAA2C15D1D2F932900169A13 /* Explore */,
 				BA03C43A1DB5A51D00277382 /* Standalone Search */,
 				BA6B78B71D2EEBD9003EE992 /* Detail */,
+				BA6DFBDD1DF1012100B30F53 /* Icon */,
 				BA1DE12A1D244486004F3ED2 /* Models */,
 				BA1DE1431D244CBD004F3ED2 /* Global Refs */,
 				BA23C8021D4FE0DC00BA0109 /* Profile */,
@@ -321,12 +322,9 @@
 		BA1DE1431D244CBD004F3ED2 /* Global Refs */ = {
 			isa = PBXGroup;
 			children = (
-				BA1DE1281D244440004F3ED2 /* Icon.swift */,
-				BA17FC051D3E0AEC00DC952D /* LoadingView.swift */,
 				BA1DE1411D244C9F004F3ED2 /* globalExtensions.swift */,
 				BA7D67801D30DEA100883B88 /* globalFunctions.swift */,
 				BAD7A2B01D5473D30003CED4 /* Save.swift */,
-				BAB03AC51D80AB0500090147 /* IconContainer.swift */,
 			);
 			name = "Global Refs";
 			sourceTree = "<group>";
@@ -377,6 +375,16 @@
 				BAD363A91D51646E00560EB5 /* DetailCollectionCell.swift */,
 			);
 			name = Detail;
+			sourceTree = "<group>";
+		};
+		BA6DFBDD1DF1012100B30F53 /* Icon */ = {
+			isa = PBXGroup;
+			children = (
+				BA17FC051D3E0AEC00DC952D /* LoadingView.swift */,
+				BAB03AC51D80AB0500090147 /* IconContainer.swift */,
+				BA1DE1281D244440004F3ED2 /* Icon.swift */,
+			);
+			name = Icon;
 			sourceTree = "<group>";
 		};
 		BAA2C15D1D2F932900169A13 /* Explore */ = {

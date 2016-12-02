@@ -9,6 +9,9 @@
 import UIKit
 
 class HomeVC: UIViewController, feedVCDelegate {
+    
+    public var tabDelegate : tabVCDelegate!
+
     fileprivate var isLoaded = false
     fileprivate var homeFeedVC : FeedVC!
     fileprivate var loadingView : LoadingView?
@@ -49,7 +52,6 @@ class HomeVC: UIViewController, feedVCDelegate {
     
     func loadFeed() {
         if User.isLoggedIn() && !initialLoadComplete {
-            print("load feed fired")
             if homeFeedVC == nil {
                 homeFeedVC = FeedVC()
                 GlobalFunctions.addNewVC(self.homeFeedVC, parentVC: self)
@@ -70,13 +72,14 @@ class HomeVC: UIViewController, feedVCDelegate {
                     self.view.bringSubview(toFront: self.loadingView!)
                     self.toggleLoading(show: true, message: "Explore new channels to add to your feed")
                 }
+                
+                if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
                 self.initialLoadComplete = true
             }
-        } else {
+        } else if !User.isLoggedIn() {
             if homeFeedVC != nil {
                 view.bringSubview(toFront: loadingView!)
             }
-            initialLoadComplete = false
             toggleLoading(show: true, message: "Please login to see your feed!")
         }
         
@@ -111,7 +114,6 @@ class HomeVC: UIViewController, feedVCDelegate {
             if homeFeedVC != nil {
                 view.bringSubview(toFront: loadingView!)
             }
-            print("setting initial load complete to false")
             initialLoadComplete = false
             toggleLoading(show: true, message: "Please login to see your feed!")
         }

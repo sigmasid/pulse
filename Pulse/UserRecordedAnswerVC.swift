@@ -184,7 +184,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     func _post() {
         _controlsOverlay.getButton(.post).isEnabled = false
         if User.isLoggedIn() {
-            _controlsOverlay.getButton(.post).setTitle("Posting...", for: UIControlState.disabled)
+            _controlsOverlay.addProgressLabel("Posting...")
             _controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
             
             uploadAnswer()
@@ -298,7 +298,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///User clicked save to album button
     func _save(_ sender: UIButton!) {
-        _controlsOverlay.addSavingLabel("Saving...")
+        _controlsOverlay.addProgressLabel("Saving...")
         
         if currentAnswer.aType == .recordedVideo || currentAnswer.aType == .albumVideo {
             _saveVideoToAlbum(currentAnswer.aURL as URL)
@@ -306,7 +306,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             _saveImageToAlbum(currentAnswer.aImage!)
         }
         else {
-            _controlsOverlay.hideSavingLabel("Sorry error saving file")
+            _controlsOverlay.hideProgressLabel("Sorry error saving file")
         }
     }
     
@@ -317,11 +317,11 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             }, completionHandler: { success, error in
                 if success {
                     DispatchQueue.main.async {
-                        self._controlsOverlay.hideSavingLabel("Saved video!")
+                        self._controlsOverlay.hideProgressLabel("Saved video!")
                     }
                 } else {
                     DispatchQueue.main.async {
-                        self._controlsOverlay.hideSavingLabel("Sorry there was an error")
+                        self._controlsOverlay.hideProgressLabel("Sorry there was an error")
                     }
                 }
         })
@@ -334,11 +334,11 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             }, completionHandler: { success, error in
                 if success {
                     DispatchQueue.main.async {
-                        self._controlsOverlay.hideSavingLabel("Saved image!")
+                        self._controlsOverlay.hideProgressLabel("Saved image!")
                     }
                 } else {
                     DispatchQueue.main.async {
-                        self._controlsOverlay.hideSavingLabel("Sorry there was an error")
+                        self._controlsOverlay.hideProgressLabel("Sorry there was an error")
                     }
                 }
         })
