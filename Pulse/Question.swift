@@ -21,7 +21,7 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 
 class Question : NSObject {
     var qID : String
-    var qTagID : String?
+    var qTag : Tag!
     var qTitle : String?
     
     dynamic var qCreated = false
@@ -34,9 +34,9 @@ class Question : NSObject {
         self.qID = qID
     }
     
-    init(qID: String, qTagID : String?) {
+    init(qID: String, qTag : Tag) {
         self.qID = qID
-        self.qTagID = qTagID
+        self.qTag = qTag
     }
     
     init(qID: String, snapshot: FIRDataSnapshot) {

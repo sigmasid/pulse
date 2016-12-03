@@ -78,7 +78,7 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         dismissKeyboard()
         
         if selectedTag != nil {
-            Database.askTagQuestion(tagID: selectedTag.tagID!, qText: questionBody.text, completion: {(success, error) in
+            Database.askTagQuestion(tag: selectedTag, qText: questionBody.text, completion: {(success, error) in
                 if success {
                     let questionConfirmation = UIAlertController(title: "Question Posted!", message: "Thanks for your question. You will get a notification as soon as someone posts an answer", preferredStyle: .actionSheet)
                     

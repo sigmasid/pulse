@@ -11,6 +11,7 @@ import Firebase
 
 class Tag : NSObject {
     var tagID: String?
+    var tagTitle : String?
     
     var questions = [Question?]()
     var experts: [User?]?
@@ -24,6 +25,11 @@ class Tag : NSObject {
         self.tagID = tagID
     }
     
+    init(tagID: String, tagTitle : String?) {
+        self.tagID = tagID
+        self.tagTitle = tagTitle
+    }
+    
     init(tagID: String, questions : [Question]?) {
         self.tagID = tagID
         self.questions = questions!
@@ -35,6 +41,7 @@ class Tag : NSObject {
         
         self.tagDescription  = snapshot.childSnapshot(forPath: "description").value as? String
         self.previewImage = snapshot.childSnapshot(forPath: "previewImage").value as? String
+        self.tagTitle = snapshot.childSnapshot(forPath: "title").value as? String
 
         for question in snapshot.childSnapshot(forPath: "questions").children {
             let _question = Question(qID: (question as AnyObject).key)

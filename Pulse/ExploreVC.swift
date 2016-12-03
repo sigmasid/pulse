@@ -174,8 +174,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updateHeader(navTitle: nil, screentitle : "Explore", leftButton: searchButton, rightButton: nil, navImage: nil)
             updateRootScopeSelection()
         case .tag:
-            updateHeader(navTitle: nil, screentitle : selectedTag.tagID!, leftButton: backButton, rightButton: nil, navImage: nil)
-            isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTags[selectedTag.tagID!] != nil ? true : false
+            updateHeader(navTitle: nil, screentitle : selectedTag.tagTitle ?? "Explore Tag", leftButton: backButton, rightButton: nil, navImage: nil)
+            print(User.currentUser!.savedTags)
+            isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(selectedTag.tagID!) ? true : false
             updateTagScopeSelection()
         case .search:
             updateHeader(navTitle: nil, screentitle : nil, leftButton: closeButton, rightButton: nil, navImage: nil)

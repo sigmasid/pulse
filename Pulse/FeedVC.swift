@@ -228,8 +228,8 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { return cell }
 
-                if let tagID = _currentQuestion.qTagID {
-                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: tagID.capitalized)
+                if let tagTitle = _currentQuestion.qTag?.tagTitle {
+                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: tagTitle.capitalized)
                 } else {
                     cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
                 }
@@ -242,14 +242,14 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             } else {
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
                     if let question = question {
-                        if let tagID = question.qTagID {
-                            cell.updateLabel(question.qTitle, _subtitle: tagID.capitalized)
+                        if let tagTitle = question.qTag?.tagTitle  {
+                            cell.updateLabel(question.qTitle, _subtitle: tagTitle.capitalized)
                             self.allQuestions[indexPath.row] = question
 
-                        } else if let tagID = self.allQuestions[indexPath.row]?.qTagID {
-                            cell.updateLabel(question.qTitle, _subtitle: tagID.capitalized)
+                        } else if let tag = self.allQuestions[indexPath.row]?.qTag {
+                            cell.updateLabel(question.qTitle, _subtitle: tag.tagTitle?.capitalized)
                             self.allQuestions[indexPath.row] = question
-                            self.allQuestions[indexPath.row]?.qTagID = tagID
+                            self.allQuestions[indexPath.row]?.qTag = tag
 
                         } else {
                             cell.updateLabel(question.qTitle, _subtitle: nil)
@@ -277,14 +277,14 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
             if allTags.count > indexPath.row && allTags[indexPath.row].tagCreated {
                 let _currentTag = allTags[indexPath.row]
-                cell.updateLabel(_currentTag.tagID, _subtitle: _currentTag.tagDescription)
+                cell.updateLabel(_currentTag.tagTitle, _subtitle: _currentTag.tagDescription)
                 cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), for: UIControlState())
             } else if allTags.count > indexPath.row {
 
                 Database.getTag(allTags[indexPath.row].tagID!, completion: { (tag, error) in
                     if error == nil {
                         self.allTags[indexPath.row] = tag
-                        cell.updateLabel(tag.tagID, _subtitle: tag.tagDescription)
+                        cell.updateLabel(tag.tagTitle, _subtitle: tag.tagDescription)
                         cell.answerCount.setTitle(String(tag.totalQuestionsForTag()), for: UIControlState())
                     }
                 })

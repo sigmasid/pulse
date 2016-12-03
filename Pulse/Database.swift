@@ -625,14 +625,15 @@ class Database {
             initialFeedUpdateComplete = true
 
         } else if User.currentUser!.savedTags.count > 0 && !initialFeedUpdateComplete {
+            //check for questions added to tags
             keepUserTagsUpdated()
         
             //monitor updates to existing questions
             updateAnswersForExistingFeedQuestions()
         
             //add in new posts before returning feed
-            for (offset : index, (key : tagID, value : _)) in User.currentUser!.savedTags.enumerated() {
-                Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
+            for (offset : index, (key : tag, value : _)) in User.currentUser!.savedTags.enumerated() {
+                Database.addNewQuestionsFromTagToFeed(tag.tagID!, tagTitle: tag.tagTitle, completion: {(success) in
                     if index + 1 == User.currentUser?.savedTags.count && success {
                         initialFeedUpdateComplete = true
                         
@@ -653,7 +654,9 @@ class Database {
         
         feedPath.observeSingleEvent(of: .value, with: {(snap) in
             for question in snap.children {
-                let _question = Question(qID: (question as AnyObject).key, qTagID: (question as AnyObject).childSnapshot(forPath: "tagID").value as? String)
+                let currentTag = Tag(tagID: (question as AnyObject).childSnapshot(forPath: "tagID").value as! String,
+                                     tagTitle: (question as AnyObject).childSnapshot(forPath: "tagTitle").value as? String)
+                let _question = Question(qID: (question as AnyObject).key, qTag: currentTag)
                 homeFeed.questions.insert(_question, at: 0)
             }
             completion(homeFeed)
@@ -687,12 +690,13 @@ class Database {
         })
     }
     
-    static func addNewQuestionsFromTagToFeed(_ tagID : String, completion: @escaping (_ success: Bool) -> Void) {
+    static func addNewQuestionsFromTagToFeed(_ tagID : String, tagTitle: String?, completion: @escaping (_ success: Bool) -> Void) {
         var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
+        
         currentUserRef.child("savedTags").child(tagID).observeSingleEvent(of: .value, with: { snap in
-            if snap.exists() && (snap.value! as AnyObject).isKind(of: NSString.self) {
+            if snap.exists() && (snap.childSnapshot(forPath: "lastQuestionID").value! as AnyObject).isKind(of: NSString.self) {
                 //first get the last sync'd question for a tag
-                let lastQuestionID = snap.value as! String
+                let lastQuestionID = snap.childSnapshot(forPath: "lastQuestionID").value as! String
                     
                 if lastQuestionID != "true" {
                     tagQuestions = tagQuestions.queryOrderedByKey().queryStarting(atValue: lastQuestionID)
@@ -710,15 +714,15 @@ class Database {
                         }
                         
                         if questionIndex + 1 == Int(questionSnap.childrenCount) && lastQuestionKey != lastQuestionID { //at the last question in tag query
-                            currentUserRef.child("savedTags").updateChildValues([tagID : (questionID as! FIRDataSnapshot).key]) // update last sync'd question ID
-                            keepTagQuestionsUpdated(tagID, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
+                            currentUserRef.child("savedTags/\(tagID)").updateChildValues(["lastQuestionID" : (questionID as! FIRDataSnapshot).key]) // update last sync'd question ID
+                            keepTagQuestionsUpdated(tagID, tagTitle: tagTitle, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
                         } else if questionIndex + 1 == Int(questionSnap.childrenCount) && lastQuestionKey == lastQuestionID {
-                            keepTagQuestionsUpdated(tagID, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
+                            keepTagQuestionsUpdated(tagID, tagTitle: tagTitle, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
                         }
                     }
                     
                     // adds the questions to the feed once we have iterated through all the questions
-                    updateFeedQuestions(tagID, questions: newQuestions, completion: { added in
+                    updateFeedQuestions(tagID, tagTitle: tagTitle, questions: newQuestions, completion: { added in
                         completion(true)
                     })
                 })
@@ -726,11 +730,19 @@ class Database {
         })
     }
     
-    static func updateFeedQuestions(_ tagID : String?, questions : [String : String?], completion: @escaping (_ added: Bool) -> Void) {
+    static func updateFeedQuestions(_ tagID : String?, tagTitle: String?, questions : [String : String?], completion: @escaping (_ added: Bool) -> Void) {
         //add new questions to feed
         let _updatePath = currentUserRef.child(Item.Feed.rawValue)
         var post = [String : AnyObject]()
         
+        if let _tagID = tagID {
+            post["tagID"] = _tagID as AnyObject?
+        }
+        
+        if let _tagID = tagID {
+            post["tagTitle"] = tagTitle as AnyObject?
+        }
+
         if questions.count == 0 {
             completion(true)
         } else {
@@ -751,9 +763,6 @@ class Database {
                             post["lastAnswerID"] = (answerID as AnyObject).key
                             post["newAnswerCount"] = totalNewAnswers as AnyObject?
                             
-                            if let _tagID = tagID {
-                                post["tagID"] = _tagID as AnyObject?
-                            }
                             _updatePath.updateChildValues([questionID : post], withCompletionBlock: { (error, ref) in
                                 
                                 if index + 1 == questions.count {
@@ -769,7 +778,7 @@ class Database {
                         else if totalNewAnswers == 0 {
                             post["lastAnswerID"] = (answerID as AnyObject).key
                             post["newAnswerCount"] = totalNewAnswers as AnyObject?
-                            
+
                             _updatePath.updateChildValues([questionID : post], withCompletionBlock: { (error, ref) in
                                 if index + 1 == questions.count {
                                     completion(true)
@@ -791,7 +800,7 @@ class Database {
             
             userTagsPath.observe(.childAdded, with: { tagSnap in
                 if initialFeedUpdateComplete {
-                    addNewQuestionsFromTagToFeed(tagSnap.key, completion: { success in
+                    addNewQuestionsFromTagToFeed(tagSnap.key, tagTitle: tagSnap.childSnapshot(forPath: "title").value as? String, completion: { success in
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdated"), object: self)
                     })
                 } else {
@@ -811,14 +820,14 @@ class Database {
         }
     }
     
-    static func keepTagQuestionsUpdated(_ tagID : String, lastQuestionID : String) {
+    static func keepTagQuestionsUpdated(_ tagID : String, tagTitle: String?, lastQuestionID : String) {
         let tagsRef = getDatabasePath(Item.Tags, itemID: tagID).child("questions").queryOrderedByKey().queryStarting(atValue: lastQuestionID)
         activeListeners.append(getDatabasePath(Item.Tags, itemID: tagID).child("questions"))
         
         tagsRef.observe(.childAdded, with: { (snap) in
             if snap.key != lastQuestionID {
-                currentUserRef.child("savedTags").updateChildValues([tagID : snap.key]) //update last sync'd question for user
-                updateFeedQuestions(tagID, questions: [snap.key : "true"], completion: { _ in })
+                currentUserRef.child("savedTags/\(tagID)").updateChildValues(["lastQuestionID" : snap.key]) //update last sync'd question for user
+                updateFeedQuestions(tagID, tagTitle: tagTitle, questions: [snap.key : "true"], completion: { _ in })
                     //add question to feed
             }
         })
@@ -1032,7 +1041,13 @@ class Database {
         usersRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
             if snap.hasChild("savedTags") {
                 for _tag in snap.childSnapshot(forPath: "savedTags").children {
-                    User.currentUser!.savedTags[(_tag as AnyObject).key] = (_tag as AnyObject).value
+                    let tagTitle = (_tag as! FIRDataSnapshot).childSnapshot(forPath: "title").value as? String
+                    let lastAnswer = (_tag as! FIRDataSnapshot).childSnapshot(forPath: "lastAnswerID").value as? String
+
+                    let savedTag = Tag(tagID: (_tag as AnyObject).key,
+                                        tagTitle: tagTitle)
+                    User.currentUser!.savedTags[savedTag] = lastAnswer
+                    User.currentUser!.savedTagIDs.append((_tag as AnyObject).key as String)
                 }
             }
             
@@ -1292,7 +1307,7 @@ class Database {
     }
     
     /** ASK QUESTIONS **/
-    static func askTagQuestion(tagID : String, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func askTagQuestion(tag : Tag, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to ask a question" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
@@ -1302,9 +1317,9 @@ class Database {
         let questionKey = questionsRef.childByAutoId().key
         
         let post = ["questions/\(questionKey)/title":qText,
-                    "questions/\(questionKey)/tags/\(tagID)":true,
+                    "questions/\(questionKey)/tags/\(tag.tagID)":tag.tagTitle ?? "true",
                     "questions/\(questionKey)/uID/":user.uid,
-                    "tags/\(tagID)/questions/\(questionKey)":true,
+                    "tags/\(tag.tagID)/questions/\(questionKey)":true,
                     "users/\(user.uid)/askedQuestions/\(questionKey)":true] as [String: Any]
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
@@ -1395,26 +1410,29 @@ class Database {
     
     static func pinTagForUser(_ tag : Tag, completion: @escaping (Bool, NSError?) -> Void) {
         if User.isLoggedIn() {
-            if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[tag.tagID!] != nil { //remove tag
+            if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[tag] != nil { //remove tag
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     } else {
                         completion(true, nil)
-                        User.currentUser?.savedTags[tag.tagID!] = nil
+                        User.currentUser?.savedTags[tag] = nil
                         _path.removeAllObservers()
                     }
                 })
             }
             else { //save tag
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
-                _path.updateChildValues([tag.tagID!: "true"], withCompletionBlock: { (completionError, ref) in
+                
+                let post = ["lastQuestionID" : "true", "title" : tag.tagTitle ?? ""] as [String: Any]
+                
+                _path.updateChildValues([tag.tagID!: post], withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     }
                     else {
-                        User.currentUser?.savedTags[tag.tagID!] = "true"
+                        User.currentUser?.savedTags[tag] = "true"
                         completion(true, nil)
                     }
                 })

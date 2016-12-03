@@ -18,9 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        
         // setup firebase, check twitter and facebook tokens to login if available
         FIRApp.configure()
         Fabric.with([Twitter.self()])
@@ -30,7 +28,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
         let initialVC = MasterTabVC()
-
         self.window?.rootViewController = initialVC
         self.window?.makeKeyAndVisible()
         

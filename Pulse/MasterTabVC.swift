@@ -29,7 +29,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate var initialLoadComplete = false
     fileprivate var loadingView : LoadingView!
 
-    var accountVC : AccountLoginManagerVC! 
+    var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
     var exploreVC : ExploreVC!
     var homeVC : HomeVC!
     fileprivate var deselectedIndex : Int!
@@ -118,7 +118,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     }
     
     func setupControllers() {
-        accountVC = AccountLoginManagerVC()
         let accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         accountNavVC.setNav(navTitle: "Account", screenTitle: nil, screenImage: nil)
         accountNavVC.viewControllers = [accountVC]

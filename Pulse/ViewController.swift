@@ -31,9 +31,8 @@ class ViewController: UIViewController {
     @IBAction func updateFeed(_ sender: UIButton) {
         Database.keepUserTagsUpdated()
 
-        for (offset : index, (key : tagID, value : _)) in User.currentUser!.savedTags.enumerated() {
-            print("current tag is \(tagID)")
-            Database.addNewQuestionsFromTagToFeed(tagID, completion: {(success) in
+        for (offset : index, (key : tag, value : _)) in User.currentUser!.savedTags.enumerated() {
+            Database.addNewQuestionsFromTagToFeed(tag.tagID!, tagTitle: tag.tagTitle, completion: {(success) in
                 if index + 1 == User.currentUser?.savedTags.count {
                     initialFeedUpdateComplete = true
                 }
