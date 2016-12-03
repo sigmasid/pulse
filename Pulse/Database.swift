@@ -963,6 +963,7 @@ class Database {
         User.currentUser!.answers = []
         User.currentUser!.answeredQuestions = []
         User.currentUser!.savedTags = [ : ]
+        User.currentUser!.savedTagIDs = []
         User.currentUser!.profilePic = nil
         User.currentUser!.thumbPic = nil
         User.currentUser!._totalAnswers = nil
@@ -1410,7 +1411,7 @@ class Database {
     
     static func pinTagForUser(_ tag : Tag, completion: @escaping (Bool, NSError?) -> Void) {
         if User.isLoggedIn() {
-            if User.currentUser?.savedTags != nil && User.currentUser!.savedTags[tag] != nil { //remove tag
+            if User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(tag.tagID!) { //remove tag
                 let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {

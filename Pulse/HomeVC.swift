@@ -108,7 +108,7 @@ class HomeVC: UIViewController, feedVCDelegate {
         if User.isLoggedIn() {
             Database.getFeed { feed in
                 self.homeFeedVC.allQuestions = feed.questions
-                self.homeFeedVC.updateDataSource = true
+                self.homeFeedVC.feedItemType = .question
             }
         } else {
             if homeFeedVC != nil {
