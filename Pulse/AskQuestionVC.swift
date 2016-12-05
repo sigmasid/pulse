@@ -143,10 +143,16 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     
     fileprivate func setAskTag() {
         guard selectedTag != nil else { return }
-
-        questionToTitle.text = selectedTag.tagID!.capitalized
-        questionToSubtitle.text = selectedTag.tagDescription
-        questionBody.text = "ask experts about \(selectedTag.tagID!.capitalized)"
+        
+        if let tagTitle = selectedTag.tagTitle {
+            questionToTitle.text = tagTitle.capitalized
+            questionToSubtitle.text = selectedTag.tagDescription
+            questionBody.text = "ask experts about \(tagTitle.capitalized)"
+        } else {
+            questionToTitle.text = "Ask Question"
+            questionToSubtitle.text = selectedTag.tagDescription
+            questionBody.text = "ask experts your question here"
+        }
     }
     
     fileprivate func setupQuestionBox() {

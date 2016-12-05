@@ -53,6 +53,15 @@ class Database {
     static var activeListeners = [FIRDatabaseReference]()
     static var profileListenersAdded = false
     
+    static func addTags() {
+        for _ in 1...10 {
+            let key = tagsRef.childByAutoId().key
+            let post = ["title":"test1"]
+            tagsRef.child(key).setValue(post)
+        }
+    }
+    
+    
     /** MARK : SEARCH **/
     static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
         var _results = [Tag]()
@@ -1315,12 +1324,18 @@ class Database {
             return
         }
         
+        guard let tagID = tag.tagID else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you can only post a question in an active tag" ]
+            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            return
+        }
+        
         let questionKey = questionsRef.childByAutoId().key
         
         let post = ["questions/\(questionKey)/title":qText,
-                    "questions/\(questionKey)/tags/\(tag.tagID)":tag.tagTitle ?? "true",
+                    "questions/\(questionKey)/tags/\(tagID)":tag.tagTitle ?? "true",
                     "questions/\(questionKey)/uID/":user.uid,
-                    "tags/\(tag.tagID)/questions/\(questionKey)":true,
+                    "tags/\(tagID)/questions/\(questionKey)":true,
                     "users/\(user.uid)/askedQuestions/\(questionKey)":true] as [String: Any]
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in

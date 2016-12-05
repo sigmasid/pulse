@@ -30,7 +30,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let initialVC = MasterTabVC()
         self.window?.rootViewController = initialVC
         self.window?.makeKeyAndVisible()
-        
         return true
     }
     
