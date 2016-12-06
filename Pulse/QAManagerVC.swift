@@ -38,6 +38,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     var questionCounter = 0
     var currentQuestion : Question!
     var answerIndex = 0
+    
     var openingScreen : OpeningScreenOptions = .question
     enum OpeningScreenOptions { case camera, question }
 
@@ -161,7 +162,13 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     /* user finished recording video or image - send to user recorded answer to add more or post */
     func doneRecording(_ assetURL : URL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?){
         let answerKey = databaseRef.child("answers").childByAutoId().key
-        let answer = Answer(aID: answerKey, qID: self.currentQuestion!.qID, uID: User.currentUser!.uID!, aType: assetType!, aLocation: location, aImage: image, aURL: assetURL)
+        let answer = Answer(aID: answerKey,
+                            qID: self.currentQuestion!.qID,
+                            uID: User.currentUser!.uID!,
+                            aType: assetType!,
+                            aLocation: location,
+                            aImage: image,
+                            aURL: assetURL)
         
         savedRecordedVideoVC.delegate = self
         
@@ -327,7 +334,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func showQuestionPreviewOverlay() {
-        print("show question preview fired")
         questionPreviewVC = QuestionPreviewVC()
         questionPreviewVC?.questionTitle = currentQuestion.qTitle
         questionPreviewVC?.numAnswers =  currentQuestion.totalAnswers()
@@ -337,7 +343,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func removeQuestionPreview() {
-        print("remove question preview fired")
         if _isShowingQuestionPreview {
             popViewController(animated: true)
             _isShowingQuestionPreview = false

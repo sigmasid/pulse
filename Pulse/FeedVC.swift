@@ -405,7 +405,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
                         self.allUsers[indexPath.row] = user
 
-                        if let _uPic = user.thumbPic {
+                        if let _uPic = user.profilePic {
                             DispatchQueue.global(qos: .background).async {
                                 if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
                                     DispatchQueue.main.async {

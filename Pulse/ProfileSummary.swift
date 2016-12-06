@@ -8,11 +8,11 @@
 
 import UIKit
 
-class ProfileSummary: UIView, UITextFieldDelegate {
+class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     
     fileprivate var uProfilePic = UIImageView()
     fileprivate var uName = UITextField()
-    fileprivate var uShortBio = UITextField()
+    fileprivate var uShortBio = UITextView()
     fileprivate var uMessages = UIButton()
     fileprivate var nameErrorLabel = UILabel()
 
@@ -37,6 +37,8 @@ class ProfileSummary: UIView, UITextFieldDelegate {
             uName.delegate = self
             uName.clearsOnBeginEditing = true
             
+            uShortBio.delegate = self
+
             tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleImageTap))
             uProfilePic.addGestureRecognizer(tapGesture!)
             uProfilePic.isUserInteractionEnabled = true
@@ -140,9 +142,21 @@ class ProfileSummary: UIView, UITextFieldDelegate {
     }
     
     /* TEXT FIELD DELEGATES */
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        textView.text = ""
+    }
+    
     func textFieldDidBeginEditing(_ textField: UITextField) {
+        textField.text = ""
         nameErrorLabel.text = ""
     }
+    
+    func textViewShouldReturn(_ textView: UITextView) -> Bool {
+        endEditing(true)
+        return true
+        // ADD FOR TEXT VIEW
+    }
+
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         endEditing(true)
@@ -235,9 +249,8 @@ class ProfileSummary: UIView, UITextFieldDelegate {
         
         uShortBio.translatesAutoresizingMaskIntoConstraints = false
         uShortBio.topAnchor.constraint(equalTo: uName.bottomAnchor).isActive = true
-        uShortBio.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        uShortBio.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.6).isActive = true
         uShortBio.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        uShortBio.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         uShortBio.layoutIfNeeded()
         uShortBio.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)
         

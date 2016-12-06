@@ -49,15 +49,13 @@ class Database {
     static var masterQuestionIndex = [String : String]()
     static var masterTagIndex = [String : String]()
 
-    static let querySize : UInt = 20
+    static let querySize : UInt = 40
     static var activeListeners = [FIRDatabaseReference]()
     static var profileListenersAdded = false
     
     static func addTags() {
         for _ in 1...10 {
-            let key = tagsRef.childByAutoId().key
-            let post = ["title":"test1"]
-            tagsRef.child(key).setValue(post)
+            tagsRef.childByAutoId().child("title").setValue("test1")
         }
     }
     
@@ -978,6 +976,7 @@ class Database {
         User.currentUser!._totalAnswers = nil
         User.currentUser!.birthday = nil
         User.currentUser!.bio = nil
+        User.currentUser!.shortBio = nil
         User.currentUser!.gender = nil
         User.currentUser!.savedQuestions = [ : ]
         User.currentUser!.socialSources = [ : ]
@@ -1079,6 +1078,21 @@ class Database {
     
     static func addUserProfileListener(uID : String) {
         if !profileListenersAdded {
+            usersPublicDetailedRef.child(uID).child("gender").observe(.value, with: { snap in
+                User.currentUser!.gender = snap.value as? String
+            })
+            activeListeners.append(usersPublicDetailedRef.child(uID).child("gender"))
+            
+            usersPublicDetailedRef.child(uID).child("birthday").observe(.value, with: { snap in
+                User.currentUser!.birthday = snap.value as? String
+            })
+            activeListeners.append(usersPublicDetailedRef.child(uID).child("birthday"))
+
+            usersPublicDetailedRef.child(uID).child("bio").observe(.value, with: { snap in
+                User.currentUser!.bio = snap.value as? String
+            })
+            activeListeners.append(usersPublicDetailedRef.child(uID).child("bio"))
+
             usersPublicDetailedRef.child(uID).child("answeredQuestions").observe(.childAdded, with: { snap in
                 if !User.currentUser!.answeredQuestions.contains(snap.key) {
                     User.currentUser!.answeredQuestions.append(snap.key)

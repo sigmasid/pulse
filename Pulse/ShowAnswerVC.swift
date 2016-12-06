@@ -526,8 +526,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 removeObserverIfNeeded()
                 if qPlayer.items().count > 1 {
                     qPlayer.advanceToNextItem()
-                } else {
-                    print("total items in qPlayer is \(qPlayer.items().count)")
                 }
                 addObserverForStatusReady()
             }

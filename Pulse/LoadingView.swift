@@ -34,11 +34,17 @@ class LoadingView: UIView {
         messageLabel.textAlignment = .center
         
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        messageLabel.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        
+        if iconManager != nil {
+            messageLabel.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        } else {
+            messageLabel.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+        }
+        
         messageLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
     }
     
-    func addMessage(_ _text : String, _color : UIColor) {
+    func addMessage(_ _text : String?, _color : UIColor) {
         messageLabel.textColor = _color
         addMessage(_text)
     }

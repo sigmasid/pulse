@@ -116,7 +116,15 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         }
     }
     
-    func cycleFlash(_ oldButton : UIButton) {
+    public func toggleLoading(show: Bool, message: String?) {
+        view.addSubview(loadingOverlay)
+        loadingOverlay.isHidden = show ? false : true
+        loadingOverlay.addIcon(.medium, _iconColor: .white, _iconBackgroundColor: .black)
+        loadingOverlay?.addMessage(message, _color: .white)
+    }
+
+    
+    public func cycleFlash(_ oldButton : UIButton) {
         let newFlashMode = camera.changeFlashMode()
         
         switch newFlashMode {
@@ -126,7 +134,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         }
     }
     
-    func flipCamera() {
+    public func flipCamera() {
         if camera.cameraDevice == .front {
             camera.cameraDevice = .back
         } else {
@@ -138,6 +146,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.black)
         view.addSubview(loadingOverlay)
     }
+
     
     fileprivate func setupCamera() {
         camera.showAccessPermissionPopupAutomatically = true
@@ -150,6 +159,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
                 UIView.animate(withDuration: 0.2, animations: { self.loadingOverlay.alpha = 0.0 } ,
                     completion: {(value: Bool) in
                         self.loadingOverlay.removeFromSuperview()
+                        self.loadingOverlay.alpha = 1.0
                 })
                 self.tap.isEnabled = true //enables tap when camera is ready
                 self.longTap.isEnabled = true

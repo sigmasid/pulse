@@ -7,13 +7,14 @@
 //
 
 import UIKit
+import MobileCoreServices
 
 protocol accountDelegate: class {
     func userClickedCamera()
     func updateNav(title : String)
 }
 
-class AccountPageVC: UIViewController, accountDelegate {
+class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     fileprivate var nav : PulseNavVC?
     fileprivate var profileSummary = ProfileSummary()
@@ -21,10 +22,9 @@ class AccountPageVC: UIViewController, accountDelegate {
     fileprivate var settingsLinks : AccountPageMenu!
     fileprivate lazy var answersVC : FeedVC = FeedVC()
 
-    fileprivate lazy var cameraView = UIView()
-    fileprivate lazy var Camera = CameraManager()
-    fileprivate var cameraOverlay : CameraOverlayView!
-    
+    fileprivate var cameraVC : CameraVC!
+    fileprivate var panDismissInteractionController = PanContainerInteractionController()
+
     fileprivate var loadingOverlay : LoadingView!
     //fileprivate var icon : IconContainer!
     
@@ -57,6 +57,8 @@ class AccountPageVC: UIViewController, accountDelegate {
             if !notificationsSetup {
                 NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
                 NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "AccountPageLoaded"), object: nil)
+                NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
+
                 
                 notificationsSetup = true
             }
@@ -203,9 +205,7 @@ class AccountPageVC: UIViewController, accountDelegate {
 
     /* DELEGATE METHODS */
     func userClickedCamera() {
-        setupCamera()
-        setupCameraOverlay()
-        toggleLoading(show: true, message: "Smile!")
+        showCamera()
     }
     
     func updateNav(title : String) {
@@ -214,107 +214,89 @@ class AccountPageVC: UIViewController, accountDelegate {
         }
     }
     
-    /* CAMERA FUNCTIONS */
-    fileprivate func setupCamera() {
-        cameraView = UIView(frame: view.bounds)
-        cameraView.backgroundColor = UIColor.white
-        nav?.setNav(navTitle: nil, screenTitle: nil, screenImage: nil)
-        view.addSubview(cameraView)
-        
-        Camera.showAccessPermissionPopupAutomatically = true
-        Camera.shouldRespondToOrientationChanges = false
-        Camera.cameraDevice = .front
-        
-        _ = Camera.addPreviewLayerToView(cameraView, newCameraOutputMode: .stillImage, completition: {() in
-            DispatchQueue.main.async {
-                UIView.animate(withDuration: 0.2, animations: { self.loadingOverlay.alpha = 0.0 } ,
-                    completion: {(value: Bool) in
-                        self.toggleLoading(show: false, message: nil)
-                })
-                self.cameraOverlay.getButton(.shutter).isEnabled = true
-            }
-        })
-        
-        Camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
-            
-            let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
-            
-            self?.present(alertController, animated: true, completion: nil)
-        }
-    }
-    
-    fileprivate func setupCameraOverlay() {
-        cameraOverlay = CameraOverlayView(frame: view.bounds)
-        cameraView.addSubview(cameraOverlay)
-        
-        switch Camera.flashMode {
-        case .off: cameraOverlay._flashMode =  .off
-        case .on: cameraOverlay._flashMode = .on
-        case .auto: cameraOverlay._flashMode = .auto
-        }
-        
-        cameraOverlay.getButton(.shutter).addTarget(self, action: #selector(gotImage), for: UIControlEvents.touchUpInside)
-        cameraOverlay.getButton(.shutter).isEnabled = false
-        
-        cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
-        cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
-        cameraOverlay.updateTitle("smile!")
-    }
-    
-    func flipCamera() {
-        if Camera.cameraDevice == .front {
-            Camera.cameraDevice = .back
-        } else {
-            Camera.cameraDevice = .front
-        }
-    }
-    
-    func cycleFlash(_ oldButton : UIButton) {
-        let newFlashMode = Camera.changeFlashMode()
-        
-        switch newFlashMode {
-        case .off: cameraOverlay._flashMode =  .off
-        case .on: cameraOverlay._flashMode = .on
-        case .auto: cameraOverlay._flashMode = .auto
-        }
-    }
-    
-    func gotImage() {
-        setupLoading()
+    /* CAMERA FUNCTIONS & DELEGATE METHODS */
+    func showCamera() {
+        guard let nav = parent?.navigationController else { return }
 
-        cameraOverlay.getButton(.shutter).isEnabled = false
-        toggleLoading(show: true, message: "saving! just a sec...")
+        cameraVC = CameraVC()
+        cameraVC.delegate = self
+        cameraVC.screenTitle = "smile!"
         
-        Camera.capturePictureDataWithCompletition({ (imageData, error) -> Void in
-            if let errorOccured = error {
-                self.Camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
-                self.cameraOverlay.getButton(.shutter).isEnabled = true
+        panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav)
+        panDismissInteractionController.delegate = self
+        
+        present(cameraVC, animated: true, completion: nil)
+    }
+    
+    func doneRecording(_: URL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?) {
+        guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
+        
+        cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+
+        Database.uploadProfileImage(imageData, completion: {(URL, error) in
+            if error != nil {
+                self.toggleLoading(show: false, message: nil)
             } else {
-                Database.uploadProfileImage(imageData!, completion: {(URL, error) in
-                    if error != nil {
-                        self.Camera.showErrorBlock("Error occurred", error!.localizedDescription)
-                        self.cameraOverlay.getButton(.shutter).isEnabled = true
-                        self.toggleLoading(show: false, message: nil)
-                    } else {
-                        self.Camera.stopAndRemoveCaptureSession()
-                        UIView.animate(withDuration: 0.2, animations: { self.cameraView.alpha = 0.0 } ,
-                            completion: {(value: Bool) in
-                                self.toggleLoading(show: false, message: nil)
-                                self.cameraView.removeFromSuperview()
+                UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
+                               completion: {(value: Bool) in
+                                self.cameraVC.toggleLoading(show: false, message: nil)
                                 self.updateHeader(title: "Account", leftButton: .menu)
                                 self.profileSummary.updateLabels()
-                        })
-                    }
+                                self.cameraVC.dismiss(animated: true, completion: nil)
                 })
             }
         })
+    }
+    
+    func userDismissedCamera() {
+        cameraVC.dismiss(animated: true, completion: nil)
+    }
+    
+    func showAlbumPicker(_ currentVC : UIViewController) {
+        let albumPicker = UIImagePickerController()
+        
+        albumPicker.delegate = self
+        albumPicker.allowsEditing = false
+        albumPicker.sourceType = .photoLibrary
+        albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
+        
+        cameraVC.present(albumPicker, animated: true, completion: nil)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
+        picker.dismiss(animated: true, completion: nil)
+
+        cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+
+        if mediaType.isEqual(to: kUTTypeImage as String) {
+            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+
+            Database.uploadProfileImage(pickedImage.highQualityJPEGNSData, completion: {(URL, error) in
+                if error != nil {
+                    self.cameraVC.toggleLoading(show: false, message: nil)
+                } else {
+                    UIView.animate(withDuration: 0.2, animations: { self.cameraVC.view.alpha = 0.0 } ,
+                                   completion: {(value: Bool) in
+                                    self.updateHeader(title: "Account", leftButton: .menu)
+                                    self.profileSummary.updateLabels()
+                                    self.toggleLoading(show: false, message: nil)
+                                    self.cameraVC.dismiss(animated: true, completion: nil)
+                    })
+                }
+            })
+            // Media is an image
+        }
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
     }
     
     /* LAYOUT FUNCTION */
     fileprivate func updateHeader(title : String, leftButton : ButtonType) {
         if parent?.navigationController != nil {
-
+            
             if leftButton == .menu {
                 let button = PulseButton(size: .small, type: .menu, isRound : true, hasBackground: true)
                 button.addTarget(self, action: #selector(clickedMenu), for: UIControlEvents.touchUpInside)
@@ -366,6 +348,6 @@ class AccountPageVC: UIViewController, accountDelegate {
         settingsLinks.getButton(type: .logout).addTarget(self, action: #selector(clickedLogout), for: .touchUpInside)
         
         clickedMenu()
-
+        
     }
 }
