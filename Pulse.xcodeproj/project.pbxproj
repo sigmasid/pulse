@@ -81,6 +81,7 @@
 		BAFBD1651D81DD7F00911453 /* FadeAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFBD1641D81DD7F00911453 /* FadeAnimationController.swift */; };
 		BAFD76DA1D9C8384005FBBD0 /* SearchVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFD76D91D9C8384005FBBD0 /* SearchVC.swift */; };
 		BAFD76DC1D9C8C7D005FBBD0 /* SearchHeaderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFD76DB1D9C8C7D005FBBD0 /* SearchHeaderCell.swift */; };
+		BAFEBB831DFA7EB5005F5D54 /* FeedAnswerCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAFEBB821DFA7EB5005F5D54 /* FeedAnswerCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -161,6 +162,7 @@
 		BAFD76D81D9C6F7C005FBBD0 /* Pulse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Pulse.entitlements; sourceTree = "<group>"; };
 		BAFD76D91D9C8384005FBBD0 /* SearchVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchVC.swift; sourceTree = "<group>"; };
 		BAFD76DB1D9C8C7D005FBBD0 /* SearchHeaderCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchHeaderCell.swift; sourceTree = "<group>"; };
+		BAFEBB821DFA7EB5005F5D54 /* FeedAnswerCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedAnswerCell.swift; sourceTree = "<group>"; };
 		C4B93ACED20027ACF593EDFD /* Pods-Pulse.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Pulse.release.xcconfig"; path = "Pods/Target Support Files/Pods-Pulse/Pods-Pulse.release.xcconfig"; sourceTree = "<group>"; };
 		F6E190E94E153F0B7B61227E /* Pods_Pulse.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Pulse.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -399,6 +401,7 @@
 				BA7D55291D74C5A9005EF7F3 /* FeedCell.swift */,
 				BAFD76DB1D9C8C7D005FBBD0 /* SearchHeaderCell.swift */,
 				BA0941FA1DE4C7AB0060A9BC /* FeedPeopleCell.swift */,
+				BAFEBB821DFA7EB5005F5D54 /* FeedAnswerCell.swift */,
 			);
 			name = Feed;
 			sourceTree = "<group>";
@@ -621,6 +624,7 @@
 				BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */,
 				BA0941FB1DE4C7AB0060A9BC /* FeedPeopleCell.swift in Sources */,
 				BAFD76DC1D9C8C7D005FBBD0 /* SearchHeaderCell.swift in Sources */,
+				BAFEBB831DFA7EB5005F5D54 /* FeedAnswerCell.swift in Sources */,
 				BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */,
 				BAFA88751D59245000854B12 /* BrowseAnswersView.swift in Sources */,
 				BA1DE1401D244C51004F3ED2 /* ShowAnswerVC.swift in Sources */,

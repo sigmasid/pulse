@@ -30,6 +30,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let initialVC = MasterTabVC()
         self.window?.rootViewController = initialVC
         self.window?.makeKeyAndVisible()
+        
+        //Database.updateQuestionSearchIndex()
+        //Database.updateTagSearchIndex()
+        //Database.addTags()
         return true
     }
     

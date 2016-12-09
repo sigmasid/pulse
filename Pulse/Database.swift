@@ -49,7 +49,7 @@ class Database {
     static var masterQuestionIndex = [String : String]()
     static var masterTagIndex = [String : String]()
 
-    static let querySize : UInt = 40
+    static let querySize : UInt = 50
     static var activeListeners = [FIRDatabaseReference]()
     static var profileListenersAdded = false
     
@@ -59,6 +59,30 @@ class Database {
         }
     }
     
+    static func updateTagSearchIndex() {
+        tagsRef.observeSingleEvent(of: .value, with: { snap in
+            for tag in snap.children {
+                let firTag = tag as? FIRDataSnapshot
+                let tagKey = firTag?.key
+                let tagTitle = firTag?.childSnapshot(forPath: "title").value as! String
+                
+                databaseRef.child("tagSearchIndex").updateChildValues([tagKey!:tagTitle])
+                
+            }
+        })
+    }
+    
+    static func updateQuestionSearchIndex() {
+        questionsRef.observeSingleEvent(of: .value, with: { snap in
+            for question in snap.children {
+                let questionTag = question as? FIRDataSnapshot
+                let questionKey = questionTag?.key
+                let questionTitle = questionTag?.childSnapshot(forPath: "title").value as! String
+                
+                databaseRef.child("questionSearchIndex").updateChildValues([questionKey!:questionTitle])
+            }
+        })
+    }
     
     /** MARK : SEARCH **/
     static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
@@ -66,8 +90,7 @@ class Database {
     
         search(type: .tag, searchText: searchText, completion: { results in
             for (key, value) in results {
-                let _currentTag = Tag(tagID: key)
-                _currentTag.tagDescription = value
+                let _currentTag = Tag(tagID: key, tagTitle: value)
                 _results.append(_currentTag)
             }
             
@@ -166,7 +189,7 @@ class Database {
             completion(_results)
         case .tag:
             let _results = masterTagIndex.filter({
-                $0.key.contains(searchText)
+                $0.value.contains(searchText)
             })
             completion(_results)
         case .people: break

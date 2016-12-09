@@ -11,7 +11,7 @@ import AVFoundation
 
 class PreviewVC: UIView, PreviewPlayerItemDelegate {
     fileprivate var _loadingIndicator : LoadingIndicatorView?
-    fileprivate var aPlayer = AVPlayer()
+    static var aPlayer = AVPlayer()
     fileprivate var imageView : UIImageView!
     fileprivate var isImageViewShown = false
     
@@ -28,7 +28,7 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         super.init(frame: frame)
         
         backgroundColor = UIColor.black
-        let avPlayerLayer = AVPlayerLayer(player: aPlayer)
+        let avPlayerLayer = AVPlayerLayer(player: PreviewVC.aPlayer)
         layer.addSublayer(avPlayerLayer)
         avPlayerLayer.frame = bounds
         avPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
@@ -38,11 +38,16 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         super.init(coder: aDecoder)
     }
     
+    func removeClip() {
+        PreviewVC.aPlayer.pause()
+        PreviewVC.aPlayer.replaceCurrentItem(with: nil)
+    }
+    
     func itemStatusReady() {
-        switch aPlayer.status {
+        switch PreviewVC.aPlayer.status {
         case AVPlayerStatus.readyToPlay:
             removeLoadingIndicator()
-            aPlayer.play()
+            PreviewVC.aPlayer.play()
             break
         default: break
         }
@@ -58,7 +63,6 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
             }
             
             if answerType == .recordedVideo || answerType == .albumVideo {
-                print("answer is video \(answerType)")
                 Database.getAnswerURL(answer.aID, completion: { (URL, error) in
                     if (error != nil) {
                         GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
@@ -66,11 +70,10 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
                         let aPlayerItem = PreviewPlayerItem(url: URL!)
                         self.removeImageView()
                         aPlayerItem.delegate = self
-                        self.aPlayer.replaceCurrentItem(with: aPlayerItem)
+                        PreviewVC.aPlayer.replaceCurrentItem(with: aPlayerItem)
                     }
                 })
             } else if answerType == .recordedImage || answerType == .albumImage {
-                print("answer is image \(answerType)")
                 Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
                     if error != nil {
                         GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")

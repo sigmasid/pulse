@@ -385,17 +385,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         switch type {
         case .tag:
             selectedTag = item as! Tag //didSet method pulls questions from database in case of search else assigns questions from existing tag
-            currentExploreMode = Explore(currentMode: .tag, currentSelection: 0)
+            currentExploreMode = Explore(currentMode: .tag, currentSelection: 0, currentSelectedItem: selectedTag)
             exploreStack.append(currentExploreMode)
             exploreContainer.updateDataSource = true
         case .question:
             selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
-            currentExploreMode = Explore(currentMode: .question, currentSelection: 0)
+            currentExploreMode = Explore(currentMode: .question, currentSelection: 0, currentSelectedItem: selectedQuestion)
             exploreStack.append(currentExploreMode)
             exploreContainer.selectedTag = currentExploreMode.currentMode == .search ? Tag(tagID: "SEARCH") : Tag(tagID : "EXPLORE")
         case .people:
             selectedUser = item as! User //didSet method pulls questions from database in case of search else assigns questions from existing tag
-            currentExploreMode = Explore(currentMode: .people, currentSelection: 0)
+            currentExploreMode = Explore(currentMode: .people, currentSelection: 0, currentSelectedItem: selectedUser)
             exploreStack.append(currentExploreMode)
         default: break
         }
@@ -484,7 +484,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     func userClickedSearch() {
         searchController.isActive = true
-        currentExploreMode = Explore(currentMode: .search, currentSelection: 0)
+        currentExploreMode = Explore(currentMode: .search, currentSelection: 0, currentSelectedItem: nil)
         exploreStack.append(currentExploreMode)
         tapGesture.isEnabled = true
         
@@ -516,6 +516,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
         
         let _ = exploreStack.popLast()
+        
+        switch exploreStack.last!.currentMode {
+        case .people:
+            selectedUser = exploreStack.last?.currentSelectedItem as? User
+        case .question:
+            selectedQuestion = exploreStack.last?.currentSelectedItem as? Question
+        case .tag:
+            selectedTag = exploreStack.last?.currentSelectedItem as? Tag
+        default: break
+        }
+        
         currentExploreMode = exploreStack.last
     }
     
@@ -618,7 +629,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         exploreContainer.view.layoutIfNeeded()
         exploreContainer.feedDelegate = self
 
-        currentExploreMode = Explore(currentMode: .root, currentSelection: 0)
+        currentExploreMode = Explore(currentMode: .root, currentSelection: 0, currentSelectedItem: nil)
         exploreStack.append(currentExploreMode)
         
         loadingView = LoadingView(frame: CGRect.zero, backgroundColor: .white)
@@ -797,6 +808,8 @@ extension ExploreVC {
         }
         
         var currentSelection : Int = 0
+        var currentSelectedItem : Any?
+        
         var currentScopeBar : scopeBar? {
             switch currentMode {
             case .root: return scopeBar(titles: getOptionTitles(), icons: rootIcons)
