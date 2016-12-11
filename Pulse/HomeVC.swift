@@ -123,7 +123,7 @@ class HomeVC: UIViewController, feedVCDelegate {
         switch type {
         case .question:
             
-            let selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
+            let selectedQuestion = item as! Question
 
             Database.getQuestion(selectedQuestion.qID, completion: { question, error in
                 if let question = question, question.hasAnswers() {

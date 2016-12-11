@@ -203,13 +203,15 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             Database.uploadImage(.AnswerThumbs, fileID: currentAnswers.first!.aID, image: _image, completion: { (success, error) in } )
         }
         
-        for answer in self.currentAnswers {
+        for (index, answer) in currentAnswers.enumerated() {
             answerCollectionPost[answer.aID] = true
             
+            print("uploading answer for index \(index) of \(self.currentAnswers.count)")
             if answer.aType != nil && answer.aType == .recordedVideo || answer.aType == .albumVideo {
+                
                 uploadVideo(answer, completion: {(success, _answerID) in
-                    
-                    if answer == self.currentAnswers.last {
+                    print("uploaded video success for \(answer.aID)")
+                    if answer.aID == self.currentAnswers.last?.aID {
                         self.doneCreatingAnswer()
                     }
                 })
@@ -255,7 +257,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             uploadTask = path.putFile(localFile, metadata: _metadata)
             
             uploadTask.observe(.success) { snapshot in
-                
+                print("successfully added file to storage")
                 self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
                 
                 Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
@@ -263,6 +265,8 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                         GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                         completion(false, nil)
                     } else {
+                        print("successfully uploaded to real time database")
+
                         self.uploadTask.removeAllObservers()
                         completion(true, answer.aID)
                     }
@@ -272,6 +276,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
             
             uploadTask.observe(.failure) { snapshot in
                 if let _error = snapshot.error {
+                    print("went into error posting video")
                     GlobalFunctions.showErrorBlock("Error Posting Video", erMessage: _error.localizedDescription)
                 }
             }

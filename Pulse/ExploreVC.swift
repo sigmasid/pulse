@@ -181,9 +181,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updateHeader(navTitle: nil, screentitle : nil, leftButton: closeButton, rightButton: nil, navImage: nil)
             updateSearchResults(for: searchController)
         case .question:
-            updateHeader(navTitle: currentExploreMode.getModeTitle(), screentitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: nil, navImage: nil)
             isFollowingSelectedQuestion = User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[selectedQuestion.qID] != nil ? true : false
             updateQuestionScopeSelection()
+            updateHeader(navTitle: currentExploreMode.getModeTitle(), screentitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: nil, navImage: nil)
+
         case .people:
             updateHeader(navTitle: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
                          screentitle : selectedUser.name,
@@ -304,8 +305,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 Database.getQuestion(selectedQuestion.qID, completion: { question, error in
                     if let question = question, question.hasAnswers() {
                         self.exploreContainer.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
-                        self.exploreContainer.allQuestions = [self.selectedQuestion]
-                        self.exploreContainer.selectedQuestion = self.selectedQuestion
                         self.exploreContainer.feedItemType = .answer
                         
                         self.toggleLoading(show: false, message : nil)
@@ -317,8 +316,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             } else {
                 if selectedQuestion.hasAnswers() {
                     exploreContainer.allAnswers = selectedQuestion.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
-                    exploreContainer.allQuestions = [self.selectedQuestion]
-                    exploreContainer.selectedQuestion = selectedQuestion
 
                     exploreContainer.feedItemType = .answer
                     exploreContainer.setSelectedIndex(index: IndexPath(row: 0, section: 0))
@@ -329,6 +326,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 }
             }
         case .experts:
+            //removed this option - but had it before
             Database.getExpertsForQuestion(qID: selectedQuestion.qID, completion: { experts in
                 self.exploreContainer.setSelectedIndex(index: nil)
                 self.exploreContainer.allUsers = experts
@@ -384,17 +382,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         switch type {
         case .tag:
-            selectedTag = item as! Tag //didSet method pulls questions from database in case of search else assigns questions from existing tag
+            selectedTag = item as! Tag
             currentExploreMode = Explore(currentMode: .tag, currentSelection: 0, currentSelectedItem: selectedTag)
             exploreStack.append(currentExploreMode)
             exploreContainer.updateDataSource = true
         case .question:
-            selectedQuestion = item as! Question //didSet method pulls questions from database in case of search else assigns questions from existing tag
+            selectedQuestion = item as! Question
             currentExploreMode = Explore(currentMode: .question, currentSelection: 0, currentSelectedItem: selectedQuestion)
             exploreStack.append(currentExploreMode)
             exploreContainer.selectedTag = currentExploreMode.currentMode == .search ? Tag(tagID: "SEARCH") : Tag(tagID : "EXPLORE")
         case .people:
-            selectedUser = item as! User //didSet method pulls questions from database in case of search else assigns questions from existing tag
+            selectedUser = item as! User
             currentExploreMode = Explore(currentMode: .people, currentSelection: 0, currentSelectedItem: selectedUser)
             exploreStack.append(currentExploreMode)
         default: break
@@ -413,6 +411,16 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         if let nav = headerNav {
             nav.setNav(navTitle: navTitle, screenTitle: screentitle, screenImage: navImage)
+            
+            /*
+             
+            nav.showNavbar(animated: false)
+            
+            nav.setNavigationBarHidden(true, animated: false)
+            nav.setNavigationBarHidden(false, animated: false)
+            
+             */
+
         } else {
             title = navTitle
         }
@@ -790,7 +798,7 @@ extension ExploreVC {
         }
         
         private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
-        private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "profile")!, UIImage(named: "related")!]
+        private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "related")!]
         private let tagIcons = [UIImage(named: "question")!, UIImage(named: "profile")!, UIImage(named: "related")!]
         private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
         private let peopleIcons = [UIImage(named: "answers")!, UIImage(named: "tag")!]
@@ -801,7 +809,7 @@ extension ExploreVC {
             switch currentMode {
             case .root: return [.tags, .questions, .people]
             case .tag: return [.questions, .experts, .related]
-            case .question: return [.answers, .experts, .related]
+            case .question: return [.answers, .related]
             case .people: return [ .answers, .tags ]
             case .search: return [.tags, .questions, .people]
             }

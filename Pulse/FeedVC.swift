@@ -29,6 +29,15 @@ class FeedVC: UIViewController {
         return feedCollectionView != nil ? feedCollectionView : nil
     }
     
+    struct AnswerPreviewData {
+        var user : User?
+        var answer : Answer!
+        var question : Question?
+        
+        var gettingImageForAnswerPreview : Bool = false
+        var gettingInfoForAnswerPreview : Bool = false
+    }
+    
     /* SET BY PARENT */
     var feedDelegate : feedVCDelegate!
     var feedItemType : FeedItemType! {
@@ -41,6 +50,8 @@ class FeedVC: UIViewController {
     var updateDataSource : Bool = false {
         didSet {
             selectedIndex = nil
+            answerStack.removeAll()
+
             switch feedItemType! {
             case .tag:
                 totalItemCount = allTags.count
@@ -48,11 +59,16 @@ class FeedVC: UIViewController {
                 totalItemCount = allQuestions.count
             case .answer:
                 totalItemCount = allAnswers.count
-
-                gettingImageForCell = [Bool](repeating: false, count: totalItemCount)
-                gettingInfoForCell = [Bool](repeating: false, count: totalItemCount)
-                usersForAnswerPreviews = [User?](repeating: nil, count: totalItemCount)
-                questionsForAnswerPreviews = [Question?](repeating: nil, count: totalItemCount)
+                
+                for (index, answer) in allAnswers.enumerated() {
+                    let currentAnswerData = AnswerPreviewData(user: nil,
+                                                       answer: answer,
+                                                       question: nil,
+                                                       gettingImageForAnswerPreview: false,
+                                                       gettingInfoForAnswerPreview: false)
+                    answerStack.insert(currentAnswerData, at: index)
+                }
+                
             case .people:
                 totalItemCount = allUsers.count
             }
@@ -60,6 +76,7 @@ class FeedVC: UIViewController {
             feedCollectionView?.delegate = self
             feedCollectionView?.dataSource = self
             feedCollectionView?.reloadData()
+            feedCollectionView?.layoutIfNeeded()
             
             if totalItemCount > 0 {
                 feedCollectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
@@ -99,6 +116,17 @@ class FeedVC: UIViewController {
             if selectedIndex != nil {
                 deselectedIndex = selectedIndex
             }
+            
+            if newValue == nil && feedItemType != nil {
+                switch feedItemType! {
+                case .answer:
+                    if let selectedIndex = selectedIndex {
+                        let cell = feedCollectionView?.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: selectedIndex) as! FeedAnswerCell
+                        cell.removeAnswer()
+                    }
+                default: return
+                }
+            }
         }
     }
     fileprivate var deselectedIndex : IndexPath?
@@ -117,15 +145,12 @@ class FeedVC: UIViewController {
     
     fileprivate var totalItemCount = 0
 
-    /* cache questions & answers that have been shown */
-    fileprivate var gettingImageForCell : [Bool]!
-    fileprivate var gettingInfoForCell : [Bool]!
-    fileprivate var usersForAnswerPreviews : [User?]!
-    fileprivate var questionsForAnswerPreviews : [Question?]!
+    fileprivate var answerStack = [AnswerPreviewData]()
 
     let collectionReuseIdentifier = "FeedCell"
     let collectionPeopleReuseIdentifier = "FeedPeopleCell"
-
+    let collectionAnswerReuseIdentifier = "FeedAnswerCell"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -160,6 +185,7 @@ class FeedVC: UIViewController {
         feedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         feedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
         feedCollectionView?.register(FeedPeopleCell.self, forCellWithReuseIdentifier: collectionPeopleReuseIdentifier)
+        feedCollectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: collectionAnswerReuseIdentifier)
 
         view.addSubview(feedCollectionView!)
         
@@ -293,32 +319,33 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
         /** FEED ITEM: ANSWER **/
         case .answer:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: indexPath) as! FeedAnswerCell
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
             cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
-
-            if cell.itemType == nil || cell.itemType != feedItemType {
-                cell.itemType = .answer
-            }
+            cell.updateLabel(nil, _subtitle: nil, _image : nil)
             
-            cell.hideAnswerCount()
-            let _answer = allAnswers[indexPath.row]
-
+            let currentAnswer = answerStack[indexPath.row]
+            // let _answer = allAnswers[indexPath.row]
+            
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
-            if _answer.thumbImage != nil && gettingImageForCell[indexPath.row] == true {
-                cell.updateImage(image: _answer.thumbImage!)
-            } else if gettingImageForCell[indexPath.row] {
+            if currentAnswer.answer.thumbImage != nil && currentAnswer.gettingImageForAnswerPreview {
+
+                cell.updateImage(image: currentAnswer.answer.thumbImage!)
+            } else if currentAnswer.gettingImageForAnswerPreview {
+                
                 //ignore if already fetching the image, so don't refetch if already getting
             } else {
-                gettingImageForCell[indexPath.row] = true
-                cell.updateImage(image: nil)
+                answerStack[indexPath.row].gettingImageForAnswerPreview = true
                 
-                Database.getImage(.AnswerThumbs, fileID: allAnswers[indexPath.row].aID, maxImgSize: maxImgSize, completion: {(_data, error) in
+                Database.getImage(.AnswerThumbs, fileID: currentAnswer.answer.aID, maxImgSize: maxImgSize, completion: {(_data, error) in
                     if error == nil {
                         let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
-                        self.allAnswers[indexPath.row].thumbImage = _answerPreviewImage
-                        cell.updateImage(image: _answerPreviewImage)
+                        self.answerStack[indexPath.row].answer.thumbImage = _answerPreviewImage
+                        
+                        DispatchQueue.main.async {
+                            cell.updateImage(image: self.answerStack[indexPath.row].answer.thumbImage)
+                        }
                     } else {
                         cell.updateImage(image: nil)
                     }
@@ -327,57 +354,62 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             /* GET QUESTION FROM DATABASE - SHOWING ALL ANSWERS FOR ONE USER CASE */
             if selectedUser != nil {
-                if questionsForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
-                    if let _question = questionsForAnswerPreviews[indexPath.row] {
-                        cell.updateLabel(_question.qTitle, _subtitle: nil)
-                    }
-                } else if gettingInfoForCell[indexPath.row] {
+                if currentAnswer.question != nil && currentAnswer.gettingInfoForAnswerPreview {
+                    cell.updateLabel(currentAnswer.question!.qTitle, _subtitle: nil)
+                } else if currentAnswer.gettingInfoForAnswerPreview {
                     //ignore if already fetching the image, so don't refetch if already getting
                 } else {
-                    cell.updateLabel(nil, _subtitle: nil)
-                    gettingInfoForCell[indexPath.row] = true
                     
-                    Database.getQuestion(allAnswers[indexPath.row].qID, completion: { (question, error) in
+                    answerStack[indexPath.row].gettingInfoForAnswerPreview = true
+                    
+                    Database.getQuestion(currentAnswer.answer.qID, completion: { (question, error) in
                         if error != nil {
-                            self.questionsForAnswerPreviews[indexPath.row] = nil
+                            self.answerStack[indexPath.row].question = nil
                         } else {
+                            self.answerStack[indexPath.row].question = question
                             cell.updateLabel(question?.qTitle, _subtitle: nil)
-                            self.questionsForAnswerPreviews[indexPath.row] = question
                         }
                     })
                 }
             }
-            /* GET NAME & BIO FROM DATABASE - SHOWING MANY ANSWERS CASE */
-            else if usersForAnswerPreviews.count > indexPath.row && gettingInfoForCell[indexPath.row] == true {
-                cell.hideAnswerCount()
-                if let _user = usersForAnswerPreviews[indexPath.row] {
-                    cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio?.capitalized)
-                }
-            } else if gettingInfoForCell[indexPath.row] {
+            /* GET NAME & BIO FROM DATABASE - SHOWING MANY ANSWERS FROM MANY USERS CASE */
+            else if answerStack[indexPath.row].user != nil && answerStack[indexPath.row].gettingInfoForAnswerPreview {
+
+                cell.updateLabel(answerStack[indexPath.row].user!.name?.capitalized, _subtitle: answerStack[indexPath.row].user!.shortBio?.capitalized)
+            } else if answerStack[indexPath.row].gettingInfoForAnswerPreview {
+                
                 //ignore if already fetching the image, so don't refetch if already getting
             } else {
-                cell.updateLabel(nil, _subtitle: nil)
-                gettingInfoForCell[indexPath.row] = true
+
+                answerStack[indexPath.row].gettingInfoForAnswerPreview = true
                 
-                Database.getUserSummaryForAnswer(allAnswers[indexPath.row].aID, completion: { (user, error) in
+                Database.getUserSummaryForAnswer(currentAnswer.answer.aID, completion: { (user, error) in
                     if error != nil {
-                        self.usersForAnswerPreviews[indexPath.row] = nil
+                        self.answerStack[indexPath.row].user = nil
                     } else {
+                        self.answerStack[indexPath.row].user = user
                         cell.updateLabel(user?.name?.capitalized, _subtitle: user?.shortBio?.capitalized)
-                        self.usersForAnswerPreviews[indexPath.row] = user
                     }
                 })
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
-                //only show answer by selected user - removes other answers from qAnswers array and creates blank tag
+                //only show answer by selected user - removes other answers from qAnswers array and creates blank dummy tag
                 if selectedUser != nil {
-                    let selectedQuestion = questionsForAnswerPreviews[indexPath.row]
+                    let selectedQuestion = currentAnswer.question
                     let currentTag = Tag(tagID: "ANSWERS")
-                    selectedQuestion?.qAnswers = [allAnswers[indexPath.row].aID]
-                    showQuestion(selectedQuestion, allQuestions: [selectedQuestion], questionIndex: selectedQuestionIndex, answerIndex: 0, selectedTag: currentTag)
+                    selectedQuestion?.qAnswers = [currentAnswer.answer.aID]
+                    showQuestion(selectedQuestion,
+                                 allQuestions: [selectedQuestion],
+                                 questionIndex: selectedQuestionIndex,
+                                 answerIndex: 0,
+                                 selectedTag: currentTag)
                 } else {
-                    showQuestion(selectedQuestion, allQuestions: allQuestions, questionIndex: selectedQuestionIndex, answerIndex: indexPath.row, selectedTag: selectedTag)
+                    showQuestion(selectedQuestion,
+                                 allQuestions: allQuestions,
+                                 questionIndex: selectedQuestionIndex,
+                                 answerIndex: indexPath.row,
+                                 selectedTag: selectedTag)
                 }
             } else if indexPath == selectedIndex {
                 cell.showAnswer(answer: selectedAnswer)
@@ -388,13 +420,12 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             return cell
         
         case .people:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionPeopleReuseIdentifier, for: indexPath) as! FeedPeopleCell
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: indexPath) as! FeedAnswerCell
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
             cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
 
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
-            cell.hideAnswerCount()
 
             let _user = allUsers[indexPath.row]
 
@@ -465,6 +496,10 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     //Should select item at indexPath
     func collectionView(_ collectionView: UICollectionView,
                         shouldSelectItemAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
     }
 }

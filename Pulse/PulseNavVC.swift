@@ -135,7 +135,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
             gestureRecognizer?.isEnabled = false
             self.navBarState = .scrolling
             UIView.animate(withDuration: animated ? 0.1 : 0, animations: {
-                self.lastContentOffset = 0;
+                self.lastContentOffset = 0
                 self.delayDistance = -navBar.navBarSize.height
                 self.scrollWithDelta(-navBar.navBarSize.height)
                 visibleViewController.view.setNeedsLayout()

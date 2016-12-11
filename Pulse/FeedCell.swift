@@ -91,6 +91,7 @@ class FeedCell: UICollectionViewCell {
             titleLabel.isHidden = false
             subtitleLabel.isHidden = false
         }
+        previewVC?.removeClip()
         previewVC?.removeFromSuperview()
     }
     
@@ -160,7 +161,7 @@ class FeedCell: UICollectionViewCell {
         }
         
         if previewImage != nil {
-            previewImage?.image = nil
+            previewImage!.image = nil
         }
         super.prepareForReuse()
     }
@@ -236,7 +237,7 @@ class FeedCell: UICollectionViewCell {
         titleLabelConstraint4 = titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue)
         
         previewImage!.translatesAutoresizingMaskIntoConstraints = false
-        previewImageConstraint1 = previewImage!.heightAnchor.constraint(equalTo: contentView.heightAnchor, multiplier: 0.8)
+        previewImageConstraint1 = previewImage!.heightAnchor.constraint(equalTo: contentView.heightAnchor, multiplier: 0.85)
         previewImageConstraint2 = previewImage!.topAnchor.constraint(equalTo: contentView.topAnchor)
         previewImageConstraint3 = previewImage!.widthAnchor.constraint(equalTo: contentView.widthAnchor)
         previewImageConstraint4 = previewImage!.leadingAnchor.constraint(equalTo: contentView.leadingAnchor)
