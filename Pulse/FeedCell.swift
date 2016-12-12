@@ -163,6 +163,9 @@ class FeedCell: UICollectionViewCell {
         if previewImage != nil {
             previewImage!.image = nil
         }
+        
+        titleLabel.text = ""
+        subtitleLabel.text = ""
         super.prepareForReuse()
     }
     

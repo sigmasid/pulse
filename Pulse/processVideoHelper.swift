@@ -157,8 +157,8 @@ func compressVideo(_ inputURL: URL, completion: @escaping (_ result: URL?, _ thu
 private func tempFileURL() -> URL {
     let saveFileName = "/pulse-\(Int(Date().timeIntervalSince1970)).mp4"
     
-    let paths = NSSearchPathForDirectoriesInDomains(
-        FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+    let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory,
+                                                    FileManager.SearchPathDomainMask.userDomainMask, true)
     let documentsDirectory: AnyObject = paths[0] as AnyObject
     let dataPath = documentsDirectory.appending(saveFileName)
     let outputUrl = URL(fileURLWithPath: dataPath)

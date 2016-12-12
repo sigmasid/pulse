@@ -14,7 +14,7 @@ import Photos
 class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     fileprivate var uploadTask : FIRStorageUploadTask!
-
+    
     // set by the delegate
     var currentAnswer : Answer! {
         didSet {
@@ -28,12 +28,12 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     var currentQuestion : Question! {
         didSet {
-//            _controlsOverlay = RecordedAnswerOverlay(frame: view.bounds)
+            //            _controlsOverlay = RecordedAnswerOverlay(frame: view.bounds)
             
             if currentQuestion.hasFilters() {
                 _answersFilters = FiltersOverlay(frame: view.bounds)
                 _answersFilters!.currentQuestion = currentQuestion
-//                view.addSubview(_answersFilters!) //NEED TO PUT BACK IN 
+                //                view.addSubview(_answersFilters!) //NEED TO PUT BACK IN
                 view.addSubview(_controlsOverlay)
             } else {
                 view.addSubview(_controlsOverlay)
@@ -71,7 +71,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate var _answersFilters : FiltersOverlay?
     fileprivate var _isVideoLoaded = false
     fileprivate var _isImageViewLoaded = false
-
+    
     fileprivate var aPlayer : AVPlayer!
     fileprivate var avPlayerLayer : AVPlayerLayer!
     fileprivate var imageView : UIImageView!
@@ -186,8 +186,8 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         if User.isLoggedIn() {
             _controlsOverlay.addProgressLabel("Posting...")
             _controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
-            
-            uploadAnswer()
+            print("current answer urls are \(currentAnswers.map { $0.aURL })")
+            uploadAnswer(allAnswers: currentAnswers)
         } else {
             if let delegate = delegate {
                 _controlsOverlay.getButton(.post).isEnabled = true
@@ -197,52 +197,57 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     ///upload video to firebase and update current answer with URL upon success
-    fileprivate func uploadAnswer() {
+    fileprivate func uploadAnswer( allAnswers : [Answer]) {
         
-        if let _image = currentAnswers.first?.thumbImage  {
-            Database.uploadImage(.AnswerThumbs, fileID: currentAnswers.first!.aID, image: _image, completion: { (success, error) in } )
+        var allAnswers = allAnswers
+        
+        guard let answer = allAnswers.last else {
+            self.doneCreatingAnswer()
+            return
         }
         
-        for (index, answer) in currentAnswers.enumerated() {
-            answerCollectionPost[answer.aID] = true
+        
+        if let _image = answer.thumbImage  {
+            Database.uploadImage(.AnswerThumbs, fileID: answer.aID, image: _image, completion: { (success, error) in } )
+        }
+        
+        answerCollectionPost[answer.aID] = true
+        
+        if answer.aType != nil && answer.aType == .recordedVideo || answer.aType == .albumVideo {
             
-            print("uploading answer for index \(index) of \(self.currentAnswers.count)")
-            if answer.aType != nil && answer.aType == .recordedVideo || answer.aType == .albumVideo {
+            uploadVideo(answer, completion: {(success, _answerID) in
                 
-                uploadVideo(answer, completion: {(success, _answerID) in
-                    print("uploaded video success for \(answer.aID)")
-                    if answer.aID == self.currentAnswers.last?.aID {
-                        self.doneCreatingAnswer()
-                    }
-                })
-            }
-                
-            else if answer.aType != nil && answer.aType == .recordedImage || answer.aType == .albumImage {
-                Database.uploadImage(.Answers, fileID: answer.aID, image: answer.aImage!, completion: {(success, error) in
-                    if error != nil {
-                        GlobalFunctions.showErrorBlock("Error Posting Image", erMessage: error!.localizedDescription)
-                    } else {
-                        
-                        Database.addUserAnswersToDatabase(answer, completion: {(success, error) in
-                            if !success {
-                                GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
-                            }
-                        })
-                    }
+                allAnswers.removeLast()
+                self.uploadAnswer(allAnswers: allAnswers)
+            })
+        }
+            
+        else if answer.aType != nil && answer.aType == .recordedImage || answer.aType == .albumImage {
+            Database.uploadImage(.Answers, fileID: answer.aID, image: answer.aImage!, completion: {(success, error) in
+                if error != nil {
+                    GlobalFunctions.showErrorBlock("Error Posting Image", erMessage: error!.localizedDescription)
+                } else {
                     
-                    if answer == self.currentAnswers.last {
-                        self.doneCreatingAnswer()
-                    }
-                })
-            }
+                    Database.addUserAnswersToDatabase(answer, completion: {(success, error) in
+                        if !success {
+                            GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                        } else {
+                            allAnswers.removeLast()
+                            self.uploadAnswer(allAnswers: allAnswers)
+                        }
+                    })
+                }
+            })
         }
     }
     
-    fileprivate func uploadVideo(_ answer : Answer, completion: @escaping (_ success : Bool, _ _answerID : String?) -> Void) {
+    fileprivate func uploadVideo(_ answer : Answer,
+                                 completion: @escaping (_ success : Bool, _ _answerID : String?) -> Void) {
         var fileSize = UInt64()
         _controlsOverlay.addUploadProgressBar()
         
         if let localFile: URL = answer.aURL as URL? {
+            
             let _metadata = FIRStorageMetadata()
             _metadata.contentType = "video/mp4"
             
@@ -251,35 +256,62 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 if let _attr = attr {
                     fileSize = _attr.fileSize()
                 }
-            } catch {}
+            } catch { }
             
             let path = Database.getStoragePath(.Answers, itemID: answer.aID)
-            uploadTask = path.putFile(localFile, metadata: _metadata)
             
-            uploadTask.observe(.success) { snapshot in
-                print("successfully added file to storage")
-                self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
+            do {
+                let assetData = try Data(contentsOf: localFile)
                 
-                Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
-                    if !success {
-                        GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
-                        completion(false, nil)
+                uploadTask = path.put(assetData, metadata: _metadata) { metadata, error in
+                    if (error != nil) {
+                        print("error occured with upload")
                     } else {
-                        print("successfully uploaded to real time database")
-
-                        self.uploadTask.removeAllObservers()
-                        completion(true, answer.aID)
+                        // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
+                        //self.currentAnswer.aURL = metadata?.downloadURL()
+                        
+                        Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
+                            if !success {
+                                GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                                completion(false, nil)
+                            } else {
+                                self.uploadTask.removeAllObservers()
+                                completion(true, answer.aID)
+                            }
+                        })
                     }
-                })
-
-            }
-            
-            uploadTask.observe(.failure) { snapshot in
-                if let _error = snapshot.error {
-                    print("went into error posting video")
-                    GlobalFunctions.showErrorBlock("Error Posting Video", erMessage: _error.localizedDescription)
                 }
+                
+                
             }
+            catch {}
+            
+            /*
+             //NEED TO CHECK IF THIS STILL WORKS - FOR FAILURE & SUCCESS
+             uploadTask.observe(.success) { snapshot in
+             print("successfully added file to storage")
+             self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
+             
+             Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
+             if !success {
+             print("error adding file to database")
+             GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+             completion(false, nil)
+             } else {
+             print("successfully uploaded to real time database")
+             
+             self.uploadTask.removeAllObservers()
+             completion(true, answer.aID)
+             }
+             })
+             }
+             
+             uploadTask.observe(.failure) { snapshot in
+             if let _error = snapshot.error {
+             print("went into error posting video")
+             GlobalFunctions.showErrorBlock("Error Posting Video", erMessage: _error.localizedDescription)
+             }
+             } */
             
             uploadTask.observe(.progress) { snapshot in
                 if fileSize > 0 {
@@ -319,16 +351,16 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate func _saveVideoToAlbum(_ url: URL) {
         let _ = PHPhotoLibrary.shared().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-            }, completionHandler: { success, error in
-                if success {
-                    DispatchQueue.main.async {
-                        self._controlsOverlay.hideProgressLabel("Saved video!")
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        self._controlsOverlay.hideProgressLabel("Sorry there was an error")
-                    }
+        }, completionHandler: { success, error in
+            if success {
+                DispatchQueue.main.async {
+                    self._controlsOverlay.hideProgressLabel("Saved video!")
                 }
+            } else {
+                DispatchQueue.main.async {
+                    self._controlsOverlay.hideProgressLabel("Sorry there was an error")
+                }
+            }
         })
     }
     
@@ -336,16 +368,16 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate func _saveImageToAlbum(_ image: UIImage) {
         let _ = PHPhotoLibrary.shared().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAsset(from: image)
-            }, completionHandler: { success, error in
-                if success {
-                    DispatchQueue.main.async {
-                        self._controlsOverlay.hideProgressLabel("Saved image!")
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        self._controlsOverlay.hideProgressLabel("Sorry there was an error")
-                    }
+        }, completionHandler: { success, error in
+            if success {
+                DispatchQueue.main.async {
+                    self._controlsOverlay.hideProgressLabel("Saved image!")
                 }
+            } else {
+                DispatchQueue.main.async {
+                    self._controlsOverlay.hideProgressLabel("Sorry there was an error")
+                }
+            }
         })
     }
 }
