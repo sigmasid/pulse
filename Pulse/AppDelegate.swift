@@ -34,6 +34,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         //Database.updateQuestionSearchIndex()
         //Database.updateTagSearchIndex()
         //Database.addTags()
+        
         return true
     }
     

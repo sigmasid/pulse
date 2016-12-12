@@ -426,14 +426,12 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         switch operation {
         case .pop:
             if fromVC is CameraVC {
-                print("should use camera dismiss")
                 let animator = ShrinkDismissController()
                 animator.transitionType = .dismiss
                 animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
 
                 return animator
             } else if fromVC is UserRecordedAnswerVC && toVC is CameraVC {
-                print("should use fade dismiss")
                 let animator = FadeAnimationController()
                 animator.transitionType = .dismiss
                 return animator

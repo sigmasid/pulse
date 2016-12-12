@@ -614,7 +614,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             captureDevice?.unlockForConfiguration()
             
         } catch {
-            print("Error locking configuration")
+            //print("Error locking configuration")
         }
     }
     

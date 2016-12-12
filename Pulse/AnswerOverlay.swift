@@ -452,7 +452,6 @@ class AnswerOverlay: UIView {
         
         switch _vote {
         case .upvote:
-            print("case upvote")
             _voteImage = UIImageView(image: UIImage(named: "upvote"))
             addSubview(_voteImage)
             _voteImage.translatesAutoresizingMaskIntoConstraints = false

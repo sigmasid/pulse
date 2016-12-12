@@ -150,7 +150,8 @@ class FeedVC: UIViewController {
     let collectionReuseIdentifier = "FeedCell"
     let collectionPeopleReuseIdentifier = "FeedPeopleCell"
     let collectionAnswerReuseIdentifier = "FeedAnswerCell"
-    
+    let collectionQuestionReuseIdentifier = "FeedQuestionCell"
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -184,7 +185,7 @@ class FeedVC: UIViewController {
         
         feedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         feedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
-        feedCollectionView?.register(FeedPeopleCell.self, forCellWithReuseIdentifier: collectionPeopleReuseIdentifier)
+        feedCollectionView?.register(FeedQuestionCell.self, forCellWithReuseIdentifier: collectionQuestionReuseIdentifier)
         feedCollectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: collectionAnswerReuseIdentifier)
 
         view.addSubview(feedCollectionView!)
@@ -239,17 +240,13 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
         /** FEED ITEM: QUESTION **/
         case .question:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionQuestionReuseIdentifier, for: indexPath) as! FeedQuestionCell
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
             cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
 
             //clear the cells and set the item type first
-            if cell.itemType == nil || cell.itemType != feedItemType {
-                cell.itemType = .question
-            }
             cell.updateLabel(nil, _subtitle: nil)
-            cell.showAnswerCount()
 
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { return cell }
@@ -263,26 +260,38 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 if _currentQuestion.hasAnswers() {
                     cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
                 } else {
-                    cell.hideAnswerCount()
+                    cell.answerCount.setTitle("0", for: UIControlState())
                 }
             } else {
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
                     if let question = question {
+
                         if let tagTitle = question.qTag?.tagTitle  {
-                            cell.updateLabel(question.qTitle, _subtitle: tagTitle.capitalized)
+                            DispatchQueue.main.async {
+                                cell.updateLabel(question.qTitle, _subtitle: tagTitle.capitalized)
+                                collectionView.reloadItems(at: [indexPath])
+                            }
                             self.allQuestions[indexPath.row] = question
 
                         } else if let tag = self.allQuestions[indexPath.row]?.qTag {
-                            cell.updateLabel(question.qTitle, _subtitle: tag.tagTitle?.capitalized)
+                            DispatchQueue.main.async {
+                                cell.updateLabel(question.qTitle, _subtitle: tag.tagTitle?.capitalized)
+                                collectionView.reloadItems(at: [indexPath])
+                            }
                             self.allQuestions[indexPath.row] = question
                             self.allQuestions[indexPath.row]?.qTag = tag
 
                         } else {
-                            cell.updateLabel(question.qTitle, _subtitle: nil)
+                            DispatchQueue.main.async {
+                                cell.updateLabel(question.qTitle, _subtitle: nil)
+                                collectionView.reloadItems(at: [indexPath])
+                            }
                             self.allQuestions[indexPath.row] = question
                         }
-                        
-                        cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
+                        DispatchQueue.main.async {
+                            cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
+                            collectionView.reloadItems(at: [indexPath])
+                        }
                     }
                 })
             }

@@ -11,7 +11,6 @@
 		BA0387081DB1B2BA00A7BB79 /* PulseNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0387071DB1B2BA00A7BB79 /* PulseNavBar.swift */; };
 		BA03C43E1DB6095800277382 /* AccountPageMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA03C43D1DB6095700277382 /* AccountPageMenu.swift */; };
 		BA06EDED1DA7081C00F880EE /* XMSegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA06EDEC1DA7081C00F880EE /* XMSegmentedControl.swift */; };
-		BA0941FB1DE4C7AB0060A9BC /* FeedPeopleCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0941FA1DE4C7AB0060A9BC /* FeedPeopleCell.swift */; };
 		BA0969841D83922D00A9BA51 /* PanContainerInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0969831D83922D00A9BA51 /* PanContainerInteractionController.swift */; };
 		BA0B69001D89F7370037A7C4 /* HomeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0B68FF1D89F7370037A7C4 /* HomeVC.swift */; };
 		BA1550C51D5554C4000EF1AA /* MiniProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1550C41D5554C4000EF1AA /* MiniProfile.swift */; };
@@ -37,6 +36,7 @@
 		BA1DE1471D244DFA004F3ED2 /* QAManagerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE1461D244DFA004F3ED2 /* QAManagerVC.swift */; };
 		BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */; };
 		BA2CCC141D4A9618003C94FC /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC131D4A9618003C94FC /* Settings.swift */; };
+		BA4669C21DFF1D3C00C14DA6 /* FeedQuestionCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA4669C11DFF1D3C00C14DA6 /* FeedQuestionCell.swift */; };
 		BA48858C1D24390B007333E0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BA48858B1D24390B007333E0 /* GoogleService-Info.plist */; };
 		BA53EAB91D70E08100357E5A /* ExploreVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA53EAB81D70E08100357E5A /* ExploreVC.swift */; };
 		BA6B78B61D2E2620003EE992 /* RecordedAnswerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6B78B51D2E2620003EE992 /* RecordedAnswerOverlay.swift */; };
@@ -89,7 +89,6 @@
 		BA0387071DB1B2BA00A7BB79 /* PulseNavBar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseNavBar.swift; sourceTree = "<group>"; };
 		BA03C43D1DB6095700277382 /* AccountPageMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountPageMenu.swift; sourceTree = "<group>"; };
 		BA06EDEC1DA7081C00F880EE /* XMSegmentedControl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XMSegmentedControl.swift; sourceTree = "<group>"; };
-		BA0941FA1DE4C7AB0060A9BC /* FeedPeopleCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedPeopleCell.swift; sourceTree = "<group>"; };
 		BA0969831D83922D00A9BA51 /* PanContainerInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanContainerInteractionController.swift; sourceTree = "<group>"; };
 		BA0B68FF1D89F7370037A7C4 /* HomeVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeVC.swift; sourceTree = "<group>"; };
 		BA1550C41D5554C4000EF1AA /* MiniProfile.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MiniProfile.swift; sourceTree = "<group>"; };
@@ -117,6 +116,7 @@
 		BA1DE1461D244DFA004F3ED2 /* QAManagerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QAManagerVC.swift; sourceTree = "<group>"; };
 		BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableVC.swift; sourceTree = "<group>"; };
 		BA2CCC131D4A9618003C94FC /* Settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		BA4669C11DFF1D3C00C14DA6 /* FeedQuestionCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedQuestionCell.swift; sourceTree = "<group>"; };
 		BA48858B1D24390B007333E0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BA53EAB81D70E08100357E5A /* ExploreVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreVC.swift; sourceTree = "<group>"; };
 		BA6B78B51D2E2620003EE992 /* RecordedAnswerOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecordedAnswerOverlay.swift; sourceTree = "<group>"; };
@@ -400,8 +400,8 @@
 				BA7D55271D74C58D005EF7F3 /* FeedVC.swift */,
 				BA7D55291D74C5A9005EF7F3 /* FeedCell.swift */,
 				BAFD76DB1D9C8C7D005FBBD0 /* SearchHeaderCell.swift */,
-				BA0941FA1DE4C7AB0060A9BC /* FeedPeopleCell.swift */,
 				BAFEBB821DFA7EB5005F5D54 /* FeedAnswerCell.swift */,
+				BA4669C11DFF1D3C00C14DA6 /* FeedQuestionCell.swift */,
 			);
 			name = Feed;
 			sourceTree = "<group>";
@@ -616,13 +616,13 @@
 				BA1DE1371D244A6A004F3ED2 /* CameraVC.swift in Sources */,
 				BA7D55281D74C58D005EF7F3 /* FeedVC.swift in Sources */,
 				BA1DE1211D244330004F3ED2 /* PreviewVC.swift in Sources */,
+				BA4669C21DFF1D3C00C14DA6 /* FeedQuestionCell.swift in Sources */,
 				BA1C48BC1D243704008F8A04 /* AppDelegate.swift in Sources */,
 				BA819D781D5E82EA002D69FA /* AnswerMenu.swift in Sources */,
 				BAD363A81D51319600560EB5 /* QuestionPreviewVC.swift in Sources */,
 				BAC892DC1D7A291E0060A928 /* PanAnimationController.swift in Sources */,
 				BA7D552A1D74C5A9005EF7F3 /* FeedCell.swift in Sources */,
 				BA1DE13B1D244AE0004F3ED2 /* CameraOverlayView.swift in Sources */,
-				BA0941FB1DE4C7AB0060A9BC /* FeedPeopleCell.swift in Sources */,
 				BAFD76DC1D9C8C7D005FBBD0 /* SearchHeaderCell.swift in Sources */,
 				BAFEBB831DFA7EB5005F5D54 /* FeedAnswerCell.swift in Sources */,
 				BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */,

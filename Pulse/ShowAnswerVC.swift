@@ -205,7 +205,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
         
         if _answerType == .recordedVideo || _answerType == .albumVideo {
-            Database.getAnswerURL(answer.aID, completion: { (URL, error) in
+            Database.getAnswerURL(qID: answer.qID, fileID: answer.aID, completion: { (URL, error) in
                 if (error != nil) {
                     GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please go to next answer")
                     self.delegate.removeQuestionPreview()
@@ -220,7 +220,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 }
             })
         } else if _answerType == .recordedImage || _answerType == .albumImage {
-            Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
+            Database.getAnswerImage(qID: answer.qID, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
                 if error != nil {
                     self.delegate.removeQuestionPreview()
                     self.handleTap()
@@ -297,7 +297,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 self.nextAnswer = answer
                 
                 if self.nextAnswer!.aType == .recordedVideo || self.nextAnswer!.aType == .albumVideo {
-                    Database.getAnswerURL(nextAnswerID, completion: { (URL, error) in
+                    Database.getAnswerURL(qID: answer.qID, fileID : nextAnswerID, completion: { (URL, error) in
                         if (error != nil) {
                             GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
                             self.handleTap()
@@ -310,7 +310,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                         }
                     })
                 } else if self.nextAnswer!.aType == .recordedImage || self.nextAnswer!.aType == .albumImage {
-                    Database.getImage(.Answers, fileID: nextAnswerID, maxImgSize: maxImgSize, completion: {(data, error) in
+                    Database.getAnswerImage(qID: answer.qID, fileID: nextAnswerID, maxImgSize: maxImgSize, completion: {(data, error) in
                         if error != nil {
                             GlobalFunctions.showErrorBlock("Download Error", erMessage: "Sorry! Mind tapping to next answer?")
                             self.handleTap()
@@ -492,7 +492,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             return
         }
         
-        print("answer index is \(answerIndex), can advance \(_canAdvanceReady), tap ready \(_tapReady), next item ready \(_nextItemReady)")
         if (answerIndex == minAnswersToShow && !_hasUserBeenAskedQuestion && _canAdvanceReady) { //ask user to answer the question
             if (delegate != nil) {
                 qPlayer.pause()
@@ -553,8 +552,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             return
         }
         
-        print("answer index is \(answerIndex), can advance \(_canAdvanceReady), tap ready \(_tapReady), next item ready \(_nextItemReady) in detail tap")
-
         if (!_tapReady || (!_nextItemReady && _canAdvanceDetailReady)) {
             //ignore tap
         }

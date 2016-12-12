@@ -183,10 +183,11 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     ///post video to firebase
     func _post() {
         _controlsOverlay.getButton(.post).isEnabled = false
+        aPlayer.pause()
+
         if User.isLoggedIn() {
             _controlsOverlay.addProgressLabel("Posting...")
             _controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
-            print("current answer urls are \(currentAnswers.map { $0.aURL })")
             uploadAnswer(allAnswers: currentAnswers)
         } else {
             if let delegate = delegate {
@@ -258,14 +259,16 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 }
             } catch { }
             
-            let path = Database.getStoragePath(.Answers, itemID: answer.aID)
+            let path = storageRef.child("answers").child(answer.qID).child(answer.aID)
+
+            //let path = Database.getStoragePath(.Answers, itemID: answer.aID)
             
             do {
                 let assetData = try Data(contentsOf: localFile)
                 
                 uploadTask = path.put(assetData, metadata: _metadata) { metadata, error in
                     if (error != nil) {
-                        print("error occured with upload")
+                        GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                     } else {
                         // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
                         //self.currentAnswer.aURL = metadata?.downloadURL()

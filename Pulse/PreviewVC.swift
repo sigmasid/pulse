@@ -63,7 +63,7 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
             }
             
             if answerType == .recordedVideo || answerType == .albumVideo {
-                Database.getAnswerURL(answer.aID, completion: { (URL, error) in
+                Database.getAnswerURL(qID: answer.qID, fileID: answer.aID, completion: { (URL, error) in
                     if (error != nil) {
                         GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
                     } else {
@@ -74,7 +74,7 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
                     }
                 })
             } else if answerType == .recordedImage || answerType == .albumImage {
-                Database.getImage(.Answers, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
+                Database.getAnswerImage(qID: answer.qID, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
                     if error != nil {
                         GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
                     } else {

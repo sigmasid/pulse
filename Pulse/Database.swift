@@ -84,6 +84,54 @@ class Database {
         })
     }
     
+    static func removeAnswers(userID : String, answerID : String) {
+        databaseRef.child("userDetailedPublicSummary/\(userID)/answers/\(answerID)").observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                questionsRef.child(snap.value as! String).child("answers").child(snap.key).setValue(nil, withCompletionBlock: { (error, snap) in
+                    if error != nil {
+                        //print("error removing answer \(error)")
+                    }
+                })
+                answersRef.child(snap.key).setValue(nil)
+                usersPublicDetailedRef.child(userID).child("answers").child(snap.key).setValue(nil)
+                usersPublicDetailedRef.child(userID).child("answeredQuestions").child(snap.value as! String).setValue(nil)
+                answerCollectionsRef.child(snap.key).setValue(nil)
+                
+                let desertRef = storageRef.child("answers").child(snap.key)
+                let thumbRef = storageRef.child("answerThumbnails").child(snap.key)
+
+                // Delete the file
+                thumbRef.delete { (error) -> Void in
+                    if (error != nil) {
+                        //print("error deleting thumbnail \(error)")
+                        // Uh-oh, an error occurred!
+                    } else {
+                        //print("deleted thumbnail")
+                    }
+                }
+                
+                desertRef.delete { (error) -> Void in
+                    if (error != nil) {
+                        //print("error deleting video \(error)")
+                        // Uh-oh, an error occurred!
+                    } else {
+                        //print("deleted video")
+                    }
+                }
+
+
+            } else {
+                //print("couldn't cast as answerSnap")
+            }
+        })
+            //CHECKS:
+            //clear questionID from answeredQuestions - CHECK
+            //clear answerID from user's answers - CHECK
+            //set answerID to nil in answers - CHECK
+            //remove answerID from questionID's answers - CHECK
+            //check / remove answerID from answerCollections
+    }
+    
     /** MARK : SEARCH **/
     static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
         var _results = [Tag]()
@@ -971,8 +1019,8 @@ class Database {
 
         FIRAuth.auth()?.addStateDidChangeListener { auth, user in
             if let _user = user {
-
                 setCurrentUserPaths()
+                
                 populateCurrentUser(_user, completion: { (success) in
                     if success {
                         completion(true)
@@ -1035,7 +1083,7 @@ class Database {
                 User.currentUser!.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
             }
         }, withCancel: { error in
-            print("error getting user public summary \(error)")
+            //print("error getting user public summary \(error)")
         })
         
         usersPublicDetailedRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
@@ -1410,8 +1458,8 @@ class Database {
     }
     
     /* STORAGE METHODS */
-    static func getAnswerURL(_ fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
-        let path = answersStorageRef.child(fileID)
+    static func getAnswerURL(qID: String, fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
+        let path = answersStorageRef.child(qID).child(fileID)
         
         let _ = path.downloadURL { (URL, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(URL!, nil)
@@ -1436,6 +1484,14 @@ class Database {
     
     static func getImage(_ type : Item, fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = getStoragePath(type, itemID: fileID)
+        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
+            error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
+        }
+    }
+    
+    static func getAnswerImage(qID : String, fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
+        let path = storageRef.child("answers").child(qID).child(fileID)
+        
         path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }

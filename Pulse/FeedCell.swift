@@ -34,6 +34,8 @@ class FeedCell: UICollectionViewCell {
     fileprivate var previewImageConstraint4 : NSLayoutConstraint!
     
     fileprivate var showPreviewImage = false
+    
+    fileprivate var cellSetupComplete = false
 
     var itemType : FeedItemType? {
         didSet {
@@ -307,6 +309,8 @@ class FeedCell: UICollectionViewCell {
         answerCount.setNeedsLayout()
         subtitleLabel.setNeedsLayout()
         titleLabel.setNeedsLayout()
+        
+        cellSetupComplete = true
     }
     
     fileprivate func setupTagPreview() {
