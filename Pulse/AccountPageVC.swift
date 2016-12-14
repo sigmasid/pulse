@@ -88,6 +88,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
     }
     
     func updateLabels(_ notification: Notification) {
+        updateHeader(title: "Account", leftButton: .menu)
         profileSummary.updateLabels()
     }
     

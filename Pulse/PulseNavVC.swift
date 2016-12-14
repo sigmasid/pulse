@@ -39,7 +39,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     }
     
     override public func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+        super.viewWillAppear(false)
     }
     
     override public func viewWillDisappear(_ animated: Bool) {
