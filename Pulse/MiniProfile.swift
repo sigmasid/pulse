@@ -75,7 +75,7 @@ class MiniProfile: UIView {
         bioLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
         
         tagLine.translatesAutoresizingMaskIntoConstraints = false
-        tagLine.bottomAnchor.constraint(equalTo: bioLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        tagLine.bottomAnchor.constraint(equalTo: messageButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
         tagLine.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         tagLine.widthAnchor.constraint(equalTo: bioLabel.widthAnchor).isActive = true
     }
@@ -144,7 +144,7 @@ class MiniProfile: UIView {
     }
     
     func setBioLabel(_ text : String?) {
-        bioLabel.text = text
+        //bioLabel.text = text
         bioLabel.numberOfLines = 0
         
         bioLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)

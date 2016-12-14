@@ -36,7 +36,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     internal var answerIndex = 0
-    internal var minAnswersToShow = 3
+    internal var minAnswersToShow = 4
     
     internal var currentTag : Tag!
     internal var currentAnswer : Answer?
@@ -55,6 +55,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     fileprivate var _nextItemReady = false
     fileprivate var _canAdvanceReady = false
     fileprivate var _canAdvanceDetailReady = false
+    fileprivate var _returningFromDetail = false
     fileprivate var _hasUserBeenAskedQuestion = false
     fileprivate var isObserving = false
     fileprivate var isLoaded = false
@@ -111,6 +112,10 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        
+        if qPlayer.currentItem != nil {
+            qPlayer.pause()
+        }
     }
     
     override var prefersStatusBarHidden : Bool {
@@ -176,6 +181,17 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             _addNextClipToQueue(currentAnswerCollection[answerCollectionIndex + 1])
             answerCollectionIndex += 1
             _canAdvanceDetailReady = true
+        } else {
+            _canAdvanceDetailReady = false
+            
+            // done w/ answer detail - queue up next answer if it exists
+            if _canAdvance(answerIndex) {
+                _addNextClipToQueue(currentQuestion.qAnswers[answerIndex])
+                _canAdvanceReady = true
+                _returningFromDetail = true
+            } else {
+                _canAdvanceReady = false
+            }
         }
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
@@ -328,12 +344,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         if keyPath == "status" {
             switch self.qPlayer.status {
             case AVPlayerStatus.readyToPlay:
-                qPlayer.play()
-                if !_tapReady {
-                    _tapReady = true
-                }
-                
-                delegate.removeQuestionPreview()
+                readyToPlay()
                 break
             default: break
             }
@@ -349,6 +360,18 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             qPlayer.currentItem!.removeObserver(self, forKeyPath: "status")
             isObserving = false
         }
+    }
+    
+    fileprivate func readyToPlay() {
+        DispatchQueue.main.async(execute: {
+            self.qPlayer.play()
+        })
+        
+        if !_tapReady {
+            _tapReady = true
+        }
+        
+        delegate.removeQuestionPreview()
     }
     
     fileprivate func addObserverForStatusReady() {
@@ -518,15 +541,32 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     showImageView(_image)
                 }
             } else if _nextAnswer.aType == .recordedVideo || _nextAnswer.aType == .albumVideo  {
-
                 removeImageView()
                 _tapReady = false
                 qPlayer.pause()
                 removeObserverIfNeeded()
+                
+                
                 if qPlayer.items().count > 1 {
-                    qPlayer.advanceToNextItem()
+                    self.qPlayer.advanceToNextItem()
                 }
-                addObserverForStatusReady()
+                
+                if qPlayer.status != .readyToPlay {
+                    addObserverForStatusReady()
+                } else if _returningFromDetail {
+                    if let currentItem = qPlayer.currentItem {
+                        
+                        //work around otherwise video freezes and only audio plays - removing and reinserting clip into
+                        self.qPlayer.remove(currentItem)
+                        self.qPlayer.insert(currentItem, after: nil)
+                        self.qPlayer.advanceToNextItem()
+                        addObserverForStatusReady()
+                        _returningFromDetail = false
+                    }
+
+                } else if qPlayer.status == .readyToPlay{
+                    readyToPlay()
+                }
             }
         
             currentAnswer = _nextAnswer
@@ -588,6 +628,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                 if _canAdvance(answerIndex) {
                     _addNextClipToQueue(currentQuestion.qAnswers[answerIndex])
                     _canAdvanceReady = true
+                    _returningFromDetail = true
                 } else {
                     _canAdvanceReady = false
                 }
