@@ -406,7 +406,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 //only show answer by selected user - removes other answers from qAnswers array and creates blank dummy tag
                 if selectedUser != nil {
                     let selectedQuestion = currentAnswer.question
-                    let currentTag = Tag(tagID: "ANSWERS")
+                    let currentTag = Tag(tagID: currentAnswer.question!.getTag())
                     selectedQuestion?.qAnswers = [currentAnswer.answer.aID]
                     showQuestion(selectedQuestion,
                                  allQuestions: [selectedQuestion],

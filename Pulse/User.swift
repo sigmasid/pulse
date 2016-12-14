@@ -107,7 +107,7 @@ class User {
         } else if hasAnsweredQuestion(qID) {
             completion(false, "Already Answered!", "Sorry you can only answer a question once")
         } else if expertiseTags[tag.tagID!] == nil {
-            completion(false, "Experts Only", "Are you an expert in \"\(tag.tagTitle != nil ? tag.tagTitle! : "this questions")\"? Then please click apply to answer question")
+            completion(false, "Experts Only", "Are you an expert? Apply to answer!")
         }
     }
     

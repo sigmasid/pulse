@@ -586,12 +586,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             return
         }
         
+        guard let selectedTag = self.selectedTag != nil ? self.selectedTag : Tag(tagID: selectedQuestion.getTag()) else {
+            GlobalFunctions.showErrorBlock("Error Adding Answer", erMessage: "Sorry there was an error trying to add your answer.")
+            return
+        }
+        
         currentUser.canAnswer(qID: selectedQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
             if success {
                 let addAnswerVC = QAManagerVC()
                 addAnswerVC.allQuestions = [selectedQuestion]
                 addAnswerVC.currentQuestion = selectedQuestion
-                addAnswerVC.selectedTag = selectedTag != nil ? Tag(tagID: selectedTag.tagID!) : Tag(tagID: "Add Answer")
+                addAnswerVC.selectedTag = selectedTag
                 addAnswerVC.openingScreen = .camera
                 
                 present(addAnswerVC, animated: true, completion: nil)
@@ -600,7 +605,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     GlobalFunctions.showErrorBlock("Error Adding Answer", erMessage: "Sorry there was an error!")
                     return
                 }
-                
                 GlobalFunctions.showErrorBlock(errorTitle!, erMessage: errorDescription!)
             }
         })
