@@ -12,10 +12,16 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     
     fileprivate var uProfilePic = UIImageView()
     fileprivate var uName = UITextField()
-    fileprivate var uShortBio = UITextView()
+    fileprivate var uShortBio = UILabel()
     fileprivate var uMessages = UIButton()
     fileprivate var nameErrorLabel = UILabel()
-
+    
+    fileprivate var expertiseTitleLabel = UILabel()
+    fileprivate var expertTagList = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
+    fileprivate lazy var tagRow1 = PulseMenu(_axis: .horizontal, _spacing: Spacing.xs.rawValue)
+    fileprivate lazy var tagRow2 = PulseMenu(_axis: .horizontal, _spacing: Spacing.xs.rawValue)
+    fileprivate lazy var tagRow3 = PulseMenu(_axis: .horizontal, _spacing: Spacing.xs.rawValue)
+    
     fileprivate var socialLinks = UIStackView()
     fileprivate var inButton = UIButton()
     fileprivate var twtrButton = UIButton()
@@ -37,8 +43,6 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
             uName.delegate = self
             uName.clearsOnBeginEditing = true
             
-            uShortBio.delegate = self
-
             tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleImageTap))
             uProfilePic.addGestureRecognizer(tapGesture!)
             uProfilePic.isUserInteractionEnabled = true
@@ -71,26 +75,28 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     }
     
     fileprivate func highlightConnectedSocialSources() {
-        if User.currentUser?.socialSources[.facebook] != true {
+        guard let currentUser = User.currentUser else { return }
+
+        if currentUser.socialSources[.facebook] != true {
             fbButton.alpha = 0.5
             fbButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-        } else if User.currentUser?.socialSources[.facebook] == true {
+        } else if currentUser.socialSources[.facebook] == true {
             fbButton.alpha = 1.0
             fbButton.backgroundColor = UIColor(red: 78/255, green: 99/255, blue: 152/255, alpha: 1.0 )
         }
         
-        if User.currentUser?.socialSources[.twitter] != true {
+        if currentUser.socialSources[.twitter] != true {
             twtrButton.alpha = 0.5
             twtrButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-        }  else if User.currentUser?.socialSources[.twitter] == true {
+        }  else if currentUser.socialSources[.twitter] == true {
             twtrButton.alpha = 1.0
             twtrButton.backgroundColor = UIColor(red: 58/255, green: 185/255, blue: 228/255, alpha: 1.0 )
         }
         
-        if User.currentUser?.socialSources[.linkedin] != true {
+        if currentUser.socialSources[.linkedin] != true {
             inButton.alpha = 0.5
             inButton.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
-        }  else if User.currentUser?.socialSources[.linkedin] == true {
+        }  else if currentUser.socialSources[.linkedin] == true {
             inButton.alpha = 1.0
             inButton.backgroundColor = UIColor(red: 2/255, green: 116/255, blue: 179/255, alpha: 1.0 )
         }
@@ -100,8 +106,79 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         nameErrorLabel.text = _errorText
     }
     
+    fileprivate func updateExpertiseTags() {
+        guard let currentUser = User.currentUser else { return }
+        
+        switch currentUser.expertiseTags.count {
+        case 0:
+            return
+        case 1..<4:
+            tagRow1.alignment = .firstBaseline
+
+            expertTagList.addArrangedSubview(tagRow1)
+            
+        case 4..<7:
+            expertTagList.addArrangedSubview(tagRow1)
+            expertTagList.addArrangedSubview(tagRow2)
+            
+            tagRow1.alignment = .firstBaseline
+            tagRow2.alignment = .firstBaseline
+
+        case 7..<10:
+            expertTagList.addArrangedSubview(tagRow1)
+            expertTagList.addArrangedSubview(tagRow2)
+            expertTagList.addArrangedSubview(tagRow3)
+            
+            tagRow1.alignment = .firstBaseline
+            tagRow2.alignment = .firstBaseline
+            tagRow3.alignment = .firstBaseline
+
+        default:
+            expertTagList.addArrangedSubview(tagRow1)
+            expertTagList.addArrangedSubview(tagRow2)
+            expertTagList.addArrangedSubview(tagRow3)
+            
+            tagRow1.alignment = .firstBaseline
+            tagRow2.alignment = .firstBaseline
+            tagRow3.alignment = .firstBaseline
+            //show more button
+        }
+        
+        for (offset : index, (key : _, value : val)) in currentUser.expertiseTags.enumerated() {
+            let tagLabel = PaddingLabel()
+            tagLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .darkGray, alignment: .left)
+            
+            tagLabel.backgroundColor = .white
+            tagLabel.text = val
+            tagLabel.numberOfLines = 3
+            
+            if index < 3 {
+                tagRow1.addArrangedSubview(tagLabel)
+                
+            } else if index < 6 {
+                tagRow2.addArrangedSubview(tagLabel)
+            } else {
+                tagRow3.addArrangedSubview(tagLabel)
+            }
+            
+            tagLabel.layer.shadowColor = UIColor.black.cgColor
+            tagLabel.layer.shadowOffset = CGSize(width: 2, height: 4)
+            tagLabel.layer.shadowRadius = 4.0
+            tagLabel.layer.shadowOpacity = 0.7
+            
+            tagLabel.leftInset = 2.5
+            tagLabel.rightInset = 2.5
+            tagLabel.topInset = 5
+            tagLabel.bottomInset = 5
+
+            tagLabel.layoutIfNeeded()
+        }
+    }
+    
     func updateLabels() {
-        if let _userName = User.currentUser!.name {
+        guard let currentUser = User.currentUser else { return }
+
+        if let _userName = currentUser.name {
             delegate.updateNav(title: "welcome \(_userName)")
             uName.text = _userName
             uName.isUserInteractionEnabled = false
@@ -111,17 +188,26 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
             uName.isUserInteractionEnabled = true
         }
         
-        if let _userBio = User.currentUser!.shortBio {
+        var fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)]
+        var titleHeight = GlobalFunctions.getLabelSize(title: uName.text!, width: uName.frame.width, fontAttributes: fontAttributes)
+        uName.heightAnchor.constraint(equalToConstant: titleHeight).isActive = true
+        uName.layoutIfNeeded()
+
+        if let _userBio = currentUser.shortBio {
             uShortBio.text = _userBio
-            uShortBio.isUserInteractionEnabled = false
         } else {
-            uShortBio.text = "tap to edit bio"
-            uShortBio.isUserInteractionEnabled = true
+            uShortBio.text = ""
         }
         
+        fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)]
+        titleHeight = GlobalFunctions.getLabelSize(title: uShortBio.text!, width: uName.frame.width, fontAttributes: fontAttributes)
+        uShortBio.heightAnchor.constraint(equalToConstant: titleHeight).isActive = true
+        uShortBio.layoutIfNeeded()
+
+        
         //add profile pic or use default image
-        if User.currentUser!.profilePic != nil || User.currentUser!.thumbPic != nil {
-            let _uPic = User.currentUser!.thumbPic != nil ? User.currentUser!.thumbPic : User.currentUser!.profilePic
+        if currentUser.profilePic != nil || currentUser.thumbPic != nil {
+            let _uPic = currentUser.thumbPic != nil ? currentUser.thumbPic : currentUser.profilePic
             _defaultProfileOverlay.isHidden = true
             addUserProfilePic(URL(string: _uPic!))
         } else {
@@ -134,6 +220,12 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         }
         
         highlightConnectedSocialSources()
+        
+        if currentUser.hasExpertise() {
+            setupExpertTags()
+            updateExpertiseTags()
+        }
+        
         setNeedsLayout()
     }
     
@@ -142,10 +234,6 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     }
     
     /* TEXT FIELD DELEGATES */
-    func textViewDidBeginEditing(_ textView: UITextView) {
-        textView.text = ""
-    }
-    
     func textFieldDidBeginEditing(_ textField: UITextField) {
         textField.text = ""
         nameErrorLabel.text = ""
@@ -160,6 +248,7 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         endEditing(true)
+        
         GlobalFunctions.validateName(uName.text, completion: {(verified, error) in
             if verified {
                 Database.updateUserData(UserProfileUpdateType.displayName, value: self.uName.text!, completion: { (success, error) in
@@ -179,13 +268,36 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     }
 
     /*LAYOUT FUNCTIONS */
+    fileprivate func setupExpertTags() {
+        addSubview(expertiseTitleLabel)
+        addSubview(expertTagList)
+        
+        expertiseTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        expertiseTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        expertiseTitleLabel.topAnchor.constraint(equalTo: uShortBio.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        expertiseTitleLabel.leadingAnchor.constraint(equalTo: uShortBio.leadingAnchor).isActive = true
+
+        expertiseTitleLabel.text = "Expert in"
+        expertiseTitleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
+        expertiseTitleLabel.layoutIfNeeded()
+        
+        expertTagList.translatesAutoresizingMaskIntoConstraints = false
+        expertTagList.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        expertTagList.topAnchor.constraint(equalTo: expertiseTitleLabel.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        expertTagList.leadingAnchor.constraint(equalTo: expertiseTitleLabel.leadingAnchor).isActive = true
+        expertTagList.layoutIfNeeded()
+        
+        expertTagList.distribution = .equalCentering
+        expertTagList.alignment = .top
+    }
+    
     fileprivate func setupSocialButtonsLayout() {
         addSubview(socialLinks)
         
         socialLinks.translatesAutoresizingMaskIntoConstraints = false
         socialLinks.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue * 3 + Spacing.m.rawValue * 2).isActive = true
         socialLinks.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        socialLinks.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -IconSizes.xLarge.rawValue).isActive = true
+        socialLinks.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -IconSizes.large.rawValue).isActive = true
         socialLinks.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         socialLinks.layoutIfNeeded()
         
@@ -241,18 +353,15 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         
         uName.translatesAutoresizingMaskIntoConstraints = false
         uName.topAnchor.constraint(equalTo: uProfilePic.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
-        uName.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        uName.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.6).isActive = true
         uName.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        uName.heightAnchor.constraint(equalToConstant: Spacing.s.rawValue).isActive = true
-        uName.layoutIfNeeded()
-        uName.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)
-        
+        uName.font = UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightHeavy)
+
         uShortBio.translatesAutoresizingMaskIntoConstraints = false
         uShortBio.topAnchor.constraint(equalTo: uName.bottomAnchor).isActive = true
         uShortBio.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.6).isActive = true
         uShortBio.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        uShortBio.layoutIfNeeded()
-        uShortBio.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)
+        uShortBio.font = UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightMedium)
         
         uMessages.translatesAutoresizingMaskIntoConstraints = false
         uMessages.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true

@@ -1036,21 +1036,24 @@ class Database {
     
     ///Remove current user
     static func removeCurrentUser() {
-        User.currentUser!.uID = nil
-        User.currentUser!.name = nil
-        User.currentUser!.answers = []
-        User.currentUser!.answeredQuestions = []
-        User.currentUser!.savedTags = [ : ]
-        User.currentUser!.savedTagIDs = []
-        User.currentUser!.profilePic = nil
-        User.currentUser!.thumbPic = nil
-        User.currentUser!._totalAnswers = nil
-        User.currentUser!.birthday = nil
-        User.currentUser!.bio = nil
-        User.currentUser!.shortBio = nil
-        User.currentUser!.gender = nil
-        User.currentUser!.savedQuestions = [ : ]
-        User.currentUser!.socialSources = [ : ]
+        guard let currentUser = User.currentUser else { return }
+        
+        currentUser.uID = nil
+        currentUser.name = nil
+        currentUser.answers = []
+        currentUser.answeredQuestions = []
+        currentUser.expertiseTags = [:]
+        currentUser.savedTags = [ : ]
+        currentUser.savedTagIDs = []
+        currentUser.profilePic = nil
+        currentUser.thumbPic = nil
+        currentUser._totalAnswers = nil
+        currentUser.birthday = nil
+        currentUser.bio = nil
+        currentUser.shortBio = nil
+        currentUser.gender = nil
+        currentUser.savedQuestions = [ : ]
+        currentUser.socialSources = [ : ]
         
         setCurrentUserPaths()
         NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
@@ -1107,6 +1110,12 @@ class Database {
                 User.currentUser?._totalAnswers = Int(snap.childSnapshot(forPath: "answers").childrenCount)
                 for _answer in snap.childSnapshot(forPath: "answers").children {
                     User.currentUser!.answers.append((_answer as AnyObject).key)
+                }
+            }
+            if snap.hasChild("expertiseTags") {
+                User.currentUser!.expertiseTags = [:]
+                for expertise in snap.childSnapshot(forPath: "expertiseTags").children {
+                    User.currentUser!.expertiseTags[(expertise as AnyObject).key] = (expertise as AnyObject).value
                 }
             }
             

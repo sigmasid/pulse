@@ -581,17 +581,29 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     func userClickedAddAnswer() {
         hideMenu()
         
-        if !User.currentUser!.hasAnsweredQuestion(selectedQuestion.qID) {
-            let addAnswerVC = QAManagerVC()
-            addAnswerVC.allQuestions = [selectedQuestion]
-            addAnswerVC.currentQuestion = selectedQuestion
-            addAnswerVC.selectedTag = selectedTag != nil ? Tag(tagID: selectedTag.tagID!) : Tag(tagID: "Add Answer")
-            addAnswerVC.openingScreen = .camera
-            
-            present(addAnswerVC, animated: true, completion: nil)
-        } else {
-            GlobalFunctions.showErrorBlock("Already Answered!", erMessage: "Sorry you can only post one answer for any question.")
+        guard let currentUser = User.currentUser else {
+            GlobalFunctions.showErrorBlock("Please Login!", erMessage: "You need to be logged in to answer this question.")
+            return
         }
+        
+        currentUser.canAnswer(qID: selectedQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+            if success {
+                let addAnswerVC = QAManagerVC()
+                addAnswerVC.allQuestions = [selectedQuestion]
+                addAnswerVC.currentQuestion = selectedQuestion
+                addAnswerVC.selectedTag = selectedTag != nil ? Tag(tagID: selectedTag.tagID!) : Tag(tagID: "Add Answer")
+                addAnswerVC.openingScreen = .camera
+                
+                present(addAnswerVC, animated: true, completion: nil)
+            } else {
+                guard errorTitle != nil, errorDescription != nil else {
+                    GlobalFunctions.showErrorBlock("Error Adding Answer", erMessage: "Sorry there was an error!")
+                    return
+                }
+                
+                GlobalFunctions.showErrorBlock(errorTitle!, erMessage: errorDescription!)
+            }
+        })
     }
     
     func userClickedAskQuestion() {
