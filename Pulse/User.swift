@@ -101,15 +101,13 @@ class User {
     
     /// Returns if user can answer question in given tag
     func canAnswer(qID: String, tag : Tag, completion: (Bool, String?, String?) -> Void) {
-        
-        print("tag descriptions are \(expertiseTags)")
         // if user has not answered the question and is an expert in the tag then allowed to answer question
         if !hasAnsweredQuestion(qID), expertiseTags[tag.tagID!] != nil {
             completion(true, nil, nil)
         } else if hasAnsweredQuestion(qID) {
             completion(false, "Already Answered!", "Sorry you can only answer a question once")
         } else if expertiseTags[tag.tagID!] == nil {
-            completion(false, "Experts Only", "Are you an expert in \"\(tag.tagTitle!)\"? Then please click apply to answer question")
+            completion(false, "Experts Only", "Are you an expert in \"\(tag.tagTitle != nil ? tag.tagTitle! : "this questions")\"? Then please click apply to answer question")
         }
     }
     

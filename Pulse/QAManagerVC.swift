@@ -262,13 +262,15 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     
     func askUserQuestion() {
         if User.isLoggedIn() {
-            if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
-                returnToAnswers()
-            } else {
-                answerVC.view.isHidden = true
-                _hasMoreAnswers = true
-                showCamera()
-            }
+            User.currentUser!.canAnswer(qID: currentQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+                if success {
+                    answerVC.view.isHidden = true
+                    _hasMoreAnswers = true
+                    showCamera()
+                } else {
+                    returnToAnswers()
+                }
+            })
         } else {
             answerVC.view.isHidden = true
             _hasMoreAnswers = true
@@ -281,14 +283,17 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
             showNextQuestion()
             _hasMoreAnswers = false
         } else if User.isLoggedIn() {
-            if User.currentUser!.hasAnsweredQuestion(currentQuestion.qID) {
-                showNextQuestion()
-                _hasMoreAnswers = false
-            } else {
-                showCamera()
-            }
+            User.currentUser!.canAnswer(qID: currentQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+                if success {
+                    showCamera()
+                } else {
+                    showNextQuestion()
+                    _hasMoreAnswers = false
+                }
+            })
         } else {
-            showCamera()
+            showNextQuestion()
+            _hasMoreAnswers = false
         }
     }
     

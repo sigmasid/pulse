@@ -106,8 +106,32 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         nameErrorLabel.text = _errorText
     }
     
+    fileprivate func clearExpertTags() {
+        for aView in tagRow1.arrangedSubviews {
+            tagRow1.removeArrangedSubview(aView)
+            aView.removeFromSuperview()
+        }
+        
+        for aView in tagRow2.arrangedSubviews {
+            tagRow2.removeArrangedSubview(aView)
+            aView.removeFromSuperview()
+        }
+        
+        for aView in tagRow3.arrangedSubviews {
+            tagRow3.removeArrangedSubview(aView)
+            aView.removeFromSuperview()
+        }
+        
+        for aView in expertTagList.arrangedSubviews {
+            expertTagList.removeArrangedSubview(aView)
+            aView.removeFromSuperview()
+        }
+    }
+    
     fileprivate func updateExpertiseTags() {
         guard let currentUser = User.currentUser else { return }
+        
+        clearExpertTags()
         
         switch currentUser.expertiseTags.count {
         case 0:
@@ -188,22 +212,11 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
             uName.isUserInteractionEnabled = true
         }
         
-        var fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)]
-        var titleHeight = GlobalFunctions.getLabelSize(title: uName.text!, width: uName.frame.width, fontAttributes: fontAttributes)
-        uName.heightAnchor.constraint(equalToConstant: titleHeight).isActive = true
-        uName.layoutIfNeeded()
-
         if let _userBio = currentUser.shortBio {
             uShortBio.text = _userBio
         } else {
             uShortBio.text = ""
         }
-        
-        fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightHeavy)]
-        titleHeight = GlobalFunctions.getLabelSize(title: uShortBio.text!, width: uName.frame.width, fontAttributes: fontAttributes)
-        uShortBio.heightAnchor.constraint(equalToConstant: titleHeight).isActive = true
-        uShortBio.layoutIfNeeded()
-
         
         //add profile pic or use default image
         if currentUser.profilePic != nil || currentUser.thumbPic != nil {
@@ -224,6 +237,11 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         if currentUser.hasExpertise() {
             setupExpertTags()
             updateExpertiseTags()
+        } else {
+            for aView in expertTagList.arrangedSubviews {
+                expertTagList.removeArrangedSubview(aView)
+                aView.removeFromSuperview()
+            }
         }
         
         setNeedsLayout()
@@ -273,9 +291,9 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         addSubview(expertTagList)
         
         expertiseTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        expertiseTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         expertiseTitleLabel.topAnchor.constraint(equalTo: uShortBio.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        expertiseTitleLabel.leadingAnchor.constraint(equalTo: uShortBio.leadingAnchor).isActive = true
+        expertiseTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: IconSizes.medium.rawValue + Spacing.s.rawValue).isActive = true
+        expertiseTitleLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.6).isActive = true
 
         expertiseTitleLabel.text = "Expert in"
         expertiseTitleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
@@ -353,8 +371,8 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         
         uName.translatesAutoresizingMaskIntoConstraints = false
         uName.topAnchor.constraint(equalTo: uProfilePic.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
-        uName.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.6).isActive = true
         uName.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        uName.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.6).isActive = true
         uName.font = UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightHeavy)
 
         uShortBio.translatesAutoresizingMaskIntoConstraints = false
