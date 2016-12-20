@@ -309,7 +309,8 @@ open class PulseButton: UIButton {
         case .close:
         let tintedTimage = UIImage(named: "close")?.withRenderingMode(.alwaysTemplate)
         setImage(tintedTimage, for: UIControlState.normal)
-        
+        imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
+
         case .settings:
         let tintedTimage = UIImage(named: "settings")?.withRenderingMode(.alwaysTemplate)
         setImage(tintedTimage, for: UIControlState.normal)
@@ -339,7 +340,8 @@ open class PulseButton: UIButton {
         case .save:
             let tintedTimage = UIImage(named: "download-to-disk")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            
+            imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
+
         case .profile:
             let tintedTimage = UIImage(named: "profile")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)

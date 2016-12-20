@@ -415,7 +415,8 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                  selectedTag: currentTag)
                 } else {
                     showQuestion(selectedQuestion,
-                                 allQuestions: allQuestions,
+                                 allQuestions: [selectedQuestion],
+                                 //allQuestions: allQuestions,
                                  questionIndex: selectedQuestionIndex,
                                  answerIndex: indexPath.row,
                                  selectedTag: selectedTag)

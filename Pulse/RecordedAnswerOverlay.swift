@@ -9,8 +9,8 @@
 import UIKit
 
 class RecordedAnswerOverlay: UIView {
-    fileprivate var saveButton = PulseButton(size: .small, type: .save, isRound: true, hasBackground: true)
-    fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: true)
+    fileprivate var saveButton = PulseButton(size: .small, type: .save, isRound: true, hasBackground: false)
+    fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: false)
 
     fileprivate var addMoreStack = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
     fileprivate var addMoreLabel = UILabel()
@@ -73,12 +73,16 @@ class RecordedAnswerOverlay: UIView {
 
         postStack.translatesAutoresizingMaskIntoConstraints = false
         postStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.m.rawValue).isActive = true
-        postStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.l.rawValue).isActive = true
+        postStack.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        postStack.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.5).isActive = true
+
         postStack.layoutIfNeeded()
         
         addMoreStack.translatesAutoresizingMaskIntoConstraints = false
         addMoreStack.bottomAnchor.constraint(equalTo: postStack.bottomAnchor).isActive = true
-        addMoreStack.trailingAnchor.constraint(equalTo: postStack.leadingAnchor, constant: -Spacing.l.rawValue).isActive = true
+        addMoreStack.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        addMoreStack.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.5).isActive = true
+
         addMoreStack.layoutIfNeeded()
 
         postLabel.text = "Post"
@@ -100,8 +104,12 @@ class RecordedAnswerOverlay: UIView {
     fileprivate func addSaveButton() {
         addSubview(saveButton)
         saveButton.translatesAutoresizingMaskIntoConstraints = false
-        saveButton.topAnchor.constraint(equalTo: closeButton.topAnchor).isActive = true
-        saveButton.leadingAnchor.constraint(equalTo: closeButton.trailingAnchor, constant: Spacing.m.rawValue).isActive = true
+        saveButton.topAnchor.constraint(equalTo: closeButton.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        saveButton.leadingAnchor.constraint(equalTo: closeButton.leadingAnchor).isActive = true
+        saveButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        saveButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        saveButton.layoutIfNeeded()
+
     }
     
     fileprivate func addCloseButton() {
@@ -110,6 +118,10 @@ class RecordedAnswerOverlay: UIView {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
         closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.m.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        
+        closeButton.layoutIfNeeded()
     }
     
     func addProgressLabel(_ label : String) {

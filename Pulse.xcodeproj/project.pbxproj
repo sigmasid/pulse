@@ -68,6 +68,7 @@
 		BAD37D621D2640E800BACB04 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD37D611D2640E800BACB04 /* Database.swift */; };
 		BAE51E201D87353600677A50 /* MasterTabVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE51E1F1D87353600677A50 /* MasterTabVC.swift */; };
 		BAE6E14F1DBACA9200951A89 /* ProfileSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE6E14E1DBACA9200951A89 /* ProfileSummary.swift */; };
+		BAE842E51E09095000FBC0B7 /* LoadingVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE842E41E09095000FBC0B7 /* LoadingVC.swift */; };
 		BAF220C51D31F0DB00C5B611 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BAF220C41D31F0DB00C5B611 /* Main.storyboard */; };
 		BAF2940F1D46E6DA0046B073 /* AccountLoginManagerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */; };
 		BAF76D851DB025B300FB72EE /* InboxVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF76D841DB025B300FB72EE /* InboxVC.swift */; };
@@ -148,6 +149,7 @@
 		BAD37D611D2640E800BACB04 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		BAE51E1F1D87353600677A50 /* MasterTabVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MasterTabVC.swift; sourceTree = "<group>"; };
 		BAE6E14E1DBACA9200951A89 /* ProfileSummary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProfileSummary.swift; sourceTree = "<group>"; };
+		BAE842E41E09095000FBC0B7 /* LoadingVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingVC.swift; sourceTree = "<group>"; };
 		BAF220C41D31F0DB00C5B611 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountLoginManagerVC.swift; sourceTree = "<group>"; };
 		BAF76D841DB025B300FB72EE /* InboxVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InboxVC.swift; sourceTree = "<group>"; };
@@ -390,6 +392,7 @@
 				BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */,
 				BA0B68FF1D89F7370037A7C4 /* HomeVC.swift */,
 				BAE51E1F1D87353600677A50 /* MasterTabVC.swift */,
+				BAE842E41E09095000FBC0B7 /* LoadingVC.swift */,
 			);
 			name = "Main Tabs";
 			sourceTree = "<group>";
@@ -593,6 +596,7 @@
 				BAB7B1ED1DDFC30D00EA9DD2 /* AskQuestionVC.swift in Sources */,
 				BA7D677F1D30D0B100883B88 /* LoginAddNameVC.swift in Sources */,
 				BA1DE1391D244A9D004F3ED2 /* CameraManager.swift in Sources */,
+				BAE842E51E09095000FBC0B7 /* LoadingVC.swift in Sources */,
 				BA03C43E1DB6095800277382 /* AccountPageMenu.swift in Sources */,
 				BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */,
 				BA7D677D1D30D07400883B88 /* LoginCreateAccountVC.swift in Sources */,

@@ -109,22 +109,34 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     fileprivate func clearExpertTags() {
         for aView in tagRow1.arrangedSubviews {
             tagRow1.removeArrangedSubview(aView)
-            aView.removeFromSuperview()
+            
+            if aView.superview != nil {
+                aView.removeFromSuperview()
+            }
         }
         
         for aView in tagRow2.arrangedSubviews {
             tagRow2.removeArrangedSubview(aView)
-            aView.removeFromSuperview()
+            
+            if aView.superview != nil {
+                aView.removeFromSuperview()
+            }
         }
         
         for aView in tagRow3.arrangedSubviews {
             tagRow3.removeArrangedSubview(aView)
-            aView.removeFromSuperview()
+            
+            if aView.superview != nil {
+                aView.removeFromSuperview()
+            }
         }
         
         for aView in expertTagList.arrangedSubviews {
             expertTagList.removeArrangedSubview(aView)
-            aView.removeFromSuperview()
+            
+            if aView.superview != nil {
+                aView.removeFromSuperview()
+            }
         }
     }
     

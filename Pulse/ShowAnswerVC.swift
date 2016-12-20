@@ -27,10 +27,13 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     internal var currentQuestion : Question! {
         didSet {
             if self.isViewLoaded {
+                print("current question set")
                 removeObserverIfNeeded()
                 answerIndex = 0
                 _hasUserBeenAskedQuestion = false
                 _loadAnswer(currentQuestion, index: answerIndex)
+            } else  {
+                print("view is not loaded")
             }
         }
     }
@@ -139,7 +142,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             _addExploreAnswerDetail(_answerID)
             
             Database.getAnswer(_answerID, completion: { (answer, error) in
-                
+                print("got answer for current question")
                 self.currentAnswer = answer
                 self._addClip(answer)
                 self._updateOverlayData(answer)

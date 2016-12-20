@@ -26,7 +26,7 @@ protocol childVCDelegate: class {
     func minAnswersShown()
     func askUserQuestion()
     func showNextQuestion()
-    func goBack(_ : UIViewController)
+    //func goBack(_ : UIViewController)
     func showQuestionPreviewOverlay()
     func userClickedAddMoreToAnswer(_ : UIViewController, _currentAnswers : [Answer])
 }
@@ -45,7 +45,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     fileprivate var currentAnswers = [Answer]()
     
     /* CHILD VIEW CONTROLLERS */
-    fileprivate var loadingView : LoadingView?
+    fileprivate var loadingVC = LoadingVC()
 
     fileprivate let answerVC = ShowAnswerVC()
     fileprivate var cameraVC : CameraVC!
@@ -58,11 +58,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     fileprivate var _isShowingQuestionPreview = false
     
     fileprivate var panDismissInteractionController = PanContainerInteractionController()
-    fileprivate var panStartingPointX : CGFloat = 0
-    fileprivate var panStartingPointY : CGFloat = 0
     
-    fileprivate var rectToRight : CGRect!
-    fileprivate var rectToLeft : CGRect!
     fileprivate var isLoaded = false
     
     
@@ -78,12 +74,9 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     override func viewDidLoad() {
         super.viewDidLoad()
 
-//        panGestureRecognizer = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-//        panGestureRecognizer.edges = .Left
-//        view.addGestureRecognizer(panGestureRecognizer)
-        
         if !isLoaded {
             delegate = self // set the navigation controller delegate
+            pushViewController(loadingVC, animated: false)
             
             if openingScreen == .question {
                 displayQuestion()
@@ -91,18 +84,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                 showCamera()
             }
             
-            rectToLeft = view.frame
-            rectToLeft.origin.x = view.frame.minX - view.frame.size.width
-            
-            rectToRight = view.frame
-            rectToRight.origin.x = view.frame.maxX
-            
-            loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white)
-            loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
-            loadingView?.addMessage("Loading...")
-            
-//            view.addSubview(loadingView!)
-        
             isLoaded = true
         }
     }
@@ -122,6 +103,9 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         pushViewController(answerVC, animated: false)
         answerVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
         
+        panDismissInteractionController.wireToViewController(answerVC, toViewController: nil, parentViewController: self)
+        panDismissInteractionController.delegate = self
+
         showQuestionPreviewOverlay()
     }
     
@@ -132,7 +116,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                 if error != nil {
                     completion(nil, error)
                 } else {
-                    self.allQuestions[self.questionCounter] = question
+                    self.allQuestions.append(question)
                     self.currentQuestion = question
                     completion(question, nil)
                 }
@@ -279,6 +263,18 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func noAnswersToShow(_ currentVC : UIViewController) {
+        if User.isLoggedIn() {
+            User.currentUser!.canAnswer(qID: currentQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+            if success {
+                showCamera()
+            } else {
+                _hasMoreAnswers = false
+                dismiss(animated: true, completion: nil)
+            }
+            })
+        }
+
+        /** //old way -- show next question
         if _hasMoreAnswers {
             showNextQuestion()
             _hasMoreAnswers = false
@@ -294,7 +290,8 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         } else {
             showNextQuestion()
             _hasMoreAnswers = false
-        }
+        } 
+        **/
     }
     
     func minAnswersShown() {
@@ -339,6 +336,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func showQuestionPreviewOverlay() {
+
         questionPreviewVC = QuestionPreviewVC()
         questionPreviewVC?.questionTitle = currentQuestion.qTitle
         questionPreviewVC?.numAnswers =  currentQuestion.totalAnswers()
@@ -348,6 +346,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     }
     
     func removeQuestionPreview() {
+
         if _isShowingQuestionPreview {
             popViewController(animated: true)
             _isShowingQuestionPreview = false
@@ -368,20 +367,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         } else if _hasMoreAnswers {
             returnToAnswers()
         } else {
-            loadNextQuestion({ (question, error) in
-                if error != nil {
-                    if error?.domain == "ReachedEnd" {
-                        self.dismiss(animated: true, completion: nil)
-                    }
-                } else {
-                    self.popViewController(animated: false)
-                    self._isCameraLoaded = false
-                    //self.currentQuestion = question
-
-                    self.showQuestionPreviewOverlay()
-                    self.answerVC.currentQuestion = question
-                }
-            })
+            dismiss(animated: true, completion: nil)
         }
     }
     
@@ -390,14 +376,9 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         answerVC.handleTap()
     }
     
-    func goBack(_ currentVC : UIViewController) {
-        self.dismiss(animated: true, completion: nil)
-    }
-    
     func loginSuccess (_ currentVC : UIViewController) {
         savedRecordedVideoVC._post()
         popViewController(animated: true)
-//        GlobalFunctions.dismissVC(currentVC)
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
@@ -416,7 +397,6 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
             // Media is a video
         }
         picker.dismiss(animated: true, completion: nil)
-//        GlobalFunctions.dismissVC(picker)
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
@@ -428,6 +408,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                               animationControllerFor operation: UINavigationControllerOperation,
                               from fromVC: UIViewController,
                              to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        
         switch operation {
         case .pop:
             if fromVC is CameraVC {
@@ -440,7 +421,15 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                 let animator = FadeAnimationController()
                 animator.transitionType = .dismiss
                 return animator
+            } else if fromVC is ShowAnswerVC {
+                let animator = ShrinkDismissController()
+                animator.transitionType = .dismiss
+                animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
+                
+                return animator
+
             } else {
+
                 return nil
             }
         case .push:
@@ -454,6 +443,13 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
                 animator.transitionType = .present
                 
                 return animator
+            } else if fromVC is CameraVC && toVC is QuestionPreviewVC {
+                let animator = ShrinkDismissController()
+                animator.transitionType = .dismiss
+                animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
+
+                return animator
+
             } else {
                 return nil
             }
@@ -467,41 +463,3 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
-
-/** OLD - STILL USED FOR CAMERA? **/
-//extension QAManagerVC: UIViewControllerTransitioningDelegate {
-//    
-//    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-//        if presented is CameraVC {
-//            print("transitioning delegate fired or present")
-//            let animator = FadeAnimationController()
-//            animator.transitionType = .present
-//            
-//            return animator
-//        } else {
-//            return nil
-//        }
-//    }
-//    
-//    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-//        if dismissed is CameraVC {
-//            print("transitioning delegate fired for dismiss")
-//
-//            let animator = ShrinkDismissController()
-//            animator.transitionType = .dismiss
-//            animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
-//            
-//            return animator
-//        } else {
-//            return nil
-//        }
-//    }
-//    
-//    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-//        return nil
-//    }
-//    
-//    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-//        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
-//    }
-//}

@@ -107,7 +107,7 @@ class MiniProfile: UIView {
     }
     
     fileprivate func addCloseButton() {
-        closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, hasBackground: true)
+        closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, hasBackground: false)
         closeButton.addTarget(self, action: #selector(closeButtonClicked), for: UIControlEvents.touchUpInside)
 
         addSubview(closeButton)
