@@ -18,7 +18,13 @@ class FeedAnswerCell: UICollectionViewCell {
     fileprivate lazy var previewVC : PreviewVC = PreviewVC()
     fileprivate var previewAdded = false
     fileprivate var reuseCell = false
-
+    
+    var showTapForMore = false {
+        didSet {
+            previewVC.showTapForMore = showTapForMore ? true : false
+        }
+    }
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         

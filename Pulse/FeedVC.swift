@@ -12,7 +12,11 @@ protocol feedVCDelegate: class {
     func userSelected(type : FeedItemType, item : Any)
 }
 
-class FeedVC: UIViewController {
+protocol previewDelegate: class {
+    var watchedFullPreview : Bool { get set }
+}
+
+class FeedVC: UIViewController, previewDelegate {
     
     fileprivate var isLoaded = false
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
@@ -24,6 +28,9 @@ class FeedVC: UIViewController {
     fileprivate var QAVC : QAManagerVC!
     
     fileprivate var searchScope : FeedItemType? = .question
+    
+    //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
+    var watchedFullPreview: Bool = false
     
     public func getScrollView() -> UICollectionView? {
         return feedCollectionView != nil ? feedCollectionView : nil
@@ -147,7 +154,7 @@ class FeedVC: UIViewController {
 
     fileprivate var answerStack = [AnswerPreviewData]()
 
-    let collectionReuseIdentifier = "FeedCell"
+    let collectionReuseIdentifier = "FeedTagCell"
     let collectionPeopleReuseIdentifier = "FeedPeopleCell"
     let collectionAnswerReuseIdentifier = "FeedAnswerCell"
     let collectionQuestionReuseIdentifier = "FeedQuestionCell"
@@ -184,7 +191,7 @@ class FeedVC: UIViewController {
         layout.sectionInset = UIEdgeInsetsMake(0, 0, 0, 0)
         
         feedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        feedCollectionView?.register(FeedCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        feedCollectionView?.register(FeedTagCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
         feedCollectionView?.register(FeedQuestionCell.self, forCellWithReuseIdentifier: collectionQuestionReuseIdentifier)
         feedCollectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: collectionAnswerReuseIdentifier)
 
@@ -299,16 +306,11 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
         /** FEED ITEM: TAG **/
         case .tag:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedCell
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedTagCell
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
             cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
-
-            if cell.itemType == nil || cell.itemType != feedItemType {
-                cell.itemType = .tag
-            }
             cell.updateLabel(nil, _subtitle: nil)
-            cell.showAnswerCount()
 
             if allTags.count > indexPath.row && allTags[indexPath.row].tagCreated {
                 let _currentTag = allTags[indexPath.row]
@@ -335,7 +337,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
             
             let currentAnswer = answerStack[indexPath.row]
-            // let _answer = allAnswers[indexPath.row]
             
             /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
             if currentAnswer.answer.thumbImage != nil && currentAnswer.gettingImageForAnswerPreview {
@@ -422,7 +423,17 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                  selectedTag: selectedTag)
                 }
             } else if indexPath == selectedIndex {
+                //if answer has more than initial clip, show 'see more at the end'
+                Database.getAnswerCollection(currentAnswer.answer.aID, completion: {(hasDetail, answerCollection) in
+                    if hasDetail {
+                        cell.showTapForMore = true
+                    } else {
+                        cell.showTapForMore = false
+                    }
+                })
+                
                 cell.showAnswer(answer: selectedAnswer)
+
             } else if indexPath == deselectedIndex {
                 cell.removeAnswer()
             }

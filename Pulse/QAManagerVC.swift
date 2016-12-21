@@ -38,6 +38,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     var questionCounter = 0
     var currentQuestion : Question!
     var answerIndex = 0
+    var watchedFullPreview = false
     
     var openingScreen : OpeningScreenOptions = .question
     enum OpeningScreenOptions { case camera, question }

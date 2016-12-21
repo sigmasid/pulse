@@ -15,6 +15,10 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
     fileprivate var imageView : UIImageView!
     fileprivate var isImageViewShown = false
     
+    fileprivate var isTapForMoreShown = false
+    fileprivate var tapForMore = UILabel()
+    var showTapForMore = false
+    
     var currentQuestion : Question!
     
     var currentAnswer : Answer! {
@@ -71,6 +75,10 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
                         self.removeImageView()
                         aPlayerItem.delegate = self
                         PreviewVC.aPlayer.replaceCurrentItem(with: aPlayerItem)
+                        
+                        NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
+                                                               name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: PreviewVC.aPlayer.currentItem)
+
                     }
                 })
             } else if answerType == .recordedImage || answerType == .albumImage {
@@ -103,6 +111,20 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         }
     }
     
+    func showPreviewEndedOverlay() {
+        if showTapForMore {
+            tapForMore = UILabel(frame: bounds)
+            tapForMore.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+            tapForMore.text = "See More"
+            tapForMore.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)
+        
+            addSubview(tapForMore)
+            NotificationCenter.default.removeObserver(self)
+            
+            isTapForMoreShown = true
+        }
+    }
+    
     fileprivate func removeImageView() {
         if isImageViewShown {
             imageView.image = nil
@@ -111,8 +133,11 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         }
     }
 
-    
     func addLoadingIndicator() {
+        if isTapForMoreShown {
+            tapForMore.removeFromSuperview()
+        }
+        
         let _loadingIndicatorFrame = CGRect(x: bounds.midX - (IconSizes.medium.rawValue / 2), y: bounds.midY - (IconSizes.medium.rawValue / 2), width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)
         _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.white)
         addSubview(_loadingIndicator!)

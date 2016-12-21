@@ -35,6 +35,13 @@ class PaddingLabel: UILabel {
         let heigth = superSizeThatFits.height  + topInset + bottomInset
         return CGSize(width: width, height: heigth)
     }
+    
+    func addShadow() {
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOffset = CGSize(width: 2, height: 4)
+        layer.shadowRadius = 4.0
+        layer.shadowOpacity = 0.7
+    }
 }
 
 // To dismiss keyboard when needed

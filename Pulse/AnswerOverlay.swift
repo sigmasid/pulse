@@ -285,7 +285,7 @@ class AnswerOverlay: UIView {
     func handleExploreTap() {
         if delegate != nil {
             toggleMenu(show: false)
-            delegate.userClickedExploreAnswers()
+            delegate.userClickedBrowseAnswers()
         }
     }
     

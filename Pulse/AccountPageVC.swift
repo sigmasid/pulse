@@ -11,7 +11,7 @@ import MobileCoreServices
 
 protocol accountDelegate: class {
     func userClickedCamera()
-    func updateNav(title : String)
+    func updateNav(title : String?, image: UIImage?)
 }
 
 class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
@@ -58,7 +58,6 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
                 NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
                 NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "AccountPageLoaded"), object: nil)
                 NotificationCenter.default.addObserver(self, selector: #selector(updateLabels), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
-
                 
                 notificationsSetup = true
             }
@@ -209,9 +208,10 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         showCamera()
     }
     
-    func updateNav(title : String) {
+    func updateNav(title : String?, image: UIImage?) {
         if let nav = nav {
-            nav.setNav(navTitle: title, screenTitle: nil, screenImage: nil)
+            print("set nav fired")
+            nav.setNav(navTitle: title, screenTitle: nil, screenImage: image)
         }
     }
     
@@ -317,16 +317,8 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
     }
     
     fileprivate func setupProfileSummary() {
+        profileSummary.frame = view.frame
         view.addSubview(profileSummary)
-        
-        profileSummary.translatesAutoresizingMaskIntoConstraints = false
-        leadingProfileConstraint = profileSummary.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0)
-        leadingProfileConstraint.isActive = true
-        
-        profileSummary.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        profileSummary.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.l.rawValue).isActive = true
-        profileSummary.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-        profileSummary.layoutIfNeeded()
     }
     
     fileprivate func setupSettingsMenuLayout() {

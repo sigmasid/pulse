@@ -115,9 +115,12 @@ public class PulseNavBar: UINavigationBar {
             setNavMode(mode: .none)
         }
         
-        navImage.image = _navImage
-        navTitle.text = _navTitle
-        screenTitle.text = _screenTitle?.uppercased()
+        DispatchQueue.main.async(execute: {
+            self.navImage.image = _navImage
+            self.navTitle.text = _navTitle
+            self.screenTitle.text = _screenTitle?.uppercased()
+        })
+        
     }
     
     fileprivate func setNavMode(mode : NavMode) {
