@@ -107,7 +107,7 @@ class MiniProfile: UIView {
     }
     
     fileprivate func addCloseButton() {
-        closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, hasBackground: false)
+        closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: false)
         closeButton.addTarget(self, action: #selector(closeButtonClicked), for: UIControlEvents.touchUpInside)
 
         addSubview(closeButton)
@@ -115,8 +115,8 @@ class MiniProfile: UIView {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor).isActive = true
         closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
-        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         
         closeButton.layoutIfNeeded()
     }

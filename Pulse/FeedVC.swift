@@ -40,6 +40,7 @@ class FeedVC: UIViewController, previewDelegate {
         var user : User?
         var answer : Answer!
         var question : Question?
+        var answerCollection = [String]()
         
         var gettingImageForAnswerPreview : Bool = false
         var gettingInfoForAnswerPreview : Bool = false
@@ -71,6 +72,7 @@ class FeedVC: UIViewController, previewDelegate {
                     let currentAnswerData = AnswerPreviewData(user: nil,
                                                        answer: answer,
                                                        question: nil,
+                                                       answerCollection: [],
                                                        gettingImageForAnswerPreview: false,
                                                        gettingInfoForAnswerPreview: false)
                     answerStack.insert(currentAnswerData, at: index)
@@ -209,8 +211,14 @@ class FeedVC: UIViewController, previewDelegate {
         feedCollectionView?.showsVerticalScrollIndicator = false
     }
     
-    func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
+    func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?], answerCollection: [String], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
         QAVC = QAManagerVC()
+        
+        //need to be set first 
+        QAVC.watchedFullPreview = watchedFullPreview
+        QAVC.answerCollection = answerCollection
+        QAVC.allAnswers = answerStack.map{ (answerData) -> Answer in answerData.answer }
+        
         QAVC.selectedTag = selectedTag
         QAVC.allQuestions = allQuestions
         QAVC.currentQuestion = selectedQuestion
@@ -393,10 +401,14 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
                 answerStack[indexPath.row].gettingInfoForAnswerPreview = true
                 
-                Database.getUserSummaryForAnswer(currentAnswer.answer.aID, completion: { (user, error) in
+                Database.getUserSummaryForAnswer(currentAnswer.answer.aID, completion: { (answer, user, error) in
                     if error != nil {
                         self.answerStack[indexPath.row].user = nil
                     } else {
+                        let tempImage = self.answerStack[indexPath.row].answer.thumbImage
+                        self.answerStack[indexPath.row].answer = answer
+                        self.answerStack[indexPath.row].answer.thumbImage = tempImage
+                        
                         self.answerStack[indexPath.row].user = user
                         cell.updateLabel(user?.name?.capitalized, _subtitle: user?.shortBio?.capitalized)
                     }
@@ -411,26 +423,32 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     selectedQuestion?.qAnswers = [currentAnswer.answer.aID]
                     showQuestion(selectedQuestion,
                                  allQuestions: [selectedQuestion],
+                                 answerCollection: currentAnswer.answerCollection,
                                  questionIndex: selectedQuestionIndex,
                                  answerIndex: 0,
                                  selectedTag: currentTag)
                 } else {
                     showQuestion(selectedQuestion,
                                  allQuestions: [selectedQuestion],
-                                 //allQuestions: allQuestions,
+                                 answerCollection: currentAnswer.answerCollection,
                                  questionIndex: selectedQuestionIndex,
                                  answerIndex: indexPath.row,
                                  selectedTag: selectedTag)
                 }
             } else if indexPath == selectedIndex {
                 //if answer has more than initial clip, show 'see more at the end'
+                watchedFullPreview = false
+                
                 Database.getAnswerCollection(currentAnswer.answer.aID, completion: {(hasDetail, answerCollection) in
                     if hasDetail {
                         cell.showTapForMore = true
+                        self.answerStack[indexPath.row].answerCollection = answerCollection!
                     } else {
                         cell.showTapForMore = false
                     }
                 })
+                
+                cell.delegate = self
                 
                 cell.showAnswer(answer: selectedAnswer)
 

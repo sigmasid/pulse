@@ -8,7 +8,8 @@
 
 import UIKit
 
-class FeedAnswerCell: UICollectionViewCell {
+class FeedAnswerCell: UICollectionViewCell, previewDelegate {
+    var delegate : previewDelegate!
     
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()
@@ -19,6 +20,15 @@ class FeedAnswerCell: UICollectionViewCell {
     fileprivate var previewAdded = false
     fileprivate var reuseCell = false
     
+    //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
+    var watchedFullPreview: Bool = false {
+        didSet {
+            if delegate != nil {
+                delegate.watchedFullPreview = watchedFullPreview
+            }
+        }
+    }
+
     var showTapForMore = false {
         didSet {
             previewVC.showTapForMore = showTapForMore ? true : false
@@ -57,6 +67,7 @@ class FeedAnswerCell: UICollectionViewCell {
     
     func showAnswer(answer : Answer) {
         previewVC = PreviewVC(frame: contentView.bounds)
+        previewVC.delegate = self
         previewVC.currentAnswer = answer
         previewImage.isHidden = true
         

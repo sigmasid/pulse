@@ -635,16 +635,17 @@ class Database {
         })
     }
     
-    static func getUserSummaryForAnswer(_ aID : String, completion: @escaping (_ user : User?, _ error : NSError?) -> Void) {
+    static func getUserSummaryForAnswer(_ aID : String, completion: @escaping (_ answer : Answer?, _ user : User?, _ error : NSError?) -> Void) {
         answersRef.child(aID).observeSingleEvent(of: .value, with: { snap in
+            let answer = Answer(aID: aID, snapshot: snap)
             if snap.hasChild("uID") {
                 let _uID = snap.childSnapshot(forPath: "uID").value as! String
                 getUser(_uID, completion: {(_user, error) in
-                    error != nil ? completion(nil, error) : completion(_user, nil)
+                    error != nil ? completion(answer, nil, error) : completion(answer, _user, nil)
                 })
             } else {
                 let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
-                completion(nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
+                completion(answer, nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
             }
         })
     }

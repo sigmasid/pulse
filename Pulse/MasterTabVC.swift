@@ -272,8 +272,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 0:
             profileButton.isHighlighted = false
             DispatchQueue.main.async {
+                /**
                 self.profileButton.frame.origin.y += Spacing.xs.rawValue
                 self.profileLabel.frame.origin.y += Spacing.xs.rawValue
+                 **/
                 self.profileLabel.textColor = .white
                 self.profileButton.transform = CGAffineTransform.identity
             }
@@ -281,8 +283,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 1:
             exploreButton.isHighlighted = false
             DispatchQueue.main.async {
+                /**
                 self.exploreButton.frame.origin.y += Spacing.xs.rawValue
                 self.exploreLabel.frame.origin.y += Spacing.xs.rawValue
+                 **/
                 self.exploreLabel.textColor = .white
                 self.exploreButton.transform = CGAffineTransform.identity
             }
@@ -290,8 +294,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 2:
             feedButton.isHighlighted = false
             DispatchQueue.main.async {
+                /**
                 self.feedButton.frame.origin.y += Spacing.xs.rawValue
                 self.feedLabel.frame.origin.y += Spacing.xs.rawValue
+                 **/
                 self.feedLabel.textColor = .white
                 self.feedButton.transform = CGAffineTransform.identity
             }
@@ -308,8 +314,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 0:
             profileButton.isHighlighted = true
             DispatchQueue.main.async {
+                /** removing moving the icon up - casuses issues
                 self.profileButton.frame.origin.y -= Spacing.xs.rawValue
                 self.profileLabel.frame.origin.y -= Spacing.xs.rawValue
+                **/
                 self.profileLabel.textColor = pulseBlue
                 self.profileButton.transform = xScaleUp
             }
@@ -318,8 +326,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 1:
             exploreButton.isHighlighted = true
             DispatchQueue.main.async {
+                /** removing moving the icon up - casuses issues
                 self.exploreButton.frame.origin.y -= Spacing.xs.rawValue
                 self.exploreLabel.frame.origin.y -= Spacing.xs.rawValue
+                **/
                 self.exploreLabel.textColor = pulseBlue
                 self.exploreButton.transform = xScaleUp
             }
@@ -328,8 +338,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 2:
             feedButton.isHighlighted = true
             DispatchQueue.main.async {
+                /** removing moving the icon up - casuses issues
                 self.feedButton.frame.origin.y -= Spacing.xs.rawValue
                 self.feedLabel.frame.origin.y -= Spacing.xs.rawValue
+                **/
                 self.feedLabel.textColor = pulseBlue
                 self.feedButton.transform = xScaleUp
             }

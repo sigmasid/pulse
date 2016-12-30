@@ -245,7 +245,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             gettingInfoForCell[(indexPath as NSIndexPath).row] = true
             
-            Database.getUserSummaryForAnswer(currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], completion: { (user, error) in
+            Database.getUserSummaryForAnswer(currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], completion: { (answer, user, error) in
                 if error != nil {
                     cell.answerPreviewName!.text = nil
                     cell.answerPreviewBio!.text = nil

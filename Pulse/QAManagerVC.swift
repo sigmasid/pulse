@@ -32,13 +32,17 @@ protocol childVCDelegate: class {
 }
 
 class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
-    // delegate vars
+    //properties set by sender
     var selectedTag : Tag!
     var allQuestions = [Question?]()
+    var allAnswers = [Answer]()
+
     var questionCounter = 0
     var currentQuestion : Question!
     var answerIndex = 0
+    
     var watchedFullPreview = false
+    var answerCollection = [String]()
     
     var openingScreen : OpeningScreenOptions = .question
     enum OpeningScreenOptions { case camera, question }
@@ -96,6 +100,11 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     /* QA Specific Methods */
     func displayQuestion() {
         
+        //need to be set first - to determine if first clip should be answer detail or the answer itself
+        answerVC.watchedFullPreview = watchedFullPreview
+        answerVC.currentAnswerCollection = answerCollection
+        answerVC.allAnswers = allAnswers
+
         answerVC.currentQuestion = currentQuestion
         answerVC.currentTag = selectedTag
         answerVC.answerIndex = answerIndex

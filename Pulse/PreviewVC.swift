@@ -10,23 +10,26 @@ import UIKit
 import AVFoundation
 
 class PreviewVC: UIView, PreviewPlayerItemDelegate {
+    static var aPlayer = AVPlayer() //shared instance
+
     fileprivate var _loadingIndicator : LoadingIndicatorView?
-    static var aPlayer = AVPlayer()
     fileprivate var imageView : UIImageView!
     fileprivate var isImageViewShown = false
     
     fileprivate var isTapForMoreShown = false
     fileprivate var tapForMore = UILabel()
+    
+    //delegate vars
+    var delegate : previewDelegate!
     var showTapForMore = false
-    
     var currentQuestion : Question!
-    
     var currentAnswer : Answer! {
         didSet {
             addAnswer(answer: currentAnswer)
             addLoadingIndicator()
         }
     }
+    //end delegate vars
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -113,11 +116,14 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
     
     func showPreviewEndedOverlay() {
         if showTapForMore {
+            if delegate != nil {
+                delegate.watchedFullPreview = true
+            }
             tapForMore = UILabel(frame: bounds)
             tapForMore.backgroundColor = UIColor.black.withAlphaComponent(0.7)
             tapForMore.text = "See More"
             tapForMore.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)
-        
+            
             addSubview(tapForMore)
             NotificationCenter.default.removeObserver(self)
             
