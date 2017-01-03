@@ -33,24 +33,20 @@ public class PulseNavBar: UINavigationBar {
             if shouldShowScope && shouldShowScope != oldValue {
                 navBarSize = CGSize(width: navBarSize.width, height: fullNavHeight + scopeBarHeight)
 
-                UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
                     self.screenOptions.alpha = 1.0
                     self.screenOptions.frame.origin.y = self.fullNavHeight
                     self.screenOptions.isHidden = false
-
-                }, completion: { _ in self.layoutIfNeeded() })
+                    self.layoutIfNeeded()
+                
             } else if !shouldShowScope && shouldShowScope != oldValue {
                 navBarSize = CGSize(width: navBarSize.width, height: fullNavHeight)
 
-                UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
                     self.screenOptions.alpha = 1.0
                     self.screenOptions.frame.origin.y = self.fullNavHeight - self.scopeBarHeight
-
                     self.screenOptions.isHidden = true
-                    
                     self.frame = CGRect(x: self.frame.origin.x, y: self.frame.origin.y,
                                         width: self.navBarSize.width, height: self.navBarSize.height)
-                }, completion: { _ in self.layoutIfNeeded() })
+                    self.layoutIfNeeded()
             }
         }
     }

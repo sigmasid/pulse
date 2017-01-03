@@ -1467,6 +1467,41 @@ class Database {
         })
     }
     
+    /* BECOME EXPERT */
+    static func becomeExpert(tag : Tag, applyText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard let tagID = tag.tagID else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you can only apply to become an expert in a tag" ]
+            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let verificationPath = databaseRef.child("verificationRequests").child(tagID)
+        let post = [user.uid:applyText]
+        
+        verificationPath.child(user.uid).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                let errorInfo = [ NSLocalizedDescriptionKey : "you have already applied! we will get back to you soon." ]
+                completion(false, NSError.init(domain: "AlreadyApplied", code: 404, userInfo: errorInfo))
+            } else {
+                verificationPath.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+                    if completionError != nil {
+                        let errorInfo = [ NSLocalizedDescriptionKey : "error applying, please try again!" ]
+                        completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
+                    } else {
+                        completion(true, nil)
+                    }
+                })
+            }
+        })
+    }
+
+    
     /* STORAGE METHODS */
     static func getAnswerURL(qID: String, fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
         let path = answersStorageRef.child(qID).child(fileID)

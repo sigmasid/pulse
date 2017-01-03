@@ -29,6 +29,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var messageLabel = PulseButton(title: "Send Message", isRound: false)
     fileprivate var messageStack = UIStackView()
     
+    fileprivate var becomeExpertButton = PulseButton(size: .medium, type: .checkCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var becomeExpertLabel = PulseButton(title: "Become Expert", isRound: false)
+    fileprivate var becomeExpertStack = UIStackView()
+    
     fileprivate var askQuestionButton = PulseButton(size: .medium, type: .questionCircle, isRound : true, hasBackground: false, tint: .black)
     fileprivate var askQuestionLabel = PulseButton(title: "Ask Question", isRound: false)
     fileprivate var askQuestionStack = UIStackView()
@@ -106,7 +110,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+        super.viewWillAppear(false)
 
         navigationController?.isNavigationBarHidden = false //neeed in case coming back from messageVC
         
@@ -122,7 +126,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
+        super.viewWillDisappear(false)
         
         guard let headerNav = headerNav else { return }
         headerNav.stopFollowingScrollView()
@@ -411,16 +415,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         if let nav = headerNav {
             nav.setNav(navTitle: navTitle, screenTitle: screentitle, screenImage: navImage)
-            
-            /*
-             
-            nav.showNavbar(animated: false)
-            
-            nav.setNavigationBarHidden(true, animated: false)
-            nav.setNavigationBarHidden(false, animated: false)
-            
-             */
-
         } else {
             title = navTitle
         }
@@ -452,6 +446,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         switch currentExploreMode.currentMode {
         case .tag:
+            screenMenu.addArrangedSubview(becomeExpertStack)
             screenMenu.addArrangedSubview(askQuestionStack)
             screenMenu.addArrangedSubview(toggleFollowStack)
 
@@ -610,6 +605,18 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         })
     }
     
+    ///Hide menu and push apply to become expert VC and set tag to currently selected tag
+    func userClickedBecomeExpert() {
+        guard selectedTag != nil else { return }
+        
+        hideMenu()
+        
+        let applyExpertVC = ApplyExpertVC()
+        applyExpertVC.selectedTag = selectedTag
+        
+        navigationController?.pushViewController(applyExpertVC, animated: true)
+    }
+    
     func userClickedAskQuestion() {
         hideMenu()
         
@@ -691,6 +698,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         messageStack.spacing = Spacing.s.rawValue
         addAnswerStack.spacing = Spacing.s.rawValue
         askQuestionStack.spacing = Spacing.s.rawValue
+        becomeExpertStack.spacing = Spacing.s.rawValue
 
         toggleFollowStack.addArrangedSubview(toggleFollowLabel)
         toggleFollowStack.addArrangedSubview(toggleFollowButton)
@@ -704,6 +712,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         askQuestionStack.addArrangedSubview(askQuestionLabel)
         askQuestionStack.addArrangedSubview(askQuestionButton)
         
+        becomeExpertStack.addArrangedSubview(becomeExpertLabel)
+        becomeExpertStack.addArrangedSubview(becomeExpertButton)
+
         toggleFollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         toggleFollowLabel.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         
@@ -715,6 +726,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
 
         askQuestionButton.addTarget(self, action: #selector(userClickedAskQuestion), for: UIControlEvents.touchUpInside)
         askQuestionLabel.addTarget(self, action: #selector(userClickedAskQuestion), for: UIControlEvents.touchUpInside)
+        
+        becomeExpertButton.addTarget(self, action: #selector(userClickedBecomeExpert), for: UIControlEvents.touchUpInside)
+        becomeExpertButton.addTarget(self, action: #selector(userClickedBecomeExpert), for: UIControlEvents.touchUpInside)
+
     }
     
     fileprivate func setupMenu() {
