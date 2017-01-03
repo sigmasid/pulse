@@ -123,8 +123,9 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         super.viewWillAppear(true)
     }
     
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        removeObserverIfNeeded()
         
         if ShowAnswerVC.qPlayer.currentItem != nil {
             ShowAnswerVC.qPlayer.pause()
