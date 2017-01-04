@@ -257,8 +257,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         case .question:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionQuestionReuseIdentifier, for: indexPath) as! FeedQuestionCell
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-            
-            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
 
             //clear the cells and set the item type first
             cell.updateLabel(nil, _subtitle: nil)
@@ -266,46 +264,41 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { return cell }
 
-                if let tagTitle = _currentQuestion.qTag?.tagTitle {
-                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: tagTitle.capitalized)
-                } else {
-                    cell.updateLabel(_currentQuestion.qTitle, _subtitle: nil)
-                }
+                cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+                cell.updateLabel(_currentQuestion.qTitle, _subtitle: _currentQuestion.qTag?.tagTitle?.capitalized ?? nil)
+                cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
                 
-                if _currentQuestion.hasAnswers() {
-                    cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
-                } else {
-                    cell.answerCount.setTitle("0", for: UIControlState())
-                }
             } else {
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
-                    if let question = question {
+                    cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
 
+                    if let question = question {
                         if let tagTitle = question.qTag?.tagTitle  {
-                            DispatchQueue.main.async {
-                                cell.updateLabel(question.qTitle, _subtitle: tagTitle.capitalized)
-                                collectionView.reloadItems(at: [indexPath])
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                DispatchQueue.main.async {
+                                    cell.updateLabel(question.qTitle, _subtitle: tagTitle.capitalized)
+                                    cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
+                                }
                             }
                             self.allQuestions[indexPath.row] = question
-
                         } else if let tag = self.allQuestions[indexPath.row]?.qTag {
-                            DispatchQueue.main.async {
-                                cell.updateLabel(question.qTitle, _subtitle: tag.tagTitle?.capitalized)
-                                collectionView.reloadItems(at: [indexPath])
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                DispatchQueue.main.async {
+                                    cell.updateLabel(question.qTitle, _subtitle: tag.tagTitle?.capitalized)
+                                    cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
+                                }
                             }
                             self.allQuestions[indexPath.row] = question
                             self.allQuestions[indexPath.row]?.qTag = tag
 
                         } else {
-                            DispatchQueue.main.async {
-                                cell.updateLabel(question.qTitle, _subtitle: nil)
-                                collectionView.reloadItems(at: [indexPath])
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                DispatchQueue.main.async {
+                                    cell.updateLabel(question.qTitle, _subtitle: nil)
+                                    cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
+                                }
                             }
                             self.allQuestions[indexPath.row] = question
-                        }
-                        DispatchQueue.main.async {
-                            cell.answerCount.setTitle(String(question.totalAnswers()), for: UIControlState())
-                            collectionView.reloadItems(at: [indexPath])
                         }
                     }
                 })
@@ -361,8 +354,10 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
                         self.answerStack[indexPath.row].answer.thumbImage = _answerPreviewImage
                         
-                        DispatchQueue.main.async {
-                            cell.updateImage(image: self.answerStack[indexPath.row].answer.thumbImage)
+                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                            DispatchQueue.main.async {
+                                cell.updateImage(image: self.answerStack[indexPath.row].answer.thumbImage)
+                            }
                         }
                     } else {
                         cell.updateImage(image: nil)
@@ -449,7 +444,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 })
                 
                 cell.delegate = self
-                
                 cell.showAnswer(answer: selectedAnswer)
 
             } else if indexPath == deselectedIndex {
@@ -463,7 +457,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
             cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
-
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
 
             let _user = allUsers[indexPath.row]
@@ -478,9 +471,12 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         if let _uPic = user.profilePic {
                             DispatchQueue.global(qos: .background).async {
                                 if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
+                                    self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+
                                     DispatchQueue.main.async {
-                                        self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                                        cell.updateImage(image : UIImage(data: _userImageData))
+                                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                            cell.updateImage(image : UIImage(data: _userImageData))
+                                        }
                                     }
                                 }
                             }
@@ -489,16 +485,17 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 })
             } else {
                 cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio)
-                cell.updateImage(image: nil)
                 if _user.thumbPicImage != nil {
                     cell.updateImage(image : _user.thumbPicImage)
-                }
-                else if let _uPic = _user.thumbPic {
+                } else if let _uPic = _user.thumbPic {
                     DispatchQueue.global(qos: .background).async {
                         if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                            DispatchQueue.main.async {
-                                self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                                cell.updateImage(image : UIImage(data: _userImageData))
+                            self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+                            
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                DispatchQueue.main.async {
+                                    cell.updateImage(image : UIImage(data: _userImageData))
+                                }
                             }
                         }
                     }
@@ -506,6 +503,50 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             }
             return cell
         }
+    }
+    
+    //reload data isn't called on existing cells so this makes sure visible cells always have data in them
+    func updateQuestionCell(_ cell: FeedQuestionCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
+        if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
+            guard let _currentQuestion = allQuestions[indexPath.row] else { return }
+            
+            cell.updateLabel(_currentQuestion.qTitle, _subtitle: _currentQuestion.qTag?.tagTitle?.capitalized ?? nil)
+            cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
+        }
+    }
+    
+    func updateAnswerCell(_ cell: FeedAnswerCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
+        let _user = allUsers[indexPath.row]
+        
+        cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio)
+        if _user.thumbPicImage != nil {
+            cell.updateImage(image : _user.thumbPicImage)
+        }
+    }
+    
+    func updateOnscreenRows() {
+        if let visiblePaths = feedCollectionView?.indexPathsForVisibleItems {
+            for indexPath in visiblePaths {
+                switch feedItemType! {
+                case .question:
+                    let cell = feedCollectionView?.cellForItem(at: indexPath) as! FeedQuestionCell
+                    updateQuestionCell(cell, inCollectionView: feedCollectionView!, atIndexPath: indexPath)
+                case .answer:
+                    let cell = feedCollectionView?.cellForItem(at: indexPath) as! FeedAnswerCell
+                    updateAnswerCell(cell, inCollectionView: feedCollectionView!, atIndexPath: indexPath)
+
+                default: return
+                }
+            }
+        }
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        updateOnscreenRows()
+    }
+    
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { updateOnscreenRows() }
     }
     
     //Did select item at index path
@@ -541,6 +582,25 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
     }
+    
+    /**
+    func updateOnscreenRows() {
+        if let visiblePaths = feedCollectionView?.indexPathsForVisibleItems {
+            for indexPath in visiblePaths {
+                let entry = entries[(indexPath as NSIndexPath).row]
+                let cell = collectionView(self.feedCollectionView!, cellForItemAt: indexPath)
+                updateImageForCell(cell, inCollectionView: collectionView, withEntry: entry, atIndexPath: indexPath)
+            }
+        }
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        updateOnscreenRows()
+    }
+    
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { updateOnscreenRows() }
+    } **/
 }
 
 extension FeedVC: UICollectionViewDelegateFlowLayout {

@@ -21,29 +21,32 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var blankButton : PulseButton!
     fileprivate var backButton : PulseButton!
     
-    
     /* SIDE MENU VARS */
     fileprivate var screenMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.m.rawValue)
 
     fileprivate var messageButton = PulseButton(size: .medium, type: .messageCircle, isRound : true, hasBackground: false, tint: .black)
     fileprivate var messageLabel = PulseButton(title: "Send Message", isRound: false)
-    fileprivate var messageStack = UIStackView()
+    fileprivate var messageStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     
     fileprivate var becomeExpertButton = PulseButton(size: .medium, type: .checkCircle, isRound : true, hasBackground: false, tint: .black)
     fileprivate var becomeExpertLabel = PulseButton(title: "Become Expert", isRound: false)
-    fileprivate var becomeExpertStack = UIStackView()
+    fileprivate var becomeExpertStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     
     fileprivate var askQuestionButton = PulseButton(size: .medium, type: .questionCircle, isRound : true, hasBackground: false, tint: .black)
     fileprivate var askQuestionLabel = PulseButton(title: "Ask Question", isRound: false)
-    fileprivate var askQuestionStack = UIStackView()
+    fileprivate var askQuestionStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     
     fileprivate var addAnswerButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
     fileprivate var addAnswerLabel = PulseButton(title: "Add Answer", isRound: false)
-    fileprivate var addAnswerStack = UIStackView()
+    fileprivate var addAnswerStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     
     fileprivate var toggleFollowButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
     fileprivate var toggleFollowLabel = PulseButton(title: "Follow Tag", isRound: false)
-    fileprivate var toggleFollowStack = UIStackView()
+    fileprivate var toggleFollowStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var searchMenuButton = PulseButton(size: .medium, type: .searchCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var searchLabel = PulseButton(title: "Search", isRound: false)
+    fileprivate var searchStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     /* END SIDE MENU VARS */
     
     fileprivate var hideStatusBar = false {
@@ -376,7 +379,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 }
             })
         case .tags:
-            return
+            Database.getUserExpertTags(uID: selectedUser.uID!, completion: { tags in
+                if tags.count > 0 {
+                    self.exploreContainer.selectedUser = self.selectedUser
+                    self.exploreContainer.allTags = tags
+                    self.exploreContainer.feedItemType = self.currentExploreMode.getFeedType()
+                    
+                    self.toggleLoading(show: false, message : nil)
+                } else {
+                    self.toggleLoading(show: true, message : "No verified expertise yet!")
+                }
+            })
         default: return
         }
     }
@@ -445,6 +458,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
         
         switch currentExploreMode.currentMode {
+        case .root:
+            screenMenu.addArrangedSubview(searchStack)
+
         case .tag:
             screenMenu.addArrangedSubview(becomeExpertStack)
             screenMenu.addArrangedSubview(askQuestionStack)
@@ -486,6 +502,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     func userClickedSearch() {
+        hideMenu()
+
         searchController.isActive = true
         currentExploreMode = Explore(currentMode: .search, currentSelection: 0, currentSelectedItem: nil)
         exploreStack.append(currentExploreMode)
@@ -693,13 +711,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         blankButton = PulseButton(size: .small, type: .blank, isRound : true, hasBackground: true)
 
         // SIDE MENU OPTIONS //
-    
-        toggleFollowStack.spacing = Spacing.s.rawValue
-        messageStack.spacing = Spacing.s.rawValue
-        addAnswerStack.spacing = Spacing.s.rawValue
-        askQuestionStack.spacing = Spacing.s.rawValue
-        becomeExpertStack.spacing = Spacing.s.rawValue
-
         toggleFollowStack.addArrangedSubview(toggleFollowLabel)
         toggleFollowStack.addArrangedSubview(toggleFollowButton)
         
@@ -714,6 +725,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         becomeExpertStack.addArrangedSubview(becomeExpertLabel)
         becomeExpertStack.addArrangedSubview(becomeExpertButton)
+        
+        searchStack.addArrangedSubview(searchLabel)
+        searchStack.addArrangedSubview(searchMenuButton)
 
         toggleFollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         toggleFollowLabel.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
@@ -729,7 +743,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         becomeExpertButton.addTarget(self, action: #selector(userClickedBecomeExpert), for: UIControlEvents.touchUpInside)
         becomeExpertButton.addTarget(self, action: #selector(userClickedBecomeExpert), for: UIControlEvents.touchUpInside)
-
+        
+        searchMenuButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
+        searchMenuButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
     }
     
     fileprivate func setupMenu() {
@@ -896,15 +912,7 @@ extension ExploreVC {
     }
 }
 
-//if let _tagImage = selectedTag.previewImage {
-//    Database.getTagImage(_tagImage, maxImgSize: maxImgSize, completion: {(data, error) in
-//        if error != nil {
-//            print (error?.localizedDescription)
-//        } else {
-//            if let backgroundImage = UIImage(data: data!) {
-//                self.headerNav?.updateBackgroundImage(image: backgroundImage)
-//            }
-//        }
-//    })
-//}
-
+//Moving side menu layout & functions here for clean up
+extension ExploreVC {
+    
+}

@@ -16,7 +16,7 @@ class PanAnimationController: BaseAnimator  {
     var delegate : tabVCDelegate!
     
     override func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-        return 0.5
+        return 0.3
     }
     
     override func animatePresentingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
@@ -89,7 +89,7 @@ class PanAnimationController: BaseAnimator  {
             containerView.addSubview(snapshot)
             
             let duration = transitionDuration(using: transitionContext)
-            let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveEaseOut] : []
+            let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveLinear] : []
             let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
 
             UIView.animate(

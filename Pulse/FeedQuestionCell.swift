@@ -26,8 +26,8 @@ class FeedQuestionCell: UICollectionViewCell {
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?) {
-        titleLabel.text = _title
-        subtitleLabel.text = _subtitle
+        self.titleLabel.text = _title
+        self.subtitleLabel.text = _subtitle
     }
     
     override func prepareForReuse() {

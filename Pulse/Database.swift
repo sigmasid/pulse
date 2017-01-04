@@ -664,6 +664,23 @@ class Database {
             }
         })
     }
+    
+    ///Get all tags that user is a verified expert in
+    static func getUserExpertTags(uID: String, completion: @escaping (_ tags : [Tag]) -> Void) {
+        var allTags = [Tag]()
+        
+        usersPublicDetailedRef.child(uID).child("expertiseTags").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    let currentTag = Tag(tagID: (child as AnyObject).key)
+                    allTags.append(currentTag)
+                }
+                completion(allTags)
+            } else {
+                completion(allTags)
+            }
+        })
+    }
     /*** MARK END : GET USER ITEMS ***/
     
     /* CREATE / UPDATE FEED */

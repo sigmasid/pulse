@@ -366,11 +366,11 @@
 		BAC892DA1D7A28CF0060A928 /* Transition Animation */ = {
 			isa = PBXGroup;
 			children = (
-				BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */,
+				BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */,
 				BAB03AC71D80D76300090147 /* PanHorizontalInteraction.swift */,
+				BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */,
 				BA0969831D83922D00A9BA51 /* PanContainerInteractionController.swift */,
 				BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */,
-				BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */,
 				BAB03AC31D808DEF00090147 /* ShrinkDismissAnimationController.swift */,
 				BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */,
 				BAFBD1641D81DD7F00911453 /* FadeAnimationController.swift */,

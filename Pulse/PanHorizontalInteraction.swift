@@ -28,7 +28,14 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
         view.addGestureRecognizer(gesture)
     }
     
+    
+    
     func handleGesture(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {
+        
+        //To make sure that the user is indeed moving left to right
+        //let velocity : CGPoint = gestureRecognizer.velocity(in: gestureRecognizer.view!.superview!)
+        //guard abs(velocity.x) > abs(velocity.y) || interactionInProgress == false else { return }
+        
         //Represents the percentage of the transition that must be completed before allowing to complete.
         let percentThreshold: CGFloat = 0.3
         
@@ -37,11 +44,13 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
         
         var progress: CGFloat = translation.x / screenWidth
         
+        
         rightToLeftPan = progress < 0
         
         progress = abs(progress)
         progress = fmax(progress, 0)
         progress = fmin(progress, 1)
+        
         
         switch gestureRecognizer.state {
             
@@ -58,6 +67,7 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
             }
         case .changed:
             shouldCompleteTransition = progress > percentThreshold
+            
             update(progress)
             
         case .cancelled:
