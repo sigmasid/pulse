@@ -19,13 +19,16 @@ class PanAnimationController: BaseAnimator  {
         return 0.3
     }
     
-    override func animatePresentingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
-        
+    override func animatePresentingInContext(_ transitionContext: UIViewControllerContextTransitioning,
+                                             fromVC: UIViewController, toVC: UIViewController) {
+
         let containerView = transitionContext.containerView
         let fromVCRect = transitionContext.initialFrame(for: fromVC)
         toVC.view.frame = fromVCRect
         
-        if let snapshot = toVC.view.resizableSnapshotView(from: toVC.view.frame, afterScreenUpdates: true, withCapInsets: UIEdgeInsets.zero) {
+        if let snapshot = toVC.view.resizableSnapshotView(from: toVC.view.frame,
+                                                          afterScreenUpdates: true,
+                                                          withCapInsets: UIEdgeInsets.zero) {
             toVC.view.isHidden = true
             snapshot.frame = initialFrame
             
@@ -34,7 +37,8 @@ class PanAnimationController: BaseAnimator  {
             containerView.addSubview(snapshot)
             
             let duration = transitionDuration(using: transitionContext)
-            let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveLinear] : []
+            let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ?
+                [UIViewAnimationOptions.curveLinear] : []
             let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
 
             UIView.animate(
@@ -75,21 +79,28 @@ class PanAnimationController: BaseAnimator  {
         }
     }
     
-    override func animateDismissingInContext(_ transitionContext: UIViewControllerContextTransitioning, fromVC: UIViewController, toVC: UIViewController) {
+    //not used but here just to fulfill protocol reqs
+    override func animateDismissingInContext(_ transitionContext: UIViewControllerContextTransitioning,
+                                             fromVC: UIViewController, toVC: UIViewController) {
+        
         let containerView = transitionContext.containerView
         
         let fromVCRect = transitionContext.initialFrame(for: fromVC)
         toVC.view.frame = fromVCRect
         
-        if let snapshot = toVC.view.resizableSnapshotView(from: toVC.view.frame, afterScreenUpdates: true, withCapInsets: UIEdgeInsets.zero) {
+        if let snapshot = toVC.view.resizableSnapshotView(from: toVC.view.frame,
+                                                          afterScreenUpdates: true,
+                                                          withCapInsets: UIEdgeInsets.zero) {
             toVC.view.isHidden = true
             snapshot.frame = initialFrame
             
-            containerView.insertSubview(toVC.view, at: 0)
+            containerView.addSubview(fromVC.view)
+            containerView.addSubview(toVC.view)
             containerView.addSubview(snapshot)
             
             let duration = transitionDuration(using: transitionContext)
-            let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ? [UIViewAnimationOptions.curveLinear] : []
+            let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ?
+                [UIViewAnimationOptions.curveLinear] : []
             let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
 
             UIView.animate(
@@ -105,8 +116,8 @@ class PanAnimationController: BaseAnimator  {
                         self.tabIcons.alpha = 1.0
                     }
                 }, completion: { _ in
-                    fromVC.view.frame = fromVCRect
                     toVC.view.isHidden = false
+                    fromVC.view.frame = fromVCRect
                     snapshot.removeFromSuperview()
                     
                     UIView.animate(

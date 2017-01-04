@@ -37,7 +37,8 @@ extension BaseAnimator: UIViewControllerAnimatedTransitioning {
             case .present:
                 animatePresentingInContext(transitionContext, fromVC: from, toVC: to)
             case .dismiss:
-                animateDismissingInContext(transitionContext, fromVC: from, toVC: to)
+                //not using dismiss as it causes an animation bug
+                animatePresentingInContext(transitionContext, fromVC: from, toVC: to)
             }
         }
     }
