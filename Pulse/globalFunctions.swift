@@ -131,6 +131,21 @@ class GlobalFunctions {
         return labelWidth
     }
     
+    ///Share content
+    static func shareContent(shareType: String, shareText: String, shareLink: String, presenter: UIViewController) -> UIActivityViewController {
+        // set up activity view controller
+        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + shareLink
+        let activityViewController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
+        activityViewController.popoverPresentationController?.sourceView = presenter.view // so that iPads won't crash
+        
+        // exclude some activity types from the list (optional)
+        activityViewController.excludedActivityTypes = [ UIActivityType.airDrop ]
+        
+        // present the view controller
+        presenter.present(activityViewController, animated: true, completion: nil)
+        
+        return activityViewController
+    }
     
     ///Validate email
     static func validateEmail(_ enteredEmail:String?, completion: (_ verified: Bool, _ error: NSError?) -> Void) {

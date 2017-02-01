@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle}
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -432,6 +432,11 @@ open class PulseButton: UIButton {
 
         case .searchCircle:
             let tintedTimage = UIImage(named: "tab-explore")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+            
+        case .shareCircle:
+            let tintedTimage = UIImage(named: "share-circle")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
 

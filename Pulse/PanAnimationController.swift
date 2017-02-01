@@ -84,7 +84,6 @@ class PanAnimationController: BaseAnimator  {
                                              fromVC: UIViewController, toVC: UIViewController) {
         
         let containerView = transitionContext.containerView
-        
         let fromVCRect = transitionContext.initialFrame(for: fromVC)
         toVC.view.frame = fromVCRect
         
@@ -102,9 +101,9 @@ class PanAnimationController: BaseAnimator  {
             let animOptions: UIViewAnimationOptions = transitionContext.isInteractive ?
                 [UIViewAnimationOptions.curveLinear] : []
             let xScaleUp = CGAffineTransform(scaleX: 1.2, y: 1.2)
-
+            
             UIView.animate(
-                withDuration: duration / 2,
+                withDuration: duration,
                 delay: 0,
                 options: animOptions,
                 animations: {
@@ -115,28 +114,28 @@ class PanAnimationController: BaseAnimator  {
                         self.tabIcons.transform = xScaleUp
                         self.tabIcons.alpha = 1.0
                     }
-                }, completion: { _ in
-                    toVC.view.isHidden = false
-                    fromVC.view.frame = fromVCRect
-                    snapshot.removeFromSuperview()
-                    
-                    UIView.animate(
-                        withDuration: duration / 2,
-                        delay: duration / 2,
-                        options: animOptions,
-                        animations: {
-
+            }, completion: { _ in
+                toVC.view.isHidden = false
+                fromVC.view.frame = fromVCRect
+                snapshot.removeFromSuperview()
+                
+                UIView.animate(
+                    withDuration: duration / 2,
+                    delay: duration / 2,
+                    options: animOptions,
+                    animations: {
+                        
                         if self.tabIcons != nil {
                             self.tabIcons.transform = CGAffineTransform.identity
                             self.tabIcons.alpha = 0.5
                         }
-                    })
+                })
                 
-                    if transitionContext.transitionWasCancelled {
-                        self.delegate.cancelledTransition()
-                    }
-                    
-                    transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
+                if transitionContext.transitionWasCancelled {
+                    self.delegate.cancelledTransition()
+                }
+                
+                transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
             })
         }
     }

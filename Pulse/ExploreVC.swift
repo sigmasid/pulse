@@ -21,6 +21,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var blankButton : PulseButton!
     fileprivate var backButton : PulseButton!
     
+    fileprivate var activityController: UIActivityViewController?
+    
     /* SIDE MENU VARS */
     fileprivate var screenMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.m.rawValue)
 
@@ -47,6 +49,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var searchMenuButton = PulseButton(size: .medium, type: .searchCircle, isRound : true, hasBackground: false, tint: .black)
     fileprivate var searchLabel = PulseButton(title: "Search", isRound: false)
     fileprivate var searchStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var shareButton = PulseButton(size: .medium, type: .shareCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var shareLabel = PulseButton(title: "Share", isRound: false)
+    fileprivate var shareStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     /* END SIDE MENU VARS */
     
     fileprivate var hideStatusBar = false {
@@ -108,7 +114,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             
             tapGesture.addTarget(self, action: #selector(dismissSearchTap))
             loadingView?.addGestureRecognizer(tapGesture)
-            
         }
     }
     
@@ -433,6 +438,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
     }
     
+    ///Shows / hides the menu - update menu has the components of the menu
     public func appButtonTapped() {
         if screenMenu.isHidden {
             toggleLoading(show: true, message: nil)
@@ -468,7 +474,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
 
         case .question:
             screenMenu.addArrangedSubview(addAnswerStack)
-            
+            screenMenu.addArrangedSubview(shareStack)
+
         case .people:
             screenMenu.addArrangedSubview(askQuestionStack)
             screenMenu.addArrangedSubview(messageStack)
@@ -518,10 +525,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         goBack()
     }
     
-    
     //UPDATE TAGS / QUESTIONS IN FEED
     internal func goBack() {
         guard exploreStack.last != nil else { return }
+        hideMenu()
         
         switch exploreStack.last!.currentMode {
         case .people:
@@ -651,6 +658,19 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         navigationController?.pushViewController(questionVC, animated: true)
     }
     
+    func userClickedShare() {
+        switch currentExploreMode.currentMode {
+        case .tag:
+            activityController = GlobalFunctions.shareContent(shareType: "channel", shareText: selectedTag.tagTitle ?? "", shareLink: "https://www.google.com", presenter: self)
+        case .question:
+            activityController = GlobalFunctions.shareContent(shareType: "question", shareText: selectedQuestion.qTitle ?? "", shareLink: "https://www.google.com", presenter: self)
+        case .people:
+            activityController = GlobalFunctions.shareContent(shareType: "person", shareText: selectedUser.name ?? "", shareLink: "https://www.google.com", presenter: self)
+
+        default: return
+        }
+    }
+    
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
         currentExploreMode.currentSelection = selectedSegment
         exploreStack[exploreStack.count - 1].currentSelection = selectedSegment
@@ -728,6 +748,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         searchStack.addArrangedSubview(searchLabel)
         searchStack.addArrangedSubview(searchMenuButton)
+        
+        shareStack.addArrangedSubview(shareLabel)
+        shareStack.addArrangedSubview(shareButton)
 
         toggleFollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         toggleFollowLabel.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
@@ -742,10 +765,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         askQuestionLabel.addTarget(self, action: #selector(userClickedAskQuestion), for: UIControlEvents.touchUpInside)
         
         becomeExpertButton.addTarget(self, action: #selector(userClickedBecomeExpert), for: UIControlEvents.touchUpInside)
-        becomeExpertButton.addTarget(self, action: #selector(userClickedBecomeExpert), for: UIControlEvents.touchUpInside)
+        becomeExpertLabel.addTarget(self, action: #selector(userClickedBecomeExpert), for: UIControlEvents.touchUpInside)
         
         searchMenuButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
-        searchMenuButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
+        searchLabel.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
+        
+        shareButton.addTarget(self, action: #selector(userClickedShare), for: UIControlEvents.touchUpInside)
+        shareLabel.addTarget(self, action: #selector(userClickedShare), for: UIControlEvents.touchUpInside)
     }
     
     fileprivate func setupMenu() {

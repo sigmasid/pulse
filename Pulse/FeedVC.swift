@@ -260,17 +260,16 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
             //clear the cells and set the item type first
             cell.updateLabel(nil, _subtitle: nil)
+            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
 
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { return cell }
 
-                cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
                 cell.updateLabel(_currentQuestion.qTitle, _subtitle: _currentQuestion.qTag?.tagTitle?.capitalized ?? nil)
                 cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
                 
             } else {
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
-                    cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
 
                     if let question = question {
                         if let tagTitle = question.qTag?.tagTitle  {
