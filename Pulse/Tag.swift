@@ -60,4 +60,15 @@ class Tag : NSObject {
     func totalQuestionsForTag() -> Int {
         return self.questions.count
     }
+    
+    func createShareLink(completion: @escaping (String?) -> Void) {
+        guard let cID = self.tagID else {
+            completion(nil)
+            return
+        }
+        
+        Database.createShareLink(linkString: "c/"+cID, completion: { link in
+            completion(link)
+        })
+    }
 }

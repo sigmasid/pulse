@@ -8,11 +8,17 @@
 
 import UIKit
 
+protocol LoadingDelegate : class {
+    func clickedRefresh()
+}
+
 class LoadingView: UIView {
     
     fileprivate let messageLabel = UILabel()
     fileprivate var iconManager : Icon!
-
+    fileprivate lazy var refreshButton = PulseButton(size: .small, type: .add, isRound: true, hasBackground: true)
+    var loadingDelegate : LoadingDelegate!
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
@@ -26,7 +32,7 @@ class LoadingView: UIView {
         super.init(coder: aDecoder)
     }
     
-    func addMessage(_ _text : String?) {
+    public func addMessage(_ _text : String?) {
         addSubview(messageLabel)
         messageLabel.text = _text
         messageLabel.adjustsFontSizeToFitWidth = true
@@ -44,12 +50,12 @@ class LoadingView: UIView {
         messageLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
     }
     
-    func addMessage(_ _text : String?, _color : UIColor) {
+    public func addMessage(_ _text : String?, _color : UIColor) {
         messageLabel.textColor = _color
         addMessage(_text)
     }
     
-    func addIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {
+    public func addIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {
         let _iconSize = iconSize.rawValue
         iconManager = Icon(frame: CGRect(x: 0, y: 0, width: _iconSize, height: _iconSize))
 
@@ -67,7 +73,7 @@ class LoadingView: UIView {
         iconManager.layoutIfNeeded()
     }
     
-    func addLongIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {
+    public func addLongIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {
         let _iconSize = iconSize.rawValue
         iconManager = Icon(frame: CGRect(x: 0, y: 0, width: frame.width, height: _iconSize))
         addSubview(iconManager)
@@ -81,6 +87,26 @@ class LoadingView: UIView {
 
         iconManager.drawLongIcon(.black, iconThickness: IconThickness.medium.rawValue, tillEnd : true)
 
+    }
+    
+    public func addRefreshButton() {
+        addSubview(refreshButton)
+        
+        refreshButton.translatesAutoresizingMaskIntoConstraints = false
+        refreshButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        refreshButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        refreshButton.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        refreshButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        refreshButton.layoutIfNeeded()
+        
+        refreshButton.addTarget(self, action: #selector(refreshButtonTapped), for: .touchUpInside)
+    }
+    
+    func refreshButtonTapped() {
+        refreshButton.removeFromSuperview()
+        
+        guard let loadingDelegate = loadingDelegate else { return }
+        loadingDelegate.clickedRefresh()
     }
 }
 

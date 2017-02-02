@@ -53,6 +53,32 @@ class Database {
     static var activeListeners = [FIRDatabaseReference]()
     static var profileListenersAdded = false
     
+    static func createShareLink(linkString : String, completion: @escaping (String?) -> Void) {
+        var request = URLRequest(url: URL(string: "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAJa2_jjaxFCWE0mLbRNfZ9lKZWK0mUyNU")!)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let longLink = "https://tc237.app.goo.gl/?link=http://checkpulse.co/" + linkString +
+                        "&ibi=co.checkpulse.pulse&isi=1200702658"
+        let json: [String: Any] = ["longDynamicLink": longLink, "suffix":["option":"SHORT"]]
+        let jsonData = try? JSONSerialization.data(withJSONObject: json)
+
+        request.httpBody = jsonData
+        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+            guard let data = data, error == nil else {
+                completion("https://checkpulse.co/"+linkString)
+                return
+            }
+            
+            let responseJSON = try? JSONSerialization.jsonObject(with: data, options: [])
+            if let responseJSON = responseJSON as? [String: Any] {
+                completion(responseJSON["shortLink"] as! String?)
+            }
+        }
+
+        task.resume()
+    }
+    
     static func addTags() {
         for _ in 1...10 {
             tagsRef.childByAutoId().child("title").setValue("test1")

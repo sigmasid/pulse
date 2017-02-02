@@ -661,11 +661,26 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     func userClickedShare() {
         switch currentExploreMode.currentMode {
         case .tag:
-            activityController = GlobalFunctions.shareContent(shareType: "channel", shareText: selectedTag.tagTitle ?? "", shareLink: "https://www.google.com", presenter: self)
+            selectedTag.createShareLink(completion: { link in
+                guard let link = link else { return }
+                self.activityController = GlobalFunctions.shareContent(shareType: "channel",
+                                                                  shareText: self.selectedTag.tagTitle ?? "",
+                                                                  shareLink: link, presenter: self)
+            })
         case .question:
-            activityController = GlobalFunctions.shareContent(shareType: "question", shareText: selectedQuestion.qTitle ?? "", shareLink: "https://www.google.com", presenter: self)
+            selectedQuestion.createShareLink(completion: { link in
+                guard let link = link else { return }
+                self.activityController = GlobalFunctions.shareContent(shareType: "question",
+                                                                  shareText: self.selectedQuestion.qTitle ?? "",
+                                                                  shareLink: link, presenter: self)
+            })
         case .people:
-            activityController = GlobalFunctions.shareContent(shareType: "person", shareText: selectedUser.name ?? "", shareLink: "https://www.google.com", presenter: self)
+            selectedUser.createShareLink(completion: { link in
+                guard let link = link else { return }
+                self.activityController = GlobalFunctions.shareContent(shareType: "person",
+                                                                  shareText: self.selectedUser.name ?? "",
+                                                                  shareLink: link, presenter: self)
+            })
 
         default: return
         }

@@ -8,6 +8,8 @@
 
 import Foundation
 import UIKit
+import SystemConfiguration
+
 
 let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
 let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
@@ -32,6 +34,29 @@ let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.ra
 let _backgroundColors = [color1, color2, color3, color4, color5, color6, color7, color8]
 
 class GlobalFunctions {
+    
+    static func isConnectedToNetwork() -> Bool {
+        
+        var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0, sin_port: 0, sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
+        zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
+        zeroAddress.sin_family = sa_family_t(AF_INET)
+        let defaultRouteReachability = withUnsafePointer(to: &zeroAddress) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {zeroSockAddress in
+                SCNetworkReachabilityCreateWithAddress(nil, zeroSockAddress)
+            }
+        }
+        
+        var flags: SCNetworkReachabilityFlags = SCNetworkReachabilityFlags(rawValue: 0)
+        if SCNetworkReachabilityGetFlags(defaultRouteReachability!, &flags) == false {
+            return false
+        }
+        
+        let isReachable = flags == .reachable
+        let needsConnection = flags == .connectionRequired
+        
+        return isReachable && !needsConnection
+    }
+    
     static func addBorders(_ _textField : UITextField) -> CAShapeLayer {
         let color = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 )
         return addBorders(_textField, _color: color, thickness : 1.0)

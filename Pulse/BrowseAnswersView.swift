@@ -32,9 +32,9 @@ class BrowseAnswersView: UIView {
     fileprivate var addAnswerButton = UIButton()
     fileprivate var sortAnswersButton = UIButton()
     
-    fileprivate var _questionLabel = UILabel()
-    fileprivate var _tagLabel = UILabel()
-    fileprivate var _answerCount = UIButton()
+    fileprivate var questionLabel = UILabel()
+    fileprivate var tagLabel = UILabel()
+    fileprivate var answerCount = UIButton()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -75,50 +75,50 @@ class BrowseAnswersView: UIView {
         
         topHeaderView.backgroundColor = UIColor.white
         
-        addSubview(_answerCount)
-        addSubview(_questionLabel)
-        addSubview(_tagLabel)
+        addSubview(answerCount)
+        addSubview(questionLabel)
+        addSubview(tagLabel)
 
-        _answerCount.translatesAutoresizingMaskIntoConstraints = false
-        _answerCount.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        _answerCount.heightAnchor.constraint(equalTo: _answerCount.widthAnchor).isActive = true
-        _answerCount.centerYAnchor.constraint(equalTo: topHeaderView.centerYAnchor).isActive = true
-        _answerCount.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        _answerCount.layoutIfNeeded()
+        answerCount.translatesAutoresizingMaskIntoConstraints = false
+        answerCount.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        answerCount.heightAnchor.constraint(equalTo: answerCount.widthAnchor).isActive = true
+        answerCount.centerYAnchor.constraint(equalTo: topHeaderView.centerYAnchor).isActive = true
+        answerCount.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        answerCount.layoutIfNeeded()
         
-        _answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
-        _answerCount.titleLabel!.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightBold)
-        _answerCount.titleLabel!.textColor = UIColor.white
-        _answerCount.titleLabel!.textAlignment = .center
-        _answerCount.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
-        _answerCount.imageView?.contentMode = .scaleAspectFit
+        answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
+        answerCount.titleLabel!.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightBold)
+        answerCount.titleLabel!.textColor = UIColor.white
+        answerCount.titleLabel!.textAlignment = .center
+        answerCount.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
+        answerCount.imageView?.contentMode = .scaleAspectFit
         
-        _questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        _questionLabel.leadingAnchor.constraint(equalTo: topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        _questionLabel.topAnchor.constraint(equalTo: _answerCount.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        _questionLabel.trailingAnchor.constraint(equalTo: _answerCount.leadingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        questionLabel.translatesAutoresizingMaskIntoConstraints = false
+        questionLabel.leadingAnchor.constraint(equalTo: topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        questionLabel.topAnchor.constraint(equalTo: answerCount.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        questionLabel.trailingAnchor.constraint(equalTo: answerCount.leadingAnchor, constant: -Spacing.s.rawValue).isActive = true
         
-        _questionLabel.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightRegular)
-        _questionLabel.textColor = UIColor.black
-        _questionLabel.textAlignment = .left
-        _questionLabel.text = currentQuestion?.qTitle
-        _questionLabel.numberOfLines = 0
-        _questionLabel.layoutIfNeeded()
+        questionLabel.font = UIFont.systemFont(ofSize: FontSizes.headline.rawValue, weight: UIFontWeightRegular)
+        questionLabel.textColor = UIColor.black
+        questionLabel.textAlignment = .left
+        questionLabel.text = currentQuestion?.qTitle
+        questionLabel.numberOfLines = 0
+        questionLabel.layoutIfNeeded()
         
-        _tagLabel.translatesAutoresizingMaskIntoConstraints = false
-        _tagLabel.leadingAnchor.constraint(equalTo: topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        _tagLabel.topAnchor.constraint(equalTo: _questionLabel.bottomAnchor).isActive = true
-        _tagLabel.trailingAnchor.constraint(equalTo: _answerCount.leadingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        _tagLabel.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightBold)
-        _tagLabel.textColor = UIColor.black
-        _tagLabel.textAlignment = .left
+        tagLabel.translatesAutoresizingMaskIntoConstraints = false
+        tagLabel.leadingAnchor.constraint(equalTo: topHeaderView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        tagLabel.topAnchor.constraint(equalTo: questionLabel.bottomAnchor).isActive = true
+        tagLabel.trailingAnchor.constraint(equalTo: answerCount.leadingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        tagLabel.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightBold)
+        tagLabel.textColor = UIColor.black
+        tagLabel.textAlignment = .left
         
         if let _currentTagTile = currentTag?.tagID {
-            _tagLabel.text = "#\(_currentTagTile)"
+            tagLabel.text = "#\(_currentTagTile)"
         }
         
-        if let _answerCountText = currentQuestion?.totalAnswers() {
-            _answerCount.setTitle(String(_answerCountText), for: UIControlState())
+        if let answerCountText = currentQuestion?.totalAnswers() {
+            answerCount.setTitle(String(answerCountText), for: UIControlState())
         }
     }
     

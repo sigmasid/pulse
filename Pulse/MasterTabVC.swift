@@ -25,7 +25,7 @@ protocol tabVCDelegate: class {
 }
 
 
-class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate {
+class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate, LoadingDelegate {
     fileprivate var initialLoadComplete = false
     fileprivate var loadingView : LoadingView!
 
@@ -73,27 +73,35 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     override func viewDidLoad() {
         super.viewDidLoad()
         setupLoading()
-        
+        checkConnectionSetup()
+    }
+    
+    func checkConnectionSetup() {
         if !isLoaded {
-            Database.checkCurrentUser { success in
-                
-                // get feed and show initial view controller
-                if success && !self.initialLoadComplete {
-                    self.setupControllers()
-                    self.setupPulseButton()
-                    self.setupIcons(_selectedIndex: 2)
-
-                    self.initialLoadComplete = true
-
-                } else if !success && !self.initialLoadComplete {
-                    self.setupControllers()
-                    self.setupPulseButton()
-                    self.setupIcons(_selectedIndex: 1)
+            if GlobalFunctions.isConnectedToNetwork() {
+                Database.checkCurrentUser { success in
                     
-                    self.initialLoadComplete = true
+                    // get feed and show initial view controller
+                    if success && !self.initialLoadComplete {
+                        self.setupControllers()
+                        self.setupPulseButton()
+                        self.setupIcons(_selectedIndex: 2)
+                        
+                        self.initialLoadComplete = true
+                        
+                    } else if !success && !self.initialLoadComplete {
+                        self.setupControllers()
+                        self.setupPulseButton()
+                        self.setupIcons(_selectedIndex: 1)
+                        
+                        self.initialLoadComplete = true
+                    }
+                    
+                    self.isLoaded = true
                 }
-                
-                self.isLoaded = true
+            } else {
+                loadingView?.addMessage("Sorry! No Internet Connection", _color: .black)
+                loadingView?.addRefreshButton()
             }
         }
     }
@@ -248,6 +256,12 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         
         loadingView?.addLongIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
         loadingView?.addMessage("P U L S E", _color: .black)
+        loadingView?.loadingDelegate = self
+    }
+    
+    func clickedRefresh() {
+        loadingView?.addMessage("Loading...", _color: .black)
+        checkConnectionSetup()
     }
     
     func setSelected(_ sender: UIButton) {

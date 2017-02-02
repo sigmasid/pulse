@@ -12,6 +12,7 @@ import Fabric
 import TwitterKit
 import FBSDKCoreKit
 import FBSDKLoginKit
+import FirebaseDynamicLinks
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -20,6 +21,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // setup firebase, check twitter and facebook tokens to login if available
+        
+        FIROptions.default().deepLinkURLScheme = "co.checkpulse.pulse"
         FIRApp.configure()
         Fabric.with([Twitter.self()])
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
@@ -31,10 +34,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         self.window?.rootViewController = initialVC
         self.window?.makeKeyAndVisible()
         
-        //Database.updateQuestionSearchIndex()
-        //Database.updateTagSearchIndex()
-        //Database.addTags()
-        
         return true
     }
     
@@ -43,16 +42,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //    }
 //
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any]) -> Bool {
-        if Twitter.sharedInstance().application(app, open:url, options: options) {
+
+        let TwitterDidHandle = Twitter.sharedInstance().application(app, open:url, options: options)
+        
+        let sourceApplication: String? = options[UIApplicationOpenURLOptionsKey.sourceApplication] as? String
+        let FBDidHandle = FBSDKApplicationDelegate.sharedInstance()
+                            .application(app,
+                            open: url,
+                            sourceApplication: sourceApplication,
+                            annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+        
+        let DeepLinkDidHandle =  application(app, open: url, sourceApplication: nil, annotation: [:])
+        
+        return TwitterDidHandle || FBDidHandle || DeepLinkDidHandle
+        
+        
+    }
+    
+    func application(_ application: UIApplication, open url: URL, sourceApplication: String?, annotation: Any) -> Bool {
+        let dynamicLink = FIRDynamicLinks.dynamicLinks()?.dynamicLink(fromCustomSchemeURL: url)
+        if let dynamicLink = dynamicLink {
             return true
         }
-        let sourceApplication: String? = options[UIApplicationOpenURLOptionsKey.sourceApplication] as? String
-//        return FBSDKApplicationDelegate.sharedInstance().application(app, open: url, sourceApplication: sourceApplication, annotation: nil)
-        return FBSDKApplicationDelegate.sharedInstance()
-            .application(app,
-                         open: url,
-                         sourceApplication: sourceApplication,
-                         annotation: options[UIApplicationOpenURLOptionsKey.annotation])
+        
+        return false
+    }
+    
+    @available(iOS 8.0, *)
+    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([Any]?) -> Void) -> Bool {
+        guard let dynamicLinks = FIRDynamicLinks.dynamicLinks() else {
+            return false
+        }
+        let handled = dynamicLinks.handleUniversalLink(userActivity.webpageURL!) { (dynamiclink, error) in
+        }
+        
+        return handled
     }
     
     func applicationWillResignActive(_ application: UIApplication) {

@@ -167,4 +167,15 @@ class User {
         default: return nil
         }
     }
+    
+    func createShareLink(completion: @escaping (String?) -> Void) {
+        guard let uID = self.uID else {
+            completion(nil)
+            return
+        }
+        
+        Database.createShareLink(linkString: "u/"+uID, completion: { link in
+            completion(link)
+        })
+    }
 }

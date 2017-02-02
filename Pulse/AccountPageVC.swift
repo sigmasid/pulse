@@ -210,7 +210,6 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
     
     func updateNav(title : String?, image: UIImage?) {
         if let nav = nav {
-            print("set nav fired")
             nav.setNav(navTitle: title, screenTitle: nil, screenImage: image)
         }
     }

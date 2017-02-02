@@ -479,6 +479,9 @@
 							com.apple.Maps.iOS = {
 								enabled = 0;
 							};
+							com.apple.SafariKeychain = {
+								enabled = 1;
+							};
 						};
 					};
 				};
@@ -763,6 +766,7 @@
 			baseConfigurationReference = 37C2C90EEEB2CE21BC7828B6 /* Pods-Pulse.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Pulse/Pulse.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution: Sidharth Tiwari (DF5FA37S35)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: Sidharth Tiwari (2PHB7P544N)";
 				DEVELOPMENT_TEAM = DF5FA37S35;
@@ -781,6 +785,7 @@
 			baseConfigurationReference = C4B93ACED20027ACF593EDFD /* Pods-Pulse.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Pulse/Pulse.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution: Sidharth Tiwari (DF5FA37S35)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Sidharth Tiwari (DF5FA37S35)";
 				DEVELOPMENT_TEAM = DF5FA37S35;
@@ -788,7 +793,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "6152bc73-dc2e-425a-bbc7-758a714ffa5f";
+				PROVISIONING_PROFILE = "6a02c05f-e838-441a-bf37-444d3ac9a9ea";
 				PROVISIONING_PROFILE_SPECIFIER = PulseDistribution;
 				SWIFT_VERSION = 3.0;
 			};

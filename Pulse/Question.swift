@@ -85,4 +85,9 @@ class Question : NSObject {
         }
     }
     
+    func createShareLink(completion: @escaping (String?) -> Void) {
+        Database.createShareLink(linkString: "q/"+qID, completion: { link in
+            completion(link)
+        })
+    }
 }
