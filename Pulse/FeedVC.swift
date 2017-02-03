@@ -211,7 +211,8 @@ class FeedVC: UIViewController, previewDelegate {
         feedCollectionView?.showsVerticalScrollIndicator = false
     }
     
-    func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?], answerCollection: [String], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
+    func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?],
+                        answerCollection: [String], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
         QAVC = QAManagerVC()
         
         //need to be set first 
@@ -235,11 +236,19 @@ class FeedVC: UIViewController, previewDelegate {
     func setSelectedIndex(index : IndexPath?) {
         if index != nil && feedItemType! == .answer {
             selectedAnswer = allAnswers[index!.row]
+            deselectedIndex = nil
             selectedIndex = index!
         } else {
             selectedIndex = nil
             deselectedIndex = nil
         }
+    }
+    
+    func clearSelected() {
+        selectedQuestion = nil
+        selectedAnswer = nil
+        selectedUser = nil
+        selectedTag = nil
     }
 }
 
@@ -427,7 +436,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                  answerCollection: currentAnswer.answerCollection,
                                  questionIndex: selectedQuestionIndex,
                                  answerIndex: indexPath.row,
-                                 selectedTag: selectedTag)
+                                 selectedTag: selectedTag == nil ? Tag(tagID: selectedQuestion.getTag()) : selectedTag)
                 }
             } else if indexPath == selectedIndex {
                 //if answer has more than initial clip, show 'see more at the end'
@@ -581,25 +590,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
     }
-    
-    /**
-    func updateOnscreenRows() {
-        if let visiblePaths = feedCollectionView?.indexPathsForVisibleItems {
-            for indexPath in visiblePaths {
-                let entry = entries[(indexPath as NSIndexPath).row]
-                let cell = collectionView(self.feedCollectionView!, cellForItemAt: indexPath)
-                updateImageForCell(cell, inCollectionView: collectionView, withEntry: entry, atIndexPath: indexPath)
-            }
-        }
-    }
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        updateOnscreenRows()
-    }
-    
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if !decelerate { updateOnscreenRows() }
-    } **/
 }
 
 extension FeedVC: UICollectionViewDelegateFlowLayout {

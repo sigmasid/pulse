@@ -150,12 +150,6 @@ class Database {
                 //print("couldn't cast as answerSnap")
             }
         })
-            //CHECKS:
-            //clear questionID from answeredQuestions - CHECK
-            //clear answerID from user's answers - CHECK
-            //set answerID to nil in answers - CHECK
-            //remove answerID from questionID's answers - CHECK
-            //check / remove answerID from answerCollections
     }
     
     /** MARK : SEARCH **/
@@ -1574,6 +1568,18 @@ class Database {
         let path = getStoragePath(type, itemID: fileID)
         path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
+        }
+    }
+    
+    static func getProfilePicForUser(user: User, completion: @escaping (_ image : UIImage?) -> Void) {
+        let userPicPath = user.profilePic != nil ? user.thumbPic : user.profilePic
+        
+        if let userPicPath = userPicPath {
+            if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
+                completion(UIImage(data: _userImageData))
+            } else {
+                completion(nil)
+            }
         }
     }
     

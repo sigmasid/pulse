@@ -10,7 +10,7 @@ import UIKit
 
 class ExpandAnimationController: BaseAnimator {
     
-    var initialFrame : CGRect!
+    var initialFrame : CGRect = UIScreen.main.bounds
     var exitFrame : CGRect!
     
     override func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
@@ -25,6 +25,7 @@ class ExpandAnimationController: BaseAnimator {
         
         let snapshot = toVC.view.resizableSnapshotView(from: toVC.view.frame, afterScreenUpdates: true, withCapInsets: UIEdgeInsets.zero)
         toVC.view.alpha = 0
+        print("setting inital frame to \(initialFrame)")
         snapshot?.frame = initialFrame
         
         containerView.addSubview(fromVC.view)

@@ -59,6 +59,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate var rectToLeft : CGRect!
     
     fileprivate var isLoaded = false
+    fileprivate var universalLink : URL?
     
     override open var selectedIndex: Int {
         didSet {
@@ -79,23 +80,27 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     func checkConnectionSetup() {
         if !isLoaded {
             if GlobalFunctions.isConnectedToNetwork() {
+                self.setupControllers()
+                self.setupPulseButton()
+                
                 Database.checkCurrentUser { success in
-                    
+                    if let link = self.universalLink {
+                        self.setupIcons(_selectedIndex: 1)
+                        self.exploreVC.universalLink = link
+                        self.setSelected(self.exploreButton)
+                        self.initialLoadComplete = true
+                    }
                     // get feed and show initial view controller
-                    if success && !self.initialLoadComplete {
-                        self.setupControllers()
-                        self.setupPulseButton()
+                    else if success && !self.initialLoadComplete {
                         self.setupIcons(_selectedIndex: 2)
-                        
                         self.initialLoadComplete = true
                         
                     } else if !success && !self.initialLoadComplete {
-                        self.setupControllers()
-                        self.setupPulseButton()
                         self.setupIcons(_selectedIndex: 1)
-                        
                         self.initialLoadComplete = true
                     }
+                    
+                    
                     
                     self.isLoaded = true
                 }
@@ -264,6 +269,15 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         checkConnectionSetup()
     }
     
+    func handleLink(link: URL) {
+        if isLoaded {
+            exploreVC.universalLink = link
+            setSelected(exploreButton)
+        } else {
+            universalLink = link
+        }
+    }
+    
     func setSelected(_ sender: UIButton) {
 
         switch sender {
@@ -286,10 +300,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 0:
             profileButton.isHighlighted = false
             DispatchQueue.main.async {
-                /**
-                self.profileButton.frame.origin.y += Spacing.xs.rawValue
-                self.profileLabel.frame.origin.y += Spacing.xs.rawValue
-                 **/
                 self.profileLabel.textColor = .white
                 self.profileButton.transform = CGAffineTransform.identity
             }
@@ -297,10 +307,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 1:
             exploreButton.isHighlighted = false
             DispatchQueue.main.async {
-                /**
-                self.exploreButton.frame.origin.y += Spacing.xs.rawValue
-                self.exploreLabel.frame.origin.y += Spacing.xs.rawValue
-                 **/
                 self.exploreLabel.textColor = .white
                 self.exploreButton.transform = CGAffineTransform.identity
             }
@@ -308,10 +314,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 2:
             feedButton.isHighlighted = false
             DispatchQueue.main.async {
-                /**
-                self.feedButton.frame.origin.y += Spacing.xs.rawValue
-                self.feedLabel.frame.origin.y += Spacing.xs.rawValue
-                 **/
                 self.feedLabel.textColor = .white
                 self.feedButton.transform = CGAffineTransform.identity
             }
@@ -328,10 +330,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 0:
             profileButton.isHighlighted = true
             DispatchQueue.main.async {
-                /** removing moving the icon up - casuses issues
-                self.profileButton.frame.origin.y -= Spacing.xs.rawValue
-                self.profileLabel.frame.origin.y -= Spacing.xs.rawValue
-                **/
                 self.profileLabel.textColor = pulseBlue
                 self.profileButton.transform = xScaleUp
             }
@@ -340,10 +338,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 1:
             exploreButton.isHighlighted = true
             DispatchQueue.main.async {
-                /** removing moving the icon up - casuses issues
-                self.exploreButton.frame.origin.y -= Spacing.xs.rawValue
-                self.exploreLabel.frame.origin.y -= Spacing.xs.rawValue
-                **/
                 self.exploreLabel.textColor = pulseBlue
                 self.exploreButton.transform = xScaleUp
             }
@@ -352,10 +346,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 2:
             feedButton.isHighlighted = true
             DispatchQueue.main.async {
-                /** removing moving the icon up - casuses issues
-                self.feedButton.frame.origin.y -= Spacing.xs.rawValue
-                self.feedLabel.frame.origin.y -= Spacing.xs.rawValue
-                **/
                 self.feedLabel.textColor = pulseBlue
                 self.feedButton.transform = xScaleUp
             }
@@ -363,10 +353,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
 
         default: break
         }
-    }
-    
-    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-
     }
     
     func tabBarController(_ tabBarController: UITabBarController,

@@ -30,17 +30,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FBSDKProfile.enableUpdates(onAccessTokenChange: true)
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
-        let initialVC = MasterTabVC()
-        self.window?.rootViewController = initialVC
+        self.window?.rootViewController = MasterTabVC()
         self.window?.makeKeyAndVisible()
         
         return true
     }
-    
-//    func application(application: UIApplication, openURL url: NSURL, sourceApplication: String?, annotation: AnyObject) -> Bool {
-//        return FBSDKApplicationDelegate.sharedInstance().application(application, openURL: url, sourceApplication: sourceApplication, annotation: annotation)
-//    }
-//
+
+    //CHECKS IF LINK CAN BE HANDLED BY FB, TWTR OR DYNAMIC LINKS AND RETURNS TRUE IF YES
     func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any]) -> Bool {
 
         let TwitterDidHandle = Twitter.sharedInstance().application(app, open:url, options: options)
@@ -59,21 +55,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
     }
     
+    //HANDLE FIREBASE DYNAMIC LINKS
     func application(_ application: UIApplication, open url: URL, sourceApplication: String?, annotation: Any) -> Bool {
         let dynamicLink = FIRDynamicLinks.dynamicLinks()?.dynamicLink(fromCustomSchemeURL: url)
-        if let dynamicLink = dynamicLink {
+        if let dynamicLinkURL = dynamicLink?.url, let masterTabVC = self.window?.rootViewController as? MasterTabVC {
+            masterTabVC.handleLink(link: dynamicLinkURL)
             return true
         }
         
         return false
     }
     
+    //FOR HANDLING UNIVERSAL LINKS
     @available(iOS 8.0, *)
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([Any]?) -> Void) -> Bool {
-        guard let dynamicLinks = FIRDynamicLinks.dynamicLinks() else {
-            return false
-        }
+        guard let dynamicLinks = FIRDynamicLinks.dynamicLinks() else { return false }
+        
         let handled = dynamicLinks.handleUniversalLink(userActivity.webpageURL!) { (dynamiclink, error) in
+            if let dynamicLinkURL = dynamiclink?.url, let masterTabVC = self.window?.rootViewController as? MasterTabVC {
+                masterTabVC.handleLink(link: dynamicLinkURL)
+            }
         }
         
         return handled

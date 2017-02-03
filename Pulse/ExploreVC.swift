@@ -9,52 +9,24 @@
 import UIKit
 
 class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate {
+    
+    ///To update view set the currentExploreMode which updates scope, menus and nav
+    
+    // Set by MasterTabVC
     public var tabDelegate : tabVCDelegate!
+    public var universalLink : URL? {
+        didSet {
+            if isLoaded, let _ = universalLink {
+                handleLink()
+            }
+        }
+    }
     
     fileprivate var exploreContainer : FeedVC!
     fileprivate var loadingView : LoadingView?
-    
     fileprivate var headerNav : PulseNavVC?
     
-    fileprivate var searchButton : PulseButton!
-    fileprivate var closeButton : PulseButton!
-    fileprivate var blankButton : PulseButton!
-    fileprivate var backButton : PulseButton!
-    
-    fileprivate var activityController: UIActivityViewController?
-    
-    /* SIDE MENU VARS */
-    fileprivate var screenMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.m.rawValue)
-
-    fileprivate var messageButton = PulseButton(size: .medium, type: .messageCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var messageLabel = PulseButton(title: "Send Message", isRound: false)
-    fileprivate var messageStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    
-    fileprivate var becomeExpertButton = PulseButton(size: .medium, type: .checkCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var becomeExpertLabel = PulseButton(title: "Become Expert", isRound: false)
-    fileprivate var becomeExpertStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    
-    fileprivate var askQuestionButton = PulseButton(size: .medium, type: .questionCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var askQuestionLabel = PulseButton(title: "Ask Question", isRound: false)
-    fileprivate var askQuestionStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    
-    fileprivate var addAnswerButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var addAnswerLabel = PulseButton(title: "Add Answer", isRound: false)
-    fileprivate var addAnswerStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    
-    fileprivate var toggleFollowButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var toggleFollowLabel = PulseButton(title: "Follow Tag", isRound: false)
-    fileprivate var toggleFollowStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    
-    fileprivate var searchMenuButton = PulseButton(size: .medium, type: .searchCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var searchLabel = PulseButton(title: "Search", isRound: false)
-    fileprivate var searchStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    
-    fileprivate var shareButton = PulseButton(size: .medium, type: .shareCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var shareLabel = PulseButton(title: "Share", isRound: false)
-    fileprivate var shareStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    /* END SIDE MENU VARS */
-    
+    fileprivate var activityController: UIActivityViewController? //Used for share screen
     fileprivate var hideStatusBar = false {
         didSet {
             setNeedsStatusBarAppearanceUpdate()
@@ -64,6 +36,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     var tapGesture = UITapGestureRecognizer()
     var searchController = UISearchController(searchResultsController: nil)
     
+    ///Each new mode is added to explore stack to allow for navigation back and forth
     fileprivate var exploreStack = [Explore]()
     var currentExploreMode : Explore! {
         didSet {
@@ -73,7 +46,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
     }
     
-    /* END EXPLORE STACK */
     fileprivate var isFollowingSelectedTag : Bool = false {
         didSet {
             isFollowingSelectedTag ?
@@ -100,20 +72,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        if !isLoaded {
-            if let nav = navigationController as? PulseNavVC {
-                headerNav = nav
-            }
-
-            getButtons()
-            setupSearch()
-            setupExplore()
-            setupMenu()
-            
-            automaticallyAdjustsScrollViewInsets = false
-            
-            tapGesture.addTarget(self, action: #selector(dismissSearchTap))
-            loadingView?.addGestureRecognizer(tapGesture)
+        
+        if let _ = universalLink {
+            performSetup(showRoot: false)
+            handleLink()
+        } else {
+            performSetup(showRoot: true)
+            loadRoot()
         }
     }
     
@@ -130,6 +95,25 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         if exploreStack.last != nil {
             currentExploreMode = exploreStack.last
+        }
+    }
+    
+    func performSetup(showRoot: Bool) {
+        if !isLoaded {
+            if let nav = navigationController as? PulseNavVC {
+                headerNav = nav
+            }
+            
+            getButtons()
+            setupSearch()
+            setupExplore()
+            setupLoading()
+            setupMenu()
+            
+            automaticallyAdjustsScrollViewInsets = false
+            
+            tapGesture.addTarget(self, action: #selector(dismissSearchTap))
+            loadingView?.addGestureRecognizer(tapGesture)
         }
     }
     
@@ -151,6 +135,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     func dismissSearchTap() {
         searchController.searchBar.resignFirstResponder()
+    }
+    
+    fileprivate func loadRoot() {
+        currentExploreMode = Explore(currentMode: .root, currentSelection: 0, currentSelectedItem: nil)
+        exploreStack.append(currentExploreMode)
     }
     
     fileprivate func updateScopeBar() {
@@ -186,22 +175,29 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             updateHeader(navTitle: nil, screentitle : "Explore", leftButton: searchButton, rightButton: nil, navImage: nil)
             updateRootScopeSelection()
         case .tag:
-            updateHeader(navTitle: nil, screentitle : selectedTag.tagTitle ?? "Explore Tag", leftButton: backButton, rightButton: nil, navImage: nil)
+            
             isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(selectedTag.tagID!) ? true : false
-            updateTagScopeSelection()
+            updateTagScopeSelection(completion: { success in
+                self.updateHeader(navTitle: nil,
+                                  screentitle : self.selectedTag.tagTitle ?? "Explore Tag", leftButton: self.backButton, rightButton: nil, navImage: nil)
+            })
         case .search:
             updateHeader(navTitle: nil, screentitle : nil, leftButton: closeButton, rightButton: nil, navImage: nil)
             updateSearchResults(for: searchController)
         case .question:
-            isFollowingSelectedQuestion = User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[selectedQuestion.qID] != nil ? true : false
-            updateQuestionScopeSelection()
-            updateHeader(navTitle: currentExploreMode.getModeTitle(), screentitle : selectedQuestion.qTitle, leftButton: backButton, rightButton: nil, navImage: nil)
-
+            isFollowingSelectedQuestion = User.currentUser?.savedQuestions != nil &&
+                                          User.currentUser!.savedQuestions[selectedQuestion.qID] != nil ? true : false
+            
+            updateQuestionScopeSelection(completion: { success in
+                self.updateHeader(navTitle: self.currentExploreMode.getModeTitle(),
+                                  screentitle : self.selectedQuestion.qTitle, leftButton: self.backButton, rightButton: nil, navImage: nil)
+            })
         case .people:
-            updateHeader(navTitle: selectedUser.thumbPicImage != nil ? nil : selectedUser.name,
-                         screentitle : selectedUser.name,
-                         leftButton: backButton, rightButton: nil, navImage: selectedUser.thumbPicImage)
-            updatePeopleScopeSelection()
+            updatePeopleScopeSelection(completion: { success in
+                self.updateHeader(navTitle: self.selectedUser.thumbPicImage != nil ? nil : self.selectedUser.name,
+                                  screentitle : self.selectedUser.name, leftButton: self.backButton,
+                                  rightButton: nil, navImage: self.selectedUser.thumbPicImage)
+            })
         }
     }
     
@@ -253,11 +249,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
     }
     
-    fileprivate func updateTagScopeSelection() {
+    fileprivate func updateTagScopeSelection(completion: @escaping (Bool) -> Void) {
         switch currentExploreMode.currentSelectionValue() {
         case .questions:
             if !selectedTag.tagCreated {
                 Database.getTag(selectedTag.tagID!, completion: { tag, error in
+                    self.selectedTag = tag
+                    
                     if error == nil && tag.totalQuestionsForTag() > 0 {
                         self.exploreContainer.setSelectedIndex(index: nil)
                         self.exploreContainer.allQuestions = tag.questions
@@ -266,12 +264,14 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     }  else {
                         self.toggleLoading(show: true, message : "No questions found")
                     }
+                    completion(true)
                 })
             } else {
                 exploreContainer.setSelectedIndex(index: nil)
                 exploreContainer.allQuestions = selectedTag.questions
                 exploreContainer.feedItemType = .question
                 toggleLoading(show: false, message : nil)
+                completion(true)
             }
         case .experts:
             Database.getExpertsForTag(tagID: selectedTag.tagID!, completion: { (experts, error) in
@@ -286,7 +286,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                         self.toggleLoading(show: true, message : "No experts for this tag yet")
                     }
                 }
-                
+                completion(true)
             })
         case .related:
             Database.getRelatedTags(selectedTag.tagID!, completion: { (tags, error) in
@@ -301,13 +301,13 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                         self.toggleLoading(show: true, message : "No related tags found")
                     }
                 }
-
+                completion(true)
             })
         default: return
         }
     }
     
-    fileprivate func updateQuestionScopeSelection() {
+    fileprivate func updateQuestionScopeSelection(completion: @escaping (Bool) -> Void) {
         toggleLoading(show: true, message : "Loading...")
         exploreContainer.setSelectedIndex(index: nil)
 
@@ -315,15 +315,21 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         case .answers:
             if !selectedQuestion.qCreated {
                 Database.getQuestion(selectedQuestion.qID, completion: { question, error in
+                    self.selectedQuestion = question
                     if let question = question, question.hasAnswers() {
+                        self.exploreContainer.selectedQuestion = question
                         self.exploreContainer.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                         self.exploreContainer.feedItemType = .answer
                         
                         self.toggleLoading(show: false, message : nil)
                         self.exploreContainer.setSelectedIndex(index: IndexPath(row: 0, section: 0))
                     } else {
+                        self.exploreContainer.allAnswers = []
+                        self.exploreContainer.feedItemType = .answer
+
                         self.toggleLoading(show: true, message : "No answers found")
                     }
+                    completion(true)
                 })
             } else {
                 if selectedQuestion.hasAnswers() {
@@ -334,11 +340,15 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     
                     toggleLoading(show: false, message : nil)
                 } else {
+                    exploreContainer.allAnswers = []
+                    exploreContainer.feedItemType = .answer
+
                     self.toggleLoading(show: true, message : "No answers found")
                 }
+                completion(true)
             }
         case .experts:
-            //removed this option - but had it before
+            //removed this option in UI - but had it before
             Database.getExpertsForQuestion(qID: selectedQuestion.qID, completion: { experts in
                 self.exploreContainer.setSelectedIndex(index: nil)
                 self.exploreContainer.allUsers = experts
@@ -349,6 +359,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 } else {
                     self.toggleLoading(show: true, message : "No experts found")
                 }
+                completion(true)
             })
         case .related:
             Database.getRelatedQuestions(selectedQuestion.qID, completion: { (questions, error) in
@@ -363,13 +374,35 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                         self.toggleLoading(show: true, message : "No related questions found")
                     }
                 }
+                completion(true)
             })
-        default: return
+        default:
+            completion(true)
+            return
         }
     }
     
-    fileprivate func updatePeopleScopeSelection() {
+    fileprivate func updatePeopleScopeSelection(completion: @escaping (Bool) -> Void) {
         self.toggleLoading(show: true, message : "Loading...")
+        if !selectedUser.uCreated {
+            Database.getUser(selectedUser.uID!, completion: {(user, error) in
+                if error == nil {
+                    self.selectedUser = user
+                    
+                    if user.thumbPic != nil {
+                        Database.getProfilePicForUser(user: user, completion: { profileImage in
+                            user.thumbPicImage = profileImage
+                            completion(true)
+                        })
+                    } else {
+                        completion(true)
+                    }
+                } else {
+                    completion(false)
+                }
+            })
+        }
+        
         switch currentExploreMode.currentSelectionValue() {
         case .answers:
             Database.getUserAnswerIDs(uID: selectedUser.uID!, completion: { answers in
@@ -407,12 +440,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             selectedTag = item as! Tag
             currentExploreMode = Explore(currentMode: .tag, currentSelection: 0, currentSelectedItem: selectedTag)
             exploreStack.append(currentExploreMode)
-            exploreContainer.updateDataSource = true
         case .question:
             selectedQuestion = item as! Question
             currentExploreMode = Explore(currentMode: .question, currentSelection: 0, currentSelectedItem: selectedQuestion)
             exploreStack.append(currentExploreMode)
-            exploreContainer.selectedTag = currentExploreMode.currentMode == .search ? Tag(tagID: "SEARCH") : Tag(tagID : "EXPLORE")
         case .people:
             selectedUser = item as! User
             currentExploreMode = Explore(currentMode: .people, currentSelection: 0, currentSelectedItem: selectedUser)
@@ -471,14 +502,21 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             screenMenu.addArrangedSubview(becomeExpertStack)
             screenMenu.addArrangedSubview(askQuestionStack)
             screenMenu.addArrangedSubview(toggleFollowStack)
+            shareLabel.setTitle("Share Channel", for: .normal)
+            screenMenu.addArrangedSubview(shareStack)
+
 
         case .question:
             screenMenu.addArrangedSubview(addAnswerStack)
+            shareLabel.setTitle("Share Question", for: .normal)
             screenMenu.addArrangedSubview(shareStack)
-
+            
         case .people:
             screenMenu.addArrangedSubview(askQuestionStack)
             screenMenu.addArrangedSubview(messageStack)
+            
+            shareLabel.setTitle("Share Profile", for: .normal)
+            screenMenu.addArrangedSubview(shareStack)
 
         default:
             screenMenu.isHidden = true
@@ -544,6 +582,14 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         }
         
         let _ = exploreStack.popLast()
+        
+        guard exploreStack.last != nil else {
+            currentExploreMode = Explore(currentMode: .root,
+                                         currentSelection: 0,
+                                         currentSelectedItem: nil)
+            exploreStack.append(currentExploreMode)
+            return
+        }
         
         switch exploreStack.last!.currentMode {
         case .people:
@@ -712,24 +758,23 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         exploreContainer.view.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         exploreContainer.view.layoutIfNeeded()
         exploreContainer.feedDelegate = self
-
-        currentExploreMode = Explore(currentMode: .root, currentSelection: 0, currentSelectedItem: nil)
-        exploreStack.append(currentExploreMode)
         
+        definesPresentationContext = true
+    }
+    
+    fileprivate func setupLoading() {
         loadingView = LoadingView(frame: CGRect.zero, backgroundColor: .white)
         view.addSubview(loadingView!)
-
+        
         loadingView?.translatesAutoresizingMaskIntoConstraints = false
         loadingView?.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         loadingView?.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         loadingView?.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         loadingView?.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         loadingView?.layoutIfNeeded()
-
+        
         loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
         toggleLoading(show: true, message: "Loading...")
-        
-        definesPresentationContext = true
     }
     
     //Get all buttons for the controller to use
@@ -800,6 +845,43 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         screenMenu.isHidden = true
     }
+    
+    /* UI ELEMENTS */
+    fileprivate var screenMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.m.rawValue)
+    
+    fileprivate var messageButton = PulseButton(size: .medium, type: .messageCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var messageLabel = PulseButton(title: "Send Message", isRound: false)
+    fileprivate var messageStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var becomeExpertButton = PulseButton(size: .medium, type: .checkCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var becomeExpertLabel = PulseButton(title: "Become Expert", isRound: false)
+    fileprivate var becomeExpertStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var askQuestionButton = PulseButton(size: .medium, type: .questionCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var askQuestionLabel = PulseButton(title: "Ask Question", isRound: false)
+    fileprivate var askQuestionStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var addAnswerButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var addAnswerLabel = PulseButton(title: "Add Answer", isRound: false)
+    fileprivate var addAnswerStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var toggleFollowButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var toggleFollowLabel = PulseButton(title: "Follow Tag", isRound: false)
+    fileprivate var toggleFollowStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var searchMenuButton = PulseButton(size: .medium, type: .searchCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var searchLabel = PulseButton(title: "Search", isRound: false)
+    fileprivate var searchStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var shareButton = PulseButton(size: .medium, type: .shareCircle, isRound : true, hasBackground: false, tint: .black)
+    fileprivate var shareLabel = PulseButton(title: "Share", isRound: false)
+    fileprivate var shareStack = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    
+    fileprivate var searchButton : PulseButton!
+    fileprivate var closeButton : PulseButton!
+    fileprivate var blankButton : PulseButton!
+    fileprivate var backButton : PulseButton!
+    /* END UI ELEMENTS */
 }
 
 extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchControllerDelegate {
@@ -953,7 +1035,44 @@ extension ExploreVC {
     }
 }
 
-//Moving side menu layout & functions here for clean up
+//HANDLE DYNAMIC LINKS
 extension ExploreVC {
+    func handleLink() {
+        
+        selectedUser = nil
+        selectedTag = nil
+        selectedQuestion = nil
+        exploreContainer.clearSelected()
     
+        if let universalLink = universalLink, let link = URLComponents(url: universalLink, resolvingAgainstBaseURL: true) {
+
+            let urlComponents = link.path.components(separatedBy: "/").dropFirst()
+            
+            guard let linkType = urlComponents.first else { return }
+            
+            switch linkType {
+            case "u":
+                let uID = urlComponents[2]
+                userSelected(type: .people, item: User(uID: uID))
+                
+            case "c":
+                let tagID = urlComponents[2]
+                userSelected(type: .tag, item: Tag(tagID: tagID))
+
+            case "q":
+                let qID = urlComponents[2]
+                userSelected(type: .question, item: Question(qID: qID))
+
+            default:
+                loadRoot()
+            }
+            
+            if !isLoaded {
+                if tabDelegate != nil { tabDelegate.removeLoading() }
+                isLoaded = true
+                self.universalLink = nil
+
+            }
+        }
+    }
 }
