@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh}
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -291,30 +291,30 @@ open class PulseButton: UIButton {
         
         switch type {
         case .search:
-        let tintedTimage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
+            let tintedTimage = UIImage(named: "search")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
         
         case .back:
-        let tintedTimage = UIImage(named: "back")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
+            let tintedTimage = UIImage(named: "back")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
         
         case .add:
-        let tintedTimage = UIImage(named: "add")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
+            let tintedTimage = UIImage(named: "add")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
         
         case.remove:
-        let tintedTimage = UIImage(named: "remove")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
+            let tintedTimage = UIImage(named: "remove")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
         
         case .close:
-        let tintedTimage = UIImage(named: "close")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
-        imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
+            let tintedTimage = UIImage(named: "close")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
 
         case .settings:
-        let tintedTimage = UIImage(named: "settings")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
-        imageEdgeInsets = UIEdgeInsetsMake(7, 7, 7, 7)
+            let tintedTimage = UIImage(named: "settings")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(7, 7, 7, 7)
 
         case .login:
             let tintedTimage = UIImage(named: "login")?.withRenderingMode(.alwaysTemplate)
@@ -326,8 +326,12 @@ open class PulseButton: UIButton {
             imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
             
         case .message:
-        let tintedTimage = UIImage(named: "message")?.withRenderingMode(.alwaysTemplate)
-        setImage(tintedTimage, for: UIControlState.normal)
+            let tintedTimage = UIImage(named: "message")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .refresh:
+            let tintedTimage = UIImage(named: "refresh")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
         
         case .menu:
             let tintedTimage = UIImage(named: "table-list")?.withRenderingMode(.alwaysTemplate)

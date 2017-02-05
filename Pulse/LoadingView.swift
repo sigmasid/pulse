@@ -16,7 +16,7 @@ class LoadingView: UIView {
     
     fileprivate let messageLabel = UILabel()
     fileprivate var iconManager : Icon!
-    fileprivate lazy var refreshButton = PulseButton(size: .small, type: .add, isRound: true, hasBackground: true)
+    fileprivate lazy var refreshButton = PulseButton(size: .small, type: .refresh, isRound: true, hasBackground: true)
     var loadingDelegate : LoadingDelegate!
     
     override init(frame: CGRect) {

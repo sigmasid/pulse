@@ -26,6 +26,9 @@ protocol tabVCDelegate: class {
 
 
 class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate, LoadingDelegate {
+    
+    var reachability: Reachability? = Reachability.networkReachabilityForInternetConnection()
+
     fileprivate var initialLoadComplete = false
     fileprivate var loadingView : LoadingView!
 
@@ -74,41 +77,60 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     override func viewDidLoad() {
         super.viewDidLoad()
         setupLoading()
-        checkConnectionSetup()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(reachabilityDidChange(_:)), name: NSNotification.Name(rawValue: ReachabilityDidChangeNotificationName), object: nil)
+
+        _ = reachability?.startNotifier()
     }
     
-    func checkConnectionSetup() {
-        if !isLoaded {
-            if GlobalFunctions.isConnectedToNetwork() {
-                self.setupControllers()
-                self.setupPulseButton()
-                
-                Database.checkCurrentUser { success in
-                    if let link = self.universalLink {
-                        self.setupIcons(_selectedIndex: 1)
-                        self.exploreVC.universalLink = link
-                        self.setSelected(self.exploreButton)
-                        self.initialLoadComplete = true
-                    }
-                    // get feed and show initial view controller
-                    else if success && !self.initialLoadComplete {
-                        self.setupIcons(_selectedIndex: 2)
-                        self.initialLoadComplete = true
-                        
-                    } else if !success && !self.initialLoadComplete {
-                        self.setupIcons(_selectedIndex: 1)
-                        self.initialLoadComplete = true
-                    }
-                    
-                    
-                    
-                    self.isLoaded = true
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        checkReachability()
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        reachability?.stopNotifier()
+    }
+    
+    func checkReachability() {
+        guard let r = reachability else { return }
+        if r.isReachable, !isLoaded {
+            self.setupControllers()
+            self.setupPulseButton()
+            
+            Database.checkCurrentUser { success in
+                if let link = self.universalLink {
+                    self.setupIcons(_selectedIndex: 1)
+                    self.exploreVC.universalLink = link
+                    self.setSelected(self.exploreButton)
+                    self.initialLoadComplete = true
                 }
-            } else {
-                loadingView?.addMessage("Sorry! No Internet Connection", _color: .black)
-                loadingView?.addRefreshButton()
+                    // get feed and show initial view controller
+                else if success && !self.initialLoadComplete {
+                    self.setupIcons(_selectedIndex: 2)
+                    self.initialLoadComplete = true
+                    
+                } else if !success && !self.initialLoadComplete {
+                    self.setupIcons(_selectedIndex: 1)
+                    self.initialLoadComplete = true
+                }
+                
+                self.isLoaded = true
             }
+        } else if r.isReachable, isLoaded {
+            removeLoading()
+        } else {
+            loadingView.isHidden = false
+            loadingView.alpha = 1.0
+            loadingView?.addMessage("Sorry! No Internet Connection", _color: .black)
+            loadingView?.addRefreshButton()
+            view.bringSubview(toFront: loadingView)
         }
+    }
+    
+    func reachabilityDidChange(_ notification: Notification) {
+        checkReachability()
     }
     
     //DELEGATE METHOD TO REMOVE INITIAL LOADING SCREEN WHEN THE FEED IS LOADED
@@ -266,7 +288,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     
     func clickedRefresh() {
         loadingView?.addMessage("Loading...", _color: .black)
-        checkConnectionSetup()
+        checkReachability()
     }
     
     func handleLink(link: URL) {

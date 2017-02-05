@@ -10,7 +10,6 @@ import Foundation
 import UIKit
 import SystemConfiguration
 
-
 let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
 let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
 let pulseBlue = UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0)
@@ -37,7 +36,9 @@ class GlobalFunctions {
     
     static func isConnectedToNetwork() -> Bool {
         
-        var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0, sin_port: 0, sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
+        var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0,
+                                      sin_port: 0, sin_addr: in_addr(s_addr: 0),
+                                      sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
         zeroAddress.sin_len = UInt8(MemoryLayout.size(ofValue: zeroAddress))
         zeroAddress.sin_family = sa_family_t(AF_INET)
         let defaultRouteReachability = withUnsafePointer(to: &zeroAddress) {

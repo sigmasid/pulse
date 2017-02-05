@@ -9,7 +9,7 @@
 import UIKit
 import AVFoundation
 
-class PreviewVC: UIView, PreviewPlayerItemDelegate {
+class Preview: UIView, PreviewPlayerItemDelegate {
     static var aPlayer = AVPlayer() //shared instance
 
     fileprivate var _loadingIndicator : LoadingIndicatorView?
@@ -35,7 +35,7 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
         super.init(frame: frame)
         
         backgroundColor = UIColor.black
-        let avPlayerLayer = AVPlayerLayer(player: PreviewVC.aPlayer)
+        let avPlayerLayer = AVPlayerLayer(player: Preview.aPlayer)
         layer.addSublayer(avPlayerLayer)
         avPlayerLayer.frame = bounds
         avPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
@@ -46,15 +46,15 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
     }
     
     func removeClip() {
-        PreviewVC.aPlayer.pause()
-        PreviewVC.aPlayer.replaceCurrentItem(with: nil)
+        Preview.aPlayer.pause()
+        Preview.aPlayer.replaceCurrentItem(with: nil)
     }
     
     func itemStatusReady() {
-        switch PreviewVC.aPlayer.status {
+        switch Preview.aPlayer.status {
         case AVPlayerStatus.readyToPlay:
             removeLoadingIndicator()
-            PreviewVC.aPlayer.play()
+            Preview.aPlayer.play()
             break
         default: break
         }
@@ -77,10 +77,10 @@ class PreviewVC: UIView, PreviewPlayerItemDelegate {
                         let aPlayerItem = PreviewPlayerItem(url: URL!)
                         self.removeImageView()
                         aPlayerItem.delegate = self
-                        PreviewVC.aPlayer.replaceCurrentItem(with: aPlayerItem)
+                        Preview.aPlayer.replaceCurrentItem(with: aPlayerItem)
                         
                         NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
-                                                               name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: PreviewVC.aPlayer.currentItem)
+                                                               name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: Preview.aPlayer.currentItem)
 
                     }
                 })

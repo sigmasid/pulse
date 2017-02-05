@@ -16,7 +16,7 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
     fileprivate lazy var previewImage = UIImageView()
     fileprivate lazy var titleStack = PulseMenu(_axis: .vertical, _spacing: 0)
     
-    fileprivate lazy var previewVC : PreviewVC = PreviewVC()
+    fileprivate lazy var previewVC : Preview = Preview()
     fileprivate var previewAdded = false
     fileprivate var reuseCell = false
     
@@ -66,7 +66,7 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
     }
     
     func showAnswer(answer : Answer) {
-        previewVC = PreviewVC(frame: contentView.bounds)
+        previewVC = Preview(frame: contentView.bounds)
         previewVC.delegate = self
         previewVC.currentAnswer = answer
         previewImage.isHidden = true

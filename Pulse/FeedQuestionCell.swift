@@ -8,7 +8,7 @@
 
 import UIKit
 
-class FeedQuestionCell: UICollectionViewCell {
+class FeedQuestionCell: PulseCell {
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()
     lazy var answerCount = UIButton()
@@ -17,7 +17,6 @@ class FeedQuestionCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
         setupQuestionPreview()
     }
     

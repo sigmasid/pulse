@@ -25,7 +25,6 @@ class ExpandAnimationController: BaseAnimator {
         
         let snapshot = toVC.view.resizableSnapshotView(from: toVC.view.frame, afterScreenUpdates: true, withCapInsets: UIEdgeInsets.zero)
         toVC.view.alpha = 0
-        print("setting inital frame to \(initialFrame)")
         snapshot?.frame = initialFrame
         
         containerView.addSubview(fromVC.view)

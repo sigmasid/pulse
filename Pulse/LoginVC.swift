@@ -213,6 +213,51 @@ class LoginVC: UIViewController, UITextFieldDelegate {
         }
     }
     
+    @IBAction func handleForgotPassword(_ sender: UIButton) {
+        let resetPasswordConfirmation = UIAlertController(title: "Reset Password?",
+                                                          message: "enter your email and we will send a password reset link if you have an account with us",
+                                                          preferredStyle: .alert)
+        
+        let resetAction = UIAlertAction(title: "reset", style: .default, handler: { (action: UIAlertAction!) in
+            if let email = resetPasswordConfirmation.textFields?.first?.text {
+                FIRAuth.auth()?.sendPasswordReset(withEmail: email) { (error) in
+                    self.resetSent()
+                }
+            } else {
+                resetPasswordConfirmation.textFields?.first?.text = ""
+                resetPasswordConfirmation.textFields?.first?.placeholder = "please enter a valid email"
+            }
+        })
+        
+        resetAction.isEnabled = false
+        
+        resetPasswordConfirmation.addTextField(configurationHandler: { emailField in
+            emailField.placeholder = "enter email"
+            NotificationCenter.default.addObserver(forName: NSNotification.Name.UITextFieldTextDidChange, object: emailField, queue: OperationQueue.main) { (notification) in
+                GlobalFunctions.validateEmail(emailField.text, completion: {(success, error) in
+                    resetAction.isEnabled = success ? true : false
+                })
+            }
+        })
+        
+        resetPasswordConfirmation.addAction(UIAlertAction(title: "cancel", style: .cancel , handler: { (action: UIAlertAction!) in }))
+        resetPasswordConfirmation.addAction(resetAction)
+        
+        self.present(resetPasswordConfirmation, animated: true, completion: nil)
+    }
+    
+    func resetSent() {
+        let alert = UIAlertController(title: "Request Sent",
+                                      message: "check your inbox for the reset link",
+                                      preferredStyle: .alert)
+        
+        self.present(alert, animated: true, completion: nil)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            alert.dismiss(animated: true, completion: nil)
+        }
+    }
+    
     @IBAction func fbLogin(_ sender: UIButton) {
         addLoading()
         let facebookReadPermissions = ["public_profile", "email", "user_friends"]
@@ -228,7 +273,6 @@ class LoginVC: UIViewController, UITextFieldDelegate {
                 //login sucess - will get handled by FB profile updated notification
             }
         })
-        
     }
     
     func onFBProfileUpdated(_ notification: Notification) {
