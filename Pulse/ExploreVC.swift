@@ -92,6 +92,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         headerNav.followScrollView(scrollView, delay: 20.0)
         headerNav.scrollingNavbarDelegate = self
+        headerNav.getScopeBar()?.delegate = self
         
         if exploreStack.last != nil {
             currentExploreMode = exploreStack.last
@@ -179,10 +180,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(selectedTag.tagID!) ? true : false
             updateTagScopeSelection(completion: { success in
                 self.updateHeader(navTitle: nil,
-                                  screentitle : self.selectedTag.tagTitle ?? "Explore Tag", leftButton: self.backButton, rightButton: nil, navImage: nil)
+                                  screentitle : self.selectedTag.tagTitle ?? "Explore Tag",
+                                  leftButton: self.backButton,
+                                  rightButton: nil,
+                                  navImage: nil)
             })
         case .search:
-            updateHeader(navTitle: nil, screentitle : nil, leftButton: closeButton, rightButton: nil, navImage: nil)
+            updateHeader(navTitle: nil,
+                         screentitle : nil,
+                         leftButton: closeButton,
+                         rightButton: nil,
+                         navImage: nil)
             updateSearchResults(for: searchController)
         case .question:
             isFollowingSelectedQuestion = User.currentUser?.savedQuestions != nil &&
@@ -190,13 +198,18 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             
             updateQuestionScopeSelection(completion: { success in
                 self.updateHeader(navTitle: self.currentExploreMode.getModeTitle(),
-                                  screentitle : self.selectedQuestion.qTitle, leftButton: self.backButton, rightButton: nil, navImage: nil)
+                                  screentitle : self.selectedQuestion.qTitle,
+                                  leftButton: self.backButton,
+                                  rightButton: nil,
+                                  navImage: nil)
             })
         case .people:
             updatePeopleScopeSelection(completion: { success in
                 self.updateHeader(navTitle: self.selectedUser.thumbPicImage != nil ? nil : self.selectedUser.name,
-                                  screentitle : self.selectedUser.name, leftButton: self.backButton,
-                                  rightButton: nil, navImage: self.selectedUser.thumbPicImage)
+                                  screentitle : self.selectedUser.name,
+                                  leftButton: self.backButton,
+                                  rightButton: nil,
+                                  navImage: self.selectedUser.thumbPicImage)
             })
         }
     }
@@ -401,6 +414,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     completion(false)
                 }
             })
+        } else {
+            completion(true)
         }
         
         switch currentExploreMode.currentSelectionValue() {

@@ -80,9 +80,13 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         if selectedTag != nil {
             Database.askTagQuestion(tag: selectedTag, qText: questionBody.text, completion: {(success, error) in
                 if success {
-                    let questionConfirmation = UIAlertController(title: "Question Posted!", message: "Thanks for your question. You will get a notification as soon as someone posts an answer", preferredStyle: .actionSheet)
+                    let questionConfirmation = UIAlertController(title: "Question Posted!",
+                                                                 message: "Thanks for your question. You will get a notification as soon as someone posts an answer",
+                                                                 preferredStyle: .actionSheet)
                     
-                    questionConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+                    questionConfirmation.addAction(UIAlertAction(title: "done",
+                                                                 style: .default,
+                                                                 handler: { (action: UIAlertAction!) in
                         self.goBack()
                     }))
                     
@@ -92,9 +96,13 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     self.postButton.removeLoadingIndicator(_loadingIndicator)
 
                 } else {
-                    let questionConfirmation = UIAlertController(title: "Error Posting Question", message: error?.localizedDescription, preferredStyle: .actionSheet)
+                    let questionConfirmation = UIAlertController(title: "Error Posting Question",
+                                                                 message: error?.localizedDescription,
+                                                                 preferredStyle: .actionSheet)
                     
-                    questionConfirmation.addAction(UIAlertAction(title: "okay", style: .default, handler: { (action: UIAlertAction!) in
+                    questionConfirmation.addAction(UIAlertAction(title: "okay",
+                                                                 style: .default,
+                                                                 handler: { (action: UIAlertAction!) in
                         questionConfirmation.dismiss(animated: true, completion: nil)
                     }))
                     

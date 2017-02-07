@@ -1504,6 +1504,37 @@ class Database {
         })
     }
     
+    /* RECOMMEND EXPERT */
+    static func recommendExpert(tag: Tag, applyName: String, applyEmail: String, applyText: String,
+                                completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to recommend experts" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard let tagID = tag.tagID else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "please choose a channel first" ]
+            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let post = ["email":applyEmail,
+                    "name":applyName,
+                    "reason":applyText,
+                    "recommenderID": user.uid]
+    
+        databaseRef.child("expertRequests/\(tagID)").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+            if completionError != nil {
+                let errorInfo = [ NSLocalizedDescriptionKey : "error sending, please try again!" ]
+                completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
+            } else {
+                completion(true, nil)
+            }
+        })
+    }
+    
     /* BECOME EXPERT */
     static func becomeExpert(tag : Tag, applyText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
@@ -1518,15 +1549,15 @@ class Database {
             return
         }
         
-        let verificationPath = databaseRef.child("verificationRequests").child(tagID)
-        let post = [user.uid:applyText]
+        let verificationPath = databaseRef.child("expertRequests").child(tagID)
+        let post = ["reason":applyText]
         
         verificationPath.child(user.uid).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 let errorInfo = [ NSLocalizedDescriptionKey : "you have already applied! we will get back to you soon." ]
                 completion(false, NSError.init(domain: "AlreadyApplied", code: 404, userInfo: errorInfo))
             } else {
-                verificationPath.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+                verificationPath.child(user.uid).updateChildValues(post, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         let errorInfo = [ NSLocalizedDescriptionKey : "error applying, please try again!" ]
                         completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))

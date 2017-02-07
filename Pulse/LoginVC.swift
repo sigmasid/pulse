@@ -269,7 +269,6 @@ class LoginVC: UIViewController, UITextFieldDelegate {
             } else if result!.isCancelled {
                 self.removeLoading()
             } else {
-                print("fb login done - success")
                 //login sucess - will get handled by FB profile updated notification
             }
         })

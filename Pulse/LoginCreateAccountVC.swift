@@ -64,8 +64,10 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
             userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
             userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
             
-            userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-            userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!,
+                                                                 attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!,
+                                                                    attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
             
             signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
             signupButton.setDisabled()
