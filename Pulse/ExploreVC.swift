@@ -172,11 +172,12 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         headerNav?.toggleSearch(show: currentExploreMode.currentMode == .search ? true : false)
 
         switch currentExploreMode.currentMode {
+            
         case .root:
             updateHeader(navTitle: nil, screentitle : "Explore", leftButton: searchButton, rightButton: nil, navImage: nil)
             updateRootScopeSelection()
-        case .tag:
             
+        case .tag:
             isFollowingSelectedTag = User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(selectedTag.tagID!) ? true : false
             updateTagScopeSelection(completion: { success in
                 self.updateHeader(navTitle: nil,
@@ -185,6 +186,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                                   rightButton: nil,
                                   navImage: nil)
             })
+            
         case .search:
             updateHeader(navTitle: nil,
                          screentitle : nil,
@@ -192,6 +194,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                          rightButton: nil,
                          navImage: nil)
             updateSearchResults(for: searchController)
+            
         case .question:
             isFollowingSelectedQuestion = User.currentUser?.savedQuestions != nil &&
                                           User.currentUser!.savedQuestions[selectedQuestion.qID] != nil ? true : false
@@ -203,6 +206,8 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                                   rightButton: nil,
                                   navImage: nil)
             })
+            Database.updateQuestionViewCount(qID: selectedQuestion.qID)
+            
         case .people:
             updatePeopleScopeSelection(completion: { success in
                 self.updateHeader(navTitle: self.selectedUser.thumbPicImage != nil ? nil : self.selectedUser.name,

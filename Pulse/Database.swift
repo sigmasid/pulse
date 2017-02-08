@@ -24,7 +24,7 @@ class Database {
     static let tagsRef = databaseRef.child(Item.Tags.rawValue)
     static let questionsRef = databaseRef.child(Item.Questions.rawValue)
     static let answersRef = databaseRef.child(Item.Answers.rawValue)
-    static let answerVotesRef = databaseRef.child(Item.AnswerVotes.rawValue)
+    static let answerStatsRef = databaseRef.child(Item.AnswerStats.rawValue)
 
     static let answerCollectionsRef = databaseRef.child(Item.AnswerCollections.rawValue)
 
@@ -1379,73 +1379,60 @@ class Database {
         }
     }
     
+    static func updateQuestionViewCount(qID : String) {
+        questionsRef.child(qID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+            if let currentViews = currentData.value as? Float {
+                currentData.value = currentViews + 1
+                return FIRTransactionResult.success(withValue: currentData)
+            }
+            return FIRTransactionResult.success(withValue: currentData)
+        })
+    }
+    
+    static func updateAnswerViewCount(aID : String) {
+        answerStatsRef.child(aID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+            if let currentViews = currentData.value as? Float {
+                currentData.value = currentViews + 1
+                return FIRTransactionResult.success(withValue: currentData)
+            }
+            return FIRTransactionResult.success(withValue: currentData)
+        })
+    }
+    
     static func addAnswerVote(_ _vote : AnswerVoteType, aID : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         var upVoteCount = 0
         var downVoteCount = 0
-        var votes : [String : Bool] = [:]
         
-        answerVotesRef.child(aID).observeSingleEvent(of: .value, with: { snap in
-            if snap.exists() {
-                answerVotesRef.child(aID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
-                    if var answer = currentData.value as? [String : AnyObject], let uid = FIRAuth.auth()?.currentUser?.uid {
-                        votes = answer["votes"] as? [String : Bool] ?? [:]
-                        upVoteCount = answer["upVoteCount"] as? Int ?? 0
-                        downVoteCount = answer["downVoteCount"] as? Int ?? 0
+        if User.currentUser?.savedVotes[aID] != true {
+            answerStatsRef.child(aID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+                if var answer = currentData.value as? [String : AnyObject] {
+                    upVoteCount = answer["upVoteCount"] as? Int ?? 0
+                    downVoteCount = answer["downVoteCount"] as? Int ?? 0
 
-                        if let _ = votes[uid] {
-                            //already voted for answer
-                        }
-                        else {
-                            if _vote == AnswerVoteType.downvote {
-                                downVoteCount -= 1
-                                votes[uid] = true
-                            } else {
-                                upVoteCount += 1
-                                votes[uid] = true
-                            }
-                        }
-                        answer["upVoteCount"] = upVoteCount as AnyObject?
-                        answer["downVoteCount"] = downVoteCount as AnyObject?
-
-                        answer["votes"] = votes as AnyObject?
-                        
-                        currentData.value = answer
-                        return FIRTransactionResult.success(withValue: currentData)
-                    }
-                    return FIRTransactionResult.success(withValue: currentData)
-                }) { (error, committed, snapshot) in
-                    if let error = error {
-                        completion(false, error as Error?)
-                    } else if committed == true {
-                        completion(true, nil)
-                    }
-                }
-            } else {
-                if let uid = FIRAuth.auth()?.currentUser?.uid {
                     if _vote == AnswerVoteType.downvote {
                         downVoteCount -= 1
-                        votes[uid] = true
                     } else {
                         upVoteCount += 1
-                        votes[uid] = true
                     }
-                    var answer : [String : AnyObject] = [:]
-
                     answer["upVoteCount"] = upVoteCount as AnyObject?
                     answer["downVoteCount"] = downVoteCount as AnyObject?
                     
-                    answer["votes"] = votes as AnyObject?
-
-                    answerVotesRef.child(aID).updateChildValues(answer, withCompletionBlock: { (completionError, ref) in
-                        if completionError != nil {
-                            completion(false, completionError as Error?)
-                        } else {
-                            completion(true, nil)
-                        }
+                    currentData.value = answer
+                    return FIRTransactionResult.success(withValue: currentData)
+                }
+                return FIRTransactionResult.success(withValue: currentData)
+            }) { (error, committed, snapshot) in
+                if let error = error {
+                    completion(false, error as Error?)
+                } else if committed == true {
+                    let post = [aID:true]
+                    currentUserRef.child("votes").updateChildValues(post , withCompletionBlock: { (error, ref) in
+                        User.currentUser?.savedVotes[aID] = true
                     })
+                    completion(true, nil)
                 }
             }
-        })
+        }
     }
     
     /** ASK QUESTIONS **/
@@ -1544,7 +1531,7 @@ class Database {
         }
         
         guard let tagID = tag.tagID else {
-            let errorInfo = [ NSLocalizedDescriptionKey : "you can only apply to become an expert in a tag" ]
+            let errorInfo = [ NSLocalizedDescriptionKey : "please select a channel first" ]
             completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
             return
         }

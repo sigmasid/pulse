@@ -72,6 +72,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     lazy var answerCollectionIndex = 0
 
     fileprivate var startObserver : AnyObject!
+    fileprivate var playedTillEndObserver : Any!
+    
     fileprivate var miniProfile : MiniProfile?
     lazy var blurBackground = UIVisualEffectView()
     
@@ -150,11 +152,12 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     }
     
     fileprivate func loadWatchedPreviewAnswer() {
+        Database.updateAnswerViewCount(aID: allAnswers[answerIndex].aID)
         currentAnswer = allAnswers[answerIndex]
         updateOverlayData(allAnswers[answerIndex])
         answerOverlay.addClipTimerCountdown()
         addExploreAnswerDetail(allAnswers[answerIndex].aID)
-        
+                
         userClickedExpandAnswer()
     }
     
@@ -167,7 +170,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             addExploreAnswerDetail(_answerID)
             
             if !allAnswers[index].aCreated {
-                //answer is created so no need to fetch again
+                //fetch answer from DB first
                 Database.getAnswer(_answerID, completion: { (answer, error) in
                     self.currentAnswer = answer
                     self.addClip(answer, completion: { success in
@@ -229,7 +232,7 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             } else {
                 self._canAdvanceDetailReady = false
                 
-                // done w/ answer detail - queue up next answer if it exists
+                // done w/ answer detail - queue up next answer (outside of collection) if it exists
                 if self._canAdvance(self.answerIndex + 1) {
                     self.addNextClipToQueue(self.allAnswers[self.answerIndex + 1])
                     self._canAdvanceReady = true
@@ -278,6 +281,8 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         guard let answerType = answer.aType else {
             return
         }
+        
+        currentAnswer = answer //needed so we vote for the correct answer and update views for correct answer
         
         if answerType == .recordedVideo || answerType == .albumVideo {
             ShowAnswerVC.qPlayer.pause()
@@ -456,7 +461,19 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     
     fileprivate func addObserverForStatusReady() {
         if ShowAnswerVC.qPlayer.currentItem != nil {
-            ShowAnswerVC.qPlayer.currentItem?.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
+            ShowAnswerVC.qPlayer.currentItem?.addObserver(self,
+                                                          forKeyPath: "status",
+                                                          options: NSKeyValueObservingOptions.new,
+                                                          context: nil)
+            
+            playedTillEndObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime,
+                                                   object: ShowAnswerVC.qPlayer.currentItem,
+                                                   queue: nil, using: { (_) in
+                if let currentAnswer = self.currentAnswer {
+                    Database.updateAnswerViewCount(aID: currentAnswer.aID)
+                }
+            })
+            
             _isObserving = true
         }
     }
@@ -464,6 +481,11 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
     fileprivate func removeObserverIfNeeded() {
         if _isObserving, ShowAnswerVC.qPlayer.currentItem != nil {
             ShowAnswerVC.qPlayer.currentItem?.removeObserver(self, forKeyPath: "status")
+            
+            if playedTillEndObserver != nil {
+                NotificationCenter.default.removeObserver(playedTillEndObserver)
+            }
+            
             _isObserving = false
         }
     }
@@ -624,6 +646,9 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
             updateOverlayData(_nextAnswer)
             addExploreAnswerDetail(_nextAnswer.aID)
             
+            currentAnswer = _nextAnswer
+            answerIndex += 1
+            
             if _nextAnswer.aType == .recordedImage || _nextAnswer.aType == .albumImage {
                 if let _image = _nextAnswer.aImage {
                     showImageView(_image)
@@ -639,9 +664,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     addObserverForStatusReady()
                 }
             }
-            
-            currentAnswer = _nextAnswer
-            answerIndex += 1
             
             if _canAdvance(answerIndex + 1) {
                 addNextClipToQueue(allAnswers[answerIndex + 1])
@@ -669,6 +691,9 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
         }
         else if _canAdvanceDetailReady {
             
+            currentAnswer = nextAnswer
+            answerCollectionIndex += 1
+
             if nextAnswer?.aType == .recordedImage || nextAnswer?.aType == .albumImage {
                 if let _image = nextAnswer!.aImage {
                     showImageView(_image)
@@ -685,9 +710,6 @@ class ShowAnswerVC: UIViewController, answerDetailDelegate, UIGestureRecognizerD
                     addObserverForStatusReady()
                 }
             }
-            
-            currentAnswer = nextAnswer
-            answerCollectionIndex += 1
             
             if _canAdvanceAnswerDetail(answerCollectionIndex) {
                 addNextClipToQueue(currentAnswerCollection[answerCollectionIndex])

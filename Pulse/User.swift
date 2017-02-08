@@ -32,6 +32,7 @@ class User {
     var savedTags = [Tag : String?]()
     var savedTagIDs = [String]()
     var savedQuestions = [String : String?]()
+    var savedVotes = [String : Bool]()
     var socialSources = [ Social : Bool ]()
     
     dynamic var uCreated = false
