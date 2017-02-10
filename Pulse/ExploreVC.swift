@@ -908,7 +908,25 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     // MARK: - Search controller delegate methods
     func updateSearchResults(for searchController: UISearchController) {
         toggleLoading(show: true, message: "Searching...")
+    }
+    
+    func didPresentSearchController(_ searchController: UISearchController) {
+        DispatchQueue.main.async { [] in
+            searchController.searchBar.becomeFirstResponder()
+            searchController.searchBar.showsCancelButton = false
+            searchController.searchBar.tintColor = pulseBlue
+        }
+        searchController.searchBar.placeholder = "enter search text"
+    }
 
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        userCancelledSearch()
+    }
+    
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        searchController.searchBar.resignFirstResponder()
+        searchBar.endEditing(true)
+        
         let _searchText = searchController.searchBar.text!
         
         if _searchText != "" && _searchText.characters.count > 1 {
@@ -943,31 +961,13 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
                     } else {
                         self.toggleLoading(show: true, message : "Sorry no users found")
                     }
-
+                    
                 })
             default: self.toggleLoading(show: true, message : "Sorry no results found")
             }
         } else if _searchText == "" {
             self.toggleLoading(show: true, message : "Searching")
         }
-    }
-    
-    func didPresentSearchController(_ searchController: UISearchController) {
-        DispatchQueue.main.async { [] in
-            searchController.searchBar.becomeFirstResponder()
-            searchController.searchBar.showsCancelButton = false
-            searchController.searchBar.tintColor = pulseBlue
-        }
-        searchController.searchBar.placeholder = "enter search text"
-    }
-
-    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        userCancelledSearch()
-    }
-    
-    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        searchController.searchBar.resignFirstResponder()
-        searchBar.endEditing(true)
     }
     
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {

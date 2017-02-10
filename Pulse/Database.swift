@@ -153,131 +153,127 @@ class Database {
     }
     
     /** MARK : SEARCH **/
-    static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
-        var _results = [Tag]()
+    static func buildQuery(searchTerm : String, type: FeedItemType) -> [String:Any] {
+        var query = [String:Any]()
+        
+        switch type {
+        case .tag:
+            query["index"] = "tags"
+            query["type"] = "tags"
+        case .people:
+            query["index"] = "firebase"
+            query["type"] = "users"
+            query["fields"] = ["name","shortBio","thumbPic"]
+        case .question:
+            query["index"] = "questions"
+            query["type"] = "questions"
+        default: break
+        }
+        
+        let qTerm = ["_all":searchTerm]
+        let qBody = ["match_phrase":qTerm]
+        query["body"] = ["query":qBody]
+        
+        return query
+    }
     
-        search(type: .tag, searchText: searchText, completion: { results in
-            for (key, value) in results {
-                let _currentTag = Tag(tagID: key, tagTitle: value)
-                _results.append(_currentTag)
-            }
+    static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
+        
+        let query = buildQuery(searchTerm: searchText, type: .tag)
+        let searchKey = databaseRef.child("search/request").childByAutoId().key
+        
+        databaseRef.child("search/request").child(searchKey).updateChildValues(query)
+        
+        databaseRef.child("search/response").child(searchKey).observe( .value, with: { snap in
+            var _results = [Tag]()
             
-            completion(_results)
+            if snap.exists() {
+                if snap.childSnapshot(forPath: "hits").exists() {
+                    for result in snap.childSnapshot(forPath: "hits/hits").children {
+
+                        if let result = result as? FIRDataSnapshot, let tagID = result.childSnapshot(forPath: "_id").value as? String {
+                            let tagTitle = result.childSnapshot(forPath: "_source/title").value as? String
+                            let currentTag = Tag(tagID: tagID, tagTitle: tagTitle)
+                            currentTag.tagDescription = result.childSnapshot(forPath: "_source/description").value as? String
+                            _results.append(currentTag)
+                        }
+                    }
+                    completion(_results)
+                } else {
+                    completion(_results)
+                }
+                snap.ref.removeAllObservers()
+                snap.ref.removeValue()
+            }
         })
     }
     
     static func searchQuestions(searchText : String, completion: @escaping (_ questionsResult : [Question]) -> Void) {
-        var _results = [Question]()
+        let query = buildQuery(searchTerm: searchText, type: .question)
+        let searchKey = databaseRef.child("search/request").childByAutoId().key
         
-        search(type: .question, searchText: searchText, completion: { results in
-            for (key, value) in results {
-                let _currentQuestion = Question(qID: key)
-                _currentQuestion.qTitle = value
-                _results.append(_currentQuestion)
-            }
+        databaseRef.child("search/request").child(searchKey).updateChildValues(query)
+        
+        databaseRef.child("search/response").child(searchKey).observe( .value, with: { snap in
+            var _results = [Question]()
             
-            completion(_results)
+            if snap.exists() {
+                if snap.childSnapshot(forPath: "hits").exists() {
+                    for result in snap.childSnapshot(forPath: "hits/hits").children {
+                        
+                        if let result = result as? FIRDataSnapshot, let qID = result.childSnapshot(forPath: "_id").value as? String {
+                            let qTitle = result.childSnapshot(forPath: "_source/title").value as? String
+                            let currentQuestion = Question(qID: qID)
+                            currentQuestion.qTitle = qTitle
+                            _results.append(currentQuestion)
+                        }
+                    }
+                    completion(_results)
+                } else {
+                    completion(_results)
+                }
+                snap.ref.removeAllObservers()
+                snap.ref.removeValue()
+            }
         })
     }
     
     static func searchUsers(searchText : String, completion: @escaping (_ peopleResult : [User]) -> Void) {
-        var allUsers = [User]()
-        let endingString = searchText.appending("\u{f8ff}")
+        let query = buildQuery(searchTerm: searchText, type: .people)
+        let searchKey = databaseRef.child("search/request").childByAutoId().key
         
-        usersPublicSummaryRef.queryOrdered(byChild: "name").queryStarting(atValue: searchText).queryEnding(atValue: endingString).observeSingleEvent(of: .value, with: { snapshot in
-            for item in snapshot.children {
-                let snap = item as! FIRDataSnapshot
-                allUsers.append(User(uID: snap.key, snapshot: snap))
-            }
-            completion(allUsers)
-        })
-    }
-    
-    static func search(type : FeedItemType, searchText : String, completion: @escaping (_ results : [(key: String, value: String)]) -> Void) {
-        switch type {
-        case .question:
-            if masterQuestionIndex.count == 0 {
-                createQuestionIndex{
-                    performSearch(searchText: searchText, type: type, completion: {(_results) in
-                        completion(_results)
-                    })                }
-            } else {
-                performSearch(searchText: searchText, type: type, completion: {(_results) in
-                    completion(_results)
-                })
-            }
-        case .tag:
-            if masterTagIndex.count == 0 {
-                createTagIndex{
-                    performSearch(searchText: searchText, type: type, completion: {(_results) in
-                        completion(_results)
-                    })
-                }
-            } else {
-                performSearch(searchText: searchText, type: type, completion: {(_results) in
-                    completion(_results)
-                })
-            }
-        case .people: break
-        case .answer: break
-        }
-    }
-    
-    internal static func createTagIndex(completion: @escaping () -> Void) {
-        databaseRef.child("tagSearchIndex").observeSingleEvent(of: .value, with: { snapshot in
-            for aTag in snapshot.children {
-                masterTagIndex[(aTag as AnyObject).key] = (aTag as AnyObject).value.lowercased()
-                
-                if masterTagIndex.count == Int(snapshot.childrenCount) {
-                    completion()
-                }
-            }
-        })
-    }
-    
-    internal static func createQuestionIndex(completion: @escaping () -> Void) {
-        databaseRef.child("questionSearchIndex").observeSingleEvent(of: .value, with: { snapshot in
-            for aQuestion in snapshot.children {
-                masterQuestionIndex[(aQuestion as AnyObject).key] = (aQuestion as AnyObject).value.lowercased()
-                
-                if masterQuestionIndex.count == Int(snapshot.childrenCount) {
-                    completion()
-                }
+        databaseRef.child("search/request").child(searchKey).updateChildValues(query)
+        
+        databaseRef.child("search/response").child(searchKey).observe( .value, with: { snap in
+            var _results = [User]()
+            
+            if snap.exists() {
+                if snap.childSnapshot(forPath: "hits").exists() {
+                    for result in snap.childSnapshot(forPath: "hits/hits").children {
+                        if let result = result as? FIRDataSnapshot, let uID = result.childSnapshot(forPath: "_id").value as? String {
+                            let uName = result.childSnapshot(forPath: "fields/name/0").value as? String
+                            let uShortBio = result.childSnapshot(forPath: "fields/shortBio/0").value as? String
+                            let uPic = result.childSnapshot(forPath: "fields/thumbPic/0").value as? String
 
+                            let currentUser = User(uID: uID)
+                            
+                            currentUser.name = uName
+                            currentUser.shortBio = uShortBio
+                            currentUser.thumbPic = uPic
+                            currentUser.uCreated = true
+                            
+                            _results.append(currentUser)
+                        }
+                    }
+                    completion(_results)
+                } else {
+                    completion(_results)
+                }
+                snap.ref.removeAllObservers()
+                snap.ref.removeValue()
             }
         })
     }
-    
-    internal static func performSearch(searchText : String, type : FeedItemType, completion: @escaping (_ results : [(key: String, value: String)]) -> Void) {
-        switch type {
-        case .question:
-            let _results = masterQuestionIndex.filter({
-                $0.value.contains(searchText)
-            })
-            completion(_results)
-        case .tag:
-            let _results = masterTagIndex.filter({
-                $0.value.contains(searchText)
-            })
-            completion(_results)
-        case .people: break
-        case .answer: break
-        }
-    }
-    
-    //OLD WAY OF DIRECTLY SEARCHING ON DB - NEW WAY DOWNLOADS THE FULL STACK
-//    static func getSearchTags(searchText : String, completion: @escaping (_ tags : [String], _ error : NSError?) -> Void) {
-//        var allTags = [String]()
-//        let endingString = searchText.appending("\u{f8ff}")
-//        
-//        tagsRef.queryOrderedByKey().queryStarting(atValue: searchText).queryEnding(atValue: endingString).observeSingleEvent(of: .value, with: { snapshot in
-//            for item in snapshot.children {
-//                let child = item as! FIRDataSnapshot
-//                allTags.append(child.key)
-//            }
-//            completion(allTags, nil)
-//        })
-//    }
     
     /** MARK : MESSAGING **/
     ///Check if user has an existing conversation with receiver, if yes then return the conversation ID
