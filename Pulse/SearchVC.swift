@@ -68,8 +68,6 @@ class SearchVC: UIViewController, XMSegmentedControlDelegate {
         searchController.searchBar.sizeToFit()
         searchBarContainer.addSubview(searchController.searchBar)
         definesPresentationContext = true
-
-        print("searchcontroller frame is \(searchBarContainer.frame)")
         
         // Setup the Search Controller
         searchController.searchResultsUpdater = self
@@ -167,17 +165,7 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating {
         let _searchText = searchController.searchBar.text!
         
         if _searchText != "" && _searchText.characters.count > 1 {
-            switch searchScope! {
-            case .tag:
-                Database.search(type: .tag, searchText: _searchText.lowercased(), completion:  { searchResults in
-                        self.results = searchResults
-                })
-            case .question:
-                Database.search(type: .question, searchText: _searchText.lowercased(), completion:  { searchResults in
-                    self.results = searchResults
-                })
-            default: break
-            }
+            //implement
         } else if _searchText == "" {
             //empty the dictionary
         }

@@ -79,37 +79,6 @@ class Database {
         task.resume()
     }
     
-    static func addTags() {
-        for _ in 1...10 {
-            tagsRef.childByAutoId().child("title").setValue("test1")
-        }
-    }
-    
-    static func updateTagSearchIndex() {
-        tagsRef.observeSingleEvent(of: .value, with: { snap in
-            for tag in snap.children {
-                let firTag = tag as? FIRDataSnapshot
-                let tagKey = firTag?.key
-                let tagTitle = firTag?.childSnapshot(forPath: "title").value as! String
-                
-                databaseRef.child("tagSearchIndex").updateChildValues([tagKey!:tagTitle])
-                
-            }
-        })
-    }
-    
-    static func updateQuestionSearchIndex() {
-        questionsRef.observeSingleEvent(of: .value, with: { snap in
-            for question in snap.children {
-                let questionTag = question as? FIRDataSnapshot
-                let questionKey = questionTag?.key
-                let questionTitle = questionTag?.childSnapshot(forPath: "title").value as! String
-                
-                databaseRef.child("questionSearchIndex").updateChildValues([questionKey!:questionTitle])
-            }
-        })
-    }
-    
     static func removeAnswers(userID : String, answerID : String) {
         databaseRef.child("userDetailedPublicSummary/\(userID)/answers/\(answerID)").observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
@@ -406,9 +375,9 @@ class Database {
 
     /*** MARK START : DATABASE PATHS ***/
     static func setCurrentUserPaths() {
-        if let _user = FIRAuth.auth()?.currentUser {
-            currentUserRef = databaseRef.child(Item.Users.rawValue).child(_user.uid)
-            currentUserFeedRef = databaseRef.child(Item.Users.rawValue).child(_user.uid).child(Item.Feed.rawValue)
+        if let user = FIRAuth.auth()?.currentUser {
+            currentUserRef = usersRef.child(user.uid)
+            currentUserFeedRef = usersRef.child(user.uid).child(Item.Feed.rawValue)
         } else {
             currentUserRef = nil
             currentUserFeedRef = nil
@@ -926,7 +895,7 @@ class Database {
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdated"), object: self)
                     })
                 } else {
-                    print("ignoring child removed)")
+                    //print("ignoring child removed)")
                 }
             })
         }
@@ -1504,11 +1473,12 @@ class Database {
         }
         
         let post = ["email":applyEmail,
+                    "tagID":tagID,
                     "name":applyName,
                     "reason":applyText,
                     "recommenderID": user.uid]
     
-        databaseRef.child("expertRequests/\(tagID)").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+        databaseRef.child("expertRequests").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
                 let errorInfo = [ NSLocalizedDescriptionKey : "error sending, please try again!" ]
                 completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
@@ -1532,19 +1502,22 @@ class Database {
             return
         }
         
-        let verificationPath = databaseRef.child("expertRequests").child(tagID)
-        let post = ["reason":applyText]
+        let verificationPath = databaseRef.child("expertRequests")
+        let post = ["uID":user.uid,
+                    "reason":applyText,
+                    "tagID":tagID]
         
-        verificationPath.child(user.uid).observeSingleEvent(of: .value, with: { snap in
+        currentUserRef.child("appliedTags").child(tagID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 let errorInfo = [ NSLocalizedDescriptionKey : "you have already applied! we will get back to you soon." ]
                 completion(false, NSError.init(domain: "AlreadyApplied", code: 404, userInfo: errorInfo))
             } else {
-                verificationPath.child(user.uid).updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+                verificationPath.childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         let errorInfo = [ NSLocalizedDescriptionKey : "error applying, please try again!" ]
                         completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
                     } else {
+                        currentUserRef.child("appliedTags").child(tagID).setValue(true)
                         completion(true, nil)
                     }
                 })

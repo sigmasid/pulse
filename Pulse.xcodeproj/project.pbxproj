@@ -290,6 +290,7 @@
 				BA03C43B1DB5A52900277382 /* Messaging */,
 				BA03C43C1DB5A53900277382 /* Pulse Shared */,
 				BAB7B1EC1DDFC30D00EA9DD2 /* AskQuestionVC.swift */,
+				BAD37D611D2640E800BACB04 /* Database.swift */,
 				BA2C46321E1C30B400CA8655 /* ApplyExpertVC.swift */,
 			);
 			path = Pulse;
@@ -298,7 +299,6 @@
 		BA1DE12A1D244486004F3ED2 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				BAD37D611D2640E800BACB04 /* Database.swift */,
 				BA1DE1241D2443BF004F3ED2 /* Answer.swift */,
 				BA1DE1261D2443FD004F3ED2 /* Tag.swift */,
 				BA1DE12B1D2444A4004F3ED2 /* User.swift */,
