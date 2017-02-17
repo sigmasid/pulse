@@ -20,12 +20,12 @@ class User {
     var birthday : String?
     var location : CLLocation?
     var sLocation : String?
-    var answers = [String]()
+    var answers = [Answer]()
     var answeredQuestions = [String]()
     var profilePic : String?
     var thumbPic : String?
     var thumbPicImage : UIImage?
-    var expertiseTags = [String : String]()
+    var expertiseTags = [Tag]()
     
     var shownCameraForQuestion = [ String : String ]()
     var _totalAnswers : Int?
@@ -92,6 +92,26 @@ class User {
         uCreated = true
     }
     
+    func updateUser(detailedSnapshot : FIRDataSnapshot) {
+        if detailedSnapshot.hasChild("bio") {
+            self.bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String
+        }
+        
+        if detailedSnapshot.hasChild("answers") {
+            for child in detailedSnapshot.children {
+                let currentAnswer = Answer(aID: (child as AnyObject).key, qID: (child as AnyObject).value)
+                self.answers.append(currentAnswer)
+            }
+        }
+        
+        if detailedSnapshot.hasChild("expertiseTags") {
+            for child in detailedSnapshot.children {
+                let currentTag = Tag(tagID: (child as AnyObject).key, tagTitle: (child as AnyObject).value)
+                self.expertiseTags.append(currentTag)
+            }
+        }
+    }
+    
     init(user: FIRUser) {
         self.uID = user.uid
     }
@@ -103,11 +123,11 @@ class User {
     /// Returns if user can answer question in given tag
     func canAnswer(qID: String, tag : Tag, completion: (Bool, String?, String?) -> Void) {
         // if user has not answered the question and is an expert in the tag then allowed to answer question
-        if !hasAnsweredQuestion(qID), expertiseTags[tag.tagID!] != nil {
+        if !hasAnsweredQuestion(qID), expertiseTags.contains(tag) {
             completion(true, nil, nil)
         } else if hasAnsweredQuestion(qID) {
             completion(false, "Already Answered!", "Sorry you can only answer a question once")
-        } else if expertiseTags[tag.tagID!] == nil {
+        } else if !expertiseTags.contains(tag) {
             completion(false, "Experts Only", "Are you an expert? Apply to answer!")
         }
     }

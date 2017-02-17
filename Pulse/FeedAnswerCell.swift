@@ -66,7 +66,7 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
     }
     
     func showAnswer(answer : Answer) {
-        previewVC = Preview(frame: contentView.bounds)
+        previewVC = Preview(frame: CGRect(x: contentView.frame.origin.x, y: contentView.frame.origin.y, width: contentView.frame.width / 2, height: contentView.frame.height))
         previewVC.delegate = self
         previewVC.currentAnswer = answer
         previewImage.isHidden = true
@@ -108,14 +108,13 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
         previewImage.translatesAutoresizingMaskIntoConstraints = false
         previewImage.heightAnchor.constraint(equalTo: contentView.heightAnchor).isActive = true
         previewImage.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
-        previewImage.widthAnchor.constraint(equalTo: contentView.widthAnchor).isActive = true
+        previewImage.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.5).isActive = true
         previewImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
         
         titleStack.translatesAutoresizingMaskIntoConstraints = false
-        titleStack.heightAnchor.constraint(equalTo: contentView.heightAnchor, multiplier: 0.125).isActive = true
-        titleStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
-        titleStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
-        titleStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        titleStack.leadingAnchor.constraint(equalTo: previewImage.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        titleStack.topAnchor.constraint(equalTo: previewImage.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        titleStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
         titleStack.addArrangedSubview(titleLabel)
         titleStack.addArrangedSubview(subtitleLabel)
@@ -123,11 +122,7 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
         previewImage.contentMode = UIViewContentMode.scaleAspectFill
         previewImage.clipsToBounds = true
         
-        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
-        
-        titleLabel.setBlurredBackground()
-        subtitleLabel.setBlurredBackground()
-
+        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
+        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
     }
 }

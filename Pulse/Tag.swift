@@ -13,8 +13,8 @@ class Tag : NSObject {
     var tagID: String?
     var tagTitle : String?
     
-    var questions = [Question?]()
-    var experts: [User?]?
+    var questions = [Question]()
+    var experts = [User]()
     var tagImage : String?
     var tagDescription : String?
     var previewImage : String?
@@ -50,10 +50,9 @@ class Tag : NSObject {
         
         for user in snapshot.childSnapshot(forPath: "experts").children {
             let _user = User(uID: (user as AnyObject).key)
-            if (self.experts?.append(_user) == nil) {
-                self.experts = [_user]
-            }
+            self.experts.append(_user)
         }
+        
         self.tagCreated = true
     }
     
@@ -70,5 +69,23 @@ class Tag : NSObject {
         Database.createShareLink(linkString: "c/"+cID, completion: { link in
             completion(link)
         })
+    }
+    
+    func getTagImage(completion: @escaping (UIImage?) -> Void) {
+        Database.getTagImage(tagID!, maxImgSize: maxImgSize, completion: {(imgData, error) in
+            if let imgData = imgData {
+                completion(UIImage(data: imgData))
+            } else {
+                completion(nil)
+            }
+        })
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let object = object as? Tag {
+            return tagID == object.tagID
+        } else {
+            return false
+        }
     }
 }

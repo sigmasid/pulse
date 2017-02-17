@@ -35,17 +35,52 @@ class PaddingLabel: UILabel {
         let heigth = superSizeThatFits.height  + topInset + bottomInset
         return CGSize(width: width, height: heigth)
     }
-    
+}
+
+extension UIImageView {
+    func makeRound() {
+        GlobalFunctions.makeRound(self)
+        layer.masksToBounds = true
+        clipsToBounds = true
+    }
+}
+
+extension UICollectionViewCell {
+    override func addShadow() {
+        super.addShadow()
+        
+        contentView.layer.borderWidth = 1.0
+        contentView.layer.borderColor = UIColor.clear.cgColor
+        contentView.layer.masksToBounds = true
+        
+        layer.masksToBounds = false
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: contentView.layer.cornerRadius).cgPath
+    }
+}
+
+extension UIView {
     func addShadow() {
-        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowColor = UIColor.lightGray.cgColor
         layer.shadowOffset = CGSize(width: 2, height: 4)
-        layer.shadowRadius = 4.0
+        layer.shadowRadius = 2.0
         layer.shadowOpacity = 0.7
     }
 }
 
 // To dismiss keyboard when needed
 extension UIViewController {
+    func getRectToLeft() -> CGRect {
+        var rectToLeft = view.frame
+        rectToLeft.origin.x = view.frame.minX - view.frame.size.width
+        return rectToLeft
+    }
+    
+    func getRectToRight() -> CGRect {
+        var rectToRight = view.frame
+        rectToRight.origin.x = view.frame.maxX
+        return rectToRight
+    }
+    
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -178,7 +213,7 @@ extension UIButton {
     }
     
     func makeRound() {
-        self.layer.cornerRadius = self.frame.width > self.frame.height ?  self.frame.height / 2 : self.frame.width / 2
+        GlobalFunctions.makeRound(self)
     }
     
     func setButtonFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {

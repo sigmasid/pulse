@@ -170,13 +170,13 @@ public class PulseNavBar: UINavigationBar {
         }
         
         if icons != nil {
-            screenOptions.segmentContent = (titles, icons!)
+            screenOptions.segmentIcon = (icons!)
         } else {
             screenOptions.segmentTitle = titles
         }
         
         screenOptions.selectedSegment = selected
-        screenOptions.layoutIfNeeded()
+        //screenOptions.layoutIfNeeded()
     }
     
     /** LAYOUT SCREEN **/
@@ -278,9 +278,9 @@ public class PulseNavBar: UINavigationBar {
                                               selectedItemHighlightStyle: XMSelectedItemHighlightStyle.bottomEdge)
         addSubview(screenOptions)
 
-        screenOptions.backgroundColor = color7
+        screenOptions.backgroundColor = UIColor.white
         screenOptions.highlightColor = pulseBlue
-        screenOptions.tint = .white
+        screenOptions.tint = .lightGray
         screenOptions.highlightTint = pulseBlue
     }
 }

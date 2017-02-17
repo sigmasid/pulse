@@ -145,7 +145,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     fileprivate func updateScopeBar() {
         if let scopeBar = currentExploreMode.currentScopeBar {
-            headerNav?.shouldShowScope = true
+            headerNav?.shouldShowScope = false
             headerNav?.updateScopeBar(titles: scopeBar.titles,
                                       icons: scopeBar.icons,
                                       selected: currentExploreMode.currentSelection )
@@ -210,11 +210,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             
         case .people:
             updatePeopleScopeSelection(completion: { success in
-                self.updateHeader(navTitle: self.selectedUser.thumbPicImage != nil ? nil : self.selectedUser.name,
+                self.updateHeader(navTitle: nil,
                                   screentitle : self.selectedUser.name,
                                   leftButton: self.backButton,
                                   rightButton: nil,
-                                  navImage: self.selectedUser.thumbPicImage)
+                                  navImage: nil)
             })
         }
     }
@@ -457,9 +457,10 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         switch type {
         case .tag:
-            selectedTag = item as! Tag
-            currentExploreMode = Explore(currentMode: .tag, currentSelection: 0, currentSelectedItem: selectedTag)
-            exploreStack.append(currentExploreMode)
+            let channelVC = ChannelVC()
+            navigationController?.pushViewController(channelVC, animated: true)
+            channelVC.selectedTag = item as! Tag
+            channelVC.channelDelegate = self
         case .question:
             selectedQuestion = item as! Question
             currentExploreMode = Explore(currentMode: .question, currentSelection: 0, currentSelectedItem: selectedQuestion)
@@ -987,10 +988,10 @@ extension ExploreVC {
             var icons : [UIImage]!
         }
         
-        private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question-circle")!, UIImage(named: "profile")!]
         private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "related")!]
-        private let tagIcons = [UIImage(named: "question")!, UIImage(named: "profile")!, UIImage(named: "related")!]
-        private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        private let tagIcons = [UIImage(named: "question-circle")!, UIImage(named: "profile")!, UIImage(named: "related")!]
+        private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question-circle")!, UIImage(named: "profile")!]
         private let peopleIcons = [UIImage(named: "answers")!, UIImage(named: "tag")!]
 
         /* PROPERTIES */
@@ -1013,7 +1014,7 @@ extension ExploreVC {
             case .root: return scopeBar(titles: getOptionTitles(), icons: rootIcons)
             case .tag: return scopeBar(titles: getOptionTitles(), icons: tagIcons)
             case .question: return scopeBar(titles: getOptionTitles(), icons: questionIcons)
-            case .people: return scopeBar(titles: getOptionTitles(), icons: peopleIcons)
+            case .people: return nil
             case .search: return scopeBar(titles: getOptionTitles(), icons: searchIcons)
             }
         }

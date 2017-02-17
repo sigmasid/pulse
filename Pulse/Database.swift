@@ -635,6 +635,14 @@ class Database {
         })
     }
     
+    static func getDetailedUserProfile(user: User, completion: @escaping (_ user: User) -> Void) {
+        usersPublicDetailedRef.child(user.uID!).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                user.updateUser(detailedSnapshot: snap)
+                completion(user) 
+            }
+        })
+    }
     static func getUserAnswerIDs(uID: String, completion: @escaping (_ answers : [Answer]) -> Void) {
         var allAnswers = [Answer]()
         usersPublicDetailedRef.child(uID).child("answers").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
@@ -820,8 +828,8 @@ class Database {
             post["tagID"] = _tagID as AnyObject?
         }
         
-        if let _tagID = tagID {
-            post["tagTitle"] = tagTitle as AnyObject?
+        if let _tagTitle = tagTitle {
+            post["tagTitle"] = _tagTitle as AnyObject?
         }
 
         if questions.count == 0 {
@@ -1045,7 +1053,7 @@ class Database {
         currentUser.name = nil
         currentUser.answers = []
         currentUser.answeredQuestions = []
-        currentUser.expertiseTags = [:]
+        currentUser.expertiseTags = []
         currentUser.savedTags = [ : ]
         currentUser.savedTagIDs = []
         currentUser.profilePic = nil
@@ -1112,13 +1120,15 @@ class Database {
                 User.currentUser!.answers = []
                 User.currentUser?._totalAnswers = Int(snap.childSnapshot(forPath: "answers").childrenCount)
                 for _answer in snap.childSnapshot(forPath: "answers").children {
-                    User.currentUser!.answers.append((_answer as AnyObject).key)
+                    let currentAnswer = Answer(aID: (_answer as AnyObject).key, qID: (_answer as AnyObject).value)
+                    User.currentUser!.answers.append(currentAnswer)
                 }
             }
             if snap.hasChild("expertiseTags") {
-                User.currentUser!.expertiseTags = [:]
+                User.currentUser!.expertiseTags = []
                 for expertise in snap.childSnapshot(forPath: "expertiseTags").children {
-                    User.currentUser!.expertiseTags[(expertise as AnyObject).key] = (expertise as AnyObject).value
+                    let expertiseTag = Tag(tagID: (expertise as AnyObject).key, tagTitle: (expertise as AnyObject).value)
+                    User.currentUser!.expertiseTags.append(expertiseTag)
                 }
             }
             
@@ -1185,8 +1195,10 @@ class Database {
             activeListeners.append(usersPublicDetailedRef.child(uID).child("answeredQuestions"))
 
             usersPublicDetailedRef.child(uID).child("answers").observe(.childAdded, with: { snap in
-                if !User.currentUser!.answers.contains(snap.key) {
-                    User.currentUser!.answers.append(snap.key)
+                let currentAnswer = Answer(aID: (snap as AnyObject).key, qID: (snap as AnyObject).value)
+
+                if !User.currentUser!.answers.contains(currentAnswer) {
+                    User.currentUser!.answers.append(currentAnswer)
                     NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
                 }
             })

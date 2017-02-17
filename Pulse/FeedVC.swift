@@ -23,12 +23,11 @@ class FeedVC: UIViewController, previewDelegate {
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
     fileprivate var initialFrame : CGRect!
-    fileprivate var rectToRight : CGRect!
-    fileprivate var rectToLeft : CGRect!
     fileprivate var QAVC : QAManagerVC!
     
     fileprivate var searchScope : FeedItemType? = .question
-    
+    var minCellHeight : CGFloat = 125
+
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
     
@@ -50,6 +49,7 @@ class FeedVC: UIViewController, previewDelegate {
     var feedDelegate : feedVCDelegate!
     var feedItemType : FeedItemType! {
         didSet {
+            minCellHeight = feedItemType == .answer ? 225 : 125
             updateDataSource = true
         }
     }
@@ -160,18 +160,14 @@ class FeedVC: UIViewController, previewDelegate {
     let collectionPeopleReuseIdentifier = "FeedPeopleCell"
     let collectionAnswerReuseIdentifier = "FeedAnswerCell"
     let collectionQuestionReuseIdentifier = "FeedQuestionCell"
+    let collectionPeopleHeaderReuseIdentifier = "ProfileHeader"
+    let collectionChannelHeaderReuseIdentifier = "ChannelHeader"
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
         if !isLoaded {
-            view.backgroundColor = .white
-            
-            rectToLeft = view.frame
-            rectToLeft.origin.x = view.frame.minX - view.frame.size.width
-            
-            rectToRight = view.frame
-            rectToRight.origin.x = view.frame.maxX
+            view.backgroundColor = UIColor(red: 249/255, green: 249/255, blue: 249/255, alpha: 1.0)
             
             setupScreenLayout()
             definesPresentationContext = true
@@ -188,14 +184,23 @@ class FeedVC: UIViewController, previewDelegate {
     fileprivate func setupScreenLayout() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
         layout.scrollDirection = UICollectionViewScrollDirection.vertical
-        layout.minimumLineSpacing = 1
-        layout.minimumInteritemSpacing = 1
-        layout.sectionInset = UIEdgeInsetsMake(0, 0, 0, 0)
+        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 10        
         
         feedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         feedCollectionView?.register(FeedTagCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
         feedCollectionView?.register(FeedQuestionCell.self, forCellWithReuseIdentifier: collectionQuestionReuseIdentifier)
         feedCollectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: collectionAnswerReuseIdentifier)
+        feedCollectionView?.register(FeedPeopleCell.self, forCellWithReuseIdentifier: collectionPeopleReuseIdentifier)
+        feedCollectionView?.register(UserProfileHeader.self,
+                                         forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
+                                         withReuseIdentifier: collectionPeopleHeaderReuseIdentifier)
+        feedCollectionView?.register(ChannelHeader.self,
+                                     forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
+                                     withReuseIdentifier: collectionChannelHeaderReuseIdentifier)
+        feedCollectionView?.register(UICollectionReusableView.self,
+                                     forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
+                                     withReuseIdentifier: "BlankHeader")
 
         view.addSubview(feedCollectionView!)
         
@@ -269,7 +274,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
             //clear the cells and set the item type first
             cell.updateLabel(nil, _subtitle: nil)
-            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+            cell.contentView.backgroundColor = .white
 
             if allQuestions.count > indexPath.row && allQuestions[indexPath.row]!.qTitle != nil {
                 guard let _currentQuestion = allQuestions[indexPath.row] else { return cell }
@@ -318,7 +323,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedTagCell
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
-            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+            cell.contentView.backgroundColor = .white
             cell.updateLabel(nil, _subtitle: nil)
 
             if allTags.count > indexPath.row && allTags[indexPath.row].tagCreated {
@@ -342,7 +347,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: indexPath) as! FeedAnswerCell
             let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
-            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+            cell.contentView.backgroundColor = .white
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
             
             let currentAnswer = answerStack[indexPath.row]
@@ -461,10 +466,9 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             return cell
         
         case .people:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: indexPath) as! FeedAnswerCell
-            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionPeopleReuseIdentifier, for: indexPath) as! FeedPeopleCell
             
-            cell.contentView.backgroundColor = _backgroundColors[Int(_rand)].withAlphaComponent(1.0)
+            cell.contentView.backgroundColor = .white
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
 
             let _user = allUsers[indexPath.row]
@@ -524,11 +528,12 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func updateAnswerCell(_ cell: FeedAnswerCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
-        let _user = allUsers[indexPath.row]
-        
-        cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio)
-        if _user.thumbPicImage != nil {
-            cell.updateImage(image : _user.thumbPicImage)
+        if allUsers != nil {
+            let _user = allUsers[indexPath.row]
+            cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio)
+            if _user.thumbPicImage != nil {
+                cell.updateImage(image : _user.thumbPicImage)
+            }
         }
     }
     
@@ -590,14 +595,55 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
     }
+    
+    func collectionView(_ collectionView: UICollectionView,
+                        viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        switch kind {
+            
+        case UICollectionElementKindSectionHeader:
+            
+            if selectedUser != nil {
+                
+                let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                                 withReuseIdentifier: "ProfileHeader", for: indexPath) as! UserProfileHeader
+                
+                headerView.backgroundColor = .white
+                headerView.updateUserDetails(selectedUser: selectedUser)
+                
+                return headerView
+            } else if selectedTag != nil {
+                let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                                 withReuseIdentifier: collectionChannelHeaderReuseIdentifier, for: indexPath) as! ChannelHeader
+                
+                headerView.backgroundColor = .white
+                
+                Database.getExpertsForTag(tagID: selectedTag.tagID!, completion: { (experts, error) in
+                    if error == nil {
+                        headerView.experts = experts
+                    }
+                })
+            }
+            return collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                   withReuseIdentifier: "BlankHeader", for: indexPath)
+            
+        default:
+            
+            assert(false, "Unexpected element kind")
+        }
+    }
 }
 
 extension FeedVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (feedCollectionView!.frame.width / 2 - 0.5),
+        return CGSize(width: (feedCollectionView!.frame.width - 20),
                       height: minCellHeight)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return CGSize(width: feedCollectionView!.frame.width, height: IconSizes.large.rawValue + Spacing.s.rawValue * 2 + scopeBarHeight + IconSizes.medium.rawValue)
     }
 }
 
@@ -611,7 +657,7 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
-            animator.exitFrame = rectToLeft
+            animator.exitFrame = getRectToLeft()
             
             return animator
         } else {
@@ -623,8 +669,8 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
         if dismissed is QAManagerVC {
             let animator = PanAnimationController()
 
-            animator.initialFrame = rectToLeft
-            animator.exitFrame = rectToRight
+            animator.initialFrame = getRectToLeft()
+            animator.exitFrame = getRectToRight()
             animator.transitionType = .dismiss
             return animator
         } else {

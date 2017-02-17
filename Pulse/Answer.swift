@@ -69,4 +69,12 @@ class Answer : NSObject {
         
         aCreated = true
     }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let object = object as? Answer {
+            return aID == object.aID
+        } else {
+            return false
+        }
+    }
 }

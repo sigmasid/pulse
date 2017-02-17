@@ -25,9 +25,9 @@ let color6 = UIColor(red: 149/255, green: 149/255, blue: 149/255, alpha: 1.0)
 let color7 = UIColor(red: 38/255, green: 58/255, blue: 69/255, alpha: 1.0)
 let color8 = UIColor(red: 97/255, green: 101/255, blue: 111/255, alpha: 1.0)
 
-let minCellHeight : CGFloat = 225
 let searchBarHeight : CGFloat = 44
 let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
+let scopeBarHeight : CGFloat = 40
 let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
 
 let _backgroundColors = [color1, color2, color3, color4, color5, color6, color7, color8]
@@ -70,6 +70,17 @@ class GlobalFunctions {
         _bottomBorder.backgroundColor = _color.cgColor
         
         return _bottomBorder
+    }
+    
+    static func makeRound(_ view: UIView) {
+        view.layer.cornerRadius = view.frame.width > view.frame.height ?  view.frame.height / 2 : view.frame.width / 2
+    }
+    
+    static func addShadow(_ view: UIView) {
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 2, height: 4)
+        view.layer.shadowRadius = 4.0
+        view.layer.shadowOpacity = 0.7
     }
 
     static func addNewVC(_ newVC: UIViewController, parentVC: UIViewController) {

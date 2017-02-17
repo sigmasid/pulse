@@ -122,7 +122,7 @@ class QAManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIIm
     fileprivate func loadNextQuestion(_ completion: @escaping (_ question : Question?, _ error : NSError?) -> Void) {
         questionCounter += 1
         if (questionCounter >= allQuestions.count && selectedTag.totalQuestionsForTag() >  questionCounter) {
-            Database.getQuestion(selectedTag.questions[questionCounter]!.qID, completion: { (question, error) in
+            Database.getQuestion(selectedTag.questions[questionCounter].qID, completion: { (question, error) in
                 if error != nil {
                     completion(nil, error)
                 } else {

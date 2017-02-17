@@ -64,7 +64,7 @@ open class XMSegmentedControl: UIView {
      Defines the height of the highlighted edge if `selectedItemHighlightStyle` is either `TopEdge` or `BottomEdge`
      - Note: Changes only take place if `selectedItemHighlightStyle` is either `TopEdge` or `BottomEdge`
      */
-    open var edgeHighlightHeight: CGFloat = 5.0
+    open var edgeHighlightHeight: CGFloat = 2.0
     
     /// Changes the background of the selected segment.
     @IBInspectable open var highlightColor = UIColor(red: 42/255, green: 132/255, blue: 210/255, alpha: 1) {
@@ -160,29 +160,31 @@ open class XMSegmentedControl: UIView {
             func isUIButton(_ view: UIView) -> Bool {
                 return view is UIButton ? true : false
             }
-            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.7, options: UIViewAnimationOptions.curveEaseOut, animations: {
-                switch(self.contentType) {
-                case .icon, .hybrid, .hybridVertical:
-                    ((self.subviews.filter(isUIButton)) as! [UIButton]).forEach {
-                        if $0.tag == self.selectedSegment {
-                            $0.tintColor = self.highlightTint
-                            self.highlightView.frame.origin.x = $0.frame.origin.x
-                        } else {
-                            $0.tintColor = self.tint
+            if selectedSegment != oldValue {
+                UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0.7, options: UIViewAnimationOptions.curveEaseOut, animations: {
+                    switch(self.contentType) {
+                    case .icon, .hybrid, .hybridVertical:
+                        ((self.subviews.filter(isUIButton)) as! [UIButton]).forEach {
+                            if $0.tag == self.selectedSegment {
+                                $0.tintColor = self.highlightTint
+                                self.highlightView.frame.origin.x = $0.frame.origin.x
+                            } else {
+                                $0.tintColor = self.tint
+                            }
+                        }
+                    case .text:
+                        ((self.subviews.filter(isUIButton)) as! [UIButton]).forEach {
+                            if $0.tag == self.selectedSegment {
+                                $0.setTitleColor(self.highlightTint, for: UIControlState())
+                                self.highlightView.frame.origin.x = $0.frame.origin.x
+                            } else {
+                                $0.setTitleColor(self.tint, for: UIControlState())
+                            }
                         }
                     }
-                case .text:
-                    ((self.subviews.filter(isUIButton)) as! [UIButton]).forEach {
-                        if $0.tag == self.selectedSegment {
-                            $0.setTitleColor(self.highlightTint, for: UIControlState())
-                            self.highlightView.frame.origin.x = $0.frame.origin.x
-                        } else {
-                            $0.setTitleColor(self.tint, for: UIControlState())
-                        }
-                    }
-                }
-                
-                }, completion:nil)
+                    
+                    }, completion:nil)
+            }
         }
         
     }
@@ -279,7 +281,7 @@ open class XMSegmentedControl: UIView {
                 
                 switch contentType {
                 case .icon:
-                    tab.imageEdgeInsets = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+                    tab.imageEdgeInsets = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
                     tab.imageView?.contentMode = UIViewContentMode.scaleAspectFit
                     tab.tintColor = i == selectedSegment ? highlightTint : tint
                     tab.setImage(segmentIcon[i], for: UIControlState())
@@ -330,7 +332,7 @@ open class XMSegmentedControl: UIView {
             case .topEdge:
                 highlightView = UIView(frame: CGRect(x: starting, y: 0, width: width, height: edgeHighlightHeight))
             case .bottomEdge:
-                highlightView = UIView(frame: CGRect(x: starting, y: frame.height - edgeHighlightHeight, width: width, height: edgeHighlightHeight))
+                highlightView = UIView(frame: CGRect(x: starting + width * 0.2, y: frame.height - edgeHighlightHeight, width: width * 0.6, height: edgeHighlightHeight))
             }
             
             highlightView.backgroundColor = highlightColor
@@ -378,7 +380,7 @@ open class XMSegmentedControl: UIView {
             let tabBarSections:Int = segmentIcon.count
             let positionWidth = startingPositionAndWidth(totalWidth, distribution: itemWidthDistribution, segmentCount: tabBarSections, selectedIndex: selectedSegment)
             addHighlightView(startingPosition: positionWidth.startingPosition, width: positionWidth.sectionWidth)
-            addSegments(startingPosition: positionWidth.startingPosition, sections: tabBarSections, width: positionWidth.sectionWidth, height: self.frame.height)
+            addSegments(startingPosition: 0, sections: tabBarSections, width: positionWidth.sectionWidth, height: self.frame.height)
         } else if contentType == .hybrid {
             let tabBarSections:Int = segmentContent.text.count
             let positionWidth = startingPositionAndWidth(totalWidth, distribution: itemWidthDistribution, segmentCount: tabBarSections, selectedIndex: selectedSegment)

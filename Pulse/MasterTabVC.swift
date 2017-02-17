@@ -50,9 +50,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate var exploreLabel = UILabel()
     fileprivate var feedLabel = UILabel()
     
-    fileprivate var pulseAppButton = IconContainer(frame: CGRect(x: 0,y: 0,
-                                                                width: IconSizes.medium.rawValue,
-                                                                height: IconSizes.small.rawValue + Spacing.s.rawValue))
+    fileprivate var pulseAppButton = UIButton(frame: CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue))
     fileprivate var pulseAppButtonTap = UITapGestureRecognizer()
 
     fileprivate var panInteractionController = PanHorizonInteractionController()
@@ -171,9 +169,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
 
         viewControllers = [accountNavVC, exploreNavVC, homeNavVC]
         
-        let tabAccount = UITabBarItem(title: "Account", image: UIImage(named: "settings"), selectedImage: UIImage(named: "profile"))
-        let tabExplore = UITabBarItem(title: "Explore", image: UIImage(named: "search"), selectedImage: UIImage(named: "search"))
-        let tabHome = UITabBarItem(title: "Home", image: UIImage(named: "browse"), selectedImage: UIImage(named: "explore"))
+        let tabAccount = UITabBarItem(title: nil, image: UIImage(named: "tab-profile"), tag: 10)
+        let tabExplore = UITabBarItem(title: nil, image: UIImage(named: "tab-explore"), tag: 20)
+        let tabHome = UITabBarItem(title: nil, image: UIImage(named: "tab-home"), tag: 30)
+        
+        UITabBar.appearance().tintColor = pulseBlue
         
         accountVC.tabBarItem = tabAccount
         exploreVC.tabBarItem = tabExplore
@@ -185,8 +185,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         rectToRight.origin.x = view.frame.maxX
         
         delegate = self
-        tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.clear)
-        tabBar.isHidden = true
+        tabBar.backgroundImage = GlobalFunctions.imageWithColor(UIColor.white)
+        //tabBar.isHidden = true
         
         panInteractionController.wireToViewController(self)
     }
@@ -203,6 +203,9 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         
         pulseAppButtonTap = UITapGestureRecognizer(target: self, action: #selector(handleAppButtonTap))
         pulseAppButton.addGestureRecognizer(pulseAppButtonTap)
+        
+        //pulseAppButton.setImage(UIImage(named: "pulse-logo"), for: .normal)
+        //pulseAppButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
     }
     
     func handleAppButtonTap() {
@@ -218,13 +221,15 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     }
     
     fileprivate func setupIcons(_selectedIndex: Int) {
+        /**
         view.addSubview(tabIcons)
         
         tabIcons.translatesAutoresizingMaskIntoConstraints = false
         tabIcons.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
         tabIcons.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         tabIcons.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4).isActive = true
-
+        **/
+        
         profileButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
         exploreButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
         feedButton.addTarget(self, action: #selector(setSelected(_:)), for: .touchUpInside)
@@ -355,24 +360,18 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
                 self.profileLabel.textColor = pulseBlue
                 self.profileButton.transform = xScaleUp
             }
-            pulseAppButton.setViewTitle("Profile")
-            
         case 1:
             exploreButton.isHighlighted = true
             DispatchQueue.main.async {
                 self.exploreLabel.textColor = pulseBlue
                 self.exploreButton.transform = xScaleUp
             }
-            pulseAppButton.setViewTitle("Explore")
-
         case 2:
             feedButton.isHighlighted = true
             DispatchQueue.main.async {
                 self.feedLabel.textColor = pulseBlue
                 self.feedButton.transform = xScaleUp
             }
-            pulseAppButton.setViewTitle("Feed")
-
         default: break
         }
     }

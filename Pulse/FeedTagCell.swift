@@ -17,6 +17,8 @@ class FeedTagCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        
+        addShadow()
         setupTagPreview()
     }
     
@@ -50,33 +52,32 @@ class FeedTagCell: UICollectionViewCell {
         addSubview(subtitleLabel)
         addSubview(answerCount)
         
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.heightAnchor.constraint(equalTo: contentView.heightAnchor).isActive = true
-        titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
-        titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: UIColor.white, alignment: .left)
-        
         answerCount.translatesAutoresizingMaskIntoConstraints = false
-        answerCount.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.15).isActive = true
+        answerCount.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.075).isActive = true
         answerCount.heightAnchor.constraint(equalTo: answerCount.widthAnchor).isActive = true
-        answerCount.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        answerCount.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        answerCount.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+        answerCount.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        answerCount.layoutIfNeeded()
         
         answerCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, answerCount.frame.height / 4, 0)
         answerCount.titleLabel!.setFont(FontSizes.caption.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
         answerCount.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
         answerCount.imageView?.contentMode = .scaleAspectFit
         
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.heightAnchor.constraint(equalTo: contentView.heightAnchor).isActive = true
+        titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+        titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        titleLabel.leadingAnchor.constraint(equalTo: answerCount.trailingAnchor, constant: Spacing.s.rawValue).isActive = true
+        titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: UIColor.black, alignment: .left)
+        
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor).isActive = true
         subtitleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
         subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.white, alignment: .left)
+        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.lightGray, alignment: .left)
         
         titleLabel.layoutIfNeeded()
-        answerCount.layoutIfNeeded()
         subtitleLabel.layoutIfNeeded()
         
         titleLabel.numberOfLines = 0
