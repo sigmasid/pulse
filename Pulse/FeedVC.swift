@@ -160,8 +160,6 @@ class FeedVC: UIViewController, previewDelegate {
     let collectionPeopleReuseIdentifier = "FeedPeopleCell"
     let collectionAnswerReuseIdentifier = "FeedAnswerCell"
     let collectionQuestionReuseIdentifier = "FeedQuestionCell"
-    let collectionPeopleHeaderReuseIdentifier = "ProfileHeader"
-    let collectionChannelHeaderReuseIdentifier = "ChannelHeader"
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -192,15 +190,6 @@ class FeedVC: UIViewController, previewDelegate {
         feedCollectionView?.register(FeedQuestionCell.self, forCellWithReuseIdentifier: collectionQuestionReuseIdentifier)
         feedCollectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: collectionAnswerReuseIdentifier)
         feedCollectionView?.register(FeedPeopleCell.self, forCellWithReuseIdentifier: collectionPeopleReuseIdentifier)
-        feedCollectionView?.register(UserProfileHeader.self,
-                                         forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                                         withReuseIdentifier: collectionPeopleHeaderReuseIdentifier)
-        feedCollectionView?.register(ChannelHeader.self,
-                                     forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                                     withReuseIdentifier: collectionChannelHeaderReuseIdentifier)
-        feedCollectionView?.register(UICollectionReusableView.self,
-                                     forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                                     withReuseIdentifier: "BlankHeader")
 
         view.addSubview(feedCollectionView!)
         
@@ -595,42 +584,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
     }
-    
-    func collectionView(_ collectionView: UICollectionView,
-                        viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        switch kind {
-            
-        case UICollectionElementKindSectionHeader:
-            
-            if selectedUser != nil {
-                
-                let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                                 withReuseIdentifier: "ProfileHeader", for: indexPath) as! UserProfileHeader
-                
-                headerView.backgroundColor = .white
-                headerView.updateUserDetails(selectedUser: selectedUser)
-                
-                return headerView
-            } else if selectedTag != nil {
-                let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                                 withReuseIdentifier: collectionChannelHeaderReuseIdentifier, for: indexPath) as! ChannelHeader
-                
-                headerView.backgroundColor = .white
-                
-                Database.getExpertsForTag(tagID: selectedTag.tagID!, completion: { (experts, error) in
-                    if error == nil {
-                        headerView.experts = experts
-                    }
-                })
-            }
-            return collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                   withReuseIdentifier: "BlankHeader", for: indexPath)
-            
-        default:
-            
-            assert(false, "Unexpected element kind")
-        }
-    }
 }
 
 extension FeedVC: UICollectionViewDelegateFlowLayout {
@@ -639,11 +592,6 @@ extension FeedVC: UICollectionViewDelegateFlowLayout {
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: (feedCollectionView!.frame.width - 20),
                       height: minCellHeight)
-    }
-    
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: feedCollectionView!.frame.width, height: IconSizes.large.rawValue + Spacing.s.rawValue * 2 + scopeBarHeight + IconSizes.medium.rawValue)
     }
 }
 

@@ -61,8 +61,7 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: "Ask Question", screenTitle: nil, screenImage: nil)
-            nav.shouldShowScope = false
+            nav.setNav(title: "Ask Question", image: nil)
         } else {
             title = "Ask Question"
         }

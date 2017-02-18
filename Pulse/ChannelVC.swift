@@ -8,7 +8,11 @@
 
 import UIKit
 
-class ChannelVC: UIViewController {
+protocol ChannelDelegate: class {
+    func userSelected(user : User)
+}
+
+class ChannelVC: UIViewController, ChannelDelegate {
 
     //set by delegate
     public var selectedTag : Tag! {
@@ -33,7 +37,6 @@ class ChannelVC: UIViewController {
             }
         }
     }
-    public var channelDelegate : feedVCDelegate!
     //end set by delegate
     
     fileprivate var headerNav : PulseNavVC?
@@ -73,6 +76,11 @@ class ChannelVC: UIViewController {
             isLoaded = true
         }
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -102,7 +110,7 @@ class ChannelVC: UIViewController {
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: toggleFollowButton)
 
         if let nav = headerNav {
-            nav.setNav(navTitle: nil, screenTitle: self.selectedTag.tagTitle ?? "Explore Tag", screenImage: nil)
+            nav.setNav(title: self.selectedTag.tagTitle ?? "Explore Tag", image: nil)
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
             toggleFollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         } else {
@@ -122,6 +130,12 @@ class ChannelVC: UIViewController {
     
     internal func goBack() {
         let _ = navigationController?.popViewController(animated: true)
+    }
+    
+    internal func userSelected(user: User) {
+        let userProfileVC = UserProfileVC()
+        navigationController?.pushViewController(userProfileVC, animated: true)
+        userProfileVC.selectedUser = user
     }
     
     fileprivate func setupScreenLayout() {
@@ -242,21 +256,20 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     //Did select item at index path
     func collectionView(_ collectionView: UICollectionView,
                         didSelectItemAt indexPath: IndexPath) {
-        channelDelegate.userSelected(type : .question, item : allQuestions[indexPath.row])
+        //channelDelegate.userSelected(type : .question, item : allQuestions[indexPath.row])
     }
     
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
     }
     
-    func collectionView(_ collectionView: UICollectionView,
-                        viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         switch kind {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ChannelHeader
             headerView.backgroundColor = .white
             headerView.experts = selectedTag.experts
+            headerView.delegate = self
             return headerView
             
         default: assert(false, "Unexpected element kind")
@@ -265,15 +278,11 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
 }
 
 extension ChannelVC: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (channel.frame.width - 20),
-                      height: minCellHeight)
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: (channel.frame.width - 20), height: minCellHeight)
     }
     
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: channel.frame.width, height: headerHeight)
     }
 }

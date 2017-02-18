@@ -59,7 +59,7 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: "Add Name", screenTitle: nil, screenImage: nil)
+            nav.setNav(title: "Add Name", image: nil)
         } else {
             title = "Add Name"
         }

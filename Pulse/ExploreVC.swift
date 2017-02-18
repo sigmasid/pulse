@@ -40,7 +40,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var exploreStack = [Explore]()
     var currentExploreMode : Explore! {
         didSet {
-            updateScopeBar()
             updateModes()
             updateMenu()
         }
@@ -85,15 +84,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(false)
 
-        navigationController?.isNavigationBarHidden = false //neeed in case coming back from messageVC
-        
-        guard let headerNav = headerNav else { return }
-        guard let scrollView = exploreContainer.getScrollView() else { return }
-        
-        headerNav.followScrollView(scrollView, delay: 20.0)
-        headerNav.scrollingNavbarDelegate = self
-        headerNav.getScopeBar()?.delegate = self
-        
         if exploreStack.last != nil {
             currentExploreMode = exploreStack.last
         }
@@ -120,10 +110,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(false)
-        
-        guard let headerNav = headerNav else { return }
-        headerNav.stopFollowingScrollView()
-        exploreContainer.getScrollView()?.contentInset = UIEdgeInsets.zero
     }
     
     override var prefersStatusBarHidden: Bool {
@@ -141,17 +127,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate func loadRoot() {
         currentExploreMode = Explore(currentMode: .root, currentSelection: 0, currentSelectedItem: nil)
         exploreStack.append(currentExploreMode)
-    }
-    
-    fileprivate func updateScopeBar() {
-        if let scopeBar = currentExploreMode.currentScopeBar {
-            headerNav?.shouldShowScope = false
-            headerNav?.updateScopeBar(titles: scopeBar.titles,
-                                      icons: scopeBar.icons,
-                                      selected: currentExploreMode.currentSelection )
-        } else {
-            headerNav?.shouldShowScope = false
-        }
     }
     
     func scrollingNavDidSet(_ controller: PulseNavVC, state: NavBarState) {
@@ -460,15 +435,14 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             let channelVC = ChannelVC()
             navigationController?.pushViewController(channelVC, animated: true)
             channelVC.selectedTag = item as! Tag
-            channelVC.channelDelegate = self
         case .question:
             selectedQuestion = item as! Question
             currentExploreMode = Explore(currentMode: .question, currentSelection: 0, currentSelectedItem: selectedQuestion)
             exploreStack.append(currentExploreMode)
         case .people:
-            selectedUser = item as! User
-            currentExploreMode = Explore(currentMode: .people, currentSelection: 0, currentSelectedItem: selectedUser)
-            exploreStack.append(currentExploreMode)
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = item as! User
         default: break
         }
     }
@@ -484,7 +458,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         navigationItem.rightBarButtonItem = rightButton != nil ? UIBarButtonItem(customView: rightButton!) : nil
         
         if let nav = headerNav {
-            nav.setNav(navTitle: navTitle, screenTitle: screentitle, screenImage: navImage)
+            nav.setNav(title: screentitle, image: navImage)
         } else {
             title = navTitle
         }
@@ -767,8 +741,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate func setupExplore() {
         view.backgroundColor = UIColor.white
         
-        headerNav?.getScopeBar()?.delegate = self
-
         exploreContainer = FeedVC()
         GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
 

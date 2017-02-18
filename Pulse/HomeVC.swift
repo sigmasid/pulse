@@ -133,7 +133,7 @@ class HomeVC: UIViewController, feedVCDelegate {
                     self.toggleLoading(show: false, message : nil)
                     
                     guard let nav = self.navigationController as? PulseNavVC else { return }
-                    nav.setNav(navTitle: nil, screenTitle: question.qTitle, screenImage: nil)
+                    nav.setNav(title: question.qTitle, image: nil)
                     nav.setNavigationBarHidden(false, animated: true)
                 } else {
                     self.toggleLoading(show: true, message : "No answers found")

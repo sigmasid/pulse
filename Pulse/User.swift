@@ -36,7 +36,8 @@ class User {
     var socialSources = [ Social : Bool ]()
     
     dynamic var uCreated = false
-
+    dynamic var uDetailedCreated = false
+    
     enum Gender {
         case male
         case female
@@ -98,18 +99,21 @@ class User {
         }
         
         if detailedSnapshot.hasChild("answers") {
-            for child in detailedSnapshot.children {
+            for child in detailedSnapshot.childSnapshot(forPath: "answers").children {
                 let currentAnswer = Answer(aID: (child as AnyObject).key, qID: (child as AnyObject).value)
                 self.answers.append(currentAnswer)
             }
         }
         
         if detailedSnapshot.hasChild("expertiseTags") {
-            for child in detailedSnapshot.children {
-                let currentTag = Tag(tagID: (child as AnyObject).key, tagTitle: (child as AnyObject).value)
+            for child in detailedSnapshot.childSnapshot(forPath: "expertiseTags").children {
+                let tagTitle = (child as! FIRDataSnapshot).value as? String
+                let currentTag = Tag(tagID: (child as AnyObject).key, tagTitle: tagTitle ?? "")
                 self.expertiseTags.append(currentTag)
             }
         }
+        
+        uDetailedCreated = true
     }
     
     init(user: FIRUser) {

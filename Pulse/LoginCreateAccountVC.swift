@@ -87,7 +87,7 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
 
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: "Create Account", screenTitle: nil, screenImage: nil)
+            nav.setNav(title: "Create Account", image: nil)
         } else {
             title = "Create Account"
         }

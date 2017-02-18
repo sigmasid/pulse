@@ -49,7 +49,7 @@ class InboxVC: UITableViewController {
     //Update Nav Header
     fileprivate func updateHeader() {
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: "Conversations", screenTitle: nil, screenImage: nil)
+            nav.setNav(title: "Conversations", image: nil)
         } else {
             title = "Conversations"
         }

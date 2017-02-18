@@ -210,7 +210,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
     
     func updateNav(title : String?, image: UIImage?) {
         if let nav = nav {
-            nav.setNav(navTitle: title, screenTitle: nil, screenImage: image)
+            nav.setNav(title: title, image: image)
         }
     }
     
@@ -309,7 +309,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         }
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: title, screenTitle: nil, screenImage: nil)
+            nav.setNav(title: title, image: nil)
         } else {
             parent?.title = title
         }

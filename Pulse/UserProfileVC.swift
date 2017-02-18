@@ -8,38 +8,43 @@
 
 import UIKit
 
+protocol UserProfileDelegate: class {
+    func askQuestion()
+}
+
+
 class UserProfileVC: UIViewController, previewDelegate {
     
-    //set by delegate
-    var profileDelegate : feedVCDelegate!
+    /** Delegate Vars **/
     public var selectedUser : User! {
         didSet {
             if !selectedUser.uCreated {
                 Database.getUser(selectedUser.uID!, completion: {(user, error) in
                     if error == nil {
                         self.selectedUser = user
-                        
-                        Database.getProfilePicForUser(user: user, completion: { profileImage in
-                            user.thumbPicImage = profileImage
-                            self.updateHeader()
-                        })
+                        self.updateHeader()
                     }
                 })
+            } else if !selectedUser.uDetailedCreated {
+                getDetailUserProfile()
             } else {
-                updateHeader()
+                allAnswers = selectedUser.answers
+                updateDataSource()
             }
             
-            
+            if selectedUser.thumbPicImage == nil {
+                getUserProfilePic()
+            }
         }
     }
-    //end set by delegate
     
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
-    
+    /** End Delegate Vars **/
+
     fileprivate var headerNav : PulseNavVC?
     fileprivate var QAVC : QAManagerVC!
-    var selectedAnswer: Answer!
+    fileprivate var selectedAnswer: Answer!
 
     fileprivate var allAnswers = [Answer]()
     fileprivate var isLoaded = false
@@ -49,7 +54,7 @@ class UserProfileVC: UIViewController, previewDelegate {
     fileprivate var profile : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
     fileprivate let headerHeight : CGFloat = 225
-    fileprivate let headerReuseIdentifier = "ChannelHeader"
+    fileprivate let headerReuseIdentifier = "UserProfileHeader"
     fileprivate let answerReuseIdentifier = "FeedAnswerCell"
     
     /** Transition Vars **/
@@ -99,8 +104,9 @@ class UserProfileVC: UIViewController, previewDelegate {
             
             view.backgroundColor = .white
             setupScreenLayout()
+            updateHeader()
+
             definesPresentationContext = true
-            
             isLoaded = true
         }
     }
@@ -109,32 +115,60 @@ class UserProfileVC: UIViewController, previewDelegate {
         super.didReceiveMemoryWarning()
     }
     
+    internal func getDetailUserProfile() {
+        Database.getDetailedUserProfile(user: selectedUser, completion: { updatedUser in
+            let userImage = self.selectedUser.thumbPicImage
+            
+            self.selectedUser = updatedUser
+            self.selectedUser.thumbPicImage = userImage
+        })
+    }
+    
+    internal func getUserProfilePic() {
+        Database.getProfilePicForUser(user: selectedUser, completion: { profileImage in
+            self.selectedUser.thumbPicImage = profileImage
+            
+            if self.profile != nil {
+                for view in self.profile.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
+                    view.setNeedsDisplay()
+                }
+            }
+        })
+    }
+    
     //Once the channel is set and pulled from database -> reload the datasource for collection view
-    func updateDataSource() {
+    internal func updateDataSource() {
         if !isLayoutSetup {
             setupScreenLayout()
+        }
+        
+        for (index, answer) in allAnswers.enumerated() {
+            let currentAnswerData = AnswerPreviewData(answer: answer,
+                                                      question: nil,
+                                                      answerCollection: [],
+                                                      gettingImageForAnswerPreview: false,
+                                                      gettingInfoForAnswerPreview: false)
+            answerStack.insert(currentAnswerData, at: index)
         }
         
         profile.delegate = self
         profile.dataSource = self
         profile.reloadData()
         profile.layoutIfNeeded()
+        
+        
     }
     
     //Update Nav Header
     fileprivate func updateHeader() {
         let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = headerNav {
-            nav.setNav(navTitle: nil, screenTitle: self.selectedUser.name ?? "Explore User", screenImage: nil)
+            nav.setNav(title: self.selectedUser.name ?? "Explore User", image: nil)
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        } else {
-            title = self.selectedUser.name ?? "Explore Tag"
         }
     }
-
     
     internal func goBack() {
         let _ = navigationController?.popViewController(animated: true)
@@ -148,8 +182,8 @@ class UserProfileVC: UIViewController, previewDelegate {
             layout.minimumInteritemSpacing = 10
             
             profile = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-            profile.register(FeedQuestionCell.self, forCellWithReuseIdentifier: answerReuseIdentifier)
-            profile.register(ChannelHeader.self,
+            profile.register(FeedAnswerCell.self, forCellWithReuseIdentifier: answerReuseIdentifier)
+            profile.register(UserProfileHeader.self,
                               forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
                               withReuseIdentifier: headerReuseIdentifier)
             
@@ -181,7 +215,6 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: answerReuseIdentifier, for: indexPath) as! FeedAnswerCell
-        let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
         
         cell.contentView.backgroundColor = .white
         cell.updateLabel(nil, _subtitle: nil, _image : nil)
@@ -234,7 +267,6 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 })
             }
         } else if answerStack[indexPath.row].gettingInfoForAnswerPreview {
-            
             //ignore if already fetching the image, so don't refetch if already getting
         }
         
@@ -271,7 +303,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func showQuestion(_ selectedQuestion : Question?, answerCollection: [String], selectedTag : Tag) {
-        QAVC = QAManagerVC()
+        let QAVC = QAManagerVC()
         
         //need to be set first
         QAVC.watchedFullPreview = watchedFullPreview
@@ -324,7 +356,6 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
-        profileDelegate.userSelected(type : .answer, item : allAnswers[indexPath.row])
     }
     
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
@@ -336,9 +367,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         
         switch kind {
         case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                             withReuseIdentifier: "ProfileHeader", for: indexPath) as! UserProfileHeader
-            
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! UserProfileHeader
             headerView.backgroundColor = .white
             headerView.updateUserDetails(selectedUser: selectedUser)
         

@@ -88,10 +88,11 @@ class MessageVC: UIViewController, UITextViewDelegate{
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? PulseNavVC {
-            nav.shouldShowScope = false
+            
+            /** NEED TO UPDATE **/
             toUserImage != nil ?
-                nav.setNav(navTitle: nil, screenTitle: nil, screenImage: toUserImage) :
-                nav.setNav(navTitle: msgToUserName.text, screenTitle: nil, screenImage: nil)
+                nav.setNav(title: msgToUserName.text, image: toUserImage) :
+                nav.setNav(title: msgToUserName.text, image: nil)
         } else {
             title = "Conversations"
         }

@@ -16,6 +16,7 @@ class ChannelHeader: UICollectionReusableView {
             expertsPreview?.reloadData()
         }
     }
+    public var delegate: ChannelDelegate!
     
     private var expertsPreview : UICollectionView!
     private var expertsLabel = UILabel()
@@ -50,9 +51,12 @@ class ChannelHeader: UICollectionReusableView {
         
         addSubview(expertsLabel)
         expertsLabel.text = "FEATURING"
+        
         expertsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
         expertsLabel.translatesAutoresizingMaskIntoConstraints = false
-        expertsLabel.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        expertsLabel.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        expertsLabel.heightAnchor.constraint(equalToConstant: Spacing.s.rawValue).isActive = true
+
         expertsLabel.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         expertsLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         expertsLabel.layoutIfNeeded()
@@ -65,7 +69,7 @@ class ChannelHeader: UICollectionReusableView {
 
         addSubview(expertsPreview)
         expertsPreview.translatesAutoresizingMaskIntoConstraints = false
-        expertsPreview.topAnchor.constraint(equalTo: expertsLabel.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        expertsPreview.topAnchor.constraint(equalTo: expertsLabel.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
         expertsPreview.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         expertsPreview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         expertsPreview.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
@@ -144,6 +148,10 @@ extension ChannelHeader: UICollectionViewDataSource, UICollectionViewDelegate, U
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: frame.width / 4.5,
                       height: IconSizes.medium.rawValue + Spacing.m.rawValue)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        delegate.userSelected(user: experts[indexPath.row])
     }
 }
 

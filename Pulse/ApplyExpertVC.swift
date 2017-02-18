@@ -73,12 +73,10 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: nil, screenTitle: "Recommend Experts", screenImage: nil)
-            nav.shouldShowScope = true
-            nav.updateScopeBar(titles: ["Apply","Recommend"], icons: nil, selected: 0)
-            nav.getScopeBar()?.delegate = self
-
-            xmSegmentedControl(nav.getScopeBar()!, selectedSegment: 0)
+            nav.setNav(title: "Recommend Experts", image: nil)
+            
+            /** Need to update **/
+            //xmSegmentedControl(nav.getScopeBar()!, selectedSegment: 0)
 
         } else {
             title = "Recommend an Expert"
