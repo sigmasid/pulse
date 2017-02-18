@@ -797,7 +797,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "6a02c05f-e838-441a-bf37-444d3ac9a9ea";
+				PROVISIONING_PROFILE = "6152bc73-dc2e-425a-bbc7-758a714ffa5f";
 				PROVISIONING_PROFILE_SPECIFIER = PulseDistribution;
 				SWIFT_VERSION = 3.0;
 			};
