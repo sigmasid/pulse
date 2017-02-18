@@ -458,7 +458,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         navigationItem.rightBarButtonItem = rightButton != nil ? UIBarButtonItem(customView: rightButton!) : nil
         
         if let nav = headerNav {
-            nav.setNav(title: screentitle, image: navImage)
+            nav.setNav(title: screentitle)
         } else {
             title = navTitle
         }

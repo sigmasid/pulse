@@ -10,15 +10,17 @@ import UIKit
 
 private let reuseIdentifier = "AnswerCell"
 
-class AnswersCollectionVC: UICollectionView, previewDelegate {
+class AnswersCollection: UICollectionView, previewDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
     /** End Delegate Vars **/
     
     //Main data source var -
     public var allAnswers = [Answer]() {
-        willSet {
-            updateAnswerStack(answers: newValue)
+        didSet {
+            print("will set fired with \(allAnswers.count)")
+            updateAnswerStack(answers: allAnswers)
+            reloadData()
         }
     }
     public var selectedUser: User?
@@ -38,6 +40,8 @@ class AnswersCollectionVC: UICollectionView, previewDelegate {
     
     /** Collection View Vars **/
     fileprivate let minCellHeight : CGFloat = 225
+    fileprivate let headerHeight : CGFloat = 225
+    
     fileprivate var initialFrame = CGRect.zero
     fileprivate var selectedIndex : IndexPath? {
         didSet {
@@ -86,11 +90,12 @@ class AnswersCollectionVC: UICollectionView, previewDelegate {
 
     // MARK: UICollectionViewDataSource
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return 0
+        return 1
     }
 
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        print("number of items in section are \(allAnswers.count)")
         return allAnswers.count
     }
     
@@ -102,6 +107,7 @@ class AnswersCollectionVC: UICollectionView, previewDelegate {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        print("cell for item at fired")
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! FeedAnswerCell
         
         cell.contentView.backgroundColor = .white
@@ -206,15 +212,35 @@ class AnswersCollectionVC: UICollectionView, previewDelegate {
         
         return cell
     }
+    
+    func collectionView(_ collectionView: UICollectionView,
+                        viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        
+        switch kind {
+        case UICollectionElementKindSectionHeader:
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: reuseIdentifier, for: indexPath) as! UserProfileHeader
+            headerView.backgroundColor = .white
+            headerView.updateUserDetails(selectedUser: selectedUser!)
+            
+            return headerView
+            
+        default: assert(false, "Unexpected element kind")
+        }
+    }
 }
 
-extension AnswersCollectionVC  {
-    //Once the channel is set and pulled from database -> reload the datasource for collection view
-
+extension AnswersCollection: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: (frame.width - 20), height: minCellHeight)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return CGSize(width: frame.width, height: headerHeight)
+    }
 }
 
 /* COLLECTION VIEW */
-extension AnswersCollectionVC  {
+extension AnswersCollection  {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     func updateAnswerCell(_ cell: FeedAnswerCell, atIndexPath indexPath: IndexPath) {
@@ -239,11 +265,5 @@ extension AnswersCollectionVC  {
     
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
-    }
-}
-
-extension AnswersCollectionVC: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (frame.width - 20), height: minCellHeight)
     }
 }

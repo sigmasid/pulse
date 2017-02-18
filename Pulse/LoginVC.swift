@@ -95,9 +95,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
         
         if let nav = navigationController as? PulseNavVC {
             self.nav = nav
-            self.nav.setNav(title: "Login", image: nil)
-        } else {
-            parent?.title = "Login"
+            self.nav.setNav(title: "Login")
         }
     }
     
@@ -192,13 +190,13 @@ class LoginVC: UIViewController, UITextFieldDelegate {
                 case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
                 case FIRAuthErrorCode.errorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
 
-                default: self.nav?.setNav(title: "error signing in", image: nil)
+                default: self.nav?.setNav(title: "error signing in")
                 }
             }
             else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                self.nav?.setNav(title: "Welcome", image: nil)
+                self.nav?.setNav(title: "Welcome")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
@@ -295,7 +293,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
             }
             else {
                 self.removeLoading()
-                self.nav?.setNav(title: aUser!.displayName, image: nil)
+                self.nav?.setNav(title: aUser!.displayName)
                 self._loggedInSuccess()
                 print("posted facebook login success update")
             }
@@ -312,7 +310,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
                 FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
                     if let blockError = blockError as? NSError {
                         self.removeLoading()
-                        self.nav?.setNav(title: blockError.description, image: nil)
+                        self.nav?.setNav(title: blockError.description)
                     } else {
                         self.removeLoading()
                         self._loggedInSuccess()
@@ -320,7 +318,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
                 }
             } else {
                 self.removeLoading()
-                self.nav?.setNav(title: "Uh oh! That didn't work", image: nil)
+                self.nav?.setNav(title: "Uh oh! That didn't work")
             }
         }
     }

@@ -10,7 +10,6 @@ import UIKit
 enum NavMode { case browseImage, browse, detail, none }
 
 public class PulseNavBar: UINavigationBar {
-    public var navImage = UIImageView()
     public var navTitle = UILabel()
     
     fileprivate var searchContainer : UIView!
@@ -48,16 +47,8 @@ public class PulseNavBar: UINavigationBar {
         super.init(coder: aDecoder)!
     }
     
-    public func setTitles(title : String?, image : UIImage?) {
-        if image != nil {
-            addNavImage()
-        }
-        
-        DispatchQueue.main.async(execute: {
-            self.navImage.image = image
-            self.navTitle.text = title?.uppercased()
-        })
-        
+    public func setTitles(title : String?) {
+        self.navTitle.text = title?.uppercased()
     }
     
     public func toggleSearch(show: Bool) {
@@ -87,17 +78,6 @@ public class PulseNavBar: UINavigationBar {
         isDetailSetup = true
     }
 
-    
-    fileprivate func addNavImage() {
-        addSubview(navImage)
-        navImage.frame = frame
-
-        navImage.layer.masksToBounds = true
-        navImage.layer.shouldRasterize = true
-        navImage.layer.rasterizationScale = UIScreen.main.scale
-        navImage.contentMode = .scaleAspectFill
-    }
-    
     fileprivate func addSearch() {
         searchContainer = UIView(frame: CGRect(x: IconSizes.large.rawValue,
                                                y: Spacing.s.rawValue,

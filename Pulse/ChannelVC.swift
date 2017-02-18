@@ -110,7 +110,7 @@ class ChannelVC: UIViewController, ChannelDelegate {
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: toggleFollowButton)
 
         if let nav = headerNav {
-            nav.setNav(title: self.selectedTag.tagTitle ?? "Explore Tag", image: nil)
+            nav.setNav(title: self.selectedTag.tagTitle ?? "Explore Tag")
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
             toggleFollowButton.addTarget(self, action: #selector(follow), for: UIControlEvents.touchUpInside)
         } else {

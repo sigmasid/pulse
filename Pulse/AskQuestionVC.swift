@@ -26,7 +26,8 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     fileprivate var questionBody = UITextView()
     fileprivate var postButton = PulseButton()
     
-    fileprivate var questionTo = UIView()
+    fileprivate var questionTo = PulseMenu(_axis: .vertical, _spacing: 0)
+    fileprivate var questionImage = UIImageView(frame: CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue))
     fileprivate var questionToTitle = UILabel()
     fileprivate var questionToSubtitle = UILabel()
     
@@ -38,15 +39,28 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        extendedLayoutIncludesOpaqueBars = true
+    }
+    
+    override func viewDidLayoutSubviews() {
         if !isLoaded {
-            updateHeader()
             setupQuestionTo()
             setupQuestionBox()
-            
+            updateHeader()
+
             view.backgroundColor = UIColor.white
+
+            tabBarController?.tabBar.isHidden = true
+            isLoaded = true
         }
     }
-
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        tabBarController?.tabBar.isHidden = false
+        extendedLayoutIncludesOpaqueBars = false
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
@@ -59,11 +73,9 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
+
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Ask Question", image: nil)
-        } else {
-            title = "Ask Question"
+            nav.setNav(title: selectedUser.name != nil ? "Ask \(selectedUser.name!.components(separatedBy: " ")[0])" : "Ask Question")
         }
     }
     
@@ -143,6 +155,7 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     fileprivate func setAskUser() {
         guard selectedUser != nil else { return }
         
+        questionImage.image = selectedUser.thumbPicImage
         questionToTitle.text = selectedUser.name?.capitalized
         questionToSubtitle.text = selectedUser.shortBio
         questionBody.text = "ask \(selectedUser.name?.capitalized) your question"
@@ -199,37 +212,35 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     }
     
     fileprivate func setupQuestionTo() {
+        view.addSubview(questionImage)
         view.addSubview(questionTo)
         
+        questionImage.translatesAutoresizingMaskIntoConstraints = false
+        questionImage.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        questionImage.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        questionImage.widthAnchor.constraint(equalTo: questionImage.heightAnchor).isActive = true
+        questionImage.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+
         questionTo.translatesAutoresizingMaskIntoConstraints = false
-        questionTo.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        questionTo.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        questionTo.topAnchor.constraint(equalTo: questionImage.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
         questionTo.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         questionTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
-        questionTo.addSubview(questionToTitle)
-        questionTo.addSubview(questionToSubtitle)
+        questionTo.addArrangedSubview(questionToTitle)
+        questionTo.addArrangedSubview(questionToSubtitle)
         
-        questionToTitle.translatesAutoresizingMaskIntoConstraints = false
-        questionToTitle.centerXAnchor.constraint(equalTo: questionTo.centerXAnchor).isActive = true
-        questionToTitle.topAnchor.constraint(equalTo: questionTo.topAnchor).isActive = true
+        questionImage.layoutIfNeeded()
+        questionImage.contentMode = .scaleAspectFill
+        questionImage.makeRound()
         
         questionToTitle.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)
-        
-        questionToSubtitle.translatesAutoresizingMaskIntoConstraints = false
-        questionToSubtitle.centerXAnchor.constraint(equalTo: questionTo.centerXAnchor).isActive = true
-        questionToSubtitle.topAnchor.constraint(equalTo: questionToTitle.bottomAnchor).isActive = true
-        questionToSubtitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        
+        questionToSubtitle.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.gray, alignment: .center)
+
         questionToSubtitle.numberOfLines = 0
         questionToSubtitle.lineBreakMode = .byWordWrapping
-        questionToSubtitle.layoutIfNeeded()
-        
-        questionToSubtitle.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.gray, alignment: .center)
     }
     
     func textViewDidBeginEditing(_ textView: UITextView) {
-        
         if textView.text == "Type your question here" {
             textView.text = ""
             textView.textColor = UIColor.black

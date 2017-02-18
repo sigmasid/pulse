@@ -37,7 +37,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
     fileprivate var msgSend = UIButton()
     
     fileprivate var sendBottomConstraint : NSLayoutConstraint!
-
+    fileprivate var textViewHeightConstraint : NSLayoutConstraint!
     //Bools for logic checks
     fileprivate var _hasMovedUp = false
     fileprivate var isExistingConversation = false
@@ -45,24 +45,39 @@ class MessageVC: UIViewController, UITextViewDelegate{
     fileprivate var isUserLoaded = false
     
     fileprivate var reuseIdentifier = "messageCell"
-
+    fileprivate var isLoaded = false
+    fileprivate var observersAdded = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor.white
         
-        navigationController?.isNavigationBarHidden = false
-        
-        hideKeyboardWhenTappedAround()
-        setupLayout()
-        updateHeader()
+        if !observersAdded {
+            extendedLayoutIncludesOpaqueBars = true
+            hideKeyboardWhenTappedAround()
 
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+            observersAdded = true
+        }
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.isNavigationBarHidden = false
+    override func viewDidLayoutSubviews() {
+        if !isLoaded {
+            
+            view.backgroundColor = UIColor.white
+            view.layoutIfNeeded()
+
+            setupLayout()
+            updateHeader()
+            
+            isLoaded = true
+        }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        tabBarController?.tabBar.isHidden = false
+        extendedLayoutIncludesOpaqueBars = false
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -72,15 +87,15 @@ class MessageVC: UIViewController, UITextViewDelegate{
             Database.removeConversationObserver(conversationID: _conversationID)
         }
     }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        navigationController?.isNavigationBarHidden = true
-    }
-    
+
     //Update Nav Header
     fileprivate func updateHeader() {
         let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
@@ -88,16 +103,9 @@ class MessageVC: UIViewController, UITextViewDelegate{
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? PulseNavVC {
-            
-            /** NEED TO UPDATE **/
-            toUserImage != nil ?
-                nav.setNav(title: msgToUserName.text, image: toUserImage) :
-                nav.setNav(title: msgToUserName.text, image: nil)
-        } else {
-            title = "Conversations"
+            nav.setNav(title: msgToUserName.text != nil ? "Message \(msgToUserName.text!.components(separatedBy: " ")[0])" : "New Message")
         }
     }
-
     
     func goBack() {
         let _ = navigationController?.popViewController(animated: true)
@@ -106,8 +114,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
-            sendBottomConstraint.constant = -(keyboardHeight + Spacing.xs.rawValue)
-            sendContainer.layoutIfNeeded()
+            sendBottomConstraint.constant = -keyboardHeight
             conversationHistory.layoutIfNeeded()
             
             if messages.count > 0 {
@@ -118,7 +125,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
     }
     
     func keyboardWillHide(notification: NSNotification) {
-        sendBottomConstraint.constant = -Spacing.xs.rawValue
+        sendBottomConstraint.constant = 0
 
         sendContainer.layoutIfNeeded()
         conversationHistory.layoutIfNeeded()
@@ -141,7 +148,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
     }
     
     fileprivate func keepConversationUpdated() {
-        
         if !hasConversationObserver {
             hasConversationObserver = true
 
@@ -190,17 +196,12 @@ class MessageVC: UIViewController, UITextViewDelegate{
         msgTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
         sendContainer.translatesAutoresizingMaskIntoConstraints = false
-        if let _ = navigationController as? PulseNavVC {
-            sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: bottomLayoutGuide.topAnchor,
-                                                                         constant: -IconSizes.large.rawValue - Spacing.xs.rawValue)
-        } else {
-            sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.xs.rawValue)
-        }
+        sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
         sendBottomConstraint.isActive = true
-        sendContainer.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.1).isActive = true
         sendContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        textViewHeightConstraint = sendContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
+        textViewHeightConstraint.isActive = true
         sendContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sendContainer.layoutIfNeeded()
 
         conversationHistory.translatesAutoresizingMaskIntoConstraints = false
         conversationHistory.topAnchor.constraint(equalTo: msgTo.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
@@ -219,34 +220,38 @@ class MessageVC: UIViewController, UITextViewDelegate{
         
         msgSend.translatesAutoresizingMaskIntoConstraints = false
         msgSend.trailingAnchor.constraint(equalTo: sendContainer.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        msgSend.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        msgSend.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         msgSend.widthAnchor.constraint(equalTo: msgSend.heightAnchor).isActive = true
         msgSend.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor).isActive = true
         msgSend.layoutIfNeeded()
 
         msgBody.translatesAutoresizingMaskIntoConstraints = false
         msgBody.topAnchor.constraint(equalTo: sendContainer.topAnchor).isActive = true
-        msgBody.leadingAnchor.constraint(equalTo: sendContainer.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        msgBody.trailingAnchor.constraint(equalTo: msgSend.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        msgBody.leadingAnchor.constraint(equalTo: sendContainer.leadingAnchor).isActive = true
         msgBody.heightAnchor.constraint(equalTo: sendContainer.heightAnchor).isActive = true
+        msgBody.trailingAnchor.constraint(equalTo: sendContainer.trailingAnchor).isActive = true
+        
+        textViewHeightConstraint = msgBody.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
+        textViewHeightConstraint.isActive = true
         msgBody.layoutIfNeeded()
         
-        msgBody.backgroundColor = UIColor.white
-        msgBody.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        msgBody.textColor = UIColor.black
+        msgBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         msgBody.layer.borderColor = UIColor.lightGray.cgColor
         msgBody.layer.borderWidth = 1.0
         msgBody.delegate = self
         
         msgBody.text = "Type message here"
         msgBody.textColor = UIColor.lightGray
-
+        msgBody.isScrollEnabled = false
+        
         msgSend.makeRound()
         msgSend.setTitle("Send", for: UIControlState())
-        msgSend.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        msgSend.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
         msgSend.setDisabled()
-        
         msgSend.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
+
+        sendContainer.layoutIfNeeded()
+        tabBarController?.tabBar.isHidden = true
     }
     
     fileprivate func setupToUserLayout() {
@@ -286,6 +291,9 @@ class MessageVC: UIViewController, UITextViewDelegate{
     func textViewDidChange(_ textView: UITextView) {
         if textView.text != "" {
             self.msgSend.setEnabled()
+            
+            let sizeThatFitsTextView = textView.sizeThatFits(CGSize(width: textView.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+            textViewHeightConstraint.constant = sizeThatFitsTextView.height
         }
     }
     
@@ -306,10 +314,6 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return messages.count
     }
-    
-//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-//        return Spacing.l.rawValue
-//    }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! MessageTableCell

@@ -62,7 +62,7 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
         navigationItem.rightBarButtonItem = nil
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Update Profile", image: nil)
+            nav.setNav(title: "Update Profile")
         } else {
             title = "Update Profile"
         }

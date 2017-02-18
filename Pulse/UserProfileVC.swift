@@ -10,10 +10,11 @@ import UIKit
 
 protocol UserProfileDelegate: class {
     func askQuestion()
+    func sendMessage()
+    func shareProfile()
 }
 
-
-class UserProfileVC: UIViewController, previewDelegate {
+class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
     
     /** Delegate Vars **/
     public var selectedUser : User! {
@@ -62,6 +63,8 @@ class UserProfileVC: UIViewController, previewDelegate {
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
+    fileprivate var activityController: UIActivityViewController? //Used for share screen
+    
     fileprivate var answerStack = [AnswerPreviewData]()
     struct AnswerPreviewData {
         var answer : Answer!
@@ -105,10 +108,17 @@ class UserProfileVC: UIViewController, previewDelegate {
             view.backgroundColor = .white
             setupScreenLayout()
             updateHeader()
-
             definesPresentationContext = true
+
             isLoaded = true
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        guard selectedUser != nil else { return }
+        updateHeader()
     }
     
     override func didReceiveMemoryWarning() {
@@ -165,7 +175,7 @@ class UserProfileVC: UIViewController, previewDelegate {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = headerNav {
-            nav.setNav(title: self.selectedUser.name ?? "Explore User", image: nil)
+            nav.setNav(title: self.selectedUser.name ?? "Explore User")
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         }
     }
@@ -173,6 +183,35 @@ class UserProfileVC: UIViewController, previewDelegate {
     internal func goBack() {
         let _ = navigationController?.popViewController(animated: true)
     }
+    
+    /** Start Delegate Functions **/
+    func askQuestion() {
+        let questionVC = AskQuestionVC()
+        questionVC.selectedUser = selectedUser
+        navigationController?.pushViewController(questionVC, animated: true)
+    }
+    
+    func shareProfile() {
+        selectedUser.createShareLink(completion: { link in
+            guard let link = link else { return }
+            self.activityController = GlobalFunctions.shareContent(shareType: "person",
+                                                                   shareText: self.selectedUser.name ?? "",
+                                                                   shareLink: link, presenter: self)
+        })
+    }
+    
+    func sendMessage() {
+        let messageVC = MessageVC()
+        messageVC.toUser = selectedUser
+        
+        if let selectedUserImage = selectedUser.thumbPicImage {
+            messageVC.toUserImage = selectedUserImage
+        }
+        
+        navigationController?.pushViewController(messageVC, animated: true)
+    }
+    /** End Delegate Functions **/
+    
     
     fileprivate func setupScreenLayout() {
         if !isLayoutSetup {
@@ -370,7 +409,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! UserProfileHeader
             headerView.backgroundColor = .white
             headerView.updateUserDetails(selectedUser: selectedUser)
-        
+            headerView.profileDelegate = self
+            
             return headerView
             
         default: assert(false, "Unexpected element kind")

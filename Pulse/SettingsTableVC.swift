@@ -64,7 +64,7 @@ class SettingsTableVC: UIViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
         if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Update Profile", image: nil)
+            nav.setNav(title: "Update Profile")
         } else {
             title = "Update Profile"
         }

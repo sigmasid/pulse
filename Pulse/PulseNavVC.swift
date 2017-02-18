@@ -43,9 +43,9 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         super.didReceiveMemoryWarning()
     }
     
-    public func setNav(title: String?, image : UIImage?) {
+    public func setNav(title: String?) {
         guard navBar != nil else { return }
-        navBar.setTitles(title: title, image: image)
+        navBar.setTitles(title: title)
     }
 
     public func toggleSearch(show : Bool) {
@@ -53,7 +53,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         navBar.toggleSearch(show : show)
     }
 
-    fileprivate func updateBackgroundImage(image : UIImage?) {
+    public func updateBackgroundImage(image : UIImage?) {
         guard navBar != nil, let image = image else { return }
         navBar.setBackgroundImage(image, for: .default)
     }
