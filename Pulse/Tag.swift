@@ -41,6 +41,7 @@ class Tag : NSObject {
         
         self.tagDescription  = snapshot.childSnapshot(forPath: "description").value as? String
         self.previewImage = snapshot.childSnapshot(forPath: "previewImage").value as? String
+
         self.tagTitle = snapshot.childSnapshot(forPath: "title").value as? String
 
         for question in snapshot.childSnapshot(forPath: "questions").children {

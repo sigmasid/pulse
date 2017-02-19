@@ -20,31 +20,33 @@ let databaseRef = FIRDatabase.database().reference()
 var initialFeedUpdateComplete = false
 
 class Database {
+    static let channelsRef = databaseRef.child(Element.Channels.rawValue)
+    static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
 
-    static let tagsRef = databaseRef.child(Item.Tags.rawValue)
-    static let questionsRef = databaseRef.child(Item.Questions.rawValue)
-    static let answersRef = databaseRef.child(Item.Answers.rawValue)
-    static let answerStatsRef = databaseRef.child(Item.AnswerStats.rawValue)
+    static let tagsRef = databaseRef.child(Element.Tags.rawValue)
+    static let questionsRef = databaseRef.child(Element.Questions.rawValue)
+    static let answersRef = databaseRef.child(Element.Answers.rawValue)
+    static let answerStatsRef = databaseRef.child(Element.AnswerStats.rawValue)
 
-    static let answerCollectionsRef = databaseRef.child(Item.AnswerCollections.rawValue)
+    static let answerCollectionsRef = databaseRef.child(Element.AnswerCollections.rawValue)
 
-    static let messagesRef = databaseRef.child(Item.Messages.rawValue)
-    static let conversationsRef = databaseRef.child(Item.Conversations.rawValue)
+    static let messagesRef = databaseRef.child(Element.Messages.rawValue)
+    static let conversationsRef = databaseRef.child(Element.Conversations.rawValue)
 
     static var currentUserRef : FIRDatabaseReference!
     static var currentUserFeedRef : FIRDatabaseReference!
 
-    static let usersRef = databaseRef.child(Item.Users.rawValue)
-    static let usersPublicDetailedRef = databaseRef.child(Item.UserDetailedSummary.rawValue)
-    static let usersPublicSummaryRef = databaseRef.child(Item.UserSummary.rawValue)
+    static let usersRef = databaseRef.child(Element.Users.rawValue)
+    static let usersPublicDetailedRef = databaseRef.child(Element.UserDetailedSummary.rawValue)
+    static let usersPublicSummaryRef = databaseRef.child(Element.UserSummary.rawValue)
 
-    static let filtersRef = databaseRef.child(Item.Filters.rawValue)
-    static let settingsRef = databaseRef.child(Item.Settings.rawValue)
-    static let settingSectionsRef = databaseRef.child(Item.SettingSections.rawValue)
+    static let filtersRef = databaseRef.child(Element.Filters.rawValue)
+    static let settingsRef = databaseRef.child(Element.Settings.rawValue)
+    static let settingSectionsRef = databaseRef.child(Element.SettingSections.rawValue)
 
-    static let answersStorageRef = storageRef.child(Item.Answers.rawValue)
-    static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
-    static let usersStorageRef = storageRef.child(Item.Users.rawValue)
+    static let answersStorageRef = storageRef.child(Element.Answers.rawValue)
+    static let tagsStorageRef = storageRef.child(Element.Tags.rawValue)
+    static let usersStorageRef = storageRef.child(Element.Users.rawValue)
 
     static var masterQuestionIndex = [String : String]()
     static var masterTagIndex = [String : String]()
@@ -377,23 +379,37 @@ class Database {
     static func setCurrentUserPaths() {
         if let user = FIRAuth.auth()?.currentUser {
             currentUserRef = usersRef.child(user.uid)
-            currentUserFeedRef = usersRef.child(user.uid).child(Item.Feed.rawValue)
+            currentUserFeedRef = usersRef.child(user.uid).child(Element.Feed.rawValue)
         } else {
             currentUserRef = nil
             currentUserFeedRef = nil
         }
     }
     
-    static func getDatabasePath(_ type : Item, itemID : String) -> FIRDatabaseReference {
+    static func getDatabasePath(_ type : Element, itemID : String) -> FIRDatabaseReference {
         return databaseRef.child(type.rawValue).child(itemID)
     }
     
-    static func getStoragePath(_ type : Item, itemID : String) -> FIRStorageReference {
+    static func getStoragePath(_ type : Element, itemID : String) -> FIRStorageReference {
         return storageRef.child(type.rawValue).child(itemID)
     }
     /*** MARK END : DATABASE PATHS ***/
 
     /*** MARK START : EXPLORE FEED ***/
+    static func getExploreChannels(_ completion: @escaping (_ channels : [Channel], _ error : Error?) -> Void) {
+        var allChannels = [Channel]()
+        
+        channelsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
+            for channel in snapshot.children {
+                let child = channel as! FIRDataSnapshot
+                allChannels.append(Channel(cID: child.key, snapshot: child))
+            }
+            completion(allChannels, nil)
+        }, withCancel: { error in
+            completion(allChannels, error)
+        })
+    }
+    
     static func getExploreTags(_ completion: @escaping (_ tags : [Tag], _ error : Error?) -> Void) {
         var allTags = [Tag]()
         
@@ -494,6 +510,24 @@ class Database {
             completion(_currentTag, nil)
         }, withCancel: { error in
             //print("error gettings tag \(error)")
+        })
+    }
+    
+    static func getChannel(cID : String, completion: @escaping (_ channel : Channel, _ error : NSError?) -> Void) {
+        channelsRef.child(cID).observeSingleEvent(of: .value, with: { snap in
+            let _currentChannel = Channel(cID: cID, snapshot: snap)
+            completion(_currentChannel, nil)
+        }, withCancel: { error in
+            //print("error gettings tag \(error)")
+        })
+    }
+    
+    static func getChannelItems(channel : Channel, completion: @escaping (_ channel : Channel?) -> Void) {
+        channelItemsRef.child(channel.cID).observeSingleEvent(of: .value, with: { snap in
+            channel.updateChannel(detailedSnapshot: snap)
+            completion(channel)
+        }, withCancel: { error in
+            completion(nil)
         })
     }
     
@@ -821,7 +855,7 @@ class Database {
     
     static func updateFeedQuestions(_ tagID : String?, tagTitle: String?, questions : [String : String?], completion: @escaping (_ added: Bool) -> Void) {
         //add new questions to feed
-        let _updatePath = currentUserRef.child(Item.Feed.rawValue)
+        let _updatePath = currentUserRef.child(Element.Feed.rawValue)
         var post = [String : AnyObject]()
         
         if let _tagID = tagID {
@@ -884,8 +918,8 @@ class Database {
     static func keepUserTagsUpdated() {
         if User.isLoggedIn() {
             
-            let userTagsPath : FIRDatabaseQuery = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
-            activeListeners.append(getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags"))
+            let userTagsPath : FIRDatabaseQuery = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedTags")
+            activeListeners.append(getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedTags"))
             
             userTagsPath.observe(.childAdded, with: { tagSnap in
                 if initialFeedUpdateComplete {
@@ -910,8 +944,8 @@ class Database {
     }
     
     static func keepTagQuestionsUpdated(_ tagID : String, tagTitle: String?, lastQuestionID : String) {
-        let tagsRef = getDatabasePath(Item.Tags, itemID: tagID).child("questions").queryOrderedByKey().queryStarting(atValue: lastQuestionID)
-        activeListeners.append(getDatabasePath(Item.Tags, itemID: tagID).child("questions"))
+        let tagsRef = getDatabasePath(Element.Tags, itemID: tagID).child("questions").queryOrderedByKey().queryStarting(atValue: lastQuestionID)
+        activeListeners.append(getDatabasePath(Element.Tags, itemID: tagID).child("questions"))
         
         tagsRef.observe(.childAdded, with: { (snap) in
             if snap.key != lastQuestionID {
@@ -931,9 +965,9 @@ class Database {
     /** REMOVED THIS LISTENER TO MINIMIZE NUMBER OF CONNECTIONS - ONLY REFRESHING ANSWERS ON RELOAD **/
     static func keepQuestionsAnswersUpdated(_ questionID : String, lastAnswerID : String) {
         let _updatePath = currentUserRef.child("savedQuestions").child(questionID).child("lastAnswerID")
-        let _observePath = getDatabasePath(Item.Questions, itemID: questionID).child("answers").queryOrderedByKey().queryStarting(atValue: lastAnswerID)
+        let _observePath = getDatabasePath(Element.Questions, itemID: questionID).child("answers").queryOrderedByKey().queryStarting(atValue: lastAnswerID)
         
-        activeListeners.append(getDatabasePath(Item.Questions, itemID: questionID).child("answers"))
+        activeListeners.append(getDatabasePath(Element.Questions, itemID: questionID).child("answers"))
         _observePath.observe(.childAdded, with: { snap in
             _updatePath.setValue(snap.key)
         })
@@ -1557,13 +1591,13 @@ class Database {
         }
     }
     
-    static func getTagImage(_ fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
-        let _ = tagsStorageRef.child(fileID).data(withMaxSize: maxImgSize) { (data, error) -> Void in
+    static func getTagImage(_ tagID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
+        let _ = tagsStorageRef.child("tags/\(tagID)").child(tagID).data(withMaxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
     }
     
-    static func getImage(_ type : Item, fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
+    static func getImage(_ type : Element, fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = getStoragePath(type, itemID: fileID)
         path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
@@ -1594,12 +1628,12 @@ class Database {
     static func saveQuestion(_ questionID : String, completion: @escaping (Bool, Error?) -> Void) {
         if User.isLoggedIn() {
             if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[questionID] != nil { //remove question
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions/\(questionID)")
+                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedQuestions/\(questionID)")
                 _path.setValue("true", withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError!) : completion(true, nil)
                 })
             } else { //pin question
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
+                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
                 _path.updateChildValues([questionID: "true"], withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
@@ -1613,7 +1647,7 @@ class Database {
     static func pinTagForUser(_ tag : Tag, completion: @escaping (Bool, NSError?) -> Void) {
         if User.isLoggedIn() {
             if User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(tag.tagID!) { //remove tag
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
+                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
@@ -1625,7 +1659,7 @@ class Database {
                 })
             }
             else { //save tag
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
+                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedTags")
                 
                 let post = ["lastQuestionID" : "true", "title" : tag.tagTitle ?? ""] as [String: Any]
                 
@@ -1646,7 +1680,7 @@ class Database {
     }
     
     /* UPLOAD IMAGE TO STORAGE */
-    static func uploadImage(_ type : Item, fileID : String, image : UIImage, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+    static func uploadImage(_ type : Element, fileID : String, image : UIImage, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         let path = getStoragePath(type, itemID: fileID)
         let _metadata = FIRStorageMetadata()
         _metadata.contentType = "image/jpeg"

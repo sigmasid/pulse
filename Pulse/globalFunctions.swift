@@ -13,6 +13,8 @@ import SystemConfiguration
 let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
 let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
 let pulseBlue = UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0)
+let pulseRed = UIColor(red: 238/255, green: 49/255, blue: 93/255, alpha: 1.0)
+
 let highlightedColor = UIColor(red: 0/255, green: 233/255, blue: 178/255, alpha: 1.0)
 
 let maxImgSize : Int64 = 1242 * 2208

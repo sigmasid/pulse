@@ -33,7 +33,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate var loadingView : LoadingView!
 
     var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
-    var exploreVC : ExploreVC!
+    var exploreChannelsVC : ExploreChannelsVC!
     var homeVC : HomeVC!
     fileprivate var deselectedIndex : Int!
     
@@ -100,7 +100,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             Database.checkCurrentUser { success in
                 if let link = self.universalLink {
                     self.setupIcons(_selectedIndex: 1)
-                    self.exploreVC.universalLink = link
+                    //self.exploreChannelsVC.universalLink = link
                     self.setSelected(self.exploreButton)
                     self.initialLoadComplete = true
                 }
@@ -155,11 +155,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         accountNavVC.setNav(title: "Account")
         accountNavVC.viewControllers = [accountVC]
 
-        exploreVC = ExploreVC()
+        exploreChannelsVC = ExploreChannelsVC()
         let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         exploreNavVC.setNav(title: "Explore")
-        exploreNavVC.viewControllers = [exploreVC]
-        exploreVC.tabDelegate = self
+        exploreNavVC.viewControllers = [exploreChannelsVC]
+        exploreChannelsVC.tabDelegate = self
         
         homeVC = HomeVC()
         let homeNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
@@ -176,7 +176,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         UITabBar.appearance().tintColor = pulseBlue
         
         accountVC.tabBarItem = tabAccount
-        exploreVC.tabBarItem = tabExplore
+        exploreChannelsVC.tabBarItem = tabExplore
         homeVC.tabBarItem = tabHome
         
         rectToLeft = view.frame
@@ -213,7 +213,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 0:
             break
         case 1:
-            exploreVC.appButtonTapped()
+            break
         case 2:
             homeVC.appButtonTapped()
         default: break
@@ -298,7 +298,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     
     func handleLink(link: URL) {
         if isLoaded {
-            exploreVC.universalLink = link
+            //exploreChannelsVC = link
             setSelected(exploreButton)
         } else {
             universalLink = link

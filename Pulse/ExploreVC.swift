@@ -434,7 +434,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         case .tag:
             let channelVC = ChannelVC()
             navigationController?.pushViewController(channelVC, animated: true)
-            channelVC.selectedTag = item as! Tag
+            //channelVC.selectedTag = item as! Tag
         case .question:
             selectedQuestion = item as! Question
             currentExploreMode = Explore(currentMode: .question, currentSelection: 0, currentSelectedItem: selectedQuestion)

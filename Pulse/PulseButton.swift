@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount}
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -444,6 +444,13 @@ open class PulseButton: UIButton {
             setImage(tintedTimage, for: UIControlState.normal)
             imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
 
+        case .answerCount:
+            titleEdgeInsets = UIEdgeInsetsMake(0, 0, frame.height / 4, 0)
+            frame = CGRect(x: 0, y: 0, width: 30, height: 30)
+            titleLabel!.setFont(FontSizes.caption.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
+            setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
+            imageView?.contentMode = .scaleAspectFit
+            
         case . blank:
             setImage(nil, for: UIControlState.normal)
         }

@@ -8,9 +8,10 @@
 
 import UIKit
 
+private let headerReuseIdentifier = "AnswersHeaderCell"
 private let reuseIdentifier = "AnswerCell"
 
-class AnswersCollection: UICollectionView, previewDelegate {
+class AnswersCollectionVC: UICollectionViewController, previewDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
     /** End Delegate Vars **/
@@ -18,19 +19,17 @@ class AnswersCollection: UICollectionView, previewDelegate {
     //Main data source var -
     public var allAnswers = [Answer]() {
         didSet {
-            print("will set fired with \(allAnswers.count)")
             updateAnswerStack(answers: allAnswers)
-            reloadData()
+            collectionView?.reloadData()
         }
     }
-    public var selectedUser: User?
+    public var selectedQuestion: Question!
 
     //this ensures we are not fetching twice and also caches the data
     fileprivate var answerStack = [AnswerPreviewData]()
     struct AnswerPreviewData {
         var user : User?
         var answer : Answer!
-        var question : Question?
         var answerCollection = [String]()
         
         var gettingImageForAnswerPreview : Bool = false
@@ -40,15 +39,15 @@ class AnswersCollection: UICollectionView, previewDelegate {
     
     /** Collection View Vars **/
     fileprivate let minCellHeight : CGFloat = 225
-    fileprivate let headerHeight : CGFloat = 225
+    fileprivate let headerHeight : CGFloat = 75
     
     fileprivate var initialFrame = CGRect.zero
     fileprivate var selectedIndex : IndexPath? {
         didSet {
             if selectedIndex != nil {
-                reloadItems(at: [selectedIndex!])
+                collectionView?.reloadItems(at: [selectedIndex!])
                 if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                    reloadItems(at: [deselectedIndex!])
+                    collectionView?.reloadItems(at: [deselectedIndex!])
                 }
             }
         }
@@ -58,7 +57,7 @@ class AnswersCollection: UICollectionView, previewDelegate {
             }
             
             if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! FeedAnswerCell
+                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! FeedAnswerCell
                 cell.removeAnswer()
             }
         }
@@ -70,7 +69,6 @@ class AnswersCollection: UICollectionView, previewDelegate {
         for (index, answer) in answers.enumerated() {
             let currentAnswerData = AnswerPreviewData(user: nil,
                                                       answer: answer,
-                                                      question: nil,
                                                       answerCollection: [],
                                                       gettingImageForAnswerPreview: false,
                                                       gettingInfoForAnswerPreview: false)
@@ -78,36 +76,33 @@ class AnswersCollection: UICollectionView, previewDelegate {
         }
     }
     
-    public override init(frame: CGRect, collectionViewLayout layout: UICollectionViewLayout) {
-        super.init(frame: frame, collectionViewLayout: layout)
-        self.register(UICollectionViewCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .white
+        collectionView?.register(AnswersHeader.self,
+                      forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
+                      withReuseIdentifier: headerReuseIdentifier)
+        collectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: reuseIdentifier)
     }
-    
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
 
     // MARK: UICollectionViewDataSource
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
+    override func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
 
 
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        print("number of items in section are \(allAnswers.count)")
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return allAnswers.count
     }
     
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        print("cell for item at fired")
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! FeedAnswerCell
         
         cell.contentView.backgroundColor = .white
@@ -141,29 +136,8 @@ class AnswersCollection: UICollectionView, previewDelegate {
             })
         }
         
-        /* GET QUESTION FROM DATABASE - SHOWING ALL ANSWERS FOR ONE USER CASE */
-        if selectedUser != nil {
-            if currentAnswer.question != nil && currentAnswer.gettingInfoForAnswerPreview {
-                cell.updateLabel(currentAnswer.question!.qTitle, _subtitle: nil)
-            } else if currentAnswer.gettingInfoForAnswerPreview {
-                //ignore if already fetching the image, so don't refetch if already getting
-            } else {
-                
-                answerStack[indexPath.row].gettingInfoForAnswerPreview = true
-                
-                Database.getQuestion(currentAnswer.answer.qID, completion: { (question, error) in
-                    if error != nil {
-                        self.answerStack[indexPath.row].question = nil
-                    } else {
-                        self.answerStack[indexPath.row].question = question
-                        cell.updateLabel(question?.qTitle, _subtitle: nil)
-                    }
-                })
-            }
-        }
-        
         /** GET NAME & BIO FROM DATABASE - SHOWING MANY ANSWERS FROM MANY USERS CASE **/
-        else if answerStack[indexPath.row].user != nil && answerStack[indexPath.row].gettingInfoForAnswerPreview {
+        if answerStack[indexPath.row].user != nil && answerStack[indexPath.row].gettingInfoForAnswerPreview {
             
             cell.updateLabel(answerStack[indexPath.row].user!.name?.capitalized, _subtitle: answerStack[indexPath.row].user!.shortBio?.capitalized)
         } else if answerStack[indexPath.row].gettingInfoForAnswerPreview {
@@ -213,14 +187,14 @@ class AnswersCollection: UICollectionView, previewDelegate {
         return cell
     }
     
-    func collectionView(_ collectionView: UICollectionView,
+    override func collectionView(_ collectionView: UICollectionView,
                         viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         
         switch kind {
         case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: reuseIdentifier, for: indexPath) as! UserProfileHeader
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! AnswersHeader
             headerView.backgroundColor = .white
-            headerView.updateUserDetails(selectedUser: selectedUser!)
+            headerView.updateLabel(selectedQuestion.qTitle)
             
             return headerView
             
@@ -229,18 +203,18 @@ class AnswersCollection: UICollectionView, previewDelegate {
     }
 }
 
-extension AnswersCollection: UICollectionViewDelegateFlowLayout {
+extension AnswersCollectionVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (frame.width - 20), height: minCellHeight)
+        return CGSize(width: (view.frame.width - 20) / 2, height: minCellHeight)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: frame.width, height: headerHeight)
+        return CGSize(width: view.frame.width, height: headerHeight)
     }
 }
 
 /* COLLECTION VIEW */
-extension AnswersCollection  {
+extension AnswersCollectionVC  {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     func updateAnswerCell(_ cell: FeedAnswerCell, atIndexPath indexPath: IndexPath) {
@@ -248,22 +222,19 @@ extension AnswersCollection  {
     }
     
     func updateOnscreenRows() {
-        let visiblePaths = indexPathsForVisibleItems
-        for indexPath in visiblePaths {
-            let cell = cellForItem(at: indexPath) as! FeedAnswerCell
-            updateAnswerCell(cell, atIndexPath: indexPath)
+        if let visiblePaths = collectionView?.indexPathsForVisibleItems {
+            for indexPath in visiblePaths {
+                let cell = collectionView?.cellForItem(at: indexPath) as! FeedAnswerCell
+                updateAnswerCell(cell, atIndexPath: indexPath)
+            }
         }
     }
     
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+    override func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         updateOnscreenRows()
     }
     
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
-    }
-    
-    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-        return true
     }
 }

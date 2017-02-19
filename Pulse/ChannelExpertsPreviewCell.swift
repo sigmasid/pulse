@@ -52,17 +52,24 @@ class ChannelExpertsPreviewCell: UICollectionViewCell {
         previewContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         previewContainer.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
         previewContainer.widthAnchor.constraint(equalTo: previewContainer.heightAnchor).isActive = true
-        previewContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
-        
+        previewContainer.centerXAnchor.constraint(equalTo: contentView.centerXAnchor).isActive = true
+        previewContainer.layoutIfNeeded()
+
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.centerXAnchor.constraint(equalTo: previewContainer.centerXAnchor).isActive = true
         titleLabel.widthAnchor.constraint(equalTo: previewContainer.widthAnchor).isActive = true
-
         titleLabel.topAnchor.constraint(equalTo: previewContainer.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        titleLabel.layoutIfNeeded()
+        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .black, alignment: .center)
+
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
+        let titleLabelHeight = GlobalFunctions.getLabelSize(title: "Very Long Name", width: titleLabel.frame.width, fontAttributes: fontAttributes)
+        titleLabel.heightAnchor.constraint(equalToConstant: titleLabelHeight).isActive = true
+        print("computed height for titleLabel is \(titleLabelHeight)")
         
-        titleLabel.numberOfLines = 1
+        titleLabel.numberOfLines = 0
+        titleLabel.lineBreakMode = .byTruncatingTail
         
-        previewContainer.layoutIfNeeded()
         previewContainer.addShadow()
         
         previewImage.frame = previewContainer.bounds
@@ -71,6 +78,5 @@ class ChannelExpertsPreviewCell: UICollectionViewCell {
         previewContainer.addSubview(previewImage)
         previewImage.makeRound()
         
-        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .center)
     }
 }

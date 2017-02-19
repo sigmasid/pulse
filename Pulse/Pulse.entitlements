@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:app_code.app.goo.gl</string>
+		<string>applinks:tc237.app.goo.gl</string>
 	</array>
 </dict>
 </plist>

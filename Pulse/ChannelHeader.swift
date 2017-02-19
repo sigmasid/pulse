@@ -28,6 +28,7 @@ class ChannelHeader: UICollectionReusableView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = UIColor.clear
+        addShadow()
         setupChannelHeader()
     }
     
@@ -50,16 +51,12 @@ class ChannelHeader: UICollectionReusableView {
         channelImage.contentMode = .scaleAspectFill
         
         addSubview(expertsLabel)
-        expertsLabel.text = "FEATURING"
-        
-        expertsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
-        expertsLabel.translatesAutoresizingMaskIntoConstraints = false
-        expertsLabel.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        expertsLabel.heightAnchor.constraint(equalToConstant: Spacing.s.rawValue).isActive = true
+        expertsLabel.text = "featuring"
+        expertsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: pulseRed, alignment: .center)
 
-        expertsLabel.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        expertsLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        expertsLabel.layoutIfNeeded()
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: expertsLabel.font.pointSize, weight: UIFontWeightMedium)]
+        let titleLabelHeight = GlobalFunctions.getLabelSize(title: expertsLabel.text!, width: frame.width, fontAttributes: fontAttributes)
+        expertsLabel.frame = CGRect(x: 0, y: 10, width: frame.width, height: titleLabelHeight)
         
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal

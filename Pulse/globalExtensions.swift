@@ -408,7 +408,10 @@ enum PageType {
     case explore
 }
 
-enum Item : String {
+enum Element : String {
+    case Channels = "channels"
+    case ChannelItems = "channelItems"
+
     case Tags = "tags"
     case Questions = "questions"
     case Answers = "answers"
