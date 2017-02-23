@@ -125,10 +125,6 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
         }
     }
     
-    internal func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-    
     internal func askQuestion() {
         applyButton.setDisabled()
         let _loadingIndicator = applyButton.addLoadingIndicator()

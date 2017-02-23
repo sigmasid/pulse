@@ -123,7 +123,7 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
         textField.text = ""
     }
     
-    func doneRecording(_: URL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?) {
+    func doneRecording(_: URL?, image: UIImage?, location: String?, assetType : CreatedAssetType?) {
         guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
@@ -149,7 +149,7 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
         cameraVC.dismiss(animated: true, completion: nil)
     }
     
-    func showAlbumPicker(_ currentVC : UIViewController) {
+    func showAlbumPicker() {
         let albumPicker = UIImagePickerController()
         
         albumPicker.delegate = self

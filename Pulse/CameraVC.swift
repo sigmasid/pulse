@@ -80,9 +80,9 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
                 self.camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
                 if image != nil {
-                    self.delegate!.doneRecording(nil, image: image, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedImage)
+                    self.delegate!.doneRecording(nil, image: image, location: self.camera.recordedLocation, assetType: .recordedImage)
                 } else if videoURL != nil {
-                    self.delegate!.doneRecording(videoURL, image: nil, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedVideo)
+                    self.delegate!.doneRecording(videoURL, image: nil, location: self.camera.recordedLocation, assetType: .recordedVideo)
                 }
                 self.camera.stopCaptureSession()
 //                self._Camera.stopAndRemoveCaptureSession()
@@ -98,7 +98,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                delegate!.doneRecording(nil, image: image, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedImage)
+                delegate!.doneRecording(nil, image: image, location: self.camera.recordedLocation, assetType: .recordedImage)
                 camera.stopCaptureSession()
 //                _Camera.stopAndRemoveCaptureSession()
             }
@@ -109,7 +109,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                delegate!.doneRecording(fileURL, image: nil, currentVC: self, location: self.camera.recordedLocation, assetType: .recordedVideo)
+                delegate!.doneRecording(fileURL, image: nil, location: self.camera.recordedLocation, assetType: .recordedVideo)
                 camera.stopCaptureSession()
 //                _Camera.stopAndRemoveCaptureSession()
             }
@@ -214,7 +214,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     
     func showAlbumPicker() {
         if let childDelegate = delegate {
-            childDelegate.showAlbumPicker(self)
+            childDelegate.showAlbumPicker()
         }
     }
 }

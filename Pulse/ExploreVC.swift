@@ -249,9 +249,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 Database.getTag(selectedTag.tagID!, completion: { tag, error in
                     self.selectedTag = tag
                     
-                    if error == nil && tag.totalQuestionsForTag() > 0 {
+                    if error == nil && tag.totalItemsForTag() > 0 {
                         self.exploreContainer.setSelectedIndex(index: nil)
-                        self.exploreContainer.allQuestions = tag.questions
+                        //self.exploreContainer.allQuestions = tag.questions
                         self.exploreContainer.feedItemType = .question
                         self.toggleLoading(show: false, message : nil)
                     }  else {
@@ -261,7 +261,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 })
             } else {
                 exploreContainer.setSelectedIndex(index: nil)
-                exploreContainer.allQuestions = selectedTag.questions
+                //exploreContainer.allQuestions = selectedTag.questions
                 exploreContainer.feedItemType = .question
                 toggleLoading(show: false, message : nil)
                 completion(true)
@@ -311,7 +311,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     self.selectedQuestion = question
                     if let question = question, question.hasAnswers() {
                         self.exploreContainer.selectedQuestion = question
-                        self.exploreContainer.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
+                        //self.exploreContainer.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                         self.exploreContainer.feedItemType = .answer
                         
                         self.toggleLoading(show: false, message : nil)
@@ -326,7 +326,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 })
             } else {
                 if selectedQuestion.hasAnswers() {
-                    exploreContainer.allAnswers = selectedQuestion.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
+                    //exploreContainer.allAnswers = selectedQuestion.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
 
                     exploreContainer.feedItemType = .answer
                     exploreContainer.setSelectedIndex(index: IndexPath(row: 0, section: 0))
@@ -379,7 +379,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         self.toggleLoading(show: true, message : "Loading...")
         if !selectedUser.uCreated {
             Database.getUser(selectedUser.uID!, completion: {(user, error) in
-                if error == nil {
+                if let user = user {
                     self.selectedUser = user
                     
                     if user.thumbPic != nil {
@@ -559,7 +559,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     //UPDATE TAGS / QUESTIONS IN FEED
-    internal func goBack() {
+    override func goBack() {
         guard exploreStack.last != nil else { return }
         hideMenu()
         
@@ -652,15 +652,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             return
         }
         
-        currentUser.canAnswer(qID: selectedQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+        currentUser.canAnswer(itemID: selectedQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
             if success {
-                let addAnswerVC = QAManagerVC()
+                /**
+                let addAnswerVC = ContentManagerVC()
                 addAnswerVC.allQuestions = [selectedQuestion]
                 addAnswerVC.currentQuestion = selectedQuestion
                 addAnswerVC.selectedTag = selectedTag
                 addAnswerVC.openingScreen = .camera
                 
                 present(addAnswerVC, animated: true, completion: nil)
+                 **/
             } else {
                 guard errorTitle != nil, errorDescription != nil else {
                     GlobalFunctions.showErrorBlock("Error Adding Answer", erMessage: "Sorry there was an error!")

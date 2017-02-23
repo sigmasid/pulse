@@ -23,7 +23,7 @@ class FeedVC: UIViewController, previewDelegate {
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
     fileprivate var initialFrame : CGRect!
-    fileprivate var QAVC : QAManagerVC!
+    fileprivate var QAVC : ContentManagerVC!
     
     fileprivate var searchScope : FeedItemType? = .question
     var minCellHeight : CGFloat = 125
@@ -207,11 +207,12 @@ class FeedVC: UIViewController, previewDelegate {
     
     func showQuestion(_ selectedQuestion : Question?, allQuestions : [Question?],
                         answerCollection: [String], questionIndex : Int, answerIndex : Int, selectedTag : Tag) {
-        QAVC = QAManagerVC()
+        /**
+        QAVC = ContentManagerVC()
         
         //need to be set first 
         QAVC.watchedFullPreview = watchedFullPreview
-        QAVC.answerCollection = answerCollection
+        QAVC.itemCollection = answerCollection
         QAVC.allAnswers = answerStack.map{ (answerData) -> Answer in answerData.answer }
         
         QAVC.selectedTag = selectedTag
@@ -225,6 +226,7 @@ class FeedVC: UIViewController, previewDelegate {
         
         QAVC.transitioningDelegate = self
         present(QAVC, animated: true, completion: nil)
+         **/
     }
     
     func setSelectedIndex(index : IndexPath?) {
@@ -259,7 +261,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         /** FEED ITEM: QUESTION **/
         case .question:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionQuestionReuseIdentifier, for: indexPath) as! FeedQuestionCell
-            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
 
             //clear the cells and set the item type first
             cell.updateLabel(nil, _subtitle: nil)
@@ -310,7 +311,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         /** FEED ITEM: TAG **/
         case .tag:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! FeedTagCell
-            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
             cell.contentView.backgroundColor = .white
             cell.updateLabel(nil, _subtitle: nil)
@@ -318,14 +318,14 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if allTags.count > indexPath.row && allTags[indexPath.row].tagCreated {
                 let _currentTag = allTags[indexPath.row]
                 cell.updateLabel(_currentTag.tagTitle, _subtitle: _currentTag.tagDescription)
-                cell.answerCount.setTitle(String(_currentTag.totalQuestionsForTag()), for: UIControlState())
+                cell.answerCount.setTitle(String(_currentTag.totalItemsForTag()), for: UIControlState())
             } else if allTags.count > indexPath.row {
 
                 Database.getTag(allTags[indexPath.row].tagID!, completion: { (tag, error) in
                     if error == nil {
                         self.allTags[indexPath.row] = tag
                         cell.updateLabel(tag.tagTitle, _subtitle: tag.tagDescription)
-                        cell.answerCount.setTitle(String(tag.totalQuestionsForTag()), for: UIControlState())
+                        cell.answerCount.setTitle(String(tag.totalItemsForTag()), for: UIControlState())
                     }
                 })
             }
@@ -334,7 +334,6 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         /** FEED ITEM: ANSWER **/
         case .answer:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: indexPath) as! FeedAnswerCell
-            let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
             
             cell.contentView.backgroundColor = .white
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
@@ -417,7 +416,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 if selectedUser != nil {
                     let selectedQuestion = currentAnswer.question
                     let currentTag = Tag(tagID: currentAnswer.question!.getTag())
-                    selectedQuestion?.qAnswers = [currentAnswer.answer.aID]
+                    //selectedQuestion?.qAnswers = [currentAnswer.answer.aID]
                     showQuestion(selectedQuestion,
                                  allQuestions: [selectedQuestion],
                                  answerCollection: currentAnswer.answerCollection,
@@ -435,7 +434,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
             } else if indexPath == selectedIndex {
                 //if answer has more than initial clip, show 'see more at the end'
                 watchedFullPreview = false
-                
+                /**
                 Database.getAnswerCollection(currentAnswer.answer.aID, completion: {(hasDetail, answerCollection) in
                     if hasDetail {
                         cell.showTapForMore = true
@@ -443,7 +442,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     } else {
                         cell.showTapForMore = false
                     }
-                })
+                }) **/
                 
                 cell.delegate = self
                 cell.showAnswer(answer: selectedAnswer)
@@ -464,7 +463,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
             if !_user.uCreated { //search case - get question from database
                 Database.getUser(_user.uID!, completion: { (user, error) in
-                    if error == nil {
+                    if let user = user {
                         cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio)
 
                         self.allUsers[indexPath.row] = user
@@ -600,7 +599,7 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
-        if presented is QAManagerVC {
+        if presented is ContentManagerVC {
             panDismissInteractionController.wireToViewController(QAVC, toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
@@ -614,7 +613,7 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
     }
     
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is QAManagerVC {
+        if dismissed is ContentManagerVC {
             let animator = PanAnimationController()
 
             animator.initialFrame = getRectToLeft()

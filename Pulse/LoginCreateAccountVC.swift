@@ -156,8 +156,4 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
             })
         }
     }
-    
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
 }

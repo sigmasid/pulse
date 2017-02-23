@@ -20,15 +20,17 @@ let databaseRef = FIRDatabase.database().reference()
 var initialFeedUpdateComplete = false
 
 class Database {
+    static let postsRef = databaseRef.child(Element.Posts.rawValue)
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
     static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
+    static let itemsRef = databaseRef.child(Element.Items.rawValue)
 
     static let tagsRef = databaseRef.child(Element.Tags.rawValue)
     static let questionsRef = databaseRef.child(Element.Questions.rawValue)
     static let answersRef = databaseRef.child(Element.Answers.rawValue)
-    static let answerStatsRef = databaseRef.child(Element.AnswerStats.rawValue)
+    static let itemStatsRef = databaseRef.child(Element.ItemStats.rawValue)
 
-    static let answerCollectionsRef = databaseRef.child(Element.AnswerCollections.rawValue)
+    static let itemCollectionRef = databaseRef.child(Element.ItemCollection.rawValue)
 
     static let messagesRef = databaseRef.child(Element.Messages.rawValue)
     static let conversationsRef = databaseRef.child(Element.Conversations.rawValue)
@@ -92,7 +94,7 @@ class Database {
                 answersRef.child(snap.key).setValue(nil)
                 usersPublicDetailedRef.child(userID).child("answers").child(snap.key).setValue(nil)
                 usersPublicDetailedRef.child(userID).child("answeredQuestions").child(snap.value as! String).setValue(nil)
-                answerCollectionsRef.child(snap.key).setValue(nil)
+                itemCollectionRef.child(snap.key).setValue(nil)
                 
                 let desertRef = storageRef.child("answers").child(snap.key)
                 let thumbRef = storageRef.child("answerThumbnails").child(snap.key)
@@ -506,8 +508,8 @@ class Database {
     /*** MARK START : GET FEED ITEMS ***/
     static func getTag(_ tagID : String, completion: @escaping (_ tag : Tag, _ error : NSError?) -> Void) {
         tagsRef.child(tagID).observeSingleEvent(of: .value, with: { snap in
-            let _currentTag = Tag(tagID: tagID, snapshot: snap)
-            completion(_currentTag, nil)
+            let currentTag = Tag(tagID: tagID, snapshot: snap)
+            completion(currentTag, nil)
         }, withCancel: { error in
             //print("error gettings tag \(error)")
         })
@@ -528,6 +530,16 @@ class Database {
             completion(channel)
         }, withCancel: { error in
             completion(nil)
+        })
+    }
+    
+    
+    static func getPost(pID : String, completion: @escaping (_ post : Post, _ error : NSError?) -> Void) {
+        postsRef.child(pID).observeSingleEvent(of: .value, with: { snap in
+            let _currentPost = Post(pID: pID, snapshot: snap)
+            completion(_currentPost, nil)
+        }, withCancel: { error in
+            //print("error gettings tag \(error)")
         })
     }
     
@@ -602,6 +614,19 @@ class Database {
         })
     }
     
+    static func getItem(_ itemID : String, completion: @escaping (_ item : Item?, _ error : NSError?) -> Void) {
+        itemsRef.child(itemID).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                let _currentItem = Item(itemID: itemID, snapshot: snap)
+                completion(_currentItem, nil)
+            }
+            else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no question found" ]
+                completion(nil, NSError.init(domain: "No Question Found", code: 404, userInfo: userInfo))
+            }
+        })
+    }
+    
     static func getAnswer(_ aID : String, completion: @escaping (_ answer : Answer, _ error : NSError?) -> Void) {
         answersRef.child(aID).observeSingleEvent(of: .value, with: { snap in
             let _currentAnswer = Answer(aID: aID, snapshot: snap)
@@ -609,6 +634,7 @@ class Database {
         })
     }
     
+    /**
     static func getAnswerCollection(_ aCollectionID : String, completion: @escaping (_ hasDetail : Bool, _ answers : [String]?) -> Void) {
         var answers = [String]()
         answerCollectionsRef.child(aCollectionID).observeSingleEvent(of: .value, with: { snap in
@@ -621,16 +647,36 @@ class Database {
                 completion(true, answers)
             }
         })
+    } **/
+    
+    static func getItemCollection(_ itemID : String, completion: @escaping (_ hasDetail : Bool, _ items : [String]?) -> Void) {
+        var items = [String]()
+        
+        itemCollectionRef.child(itemID).observeSingleEvent(of: .value, with: { snap in
+            if snap.childrenCount <= 1 {
+                completion(false, nil)
+            } else {
+                for child in snap.children {
+                    items.append((child as AnyObject).key as String)
+                }
+                completion(true, items)
+            }
+        })
     }
     /*** MARK END : GET INDIVIDUAL ITEMS ***/
 
     /*** MARK START : GET USER ITEMS ***/
     
     ///Returns the shortest public profile
-    static func getUser(_ uID : String, completion: @escaping (_ user : User, _ error : NSError?) -> Void) {
+    static func getUser(_ uID : String, completion: @escaping (_ user : User?, _ error : NSError?) -> Void) {
         usersPublicSummaryRef.child(uID).observeSingleEvent(of: .value, with: { snap in
-            let _returnUser = User(uID: uID, snapshot: snap)
-            completion(_returnUser, nil)
+            if snap.exists() {
+                let _returnUser = User(uID: uID, snapshot: snap)
+                completion(_returnUser, nil)
+            } else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
+                completion(nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
+            }
         })
     }
     
@@ -650,6 +696,25 @@ class Database {
                 completion(_property)
             } else {
                 completion(nil)
+            }
+        })
+    }
+    
+    static func getPostUser(_ pID : String, completion: @escaping (_ post : Post?, _ user : User?, _ error : NSError?) -> Void) {
+        postsRef.child(pID).observeSingleEvent(of: .value, with: { snap in
+            let post = Post(pID: pID, snapshot: snap)
+            if snap.hasChild("uID") {
+                if let _uID = snap.childSnapshot(forPath: "uID").value as? String {
+                    getUser(_uID, completion: {(_user, error) in
+                        error != nil ? completion(post, nil, error) : completion(post, _user, nil)
+                    })
+                } else {
+                    let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
+                    completion(post, nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
+                }
+            } else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
+                completion(post, nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
             }
         })
     }
@@ -771,6 +836,7 @@ class Database {
     }
     
     static func getFeed(_ completion: @escaping (_ feed : Tag) -> Void) {
+        /**
         let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
         let feedPath = currentUserFeedRef.queryOrdered(byChild: "lastAnswerID").queryLimited(toLast: querySize)
         homeFeed.questions = [Question]()
@@ -780,10 +846,11 @@ class Database {
                 let currentTag = Tag(tagID: (question as AnyObject).childSnapshot(forPath: "tagID").value as! String,
                                      tagTitle: (question as AnyObject).childSnapshot(forPath: "tagTitle").value as? String)
                 let _question = Question(qID: (question as AnyObject).key, qTag: currentTag)
-                homeFeed.questions.insert(_question, at: 0)
+                homeFeed.items.insert(_question, at: 0)
             }
             completion(homeFeed)
         })
+         **/
     }
     
     static func updateAnswersForExistingFeedQuestions() {
@@ -1346,25 +1413,33 @@ class Database {
     }
     
     ///Save individual answer to Pulse database after Auth
-    static func addUserAnswersToDatabase( _ answer : Answer, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        let _user = FIRAuth.auth()?.currentUser
+    static func addItemToDatabase( _ item : Item, channelID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
-        var answersPost : [ String : AnyObject ] = ["qID": answer.qID as AnyObject, "uID": _user!.uid as AnyObject, "createdAt" : FIRServerValue.timestamp() as AnyObject]
-        
-        if answer.aLocation != nil {
-            answersPost["location"] = answer.aLocation! as AnyObject
-        }
-        
-        if answer.aType != nil {
-            answersPost["type"] = answer.aType!.rawValue as AnyObject?
-        }
-        
-        let post : [String: Any] = ["answers/\(answer.aID)" : answersPost] //NEED TO CHECK THIS
+        if let _user = FIRAuth.auth()?.currentUser {
+            var itemPost : [ String : AnyObject] = ["title": item.itemTitle as AnyObject,
+                                                   "uID": _user.uid as AnyObject,
+                                                   "createdAt" : FIRServerValue.timestamp() as AnyObject,
+                                                   "type" : item.type.rawValue as AnyObject]
+            
+            if let url = item.contentURL?.absoluteString {
+                itemPost["contentURL"] = url as AnyObject?
+            }
+            
+            if let contentType = item.contentType {
+                itemPost["contentType"] = contentType.rawValue as AnyObject?
+            }
+            
+            if let parentID = item.parentItemID {
+                itemPost["parentID"] = parentID as AnyObject?
+            }
+            
+            let post : [String: Any] = ["items/\(item.itemID)": itemPost]
 
-        if _user != nil {
             databaseRef.updateChildValues(post , withCompletionBlock: { (blockError, ref) in
+                print("updated child values and error is \(blockError?.localizedDescription)")
                 blockError != nil ? completion(false, blockError as Error?) : completion(true, nil)
             })
+            
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
@@ -1372,14 +1447,31 @@ class Database {
     }
     
     ///Save collection into question / user
-    static func addAnswerCollectionToDatabase(_ firstAnswer : Answer, post : [String : Bool], completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+    static func addItemCollectionToDatabase(_ item : Item, channelID : String, post : [String : Bool], completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        guard item.type != nil else { return }
+        
         let _user = FIRAuth.auth()?.currentUser
+        var collectionPost : [AnyHashable: Any]!
         
-        let collectionPost : [AnyHashable: Any] = ["userDetailedPublicSummary/\(_user!.uid)/answers/\(firstAnswer.aID)": firstAnswer.qID,
-                                                   "userDetailedPublicSummary/\(_user!.uid)/answeredQuestions/\(firstAnswer.qID)" : "true",
-                                                   "questions/\(firstAnswer.qID)/answers/\(firstAnswer.aID)" : true,
-                                                   "answerCollections/\(firstAnswer.aID)" : post]
+        var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject]
+        channelPost["tagID"] = item.tag?.tagID as AnyObject
+        channelPost["tagTitle"] = item.tag?.tagTitle as AnyObject
         
+        switch item.type! {
+        case .answer:
+            collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.parentItemID!,
+                              "itemCollection/\(item.itemID)" : post,
+                              "channelItems/\(channelID)/\(item.itemID)":channelPost]
+        case .post:
+            collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.parentItemID!,
+                              "itemCollection/\(item.itemID)" : post,
+                              "channelItems/\(channelID)":channelPost]
+        default:
+            collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": true,
+                              "itemCollection/\(item.itemID)" : post,
+                              "channelItems/\(channelID)":channelPost]
+        }
+
         if _user != nil {
             databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
                 blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
@@ -1400,8 +1492,8 @@ class Database {
         })
     }
     
-    static func updateAnswerViewCount(aID : String) {
-        answerStatsRef.child(aID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+    static func updateItemViewCount(itemID : String) {
+        itemStatsRef.child(itemID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
             if let currentViews = currentData.value as? Float {
                 currentData.value = currentViews + 1
                 return FIRTransactionResult.success(withValue: currentData)
@@ -1410,17 +1502,17 @@ class Database {
         })
     }
     
-    static func addAnswerVote(_ _vote : AnswerVoteType, aID : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func addVote(_ _vote : VoteType, aID : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         var upVoteCount = 0
         var downVoteCount = 0
         
         if User.currentUser?.savedVotes[aID] != true {
-            answerStatsRef.child(aID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+            itemStatsRef.child(aID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
                 if var answer = currentData.value as? [String : AnyObject] {
                     upVoteCount = answer["upVoteCount"] as? Int ?? 0
                     downVoteCount = answer["downVoteCount"] as? Int ?? 0
 
-                    if _vote == AnswerVoteType.downvote {
+                    if _vote == .downvote {
                         downVoteCount -= 1
                     } else {
                         upVoteCount += 1
@@ -1720,13 +1812,11 @@ class Database {
                         usersPublicSummaryRef.child(_currentUserID).updateChildValues(userPost)
                     }
                 }
-
             }
         }
     }
     
     static func resizeImage(_ image: UIImage, newWidth: CGFloat) -> Data? {
-        
         let scale = newWidth / image.size.width
         let newHeight = image.size.height * scale
         UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))

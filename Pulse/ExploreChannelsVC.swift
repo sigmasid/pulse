@@ -30,14 +30,21 @@ class ExploreChannelsVC: UIViewController {
         super.viewDidLoad()
         
         if !isLoaded {
-            if let nav = navigationController as? PulseNavVC {
-                headerNav = nav
-                headerNav?.setNav(title: "Explore Channels")
-            }
+
             setupScreenLayout()
             updateRootScopeSelection()
             
             view.backgroundColor = .white
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        if let nav = navigationController as? PulseNavVC {
+            headerNav = nav
+            headerNav?.setNav(title: "Explore Channels")
+            headerNav?.updateBackgroundImage(image: nil)
         }
     }
 

@@ -8,7 +8,7 @@
 
 import UIKit
 
-private let headerReuseIdentifier = "AnswersHeaderCell"
+private let headerReuseIdentifier = "ItemHeaderCell"
 private let reuseIdentifier = "AnswerCell"
 
 class AnswersCollectionVC: UICollectionViewController, previewDelegate {
@@ -16,32 +16,50 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
     var watchedFullPreview: Bool = false
     /** End Delegate Vars **/
     
+    /** Transition Animation Vars **/
+    fileprivate var panPresentInteractionController = PanEdgeInteractionController()
+    fileprivate var panDismissInteractionController = PanEdgeInteractionController()
+    fileprivate var contentVC : ContentManagerVC!
+    fileprivate var initialFrame = CGRect.zero
+    
     //Main data source var -
-    public var allAnswers = [Answer]() {
+    public var allItems = [Item]() {
         didSet {
-            updateAnswerStack(answers: allAnswers)
-            collectionView?.reloadData()
+            itemStack.removeAll()
+            itemStack = [ItemMetaData](repeating: ItemMetaData(), count: allItems.count)
         }
     }
-    public var selectedQuestion: Question!
-
-    //this ensures we are not fetching twice and also caches the data
-    fileprivate var answerStack = [AnswerPreviewData]()
-    struct AnswerPreviewData {
-        var user : User?
-        var answer : Answer!
+    
+    struct ItemMetaData {
         var answerCollection = [String]()
         
         var gettingImageForAnswerPreview : Bool = false
         var gettingInfoForAnswerPreview : Bool = false
     }
-    fileprivate var selectedAnswer: Answer!
+    private var itemStack = [ItemMetaData]()
+
+    //set by delegate
+    public var selectedQuestion : Question! {
+        didSet {
+            if !selectedQuestion.qCreated {
+                Database.getQuestion(selectedQuestion.qID, completion: { question, error in
+                    self.selectedQuestion = question
+                })
+            }
+            else {
+                allItems = selectedQuestion.qItems
+                updateDataSource()
+            }
+        }
+    }
+    //end set by delegate
+
+    fileprivate var selectedItem: Item!
     
     /** Collection View Vars **/
     fileprivate let minCellHeight : CGFloat = 225
-    fileprivate let headerHeight : CGFloat = 75
+    fileprivate let headerHeight : CGFloat = 60
     
-    fileprivate var initialFrame = CGRect.zero
     fileprivate var selectedIndex : IndexPath? {
         didSet {
             if selectedIndex != nil {
@@ -57,42 +75,58 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
             }
             
             if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! FeedAnswerCell
+                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! AnswerCell
                 cell.removeAnswer()
             }
         }
     }
     fileprivate var deselectedIndex : IndexPath?
     /** End Declarations **/
-
-    internal func updateAnswerStack(answers: [Answer]) {
-        for (index, answer) in answers.enumerated() {
-            let currentAnswerData = AnswerPreviewData(user: nil,
-                                                      answer: answer,
-                                                      answerCollection: [],
-                                                      gettingImageForAnswerPreview: false,
-                                                      gettingInfoForAnswerPreview: false)
-            answerStack.insert(currentAnswerData, at: index)
+    
+    //once allItems var is set reload the data
+    func updateDataSource() {
+        collectionView?.reloadData()
+        collectionView?.layoutIfNeeded()
+        
+        if allItems.count > 0 {
+            collectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
         }
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+        collectionView?.register(AnswerCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        
         view.backgroundColor = .white
-        collectionView?.register(AnswersHeader.self,
-                      forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                      withReuseIdentifier: headerReuseIdentifier)
-        collectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        collectionView?.backgroundColor = .white
+    }
+    
+    internal func showItemDetail(selectedItem : Item) {
+        //need to be set first
+        
+        contentVC = ContentManagerVC()
+        contentVC.watchedFullPreview = false
+        contentVC.allItems = [selectedItem]
+        contentVC.openingScreen = .item
+        
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
     }
 
     // MARK: UICollectionViewDataSource
     override func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
-
-
+    
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return allAnswers.count
+        return allItems.count
     }
     
     override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -100,34 +134,37 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
+        
+        selectedItem = allItems[indexPath.row]
+        selectedIndex = indexPath
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! FeedAnswerCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! AnswerCell
         
         cell.contentView.backgroundColor = .white
         cell.updateLabel(nil, _subtitle: nil, _image : nil)
         
-        let currentAnswer = answerStack[indexPath.row]
+        let currentItem = allItems[indexPath.row]
         
         /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
-        if currentAnswer.answer.thumbImage != nil && currentAnswer.gettingImageForAnswerPreview {
+        if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForAnswerPreview {
             
-            cell.updateImage(image: currentAnswer.answer.thumbImage!)
-        } else if currentAnswer.gettingImageForAnswerPreview {
+            cell.updateImage(image: currentItem.content as? UIImage)
+        } else if itemStack[indexPath.row].gettingImageForAnswerPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
-            answerStack[indexPath.row].gettingImageForAnswerPreview = true
+            itemStack[indexPath.row].gettingImageForAnswerPreview = true
             
-            Database.getImage(.AnswerThumbs, fileID: currentAnswer.answer.aID, maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(.AnswerThumbs, fileID: currentItem.itemID, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
-                    self.answerStack[indexPath.row].answer.thumbImage = _answerPreviewImage
+                    self.allItems[indexPath.row].content = _answerPreviewImage
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateImage(image: self.answerStack[indexPath.row].answer.thumbImage)
+                            cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
                         }
                     }
                 } else {
@@ -137,48 +174,46 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
         }
         
         /** GET NAME & BIO FROM DATABASE - SHOWING MANY ANSWERS FROM MANY USERS CASE **/
-        if answerStack[indexPath.row].user != nil && answerStack[indexPath.row].gettingInfoForAnswerPreview {
+        if let user = currentItem.user, itemStack[indexPath.row].gettingInfoForAnswerPreview {
             
-            cell.updateLabel(answerStack[indexPath.row].user!.name?.capitalized, _subtitle: answerStack[indexPath.row].user!.shortBio?.capitalized)
-        } else if answerStack[indexPath.row].gettingInfoForAnswerPreview {
+            cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
+        } else if itemStack[indexPath.row].gettingInfoForAnswerPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
             
-            answerStack[indexPath.row].gettingInfoForAnswerPreview = true
+            itemStack[indexPath.row].gettingInfoForAnswerPreview = true
             
-            Database.getUserSummaryForAnswer(currentAnswer.answer.aID, completion: { (answer, user, error) in
-                if error != nil {
-                    self.answerStack[indexPath.row].user = nil
-                } else {
-                    let tempImage = self.answerStack[indexPath.row].answer.thumbImage
-                    self.answerStack[indexPath.row].answer = answer
-                    self.answerStack[indexPath.row].answer.thumbImage = tempImage
-                    
-                    self.answerStack[indexPath.row].user = user
-                    cell.updateLabel(user?.name?.capitalized, _subtitle: user?.shortBio?.capitalized)
+            // Get the user details
+            Database.getUser(currentItem.itemUserID, completion: {(user, error) in
+                if let user = user {
+                    self.allItems[indexPath.row].user = user
+                    DispatchQueue.main.async {
+                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                            cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
+                        }
+                    }
                 }
             })
         }
         
         if indexPath == selectedIndex && indexPath == deselectedIndex {
-            //only show answer by selected user - removes other answers from qAnswers array and creates blank dummy tag
-            //implement delegate show answer
+            showItemDetail(selectedItem: selectedItem)
         } else if indexPath == selectedIndex {
             //if answer has more than initial clip, show 'see more at the end'
             watchedFullPreview = false
             
-            Database.getAnswerCollection(currentAnswer.answer.aID, completion: {(hasDetail, answerCollection) in
+            Database.getItemCollection(selectedItem.itemID, completion: {(hasDetail, answerCollection) in
                 if hasDetail {
                     cell.showTapForMore = true
-                    self.answerStack[indexPath.row].answerCollection = answerCollection!
+                    self.itemStack[indexPath.row].answerCollection = answerCollection!
                 } else {
                     cell.showTapForMore = false
                 }
             })
             
             cell.delegate = self
-            cell.showAnswer(answer: selectedAnswer)
+            cell.showItemPreview(item: selectedItem)
             
         } else if indexPath == deselectedIndex {
             cell.removeAnswer()
@@ -192,9 +227,9 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
         
         switch kind {
         case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! AnswersHeader
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
-            headerView.updateLabel(selectedQuestion.qTitle)
+            headerView.updateLabel(selectedQuestion.qTitle, count: selectedQuestion.qItems.count)
             
             return headerView
             
@@ -205,11 +240,15 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
 
 extension AnswersCollectionVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (view.frame.width - 20) / 2, height: minCellHeight)
+        return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: view.frame.width, height: headerHeight)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 10.0, left: 10.0, bottom: 0.0, right: 10.0)
     }
 }
 
@@ -217,14 +256,14 @@ extension AnswersCollectionVC: UICollectionViewDelegateFlowLayout {
 extension AnswersCollectionVC  {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateAnswerCell(_ cell: FeedAnswerCell, atIndexPath indexPath: IndexPath) {
+    func updateAnswerCell(_ cell: AnswerCell, atIndexPath indexPath: IndexPath) {
         //to come
     }
     
     func updateOnscreenRows() {
         if let visiblePaths = collectionView?.indexPathsForVisibleItems {
             for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! FeedAnswerCell
+                let cell = collectionView?.cellForItem(at: indexPath) as! AnswerCell
                 updateAnswerCell(cell, atIndexPath: indexPath)
             }
         }
@@ -238,3 +277,44 @@ extension AnswersCollectionVC  {
         if !decelerate { updateOnscreenRows() }
     }
 }
+
+extension AnswersCollectionVC: UIViewControllerTransitioningDelegate {
+    func animationController(forPresented presented: UIViewController,
+                             presenting: UIViewController,
+                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        
+        if presented is ContentManagerVC {
+            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            
+            let animator = ExpandAnimationController()
+            animator.initialFrame = initialFrame
+            animator.exitFrame = getRectToLeft()
+            
+            return animator
+        } else {
+            return nil
+        }
+    }
+    
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        if dismissed is ContentManagerVC {
+            let animator = PanAnimationController()
+            
+            animator.initialFrame = getRectToLeft()
+            animator.exitFrame = getRectToRight()
+            animator.transitionType = .dismiss
+            return animator
+        } else {
+            return nil
+        }
+    }
+    
+    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return panPresentInteractionController.interactionInProgress ? panPresentInteractionController : nil
+    }
+    
+    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
+    }
+}
+

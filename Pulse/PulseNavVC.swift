@@ -54,7 +54,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     }
 
     public func updateBackgroundImage(image : UIImage?) {
-        guard navBar != nil, let image = image else { return }
+        guard navBar != nil else { return }
         navBar.setBackgroundImage(image, for: .default)
     }
     

@@ -26,7 +26,7 @@ class BrowseAnswersView: UIView {
     /* set by parent */
     var currentQuestion : Question?
     var currentTag : Tag?
-    weak var delegate : answerDetailDelegate!
+    weak var delegate : ItemDetailDelegate!
     
     fileprivate var topHeaderView = UIView()
     fileprivate var addAnswerButton = UIButton()
@@ -40,7 +40,7 @@ class BrowseAnswersView: UIView {
         super.init(frame: frame)
     }
     
-    convenience init(frame: CGRect, _currentQuestion : Question, _currentTag : Tag) {
+    convenience init(frame: CGRect, _currentQuestion : Question?, _currentTag : Tag?) {
         self.init(frame: frame)
         
         currentQuestion = _currentQuestion
@@ -191,7 +191,7 @@ class BrowseAnswersView: UIView {
     }
     
     func userClickedAddAnswer() {
-        delegate.userClickedAddAnswer()
+        delegate.userClickedAddItem()
     }
 }
 
@@ -223,7 +223,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             gettingImageForCell[(indexPath as NSIndexPath).row] = true
 
-            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(.AnswerThumbs, fileID: currentQuestion!.qItems[(indexPath as NSIndexPath).row].itemID, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error != nil {
                     cell.answerPreviewImage?.backgroundColor = UIColor.red /* NEED TO CHANGE */
                 } else {
@@ -245,7 +245,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             gettingInfoForCell[(indexPath as NSIndexPath).row] = true
             
-            Database.getUserSummaryForAnswer(currentQuestion!.qAnswers[(indexPath as NSIndexPath).row], completion: { (answer, user, error) in
+            Database.getUserSummaryForAnswer(currentQuestion!.qItems[(indexPath as NSIndexPath).row].itemID, completion: { (answer, user, error) in
                 if error != nil {
                     cell.answerPreviewName!.text = nil
                     cell.answerPreviewBio!.text = nil

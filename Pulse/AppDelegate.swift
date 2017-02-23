@@ -29,9 +29,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:Error?) -> Void in }
         FBSDKProfile.enableUpdates(onAccessTokenChange: true)
         
-        self.window = UIWindow(frame: UIScreen.main.bounds)
-        self.window?.rootViewController = MasterTabVC()
-        self.window?.makeKeyAndVisible()
+        window = UIWindow(frame: UIScreen.main.bounds)
+        window?.rootViewController = MasterTabVC()
+        window?.makeKeyAndVisible()
         
         return true
     }

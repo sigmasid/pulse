@@ -183,7 +183,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         present(confirmLogout, animated: true, completion: nil)
     }
     
-    func goBack() {
+    override func goBack() {
         GlobalFunctions.dismissVC(answersVC)
         updateHeader(title: "Account", leftButton: .menu)
         settingsLinks.setSelectedButton(type: nil)
@@ -228,7 +228,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         present(cameraVC, animated: true, completion: nil)
     }
     
-    func doneRecording(_: URL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?) {
+    func doneRecording(_: URL?, image: UIImage?, location: String?, assetType : CreatedAssetType?) {
         guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
@@ -252,7 +252,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         cameraVC.dismiss(animated: true, completion: nil)
     }
     
-    func showAlbumPicker(_ currentVC : UIViewController) {
+    func showAlbumPicker() {
         let albumPicker = UIImagePickerController()
         
         albumPicker.delegate = self

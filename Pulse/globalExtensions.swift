@@ -81,6 +81,10 @@ extension UIViewController {
         return rectToRight
     }
     
+    func goBack() {
+        let _ = navigationController?.popViewController(animated: true)
+    }
+    
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -312,7 +316,7 @@ enum UserProfileUpdateType {
     case photoURL
 }
 
-enum AnswerVoteType {
+enum VoteType {
     case upvote
     case downvote
 }
@@ -409,6 +413,7 @@ enum PageType {
 }
 
 enum Element : String {
+    case Items = "items"
     case Channels = "channels"
     case ChannelItems = "channelItems"
 
@@ -422,11 +427,14 @@ enum Element : String {
     case Feed = "savedQuestions"
     case SettingSections = "settingsSections"
     case AnswerThumbs = "answerThumbnails"
-    case AnswerCollections = "answerCollections"
-    case AnswerStats = "answerStats"
+    case ItemCollection = "itemCollection"
+    case ItemStats = "itemStats"
     case UserSummary = "userPublicSummary"
     case Messages = "messages"
     case Conversations = "conversations"
+    case Posts = "posts"
+    case PostThumbs = "postCovers"
+
 }
 
 enum SettingTypes : String{

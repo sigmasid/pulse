@@ -8,29 +8,37 @@
 
 import UIKit
 
-class QuestionPreviewVC: UIViewController {
+class ContentIntroVC: UIViewController {
     
     fileprivate let questionLabel = UILabel()
     fileprivate let answerCount = UIButton()
+    fileprivate var imageView = UIImageView()
     
-    var questionTitle : String! {
+    public var itemTitle : String! {
         didSet {
-            if questionTitle != nil {
-                questionLabel.text = questionTitle.uppercased()
+            if itemTitle != nil {
+                questionLabel.text = itemTitle.uppercased()
             }
         }
     }
     
-    var numAnswers : Int! {
+    public var numAnswers : Int! {
         didSet {
             answerCount.setTitle(String(numAnswers), for: UIControlState())
         }
     }
     
+    public var image: UIImage? {
+        didSet {
+            imageView.image = image
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        addBackgroundColor()
+        view.backgroundColor = UIColor.white
+
+        addBackgroundImage()
         addQuestionLabel()
         addAnswerCount()
     }
@@ -39,11 +47,15 @@ class QuestionPreviewVC: UIViewController {
         super.viewWillAppear(true)
     }
     
-    fileprivate func addBackgroundColor() {
-//        let _rand = arc4random_uniform(UInt32(_backgroundColors.count))
-//        view.backgroundColor = _backgroundColors[Int(_rand)]
-        
-        view.backgroundColor = UIColor.white
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        imageView.image = nil
+    }
+    
+    fileprivate func addBackgroundImage() {
+        view.addSubview(imageView)
+        imageView.frame = view.frame
+        imageView.contentMode = .scaleAspectFill
     }
     
     fileprivate func addQuestionLabel() {

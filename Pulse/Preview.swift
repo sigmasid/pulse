@@ -23,9 +23,9 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     var delegate : previewDelegate!
     var showTapForMore = false
     var currentQuestion : Question!
-    var currentAnswer : Answer! {
+    var currentItem : Item! {
         didSet {
-            addAnswer(answer: currentAnswer)
+            addItem(item: currentItem)
             addLoadingIndicator()
         }
     }
@@ -61,44 +61,34 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     }
     
     //adds the first clip to the answers
-    fileprivate func addAnswer(answer : Answer) {
-        Database.getAnswer(answer.aID, completion: { (answer, error) in
+    fileprivate func addItem(item : Item) {
+        
+        guard let answerType = item.contentType, let itemURL = item.contentURL else {
+            GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
+            return
+        }
+        
+        if answerType == .recordedVideo || answerType == .albumVideo {
             
-            guard let answerType = answer.aType else {
-                GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                return
-            }
+            let aPlayerItem = PreviewPlayerItem(url: itemURL)
+            self.removeImageView()
+            aPlayerItem.delegate = self
+            Preview.aPlayer.replaceCurrentItem(with: aPlayerItem)
             
-            if answerType == .recordedVideo || answerType == .albumVideo {
-                Database.getAnswerURL(qID: answer.qID, fileID: answer.aID, completion: { (URL, error) in
-                    if (error != nil) {
-                        GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                    } else {
-                        let aPlayerItem = PreviewPlayerItem(url: URL!)
-                        self.removeImageView()
-                        aPlayerItem.delegate = self
-                        Preview.aPlayer.replaceCurrentItem(with: aPlayerItem)
-                        
-                        NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
-                                                               name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: Preview.aPlayer.currentItem)
+            NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
+                                                   name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: Preview.aPlayer.currentItem)
 
-                    }
-                })
-            } else if answerType == .recordedImage || answerType == .albumImage {
-                Database.getAnswerImage(qID: answer.qID, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
-                    if error != nil {
-                        GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                    } else {
-                        if let _image = GlobalFunctions.createImageFromData(data!) {
-                            self.showImageView(_image)
-                            self.removeLoadingIndicator()
-                        } else {
-                            GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                        }
+        } else if answerType == .recordedImage || answerType == .albumImage {
+            DispatchQueue.main.async {
+                let _userImageData = try? Data(contentsOf: itemURL)
+                DispatchQueue.main.async(execute: {
+                    if let data = _userImageData, let image = UIImage(data: data) {
+                        self.showImageView(image)
+                        self.removeLoadingIndicator()
                     }
                 })
             }
-        })
+        }
     }
     
     fileprivate func showImageView(_ image : UIImage) {

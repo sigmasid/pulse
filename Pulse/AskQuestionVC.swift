@@ -79,10 +79,6 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         }
     }
     
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-    
     func askQuestion() {
         postButton.setDisabled()
         let _loadingIndicator = postButton.addLoadingIndicator()

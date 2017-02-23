@@ -59,11 +59,6 @@ class InboxVC: UITableViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
     }
     
-    ///Pop self from stack
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-    
     // MARK: - Table view data source
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return conversations.count
@@ -84,7 +79,7 @@ class InboxVC: UITableViewController {
         
         if !user.uCreated {
             Database.getUser(user.uID!, completion: { (user, error) in
-                if error == nil {
+                if let user = user {
                     self.conversations[indexPath.row].cUser = user
                     cell.updateName(name: user.name)
                     if let _uPic = user.thumbPic {

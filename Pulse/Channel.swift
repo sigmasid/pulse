@@ -38,8 +38,11 @@ class Channel : NSObject {
         self.cImageURL = snapshot.childSnapshot(forPath: "image").value as? String
         
         for tag in snapshot.childSnapshot(forPath: "tags").children {
-            let _tag = Tag(tagID: (tag as AnyObject).key, tagTitle: (tag as AnyObject).value)
+            if let tag = tag as? FIRDataSnapshot {
+            let title = tag.value as? String
+            let _tag = Tag(tagID: (tag as AnyObject).key, tagTitle: title ?? nil)
             self.tags.append(_tag)
+            }
         }
         
         for user in snapshot.childSnapshot(forPath: "experts").children {
@@ -50,11 +53,22 @@ class Channel : NSObject {
         self.cCreated = true
     }
     
-    
     func updateChannel(detailedSnapshot : FIRDataSnapshot) {
         for child in detailedSnapshot.children {
-            let currentItem = Item(itemID: (child as AnyObject).key, type: (child as AnyObject).value)
-            self.items.append(currentItem)
+            let currentItem = Item(itemID: (child as AnyObject).key)
+            
+            if let childSnap = child as? FIRDataSnapshot {
+                
+                if let tagID = childSnap.childSnapshot(forPath: "tagID").value as? String, let tagTitle = childSnap.childSnapshot(forPath: "tagTitle").value as? String{
+                    currentItem.tag = Tag(tagID: tagID, tagTitle: tagTitle)
+                }
+            
+                if let type = childSnap.childSnapshot(forPath: "type").value as? String {
+                    currentItem.setType(type: type)
+                }
+            }
+            
+            items.append(currentItem)
         }
         
         cDetailedCreated = true

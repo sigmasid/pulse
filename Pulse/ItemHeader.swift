@@ -8,8 +8,8 @@
 
 import UIKit
 
-class AnswersHeader: UICollectionReusableView {
-    fileprivate lazy var titleLabel = UILabel()
+class ItemHeader: UICollectionReusableView {
+    fileprivate var titleLabel = UILabel()
     lazy var answerCount = PulseButton(size: .small, type: .answerCount, isRound: false, hasBackground: false)
     
     fileprivate var reuseCell = false
@@ -18,17 +18,19 @@ class AnswersHeader: UICollectionReusableView {
         super.init(frame: frame)
         
         addShadow()
-        setupQuestionPreview()
+        setupPreview()
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
-    func updateLabel(_ _title : String?) {
+    func updateLabel(_ _title : String?, count: Int) {
         if let _title = _title {
-            self.titleLabel.text = "# \(_title)"
+            titleLabel.text = _title
         }
+        
+        answerCount.setTitle("\(count)", for: .normal)
     }
     
     override func prepareForReuse() {
@@ -38,13 +40,20 @@ class AnswersHeader: UICollectionReusableView {
         super.prepareForReuse()
     }
     
-    fileprivate func setupQuestionPreview() {
-        
+    fileprivate func setupPreview() {
         addSubview(titleLabel)
         addSubview(answerCount)
         
-        answerCount.frame = CGRect(x: bounds.width - answerCount.bounds.width - Spacing.xs.rawValue, y: bounds.height / 2, width: answerCount.bounds.width, height: answerCount.bounds.height)
-        titleLabel.frame = CGRect(x: Spacing.xs.rawValue, y: 0, width: bounds.width - Spacing.s.rawValue - answerCount.bounds.width, height: bounds.height)
+        answerCount.frame = CGRect(x: bounds.width - answerCount.bounds.width - Spacing.xs.rawValue,
+                                   y: bounds.height / 2 - answerCount.bounds.height / 2,
+                                   width: answerCount.bounds.width,
+                                   height: answerCount.bounds.height)
+        
+        titleLabel.frame = CGRect(x: Spacing.s.rawValue,
+                                  y: 0,
+                                  width: bounds.width - Spacing.m.rawValue - answerCount.bounds.width,
+                                  height: bounds.height)
+        
         titleLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightRegular, color: UIColor.black, alignment: .left)
     }
 }

@@ -11,72 +11,61 @@ import Firebase
 import AVFoundation
 import Photos
 
-class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
+class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     fileprivate var uploadTask : FIRStorageUploadTask!
     
     // set by the delegate
-    var currentAnswer : Answer! {
+    var currentItem : Item! {
         didSet {
-            if currentAnswer.aType == .recordedVideo || currentAnswer.aType == .albumVideo {
+            view.addSubview(controlsOverlay)
+            setupOverlayButtons()
+            
+            if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo {
                 setupVideoForAnswer()
-            } else if currentAnswer.aType == .recordedImage || currentAnswer.aType == .albumImage {
+            } else if currentItem.contentType == .recordedImage || currentItem.contentType == .albumImage {
                 setupImageForAnswer()
             }
         }
     }
     
-    var currentQuestion : Question! {
-        didSet {
-            //            _controlsOverlay = RecordedAnswerOverlay(frame: view.bounds)
-            
-            if currentQuestion.hasFilters() {
-                _answersFilters = FiltersOverlay(frame: view.bounds)
-                _answersFilters!.currentQuestion = currentQuestion
-                //                view.addSubview(_answersFilters!) //NEED TO PUT BACK IN
-                view.addSubview(_controlsOverlay)
-            } else {
-                view.addSubview(_controlsOverlay)
-            }
-            setupOverlayButtons()
-        }
-    }
+    var selectedChannelID : String! //used to upload to right folders
     
-    //includes currentAnswer - set by delegate - the image / video is replaced after processing when uploading file or adding more
-    var currentAnswers : [Answer]!
+    //includes currentItem - set by delegate - the image / video is replaced after processing when uploading file or adding more
+    var recordedItems = [Item]()
     var isNewEntry = true //don't reprocess video / image if the user is returning back to prior entry
     
-    var currentAnswerIndex : Int = 0 {
+    var currentItemIndex : Int = 0 {
         didSet {
-            if currentAnswerIndex == 0 {
+            if currentItemIndex == 0 {
                 if let delegate = delegate {
-                    delegate.userDismissedRecording(self, _currentAnswers : currentAnswers)
+                    delegate.userDismissedRecording(self, recordedItems : recordedItems)
                 }
             } else {
-                currentAnswer = currentAnswers[currentAnswerIndex - 1] // adjust for array index vs. count
+                currentItem = recordedItems[currentItemIndex - 1] // adjust for array index vs. count
             }
         }
         willSet {
-            if newValue < currentAnswerIndex {
+            if newValue < currentItemIndex {
                 isNewEntry = false
             } else {
-                _controlsOverlay.addAnswerPagers()
+                controlsOverlay.addPagers()
             }
         }
     }
     
     weak var delegate : childVCDelegate?
     
-    fileprivate lazy var _controlsOverlay : RecordedAnswerOverlay = RecordedAnswerOverlay(frame: self.view.bounds)
-    fileprivate var _answersFilters : FiltersOverlay?
-    fileprivate var _isVideoLoaded = false
-    fileprivate var _isImageViewLoaded = false
+    fileprivate lazy var controlsOverlay : RecordingOverlay = RecordingOverlay(frame: self.view.bounds)
+    fileprivate var itemFilters : FiltersOverlay?
+    fileprivate var isVideoLoaded = false
+    fileprivate var isImageViewLoaded = false
     
     fileprivate var aPlayer : AVPlayer!
     fileprivate var avPlayerLayer : AVPlayerLayer!
     fileprivate var imageView : UIImageView!
     
-    fileprivate var answerCollectionPost = [ String : Bool ]()
+    fileprivate var itemCollectionPost = [ String : Bool ]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -87,31 +76,31 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     fileprivate func setupImageForAnswer() {
-        if !_isImageViewLoaded {
+        if !isImageViewLoaded {
             imageView = UIImageView(frame: view.bounds)
             imageView.contentMode = .scaleAspectFill
             view.addSubview(imageView)
             
-            _isImageViewLoaded = true
+            isImageViewLoaded = true
         }
         
         view.bringSubview(toFront: imageView)
         arrangeViews()
         
-        imageView.image = currentAnswer.aImage
-        currentAnswer.thumbImage = currentAnswer.aImage
+        imageView.image = currentItem.content as? UIImage
     }
     
     fileprivate func setupVideoForAnswer() {
         //don't create new AVPlayer if it already exists
-        if !_isVideoLoaded {
+        guard let contentURL = currentItem.contentURL else { return }
+        if !isVideoLoaded {
             aPlayer = AVPlayer()
             
             avPlayerLayer = AVPlayerLayer(player: aPlayer)
             avPlayerLayer.frame = view.bounds
             avPlayerLayer.backgroundColor = UIColor.darkGray.cgColor
             
-            _isVideoLoaded = true
+            isVideoLoaded = true
         }
         
         //reorder views so controls & filters are still on top
@@ -120,23 +109,24 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         
         aPlayer.replaceCurrentItem(with: nil)
         
-        let currentVideo = AVPlayerItem(url: currentAnswer.aURL)
+        let currentVideo = AVPlayerItem(url: contentURL)
         aPlayer.replaceCurrentItem(with: currentVideo)
         aPlayer.play()
         
-        if isNewEntry && currentAnswer.aType == .albumVideo || currentAnswer.aType == .recordedVideo {
+        if isNewEntry && currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo {
             DispatchQueue.global(qos: .background).async {
-                compressVideo(self.currentAnswer.aURL, completion: {(resultURL, thumbnailImage, error) in
+                compressVideo(contentURL, completion: {(resultURL, thumbnailImage, error) in
                     if let resultURL = resultURL {
-                        self.currentAnswer.aURL = resultURL
-                        self.currentAnswer.thumbImage = thumbnailImage
-                        self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
+                        self.currentItem.contentURL = resultURL
+                        self.currentItem.content = thumbnailImage
+                        self.recordedItems[self.currentItemIndex - 1] = self.currentItem
                     } else {
-                        let videoAsset = AVAsset(url: self.currentAnswer.aURL)
+
+                        let videoAsset = AVAsset(url: contentURL)
                         let thumbImage = thumbnailForVideoAtURL(videoAsset, orientation: .left)
-                        
-                        self.currentAnswer.thumbImage = thumbImage
-                        self.currentAnswers[self.currentAnswerIndex - 1] = self.currentAnswer
+
+                        self.currentItem.content = thumbImage
+                        self.recordedItems[self.currentItemIndex - 1] = self.currentItem
                     }
                 })
             }
@@ -145,10 +135,10 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     //move the controls and filters to top layer
     fileprivate func arrangeViews() {
-        if _answersFilters != nil {
-            view.bringSubview(toFront: _answersFilters!)
+        if itemFilters != nil {
+            view.bringSubview(toFront: itemFilters!)
         }
-        view.bringSubview(toFront: _controlsOverlay)
+        view.bringSubview(toFront: controlsOverlay)
     }
     
     func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
@@ -160,97 +150,101 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     fileprivate func setupOverlayButtons() {
-        _controlsOverlay.getButton(.post).addTarget(self, action: #selector(_post), for: UIControlEvents.touchUpInside)
-        _controlsOverlay.getButton(.save).addTarget(self, action: #selector(_save), for: UIControlEvents.touchUpInside)
-        _controlsOverlay.getButton(.close).addTarget(self, action: #selector(_close), for: UIControlEvents.touchUpInside)
-        _controlsOverlay.getButton(.addMore).addTarget(self, action: #selector(_addMore), for: UIControlEvents.touchUpInside)
+        controlsOverlay.getButton(.post).addTarget(self, action: #selector(_post), for: UIControlEvents.touchUpInside)
+        controlsOverlay.getButton(.save).addTarget(self, action: #selector(_save), for: UIControlEvents.touchUpInside)
+        controlsOverlay.getButton(.close).addTarget(self, action: #selector(_close), for: UIControlEvents.touchUpInside)
+        controlsOverlay.getButton(.addMore).addTarget(self, action: #selector(_addMore), for: UIControlEvents.touchUpInside)
     }
     
     func _addMore() {
         if let delegate = delegate {
-            delegate.userClickedAddMoreToAnswer(self, _currentAnswers: currentAnswers)
+            delegate.addMoreItems(self, recordedItems: recordedItems)
         }
     }
     
     ///close window and go back to camera
     func _close() {
-        // need to check if it was first answer -> if yes, go to camera else stay in UserRecordedAnswer and go back to last question, remove the current answer value from currentAnswers
-        _controlsOverlay.removeAnswerPager()
-        currentAnswers.remove(at: currentAnswerIndex - 1)
-        currentAnswerIndex = currentAnswerIndex - 1
+        // need to check if it was first answer -> if yes, go to camera else stay in UserRecordedAnswer and go back to last question, remove the current answer value from recordedItems
+        controlsOverlay.removePager()
+        recordedItems.remove(at: currentItemIndex - 1)
+        currentItemIndex = currentItemIndex - 1
     }
     
     ///post video to firebase
     func _post() {
-        _controlsOverlay.getButton(.post).isEnabled = false
+        controlsOverlay.getButton(.post).isEnabled = false
         aPlayer.pause()
 
         if User.isLoggedIn() {
-            _controlsOverlay.addProgressLabel("Posting...")
-            _controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
-            uploadAnswer(allAnswers: currentAnswers)
+            controlsOverlay.addProgressLabel("Posting...")
+            controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
+            uploadItems(allItems: recordedItems)
         } else {
             if let delegate = delegate {
-                _controlsOverlay.getButton(.post).isEnabled = true
+                controlsOverlay.getButton(.post).isEnabled = true
                 delegate.askUserToLogin(self)
             }
         }
     }
     
     ///upload video to firebase and update current answer with URL upon success
-    fileprivate func uploadAnswer( allAnswers : [Answer]) {
+    fileprivate func uploadItems( allItems : [Item]) {
         
-        var allAnswers = allAnswers
-        
-        guard let answer = allAnswers.last else {
+        var allItems = allItems //needed because parameters are lets so can't edit
+        guard let item = allItems.last else {
             self.doneCreatingAnswer()
             return
         }
+        guard let contentType = item.contentType else { return }
         
-        
-        if let _image = answer.thumbImage  {
-            Database.uploadImage(.AnswerThumbs, fileID: answer.aID, image: _image, completion: { (success, error) in } )
+        if let _image = item.content as? UIImage  {
+            Database.uploadImage(.AnswerThumbs, fileID: item.itemID, image: _image, completion: { (success, error) in } )
         }
         
-        answerCollectionPost[answer.aID] = true
-        
-        if answer.aType != nil && answer.aType == .recordedVideo || answer.aType == .albumVideo {
-            
-            uploadVideo(answer, completion: {(success, _answerID) in
-                
-                allAnswers.removeLast()
-                self.uploadAnswer(allAnswers: allAnswers)
+        if contentType == .recordedVideo || contentType == .albumVideo {
+            uploadVideo(item, completion: {(success, _itemID) in
+                allItems.removeLast()
+                self.uploadItems(allItems: allItems)
             })
         }
+        else if contentType == .recordedImage || contentType == .albumImage, let _image = item.content as? UIImage {
+            let path = storageRef.child("channels").child(selectedChannelID).child(item.itemID)
             
-        else if answer.aType != nil && answer.aType == .recordedImage || answer.aType == .albumImage {
-            Database.uploadImage(.Answers, fileID: answer.aID, image: answer.aImage!, completion: {(success, error) in
-                if error != nil {
-                    GlobalFunctions.showErrorBlock("Error Posting Image", erMessage: error!.localizedDescription)
+            let data = _image.mediumQualityJPEGNSData
+                
+            let _metadata = FIRStorageMetadata()
+            _metadata.contentType = "image/jpeg"
+            
+            uploadTask = path.put(data, metadata: _metadata) { metadata, error in
+                if (error != nil) {
+                    GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                 } else {
+                    // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
+                    item.contentURL = metadata?.downloadURL()
                     
-                    Database.addUserAnswersToDatabase(answer, completion: {(success, error) in
+                    Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                         if !success {
                             GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                         } else {
-                            allAnswers.removeLast()
-                            self.uploadAnswer(allAnswers: allAnswers)
+                            self.itemCollectionPost[item.itemID] = true
+                            allItems.removeLast()
+                            self.uploadItems(allItems: allItems)
                         }
                     })
                 }
-            })
+            }
         }
     }
     
-    fileprivate func uploadVideo(_ answer : Answer,
-                                 completion: @escaping (_ success : Bool, _ _answerID : String?) -> Void) {
+    fileprivate func uploadVideo(_ item : Item, completion: @escaping (_ success : Bool, _ _itemID : String?) -> Void) {
         var fileSize = UInt64()
-        _controlsOverlay.addUploadProgressBar()
+        controlsOverlay.addUploadProgressBar()
         
-        if let localFile: URL = answer.aURL as URL? {
-            
-            let _metadata = FIRStorageMetadata()
-            _metadata.contentType = "video/mp4"
+        if let localFile: URL = item.contentURL as URL? {
+            print("file to upload link is \(localFile)")
+
+            let metadata = FIRStorageMetadata()
+            metadata.contentType = "video/mp4"
             
             do {
                 let attr:NSDictionary? = try FileManager.default.attributesOfItem(atPath: localFile.path) as NSDictionary?
@@ -259,41 +253,39 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 }
             } catch { }
             
-            let path = storageRef.child("answers").child(answer.qID).child(answer.aID)
-
-            //let path = Database.getStoragePath(.Answers, itemID: answer.aID)
+            let path = storageRef.child("channels").child(selectedChannelID).child(item.type.rawValue).child(item.itemID)
             
             do {
                 let assetData = try Data(contentsOf: localFile)
                 
-                uploadTask = path.put(assetData, metadata: _metadata) { metadata, error in
+                uploadTask = path.put(assetData, metadata: metadata) { metadata, error in
                     if (error != nil) {
-                        GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                        GlobalFunctions.showErrorBlock(viewController: self, erTitle: "Error Posting Answer", erMessage: error!.localizedDescription)
                     } else {
                         // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
-                        //self.currentAnswer.aURL = metadata?.downloadURL()
-                        
-                        Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
+                        item.contentURL = metadata?.downloadURL()
+                        print("download url is \(metadata?.downloadURL())")
+                        Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                             if !success {
-                                GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                                GlobalFunctions.showErrorBlock("Error Posting Item", erMessage: error!.localizedDescription)
                                 completion(false, nil)
                             } else {
                                 self.uploadTask.removeAllObservers()
-                                completion(true, answer.aID)
+                                completion(true, item.itemID)
                             }
                         })
                     }
                 }
-                
-                
             }
-            catch {}
+            catch {
+                print("went into catch")
+            }
             
             /*
              //NEED TO CHECK IF THIS STILL WORKS - FOR FAILURE & SUCCESS
              uploadTask.observe(.success) { snapshot in
              print("successfully added file to storage")
-             self.currentAnswer.aURL = snapshot.metadata?.downloadURL()
+             self.currentItem.aURL = snapshot.metadata?.downloadURL()
              
              Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
              if !success {
@@ -320,7 +312,7 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
                 if fileSize > 0 {
                     let percentComplete = Float(snapshot.progress!.completedUnitCount) / Float(fileSize)
                     DispatchQueue.main.async {
-                        self._controlsOverlay.updateProgressBar(percentComplete)
+                        self.controlsOverlay.updateProgressBar(percentComplete)
                     }
                 }
             }
@@ -329,7 +321,10 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///Called after user has uploaded full answer
     fileprivate func doneCreatingAnswer() {
-        Database.addAnswerCollectionToDatabase(currentAnswers.first!, post: answerCollectionPost, completion: {(success, error) in
+        Database.addItemCollectionToDatabase(recordedItems.first!,
+                                             channelID: selectedChannelID,
+                                             post: itemCollectionPost,
+                                             completion: {(success, error) in
             if let delegate = self.delegate {
                 delegate.doneUploadingAnswer(self)
             }
@@ -338,15 +333,15 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///User clicked save to album button
     func _save(_ sender: UIButton!) {
-        _controlsOverlay.addProgressLabel("Saving...")
+        controlsOverlay.addProgressLabel("Saving...")
         
-        if currentAnswer.aType == .recordedVideo || currentAnswer.aType == .albumVideo {
-            _saveVideoToAlbum(currentAnswer.aURL as URL)
-        } else if currentAnswer.aType == .recordedVideo || currentAnswer.aType == .albumVideo {
-            _saveImageToAlbum(currentAnswer.aImage!)
+        if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo, let contentURL = currentItem.contentURL {
+            _saveVideoToAlbum(contentURL)
+        } else if currentItem.contentType == .recordedImage || currentItem.contentType == .albumImage, let _image = currentItem.content as? UIImage {
+            _saveImageToAlbum(_image)
         }
         else {
-            _controlsOverlay.hideProgressLabel("Sorry error saving file")
+            controlsOverlay.hideProgressLabel("Sorry error saving file")
         }
     }
     
@@ -357,11 +352,11 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         }, completionHandler: { success, error in
             if success {
                 DispatchQueue.main.async {
-                    self._controlsOverlay.hideProgressLabel("Saved video!")
+                    self.controlsOverlay.hideProgressLabel("Saved video!")
                 }
             } else {
                 DispatchQueue.main.async {
-                    self._controlsOverlay.hideProgressLabel("Sorry there was an error")
+                    self.controlsOverlay.hideProgressLabel("Sorry there was an error")
                 }
             }
         })
@@ -374,11 +369,11 @@ class UserRecordedAnswerVC: UIViewController, UIGestureRecognizerDelegate {
         }, completionHandler: { success, error in
             if success {
                 DispatchQueue.main.async {
-                    self._controlsOverlay.hideProgressLabel("Saved image!")
+                    self.controlsOverlay.hideProgressLabel("Saved image!")
                 }
             } else {
                 DispatchQueue.main.async {
-                    self._controlsOverlay.hideProgressLabel("Sorry there was an error")
+                    self.controlsOverlay.hideProgressLabel("Sorry there was an error")
                 }
             }
         })

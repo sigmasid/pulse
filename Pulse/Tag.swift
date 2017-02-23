@@ -10,14 +10,14 @@ import Foundation
 import Firebase
 
 class Tag : NSObject {
-    var tagID: String?
+    var tagID: String!
     var tagTitle : String?
     
-    var questions = [Question]()
-    var experts = [User]()
+    var items = [Item]()
     var tagImage : String?
     var tagDescription : String?
-    var previewImage : String?
+    
+    var type : ItemTypes!
     
     dynamic var tagCreated = false
     
@@ -30,9 +30,9 @@ class Tag : NSObject {
         self.tagTitle = tagTitle
     }
     
-    init(tagID: String, questions : [Question]?) {
+    init(tagID: String, items : [Item]) {
         self.tagID = tagID
-        self.questions = questions!
+        self.items = items
     }
     
     init(tagID: String, snapshot: FIRDataSnapshot) {
@@ -40,25 +40,24 @@ class Tag : NSObject {
         super.init()
         
         self.tagDescription  = snapshot.childSnapshot(forPath: "description").value as? String
-        self.previewImage = snapshot.childSnapshot(forPath: "previewImage").value as? String
+        self.tagImage = snapshot.childSnapshot(forPath: "tagImage").value as? String
 
         self.tagTitle = snapshot.childSnapshot(forPath: "title").value as? String
-
-        for question in snapshot.childSnapshot(forPath: "questions").children {
-            let _question = Question(qID: (question as AnyObject).key)
-            self.questions.append(_question)
-        }
         
-        for user in snapshot.childSnapshot(forPath: "experts").children {
-            let _user = User(uID: (user as AnyObject).key)
-            self.experts.append(_user)
+        if let type = snapshot.childSnapshot(forPath: "type").value as? String {
+            setType(type: type)
+        }
+
+        for item in snapshot.childSnapshot(forPath: "items").children {
+            let item = Item(itemID: (item as AnyObject).key)
+            self.items.append(item)
         }
         
         self.tagCreated = true
     }
     
-    func totalQuestionsForTag() -> Int {
-        return self.questions.count
+    func totalItemsForTag() -> Int {
+        return self.items.count
     }
     
     func createShareLink(completion: @escaping (String?) -> Void) {
@@ -87,6 +86,16 @@ class Tag : NSObject {
             return tagID == object.tagID
         } else {
             return false
+        }
+    }
+    
+    internal func setType(type : String) {
+        if type == "question" {
+            self.type = .question
+        } else if type == "post" {
+            self.type = .post
+        }  else if type == "answer" {
+            self.type = .answer
         }
     }
 }

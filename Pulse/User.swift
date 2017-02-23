@@ -125,15 +125,17 @@ class User {
     }
     
     /// Returns if user can answer question in given tag
-    func canAnswer(qID: String, tag : Tag, completion: (Bool, String?, String?) -> Void) {
-        // if user has not answered the question and is an expert in the tag then allowed to answer question
-        if !hasAnsweredQuestion(qID), expertiseTags.contains(tag) {
+    func canAnswer(itemID: String, tag : Tag, completion: (Bool, String?, String?) -> Void) {
+        completion(true, nil, nil)
+        
+        /** if user has not answered the question and is an expert in the tag then allowed to answer question
+        if !hasAnsweredQuestion(itemID), expertiseTags.contains(tag) {
             completion(true, nil, nil)
-        } else if hasAnsweredQuestion(qID) {
+        } else if hasAnsweredQuestion(itemID) {
             completion(false, "Already Answered!", "Sorry you can only answer a question once")
         } else if !expertiseTags.contains(tag) {
-            completion(false, "Experts Only", "Are you an expert? Apply to answer!")
-        }
+            completion(false, "Experts Only!", "Are you an expert? Apply to get approved!")
+        } **/
     }
     
     func hasAnsweredQuestion(_ qID : String) -> Bool {

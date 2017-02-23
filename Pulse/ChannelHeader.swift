@@ -89,7 +89,7 @@ extension ChannelHeader: UICollectionViewDataSource, UICollectionViewDelegate, U
         
         if !_user.uCreated { //search case - get question from database
             Database.getUser(_user.uID!, completion: { (user, error) in
-                if error == nil {
+                if let user = user {
                     cell.updateCell(user.name?.capitalized, _image: nil)
                     
                     self.experts[indexPath.row] = user

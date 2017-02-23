@@ -107,10 +107,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
         }
     }
     
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-    
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height

@@ -44,7 +44,7 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
     /** End Delegate Vars **/
 
     fileprivate var headerNav : PulseNavVC?
-    fileprivate var QAVC : QAManagerVC!
+    fileprivate var contentVC : ContentManagerVC!
     fileprivate var selectedAnswer: Answer!
 
     fileprivate var allAnswers = [Answer]()
@@ -180,10 +180,6 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
         }
     }
     
-    internal func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-    
     /** Start Delegate Functions **/
     func askQuestion() {
         let questionVC = AskQuestionVC()
@@ -313,7 +309,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             //only show answer by selected user - removes other answers from qAnswers array and creates blank dummy tag
             if selectedUser != nil {
                 let selectedQuestion = currentAnswer.question
-                selectedQuestion?.qAnswers = [currentAnswer.answer.aID]
+                selectedQuestion?.qItems = [Item(itemID: currentAnswer.answer.aID)]
                 showQuestion(selectedQuestion,
                              answerCollection: currentAnswer.answerCollection,
                              selectedTag: Tag(tagID: currentAnswer.question!.getTag()))
@@ -322,7 +318,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             //if answer has more than initial clip, show 'see more at the end'
             watchedFullPreview = false
             
-            Database.getAnswerCollection(currentAnswer.answer.aID, completion: {(hasDetail, answerCollection) in
+            Database.getItemCollection(currentAnswer.answer.aID, completion: {(hasDetail, answerCollection) in
                 if hasDetail {
                     cell.showTapForMore = true
                     self.answerStack[indexPath.row].answerCollection = answerCollection!
@@ -342,22 +338,23 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func showQuestion(_ selectedQuestion : Question?, answerCollection: [String], selectedTag : Tag) {
-        let QAVC = QAManagerVC()
-        
+        contentVC = ContentManagerVC()
+        /**
         //need to be set first
-        QAVC.watchedFullPreview = watchedFullPreview
-        QAVC.answerCollection = answerCollection
-        QAVC.allAnswers = answerStack.map{ (answerData) -> Answer in answerData.answer }
+        contentVC.watchedFullPreview = watchedFullPreview
+        contentVC.answerCollection = answerCollection
+        contentVC.allAnswers = answerStack.map{ (answerData) -> Answer in answerData.answer }
         
-        QAVC.selectedTag = selectedTag
-        QAVC.allQuestions = [selectedQuestion]
-        QAVC.currentQuestion = selectedQuestion
-        QAVC.openingScreen = .question
+        contentVC.selectedTag = selectedTag
+        contentVC.allQuestions = [selectedQuestion]
+        contentVC.currentQuestion = selectedQuestion
+        contentVC.openingScreen = .question
         
         selectedIndex = nil
         
-        QAVC.transitioningDelegate = self
-        present(QAVC, animated: true, completion: nil)
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+         **/
     }
     
     func setSelectedIndex(index : IndexPath?) {
@@ -433,8 +430,8 @@ extension UserProfileVC: UIViewControllerTransitioningDelegate {
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
-        if presented is QAManagerVC {
-            panDismissInteractionController.wireToViewController(QAVC, toViewController: nil, edge: UIRectEdge.left)
+        if presented is ContentManagerVC {
+            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
@@ -447,7 +444,7 @@ extension UserProfileVC: UIViewControllerTransitioningDelegate {
     }
     
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is QAManagerVC {
+        if dismissed is ContentManagerVC {
             let animator = PanAnimationController()
             
             animator.initialFrame = getRectToLeft()

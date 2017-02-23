@@ -8,7 +8,7 @@
 
 import UIKit
 
-class RecordedAnswerOverlay: UIView {
+class RecordingOverlay: UIView {
     fileprivate var saveButton = PulseButton(size: .small, type: .save, isRound: true, hasBackground: false)
     fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: false)
 
@@ -24,7 +24,7 @@ class RecordedAnswerOverlay: UIView {
     fileprivate var progressBar = UIProgressView()
     
     fileprivate var pagers = [UIView]()
-    fileprivate lazy var answerPagers = UIStackView()
+    fileprivate lazy var pagersStack = UIStackView()
     
     var tap : UITapGestureRecognizer!
     
@@ -38,7 +38,7 @@ class RecordedAnswerOverlay: UIView {
         addFooterButtons()
         addCloseButton()
         addSaveButton()
-        setupAnswerPagers()
+        setupPagers()
     }
     
     func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
@@ -141,45 +141,45 @@ class RecordedAnswerOverlay: UIView {
         progressLabel.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
     }
     
-    func setupAnswerPagers() {
-        addSubview(answerPagers)
+    func setupPagers() {
+        addSubview(pagersStack)
         
-        answerPagers.translatesAutoresizingMaskIntoConstraints = false
-        answerPagers.widthAnchor.constraint(equalToConstant: Spacing.xs.rawValue).isActive = true
-        answerPagers.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
-        answerPagers.trailingAnchor.constraint(equalTo: trailingAnchor, constant : -Spacing.s.rawValue).isActive = true
+        pagersStack.translatesAutoresizingMaskIntoConstraints = false
+        pagersStack.widthAnchor.constraint(equalToConstant: Spacing.xs.rawValue).isActive = true
+        pagersStack.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
+        pagersStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant : -Spacing.s.rawValue).isActive = true
         
-        answerPagers.axis = .vertical
-        answerPagers.distribution = .fillEqually
-        answerPagers.spacing = Spacing.s.rawValue
+        pagersStack.axis = .vertical
+        pagersStack.distribution = .fillEqually
+        pagersStack.spacing = Spacing.s.rawValue
     }
     
-    func addAnswerPagers() {
+    func addPagers() {
         let _pager = UIView()
         _pager.translatesAutoresizingMaskIntoConstraints = false
         _pager.heightAnchor.constraint(equalTo: _pager.widthAnchor).isActive = true
         _pager.backgroundColor = pulseBlue
         
-        if answerPagers.arrangedSubviews.last != nil {
-            answerPagers.arrangedSubviews.last!.backgroundColor = .white
+        if pagersStack.arrangedSubviews.last != nil {
+            pagersStack.arrangedSubviews.last!.backgroundColor = .white
         }
         
-        answerPagers.addArrangedSubview(_pager)
+        pagersStack.addArrangedSubview(_pager)
         
         _pager.layoutIfNeeded()
         _pager.layer.cornerRadius = _pager.frame.width / 2
         _pager.layer.masksToBounds = true
     }
     
-    func removeAnswerPager() {
-        if answerPagers.arrangedSubviews.last != nil {
-            let lastView = answerPagers.arrangedSubviews.last!
-            answerPagers.removeArrangedSubview(lastView)
+    func removePager() {
+        if pagersStack.arrangedSubviews.last != nil {
+            let lastView = pagersStack.arrangedSubviews.last!
+            pagersStack.removeArrangedSubview(lastView)
             lastView.removeFromSuperview()
         }
         
-        if answerPagers.arrangedSubviews.last != nil {
-            answerPagers.arrangedSubviews.last!.backgroundColor = pulseBlue
+        if pagersStack.arrangedSubviews.last != nil {
+            pagersStack.arrangedSubviews.last!.backgroundColor = pulseBlue
         }
     }
     

@@ -333,10 +333,6 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
         })
     }
     
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-
     func updateProfile() {
         updateButton.setDisabled()
         let _loading = updateButton.addLoadingIndicator()

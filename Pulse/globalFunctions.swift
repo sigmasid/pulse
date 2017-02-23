@@ -232,12 +232,17 @@ class GlobalFunctions {
     
     static func showErrorBlock(_ erTitle: String, erMessage: String) {
         
+        if let topController = UIApplication.shared.keyWindow?.rootViewController {
+            showErrorBlock(viewController: topController, erTitle: erTitle, erMessage: erMessage)
+        }
+    }
+    
+    static func showErrorBlock(viewController : UIViewController, erTitle: String, erMessage: String) {
+        
         let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
 
-        if let topController = UIApplication.shared.keyWindow?.rootViewController {
-            topController.present(alertController, animated: true, completion:nil)
-        }
+        viewController.present(alertController, animated: true, completion:nil)
     }
     
     //rotate images if they are not correctly aligned

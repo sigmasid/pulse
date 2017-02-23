@@ -17,7 +17,7 @@ class MiniProfile: UIView {
     fileprivate var messageButton : UIButton!
     fileprivate var closeButton : PulseButton!
     
-    var delegate : answerDetailDelegate!
+    var delegate : ItemDetailDelegate!
 
     override init(frame: CGRect) {
         super.init(frame: frame)

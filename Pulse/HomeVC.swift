@@ -50,7 +50,11 @@ class HomeVC: UIViewController, feedVCDelegate {
         super.didReceiveMemoryWarning()
     }
     
+    
     func loadFeed() {
+        if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
+
+        /**
         if User.isLoggedIn() && !initialLoadComplete {
             if homeFeedVC == nil {
                 homeFeedVC = FeedVC()
@@ -92,14 +96,15 @@ class HomeVC: UIViewController, feedVCDelegate {
                                                    name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
             
             notificationsSetup = true
-        }
+        } **/
     }
-    
+
+    /**
     func returnHome() {
         navigationController?.setNavigationBarHidden(true, animated: true)
         
         homeFeedVC.selectedTag = feed
-        homeFeedVC.allQuestions = feed.questions
+        homeFeedVC.allQuestions = feed.items
         homeFeedVC.feedItemType = .question
         homeFeedVC.setSelectedIndex(index: nil)
     }
@@ -107,7 +112,7 @@ class HomeVC: UIViewController, feedVCDelegate {
     func updateFeed() {
         if User.isLoggedIn() {
             Database.getFeed { feed in
-                self.homeFeedVC.allQuestions = feed.questions
+                self.homeFeedVC.allQuestions = feed.items
                 self.homeFeedVC.feedItemType = .question
             }
         } else {
@@ -117,7 +122,7 @@ class HomeVC: UIViewController, feedVCDelegate {
             initialLoadComplete = false
             toggleLoading(show: true, message: "Please login to see your feed!")
         }
-    }
+    } **/
     
     func userSelected(type : FeedItemType, item : Any) {
         switch type {
@@ -127,7 +132,7 @@ class HomeVC: UIViewController, feedVCDelegate {
 
             Database.getQuestion(selectedQuestion.qID, completion: { question, error in
                 if let question = question, question.hasAnswers() {
-                    self.homeFeedVC.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
+                    //self.homeFeedVC.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                     self.homeFeedVC.feedItemType = .answer
                     self.homeFeedVC.setSelectedIndex(index: IndexPath(row: 0, section: 0))
                     self.toggleLoading(show: false, message : nil)
@@ -158,7 +163,7 @@ class HomeVC: UIViewController, feedVCDelegate {
     
     fileprivate func updateNav() {
         backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(returnHome), for: .touchUpInside)
+        //backButton.addTarget(self, action: #selector(returnHome), for: .touchUpInside)
         
         navigationItem.leftBarButtonItem = backButton != nil ? UIBarButtonItem(customView: backButton!) : nil
     }

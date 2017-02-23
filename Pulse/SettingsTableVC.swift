@@ -70,11 +70,6 @@ class SettingsTableVC: UIViewController {
         }
     }
     
-    
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-    
     func setupTable() {
         view.addSubview(settingsTable)
         

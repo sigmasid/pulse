@@ -27,8 +27,8 @@ class FeedQuestionCell: PulseCell {
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?) {
-        self.titleLabel.text = _title
-        self.subtitleLabel.text = _subtitle
+        titleLabel.text = _title
+        subtitleLabel.text = _subtitle
     }
     
     override func prepareForReuse() {
@@ -71,6 +71,7 @@ class FeedQuestionCell: PulseCell {
         titleLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightRegular, color: UIColor.black, alignment: .left)
         subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightHeavy, color: UIColor.black, alignment: .left)
         
+        titleLabel.numberOfLines = 0
         subtitleLabel.numberOfLines =  2
         subtitleLabel.lineBreakMode =  .byTruncatingTail
         

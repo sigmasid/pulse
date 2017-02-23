@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AnswerOverlay: UIView {
+class ContentOverlay: UIView {
 
     fileprivate var questionBackground = UIView()
     fileprivate var userBackground = UIView()
@@ -37,7 +37,7 @@ class AnswerOverlay: UIView {
     fileprivate var timeLeftShapeLayer = CAShapeLayer()
     fileprivate var bgShapeLayer = CAShapeLayer()
     
-    weak var delegate : answerDetailDelegate!
+    weak var delegate : ItemDetailDelegate!
     
     /** VARS FOR SIDE MENU **/
     fileprivate var detailMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.s.rawValue)
@@ -258,14 +258,14 @@ class AnswerOverlay: UIView {
     
     func handleUpvote() {
         if delegate != nil {
-            delegate.votedAnswer(.upvote)
+            delegate.votedItem(.upvote)
             addVote(.upvote)
         }
     }
     
     func handleDownvote() {
         if delegate != nil {
-            delegate.votedAnswer(.downvote)
+            delegate.votedItem(.downvote)
             addVote(.downvote)
         }
     }
@@ -285,20 +285,20 @@ class AnswerOverlay: UIView {
     func handleExploreTap() {
         if delegate != nil {
             toggleMenu(show: false)
-            delegate.userClickedBrowseAnswers()
+            delegate.userClickedBrowseItems()
         }
     }
     
     func handleAddAnswerTap() {
         if delegate != nil {
             toggleMenu(show: false)
-            delegate.userClickedAddAnswer()
+            delegate.userClickedAddItem()
         }
     }
     
     func handleExploreAnswerTap() {
         if delegate != nil {
-            delegate.userClickedExpandAnswer()
+            delegate.userClickedExpandItem()
         }
     }
     
@@ -306,28 +306,32 @@ class AnswerOverlay: UIView {
         return questionBackground.bounds.height
     }
     
-    func showExploreAnswerDetail() {
+    func showExploreDetail() {
         exploreAnswer.setTitle("EXPLORE ANSWER", for: UIControlState())
         exploreAnswer.setEnabled()
         exploreAnswer.isHidden = false
     }
     
-    func hideExploreAnswerDetail() {
+    func hideExploreDetail() {
         exploreAnswer.isHidden = true
     }
     
-    func updateExploreAnswerDetail() {
+    func updateExploreDetail() {
         exploreAnswer.setTitle("EXPLORING", for: .disabled)
         exploreAnswer.setDisabled()
     }
     
     /* PUBLIC SETTER FUNCTIONS */
     func setUserName(_ _userName : String?) {
-        userTitleLabel.text = _userName
+        if let name = _userName {
+            userTitleLabel.text = name.capitalized
+        }
     }
     
     func setUserSubtitle(_ _userSubtitle : String?) {
-        userSubtitleLabel.text = _userSubtitle
+        if let subtitle = _userSubtitle {
+            userSubtitleLabel.text = subtitle.capitalized
+        }
     }
     
     func setUserImage(_ image : UIImage?) {
@@ -338,12 +342,14 @@ class AnswerOverlay: UIView {
         return userBackground
     }
     
-    func setQuestion(_ question : String) {
-        questionLabel.text = question
+    func setTitle(_ title : String) {
+        questionLabel.text = title
     }
     
-    func setTagName(_ tagName : String) {
-        tagLabel.text = "#" + tagName.uppercased()
+    func setTagName(_ tagName : String?) {
+        if let tagName = tagName {
+            tagLabel.text = "#" + tagName.lowercased()
+        }
     }
     
     func createMenu() {
@@ -447,7 +453,7 @@ class AnswerOverlay: UIView {
     }
     
     /* ADD VOTE ANIMATION */
-    func addVote(_ _vote : AnswerVoteType) {
+    func addVote(_ _vote : VoteType) {
         var _voteImage : UIImageView!
         
         switch _vote {
