@@ -8,7 +8,7 @@
 
 import UIKit
 
-class AnswerCell: UICollectionViewCell, previewDelegate {
+class BrowseCell: UICollectionViewCell, previewDelegate {
     var delegate : previewDelegate!
     
     fileprivate lazy var titleLabel = UILabel()
@@ -86,7 +86,7 @@ class AnswerCell: UICollectionViewCell, previewDelegate {
         previewAdded = true
     }
     
-    func removeAnswer() {
+    func removePreview() {
         previewVC.removeClip()
         previewVC.removeFromSuperview()
         
@@ -96,7 +96,7 @@ class AnswerCell: UICollectionViewCell, previewDelegate {
     
     override func prepareForReuse() {
         if previewAdded {
-            removeAnswer()
+            removePreview()
         }
         
         titleLabel.text = ""

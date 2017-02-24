@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HomeVC: UIViewController, feedVCDelegate {
+class HomeVC: UIViewController {
     
     public var tabDelegate : tabVCDelegate!
 
@@ -124,6 +124,7 @@ class HomeVC: UIViewController, feedVCDelegate {
         }
     } **/
     
+    /**
     func userSelected(type : FeedItemType, item : Any) {
         switch type {
         case .question:
@@ -148,6 +149,7 @@ class HomeVC: UIViewController, feedVCDelegate {
         default: break
         }
     }
+     **/
     
     public func appButtonTapped() {
         if screenMenu.isHidden {

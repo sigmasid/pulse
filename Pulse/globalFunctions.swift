@@ -170,6 +170,15 @@ class GlobalFunctions {
         return labelWidth
     }
     
+    static func getFormattedTime(timeString : Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        let stringDate: String = formatter.string(from: timeString)
+        
+        return stringDate
+    }
+    
     ///Share content
     static func shareContent(shareType: String, shareText: String, shareLink: String, presenter: UIViewController) -> UIActivityViewController {
         // set up activity view controller

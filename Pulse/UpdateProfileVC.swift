@@ -513,9 +513,9 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch _currentSetting.settingID {
         case "answers":
-            return User.currentUser!.answers.count
-        case "savedQuestions":
-            return User.currentUser!.savedQuestions.count
+            return User.currentUser!.items.count
+        case "savedItems":
+            return User.currentUser!.savedItems.count
         case "savedTags":
             return User.currentUser!.savedTags.count
         default: return 0

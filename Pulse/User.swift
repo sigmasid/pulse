@@ -20,7 +20,8 @@ class User {
     var birthday : String?
     var location : CLLocation?
     var sLocation : String?
-    var answers = [Answer]()
+    var items = [Item]()
+    
     var answeredQuestions = [String]()
     var profilePic : String?
     var thumbPic : String?
@@ -28,10 +29,11 @@ class User {
     var expertiseTags = [Tag]()
     
     var shownCameraForQuestion = [ String : String ]()
-    var _totalAnswers : Int?
+    var _totalItems : Int?
     var savedTags = [Tag : String?]()
     var savedTagIDs = [String]()
-    var savedQuestions = [String : String?]()
+    
+    var savedItems = [String : String?]()
     var savedVotes = [String : Bool]()
     var socialSources = [ Social : Bool ]()
     
@@ -98,10 +100,15 @@ class User {
             self.bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String
         }
         
-        if detailedSnapshot.hasChild("answers") {
-            for child in detailedSnapshot.childSnapshot(forPath: "answers").children {
-                let currentAnswer = Answer(aID: (child as AnyObject).key, qID: (child as AnyObject).value)
-                self.answers.append(currentAnswer)
+        if detailedSnapshot.hasChild("items") {
+            for child in detailedSnapshot.childSnapshot(forPath: "items").children {
+                if let child = child as? FIRDataSnapshot {
+                    let item = Item(itemID: child.key)
+                    if let parentID = child.value {
+                        item.parentItemID = parentID as? String
+                    }
+                    self.items.append(item)
+                }
             }
         }
         
@@ -146,8 +153,8 @@ class User {
         return self.savedTags.isEmpty ? false : true
     }
     
-    func totalAnswers() -> Int {
-        return answers.count
+    func totalItems() -> Int {
+        return items.count
     }
     
     func getEmail() -> String? {

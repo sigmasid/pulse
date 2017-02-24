@@ -8,8 +8,8 @@
 
 import UIKit
 
-class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate {
-    
+class ExploreVC: UIViewController {
+    /**
     ///To update view set the currentExploreMode which updates scope, menus and nav
     
     // Set by MasterTabVC
@@ -877,9 +877,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var blankButton : PulseButton!
     fileprivate var backButton : PulseButton!
     /* END UI ELEMENTS */
+ 
 }
 
-extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchControllerDelegate {
+extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchControllerDelegate, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate  {
+    /**
     // MARK: - Search controller delegate methods
     func updateSearchResults(for searchController: UISearchController) {
         toggleLoading(show: true, message: "Searching...")
@@ -948,9 +950,11 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
         return true
     }
+     **/
 }
 
 extension ExploreVC {
+    /**
     /* STACK TO KEEP WINDOW SYNC'D / REFRESH AS NEEDED */
     struct Explore {
         
@@ -1028,10 +1032,12 @@ extension ExploreVC {
             }
         }
     }
+     **/
 }
 
 //HANDLE DYNAMIC LINKS
 extension ExploreVC {
+    /**
     func handleLink() {
         
         selectedUser = nil
@@ -1070,4 +1076,6 @@ extension ExploreVC {
             }
         }
     }
+     **/
+}*/
 }

@@ -14,7 +14,7 @@ protocol UserProfileDelegate: class {
     func shareProfile()
 }
 
-class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
+class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDelegate {
     
     /** Delegate Vars **/
     public var selectedUser : User! {
@@ -23,13 +23,13 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
                 Database.getUser(selectedUser.uID!, completion: {(user, error) in
                     if error == nil {
                         self.selectedUser = user
-                        self.updateHeader()
+                        self.setHeaderTitle(title: user?.name ?? "Explore User")
                     }
                 })
             } else if !selectedUser.uDetailedCreated {
                 getDetailUserProfile()
             } else {
-                allAnswers = selectedUser.answers
+                allItems = selectedUser.items
                 updateDataSource()
             }
             
@@ -45,18 +45,31 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
 
     fileprivate var headerNav : PulseNavVC?
     fileprivate var contentVC : ContentManagerVC!
-    fileprivate var selectedAnswer: Answer!
-
-    fileprivate var allAnswers = [Answer]()
+    
+    /** Data Source Vars **/
+    public var allItems = [Item]() {
+        didSet {
+            itemStack.removeAll()
+            itemStack = [ItemMetaData](repeating: ItemMetaData(), count: allItems.count)
+        }
+    }
+    
+    struct ItemMetaData {
+        var itemCollection = [String]()
+        
+        var gettingImageForPreview : Bool = false
+        var gettingInfoForPreview : Bool = false
+    }
+    private var itemStack = [ItemMetaData]()
+    /** End Data Source Vars **/
+    
     fileprivate var isLoaded = false
-    fileprivate var isLayoutSetup = false
     
     /** Collection View Vars **/
-    fileprivate var profile : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
     fileprivate let headerHeight : CGFloat = 225
     fileprivate let headerReuseIdentifier = "UserProfileHeader"
-    fileprivate let answerReuseIdentifier = "FeedAnswerCell"
+    fileprivate let reuseIdentifier = "FeedAnswerCell"
     
     /** Transition Vars **/
     fileprivate var initialFrame = CGRect.zero
@@ -65,22 +78,12 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
     
     fileprivate var activityController: UIActivityViewController? //Used for share screen
     
-    fileprivate var answerStack = [AnswerPreviewData]()
-    struct AnswerPreviewData {
-        var answer : Answer!
-        var question : Question?
-        var answerCollection = [String]()
-        
-        var gettingImageForAnswerPreview : Bool = false
-        var gettingInfoForAnswerPreview : Bool = false
-    }
-    
     fileprivate var selectedIndex : IndexPath? {
         didSet {
             if selectedIndex != nil {
-                profile.reloadItems(at: [selectedIndex!])
+                collectionView?.reloadItems(at: [selectedIndex!])
                 if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                    profile.reloadItems(at: [deselectedIndex!])
+                    collectionView?.reloadItems(at: [deselectedIndex!])
                 }
             }
         }
@@ -90,8 +93,8 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
             }
             
             if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = profile.dequeueReusableCell(withReuseIdentifier: answerReuseIdentifier, for: selectedIndex) as! FeedAnswerCell
-                cell.removeAnswer()
+                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! BrowseCell
+                cell.removePreview()
             }
         }
     }
@@ -103,13 +106,17 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
         if !isLoaded {
             if let nav = navigationController as? PulseNavVC {
                 headerNav = nav
+                updateHeader()
             }
             
             view.backgroundColor = .white
-            setupScreenLayout()
-            updateHeader()
             definesPresentationContext = true
-
+            
+            collectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+            collectionView?.register(UserProfileHeader.self,
+                                     forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
+                                     withReuseIdentifier: headerReuseIdentifier)
+            
             isLoaded = true
         }
     }
@@ -119,6 +126,7 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
         
         guard selectedUser != nil else { return }
         updateHeader()
+        setHeaderTitle(title: selectedUser.name ?? "Explore User")
     }
     
     override func didReceiveMemoryWarning() {
@@ -137,46 +145,35 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
     internal func getUserProfilePic() {
         Database.getProfilePicForUser(user: selectedUser, completion: { profileImage in
             self.selectedUser.thumbPicImage = profileImage
-            
-            if self.profile != nil {
-                for view in self.profile.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
+            if let collectionView = self.collectionView {
+                for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
                     view.setNeedsDisplay()
                 }
             }
         })
     }
     
-    //Once the channel is set and pulled from database -> reload the datasource for collection view
-    internal func updateDataSource() {
-        if !isLayoutSetup {
-            setupScreenLayout()
+    //once allItems var is set reload the data
+    func updateDataSource() {
+        collectionView?.reloadData()
+        collectionView?.layoutIfNeeded()
+        
+        if allItems.count > 0 {
+            collectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
         }
-        
-        for (index, answer) in allAnswers.enumerated() {
-            let currentAnswerData = AnswerPreviewData(answer: answer,
-                                                      question: nil,
-                                                      answerCollection: [],
-                                                      gettingImageForAnswerPreview: false,
-                                                      gettingInfoForAnswerPreview: false)
-            answerStack.insert(currentAnswerData, at: index)
-        }
-        
-        profile.delegate = self
-        profile.dataSource = self
-        profile.reloadData()
-        profile.layoutIfNeeded()
-        
-        
     }
     
     //Update Nav Header
     fileprivate func updateHeader() {
         let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
+    }
+    
+    fileprivate func setHeaderTitle(title: String) {
         if let nav = headerNav {
-            nav.setNav(title: self.selectedUser.name ?? "Explore User")
-            backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+            nav.setNav(title: title)
         }
     }
     
@@ -207,73 +204,38 @@ class UserProfileVC: UIViewController, UserProfileDelegate, previewDelegate {
         navigationController?.pushViewController(messageVC, animated: true)
     }
     /** End Delegate Functions **/
-    
-    
-    fileprivate func setupScreenLayout() {
-        if !isLayoutSetup {
-            let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-            layout.scrollDirection = UICollectionViewScrollDirection.vertical
-            layout.minimumLineSpacing = 10
-            layout.minimumInteritemSpacing = 10
-            
-            profile = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-            profile.register(FeedAnswerCell.self, forCellWithReuseIdentifier: answerReuseIdentifier)
-            profile.register(UserProfileHeader.self,
-                              forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                              withReuseIdentifier: headerReuseIdentifier)
-            
-            view.addSubview(profile)
-            
-            profile.translatesAutoresizingMaskIntoConstraints = false
-            profile.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-            profile.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-            profile.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-            profile.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-            profile.layoutIfNeeded()
-            
-            profile.backgroundColor = .clear
-            profile.backgroundView = nil
-            profile.showsVerticalScrollIndicator = false
-            
-            profile.isMultipleTouchEnabled = true
-            isLayoutSetup = true
-        }
-    }
-}
 
-/* COLLECTION VIEW */
-extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return allAnswers.count
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return allItems.count
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: answerReuseIdentifier, for: indexPath) as! FeedAnswerCell
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! FeedAnswerCell
         
         cell.contentView.backgroundColor = .white
         cell.updateLabel(nil, _subtitle: nil, _image : nil)
         
-        let currentAnswer = answerStack[indexPath.row]
+        let currentItem = allItems[indexPath.row]
         
-        /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
-        if currentAnswer.answer.thumbImage != nil && currentAnswer.gettingImageForAnswerPreview {
+        /* GET PREVIEW IMAGE FROM STORAGE */
+        if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
             
-            cell.updateImage(image: currentAnswer.answer.thumbImage!)
-        } else if currentAnswer.gettingImageForAnswerPreview {
+            cell.updateImage(image: currentItem.content as? UIImage)
+            
+        } else if itemStack[indexPath.row].gettingImageForPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
-            answerStack[indexPath.row].gettingImageForAnswerPreview = true
+            itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(.AnswerThumbs, fileID: currentAnswer.answer.aID, maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(.AnswerThumbs, fileID: currentItem.itemID, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
-                    let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
-                    self.answerStack[indexPath.row].answer.thumbImage = _answerPreviewImage
+                    let _previewImage = GlobalFunctions.createImageFromData(_data!)
+                    self.allItems[indexPath.row].content = _previewImage
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateImage(image: self.answerStack[indexPath.row].answer.thumbImage)
+                            cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
                         }
                     }
                 } else {
@@ -282,123 +244,99 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             })
         }
         
-        /* GET QUESTION FROM DATABASE - SHOWING ALL ANSWERS FOR ONE USER CASE */
-        if selectedUser != nil {
-            if currentAnswer.question != nil && currentAnswer.gettingInfoForAnswerPreview {
-                cell.updateLabel(currentAnswer.question!.qTitle, _subtitle: nil)
-            } else if currentAnswer.gettingInfoForAnswerPreview {
-                //ignore if already fetching the image, so don't refetch if already getting
-            } else {
-                
-                answerStack[indexPath.row].gettingInfoForAnswerPreview = true
-                
-                Database.getQuestion(currentAnswer.answer.qID, completion: { (question, error) in
-                    if error != nil {
-                        self.answerStack[indexPath.row].question = nil
-                    } else {
-                        self.answerStack[indexPath.row].question = question
-                        cell.updateLabel(question?.qTitle, _subtitle: nil)
-                    }
-                })
-            }
-        } else if answerStack[indexPath.row].gettingInfoForAnswerPreview {
+        /** GET NAME & BIO FROM DATABASE - SHOWING MANY ITEMS FROM MANY USERS CASE **/
+        if currentItem.itemCreated, itemStack[indexPath.row].gettingInfoForPreview {
+            
+            cell.updateLabel(currentItem.itemTitle, _subtitle: currentItem.getCreatedAt())
+            
+        } else if itemStack[indexPath.row].gettingInfoForPreview {
+            
             //ignore if already fetching the image, so don't refetch if already getting
+        } else {
+            
+            itemStack[indexPath.row].gettingInfoForPreview = true
+            
+            // Get the user details
+            Database.getItem(currentItem.itemUserID, completion: {(item, error) in
+                if let item = item {
+                    self.allItems[indexPath.row] = item
+                    DispatchQueue.main.async {
+                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                            cell.updateLabel(self.allItems[indexPath.row].itemTitle, _subtitle: self.allItems[indexPath.row].getCreatedAt())
+                        }
+                    }
+                }
+            })
         }
         
         if indexPath == selectedIndex && indexPath == deselectedIndex {
-            //only show answer by selected user - removes other answers from qAnswers array and creates blank dummy tag
-            if selectedUser != nil {
-                let selectedQuestion = currentAnswer.question
-                selectedQuestion?.qItems = [Item(itemID: currentAnswer.answer.aID)]
-                showQuestion(selectedQuestion,
-                             answerCollection: currentAnswer.answerCollection,
-                             selectedTag: Tag(tagID: currentAnswer.question!.getTag()))
-            }
+            showItemDetail(selectedItem: currentItem)
         } else if indexPath == selectedIndex {
-            //if answer has more than initial clip, show 'see more at the end'
+            //if item has more than initial clip, show 'see more at the end'
             watchedFullPreview = false
             
-            Database.getItemCollection(currentAnswer.answer.aID, completion: {(hasDetail, answerCollection) in
+            Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                 if hasDetail {
                     cell.showTapForMore = true
-                    self.answerStack[indexPath.row].answerCollection = answerCollection!
+                    self.itemStack[indexPath.row].itemCollection = itemCollection
                 } else {
                     cell.showTapForMore = false
                 }
             })
             
             cell.delegate = self
-            cell.showAnswer(answer: selectedAnswer)
+            cell.showPreview(item: currentItem)
             
         } else if indexPath == deselectedIndex {
-            cell.removeAnswer()
+            cell.removePreview()
         }
         
         return cell
     }
     
-    func showQuestion(_ selectedQuestion : Question?, answerCollection: [String], selectedTag : Tag) {
-        contentVC = ContentManagerVC()
-        /**
+    internal func showItemDetail(selectedItem : Item) {
         //need to be set first
-        contentVC.watchedFullPreview = watchedFullPreview
-        contentVC.answerCollection = answerCollection
-        contentVC.allAnswers = answerStack.map{ (answerData) -> Answer in answerData.answer }
         
-        contentVC.selectedTag = selectedTag
-        contentVC.allQuestions = [selectedQuestion]
-        contentVC.currentQuestion = selectedQuestion
-        contentVC.openingScreen = .question
-        
-        selectedIndex = nil
+        contentVC = ContentManagerVC()
+        contentVC.watchedFullPreview = false
+        contentVC.allItems = [selectedItem]
+        contentVC.openingScreen = .item
         
         contentVC.transitioningDelegate = self
         present(contentVC, animated: true, completion: nil)
-         **/
-    }
-    
-    func setSelectedIndex(index : IndexPath?) {
-        if index != nil {
-            selectedAnswer = allAnswers[index!.row]
-            deselectedIndex = nil
-            selectedIndex = index!
-        }
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateAnswerCell(_ cell: FeedAnswerCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
+    func updateCurrentCell(_ cell: BrowseCell, atIndexPath indexPath: IndexPath) {
         //to come
     }
     
     func updateOnscreenRows() {
-        let visiblePaths = profile.indexPathsForVisibleItems
-        for indexPath in visiblePaths {
-            let cell = profile.cellForItem(at: indexPath) as! FeedAnswerCell
-            updateAnswerCell(cell, inCollectionView: profile, atIndexPath: indexPath)
+        if let visiblePaths = collectionView?.indexPathsForVisibleItems {
+            for indexPath in visiblePaths {
+                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseCell
+                updateCurrentCell(cell, atIndexPath: indexPath)
+            }
         }
     }
     
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+    override func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         updateOnscreenRows()
     }
     
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
     }
     
     //Did select item at index path
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
     }
     
-    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-        return true
-    }
-    
-    func collectionView(_ collectionView: UICollectionView,
+    override func collectionView(_ collectionView: UICollectionView,
                         viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         
         switch kind {
@@ -417,11 +355,11 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
 extension UserProfileVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (profile.frame.width - 20), height: minCellHeight)
+        return CGSize(width: (collectionView.frame.width - 20), height: minCellHeight)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: profile.frame.width, height: headerHeight)
+        return CGSize(width: collectionView.frame.width, height: headerHeight)
     }
 }
 

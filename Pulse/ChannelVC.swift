@@ -311,29 +311,14 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
         case .post:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
-                if success, let _items = items {
-                    self.showItemDetail(allItems: [item], itemCollection: _items, selectedItem: item, watchedPreview: true)
-                } else {
-                    print("no posts found")
+                if success {
+                    self.showItemDetail(allItems: [item], itemCollection: items, selectedItem: item, watchedPreview: true)
                 }
             })
             
         case .question:
             
-            Database.getItemCollection(item.itemID, completion: {(success, items) in
-                if success, let _items = items {
-                    self.showItemDetail(allItems: [item], itemCollection: [], selectedItem: item, watchedPreview: true)
-                } else {
-                    print("no posts found")
-                }
-            })
-            // new question was added so go to question browser
-            
-            let selectedQuestion = Question(qID: item.itemID)
-            selectedQuestion.qTitle = item.itemTitle
-            selectedQuestion.uID = item.itemUserID
-            
-            showQuestion(selectedQuestion: selectedQuestion)
+            showBrowse(selectedItem: item)
             
         default: break
         }
@@ -352,7 +337,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         present(contentVC, animated: true, completion: nil)
     }
     
-    internal func showQuestion(selectedQuestion: Question) {
+    internal func showBrowse(selectedItem: Item) {
 
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
         layout.scrollDirection = UICollectionViewScrollDirection.vertical
@@ -360,14 +345,10 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         layout.minimumInteritemSpacing = 10
         layout.sectionHeadersPinToVisibleBounds = true
         
-        let answersCollection = AnswersCollectionVC(collectionViewLayout: layout)
-        answersCollection.selectedQuestion = selectedQuestion
+        let itemCollection = BrowseCollectionVC(collectionViewLayout: layout)
+        itemCollection.selectedItem = selectedItem
         
-        if selectedQuestion.qCreated {
-            answersCollection.allItems = selectedQuestion.qItems
-        }
-        
-        navigationController?.pushViewController(answersCollection, animated: true)
+        navigationController?.pushViewController(itemCollection, animated: true)
     }
     
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {

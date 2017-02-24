@@ -131,7 +131,7 @@ class FeedVC: UIViewController, previewDelegate {
                 case .answer:
                     if let selectedIndex = selectedIndex {
                         let cell = feedCollectionView?.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: selectedIndex) as! FeedAnswerCell
-                        cell.removeAnswer()
+                        //cell.removeAnswer()
                     }
                 default: return
                 }
@@ -273,6 +273,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.answerCount.setTitle(String(_currentQuestion.totalAnswers()), for: UIControlState())
                 
             } else {
+                /**
                 Database.getQuestion(allQuestions[indexPath.row]!.qID, completion: { (question, error) in
 
                     if let question = question {
@@ -304,7 +305,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             self.allQuestions[indexPath.row] = question
                         }
                     }
-                })
+                }) **/
             }
             return cell
 
@@ -376,6 +377,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     
                     answerStack[indexPath.row].gettingInfoForAnswerPreview = true
                     
+                    /**
                     Database.getQuestion(currentAnswer.answer.qID, completion: { (question, error) in
                         if error != nil {
                             self.answerStack[indexPath.row].question = nil
@@ -384,6 +386,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             cell.updateLabel(question?.qTitle, _subtitle: nil)
                         }
                     })
+                    **/
                 }
             }
             /* GET NAME & BIO FROM DATABASE - SHOWING MANY ANSWERS FROM MANY USERS CASE */
@@ -397,6 +400,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
                 answerStack[indexPath.row].gettingInfoForAnswerPreview = true
                 
+                /**
                 Database.getUserSummaryForAnswer(currentAnswer.answer.aID, completion: { (answer, user, error) in
                     if error != nil {
                         self.answerStack[indexPath.row].user = nil
@@ -409,6 +413,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         cell.updateLabel(user?.name?.capitalized, _subtitle: user?.shortBio?.capitalized)
                     }
                 })
+                **/
             }
             
             if indexPath == selectedIndex && indexPath == deselectedIndex {
@@ -445,10 +450,10 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 }) **/
                 
                 cell.delegate = self
-                cell.showAnswer(answer: selectedAnswer)
+                //cell.showPreview(answer: selectedAnswer)
 
             } else if indexPath == deselectedIndex {
-                cell.removeAnswer()
+                //cell.removeAnswer()
             }
             
             return cell

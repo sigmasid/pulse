@@ -245,6 +245,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
         } else {
             gettingInfoForCell[(indexPath as NSIndexPath).row] = true
             
+            /**
             Database.getUserSummaryForAnswer(currentQuestion!.qItems[(indexPath as NSIndexPath).row].itemID, completion: { (answer, user, error) in
                 if error != nil {
                     cell.answerPreviewName!.text = nil
@@ -255,7 +256,7 @@ extension BrowseAnswersView : UICollectionViewDataSource, UICollectionViewDelega
                     cell.answerPreviewBio!.text = user?.shortBio
                     self.usersForAnswerPreviews.insert(user, at: (indexPath as NSIndexPath).row)
                 }
-            })
+            }) **/
         }
         
         return cell

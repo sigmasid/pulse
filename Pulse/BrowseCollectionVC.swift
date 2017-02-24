@@ -1,5 +1,5 @@
 //
-//  AnswersCollectionVC.swift
+//  BrowseCollectionVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 2/17/17.
@@ -9,9 +9,9 @@
 import UIKit
 
 private let headerReuseIdentifier = "ItemHeaderCell"
-private let reuseIdentifier = "AnswerCell"
+private let reuseIdentifier = "BrowseCell"
 
-class AnswersCollectionVC: UICollectionViewController, previewDelegate {
+class BrowseCollectionVC: UICollectionViewController, previewDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
     /** End Delegate Vars **/
@@ -31,30 +31,26 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
     }
     
     struct ItemMetaData {
-        var answerCollection = [String]()
+        var itemCollection = [String]()
         
-        var gettingImageForAnswerPreview : Bool = false
-        var gettingInfoForAnswerPreview : Bool = false
+        var gettingImageForPreview : Bool = false
+        var gettingInfoForPreview : Bool = false
     }
     private var itemStack = [ItemMetaData]()
 
     //set by delegate
-    public var selectedQuestion : Question! {
+    public var selectedItem : Item! {
         didSet {
-            if !selectedQuestion.qCreated {
-                Database.getQuestion(selectedQuestion.qID, completion: { question, error in
-                    self.selectedQuestion = question
-                })
-            }
-            else {
-                allItems = selectedQuestion.qItems
-                updateDataSource()
-            }
+            Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+                if success {
+                    let type = self.selectedItem.type == .question ? "answer" : "post"
+                    self.allItems = items.map{ val -> Item in Item(itemID: val, type: type) }
+                    self.updateDataSource()
+                }
+            })
         }
     }
     //end set by delegate
-
-    fileprivate var selectedItem: Item!
     
     /** Collection View Vars **/
     fileprivate let minCellHeight : CGFloat = 225
@@ -75,8 +71,8 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
             }
             
             if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! AnswerCell
-                cell.removeAnswer()
+                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! BrowseCell
+                cell.removePreview()
             }
         }
     }
@@ -96,7 +92,7 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
-        collectionView?.register(AnswerCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        collectionView?.register(BrowseCell.self, forCellWithReuseIdentifier: reuseIdentifier)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -108,12 +104,14 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
         collectionView?.backgroundColor = .white
     }
     
-    internal func showItemDetail(selectedItem : Item) {
+    internal func showItemDetail(item : Item, index : Int) {
         //need to be set first
         
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = false
-        contentVC.allItems = [selectedItem]
+        contentVC.selectedItem = selectedItem
+        contentVC.allItems = allItems
+        contentVC.itemIndex = index
         contentVC.openingScreen = .item
         
         contentVC.transitioningDelegate = self
@@ -140,27 +138,27 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! AnswerCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseCell
         
         cell.contentView.backgroundColor = .white
         cell.updateLabel(nil, _subtitle: nil, _image : nil)
         
         let currentItem = allItems[indexPath.row]
         
-        /* GET ANSWER PREVIEW IMAGE FROM STORAGE */
-        if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForAnswerPreview {
+        /* GET PREVIEW IMAGE FROM STORAGE */
+        if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
             
             cell.updateImage(image: currentItem.content as? UIImage)
-        } else if itemStack[indexPath.row].gettingImageForAnswerPreview {
+        } else if itemStack[indexPath.row].gettingImageForPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
-            itemStack[indexPath.row].gettingImageForAnswerPreview = true
+            itemStack[indexPath.row].gettingImageForPreview = true
             
             Database.getImage(.AnswerThumbs, fileID: currentItem.itemID, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
-                    let _answerPreviewImage = GlobalFunctions.createImageFromData(_data!)
-                    self.allItems[indexPath.row].content = _answerPreviewImage
+                    let _previewImage = GlobalFunctions.createImageFromData(_data!)
+                    self.allItems[indexPath.row].content = _previewImage
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
@@ -173,40 +171,51 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
             })
         }
         
-        /** GET NAME & BIO FROM DATABASE - SHOWING MANY ANSWERS FROM MANY USERS CASE **/
-        if let user = currentItem.user, itemStack[indexPath.row].gettingInfoForAnswerPreview {
+        //Already fetched this item
+        if allItems[indexPath.row].itemCreated, let user = allItems[indexPath.row].user  {
             
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
-        } else if itemStack[indexPath.row].gettingInfoForAnswerPreview {
+
+        } else if itemStack[indexPath.row].gettingInfoForPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
-            
-            itemStack[indexPath.row].gettingInfoForAnswerPreview = true
-            
-            // Get the user details
-            Database.getUser(currentItem.itemUserID, completion: {(user, error) in
-                if let user = user {
-                    self.allItems[indexPath.row].user = user
-                    DispatchQueue.main.async {
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
+            itemStack[indexPath.row].gettingInfoForPreview = true
+
+            Database.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
+                
+                if let item = item {
+                    
+                    item.tag = self.allItems[indexPath.row].tag
+                    self.allItems[indexPath.row] = item
+                    
+                    // Get the user details
+                    Database.getUser(item.itemUserID, completion: {(user, error) in
+                        if let user = user {
+                            self.allItems[indexPath.row].user = user
+                            DispatchQueue.main.async {
+                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                    
+                                    cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
+
+                                }
+                            }
                         }
-                    }
+                    })
                 }
             })
         }
         
         if indexPath == selectedIndex && indexPath == deselectedIndex {
-            showItemDetail(selectedItem: selectedItem)
+            showItemDetail(item: selectedItem, index: indexPath.row)
         } else if indexPath == selectedIndex {
-            //if answer has more than initial clip, show 'see more at the end'
+            //if item has more than initial clip, show 'see more at the end'
             watchedFullPreview = false
             
-            Database.getItemCollection(selectedItem.itemID, completion: {(hasDetail, answerCollection) in
+            Database.getItemCollection(selectedItem.itemID, completion: {(hasDetail, itemCollection) in
                 if hasDetail {
                     cell.showTapForMore = true
-                    self.itemStack[indexPath.row].answerCollection = answerCollection!
+                    self.itemStack[indexPath.row].itemCollection = itemCollection
                 } else {
                     cell.showTapForMore = false
                 }
@@ -216,7 +225,7 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
             cell.showItemPreview(item: selectedItem)
             
         } else if indexPath == deselectedIndex {
-            cell.removeAnswer()
+            cell.removePreview()
         }
         
         return cell
@@ -229,7 +238,7 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
-            headerView.updateLabel(selectedQuestion.qTitle, count: selectedQuestion.qItems.count)
+            headerView.updateLabel(selectedItem.itemTitle, count: allItems.count)
             
             return headerView
             
@@ -238,7 +247,7 @@ class AnswersCollectionVC: UICollectionViewController, previewDelegate {
     }
 }
 
-extension AnswersCollectionVC: UICollectionViewDelegateFlowLayout {
+extension BrowseCollectionVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
     }
@@ -253,18 +262,24 @@ extension AnswersCollectionVC: UICollectionViewDelegateFlowLayout {
 }
 
 /* COLLECTION VIEW */
-extension AnswersCollectionVC  {
+extension BrowseCollectionVC  {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateAnswerCell(_ cell: AnswerCell, atIndexPath indexPath: IndexPath) {
-        //to come
+    func updateBrowseCell(_ cell: BrowseCell, atIndexPath indexPath: IndexPath) {
+        if let user = allItems[indexPath.row].user  {
+            cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
+        }
+        
+        if let image = allItems[indexPath.row].content as? UIImage  {
+            cell.updateImage(image: image)
+        }
     }
     
     func updateOnscreenRows() {
         if let visiblePaths = collectionView?.indexPathsForVisibleItems {
             for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! AnswerCell
-                updateAnswerCell(cell, atIndexPath: indexPath)
+                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseCell
+                updateBrowseCell(cell, atIndexPath: indexPath)
             }
         }
     }
@@ -278,7 +293,7 @@ extension AnswersCollectionVC  {
     }
 }
 
-extension AnswersCollectionVC: UIViewControllerTransitioningDelegate {
+extension BrowseCollectionVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {

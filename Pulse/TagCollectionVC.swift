@@ -206,24 +206,22 @@ class TagCollectionVC: UICollectionViewController {
     
     internal func showItemDetail(selectedItem : Item) {
         
-        Database.getQuestion(selectedItem.itemID, completion: {(question, error) in
-            if let question = question, question.qItems.count > 0 {
+        Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+            if success {
                 self.contentVC = ContentManagerVC()
-                let selectedItem = Item(itemID: question.qID, type: "question")
-                selectedItem.itemTitle = question.qTitle
-                selectedItem.tag = self.selectedTag
                 
                 self.contentVC.selectedChannel = self.selectedChannel
                 self.contentVC.selectedItem = selectedItem
-                self.contentVC.allItems = question.qItems
+                
+                let type = selectedItem.type == .question ? "answer" : "post"
+                self.contentVC.allItems = items.map{ val -> Item in Item(itemID: val, type: type) }
+                
                 self.contentVC.openingScreen = .item
                 self.contentVC.transitioningDelegate = self
 
                 DispatchQueue.main.async {
                     self.present(self.contentVC, animated: true, completion: nil)
                 }
-            } else {
-                print("no answers found")
             }
         })
     }

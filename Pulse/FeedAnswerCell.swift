@@ -65,10 +65,10 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
         }
     }
     
-    func showAnswer(answer : Answer) {
+    func showPreview(item : Item) {
         previewVC = Preview(frame: CGRect(x: contentView.frame.origin.x, y: contentView.frame.origin.y, width: contentView.frame.width / 2, height: contentView.frame.height))
         previewVC.delegate = self
-        //previewVC.currentAnswer = answer
+        previewVC.currentItem = item
         previewImage.isHidden = true
         
         UIView.transition( with: contentView,
@@ -80,14 +80,14 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
         previewAdded = true
     }
     
-    func removeAnswer() {        
+    func removePreview() {
         previewVC.removeClip()
         previewVC.removeFromSuperview()
     }
     
     override func prepareForReuse() {
         if previewAdded {
-            removeAnswer()
+            removePreview()
         }
         
         titleLabel.text = ""

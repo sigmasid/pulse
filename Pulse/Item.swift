@@ -27,6 +27,7 @@ class Item: NSObject {
     var contentURL : URL?
     var content : Any?
     var contentType : CreatedAssetType?
+    var createdAt : Date!
     
     var user : User?
     var tag : Tag?
@@ -90,6 +91,11 @@ class Item: NSObject {
             self.contentType = CreatedAssetType.getAssetType(assetType)
         }
         
+        if let createdAt = snapshot.childSnapshot(forPath: "createdAt").value as? Double {
+            let convertedDate = Date(timeIntervalSince1970: createdAt / 1000)
+            self.createdAt = convertedDate
+        }
+        
         itemCreated = true
     }
     
@@ -101,5 +107,15 @@ class Item: NSObject {
         }  else if type == "answer" {
             self.type = .answer
         }
+    }
+    
+    func getCreatedAt() -> String {
+        return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt) : ""
+    }
+    
+    func createShareLink(completion: @escaping (String?) -> Void) {
+        Database.createShareLink(linkString: "q/"+itemID, completion: { link in
+            completion(link)
+        })
     }
 }

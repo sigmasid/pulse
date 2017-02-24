@@ -253,7 +253,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
             Database.getItemCollection(_itemID, completion: {(hasDetail, itemCollection) in
                 if hasDetail {
                     self.contentOverlay.showExploreDetail()
-                    self.itemDetailCollection = itemCollection!
+                    self.itemDetailCollection = itemCollection
                 } else {
                     self.contentOverlay.hideExploreDetail()
                 }
@@ -525,7 +525,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     func votedItem(_ _vote : VoteType) {
         if let _currentItem = currentItem {
-            Database.addVote( _vote, aID: _currentItem.itemID, completion: { (success, error) in })
+            Database.addVote( _vote, itemID: _currentItem.itemID, completion: { (success, error) in })
         }
     }
     
