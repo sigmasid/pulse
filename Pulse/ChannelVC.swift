@@ -10,14 +10,14 @@ import UIKit
 
 protocol ChannelDelegate: class {
     func userSelected(user : User)
-    func userSelected(tag : Tag)
+    func userSelected(item : Item)
 }
 
 class ChannelVC: UIViewController, ChannelDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
-            isFollowingSelectedChannel = User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(selectedChannel.cID!) ? true : false
+            isSubscribed = User.currentUser?.savedChannels != nil && User.currentUser!.savedChannelIDs.contains(selectedChannel.cID) ? true : false
 
             if !selectedChannel.cCreated {
                 Database.getChannel(cID: selectedChannel.cID!, completion: { channel, error in
@@ -38,14 +38,11 @@ class ChannelVC: UIViewController, ChannelDelegate {
     fileprivate var headerNav : PulseNavVC?
     fileprivate var contentVC : ContentManagerVC!
 
-    fileprivate var toggleFollowButton = PulseButton(size: .medium, type: .addCircle, isRound : true, hasBackground: false, tint: .black)
-    fileprivate var isFollowingSelectedChannel : Bool = false {
-        didSet {
-            isFollowingSelectedChannel ?
-                toggleFollowButton.setImage(UIImage(named: "remove-circle")?.withRenderingMode(.alwaysTemplate), for: UIControlState()) :
-                toggleFollowButton.setImage(UIImage(named: "add-circle")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
-        }
+    fileprivate var subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, hasBackground: true, tint: .white)
+    fileprivate var isSubscribed : Bool = false {
+        didSet { setupSubscribe() }
     }
+    fileprivate var activityIndicator = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue))
     
     fileprivate var allItems = [Item]()
     fileprivate var isLoaded = false
@@ -73,7 +70,11 @@ class ChannelVC: UIViewController, ChannelDelegate {
                 headerNav = nav
             }
             
+            extendedLayoutIncludesOpaqueBars = true
+            tabBarController?.tabBar.isHidden = true
+            edgesForExtendedLayout = .bottom
             view.backgroundColor = .white
+            
             setupScreenLayout()
             definesPresentationContext = true
             
@@ -83,6 +84,7 @@ class ChannelVC: UIViewController, ChannelDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
         updateHeader()
     }
 
@@ -114,81 +116,73 @@ class ChannelVC: UIViewController, ChannelDelegate {
         }
     }
     
-    //Update Nav Header
+    internal func subscribe() {
+        let indicator = subscribeButton.addLoadingIndicator()
+        
+        Database.subscribeChannel(selectedChannel, completion: {(success, error) in
+            if !success {
+                GlobalFunctions.showErrorBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
+            } else {
+                if let user = User.currentUser, user.isSubscribedToChannel(cID: self.selectedChannel.cID) {
+                    indicator.removeFromSuperview()
+                    self.subscribeButton.setImage(UIImage(named: "check")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
+
+                    UIView.animate(withDuration: 1, animations: { self.subscribeButton.alpha = 0 } , completion: {(value: Bool) in
+                        self.subscribeButton.removeFromSuperview()
+                    })
+                }
+            }
+        })
+    }
+    
+    /** HEADER FUNCTIONS **/
     fileprivate func updateHeader() {
         let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: toggleFollowButton)
-
+        
         if let nav = headerNav {
             nav.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
             nav.updateBackgroundImage(image: selectedChannel.cPreviewImage)
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-            //toggleFollowButton.addTarget(self, action: #selector(), for: UIControlEvents.touchUpInside)
         } else {
             title = selectedChannel.cTitle ?? "Explore Channel"
         }
     }
     
-    /**
-    internal func follow() {
-        Database.pinTagForUser(selectedTag, completion: {(success, error) in
-            if !success {
-                GlobalFunctions.showErrorBlock("Error Saving Tag", erMessage: error!.localizedDescription)
-            } else {
-                self.isFollowingSelectedTag = self.isFollowingSelectedTag ? false : true
-            }
-        })
-    }**/
-    
     internal func userSelected(user: User) {
-        let userProfileVC = UserProfileVC()
+        let userProfileVC = UserProfileVC(collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
         navigationController?.pushViewController(userProfileVC, animated: true)
         userProfileVC.selectedUser = user
     }
     
-    internal func userSelected(tag: Tag) {
-        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.scrollDirection = UICollectionViewScrollDirection.vertical
-        layout.minimumLineSpacing = 10
-        layout.minimumInteritemSpacing = 10
-        layout.sectionHeadersPinToVisibleBounds = true
-        
-        let tagDetailVC = TagCollectionVC(collectionViewLayout: layout)
-        tagDetailVC.selectedChannel = selectedChannel
-        tagDetailVC.selectedTag = tag
-        navigationController?.pushViewController(tagDetailVC, animated: true)
+    internal func setupSubscribe() {
+        if !isSubscribed {
+            view.addSubview(subscribeButton)
+            
+            subscribeButton.addTarget(self, action: #selector(subscribe), for: UIControlEvents.touchUpInside)
+            
+            subscribeButton.translatesAutoresizingMaskIntoConstraints = false
+            subscribeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+            subscribeButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+            subscribeButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+            subscribeButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+            subscribeButton.layoutIfNeeded()
+        }
     }
     
     fileprivate func setupScreenLayout() {
         if !isLayoutSetup {
-            let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-            layout.scrollDirection = UICollectionViewScrollDirection.vertical
-            layout.minimumLineSpacing = 10
-            layout.minimumInteritemSpacing = 10
-
-            channel = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
+            
+            channel = UICollectionView(frame: view.bounds, collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
             channel?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-            channel?.register(ChannelHeaderTags.self,
-                                            forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                                            withReuseIdentifier: headerReuseIdentifier)
-            //channel?.register(ChannelHeader.self,
-            //                  forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-            //                  withReuseIdentifier: headerReuseIdentifier)
+            channel?.register(ChannelHeaderTags.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+            //channel?.register(ChannelHeaderExperts.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             
             view.addSubview(channel!)
-            
-            channel.translatesAutoresizingMaskIntoConstraints = false
-            channel.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-            channel.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-            channel.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-            channel.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-            channel.layoutIfNeeded()
             
             channel.backgroundColor = .clear
             channel.backgroundView = nil
             channel.showsVerticalScrollIndicator = false
-            
             
             channel?.isMultipleTouchEnabled = true
             isLayoutSetup = true
@@ -209,18 +203,24 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         
         //clear the cells and set the item type first
         cell.updateLabel(nil, _subtitle: nil, _tag: nil)
-        cell.itemType = currentItem.type
         
         //Already fetched this item
-        if allItems.count > indexPath.row, allItems[indexPath.row].itemCreated {
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.tagTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+        if currentItem.itemCreated {
+
+            cell.itemType = currentItem.type
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage)
+            
         } else {
-            Database.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
+            Database.getItem(currentItem.itemID, completion: { (item, error) in
+
                 if let item = item {
+
+                    cell.itemType = currentItem.type
+
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.tagTitle)
+                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.itemTitle)
                         }
                     }
                     
@@ -246,7 +246,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             self.allItems[indexPath.row].user = user
                             DispatchQueue.main.async {
                                 if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.tagTitle)
+                                    cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.itemTitle)
                                 }
                             }
                             
@@ -273,9 +273,9 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
-        if allItems.count > indexPath.row, allItems[indexPath.row].itemCreated {
+        if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.tagTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage)
         }
     }
@@ -299,13 +299,13 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     //Did select item at index path
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedItem = allItems[indexPath.row]
-        showItem(selectedItem)
+        userSelected(item: selectedItem)
     }
     
-    func showItem(_ item : Item) {
+    func userSelected(item : Item) {
         contentVC = ContentManagerVC()
         
-        switch item.type! {
+        switch item.type {
         case .answer:
             showItemDetail(allItems: [item], itemCollection: [], selectedItem: item, watchedPreview: false)
 
@@ -320,11 +320,15 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             showBrowse(selectedItem: item)
             
+        case .tag:
+            print("went into show tag")
+            showTag(selectedItem: item)
+            
         default: break
         }
     }
     
-    internal func showItemDetail(allItems: [Item], itemCollection: [String], selectedItem : Item, watchedPreview : Bool) {
+    internal func showItemDetail(allItems: [Item], itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = watchedPreview
         contentVC.selectedChannel = selectedChannel
@@ -338,11 +342,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     internal func showBrowse(selectedItem: Item) {
-
-        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.scrollDirection = UICollectionViewScrollDirection.vertical
-        layout.minimumLineSpacing = 10
-        layout.minimumInteritemSpacing = 10
+        let layout = GlobalFunctions.getPulseCollectionLayout()
         layout.sectionHeadersPinToVisibleBounds = true
         
         let itemCollection = BrowseCollectionVC(collectionViewLayout: layout)
@@ -351,18 +351,23 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         navigationController?.pushViewController(itemCollection, animated: true)
     }
     
-    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-        return true
+    internal func showTag(selectedItem : Item) {
+        let layout = GlobalFunctions.getPulseCollectionLayout()
+        layout.sectionHeadersPinToVisibleBounds = true
+        
+        let tagDetailVC = TagCollectionVC(collectionViewLayout: layout)
+        tagDetailVC.selectedChannel = selectedChannel
+        tagDetailVC.selectedItem = selectedItem
+        
+        navigationController?.pushViewController(tagDetailVC, animated: true)
     }
-    
-
     
     func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         switch kind {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ChannelHeaderTags
             headerView.backgroundColor = .white
-            headerView.tags = selectedChannel.tags
+            headerView.items = selectedChannel.tags
             //headerView.experts = selectedChannel.experts
             headerView.delegate = self
             return headerView
@@ -383,7 +388,7 @@ extension ChannelVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let cellHeight = allItems[indexPath.row].type == .question || allItems[indexPath.row].type == .answer ? questionCellHeight : postCellHeight
+        let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
         return CGSize(width: channel.frame.width - 20, height: cellHeight)
     }
 }

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ChannelExpertsPreviewCell: UICollectionViewCell {
+class ChannelHeaderCell: UICollectionViewCell {
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var previewContainer = UIView()
     fileprivate lazy var previewImage = UIImageView()
@@ -65,7 +65,6 @@ class ChannelExpertsPreviewCell: UICollectionViewCell {
         let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
         let titleLabelHeight = GlobalFunctions.getLabelSize(title: "Very Long Name", width: titleLabel.frame.width, fontAttributes: fontAttributes)
         titleLabel.heightAnchor.constraint(equalToConstant: titleLabelHeight).isActive = true
-        print("computed height for titleLabel is \(titleLabelHeight)")
         
         titleLabel.numberOfLines = 0
         titleLabel.lineBreakMode = .byTruncatingTail

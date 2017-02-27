@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ChannelHeader: UICollectionReusableView {
+class ChannelHeaderExperts: UICollectionReusableView {
     public var experts = [User]() {
         didSet {
             expertsPreview?.delegate = self
@@ -20,7 +20,6 @@ class ChannelHeader: UICollectionReusableView {
     
     private var expertsPreview : UICollectionView!
     private var expertsLabel = UILabel()
-    private var channelImage = UIImageView()
     internal var expertPreviewCount = 5
     let collectionReuseIdentifier = "expertThumbCell"
 
@@ -36,20 +35,7 @@ class ChannelHeader: UICollectionReusableView {
         super.init(coder: aDecoder)
     }
     
-    public func updateChannelImage(selectedChannel: Tag) {
-        selectedChannel.getTagImage(completion: { image in
-            if let image = image {
-                self.channelImage.image = image
-            }
-        })
-    }
-    
     fileprivate func setupChannelHeader() {
-        addSubview(channelImage)
-        channelImage.frame = frame
-        channelImage.layoutIfNeeded()
-        channelImage.contentMode = .scaleAspectFill
-        
         addSubview(expertsLabel)
         expertsLabel.text = "featuring"
         expertsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: pulseRed, alignment: .center)
@@ -62,7 +48,7 @@ class ChannelHeader: UICollectionReusableView {
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
         expertsPreview = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        expertsPreview.register(ChannelExpertsPreviewCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        expertsPreview.register(ChannelHeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
         addSubview(expertsPreview)
         expertsPreview.translatesAutoresizingMaskIntoConstraints = false
@@ -77,13 +63,13 @@ class ChannelHeader: UICollectionReusableView {
     }
 }
 
-extension ChannelHeader: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
+extension ChannelHeaderExperts: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return experts.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! ChannelExpertsPreviewCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! ChannelHeaderCell
         
         let _user = experts[indexPath.row]
         
@@ -131,8 +117,6 @@ extension ChannelHeader: UICollectionViewDataSource, UICollectionViewDelegate, U
             }
         }
         
-        
-        cell.updateCell(experts[indexPath.row].name, _image: experts[indexPath.row].thumbPicImage)
         return cell
     }
     

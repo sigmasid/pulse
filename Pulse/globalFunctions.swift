@@ -29,6 +29,8 @@ let color8 = UIColor(red: 97/255, green: 101/255, blue: 111/255, alpha: 1.0)
 
 let searchBarHeight : CGFloat = 44
 let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
+let defaultCellHeight : CGFloat = 225
+
 let scopeBarHeight : CGFloat = 40
 let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
 
@@ -58,6 +60,15 @@ class GlobalFunctions {
         let needsConnection = flags == .connectionRequired
         
         return isReachable && !needsConnection
+    }
+    
+    static func getPulseCollectionLayout() -> UICollectionViewFlowLayout {
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.scrollDirection = UICollectionViewScrollDirection.vertical
+        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 10
+        
+        return layout
     }
     
     static func addBorders(_ _textField : UITextField) -> CAShapeLayer {
@@ -172,11 +183,20 @@ class GlobalFunctions {
     
     static func getFormattedTime(timeString : Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
         let stringDate: String = formatter.string(from: timeString)
         
         return stringDate
+    }
+    
+    static func getCellHeight(type : ItemTypes) -> CGFloat {
+        switch type {
+        case .question: return 125
+        case .answer: return 125
+        case .post: return 300
+        default: return 225
+        }
     }
     
     ///Share content

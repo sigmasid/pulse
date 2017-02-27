@@ -22,7 +22,6 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     //delegate vars
     var delegate : previewDelegate!
     var showTapForMore = false
-    var currentQuestion : Question!
     var currentItem : Item! {
         didSet {
             addItem(item: currentItem)
@@ -45,6 +44,10 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         super.init(coder: aDecoder)
     }
     
+    deinit {
+        removeClip()
+    }
+    
     func removeClip() {
         Preview.aPlayer.pause()
         Preview.aPlayer.replaceCurrentItem(with: nil)
@@ -62,9 +65,11 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     
     //adds the first clip to the answers
     fileprivate func addItem(item : Item) {
+        removeClip()
         
         guard let answerType = item.contentType, let itemURL = item.contentURL else {
-            GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
+            print("item type is \(item.contentType), url is \(item.contentURL)")
+            GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
             return
         }
         

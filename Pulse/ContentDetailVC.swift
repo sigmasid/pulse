@@ -40,7 +40,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
             }
         }
     }
-    lazy var itemDetailCollection = [String]()
+    lazy var itemDetailCollection = [Item]()
     lazy var itemCollectionIndex = 0
 
     //if user has already watched the full preview, go directly to 2nd clip. set by sender - defaults to false
@@ -70,8 +70,6 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     fileprivate var miniProfile : MiniProfile?
     lazy var blurBackground = UIVisualEffectView()
-    
-    fileprivate var exploreItems : BrowseAnswersView?
     
     weak var delegate : childVCDelegate!
     fileprivate var tap : UITapGestureRecognizer!
@@ -143,7 +141,6 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     }
     
     fileprivate func loadWatchedPreviewItem() {
-        print("load watched preview item fired")
         Database.updateItemViewCount(itemID: allItems[itemIndex].itemID)
         currentItem = allItems[itemIndex]
         updateOverlayData(allItems[itemIndex])
@@ -154,7 +151,6 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     }
     
     fileprivate func loadItem(index: Int) {
-        print("load item fired")
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         _canAdvanceReady = false
         
@@ -196,8 +192,6 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
                         } else {
                             self._canAdvanceReady = false
                         }
-                    } else {
-                        print("error adding clip")
                     }
                 })
                 
@@ -225,7 +219,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
         addClip(itemDetailCollection[itemCollectionIndex], completion: { success in
             if self._canAdvanceItemDetail(self.itemCollectionIndex + 1) {
                 
-                self.addNextClipToQueue(self.itemDetailCollection[self.itemCollectionIndex + 1])
+                self.addNextClipToQueue(self.itemDetailCollection[self.itemCollectionIndex + 1].itemID)
                 self.itemCollectionIndex += 1
                 self._canAdvanceDetailReady = true
             } else {
@@ -276,42 +270,47 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     //adds the first clip to the Items
     fileprivate func addClip(_ item : Item, completion: @escaping (_ success : Bool) -> Void) {
-        guard let itemType = item.contentType else {
-            return
-        }
         
-        currentItem = item //needed so we vote for the correct Item and update views for correct Item
-        let itemURL = currentItem?.contentURL
-        
-        if itemType == .recordedVideo || itemType == .albumVideo {
-            ShowItemVC.qPlayer.pause()
+        if !item.itemCreated {
             
-            if let itemURL = itemURL  {
-                currentPlayerItem = AVPlayerItem(url: itemURL)
-
-                removeImageView()
+            addClip(item.itemID, completion: { _ in })
+            
+        } else {
+            guard let itemType = item.contentType else { return }
+            
+            currentItem = item //needed so we vote for the correct Item and update views for correct Item
+            let itemURL = currentItem?.contentURL
+            
+            if itemType == .recordedVideo || itemType == .albumVideo {
+                ShowItemVC.qPlayer.pause()
                 
-                if let _currentPlayerItem = currentPlayerItem {
-                    if ShowItemVC.qPlayer.currentItem != nil {
-                        ShowItemVC.qPlayer.insert(_currentPlayerItem, after: ShowItemVC.qPlayer.currentItem)
-                        ShowItemVC.qPlayer.advanceToNextItem()
-                        addObserverForStatusReady()
-                        completion(true)
-                    } else {
-                        ShowItemVC.qPlayer.insert(_currentPlayerItem, after: nil)
-                        addObserverForStatusReady()
-                        completion(true)
+                if let itemURL = itemURL  {
+                    currentPlayerItem = AVPlayerItem(url: itemURL)
+
+                    removeImageView()
+                    
+                    if let _currentPlayerItem = currentPlayerItem {
+                        if ShowItemVC.qPlayer.currentItem != nil {
+                            ShowItemVC.qPlayer.insert(_currentPlayerItem, after: ShowItemVC.qPlayer.currentItem)
+                            ShowItemVC.qPlayer.advanceToNextItem()
+                            addObserverForStatusReady()
+                            completion(true)
+                        } else {
+                            ShowItemVC.qPlayer.insert(_currentPlayerItem, after: nil)
+                            addObserverForStatusReady()
+                            completion(true)
+                        }
                     }
                 }
-            }
-        } else if itemType == .recordedImage || itemType == .albumImage {
-            DispatchQueue.global(qos: .background).async {
-                if let imageURL = itemURL, let _imageData = try? Data(contentsOf: imageURL), let image = UIImage(data: _imageData) {
-                    self.showImageView(image)
-                    self.delegate.removeQuestionPreview()
-                } else {
-                    self.delegate.removeQuestionPreview()
-                    self.handleTap()
+            } else if itemType == .recordedImage || itemType == .albumImage {
+                DispatchQueue.global(qos: .background).async {
+                    if let imageURL = itemURL, let _imageData = try? Data(contentsOf: imageURL), let image = UIImage(data: _imageData) {
+                        self.showImageView(image)
+                        self.delegate.removeQuestionPreview()
+                    } else {
+                        self.delegate.removeQuestionPreview()
+                        self.handleTap()
+                    }
                 }
             }
         }
@@ -327,7 +326,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     fileprivate func updateOverlayData(_ item : Item) {
         print("item name is \(item.itemTitle, item.user?.name)")
         contentOverlay.setTitle(item.itemTitle)
-        contentOverlay.setTagName(item.tag?.tagTitle)
+        contentOverlay.setTagName(item.tag?.itemTitle)
 
         if let user = item.user {
             contentOverlay.setUserName(user.name)
@@ -566,29 +565,29 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     func userClickedAddItem() {
         tap.isEnabled = true
-        exploreItems?.removeFromSuperview()
         delegate.askUserQuestion()
-    }
-    
-    func userClickedBrowseItems() {
-        removeObserverIfNeeded()
-        tap.isEnabled = false
-        
-        //exploreItems = BrowseAnswersView(frame: view.bounds, _currentQuestion: currentQuestion, _currentTag: currentItem?.tag)
-        exploreItems!.delegate = self
-        view.addSubview(exploreItems!)
-        //add browse Items view and set question
     }
     
     func userSelectedFromExploreQuestions(_ index : IndexPath) {
         tap.isEnabled = true
-        exploreItems?.removeFromSuperview()
         loadItem(index: (index as NSIndexPath).row)
     }
     
     func userClickedShowMenu() {
         contentOverlay.toggleMenu(show: _isMenuShowing ? false : true)
         _isMenuShowing = _isMenuShowing ? false : true
+    }
+    
+    func userClickedBrowseItems() {
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.scrollDirection = UICollectionViewScrollDirection.horizontal
+        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 10
+        
+        let quickBrowse : QuickBrowseVC = QuickBrowseVC(collectionViewLayout: layout)
+        quickBrowse.delegate = self
+        quickBrowse.allItems = allItems
+        GlobalFunctions.addNewVC(quickBrowse, parentVC: self)
     }
     
     func userClickedExpandItem() {

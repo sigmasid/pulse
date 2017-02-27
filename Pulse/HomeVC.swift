@@ -17,7 +17,7 @@ class HomeVC: UIViewController {
     fileprivate var loadingView : LoadingView?
     fileprivate var titleLabel = UILabel()
     
-    fileprivate var feed : Tag!
+    //fileprivate var feed : Tag!
     fileprivate var backButton : PulseButton!
     fileprivate var notificationsSetup : Bool = false
     fileprivate var initialLoadComplete = false

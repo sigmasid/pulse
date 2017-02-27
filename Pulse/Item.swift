@@ -14,15 +14,22 @@ enum ItemTypes: String {
     case question
     case post
     case answer
+    case tag
+    case user
     case unknown
+}
+
+enum FileTypes: String {
+    case content
+    case thumb
 }
 
 class Item: NSObject {
     var itemID = String()
     var itemUserID : String!
     var itemTitle : String!
-    var type : ItemTypes!
-    var parentItemID : String?
+    var type : ItemTypes = .unknown
+    var cID : String!
     
     var contentURL : URL?
     var content : Any?
@@ -30,7 +37,7 @@ class Item: NSObject {
     var createdAt : Date!
     
     var user : User?
-    var tag : Tag?
+    var tag : Item?
     
     dynamic var itemCreated = false
     
@@ -45,7 +52,7 @@ class Item: NSObject {
         setType(type: type)
     }
     
-    init(itemID: String, itemUserID: String, itemTitle: String, type: ItemTypes, contentURL: URL?, content: Any?, contentType : CreatedAssetType?, tag: Tag?, parentItemID: String?) {
+    init(itemID: String, itemUserID: String, itemTitle: String, type: ItemTypes, contentURL: URL?, content: Any?, contentType : CreatedAssetType?, tag: Item?, cID: String) {
         super.init()
         self.itemID = itemID
 
@@ -56,7 +63,7 @@ class Item: NSObject {
         self.content = content
         self.contentType = contentType
         self.tag = tag
-        self.parentItemID = parentItemID
+        self.cID = cID
     }
 
     override func isEqual(_ object: Any?) -> Bool {
@@ -67,10 +74,22 @@ class Item: NSObject {
         }
     }
     
+    init(itemID: String, snapshot: FIRDataSnapshot, feedUpdate:Bool) {
+        self.itemID = itemID
+        super.init()
+        if let tagID = snapshot.childSnapshot(forPath: "tagID").value as? String, let tagTitle = snapshot.childSnapshot(forPath: "tagTitle").value as? String {
+            self.tag = Item(itemID: tagID, type: "tag")
+            self.tag?.itemTitle = tagTitle
+        }
+        
+        if let type = snapshot.childSnapshot(forPath: "type").value as? String {
+            setType(type: type)
+        }
+    }
+    
     init(itemID: String, snapshot: FIRDataSnapshot) {
         self.itemID = itemID
         super.init()
-
         if snapshot.hasChild("title") {
             self.itemTitle = snapshot.childSnapshot(forPath: "title").value as? String
         }

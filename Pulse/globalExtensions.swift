@@ -192,7 +192,23 @@ extension UILabel {
     }
 }
 
+fileprivate let minimumHitArea = CGSize(width: 50, height: 50)
+
 extension UIButton {
+    open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // if the button is hidden/disabled/transparent it can't be hit
+        if self.isHidden || !self.isUserInteractionEnabled || self.alpha < 0.01 { return nil }
+        
+        // increase the hit frame to be at least as big as `minimumHitArea`
+        let buttonSize = self.bounds.size
+        let widthToAdd = max(minimumHitArea.width - buttonSize.width, 0) * 1.25
+        let heightToAdd = max(minimumHitArea.height - buttonSize.height, 0) * 1.25
+        let largerFrame = self.bounds.insetBy(dx: -widthToAdd / 2, dy: -heightToAdd / 2)
+        
+        // perform hit test on larger frame
+        return (largerFrame.contains(point)) ? self : nil
+    }
+    
     func setEnabled() {
         self.isEnabled = true
         self.alpha = 1.0
@@ -321,11 +337,6 @@ enum VoteType {
     case downvote
 }
 
-enum SaveType {
-    case save
-    case unsave
-}
-
 enum Spacing: CGFloat {
     case xxs = 5
     case xs = 10
@@ -356,7 +367,6 @@ enum buttonCornerRadius : CGFloat {
         }
     }
 }
-
 
 enum FontSizes: CGFloat {
     case caption2 = 8
@@ -399,13 +409,6 @@ enum SectionTypes : String {
     }
 }
 
-enum FeedItemType {
-    case tag
-    case question
-    case answer
-    case people
-}
-
 enum PageType {
     case home
     case detail
@@ -413,28 +416,25 @@ enum PageType {
 }
 
 enum Element : String {
-    case Items = "items"
     case Channels = "channels"
     case ChannelItems = "channelItems"
-
-    case Tags = "tags"
-    case Questions = "questions"
-    case Answers = "answers"
-    case Users = "users"
-    case UserDetailedSummary = "userDetailedPublicSummary"
-    case Filters = "filters"
-    case Settings = "settings"
-    case Feed = "savedQuestions"
-    case SettingSections = "settingsSections"
-    case AnswerThumbs = "answerThumbnails"
+    
+    case Items = "items"
+    case ItemThumbs = "itemThumbnails"
     case ItemCollection = "itemCollection"
     case ItemStats = "itemStats"
+    
+    case Users = "users"
+    case UserDetailedSummary = "userDetailedPublicSummary"
     case UserSummary = "userPublicSummary"
+
+    case Filters = "filters"
+    case Settings = "settings"
+    case Feed = "savedChannels"
+    case SettingSections = "settingsSections"
+    
     case Messages = "messages"
     case Conversations = "conversations"
-    case Posts = "posts"
-    case PostThumbs = "postCovers"
-
 }
 
 enum SettingTypes : String{
@@ -513,6 +513,13 @@ enum MediaAssetType {
         default: return .unknown
         }
     }
+}
+
+struct ItemMetaData {
+    var itemCollection = [Item]() //this is the collection within the answer - i.e. all the posts
+    
+    var gettingImageForPreview : Bool = false
+    var gettingInfoForPreview : Bool = false
 }
 
 /* EXTEND CUSTOM LOADING */

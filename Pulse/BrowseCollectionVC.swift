@@ -29,13 +29,6 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
             itemStack = [ItemMetaData](repeating: ItemMetaData(), count: allItems.count)
         }
     }
-    
-    struct ItemMetaData {
-        var itemCollection = [String]()
-        
-        var gettingImageForPreview : Bool = false
-        var gettingInfoForPreview : Bool = false
-    }
     private var itemStack = [ItemMetaData]()
 
     //set by delegate
@@ -44,7 +37,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
                 if success {
                     let type = self.selectedItem.type == .question ? "answer" : "post"
-                    self.allItems = items.map{ val -> Item in Item(itemID: val, type: type) }
+                    self.allItems = items.map{ item -> Item in Item(itemID: item.itemID, type: type) }
                     self.updateDataSource()
                 }
             })
@@ -100,6 +93,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         
+        extendedLayoutIncludesOpaqueBars = true
         view.backgroundColor = .white
         collectionView?.backgroundColor = .white
     }
@@ -133,7 +127,6 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
         
-        selectedItem = allItems[indexPath.row]
         selectedIndex = indexPath
     }
     
@@ -155,7 +148,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(.AnswerThumbs, fileID: currentItem.itemID, maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -222,7 +215,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
             })
             
             cell.delegate = self
-            cell.showItemPreview(item: selectedItem)
+            cell.showItemPreview(item: currentItem)
             
         } else if indexPath == deselectedIndex {
             cell.removePreview()
@@ -238,7 +231,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
-            headerView.updateLabel(selectedItem.itemTitle, count: allItems.count)
+            headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "", count: allItems.count)
             
             return headerView
             
@@ -253,7 +246,7 @@ extension BrowseCollectionVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: view.frame.width, height: headerHeight)
+        return CGSize(width: view.frame.width, height: selectedItem != nil ? headerHeight : 0)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {

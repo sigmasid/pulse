@@ -32,7 +32,10 @@ class ItemCell: UICollectionViewCell {
                 titleLabel.numberOfLines = 2
                 itemImage.isHidden = false
                 
-            default: break
+            default:
+                titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
+                titleLabel.numberOfLines = 1
+                itemImage.isHidden = true
             }
         }
     }
@@ -149,8 +152,8 @@ class ItemCell: UICollectionViewCell {
         itemTag.bottomAnchor.constraint(lessThanOrEqualTo: titleLabel.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         itemTag.heightAnchor.constraint(equalToConstant: subtitleLabelHeight).isActive = true
         
-        itemTag.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .black, alignment: .right)
-
+        itemTag.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .darkText, alignment: .right)
+        
         itemImage.contentMode = UIViewContentMode.scaleAspectFill
         itemImage.clipsToBounds = true
                 

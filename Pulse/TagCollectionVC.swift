@@ -14,19 +14,13 @@ class TagCollectionVC: UICollectionViewController {
     
     public var selectedChannel: Channel!
     //set by delegate
-    public var selectedTag : Tag! {
+    public var selectedItem : Item! {
         didSet {
-            if !selectedTag.tagCreated {
-                Database.getTag(selectedTag.tagID!, completion: { tag, error in
-                    self.selectedTag = tag
-                    self.updateHeader()
-                })
-            }
-            else {
-                allItems = selectedTag.items
-                updateDataSource()
-                updateHeader()
-            }
+            Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+                self.allItems = items
+                self.updateDataSource()
+                self.updateHeader()
+            })
         }
     }
     //end set by delegate
@@ -38,8 +32,6 @@ class TagCollectionVC: UICollectionViewController {
     fileprivate var contentVC : ContentManagerVC!
     
     /** Collection View Vars **/
-    internal let questionCellHeight : CGFloat = 125
-    internal let postCellHeight : CGFloat = 300
     internal let headerHeight : CGFloat = 60
     
     fileprivate let headerReuseIdentifier = "ChannelHeader"
@@ -54,10 +46,11 @@ class TagCollectionVC: UICollectionViewController {
         super.viewDidLoad()
         
         view.backgroundColor = .white
+        collectionView?.backgroundColor = .white
         
         collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
-        collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-        
+        collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)        
+    
         if let nav = navigationController as? PulseNavVC {
             headerNav = nav
         }
@@ -69,7 +62,9 @@ class TagCollectionVC: UICollectionViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         
+        extendedLayoutIncludesOpaqueBars = true
         collectionView?.backgroundColor = .white
+        view.backgroundColor = .white
     }
     
     override func didReceiveMemoryWarning() {
@@ -115,26 +110,29 @@ class TagCollectionVC: UICollectionViewController {
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
         
-        if allItems[indexPath.row].type == nil {
-            allItems[indexPath.row].type = selectedTag.type
-        }
-        
         let currentItem = allItems[indexPath.row]
 
         //clear the cells and set the item type first
         cell.updateLabel(nil, _subtitle: nil, _tag: nil)
-        cell.itemType = currentItem.type
         
         //Already fetched this item
-        if allItems.count > indexPath.row, allItems[indexPath.row].itemCreated {
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.tagTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+        if allItems[indexPath.row].itemCreated {
+            
+            cell.itemType = currentItem.type
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage)
+            
         } else {
             Database.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
                 if let item = item {
+                    
+                    cell.itemType = item.type
+
+
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.tagTitle)
+                            cell.itemType = item.type
+                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.itemTitle)
                         }
                     }
                     
@@ -160,7 +158,7 @@ class TagCollectionVC: UICollectionViewController {
                             self.allItems[indexPath.row].user = user
                             DispatchQueue.main.async {
                                 if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.tagTitle)
+                                    cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.itemTitle)
                                 }
                             }
                             
@@ -178,7 +176,6 @@ class TagCollectionVC: UICollectionViewController {
                             }
                         }
                     })
-                    
                 }
             })
         }
@@ -193,14 +190,44 @@ class TagCollectionVC: UICollectionViewController {
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
             
-            if let title = selectedTag.tagTitle {
-                headerView.updateLabel("# \(title.capitalized)", count: selectedTag.items.count)
+            if let title = selectedItem.itemTitle {
+                headerView.updateLabel("# \(title.capitalized)", count: allItems.count)
             }
             
             return headerView
             
         default: assert(false, "Unexpected element kind")
         }
+    }
+    
+    //reload data isn't called on existing cells so this makes sure visible cells always have data in them
+    func updateCell(_ cell: ItemCell, atIndexPath indexPath: IndexPath) {
+        
+        if let image = allItems[indexPath.row].user?.thumbPicImage  {
+            cell.updateButtonImage(image: image)
+        }
+        
+        if allItems[indexPath.row].itemCreated {
+            let currentItem = allItems[indexPath.row]
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+        }
+    }
+    
+    func updateOnscreenRows() {
+        if let visiblePaths = collectionView?.indexPathsForVisibleItems {
+            for indexPath in visiblePaths {
+                let cell = collectionView?.cellForItem(at: indexPath) as! ItemCell
+                updateCell(cell, atIndexPath: indexPath)
+            }
+        }
+    }
+    
+    override func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        updateOnscreenRows()
+    }
+    
+    override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { updateOnscreenRows() }
     }
     
     
@@ -214,7 +241,7 @@ class TagCollectionVC: UICollectionViewController {
                 self.contentVC.selectedItem = selectedItem
                 
                 let type = selectedItem.type == .question ? "answer" : "post"
-                self.contentVC.allItems = items.map{ val -> Item in Item(itemID: val, type: type) }
+                self.contentVC.allItems = items.map{ item -> Item in Item(itemID: item.itemID, type: type) }
                 
                 self.contentVC.openingScreen = .item
                 self.contentVC.transitioningDelegate = self
@@ -237,7 +264,8 @@ extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let cellHeight = selectedTag.type == .question ? questionCellHeight : postCellHeight
+        let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
+
         return CGSize(width: collectionView.frame.width - 20, height: cellHeight)
     }
 }

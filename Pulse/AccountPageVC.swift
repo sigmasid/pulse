@@ -20,7 +20,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
     fileprivate var profileSummary = ProfileSummary()
     fileprivate var profileSettingsVC : SettingsTableVC!
     fileprivate var settingsLinks : AccountPageMenu!
-    fileprivate lazy var answersVC : FeedVC = FeedVC()
+    fileprivate lazy var browseItemsVC : BrowseCollectionVC = BrowseCollectionVC(collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
 
     fileprivate var cameraVC : CameraVC!
     fileprivate var panDismissInteractionController = PanContainerInteractionController()
@@ -81,7 +81,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         }
         
         if isShowingAnswers {
-            GlobalFunctions.dismissVC(answersVC)
+            GlobalFunctions.dismissVC(browseItemsVC)
             isShowingAnswers = false
         }
     }
@@ -130,29 +130,26 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
     
     func clickedAnswers() {
         settingsLinks.setSelectedButton(type: .answers)
-        GlobalFunctions.addNewVC(answersVC, parentVC: self)
+        GlobalFunctions.addNewVC(browseItemsVC, parentVC: self)
         isShowingAnswers = true
 
-        answersVC.view.translatesAutoresizingMaskIntoConstraints = false
-        answersVC.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-        answersVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        answersVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        answersVC.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        browseItemsVC.view.translatesAutoresizingMaskIntoConstraints = false
+        browseItemsVC.view.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
+        browseItemsVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        browseItemsVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        browseItemsVC.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
 
         toggleLoading(show: true, message: "Loading your answers...")
         updateHeader(title: "Your Answers", leftButton: .back)
 
         if let _user = User.currentUser {
-            Database.getUserAnswerIDs(uID: _user.uID!, completion: { answers in
-                if answers.count > 0 {
-                    self.answersVC.selectedUser = _user
-                    self.answersVC.allAnswers = answers
-                    self.answersVC.feedItemType = .answer
-
+            Database.getUserItems(uID: _user.uID!, completion: { items in
+                if items.count > 0 {
+                    self.browseItemsVC.allItems = items
                     self.toggleLoading(show: false, message: nil)
                 }
                 else {
-                    self.toggleLoading(show: true, message: "You haven't shared any answers yet")
+                    self.toggleLoading(show: true, message: "You haven't created any content yet")
                     UIView.animate(withDuration: 0.1, animations: { self.loadingOverlay.alpha = 0.0 } ,
                                    completion: {(value: Bool) in
                                     self.toggleLoading(show: false, message: nil)
@@ -162,7 +159,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         }
         
         automaticallyAdjustsScrollViewInsets = false
-        answersVC.view.setNeedsLayout()
+        browseItemsVC.view.setNeedsLayout()
     }
     
     func clickedLogout() {
@@ -184,7 +181,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
     }
     
     override func goBack() {
-        GlobalFunctions.dismissVC(answersVC)
+        GlobalFunctions.dismissVC(browseItemsVC)
         updateHeader(title: "Account", leftButton: .menu)
         settingsLinks.setSelectedButton(type: nil)
         isShowingAnswers = false

@@ -10,7 +10,7 @@ import UIKit
 
 class AskQuestionVC: UIViewController, UITextViewDelegate {
     
-    public var selectedTag : Tag! {
+    public var selectedTag : Item! {
         didSet {
             setAskTag()
         }
@@ -85,7 +85,7 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         dismissKeyboard()
         
         if selectedTag != nil {
-            Database.askTagQuestion(tag: selectedTag, qText: questionBody.text, completion: {(success, error) in
+            Database.askQuestion(item: selectedTag, qText: questionBody.text, completion: {(success, error) in
                 if success {
                     let questionConfirmation = UIAlertController(title: "Question Posted!",
                                                                  message: "Thanks for your question. You will get a notification as soon as someone posts an answer",
@@ -160,13 +160,11 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     fileprivate func setAskTag() {
         guard selectedTag != nil else { return }
         
-        if let tagTitle = selectedTag.tagTitle {
-            questionToTitle.text = tagTitle.capitalized
-            questionToSubtitle.text = selectedTag.tagDescription
-            questionBody.text = "ask experts about \(tagTitle.capitalized)"
+        if let title = selectedTag.itemTitle {
+            questionToTitle.text = title.capitalized
+            questionBody.text = "ask experts about \(title.capitalized)"
         } else {
             questionToTitle.text = "Ask Question"
-            questionToSubtitle.text = selectedTag.tagDescription
             questionBody.text = "ask experts your question here"
         }
     }

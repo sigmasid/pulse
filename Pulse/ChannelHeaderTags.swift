@@ -9,7 +9,7 @@
 import UIKit
 
 class ChannelHeaderTags: UICollectionReusableView {
-    public var tags = [Tag]() {
+    public var items = [Item]() {
         didSet {
             tagsList?.delegate = self
             tagsList?.dataSource = self
@@ -21,7 +21,7 @@ class ChannelHeaderTags: UICollectionReusableView {
     private var tagsList : UICollectionView!
     private var tagsLabel = UILabel()
     internal var tagCount = 10
-    let collectionReuseIdentifier = "tagCell"
+    let collectionReuseIdentifier = "expertThumbCell"
     
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {
@@ -36,31 +36,26 @@ class ChannelHeaderTags: UICollectionReusableView {
     }
     
     fileprivate func setupChannelHeader() {
-       
         addSubview(tagsLabel)
-        tagsLabel.text = "trending"
+        tagsLabel.text = "featuring"
+        tagsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: pulseRed, alignment: .center)
         
-        tagsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
-        tagsLabel.translatesAutoresizingMaskIntoConstraints = false
-        tagsLabel.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        tagsLabel.heightAnchor.constraint(equalToConstant: Spacing.s.rawValue).isActive = true
-        
-        tagsLabel.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        tagsLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        tagsLabel.layoutIfNeeded()
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: tagsLabel.font.pointSize, weight: UIFontWeightMedium)]
+        let titleLabelHeight = GlobalFunctions.getLabelSize(title: tagsLabel.text!, width: frame.width, fontAttributes: fontAttributes)
+        tagsLabel.frame = CGRect(x: 0, y: 10, width: frame.width, height: titleLabelHeight)
         
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
         tagsList = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        tagsList.register(ChannelHeaderTagCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        tagsList.register(ChannelHeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
         
         addSubview(tagsList)
         tagsList.translatesAutoresizingMaskIntoConstraints = false
         tagsList.topAnchor.constraint(equalTo: tagsLabel.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
         tagsList.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         tagsList.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        tagsList.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        tagsList.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
         tagsList.layoutIfNeeded()
         
         tagsList.backgroundColor = .white
@@ -70,15 +65,58 @@ class ChannelHeaderTags: UICollectionReusableView {
 
 extension ChannelHeaderTags: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return tags.count
+        return items.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! ChannelHeaderTagCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! ChannelHeaderCell
         
-        let _tag = tags[indexPath.row]
-        cell.updateCell(title: _tag.tagTitle)
+        let item = items[indexPath.row]
         
+        if !item.itemCreated { //search case - get question from database
+            Database.getItem(item.itemID, completion: { (item, error) in
+                if let item = item {
+                    cell.updateCell(item.itemTitle.lowercased(), _image: nil)
+                    
+                    self.items[indexPath.row] = item
+                    
+                    if let itemURL = item.contentURL {
+                        DispatchQueue.global(qos: .background).async {
+                            if let imageData = try? Data(contentsOf: itemURL) {
+                                self.items[indexPath.row].content = UIImage(data: imageData)
+                                
+                                DispatchQueue.main.async {
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        cell.updateImage(image : UIImage(data: imageData))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+        } else {
+            if let itemImage = item.content as? UIImage {
+                cell.updateCell(item.itemTitle.lowercased(), _image : itemImage)
+            } else if let itemURL = item.contentURL {
+                cell.updateCell(item.itemTitle.lowercased(), _image: nil)
+                
+                DispatchQueue.global(qos: .background).async {
+                    if let imageData = try? Data(contentsOf: itemURL) {
+                        self.items[indexPath.row].content = UIImage(data: imageData)
+                        
+                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                            DispatchQueue.main.async {
+                                cell.updateCell(item.itemTitle.capitalized, _image : UIImage(data: imageData))
+                            }
+                        }
+                    }
+                }
+            } else {
+                cell.updateCell(item.itemTitle.capitalized, _image: nil)
+            }
+        }
+                
         return cell
     }
     
@@ -89,11 +127,13 @@ extension ChannelHeaderTags: UICollectionViewDataSource, UICollectionViewDelegat
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: frame.width / 3,
-                      height: IconSizes.small.rawValue)
+        return CGSize(width: frame.width / 4.5,
+                      height: IconSizes.medium.rawValue + Spacing.m.rawValue)
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        delegate.userSelected(tag: tags[indexPath.row])
+        let selectedItem = items[indexPath.row]
+        selectedItem.type = .tag
+        delegate.userSelected(item: selectedItem)
     }
 }

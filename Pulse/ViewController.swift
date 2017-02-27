@@ -29,8 +29,9 @@ class ViewController: UIViewController {
     }
     
     @IBAction func updateFeed(_ sender: UIButton) {
-        Database.keepUserTagsUpdated()
-
+        //Database.keepUserTagsUpdated()
+        
+        /**
         for (offset : index, (key : tag, value : _)) in User.currentUser!.savedTags.enumerated() {
             Database.addNewQuestionsFromTagToFeed(tag.tagID!, tagTitle: tag.tagTitle, completion: {(success) in
                 if index + 1 == User.currentUser?.savedTags.count {
@@ -38,6 +39,7 @@ class ViewController: UIViewController {
                 }
             })
         }
+         **/
     }
     
     @IBAction func loadQuestions(_ sender: UIButton) {

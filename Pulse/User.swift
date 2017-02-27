@@ -22,16 +22,16 @@ class User {
     var sLocation : String?
     var items = [Item]()
     
-    var answeredQuestions = [String]()
     var profilePic : String?
     var thumbPic : String?
     var thumbPicImage : UIImage?
-    var expertiseTags = [Tag]()
+    
+    var approvedChannels = [Channel]()
     
     var shownCameraForQuestion = [ String : String ]()
     var _totalItems : Int?
-    var savedTags = [Tag : String?]()
-    var savedTagIDs = [String]()
+    var savedChannels = [Channel : String?]()
+    var savedChannelIDs = [String]()
     
     var savedItems = [String : String?]()
     var savedVotes = [String : Bool]()
@@ -102,21 +102,18 @@ class User {
         
         if detailedSnapshot.hasChild("items") {
             for child in detailedSnapshot.childSnapshot(forPath: "items").children {
-                if let child = child as? FIRDataSnapshot {
-                    let item = Item(itemID: child.key)
-                    if let parentID = child.value {
-                        item.parentItemID = parentID as? String
-                    }
+                if let child = child as? FIRDataSnapshot, let type = child.value as? String {
+                    let item = Item(itemID: child.key, type: type)
                     self.items.append(item)
                 }
             }
         }
         
-        if detailedSnapshot.hasChild("expertiseTags") {
-            for child in detailedSnapshot.childSnapshot(forPath: "expertiseTags").children {
-                let tagTitle = (child as! FIRDataSnapshot).value as? String
-                let currentTag = Tag(tagID: (child as AnyObject).key, tagTitle: tagTitle ?? "")
-                self.expertiseTags.append(currentTag)
+        if detailedSnapshot.hasChild("approvedChannels") {
+            for child in detailedSnapshot.childSnapshot(forPath: "approvedChannels").children {
+                let channel = Channel(cID: (child as AnyObject).key)
+                channel.cTitle = (child as! FIRDataSnapshot).value as? String
+                self.approvedChannels.append(channel)
             }
         }
         
@@ -132,7 +129,7 @@ class User {
     }
     
     /// Returns if user can answer question in given tag
-    func canAnswer(itemID: String, tag : Tag, completion: (Bool, String?, String?) -> Void) {
+    func canAnswer(itemID: String, tag : Item, completion: (Bool, String?, String?) -> Void) {
         completion(true, nil, nil)
         
         /** if user has not answered the question and is an expert in the tag then allowed to answer question
@@ -145,12 +142,8 @@ class User {
         } **/
     }
     
-    func hasAnsweredQuestion(_ qID : String) -> Bool {
-        return answeredQuestions.contains(qID) ? true : false
-    }
-    
-    func hasSavedTags() -> Bool {
-        return self.savedTags.isEmpty ? false : true
+    func isSubscribedToChannel(cID: String) -> Bool {
+        return self.savedChannelIDs.contains(cID)
     }
     
     func totalItems() -> Int {
@@ -162,7 +155,7 @@ class User {
     }
     
     func hasExpertise() -> Bool {
-        return self.expertiseTags.isEmpty ? false : true
+        return self.approvedChannels.isEmpty ? false : true
     }
     
     func getLocation(completion: @escaping (String?) -> Void) {

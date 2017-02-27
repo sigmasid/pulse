@@ -10,7 +10,7 @@ import UIKit
 
 class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
 
-    public var selectedTag : Tag!
+    public var selectedChannel : Channel!
     
     fileprivate var isLoaded = false
     
@@ -84,7 +84,7 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
     }
     
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
-        guard selectedTag != nil else { return }
+        guard selectedChannel != nil else { return }
         
         switch selectedSegment {
         case 0:
@@ -97,7 +97,7 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
             
             reasonVerified = false
             
-            if let tagTitle = selectedTag.tagTitle {
+            if let tagTitle = selectedChannel.cTitle {
                 applyTitle.text = "Become a Verified Expert in\n\(tagTitle.capitalized)"
                 applySubtitle.text = "apply to be featured as a trusted expert, respond to questions and showcase your expertise!"
                 applyText.text = subText1
@@ -115,7 +115,7 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
             nameVerified = false
             reasonVerified = false
             
-            if let tagTitle = selectedTag.tagTitle {
+            if let tagTitle = selectedChannel.cTitle {
                 applyTitle.text = "Recommend an Expert for\n\(tagTitle.capitalized)"
                 applySubtitle.text = "we feature experts so interested users can hear directly from the best trusted voices!"
                 applyText.text = subText2
@@ -130,8 +130,8 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
         let _loadingIndicator = applyButton.addLoadingIndicator()
         dismissKeyboard()
         
-        if selectedTag != nil {
-            Database.becomeExpert(tag: selectedTag, applyText: applyText.text, completion: {(success, error) in
+        if selectedChannel != nil {
+            Database.joinChannel(channel: selectedChannel, applyText: applyText.text, completion: {(success, error) in
                 if success {
                     let applyConfirmation = UIAlertController(title: "Thanks for applying!",
                                                             message: "We individually review & hand select the best experts for each channel and will get back to you soon!",
@@ -167,11 +167,11 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
         let _loadingIndicator = applyButton.addLoadingIndicator()
         dismissKeyboard()
         
-        if selectedTag != nil {
-            Database.recommendExpert(tag: selectedTag,
-                                     applyName: recommendName.text!,
-                                     applyEmail: recommendEmail.text!,
-                                     applyText: recommendText.text, completion: { (success, error) in
+        if selectedChannel != nil {
+            Database.recommendJoinChannel(channel: selectedChannel,
+                                          applyName: recommendName.text!,
+                                          applyEmail: recommendEmail.text!,
+                                          applyText: recommendText.text, completion: { (success, error) in
                 if success {
                     let applyConfirmation = UIAlertController(title: "Recommendation Sent!",
                                                               message: "We review & hand select the best experts for each channel and will carefully review your recommendation!",

@@ -65,7 +65,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate var avPlayerLayer : AVPlayerLayer!
     fileprivate var imageView : UIImageView!
     
-    fileprivate var itemCollectionPost = [ String : Bool ]()
+    fileprivate var itemCollectionPost = [ String : String ]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -198,7 +198,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         guard let contentType = item.contentType else { return }
         
         if let _image = item.content as? UIImage  {
-            Database.uploadImage(.AnswerThumbs, fileID: item.itemID, image: _image, completion: { (success, error) in } )
+            
+            Database.uploadThumbImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, completion: { (success, error) in } )
         }
         
         if contentType == .recordedVideo || contentType == .albumVideo {
@@ -208,7 +209,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             })
         }
         else if contentType == .recordedImage || contentType == .albumImage, let _image = item.content as? UIImage {
-            let path = storageRef.child("channels").child(selectedChannelID).child(item.itemID)
+            let path = storageRef.child("channels").child(selectedChannelID).child(item.itemID).child("content")
             
             let data = _image.mediumQualityJPEGNSData
                 
@@ -226,7 +227,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                         if !success {
                             GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                         } else {
-                            self.itemCollectionPost[item.itemID] = true
+                            self.itemCollectionPost[item.itemID] = item.type.rawValue
                             allItems.removeLast()
                             self.uploadItems(allItems: allItems)
                         }
@@ -253,7 +254,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                 }
             } catch { }
             
-            let path = storageRef.child("channels").child(selectedChannelID).child(item.type.rawValue).child(item.itemID)
+            let path = storageRef.child("channels").child(selectedChannelID).child(item.itemID).child("content")
             
             do {
                 let assetData = try Data(contentsOf: localFile)

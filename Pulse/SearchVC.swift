@@ -10,7 +10,7 @@ import UIKit
 
 protocol searchVCDelegate: class {
     func userCancelledSearch()
-    func userSelectedSearchResult(type : FeedItemType?, id : String)
+    func userSelectedSearchResult(type : ItemTypes?, id : String)
 }
 
 
@@ -23,7 +23,7 @@ class SearchVC: UIViewController, XMSegmentedControlDelegate {
     
     fileprivate var isSetupComplete = false
     
-    fileprivate var searchScope : FeedItemType? = .tag
+    fileprivate var searchScope : ItemTypes? = .tag
     var searchDelegate : searchVCDelegate!
 
     var results = [(key:String , value:String)]() {
@@ -103,7 +103,7 @@ class SearchVC: UIViewController, XMSegmentedControlDelegate {
         switch selectedSegment {
         case 0: searchScope = .tag
         case 1: searchScope = .question
-        case 2: searchScope = .people
+        case 2: searchScope = .user
         default: searchScope = nil
         }
     }

@@ -120,8 +120,8 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         
         clearExpertTags()
         
-        for tag in currentUser.expertiseTags {
-            let tagButton = PulseButton(title: tag.tagTitle ?? "Undefined", isRound: true)
+        for channel in currentUser.approvedChannels {
+            let tagButton = PulseButton(title: channel.cTitle ?? "Undefined", isRound: true)
             expertTagList.addArrangedSubview(tagButton)
 
             tagButton.contentEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)

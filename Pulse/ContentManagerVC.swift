@@ -40,7 +40,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     var itemIndex = 0
     
     var watchedFullPreview = false
-    var itemCollection = [String]()
+    var itemCollection = [Item]()
     
     var openingScreen : OpeningScreenOptions = .item
     enum OpeningScreenOptions { case camera, item }
@@ -116,10 +116,10 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     }
     
     func loadMoreFromTag() {
-        if let selectedTag = selectedItem.tag, !selectedTag.tagCreated {
-            Database.getTag(selectedTag.tagID, completion: { (tag, error) in
-                self.itemIndex = tag.items.index(of: self.selectedItem) ?? 0
-                self.allItems = tag.items
+        if let selectedTag = selectedItem.tag, !selectedTag.itemCreated {
+            Database.getItemCollection(selectedTag.itemID, completion: { (success, items) in
+                self.itemIndex = items.index(of: self.selectedItem) ?? 0
+                self.allItems = items
             })
         } else {
             self.dismiss(animated: true, completion: nil)
@@ -137,7 +137,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
                         content: image,
                         contentType: assetType,
                         tag: selectedItem.tag,
-                        parentItemID: selectedItem.itemID)
+                        cID: selectedChannel.cID)
         
         recordedVideoVC.delegate = self
         recordedItems.append(item)
@@ -229,13 +229,10 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     }
     
     func minItemsShown() {
+        //NEEDS UPDATE
         if User.isLoggedIn() {
-            if User.currentUser!.hasAnsweredQuestion(selectedItem.itemID) {
-                returnToAnswers()
-            } else {
-                hasMoreItems = true
-                showCamera()
-            }
+            hasMoreItems = true
+            showCamera()
         } else {
             hasMoreItems = true
             showCamera()
@@ -271,23 +268,24 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     
     func showPreviewOverlay() {
         introVC = ContentIntroVC()
-        
-        switch selectedItem.type! {
-        case .question, .answer:
-            introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].itemTitle
-        case .post:
-            introVC?.itemTitle = selectedItem != nil ? selectedItem.tag?.tagTitle : allItems[itemIndex].tag?.tagTitle
-        default: break
+        if selectedItem != nil {
+            switch selectedItem.type {
+            case .question, .answer:
+                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].itemTitle
+            case .post:
+                introVC?.itemTitle = selectedItem != nil ? selectedItem.tag?.itemTitle : allItems[itemIndex].tag?.itemTitle
+            default: break
+            }
+            
+            introVC?.numAnswers = allItems.count
+            
+            if let image = selectedItem.content as? UIImage {
+                introVC?.image = image
+            }
+            
+            pushViewController(introVC!, animated: true)
+            isShowingIntro = true
         }
-        
-        introVC?.numAnswers = allItems.count
-        
-        if let image = selectedItem.content as? UIImage {
-            introVC?.image = image
-        }
-        
-        pushViewController(introVC!, animated: true)
-        isShowingIntro = true
     }
     
     func removeQuestionPreview() {

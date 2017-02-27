@@ -9,15 +9,15 @@
 import UIKit
 
 protocol feedVCDelegate: class {
-    func userSelected(type : FeedItemType, item : Any)
+    func userSelected(type : ItemTypes, item : Any)
 }
 
 protocol previewDelegate: class {
     var watchedFullPreview : Bool { get set }
 }
 
-class FeedVC: UIViewController, previewDelegate {
-    
+class FeedVC: UIViewController {
+/**
     fileprivate var isLoaded = false
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
@@ -130,7 +130,7 @@ class FeedVC: UIViewController, previewDelegate {
                 switch feedItemType! {
                 case .answer:
                     if let selectedIndex = selectedIndex {
-                        let cell = feedCollectionView?.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: selectedIndex) as! FeedAnswerCell
+                        let cell = feedCollectionView?.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: selectedIndex) as! ItemFullWidthCell
                         //cell.removeAnswer()
                     }
                 default: return
@@ -140,14 +140,14 @@ class FeedVC: UIViewController, previewDelegate {
     }
     fileprivate var deselectedIndex : IndexPath?
 
-    var allTags : [Tag]!
-    var allQuestions : [Question?]!
+    //var allTags : [Tag]!
+    //var allQuestions : [Question?]!
     var allAnswers : [Answer]!
     var allUsers : [User]!
     
     var selectedUser : User!
-    var selectedTag : Tag!
-    var selectedQuestion : Question!
+    //var selectedTag : Tag!
+    //var selectedQuestion : Question!
     var selectedAnswer: Answer!
     
     var selectedQuestionIndex = 0
@@ -188,7 +188,7 @@ class FeedVC: UIViewController, previewDelegate {
         feedCollectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         feedCollectionView?.register(FeedTagCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
         feedCollectionView?.register(FeedQuestionCell.self, forCellWithReuseIdentifier: collectionQuestionReuseIdentifier)
-        feedCollectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: collectionAnswerReuseIdentifier)
+        feedCollectionView?.register(ItemFullWidthCell.self, forCellWithReuseIdentifier: collectionAnswerReuseIdentifier)
         feedCollectionView?.register(FeedPeopleCell.self, forCellWithReuseIdentifier: collectionPeopleReuseIdentifier)
 
         view.addSubview(feedCollectionView!)
@@ -321,20 +321,20 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.updateLabel(_currentTag.tagTitle, _subtitle: _currentTag.tagDescription)
                 cell.answerCount.setTitle(String(_currentTag.totalItemsForTag()), for: UIControlState())
             } else if allTags.count > indexPath.row {
-
+                /**
                 Database.getTag(allTags[indexPath.row].tagID!, completion: { (tag, error) in
                     if error == nil {
                         self.allTags[indexPath.row] = tag
                         cell.updateLabel(tag.tagTitle, _subtitle: tag.tagDescription)
                         cell.answerCount.setTitle(String(tag.totalItemsForTag()), for: UIControlState())
                     }
-                })
+                }) **/
             }
             return cell
 
         /** FEED ITEM: ANSWER **/
         case .answer:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: indexPath) as! FeedAnswerCell
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionAnswerReuseIdentifier, for: indexPath) as! ItemFullWidthCell
             
             cell.contentView.backgroundColor = .white
             cell.updateLabel(nil, _subtitle: nil, _image : nil)
@@ -520,7 +520,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
     }
     
-    func updateAnswerCell(_ cell: FeedAnswerCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
+    func updateAnswerCell(_ cell: ItemFullWidthCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allUsers != nil {
             let _user = allUsers[indexPath.row]
             cell.updateLabel(_user.name?.capitalized, _subtitle: _user.shortBio)
@@ -538,7 +538,7 @@ extension FeedVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     let cell = feedCollectionView?.cellForItem(at: indexPath) as! FeedQuestionCell
                     updateQuestionCell(cell, inCollectionView: feedCollectionView!, atIndexPath: indexPath)
                 case .answer:
-                    let cell = feedCollectionView?.cellForItem(at: indexPath) as! FeedAnswerCell
+                    let cell = feedCollectionView?.cellForItem(at: indexPath) as! ItemFullWidthCell
                     updateAnswerCell(cell, inCollectionView: feedCollectionView!, atIndexPath: indexPath)
 
                 default: return
@@ -637,4 +637,5 @@ extension FeedVC: UIViewControllerTransitioningDelegate {
     func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
+ **/
 }

@@ -55,7 +55,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     }
     
     struct ItemMetaData {
-        var itemCollection = [String]()
+        var itemCollection = [Item]()
         
         var gettingImageForPreview : Bool = false
         var gettingInfoForPreview : Bool = false
@@ -93,7 +93,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
             }
             
             if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! BrowseCell
+                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! ItemFullWidthCell
                 cell.removePreview()
             }
         }
@@ -111,8 +111,8 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
             
             view.backgroundColor = .white
             definesPresentationContext = true
-            
-            collectionView?.register(FeedAnswerCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+            collectionView?.backgroundColor = .white
+            collectionView?.register(ItemFullWidthCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(UserProfileHeader.self,
                                      forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
                                      withReuseIdentifier: headerReuseIdentifier)
@@ -157,10 +157,6 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     func updateDataSource() {
         collectionView?.reloadData()
         collectionView?.layoutIfNeeded()
-        
-        if allItems.count > 0 {
-            collectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
-        }
     }
     
     //Update Nav Header
@@ -210,7 +206,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! FeedAnswerCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemFullWidthCell
         
         cell.contentView.backgroundColor = .white
         cell.updateLabel(nil, _subtitle: nil, _image : nil)
@@ -228,7 +224,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(.AnswerThumbs, fileID: currentItem.itemID, maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -257,7 +253,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
             itemStack[indexPath.row].gettingInfoForPreview = true
             
             // Get the user details
-            Database.getItem(currentItem.itemUserID, completion: {(item, error) in
+            Database.getItem(currentItem.itemID, completion: {(item, error) in
                 if let item = item {
                     self.allItems[indexPath.row] = item
                     DispatchQueue.main.async {
@@ -307,14 +303,20 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateCurrentCell(_ cell: BrowseCell, atIndexPath indexPath: IndexPath) {
-        //to come
+    func updateCurrentCell(_ cell: ItemFullWidthCell, atIndexPath indexPath: IndexPath) {
+        if allItems[indexPath.row].itemCreated  {
+            cell.updateLabel(allItems[indexPath.row].itemTitle, _subtitle: allItems[indexPath.row].getCreatedAt())
+        }
+        
+        if let image = allItems[indexPath.row].content as? UIImage  {
+            cell.updateImage(image: image)
+        }
     }
     
     func updateOnscreenRows() {
         if let visiblePaths = collectionView?.indexPathsForVisibleItems {
             for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseCell
+                let cell = collectionView?.cellForItem(at: indexPath) as! ItemFullWidthCell
                 updateCurrentCell(cell, atIndexPath: indexPath)
             }
         }
@@ -334,6 +336,8 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
+        
+        selectedIndex = indexPath
     }
     
     override func collectionView(_ collectionView: UICollectionView,

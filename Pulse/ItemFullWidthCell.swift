@@ -1,5 +1,5 @@
 //
-//  FeedAnswerCell.swift
+//  ItemFullWidthCell.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 12/8/16.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class FeedAnswerCell: UICollectionViewCell, previewDelegate {
+class ItemFullWidthCell: UICollectionViewCell, previewDelegate {
     var delegate : previewDelegate!
     
     fileprivate lazy var titleLabel = UILabel()
@@ -38,7 +38,7 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        setupAnswerPreview()
+        setupPreview()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -101,7 +101,7 @@ class FeedAnswerCell: UICollectionViewCell, previewDelegate {
         super.prepareForReuse()
     }
     
-    fileprivate func setupAnswerPreview() {
+    fileprivate func setupPreview() {
         addSubview(previewImage)
         addSubview(titleStack)
 

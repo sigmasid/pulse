@@ -15,7 +15,7 @@ class Channel : NSObject {
     var cTitle : String?
     var cDescription : String?
     
-    var tags = [Tag]()
+    var tags = [Item]()
     var experts = [User]()
     var items = [Item]()
     
@@ -39,9 +39,9 @@ class Channel : NSObject {
         
         for tag in snapshot.childSnapshot(forPath: "tags").children {
             if let tag = tag as? FIRDataSnapshot {
-            let title = tag.value as? String
-            let _tag = Tag(tagID: (tag as AnyObject).key, tagTitle: title ?? nil)
-            self.tags.append(_tag)
+                let _tag = Item(itemID: (tag as AnyObject).key, type: "tag")
+                _tag.itemTitle = tag.value as? String
+                self.tags.append(_tag)
             }
         }
         
@@ -60,7 +60,8 @@ class Channel : NSObject {
             if let childSnap = child as? FIRDataSnapshot {
                 
                 if let tagID = childSnap.childSnapshot(forPath: "tagID").value as? String, let tagTitle = childSnap.childSnapshot(forPath: "tagTitle").value as? String{
-                    currentItem.tag = Tag(tagID: tagID, tagTitle: tagTitle)
+                    currentItem.tag = Item(itemID: tagID)
+                    currentItem.tag?.itemTitle = tagTitle
                 }
             
                 if let type = childSnap.childSnapshot(forPath: "type").value as? String {
@@ -82,16 +83,6 @@ class Channel : NSObject {
         
         Database.createShareLink(linkString: "c/"+cID, completion: { link in
             completion(link)
-        })
-    }
-
-    func getChannelImage(completion: @escaping (UIImage?) -> Void) {
-        Database.getTagImage(cID!, maxImgSize: maxImgSize, completion: {(imgData, error) in
-            if let imgData = imgData {
-                completion(UIImage(data: imgData))
-            } else {
-                completion(nil)
-            }
         })
     }
 

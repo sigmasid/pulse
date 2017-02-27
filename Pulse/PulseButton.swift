@@ -286,6 +286,9 @@ open class PulseButton: UIButton {
         
         switch size {
         case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) //smaller insets for xSmall button
+        case .medium: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15) //smaller insets for xSmall button
+        case .large: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15) //smaller insets for xSmall button
+
         default: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //standard insets
         }
         
