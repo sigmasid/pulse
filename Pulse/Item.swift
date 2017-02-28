@@ -22,6 +22,7 @@ enum ItemTypes: String {
 enum FileTypes: String {
     case content
     case thumb
+    case cover
 }
 
 class Item: NSObject {
@@ -100,6 +101,10 @@ class Item: NSObject {
         
         if snapshot.hasChild("uID") {
             self.itemUserID = snapshot.childSnapshot(forPath: "uID").value as? String
+        }
+        
+        if let cID = snapshot.childSnapshot(forPath: "cID").value as? String {
+            self.cID = cID
         }
         
         if let url = snapshot.childSnapshot(forPath: "url").value as? String {

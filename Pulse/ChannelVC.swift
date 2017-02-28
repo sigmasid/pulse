@@ -11,6 +11,7 @@ import UIKit
 protocol ChannelDelegate: class {
     func userSelected(user : User)
     func userSelected(item : Item)
+    func currentItems(items : [Item])
 }
 
 class ChannelVC: UIViewController, ChannelDelegate {
@@ -45,6 +46,8 @@ class ChannelVC: UIViewController, ChannelDelegate {
     fileprivate var activityIndicator = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue))
     
     fileprivate var allItems = [Item]()
+    fileprivate var headerItems = [Item]()
+    
     fileprivate var isLoaded = false
     fileprivate var isLayoutSetup = false
     
@@ -117,6 +120,7 @@ class ChannelVC: UIViewController, ChannelDelegate {
     }
     
     internal func subscribe() {
+        subscribeButton.setImage(nil, for: .normal)
         let indicator = subscribeButton.addLoadingIndicator()
         
         Database.subscribeChannel(selectedChannel, completion: {(success, error) in
@@ -129,6 +133,7 @@ class ChannelVC: UIViewController, ChannelDelegate {
 
                     UIView.animate(withDuration: 1, animations: { self.subscribeButton.alpha = 0 } , completion: {(value: Bool) in
                         self.subscribeButton.removeFromSuperview()
+                        self.subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, hasBackground: true, tint: .white)
                     })
                 }
             }
@@ -153,6 +158,10 @@ class ChannelVC: UIViewController, ChannelDelegate {
         let userProfileVC = UserProfileVC(collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
         navigationController?.pushViewController(userProfileVC, animated: true)
         userProfileVC.selectedUser = user
+    }
+    
+    internal func currentItems(items : [Item]) {
+        headerItems = items
     }
     
     internal func setupSubscribe() {
@@ -228,16 +237,30 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     self.allItems[indexPath.row] = item
                     
                     //Get the cover image
-                    DispatchQueue.global(qos: .background).async {
-                        if let imageURL = item.contentURL, item.contentType == .recordedImage || item.contentType == .albumImage, let _imageData = try? Data(contentsOf: imageURL) {
-                            self.allItems[indexPath.row].content = UIImage(data: _imageData)
+                    if let imageURL = item.contentURL, item.contentType == .recordedImage || item.contentType == .albumImage {
+                        DispatchQueue.global(qos: .background).async {
+                            if let data = try? Data(contentsOf: imageURL) {
+                                self.allItems[indexPath.row].content = UIImage(data: data)
                             
-                            DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                DispatchQueue.main.async {
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                    }
                                 }
                             }
                         }
+                    } else if item.contentType == .recordedVideo || item.contentType == .albumVideo {
+                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .cover, maxImgSize: maxImgSize, completion: { (data, error) in
+                            if let data = data {
+                                self.allItems[indexPath.row].content = UIImage(data: data)
+                                
+                                DispatchQueue.main.async {
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                    }
+                                }
+                            }
+                        })
                     }
                     
                     // Get the user details
@@ -303,25 +326,27 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func userSelected(item : Item) {
-        contentVC = ContentManagerVC()
         
         switch item.type {
+            
         case .answer:
+            
             showItemDetail(allItems: [item], itemCollection: [], selectedItem: item, watchedPreview: false)
 
         case .post:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 if success {
                     self.showItemDetail(allItems: [item], itemCollection: items, selectedItem: item, watchedPreview: true)
+                } else {
+                    self.showItemDetail(allItems: [item], itemCollection: [item], selectedItem: item, watchedPreview: false)
                 }
             })
-            
         case .question:
             
             showBrowse(selectedItem: item)
             
         case .tag:
-            print("went into show tag")
+
             showTag(selectedItem: item)
             
         default: break
@@ -346,6 +371,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         layout.sectionHeadersPinToVisibleBounds = true
         
         let itemCollection = BrowseCollectionVC(collectionViewLayout: layout)
+        itemCollection.selectedChannel = selectedChannel
         itemCollection.selectedItem = selectedItem
         
         navigationController?.pushViewController(itemCollection, animated: true)
@@ -365,9 +391,13 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         switch kind {
         case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ChannelHeaderTags
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ChannelHeaderTags
+            
             headerView.backgroundColor = .white
-            headerView.items = selectedChannel.tags
+            headerView.selectedChannel = selectedChannel
+            headerView.items = headerItems.isEmpty ? selectedChannel.tags : headerItems
+            
             //headerView.experts = selectedChannel.experts
             headerView.delegate = self
             return headerView

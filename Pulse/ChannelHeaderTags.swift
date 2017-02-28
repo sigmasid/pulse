@@ -17,6 +17,7 @@ class ChannelHeaderTags: UICollectionReusableView {
         }
     }
     public var delegate: ChannelDelegate!
+    public var selectedChannel : Channel!
     
     private var tagsList : UICollectionView!
     private var tagsLabel = UILabel()
@@ -33,6 +34,10 @@ class ChannelHeaderTags: UICollectionReusableView {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        delegate.currentItems(items: items)
     }
     
     fileprivate func setupChannelHeader() {
@@ -79,44 +84,30 @@ extension ChannelHeaderTags: UICollectionViewDataSource, UICollectionViewDelegat
                     cell.updateCell(item.itemTitle.lowercased(), _image: nil)
                     
                     self.items[indexPath.row] = item
+                
+                }
+            })
+            
+            Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
+                if let data = data {
+                    self.items[indexPath.row].content = UIImage(data: data)
                     
-                    if let itemURL = item.contentURL {
-                        DispatchQueue.global(qos: .background).async {
-                            if let imageData = try? Data(contentsOf: itemURL) {
-                                self.items[indexPath.row].content = UIImage(data: imageData)
-                                
-                                DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateImage(image : UIImage(data: imageData))
-                                    }
-                                }
-                            }
+                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                        DispatchQueue.main.async {
+                            cell.updateCell(item.itemTitle.capitalized, _image : UIImage(data: data))
                         }
                     }
                 }
             })
+            
         } else {
             if let itemImage = item.content as? UIImage {
                 cell.updateCell(item.itemTitle.lowercased(), _image : itemImage)
-            } else if let itemURL = item.contentURL {
-                cell.updateCell(item.itemTitle.lowercased(), _image: nil)
-                
-                DispatchQueue.global(qos: .background).async {
-                    if let imageData = try? Data(contentsOf: itemURL) {
-                        self.items[indexPath.row].content = UIImage(data: imageData)
-                        
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            DispatchQueue.main.async {
-                                cell.updateCell(item.itemTitle.capitalized, _image : UIImage(data: imageData))
-                            }
-                        }
-                    }
-                }
             } else {
                 cell.updateCell(item.itemTitle.capitalized, _image: nil)
             }
         }
-                
+        
         return cell
     }
     

@@ -39,7 +39,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
     fileprivate var sendBottomConstraint : NSLayoutConstraint!
     fileprivate var textViewHeightConstraint : NSLayoutConstraint!
     //Bools for logic checks
-    fileprivate var _hasMovedUp = false
     fileprivate var isExistingConversation = false
     fileprivate var hasConversationObserver = false
     fileprivate var isUserLoaded = false

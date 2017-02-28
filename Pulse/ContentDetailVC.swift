@@ -34,7 +34,6 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
         didSet {
             if self.isViewLoaded {
                 removeObserverIfNeeded()
-                itemIndex = 0
                 _hasUserBeenAskedQuestion = false
                 watchedFullPreview ? loadWatchedPreviewItem() : loadItem(index: itemIndex)
             }
@@ -129,6 +128,8 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
         if ShowItemVC.qPlayer.items().count > 0 {
             ShowItemVC.qPlayer.removeAllItems()
         }
+        
+        itemIndex = 0
     }
     
     override var prefersStatusBarHidden : Bool {
@@ -325,7 +326,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     fileprivate func updateOverlayData(_ item : Item) {
         print("item name is \(item.itemTitle, item.user?.name)")
-        contentOverlay.setTitle(item.itemTitle)
+        contentOverlay.setTitle(item.itemTitle ?? "")
         contentOverlay.setTagName(item.tag?.itemTitle)
 
         if let user = item.user {
@@ -347,8 +348,9 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
             }
         } else {
             contentOverlay.setUserImage(UIImage(named: "default-profile"))
-
-            Database.getUser(item.itemUserID!, completion: { (user, error) in
+            
+            
+            Database.getUser(item.itemUserID ?? "", completion: { (user, error) in
                 if let user = user, self.currentItem?.itemUserID == user.uID {
                     self.currentItem?.user = user
                     self.contentOverlay.setUserName(user.name)

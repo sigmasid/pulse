@@ -9,6 +9,7 @@
 import UIKit
 import FirebaseAuth
 import MobileCoreServices
+import CoreLocation
 
 class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
@@ -123,7 +124,7 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
         textField.text = ""
     }
     
-    func doneRecording(_: URL?, image: UIImage?, location: String?, assetType : CreatedAssetType?) {
+    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
         guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")

@@ -8,6 +8,7 @@
 
 import UIKit
 import MobileCoreServices
+import CoreLocation
 
 protocol accountDelegate: class {
     func userClickedCamera()
@@ -225,7 +226,7 @@ class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImageP
         present(cameraVC, animated: true, completion: nil)
     }
     
-    func doneRecording(_: URL?, image: UIImage?, location: String?, assetType : CreatedAssetType?) {
+    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
         guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")

@@ -297,6 +297,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         contentVC.watchedFullPreview = false
         contentVC.allItems = [selectedItem]
         contentVC.openingScreen = .item
+        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
         
         contentVC.transitioningDelegate = self
         present(contentVC, animated: true, completion: nil)

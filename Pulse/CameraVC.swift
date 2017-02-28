@@ -80,9 +80,9 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
                 self.camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
                 if image != nil {
-                    self.delegate!.doneRecording(nil, image: image, location: self.camera.recordedLocation, assetType: .recordedImage)
+                    self.delegate!.doneRecording(nil, image: image, location: self.camera.location, assetType: .recordedImage)
                 } else if videoURL != nil {
-                    self.delegate!.doneRecording(videoURL, image: nil, location: self.camera.recordedLocation, assetType: .recordedVideo)
+                    self.delegate!.doneRecording(videoURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
                 }
                 self.camera.stopCaptureSession()
 //                self._Camera.stopAndRemoveCaptureSession()
@@ -98,9 +98,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                delegate!.doneRecording(nil, image: image, location: self.camera.recordedLocation, assetType: .recordedImage)
+                delegate!.doneRecording(nil, image: image, location: self.camera.location, assetType: .recordedImage)
                 camera.stopCaptureSession()
-//                _Camera.stopAndRemoveCaptureSession()
             }
         } else {
             //it's a video
@@ -109,9 +108,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                delegate!.doneRecording(fileURL, image: nil, location: self.camera.recordedLocation, assetType: .recordedVideo)
+                delegate!.doneRecording(fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
                 camera.stopCaptureSession()
-//                _Camera.stopAndRemoveCaptureSession()
             }
         }
     }

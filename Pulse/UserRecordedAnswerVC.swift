@@ -11,14 +11,16 @@ import Firebase
 import AVFoundation
 import Photos
 
-class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
+class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextViewDelegate {
     
     fileprivate var uploadTask : FIRStorageUploadTask!
     
     // set by the delegate
-    var currentItem : Item! {
+    public var currentItem : Item! {
         didSet {
             view.addSubview(controlsOverlay)
+            controlsOverlay.title = currentItem.itemTitle
+            currentItem.itemTitle != "" ? controlsOverlay.showAddTitleField(makeFirstResponder: false) : controlsOverlay.clearAddTitleField()
             setupOverlayButtons()
             
             if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo {
@@ -29,7 +31,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
-    var selectedChannelID : String! //used to upload to right folders
+    public var selectedChannelID : String! //used to upload to right folders
+    public var parentItemID : String! //to add to right collection
     
     //includes currentItem - set by delegate - the image / video is replaced after processing when uploading file or adding more
     var recordedItems = [Item]()
@@ -47,7 +50,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         }
         willSet {
             if newValue < currentItemIndex {
-                isNewEntry = false
+                isNewEntry = false //return after user dismissed camera with existing videos to show
             } else {
                 controlsOverlay.addPagers()
             }
@@ -61,7 +64,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate var isVideoLoaded = false
     fileprivate var isImageViewLoaded = false
     
-    fileprivate var aPlayer : AVPlayer!
+    fileprivate var aPlayer : AVQueuePlayer!
     fileprivate var avPlayerLayer : AVPlayerLayer!
     fileprivate var imageView : UIImageView!
     
@@ -71,8 +74,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         super.viewDidLoad()
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(true)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
     }
     
     fileprivate func setupImageForAnswer() {
@@ -94,8 +97,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         //don't create new AVPlayer if it already exists
         guard let contentURL = currentItem.contentURL else { return }
         if !isVideoLoaded {
-            aPlayer = AVPlayer()
-            
+            aPlayer = AVQueuePlayer()
             avPlayerLayer = AVPlayerLayer(player: aPlayer)
             avPlayerLayer.frame = view.bounds
             avPlayerLayer.backgroundColor = UIColor.darkGray.cgColor
@@ -111,6 +113,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         
         let currentVideo = AVPlayerItem(url: contentURL)
         aPlayer.replaceCurrentItem(with: currentVideo)
+        
+        if #available(iOS 10.0, *) {
+           let _ = AVPlayerLooper(player: aPlayer, templateItem: currentVideo)
+        }
+
         aPlayer.play()
         
         if isNewEntry && currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo {
@@ -154,8 +161,44 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         controlsOverlay.getButton(.save).addTarget(self, action: #selector(_save), for: UIControlEvents.touchUpInside)
         controlsOverlay.getButton(.close).addTarget(self, action: #selector(_close), for: UIControlEvents.touchUpInside)
         controlsOverlay.getButton(.addMore).addTarget(self, action: #selector(_addMore), for: UIControlEvents.touchUpInside)
+        
+        controlsOverlay.getTitleField().delegate = self
     }
     
+    fileprivate func updateItemTitle(text : String) {
+        recordedItems[self.currentItemIndex - 1].itemTitle = text
+    }
+    
+    func textViewDidEndEditing(_ textView: UITextView) {
+        if textView.text != "" {
+            updateItemTitle(text: textView.text)
+            textView.resignFirstResponder()
+        } else {
+            textView.resignFirstResponder()
+        }
+    }
+    
+    func textViewShouldReturn(_ textView: UITextView) -> Bool {
+        updateItemTitle(text: textView.text)
+        textView.resignFirstResponder()
+        return true
+    }
+    
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            updateItemTitle(text: textView.text)
+            textView.resignFirstResponder()
+            return false
+        }
+        
+        return textView.text.characters.count + (text.characters.count - range.length) <= 120
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        controlsOverlay.endEditing(true)
+    }
+
     func _addMore() {
         if let delegate = delegate {
             delegate.addMoreItems(self, recordedItems: recordedItems)
@@ -198,7 +241,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         guard let contentType = item.contentType else { return }
         
         if let _image = item.content as? UIImage  {
-            
             Database.uploadThumbImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, completion: { (success, error) in } )
         }
         
@@ -220,7 +262,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                 if (error != nil) {
                     GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                 } else {
-                    // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
                     item.contentURL = metadata?.downloadURL()
                     
                     Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
@@ -242,7 +283,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         controlsOverlay.addUploadProgressBar()
         
         if let localFile: URL = item.contentURL as URL? {
-            print("file to upload link is \(localFile)")
 
             let metadata = FIRStorageMetadata()
             metadata.contentType = "video/mp4"
@@ -265,7 +305,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                     } else {
                         // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
                         item.contentURL = metadata?.downloadURL()
-                        print("download url is \(metadata?.downloadURL())")
                         Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                             if !success {
                                 GlobalFunctions.showErrorBlock("Error Posting Item", erMessage: error!.localizedDescription)
@@ -278,36 +317,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                     }
                 }
             }
-            catch {
-                print("went into catch")
-            }
-            
-            /*
-             //NEED TO CHECK IF THIS STILL WORKS - FOR FAILURE & SUCCESS
-             uploadTask.observe(.success) { snapshot in
-             print("successfully added file to storage")
-             self.currentItem.aURL = snapshot.metadata?.downloadURL()
-             
-             Database.addUserAnswersToDatabase( answer, completion: {(success, error) in
-             if !success {
-             print("error adding file to database")
-             GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
-             completion(false, nil)
-             } else {
-             print("successfully uploaded to real time database")
-             
-             self.uploadTask.removeAllObservers()
-             completion(true, answer.aID)
-             }
-             })
-             }
-             
-             uploadTask.observe(.failure) { snapshot in
-             if let _error = snapshot.error {
-             print("went into error posting video")
-             GlobalFunctions.showErrorBlock("Error Posting Video", erMessage: _error.localizedDescription)
-             }
-             } */
+            catch { }
             
             uploadTask.observe(.progress) { snapshot in
                 if fileSize > 0 {
@@ -323,6 +333,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     ///Called after user has uploaded full answer
     fileprivate func doneCreatingAnswer() {
         Database.addItemCollectionToDatabase(recordedItems.first!,
+                                             parentItemID: parentItemID,
                                              channelID: selectedChannelID,
                                              post: itemCollectionPost,
                                              completion: {(success, error) in

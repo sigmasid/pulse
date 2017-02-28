@@ -16,23 +16,27 @@ class ItemCell: UICollectionViewCell {
     fileprivate var cellCard = PulseMenu(_axis: .vertical, _spacing: 0)
     fileprivate var itemFooter = UIView()
     fileprivate lazy var itemTag = UILabel()
+    fileprivate var itemHeightAnchor : NSLayoutConstraint!
     
-    fileprivate var itemButton = PulseButton(size: .small, type: .blank, isRound: true, hasBackground: true, tint: .black)
+    fileprivate var itemButton = PulseButton(size: .small, type: .logo, isRound: true, hasBackground: false)
     
     public var itemType : ItemTypes? {
         didSet {
             switch itemType! {
             case .question, .answer:
+                itemHeightAnchor.constant = 0
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
                 titleLabel.numberOfLines = 3
                 itemImage.isHidden = true
-                
+
             case .post:
+                itemHeightAnchor.constant = 225
                 titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
                 titleLabel.numberOfLines = 2
                 itemImage.isHidden = false
-                
+
             default:
+                itemHeightAnchor.constant = 0
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
                 titleLabel.numberOfLines = 1
                 itemImage.isHidden = true
@@ -66,8 +70,6 @@ class ItemCell: UICollectionViewCell {
         if let _image = _image {
             itemImage.isHidden = false
             itemImage.image = _image
-        } else {
-            itemImage.isHidden = true
         }
     }
     
@@ -85,7 +87,6 @@ class ItemCell: UICollectionViewCell {
     func updateButtonImage(image : UIImage?) {
         if let image = image {
             itemButton.setBackgroundImage(image, for: .normal)
-
         }
     }
     
@@ -105,7 +106,8 @@ class ItemCell: UICollectionViewCell {
         cellCard.addArrangedSubview(itemFooter)
         
         itemButton.translatesAutoresizingMaskIntoConstraints = false
-        itemImage.heightAnchor.constraint(lessThanOrEqualToConstant: 225).isActive = true
+        itemHeightAnchor = itemImage.heightAnchor.constraint(equalToConstant: 0)
+        itemHeightAnchor.isActive = true
         
         itemFooter.addSubview(itemButton)
         itemFooter.addSubview(titleLabel)

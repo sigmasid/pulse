@@ -30,8 +30,9 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         }
     }
     private var itemStack = [ItemMetaData]()
-
+    
     //set by delegate
+    public var selectedChannel : Channel!
     public var selectedItem : Item! {
         didSet {
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
@@ -103,6 +104,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = false
+        contentVC.selectedChannel = selectedChannel
         contentVC.selectedItem = selectedItem
         contentVC.allItems = allItems
         contentVC.itemIndex = index
@@ -148,7 +150,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(channelID: selectedItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -231,7 +233,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
-            headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "", count: allItems.count)
+            headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "", count: allItems.count, image: selectedItem.content as? UIImage)
             
             return headerView
             

@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo}
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -304,6 +304,10 @@ open class PulseButton: UIButton {
         case .add:
             let tintedTimage = UIImage(named: "add")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .question:
+            let tintedTimage = UIImage(named: "question")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
         
         case.remove:
             let tintedTimage = UIImage(named: "remove")?.withRenderingMode(.alwaysTemplate)
@@ -446,6 +450,14 @@ open class PulseButton: UIButton {
             let tintedTimage = UIImage(named: "share-circle")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+            
+        case .logo:
+            setBackgroundImage(UIImage(named: "pulse-logo"), for: .normal)
+            imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+            
+        case .text:
+            let tintedTimage = UIImage(named: "text")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
 
         case .answerCount:
             titleEdgeInsets = UIEdgeInsetsMake(0, 0, frame.height / 4, 0)

@@ -8,9 +8,10 @@
 
 import UIKit
 import MobileCoreServices
+import CoreLocation
 
 protocol cameraDelegate : class {
-    func doneRecording(_: URL?, image: UIImage?, location: String?, assetType : CreatedAssetType?)
+    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
     func userDismissedCamera()
     func showAlbumPicker()
 }
@@ -127,11 +128,11 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     }
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
-    func doneRecording(_ assetURL : URL?, image: UIImage?, location: String?, assetType : CreatedAssetType?){
+    func doneRecording(_ assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
         let itemKey = databaseRef.child("items").childByAutoId().key
         let item = Item(itemID: itemKey,
                         itemUserID: User.currentUser!.uID!,
-                        itemTitle: selectedItem.itemTitle,
+                        itemTitle: selectedItem.type == .question ? selectedItem.itemTitle : "",
                         type: selectedItem.type == .question ? .answer : .post,
                         contentURL: assetURL,
                         content: image,
@@ -143,6 +144,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         recordedItems.append(item)
 
         recordedVideoVC.selectedChannelID = selectedChannel.cID
+        recordedVideoVC.parentItemID = selectedItem.itemID
         recordedVideoVC.isNewEntry = true
         recordedVideoVC.recordedItems = recordedItems
         recordedVideoVC.currentItemIndex += 1
@@ -175,13 +177,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
             }
         })
     }
-    
-    func addMoreItems(_ currentVC : UIViewController, recordedItems : [Item]) {
-        recordedVideoVC = currentVC as! RecordedVideoVC
-        self.recordedItems = recordedItems
-        isAddingMoreItems = true
-        popViewController(animated: true)
-    }
+
     
     func doneUploadingAnswer(_ currentVC: UIViewController) {
         recordedItems.removeAll() // empty current answers array
@@ -249,8 +245,8 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     func showCamera(_ animated : Bool) {
         cameraVC = CameraVC()
         cameraVC.delegate = self
-        cameraVC.screenTitle = selectedItem.itemTitle
-                
+        cameraVC.screenTitle = selectedItem.type == .question ? selectedItem.itemTitle : selectedItem.tag?.itemTitle ?? ""
+        
         panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: self)
         panDismissInteractionController.delegate = self
         pushViewController(cameraVC, animated: animated)
@@ -295,6 +291,20 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         }
     }
     
+    func addMoreItems(_ currentVC : UIViewController, recordedItems : [Item]) {
+        recordedVideoVC = currentVC as! RecordedVideoVC
+        self.recordedItems = recordedItems
+        isAddingMoreItems = true
+        
+        if !self.viewControllers.contains(cameraVC) {
+            popViewController(animated: false)
+            pushViewController(cameraVC, animated: false)
+        } else {
+            popViewController(animated: true)
+        }
+    }
+    
+    //case where user closes the 'first' video
     func userDismissedRecording(_ currentVC : UIViewController, recordedItems : [Item]) {
         self.recordedItems = recordedItems
         
@@ -306,8 +316,6 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     func userDismissedCamera() {
         if isAddingMoreItems {
             returnToRecordings()
-        } else if hasMoreItems {
-            returnToAnswers()
         } else {
             dismiss(animated: true, completion: nil)
         }

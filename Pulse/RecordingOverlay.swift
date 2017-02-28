@@ -9,8 +9,9 @@
 import UIKit
 
 class RecordingOverlay: UIView {
-    fileprivate var saveButton = PulseButton(size: .small, type: .save, isRound: true, hasBackground: false)
-    fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: false)
+    fileprivate var saveButton = PulseButton(size: .small, type: .save, isRound: true, hasBackground: false, tint: .white)
+    fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: false, tint: .white)
+    fileprivate var titleButton = PulseButton(size: .small, type: .text, isRound: true, hasBackground: false, tint: .white)
 
     fileprivate var addMoreStack = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
     fileprivate var addMoreLabel = UILabel()
@@ -23,10 +24,14 @@ class RecordingOverlay: UIView {
     fileprivate var progressLabel = UILabel()
     fileprivate var progressBar = UIProgressView()
     
+    fileprivate lazy var addTitleField = UITextView()
+    fileprivate var titleBottomConstraint : NSLayoutConstraint!
+    public var title : String = ""
+    
     fileprivate var pagers = [UIView]()
     fileprivate lazy var pagersStack = UIStackView()
-    
-    var tap : UITapGestureRecognizer!
+    fileprivate var isTitleSetup = false
+    fileprivate var observersAdded = false
     
     internal enum ControlButtons: Int {
         case save, post, close, addMore
@@ -38,7 +43,16 @@ class RecordingOverlay: UIView {
         addFooterButtons()
         addCloseButton()
         addSaveButton()
+        addTitleButton()
+        
         setupPagers()
+        
+        if !observersAdded {
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+            observersAdded = true
+        }
+        
     }
     
     func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
@@ -67,23 +81,26 @@ class RecordingOverlay: UIView {
         }
     }
     
-    fileprivate func addFooterButtons() {
-        addSubview(postStack)
-        addSubview(addMoreStack)
-
-        postStack.translatesAutoresizingMaskIntoConstraints = false
-        postStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.m.rawValue).isActive = true
-        postStack.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        postStack.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.5).isActive = true
-
-        postStack.layoutIfNeeded()
+    func getTitleField() -> UITextView {
+        return addTitleField
+    }
         
-        addMoreStack.translatesAutoresizingMaskIntoConstraints = false
-        addMoreStack.bottomAnchor.constraint(equalTo: postStack.bottomAnchor).isActive = true
-        addMoreStack.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        addMoreStack.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.5).isActive = true
+    fileprivate func addFooterButtons() {
+        addSubview(postButton)
+        addSubview(addMoreButton)
+        
+        addSubview(postLabel)
+        addSubview(addMoreLabel)
 
-        addMoreStack.layoutIfNeeded()
+        postButton.translatesAutoresizingMaskIntoConstraints = false
+        postButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.m.rawValue).isActive = true
+        postButton.centerXAnchor.constraint(equalTo: centerXAnchor, constant: frame.width / 4).isActive = true
+        postButton.layoutIfNeeded()
+        
+        addMoreButton.translatesAutoresizingMaskIntoConstraints = false
+        addMoreButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.m.rawValue).isActive = true
+        addMoreButton.centerXAnchor.constraint(equalTo: centerXAnchor, constant: -frame.width / 4).isActive = true
+        addMoreButton.layoutIfNeeded()
 
         postLabel.text = "Post"
         addMoreLabel.text = "Add More"
@@ -94,11 +111,97 @@ class RecordingOverlay: UIView {
         postLabel.setBlurredBackground()
         addMoreLabel.setBlurredBackground()
         
-        addMoreStack.addArrangedSubview(addMoreButton)
-        addMoreStack.addArrangedSubview(addMoreLabel)
+        addMoreLabel.translatesAutoresizingMaskIntoConstraints = false
+        addMoreLabel.centerXAnchor.constraint(equalTo: addMoreButton.centerXAnchor).isActive = true
+        addMoreLabel.topAnchor.constraint(equalTo: addMoreButton.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        
+        postLabel.translatesAutoresizingMaskIntoConstraints = false
+        postLabel.centerXAnchor.constraint(equalTo: postButton.centerXAnchor).isActive = true
+        postLabel.topAnchor.constraint(equalTo: postButton.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        
+        postLabel.layoutIfNeeded()
+        addMoreLabel.layoutIfNeeded()
+    }
+    
+    func userClickedAddTitle(sender: UIButton) {
+        showAddTitleField(makeFirstResponder: true)
+    }
+    
+    func showAddTitleField(makeFirstResponder: Bool) {
+        if !isTitleSetup {
+            setupTitleField()
+        }
+        
+        addTitleField.text = title
+        titleBottomConstraint.constant = -Spacing.xl.rawValue - IconSizes.medium.rawValue
 
-        postStack.addArrangedSubview(postButton)
-        postStack.addArrangedSubview(postLabel)
+        if makeFirstResponder {
+            addTitleField.becomeFirstResponder()
+        }
+    }
+    
+    func clearAddTitleField() {
+        addTitleField.text = ""
+        
+        if titleBottomConstraint  != nil {
+            titleBottomConstraint.constant = addTitleField.frame.height
+        }
+    }
+    
+    fileprivate func setupTitleField() {
+        addSubview(addTitleField)
+        
+        addTitleField.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        addTitleField.textColor = .white
+        addTitleField.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+    
+        addTitleField.translatesAutoresizingMaskIntoConstraints = false
+        addTitleField.returnKeyType = .done
+        
+        addTitleField.textContainer.maximumNumberOfLines = 2
+        addTitleField.textContainer.lineBreakMode = .byTruncatingTail
+        
+        titleBottomConstraint = addTitleField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.xl.rawValue - IconSizes.medium.rawValue)
+        titleBottomConstraint.isActive = true
+        
+        addTitleField.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        addTitleField.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        addTitleField.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        
+        addTitleField.layoutIfNeeded()
+        
+        isTitleSetup = true
+    }
+    
+    func keyboardWillHide(notification: NSNotification) {
+        
+        if addTitleField.text == "" {
+            titleBottomConstraint.constant = addTitleField.frame.height
+        } else {
+            titleBottomConstraint.constant = -Spacing.xl.rawValue - IconSizes.medium.rawValue
+        }
+        
+        addTitleField.layoutIfNeeded()
+    }
+    
+    func keyboardWillShow(notification: NSNotification) {
+        if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
+            let keyboardHeight = keyboardSize.height
+            titleBottomConstraint.constant = -keyboardHeight
+            addTitleField.layoutIfNeeded()
+        }
+    }
+    
+    fileprivate func addCloseButton() {
+        addSubview(closeButton)
+        
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
+        closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        
+        closeButton.layoutIfNeeded()
     }
     
     fileprivate func addSaveButton() {
@@ -109,19 +212,20 @@ class RecordingOverlay: UIView {
         saveButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         saveButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         saveButton.layoutIfNeeded()
-
     }
+
     
-    fileprivate func addCloseButton() {
-        addSubview(closeButton)
+    fileprivate func addTitleButton() {
+        addSubview(titleButton)
         
-        closeButton.translatesAutoresizingMaskIntoConstraints = false
-        closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
-        closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.m.rawValue).isActive = true
-        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        titleButton.translatesAutoresizingMaskIntoConstraints = false
+        titleButton.topAnchor.constraint(equalTo: saveButton.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        titleButton.leadingAnchor.constraint(equalTo: saveButton.leadingAnchor).isActive = true
+        titleButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        titleButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        titleButton.layoutIfNeeded()
         
-        closeButton.layoutIfNeeded()
+        titleButton.addTarget(self, action: #selector(userClickedAddTitle), for: .touchUpInside)
     }
     
     func addProgressLabel(_ label : String) {

@@ -89,6 +89,7 @@
 		BAE842E51E09095000FBC0B7 /* LoadingVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE842E41E09095000FBC0B7 /* LoadingVC.swift */; };
 		BAF220C51D31F0DB00C5B611 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BAF220C41D31F0DB00C5B611 /* Main.storyboard */; };
 		BAF2940F1D46E6DA0046B073 /* AccountLoginManagerVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */; };
+		BAF2A8ED1E65512F000859E6 /* PhotoCaptureDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF2A8EC1E65512F000859E6 /* PhotoCaptureDelegate.swift */; };
 		BAF76D851DB025B300FB72EE /* InboxVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF76D841DB025B300FB72EE /* InboxVC.swift */; };
 		BAF76D871DB026E700FB72EE /* InboxTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF76D861DB026E700FB72EE /* InboxTableCell.swift */; };
 		BAF76D891DB0355600FB72EE /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF76D881DB0355600FB72EE /* Conversation.swift */; };
@@ -186,6 +187,7 @@
 		BAE842E41E09095000FBC0B7 /* LoadingVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoadingVC.swift; sourceTree = "<group>"; };
 		BAF220C41D31F0DB00C5B611 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AccountLoginManagerVC.swift; sourceTree = "<group>"; };
+		BAF2A8EC1E65512F000859E6 /* PhotoCaptureDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoCaptureDelegate.swift; sourceTree = "<group>"; };
 		BAF76D841DB025B300FB72EE /* InboxVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InboxVC.swift; sourceTree = "<group>"; };
 		BAF76D861DB026E700FB72EE /* InboxTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InboxTableCell.swift; sourceTree = "<group>"; };
 		BAF76D881DB0355600FB72EE /* Conversation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
@@ -304,12 +306,12 @@
 				BA23C8021D4FE0DC00BA0109 /* Profile */,
 				BAFE7E8B1D2CCC5300DEED6C /* Login */,
 				BA1DE13C1D244AFD004F3ED2 /* Camera */,
-				BA6B78B31D2D7D43003EE992 /* Show Answer */,
+				BA6B78B31D2D7D43003EE992 /* Content Manager */,
 				BAFA886F1D5922B100854B12 /* Browse Answers */,
-				BA6B78B41D2D7D56003EE992 /* User Recorded Answer */,
+				BA6B78B41D2D7D56003EE992 /* User Recorded Item */,
 				BA7745CA1E5775040023976F /* Channel */,
 				BA7745CB1E5775120023976F /* User Profile */,
-				BA722DEF1E5A5F6E00E9699D /* Answers */,
+				BA722DEF1E5A5F6E00E9699D /* Items */,
 				BAFD76DD1D9CDFA9005FBBD0 /* Feed */,
 				BAFD76D71D9C5000005FBBD0 /* Main Tabs */,
 				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
@@ -341,6 +343,7 @@
 				BA1DE1361D244A6A004F3ED2 /* CameraVC.swift */,
 				BA1DE1381D244A9D004F3ED2 /* CameraManager.swift */,
 				BA1DE13A1D244AE0004F3ED2 /* CameraOverlayView.swift */,
+				BAF2A8EC1E65512F000859E6 /* PhotoCaptureDelegate.swift */,
 			);
 			name = Camera;
 			sourceTree = "<group>";
@@ -369,7 +372,7 @@
 			name = Profile;
 			sourceTree = "<group>";
 		};
-		BA6B78B31D2D7D43003EE992 /* Show Answer */ = {
+		BA6B78B31D2D7D43003EE992 /* Content Manager */ = {
 			isa = PBXGroup;
 			children = (
 				BA1DE1461D244DFA004F3ED2 /* ContentManagerVC.swift */,
@@ -378,22 +381,22 @@
 				BA1DE1201D244330004F3ED2 /* Preview.swift */,
 				BAD363A71D51319600560EB5 /* ContentIntroVC.swift */,
 			);
-			name = "Show Answer";
+			name = "Content Manager";
 			sourceTree = "<group>";
 		};
-		BA6B78B41D2D7D56003EE992 /* User Recorded Answer */ = {
+		BA6B78B41D2D7D56003EE992 /* User Recorded Item */ = {
 			isa = PBXGroup;
 			children = (
 				BA1DE13D1D244BEB004F3ED2 /* UserRecordedAnswerVC.swift */,
-				BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */,
 				BA6B78B51D2E2620003EE992 /* RecordingOverlay.swift */,
+				BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */,
 				BAFA8F321D42984F00C1BB14 /* FiltersOverlay.swift */,
 				BAFA8F341D42987000C1BB14 /* FiltersCell.swift */,
 			);
-			name = "User Recorded Answer";
+			name = "User Recorded Item";
 			sourceTree = "<group>";
 		};
-		BA722DEF1E5A5F6E00E9699D /* Answers */ = {
+		BA722DEF1E5A5F6E00E9699D /* Items */ = {
 			isa = PBXGroup;
 			children = (
 				BA5C62CF1E5D1D5F000823AB /* TagCollectionVC.swift */,
@@ -404,7 +407,7 @@
 				BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */,
 				BAFEBB821DFA7EB5005F5D54 /* ItemFullWidthCell.swift */,
 			);
-			name = Answers;
+			name = Items;
 			sourceTree = "<group>";
 		};
 		BA7745CA1E5775040023976F /* Channel */ = {
@@ -705,6 +708,7 @@
 				BA8E83031D38540C002345D2 /* AccountPageVC.swift in Sources */,
 				BA1DE1371D244A6A004F3ED2 /* CameraVC.swift in Sources */,
 				BA7D55281D74C58D005EF7F3 /* FeedVC.swift in Sources */,
+				BAF2A8ED1E65512F000859E6 /* PhotoCaptureDelegate.swift in Sources */,
 				BA1DE1211D244330004F3ED2 /* Preview.swift in Sources */,
 				BA4669C21DFF1D3C00C14DA6 /* FeedQuestionCell.swift in Sources */,
 				BA722DEE1E5A569800E9699D /* BrowseCell.swift in Sources */,
@@ -843,6 +847,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: Sidharth Tiwari (2PHB7P544N)";
 				DEVELOPMENT_TEAM = DF5FA37S35;
 				INFOPLIST_FILE = Pulse/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -862,6 +867,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Sidharth Tiwari (DF5FA37S35)";
 				DEVELOPMENT_TEAM = DF5FA37S35;
 				INFOPLIST_FILE = Pulse/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";

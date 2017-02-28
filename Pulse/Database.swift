@@ -1030,7 +1030,7 @@ class Database {
                                                          "views" : 0 as AnyObject]
             
             if let url = item.contentURL?.absoluteString {
-                itemPost["contentURL"] = url as AnyObject?
+                itemPost["url"] = url as AnyObject?
             }
             
             if let contentType = item.contentType {
@@ -1041,7 +1041,6 @@ class Database {
                                         "itemStats/\(item.itemID)" : itemStatsPost]
 
             databaseRef.updateChildValues(post , withCompletionBlock: { (blockError, ref) in
-                print("updated child values and error is \(blockError?.localizedDescription)")
                 blockError != nil ? completion(false, blockError as Error?) : completion(true, nil)
             })
             
@@ -1052,7 +1051,9 @@ class Database {
     }
     
     ///Save collection into question / user
-    static func addItemCollectionToDatabase(_ item : Item, channelID : String, post : [String : String], completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+    static func addItemCollectionToDatabase(_ item : Item, parentItemID : String, channelID : String, post : [String : String],
+                                            completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        
         let _user = FIRAuth.auth()?.currentUser
         var collectionPost : [AnyHashable: Any]!
         
@@ -1067,15 +1068,17 @@ class Database {
         case .answer:
             collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.itemID,
                               "itemCollection/\(item.itemID)" : post,
-                              "channelItems/\(channelID)/\(item.itemID)":channelPost]
+                              "channelItems/\(channelID)/\(item.itemID)":channelPost,
+                              "itemCollection/\(parentItemID)/\(item.itemID)" : "answer" as AnyObject]
         case .post:
             collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.itemID,
                               "itemCollection/\(item.itemID)" : post,
-                              "channelItems/\(channelID)":channelPost]
+                              "channelItems/\(channelID)/\(item.itemID)":channelPost,
+                              "itemCollection/\(parentItemID)/\(item.itemID)" : "post" as AnyObject]
         default:
             collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": true,
                               "itemCollection/\(item.itemID)" : post,
-                              "channelItems/\(channelID)":channelPost]
+                              "channelItems/\(channelID)/\(item.itemID)":channelPost]
         }
 
         if _user != nil {
@@ -1311,7 +1314,7 @@ class Database {
     static func subscribeChannel(_ channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
         if let user = User.currentUser {
             if let savedIndex = user.savedChannelIDs.index(of: channel.cID), let channelID = channel.cID  { //remove subscription case
-                let _path = currentUserRef.child("savedChannels/\(channelID)")
+                let _path = currentUserRef.child("subscriptions/\(channelID)")
                 
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
@@ -1355,16 +1358,20 @@ class Database {
     /* UPLOAD IMAGE TO STORAGE */
     static func uploadThumbImage(channelID: String, itemID : String, image : UIImage, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         let path = storageRef.child("channels").child(channelID).child(itemID).child("thumb")
-
+        
         let _metadata = FIRStorageMetadata()
         _metadata.contentType = "image/jpeg"
-        let imgData = image.mediumQualityJPEGNSData
         
-        path.put(imgData as Data, metadata: _metadata) { (metadata, error) in
-            if (error != nil) {
-                completion(false, error as NSError?)
-            } else {
-                completion(true, nil)
+        if let _thumbImageData = resizeImage(image, newWidth: 150) {
+            let _metadata = FIRStorageMetadata()
+            _metadata.contentType = "image/jpeg"
+            
+            path.put(_thumbImageData, metadata: _metadata) { (metadata, error) in
+                if (error != nil) {
+                    completion(false, error as NSError?)
+                } else {
+                    completion(true, nil)
+                }
             }
         }
     }

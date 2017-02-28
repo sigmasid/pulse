@@ -105,7 +105,7 @@ func processVideo(_ videoURL : URL, completion: @escaping (_ result: URL?, _ thu
 
 func thumbnailForVideoAtURL(_ asset: AVAsset, orientation: UIImageOrientation) -> UIImage? {
     let assetImageGenerator = AVAssetImageGenerator(asset: asset)
-//    assetImageGenerator.appliesPreferredTrackTransform = true
+    assetImageGenerator.appliesPreferredTrackTransform = true
     
     var time = asset.duration
     time.value = min(time.value, 2)
@@ -123,7 +123,7 @@ func thumbnailForVideoAtURL(_ asset: AVAsset, orientation: UIImageOrientation) -
 func compressVideo(_ inputURL: URL, completion: @escaping (_ result: URL?, _ thumbnail : UIImage?, _ error : NSError?) -> Void) {
     let outputURL = tempFileURL()
     let urlAsset = AVURLAsset(url: inputURL, options: nil)
-    let _thumbnail = thumbnailForVideoAtURL(urlAsset, orientation: .left)
+    let _thumbnail = thumbnailForVideoAtURL(urlAsset, orientation: .up)
 
     if let exporter = AVAssetExportSession(asset: urlAsset, presetName: AVAssetExportPresetMediumQuality) {
         exporter.outputURL = outputURL

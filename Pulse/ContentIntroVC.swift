@@ -38,7 +38,7 @@ class ContentIntroVC: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor.white
 
-        addBackgroundImage()
+        addImage()
         addQuestionLabel()
         addAnswerCount()
     }
@@ -52,10 +52,12 @@ class ContentIntroVC: UIViewController {
         imageView.image = nil
     }
     
-    fileprivate func addBackgroundImage() {
+    fileprivate func addImage() {
         view.addSubview(imageView)
-        imageView.frame = view.frame
+        imageView.frame = CGRect(x: Spacing.m.rawValue, y: Spacing.m.rawValue, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+        imageView.layer.cornerRadius = imageView.frame.width / 2
         imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
     }
     
     fileprivate func addQuestionLabel() {

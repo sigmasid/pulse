@@ -17,6 +17,7 @@ class TagCollectionVC: UICollectionViewController {
     public var selectedItem : Item! {
         didSet {
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+                self.setupButton()
                 self.allItems = items
                 self.updateDataSource()
                 self.updateHeader()
@@ -42,6 +43,9 @@ class TagCollectionVC: UICollectionViewController {
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
+    /** Main Button **/
+    fileprivate var screenButton : PulseButton!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -65,6 +69,28 @@ class TagCollectionVC: UICollectionViewController {
         extendedLayoutIncludesOpaqueBars = true
         collectionView?.backgroundColor = .white
         view.backgroundColor = .white
+    }
+    
+    internal func setupButton() {
+        if selectedItem.type == .question {
+            screenButton = PulseButton(size: .medium, type: .question, isRound : true, hasBackground: true, tint: .white)
+            view.addSubview(screenButton)
+
+            screenButton.addTarget(self, action: #selector(askQuestion), for: UIControlEvents.touchUpInside)
+            
+            screenButton.translatesAutoresizingMaskIntoConstraints = false
+            screenButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+            screenButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+            screenButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+            screenButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+            screenButton.layoutIfNeeded()
+        }
+    }
+    
+    func askQuestion() {
+        let questionVC = AskQuestionVC()
+        questionVC.selectedTag = selectedItem
+        navigationController?.pushViewController(questionVC, animated: true)
     }
     
     override func didReceiveMemoryWarning() {
@@ -104,7 +130,7 @@ class TagCollectionVC: UICollectionViewController {
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
         
-        showItemDetail(selectedItem: allItems[indexPath.row])
+        userSelected(item : allItems[indexPath.row])
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -140,8 +166,9 @@ class TagCollectionVC: UICollectionViewController {
                     self.allItems[indexPath.row] = item
                     
                     //Get the cover image
-                    DispatchQueue.global(qos: .background).async {
-                        if let imageURL = item.contentURL, item.contentType == .recordedImage || item.contentType == .albumImage, let _imageData = try? Data(contentsOf: imageURL) {
+                    if let imageURL = item.contentURL, item.contentType == .recordedImage || item.contentType == .albumImage, let _imageData = try? Data(contentsOf: imageURL) {
+                        DispatchQueue.global(qos: .background).async {
+                            
                             self.allItems[indexPath.row].content = UIImage(data: _imageData)
                             
                             DispatchQueue.main.async {
@@ -150,6 +177,18 @@ class TagCollectionVC: UICollectionViewController {
                                 }
                             }
                         }
+                    } else if item.contentType == .recordedVideo || item.contentType == .albumVideo {
+                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .cover, maxImgSize: maxImgSize, completion: { (data, error) in
+                            if let data = data {
+                                self.allItems[indexPath.row].content = UIImage(data: data)
+                                
+                                DispatchQueue.main.async {
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                    }
+                                }
+                            }
+                        })
                     }
                     
                     // Get the user details
@@ -191,7 +230,7 @@ class TagCollectionVC: UICollectionViewController {
             headerView.backgroundColor = .white
             
             if let title = selectedItem.itemTitle {
-                headerView.updateLabel("# \(title.capitalized)", count: allItems.count)
+                headerView.updateLabel(title.lowercased(), count: allItems.count, image: selectedItem.content as? UIImage)
             }
             
             return headerView
@@ -231,27 +270,41 @@ class TagCollectionVC: UICollectionViewController {
     }
     
     
-    internal func showItemDetail(selectedItem : Item) {
+    func userSelected(item : Item) {
         
-        Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
-            if success {
-                self.contentVC = ContentManagerVC()
-                
-                self.contentVC.selectedChannel = self.selectedChannel
-                self.contentVC.selectedItem = selectedItem
-                
-                let type = selectedItem.type == .question ? "answer" : "post"
-                self.contentVC.allItems = items.map{ item -> Item in Item(itemID: item.itemID, type: type) }
-                
-                self.contentVC.openingScreen = .item
-                self.contentVC.transitioningDelegate = self
-
-                DispatchQueue.main.async {
-                    self.present(self.contentVC, animated: true, completion: nil)
-                }
-            }
-        })
+        item.tag = selectedItem
+        
+        //can only be a question or a post that user selects since it's in a tag already
+        switch item.type {
+        case .post:
+            Database.getItemCollection(item.itemID, completion: {(success, items) in
+                success ?
+                self.showItemDetail(allItems: [item], itemCollection: items, selectedItem: self.selectedItem, watchedPreview: true) :
+                self.showItemDetail(allItems: [item], itemCollection: [item], selectedItem: self.selectedItem, watchedPreview: false)
+            })
+        case .question:
+            Database.getItemCollection(item.itemID, completion: {(success, items) in
+                success ?
+                    self.showItemDetail(allItems: items, itemCollection: [], selectedItem: item, watchedPreview: false) :
+                    GlobalFunctions.showErrorBlock("Sorry! No answers yet", erMessage: "We are still waiting to get an answer - want to add one?")
+            })
+        default: break
+        }
     }
+    
+    internal func showItemDetail(allItems: [Item], itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+        contentVC = ContentManagerVC()
+        contentVC.watchedFullPreview = watchedPreview
+        contentVC.selectedChannel = selectedChannel
+        contentVC.selectedItem = selectedItem
+        contentVC.itemCollection = itemCollection
+        contentVC.allItems = allItems
+        contentVC.openingScreen = .item
+        
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
+
 }
 
 extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
