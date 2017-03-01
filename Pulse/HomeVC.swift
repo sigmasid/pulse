@@ -11,18 +11,19 @@ import UIKit
 class HomeVC: UIViewController {
     
     public var tabDelegate : tabVCDelegate!
-
+    
     fileprivate var isLoaded = false
     fileprivate var homeFeedVC : FeedVC!
     fileprivate var loadingView : LoadingView?
     fileprivate var titleLabel = UILabel()
     
     //fileprivate var feed : Tag!
-    fileprivate var backButton : PulseButton!
     fileprivate var notificationsSetup : Bool = false
     fileprivate var initialLoadComplete = false
     
     fileprivate var screenMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.m.rawValue)
+    
+    fileprivate var channels : UICollectionView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,7 +32,6 @@ class HomeVC: UIViewController {
             view.backgroundColor = UIColor.white
             toggleLoading(show: true, message: "Loading feed...")
             
-            updateNav()
             loadFeed()
             
             automaticallyAdjustsScrollViewInsets = false
@@ -163,13 +163,6 @@ class HomeVC: UIViewController {
         screenMenu.isHidden = screenMenu.isHidden ? false : true
     }
     
-    fileprivate func updateNav() {
-        backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        //backButton.addTarget(self, action: #selector(returnHome), for: .touchUpInside)
-        
-        navigationItem.leftBarButtonItem = backButton != nil ? UIBarButtonItem(customView: backButton!) : nil
-    }
-    
     fileprivate func toggleLoading(show: Bool, message: String?) {
         if loadingView == nil {
             loadingView = LoadingView(frame: view.frame, backgroundColor: UIColor.white)
@@ -194,3 +187,20 @@ class HomeVC: UIViewController {
         screenMenu.isHidden = true
     }
 }
+
+extension HomeVC: UICollectionViewDelegateFlowLayout {
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return CGSize(width: view.frame.width, height: 50)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 10.0, left: 0.0, bottom: 1.0, right: 0.0)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let cellHeight = GlobalFunctions.getCellHeight(type: .question)
+        return CGSize(width: view.frame.width - 20, height: cellHeight)
+    }
+}
+

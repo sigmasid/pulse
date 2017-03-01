@@ -46,6 +46,19 @@ class BrowseCell: UICollectionViewCell, previewDelegate {
         super.init(coder: aDecoder)
     }
     
+    override func point(inside point : CGPoint, with event : UIEvent?) -> Bool {
+        for _view in self.subviews {
+            if _view.isUserInteractionEnabled == true && _view.point(inside: convert(point, to: _view) , with: event) {
+                return true
+            }
+        }
+        return false
+    }
+    
+    func gestureRecognizer(_ gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
+        return false
+    }
+    
     func updateLabel(_ _title : String?, _subtitle : String?) {
         titleLabel.text = _title
         subtitleLabel.text = _subtitle

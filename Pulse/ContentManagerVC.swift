@@ -51,7 +51,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     /* CHILD VIEW CONTROLLERS */
     fileprivate var loadingVC = LoadingVC()
 
-    fileprivate let showItemVC = ShowItemVC()
+    fileprivate let contentDetailVC = ContentDetailVC()
     fileprivate var cameraVC : CameraVC!
     fileprivate lazy var recordedVideoVC : RecordedVideoVC = RecordedVideoVC()
     fileprivate var introVC : ContentIntroVC?
@@ -96,22 +96,21 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     
     /* QA Specific Methods */
     func showItem() {
-        showItemVC.delegate = self
+        contentDetailVC.delegate = self
 
-        panDismissInteractionController.wireToViewController(showItemVC, toViewController: nil, parentViewController: self)
+        panDismissInteractionController.wireToViewController(contentDetailVC, toViewController: nil, parentViewController: self)
         panDismissInteractionController.delegate = self
 
         //need to be set first - to determine if first clip should be answer detail or the answer itself
-        showItemVC.watchedFullPreview = watchedFullPreview
-        showItemVC.itemDetailCollection = itemCollection
+        contentDetailVC.watchedFullPreview = watchedFullPreview
+        contentDetailVC.itemDetailCollection = itemCollection
+        contentDetailVC.selectedChannel = selectedChannel
+        contentDetailVC.itemIndex = itemIndex
         
-        showItemVC.itemIndex = itemIndex
+        pushViewController(contentDetailVC, animated: false)
         
-        pushViewController(showItemVC, animated: false)
-        
-        showItemVC.allItems = allItems
-
-        showItemVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
+        contentDetailVC.allItems = allItems
+        contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
         
         showPreviewOverlay()
     }
@@ -184,7 +183,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         
         if hasMoreItems {
             returnToAnswers()
-            popToViewController(showItemVC, animated: true)
+            popToViewController(contentDetailVC, animated: true)
         } else {
             self.dismiss(animated: true, completion: nil)
         }
@@ -194,7 +193,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         if User.isLoggedIn(), let selectedTag = selectedItem.tag {
             User.currentUser!.canAnswer(itemID: selectedItem.itemID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
                 if success {
-                    showItemVC.view.isHidden = true
+                    contentDetailVC.view.isHidden = true
                     hasMoreItems = true
                     showCamera()
                 } else {
@@ -202,7 +201,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
                 }
             })
         } else {
-            showItemVC.view.isHidden = true
+            contentDetailVC.view.isHidden = true
             hasMoreItems = true
             showCamera()
         }
@@ -322,8 +321,8 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
     }
     
     func returnToAnswers() {
-        showItemVC.view.isHidden = false
-        showItemVC.handleTap()
+        contentDetailVC.view.isHidden = false
+        contentDetailVC.handleTap()
     }
     
     func loginSuccess (_ currentVC : UIViewController) {
@@ -371,7 +370,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
                 let animator = FadeAnimationController()
                 animator.transitionType = .dismiss
                 return animator
-            } else if fromVC is ShowItemVC {
+            } else if fromVC is ContentDetailVC {
                 let animator = ShrinkDismissController()
                 animator.transitionType = .dismiss
                 animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))

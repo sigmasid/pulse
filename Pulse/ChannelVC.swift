@@ -18,7 +18,7 @@ class ChannelVC: UIViewController, ChannelDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
-            isSubscribed = User.currentUser?.savedChannels != nil && User.currentUser!.savedChannelIDs.contains(selectedChannel.cID) ? true : false
+            isSubscribed = User.currentUser!.subscriptionIDs.contains(selectedChannel.cID) ? true : false
 
             if !selectedChannel.cCreated {
                 Database.getChannel(cID: selectedChannel.cID!, completion: { channel, error in

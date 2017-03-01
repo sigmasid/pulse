@@ -114,9 +114,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
         let currentVideo = AVPlayerItem(url: contentURL)
         aPlayer.replaceCurrentItem(with: currentVideo)
         
-        if #available(iOS 10.0, *) {
-           let _ = AVPlayerLooper(player: aPlayer, templateItem: currentVideo)
-        }
+        let _ = AVPlayerLooper(player: aPlayer, templateItem: currentVideo)
 
         aPlayer.play()
         

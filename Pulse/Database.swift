@@ -420,7 +420,6 @@ class Database {
     }
     
     static func getSectionsSection(sectionName : String, completion: @escaping (_ section : SettingSection?, _ error : Error?) -> Void) {
-
         settingSectionsRef.child(sectionName).queryOrderedByValue().observeSingleEvent(of: .value, with: { snapshot in
             let section = SettingSection(sectionID: snapshot.key, snapshot: snapshot)
             completion(section, nil)
@@ -567,7 +566,7 @@ class Database {
     static func createFeed(_ completion: @escaping (_ item : Item) -> Void) {
         guard let user = User.currentUser else { return }
         
-        if user.savedChannels.count == 0 && !initialFeedUpdateComplete {
+        if user.subscriptions.count == 0 && !initialFeedUpdateComplete {
             
             keepChannelsUpdated(completion: { newItem in
                 completion(newItem)
@@ -576,16 +575,16 @@ class Database {
             //add listener if user subscribes to new channel
             initialFeedUpdateComplete = true
 
-        } else if user.savedChannels.count > 0 && !initialFeedUpdateComplete {
+        } else if user.subscriptions.count > 0 && !initialFeedUpdateComplete {
             
             keepChannelsUpdated(completion: { newItem in
                 completion(newItem)
             })
             
             //add in new posts before returning feed
-            for (offset : index, (key : channel, value : _)) in User.currentUser!.savedChannels.enumerated() {
-                Database.addNewItemsToFeed(channelID: channel.cID, completion: { item in
-                    if index + 1 == User.currentUser?.savedChannels.count {
+            for (offset : index, (key : channel, value : _)) in User.currentUser!.subscriptions.enumerated() {
+                Database.addNewItemsToFeed(channelID: channel.cID, startingAt: Date(), completion: { item in
+                    if index + 1 == User.currentUser?.subscriptions.count {
                         initialFeedUpdateComplete = true
                         
                         //once feed is updated get the feed to return
@@ -604,12 +603,12 @@ class Database {
 
     }
     
-    static func addNewItemsToFeed(channelID : String, completion: @escaping (_ item : Item) -> Void) {
+    static func addNewItemsToFeed(channelID : String, startingAt : Date, completion: @escaping (_ item : Item) -> Void) {
         
         let channelItems : FIRDatabaseQuery = channelItemsRef.child(channelID)
         activeListeners.append(channelItemsRef.child(channelID))
-
-        channelItems.queryOrdered(byChild: "createdAt").queryLimited(toLast: querySize).observe(.childAdded, with: { snap in
+        
+        channelItems.queryOrdered(byChild: "createdAt").queryEnding(atValue: startingAt).queryLimited(toLast: querySize).observe(.childAdded, with: { snap in
             if snap.exists() {
                 let item = Item(itemID: snap.key, snapshot: snap, feedUpdate: true)
                 item.cID = channelID
@@ -622,11 +621,11 @@ class Database {
         if User.isLoggedIn() {
             
             let subscriptions : FIRDatabaseQuery = currentUserRef.child("subscriptions")
-            activeListeners.append(currentUserRef.child("savedChannels"))
+            activeListeners.append(currentUserRef.child("subscriptions"))
             
             subscriptions.observe(.childAdded, with: { channelSnap in
                 if initialFeedUpdateComplete {
-                    addNewItemsToFeed(channelID: channelSnap.key, completion: { item in
+                    addNewItemsToFeed(channelID: channelSnap.key, startingAt: Date(), completion: { item in
                         completion(item)
                     })
                 } else {
@@ -763,7 +762,7 @@ class Database {
         currentUser.items = []
         currentUser.savedItems = [ : ]
 
-        currentUser.savedChannels = [ : ]
+        currentUser.subscriptions = [ : ]
 
         currentUser.approvedChannels = []
         
@@ -851,15 +850,15 @@ class Database {
         })
 
         usersRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
-            if snap.hasChild("savedChannels") {
-                for channel in snap.childSnapshot(forPath: "savedChannels").children {
+            if snap.hasChild("subscriptions") {
+                for channel in snap.childSnapshot(forPath: "subscriptions").children {
                     if let channel = channel as? FIRDataSnapshot {
                         let savedChannel = Channel(cID: channel.key)
                         savedChannel.cTitle = channel.childSnapshot(forPath: "title").value as? String
-                        User.currentUser!.savedChannels[savedChannel] = channel.childSnapshot(forPath: "lastUpdated").value as? String
+                        User.currentUser!.subscriptions[savedChannel] = channel.childSnapshot(forPath: "lastUpdated").value as? String
                         
-                        if !User.currentUser!.savedChannelIDs.contains(channel.key) {
-                            User.currentUser!.savedChannelIDs.append(channel.key)
+                        if !User.currentUser!.subscriptionIDs.contains(channel.key) {
+                            User.currentUser!.subscriptionIDs.append(channel.key)
                         }
                     }
                 }
@@ -1313,7 +1312,7 @@ class Database {
     
     static func subscribeChannel(_ channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
         if let user = User.currentUser {
-            if let savedIndex = user.savedChannelIDs.index(of: channel.cID), let channelID = channel.cID  { //remove subscription case
+            if let savedIndex = user.subscriptionIDs.index(of: channel.cID), let channelID = channel.cID  { //remove subscription case
                 let _path = currentUserRef.child("subscriptions/\(channelID)")
                 
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
@@ -1321,8 +1320,8 @@ class Database {
                         completion(false, completionError as NSError?)
                     } else {
                         
-                        user.savedChannels[channel] = nil
-                        user.savedChannelIDs.remove(at: savedIndex)
+                        user.subscriptions[channel] = nil
+                        user.subscriptionIDs.remove(at: savedIndex)
 
                         completion(true, nil)
 
@@ -1330,7 +1329,7 @@ class Database {
                     }
                 })
             } else { //save tag
-                let _path = getDatabasePath(Element.Users, itemID: user.uID!).child("savedChannels")
+                let _path = getDatabasePath(Element.Users, itemID: user.uID!).child("subscriptions")
                 let post = ["lastUpdated" : "true", "title" : channel.cTitle ?? ""] as [String: Any]
                 
                 _path.updateChildValues([channel.cID!: post], withCompletionBlock: { (completionError, ref) in
@@ -1339,10 +1338,10 @@ class Database {
                     }
                     else {
 
-                        user.savedChannels[channel] = "true"
+                        user.subscriptions[channel] = "true"
                         
-                        if !User.currentUser!.savedChannelIDs.contains(channel.cID) {
-                            user.savedChannelIDs.append(channel.cID)
+                        if !User.currentUser!.subscriptionIDs.contains(channel.cID) {
+                            user.subscriptionIDs.append(channel.cID)
                         }
                         
                         completion(true, nil)

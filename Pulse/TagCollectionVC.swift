@@ -130,7 +130,7 @@ class TagCollectionVC: UICollectionViewController {
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
         }
         
-        userSelected(item : allItems[indexPath.row])
+        userSelected(item : allItems[indexPath.row], index: indexPath.row)
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -270,34 +270,35 @@ class TagCollectionVC: UICollectionViewController {
     }
     
     
-    func userSelected(item : Item) {
+    func userSelected(item : Item, index : Int) {
         
-        item.tag = selectedItem
+        item.tag = selectedItem //since we are in tagVC
         
         //can only be a question or a post that user selects since it's in a tag already
         switch item.type {
         case .post:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 success ?
-                self.showItemDetail(allItems: [item], itemCollection: items, selectedItem: self.selectedItem, watchedPreview: true) :
-                self.showItemDetail(allItems: [item], itemCollection: [item], selectedItem: self.selectedItem, watchedPreview: false)
+                    self.showItemDetail(allItems: self.allItems, index: index, itemCollection: items, selectedItem: self.selectedItem, watchedPreview: true) :
+                    self.showItemDetail(allItems: self.allItems, index: index, itemCollection: [item], selectedItem: self.selectedItem, watchedPreview: false)
             })
         case .question:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 success ?
-                    self.showItemDetail(allItems: items, itemCollection: [], selectedItem: item, watchedPreview: false) :
+                    self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) :
                     GlobalFunctions.showErrorBlock("Sorry! No answers yet", erMessage: "We are still waiting to get an answer - want to add one?")
             })
         default: break
         }
     }
     
-    internal func showItemDetail(allItems: [Item], itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = watchedPreview
         contentVC.selectedChannel = selectedChannel
         contentVC.selectedItem = selectedItem
         contentVC.itemCollection = itemCollection
+        contentVC.itemIndex = index
         contentVC.allItems = allItems
         contentVC.openingScreen = .item
         

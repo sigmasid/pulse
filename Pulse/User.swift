@@ -30,8 +30,8 @@ class User {
     
     var shownCameraForQuestion = [ String : String ]()
     var _totalItems : Int?
-    var savedChannels = [Channel : String?]()
-    var savedChannelIDs = [String]()
+    var subscriptions = [Channel : String?]()
+    var subscriptionIDs = [String]()
     
     var savedItems = [String : String?]()
     var savedVotes = [String : Bool]()
@@ -143,7 +143,7 @@ class User {
     }
     
     func isSubscribedToChannel(cID: String) -> Bool {
-        return self.savedChannelIDs.contains(cID)
+        return self.subscriptionIDs.contains(cID)
     }
     
     func totalItems() -> Int {

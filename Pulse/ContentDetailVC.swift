@@ -1,5 +1,5 @@
 //
-//  ShowItemVC.swift
+//  ContentDetailVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
@@ -19,17 +19,19 @@ protocol ItemDetailDelegate : class {
     func userClickedBrowseItems()
     func userClickedAddItem()
     func userClickedShowMenu()
-    func userSelectedFromExploreQuestions(_ index : IndexPath)
+    func userSelected(_ index : IndexPath)
     func userClickedExpandItem()
     func votedItem(_ _vote : VoteType)
     func userClickedSendMessage()
+    func userClosedQuickBrowse()
 }
 
-class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDelegate {
+class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDelegate {
     internal var itemIndex = 0
     internal var currentItem : Item?
     internal var nextItem : Item?
 
+    public var selectedChannel : Channel!
     internal var allItems = [Item]() {
         didSet {
             if self.isViewLoaded {
@@ -42,6 +44,8 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     lazy var itemDetailCollection = [Item]()
     lazy var itemCollectionIndex = 0
 
+    fileprivate var quickBrowse: QuickBrowseVC!
+    
     //if user has already watched the full preview, go directly to 2nd clip. set by sender - defaults to false
     internal var watchedFullPreview = false
     
@@ -63,6 +67,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     fileprivate var _isMenuShowing = false
     fileprivate var _isMiniProfileShown = false
     fileprivate var _isImageViewShown = false
+    fileprivate var _isQuickBrowseShown = false
     
     fileprivate var startObserver : AnyObject!
     fileprivate var playedTillEndObserver : Any!
@@ -72,7 +77,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     weak var delegate : childVCDelegate!
     fileprivate var tap : UITapGestureRecognizer!
-    fileprivate var ItemDetailTap : UITapGestureRecognizer!
+    fileprivate var detailTap : UITapGestureRecognizer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -83,12 +88,12 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             view.addGestureRecognizer(tap)
             
-            ShowItemVC.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.none
+            ContentDetailVC.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.none
             contentOverlay = ContentOverlay(frame: view.bounds, iconColor: .white, iconBackground: .black)
             contentOverlay.addClipTimerCountdown()
             contentOverlay.delegate = self
             
-            avPlayerLayer = AVPlayerLayer(player: ShowItemVC.qPlayer)
+            avPlayerLayer = AVPlayerLayer(player: ContentDetailVC.qPlayer)
             view.layer.insertSublayer(avPlayerLayer, at: 0)
             view.insertSubview(contentOverlay, at: 2)
             avPlayerLayer.frame = view.bounds
@@ -103,7 +108,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
                                                    object: currentPlayerItem)
             
             //align the timer to actually when the video starts
-            let _ = ShowItemVC.qPlayer.addBoundaryTimeObserver(forTimes: [NSValue(time: CMTimeMake(1, 20))],
+            let _ = ContentDetailVC.qPlayer.addBoundaryTimeObserver(forTimes: [NSValue(time: CMTimeMake(1, 20))],
                                                                  queue: nil,
                                                                  using: {
                                                                     NotificationCenter.default.post(name: Notification.Name(rawValue: "PlaybackStartedNotification"),
@@ -121,12 +126,12 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
         super.viewWillDisappear(animated)
         removeObserverIfNeeded()
         
-        if ShowItemVC.qPlayer.currentItem != nil {
-            ShowItemVC.qPlayer.pause()
+        if ContentDetailVC.qPlayer.currentItem != nil {
+            ContentDetailVC.qPlayer.pause()
         }
         
-        if ShowItemVC.qPlayer.items().count > 0 {
-            ShowItemVC.qPlayer.removeAllItems()
+        if ContentDetailVC.qPlayer.items().count > 0 {
+            ContentDetailVC.qPlayer.removeAllItems()
         }
         
         itemIndex = 0
@@ -210,8 +215,8 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     fileprivate func loadItemCollections(_ index : Int) {
         tap.isEnabled = false
         
-        ItemDetailTap = UITapGestureRecognizer(target: self, action: #selector(handleItemDetailTap))
-        view.addGestureRecognizer(ItemDetailTap)
+        detailTap = UITapGestureRecognizer(target: self, action: #selector(handledetailTap))
+        view.addGestureRecognizer(detailTap)
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         _canAdvanceDetailReady = false
@@ -283,7 +288,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
             let itemURL = currentItem?.contentURL
             
             if itemType == .recordedVideo || itemType == .albumVideo {
-                ShowItemVC.qPlayer.pause()
+                ContentDetailVC.qPlayer.pause()
                 
                 if let itemURL = itemURL  {
                     currentPlayerItem = AVPlayerItem(url: itemURL)
@@ -291,13 +296,13 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
                     removeImageView()
                     
                     if let _currentPlayerItem = currentPlayerItem {
-                        if ShowItemVC.qPlayer.currentItem != nil {
-                            ShowItemVC.qPlayer.insert(_currentPlayerItem, after: ShowItemVC.qPlayer.currentItem)
-                            ShowItemVC.qPlayer.advanceToNextItem()
+                        if ContentDetailVC.qPlayer.currentItem != nil {
+                            ContentDetailVC.qPlayer.insert(_currentPlayerItem, after: ContentDetailVC.qPlayer.currentItem)
+                            ContentDetailVC.qPlayer.advanceToNextItem()
                             addObserverForStatusReady()
                             completion(true)
                         } else {
-                            ShowItemVC.qPlayer.insert(_currentPlayerItem, after: nil)
+                            ContentDetailVC.qPlayer.insert(_currentPlayerItem, after: nil)
                             addObserverForStatusReady()
                             completion(true)
                         }
@@ -318,7 +323,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     }
     
     internal func startCountdownTimer() {
-        if let currentItem = ShowItemVC.qPlayer.currentItem {
+        if let currentItem = ContentDetailVC.qPlayer.currentItem {
             let duration = currentItem.duration
             contentOverlay.startTimer(duration.seconds)
         }
@@ -386,13 +391,13 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
             if nextItem!.contentType == .recordedVideo || self.nextItem!.contentType == .albumVideo {
                 if let itemURL = itemURL  {
                     let nextPlayerItem = AVPlayerItem(url: itemURL)
-                    if ShowItemVC.qPlayer.currentItem != nil, ShowItemVC.qPlayer.canInsert(nextPlayerItem, after: ShowItemVC.qPlayer.currentItem) {
+                    if ContentDetailVC.qPlayer.currentItem != nil, ContentDetailVC.qPlayer.canInsert(nextPlayerItem, after: ContentDetailVC.qPlayer.currentItem) {
                         self.currentPlayerItem = nextPlayerItem
-                        ShowItemVC.qPlayer.insert(nextPlayerItem, after: ShowItemVC.qPlayer.currentItem)
+                        ContentDetailVC.qPlayer.insert(nextPlayerItem, after: ContentDetailVC.qPlayer.currentItem)
                         self._nextItemReady = true
-                    } else if ShowItemVC.qPlayer.canInsert(nextPlayerItem, after: nil) {
+                    } else if ContentDetailVC.qPlayer.canInsert(nextPlayerItem, after: nil) {
                         self.currentPlayerItem = nextPlayerItem
-                        ShowItemVC.qPlayer.insert(nextPlayerItem, after: nil)
+                        ContentDetailVC.qPlayer.insert(nextPlayerItem, after: nil)
                         self._nextItemReady = true
                     }
                 }
@@ -420,7 +425,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "status" {
-            switch ShowItemVC.qPlayer.status {
+            switch ContentDetailVC.qPlayer.status {
             case AVPlayerStatus.readyToPlay:
                 readyToPlay()
                 break
@@ -435,7 +440,7 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     fileprivate func readyToPlay() {
         DispatchQueue.main.async(execute: {
-            ShowItemVC.qPlayer.play()
+            ContentDetailVC.qPlayer.play()
         })
         
         if !_tapReady {
@@ -446,14 +451,14 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     }
     
     fileprivate func addObserverForStatusReady() {
-        if ShowItemVC.qPlayer.currentItem != nil {
-            ShowItemVC.qPlayer.currentItem?.addObserver(self,
+        if ContentDetailVC.qPlayer.currentItem != nil {
+            ContentDetailVC.qPlayer.currentItem?.addObserver(self,
                                                           forKeyPath: "status",
                                                           options: NSKeyValueObservingOptions.new,
                                                           context: nil)
             
             playedTillEndObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime,
-                                                   object: ShowItemVC.qPlayer.currentItem,
+                                                   object: ContentDetailVC.qPlayer.currentItem,
                                                    queue: nil, using: { (_) in
                 if let currentItem = self.currentItem {
                     Database.updateItemViewCount(itemID: currentItem.itemID)
@@ -465,8 +470,8 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     }
     
     fileprivate func removeObserverIfNeeded() {
-        if _isObserving, ShowItemVC.qPlayer.currentItem != nil {
-            ShowItemVC.qPlayer.currentItem?.removeObserver(self, forKeyPath: "status")
+        if _isObserving, ContentDetailVC.qPlayer.currentItem != nil {
+            ContentDetailVC.qPlayer.currentItem?.removeObserver(self, forKeyPath: "status")
             
             if playedTillEndObserver != nil {
                 NotificationCenter.default.removeObserver(playedTillEndObserver)
@@ -570,8 +575,9 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
         delegate.askUserQuestion()
     }
     
-    func userSelectedFromExploreQuestions(_ index : IndexPath) {
-        tap.isEnabled = true
+    //User selected an item
+    func userSelected(_ index : IndexPath) {
+        userClosedQuickBrowse()
         loadItem(index: (index as NSIndexPath).row)
     }
     
@@ -583,17 +589,29 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     func userClickedBrowseItems() {
         let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
         layout.scrollDirection = UICollectionViewScrollDirection.horizontal
-        layout.minimumLineSpacing = 10
-        layout.minimumInteritemSpacing = 10
+        layout.minimumLineSpacing = 20
+        layout.minimumInteritemSpacing = 20
         
-        let quickBrowse : QuickBrowseVC = QuickBrowseVC(collectionViewLayout: layout)
+        quickBrowse = QuickBrowseVC(collectionViewLayout: layout)
+        quickBrowse.view.frame = CGRect(x: 0, y: view.bounds.height * (2/3), width: view.bounds.width, height: view.bounds.height * (1/3))
         quickBrowse.delegate = self
+        quickBrowse.selectedChannel = selectedChannel
         quickBrowse.allItems = allItems
+        quickBrowse.delegate = self
+        
+        removeObserverIfNeeded()
+        
         GlobalFunctions.addNewVC(quickBrowse, parentVC: self)
+        
+        _isQuickBrowseShown = true        
+    }
+    
+    func userClosedQuickBrowse() {
+        _isQuickBrowseShown = false
+        GlobalFunctions.dismissVC(quickBrowse)
     }
     
     func userClickedExpandItem() {
-        print("went into expand item")
         removeObserverIfNeeded()
         contentOverlay.updateExploreDetail()
         loadItemCollections(1)
@@ -601,13 +619,16 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
     
     /* MARK : HANDLE GESTURES */
     func handleTap() {
-        //ignore tap if mini profile is shown
-        guard !_isMiniProfileShown else { return }
+        //ignore tap if mini profile is shown or if quick browse is shown
+        guard !_isMiniProfileShown, !_isQuickBrowseShown else {
+            print("handle tap fired")
+            return
+        }
         
-        print("handle tap fired with itemIndex \(itemIndex) can advance \(_canAdvanceReady) nextitem ready \(_nextItemReady)")
+        print("handle tap fired with itemIndex \(itemIndex) can advance \(_canAdvanceReady) nextitem ready \(_nextItemReady) quickBrowse is \(_isQuickBrowseShown)")
         if (itemIndex == minItemsToShow && !_hasUserBeenAskedQuestion && _canAdvanceReady) { //ask user to Item the question
             if (delegate != nil) {
-                ShowItemVC.qPlayer.pause()
+                ContentDetailVC.qPlayer.pause()
                 _hasUserBeenAskedQuestion = true
                 delegate.minItemsShown()
             }
@@ -639,11 +660,11 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
             } else if _nextItem.contentType == .recordedVideo || _nextItem.contentType == .albumVideo  {
                 removeImageView()
                 _tapReady = false
-                ShowItemVC.qPlayer.pause()
+                ContentDetailVC.qPlayer.pause()
                 removeObserverIfNeeded()
                 
-                if ShowItemVC.qPlayer.items().count > 0 {
-                    ShowItemVC.qPlayer.advanceToNextItem()
+                if ContentDetailVC.qPlayer.items().count > 0 {
+                    ContentDetailVC.qPlayer.advanceToNextItem()
                     addObserverForStatusReady()
                 }
             }
@@ -664,8 +685,9 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
         }
     }
 
-    func handleItemDetailTap() {
-        if _isMiniProfileShown {
+    func handledetailTap() {
+        guard !_isMiniProfileShown, !_isQuickBrowseShown else {
+            print("handle tap fired")
             return
         }
         
@@ -685,11 +707,11 @@ class ShowItemVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDeleg
                 removeImageView()
                 _tapReady = false
                 contentOverlay.resetTimer()
-                ShowItemVC.qPlayer.pause()
+                ContentDetailVC.qPlayer.pause()
                 removeObserverIfNeeded()
                 
-                if ShowItemVC.qPlayer.items().count > 1 {
-                    ShowItemVC.qPlayer.advanceToNextItem()
+                if ContentDetailVC.qPlayer.items().count > 1 {
+                    ContentDetailVC.qPlayer.advanceToNextItem()
                     addObserverForStatusReady()
                 }
             }

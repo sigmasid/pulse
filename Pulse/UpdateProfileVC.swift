@@ -516,8 +516,8 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
             return User.currentUser!.items.count
         case "savedItems":
             return User.currentUser!.savedItems.count
-        case "savedChannel":
-            return User.currentUser!.savedChannels.count
+        case "subscriptions":
+            return User.currentUser!.subscriptions.count
         default: return 0
         }
     }
