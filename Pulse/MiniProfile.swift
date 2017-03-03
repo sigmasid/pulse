@@ -11,10 +11,10 @@ import UIKit
 class MiniProfile: UIView {
 
     fileprivate var profileImage : UIImageView!
-    fileprivate var nameLabel : UILabel!
+    fileprivate lazy var nameLabel : PaddingLabel = PaddingLabel()
     fileprivate var tagLine : UILabel!
     fileprivate var bioLabel : UILabel!
-    fileprivate var messageButton : UIButton!
+    fileprivate lazy var profileButton : PulseButton = PulseButton(title: "View Profile", isRound: true)
     fileprivate var closeButton : PulseButton!
     
     var delegate : ItemDetailDelegate!
@@ -26,7 +26,7 @@ class MiniProfile: UIView {
         clipsToBounds = true
         
         addProfileImage()
-        addMessageButton()
+        addProfileButton()
         addLabels()
         addCloseButton()
     }
@@ -48,6 +48,12 @@ class MiniProfile: UIView {
         return false
     }
     
+    func setProfileButton(disabled : Bool) {
+        if disabled {
+            profileButton.setDisabled()
+        }
+    }
+    
     fileprivate func addProfileImage() {
         profileImage = UIImageView(frame: bounds)
         addSubview(profileImage)
@@ -56,7 +62,6 @@ class MiniProfile: UIView {
     }
     
     fileprivate func addLabels() {
-        nameLabel = UILabel()
         addSubview(nameLabel)
         
         tagLine = UILabel()
@@ -70,40 +75,33 @@ class MiniProfile: UIView {
         nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         
         bioLabel.translatesAutoresizingMaskIntoConstraints = false
-        bioLabel.bottomAnchor.constraint(equalTo: messageButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        bioLabel.bottomAnchor.constraint(equalTo: profileButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
         bioLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         bioLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
         
         tagLine.translatesAutoresizingMaskIntoConstraints = false
-        tagLine.bottomAnchor.constraint(equalTo: messageButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        tagLine.bottomAnchor.constraint(equalTo: profileButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
         tagLine.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         tagLine.widthAnchor.constraint(equalTo: bioLabel.widthAnchor).isActive = true
     }
     
-    fileprivate func addMessageButton() {
-        messageButton = UIButton()
-        addSubview(messageButton)
+    fileprivate func addProfileButton() {
+        addSubview(profileButton)
         
-        messageButton.setTitle("send a message", for: UIControlState())
-        messageButton.backgroundColor = iconBackgroundColor
+        profileButton.backgroundColor = pulseRed
         
-        messageButton.titleLabel?.setPreferredFont(UIColor.white, alignment : .center)
-        messageButton.translatesAutoresizingMaskIntoConstraints = false
-        messageButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-        messageButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        messageButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7).isActive = true
-        messageButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        
-        messageButton.layoutIfNeeded()
-        messageButton.layer.cornerRadius = messageButton.frame.height / 2
+        profileButton.titleLabel?.setPreferredFont(UIColor.white, alignment : .center)
+        profileButton.translatesAutoresizingMaskIntoConstraints = false
+        profileButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        profileButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        profileButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7).isActive = true
+        profileButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        profileButton.layoutIfNeeded()
 
-        messageButton.addTarget(self, action: #selector(messageButtonClicked), for: UIControlEvents.touchDown)
-    }
-    
-    public func setMessageButton(disabled : Bool) {
-        if disabled {
-            messageButton.setDisabled()
-        }
+        profileButton.makeRound()
+        profileButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
+
+        profileButton.addTarget(self, action: #selector(profileButtonClicked), for: UIControlEvents.touchDown)
     }
     
     fileprivate func addCloseButton() {
@@ -123,11 +121,11 @@ class MiniProfile: UIView {
     
     /* SETTER / PUBLIC FUNCTIONS */
     func closeButtonClicked() {
-        delegate.userClosedMiniProfile(self)
+        delegate.userClosedProfile(self)
     }
     
-    func messageButtonClicked() {
-        delegate.userClickedSendMessage()
+    func profileButtonClicked() {
+        delegate.userClickedProfileDetail()
     }
     
     func setNameLabel(_ name : String?) {

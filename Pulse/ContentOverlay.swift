@@ -10,27 +10,27 @@ import UIKit
 
 class ContentOverlay: UIView {
 
-    fileprivate var questionBackground = UIView()
-    fileprivate var userBackground = UIView()
+    fileprivate var footerBackground = UIView()
+    fileprivate var userTitles = PulseMenu(_axis: .vertical, _spacing: 0)
     
-    fileprivate var exploreAnswer : PulseButton!
+    fileprivate lazy var exploreAnswer = PulseButton()
     
-    fileprivate var answerMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.s.rawValue)
-    fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .small, type: .upvote, isRound: true, hasBackground: false)
-    fileprivate lazy var downVoteButton : PulseButton = PulseButton(size: .small, type: .downvote, isRound: true, hasBackground: false)
-    fileprivate lazy var saveButton : PulseButton = PulseButton(size: .small, type: .favorite, isRound: true, hasBackground: false)
+    fileprivate var menu = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
+    fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .xSmall, type: .upvote, isRound: true, hasBackground: false)
+    fileprivate lazy var downVoteButton : PulseButton = PulseButton(size: .xSmall, type: .downvote, isRound: true, hasBackground: false)
+    fileprivate lazy var saveButton : PulseButton = PulseButton(size: .xSmall, type: .favorite, isRound: true, hasBackground: false)
     
-    fileprivate let tagLabel = PaddingLabel()
-    fileprivate let questionLabel = PaddingLabel()
+    fileprivate let itemTagLabel = PaddingLabel()
+    fileprivate let itemTitleLabel = PaddingLabel()
     
     fileprivate let userTitleLabel = UILabel()
     fileprivate let userSubtitleLabel = UILabel()
-    fileprivate var userImage = UIImageView()
+    fileprivate var userImage = PulseButton(size: .small, type: .blank, isRound: true, hasBackground: false, tint: .white)
     
-    fileprivate var iconContainer : IconContainer!
+    fileprivate var browseButton = PulseButton()
+    fileprivate var messageButton = PulseButton()
 
     fileprivate let footerHeight : CGFloat = Spacing.xl.rawValue
-    fileprivate var iconSize : CGFloat = IconSizes.medium.rawValue
     
     fileprivate var countdownTimerRadiusStroke : CGFloat = 3
     fileprivate let videoTimer = UIView()
@@ -39,20 +39,6 @@ class ContentOverlay: UIView {
     
     weak var delegate : ItemDetailDelegate!
     
-    /** VARS FOR SIDE MENU **/
-    fileprivate var detailMenu = PulseMenu(_axis: .vertical, _spacing: Spacing.s.rawValue)
-    fileprivate var isShowingMenu = false
-    fileprivate var showMenuCreated = false
-
-    fileprivate lazy var addAnswer : PulseButton = PulseButton(size: ButtonSizes.medium, type: .addCircle, isRound: true, hasBackground: false, tint: .black)
-    fileprivate lazy var addAnswerLabel = PulseButton(title: "Add Answer", isRound: false)
-    fileprivate lazy var addAnswerStack = UIStackView()
-    
-    fileprivate lazy var browseAnswers : PulseButton = PulseButton(size: ButtonSizes.medium, type: .browseCircle, isRound: true, hasBackground: false, tint: .black)
-    fileprivate lazy var browseAnswersLabel = PulseButton(title: "Browse Answers", isRound: false)
-    fileprivate lazy var browseAnswersStack = UIStackView()
-    /** END VARS FOR SIDE MENU **/
-
     internal enum AnswersButtonSelector: Int {
         case upvote, downvote, save, album
     }
@@ -63,197 +49,190 @@ class ContentOverlay: UIView {
     
     convenience init(frame: CGRect, iconColor: UIColor, iconBackground: UIColor) {
         self.init(frame: frame)
-        addIcon(iconColor, backgroundColor: iconBackground)
-        addUserBackground()
-        addQuestionBackground()
+        addFooterButton()
+        addheaderBackground()
+        addFooterBackground()
+        
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
-    fileprivate func addQuestionBackground() {
-        addSubview(questionBackground)
-        questionBackground.translatesAutoresizingMaskIntoConstraints = false
-        
-        questionBackground.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0.0).isActive = true
-        questionBackground.trailingAnchor.constraint(equalTo: iconContainer.leadingAnchor).isActive = true
-        questionBackground.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0.0).isActive = true
-        questionBackground.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.1).isActive = true
-        questionBackground.layoutIfNeeded()
-        
-        addTag()
-        addQuestion()
+    override func point(inside point : CGPoint, with event : UIEvent?) -> Bool {
+        for _view in self.subviews {
+            
+            if _view.isUserInteractionEnabled == true && _view.point(inside: convert(point, to: _view) , with: event) {
+                return true
+            }
+        }
+        return false
     }
     
-    fileprivate func addUserBackground() {
-        addSubview(userBackground)
+    fileprivate func addFooterBackground() {
+        addSubview(footerBackground)
+        footerBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        userBackground.translatesAutoresizingMaskIntoConstraints = false
+        footerBackground.bottomAnchor.constraint(equalTo: bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        footerBackground.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        footerBackground.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        footerBackground.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        footerBackground.layoutIfNeeded()
         
-        userBackground.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        userBackground.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
-        userBackground.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        userBackground.heightAnchor.constraint(equalToConstant: footerHeight).isActive = true
-        userBackground.layoutIfNeeded()
-        
-        let userBackgroundTap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
-        userBackground.addGestureRecognizer(userBackgroundTap)
-        
-        addUserImage()
-        addUserTitle()
-        addUserSubtitle()
-        addExploreAnswer()
+        addFooterButton()
+        addTitle()
     }
     
-    fileprivate func addUserTitle() {
-        userBackground.addSubview(userTitleLabel)
+    fileprivate func addheaderBackground() {
+        addSubview(userImage)
+        addSubview(userTitles)
+        addSubview(itemTagLabel)
+
+        userImage.center = CGPoint(x: userImage.frame.width / 2 + Spacing.xs.rawValue,
+                                   y: userImage.frame.width / 2 + Spacing.xs.rawValue)
+        userImage.addTarget(self, action: #selector(handleProfileTap), for: .touchUpInside)
+        userImage.contentMode = .scaleAspectFill
+        userImage.clipsToBounds = true
         
+        userTitles.translatesAutoresizingMaskIntoConstraints = false
+        
+        userTitles.centerYAnchor.constraint(equalTo: userImage.centerYAnchor).isActive = true
+        userTitles.leadingAnchor.constraint(equalTo: userImage.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        userTitles.layoutIfNeeded()
+        
+        let headerBackgroundTap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
+        userTitles.addGestureRecognizer(headerBackgroundTap)
+        
+        userTitles.addArrangedSubview(userTitleLabel)
+        userTitles.addArrangedSubview(userSubtitleLabel)
+
         userTitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
         userTitleLabel.setBlurredBackground()
-
-        userTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        userTitleLabel.topAnchor.constraint(equalTo: userBackground.topAnchor, constant: footerHeight / 5).isActive = true
-        userTitleLabel.leadingAnchor.constraint(equalTo: userImage.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
-    }
-    
-    fileprivate func addUserSubtitle() {
-        userBackground.addSubview(userSubtitleLabel)
         
         userSubtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
         userSubtitleLabel.setBlurredBackground()
         
-        userSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        userSubtitleLabel.bottomAnchor.constraint(equalTo: userBackground.bottomAnchor, constant: -footerHeight / 5).isActive = true
-        userSubtitleLabel.leadingAnchor.constraint(equalTo: userTitleLabel.leadingAnchor).isActive = true
+        itemTagLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
+        itemTagLabel.setBlurredBackground()
+        
+        itemTagLabel.translatesAutoresizingMaskIntoConstraints = false
+        itemTagLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        itemTagLabel.centerYAnchor.constraint(equalTo: userImage.centerYAnchor).isActive = true
+        itemTagLabel.layoutIfNeeded()
+        
+        addExploreAnswer()
     }
-    
-    fileprivate func addUserImage() {
-        userBackground.addSubview(userImage)
-        
-        userImage.translatesAutoresizingMaskIntoConstraints = false
-        userImage.contentMode = UIViewContentMode.scaleAspectFill
-        //userImage.clipsToBounds = true
-        userImage.image = nil
-        
-        userImage.centerYAnchor.constraint(equalTo: userBackground.centerYAnchor).isActive = true
-        userImage.heightAnchor.constraint(equalTo: userBackground.heightAnchor, multiplier: 0.8).isActive = true
-        userImage.widthAnchor.constraint(equalTo: userImage.heightAnchor).isActive = true
-        userImage.leadingAnchor.constraint(equalTo: userBackground.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        userImage.layoutIfNeeded()
-        
-        userImage.layer.cornerRadius = userImage.bounds.height / 2
-        userImage.layer.masksToBounds = true
-        userImage.layer.shouldRasterize = true
-        userImage.layer.rasterizationScale = UIScreen.main.scale
-        
-        
-        // Shadow (for raised views) - Up:
-        let liftedShadowOffset  = CGSize(width: 2, height: 4)
-        
-        let downRect = CGRect(x: userImage.bounds.origin.x - liftedShadowOffset.width,
-                          y: userImage.bounds.origin.y + liftedShadowOffset.height,
-                          width: userImage.bounds.size.width + (2 * liftedShadowOffset.width),
-                          height: userImage.bounds.size.height + liftedShadowOffset.height)
-
-        userImage.layer.shadowPath = UIBezierPath.init(roundedRect: downRect , cornerRadius: userImage.layer.cornerRadius).cgPath
-        userImage.layer.shadowOffset = liftedShadowOffset
-        
-        userImage.layer.shadowColor = pulseBlue.cgColor
-        userImage.layer.shadowOpacity = 0.5
-        userImage.layer.shadowRadius = 4.5
-    }
-
     
     fileprivate func addExploreAnswer() {
         
-        exploreAnswer = PulseButton(size: .medium, type: .blank, isRound: true, hasBackground: true)
         exploreAnswer.isHidden = true
         
         addSubview(exploreAnswer)
         
-        exploreAnswer.translatesAutoresizingMaskIntoConstraints = false
-        exploreAnswer.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        exploreAnswer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        exploreAnswer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        exploreAnswer.heightAnchor.constraint(equalTo: exploreAnswer.widthAnchor).isActive = true
-        exploreAnswer.layoutIfNeeded()
+        exploreAnswer.setTitle("Explore", for: .normal)
+        exploreAnswer.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .right)
+        exploreAnswer.titleLabel?.setBlurredBackground()
         
-        exploreAnswer.titleLabel?.lineBreakMode = .byWordWrapping
-        exploreAnswer.titleLabel?.font = UIFont.systemFont(ofSize: FontSizes.caption2.rawValue, weight: UIFontWeightBold)
+        exploreAnswer.translatesAutoresizingMaskIntoConstraints = false
+        exploreAnswer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        exploreAnswer.centerYAnchor.constraint(equalTo: userImage.centerYAnchor).isActive = true
+        
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: browseButton.titleLabel!.font.pointSize, weight: UIFontWeightBold)]
+        let width = GlobalFunctions.getLabelWidth(title: exploreAnswer.titleLabel!.text!, fontAttributes: fontAttributes)
+        exploreAnswer.widthAnchor.constraint(equalToConstant: width).isActive = true
+        exploreAnswer.layoutIfNeeded()
         
         exploreAnswer.addTarget(self, action: #selector(handleExploreAnswerTap), for: UIControlEvents.touchDown)
     }
     
     ///Update question text
-    fileprivate func addQuestion() {
-        questionBackground.addSubview(questionLabel)
-        questionLabel.adjustsFontSizeToFitWidth = true
-        questionLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
-        questionLabel.setBlurredBackground()
+    fileprivate func addTitle() {
+        addSubview(itemTitleLabel)
+        
+        itemTitleLabel.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        itemTitleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
 
-        questionLabel.numberOfLines = 0
-        questionLabel.lineBreakMode = .byWordWrapping
+        itemTitleLabel.numberOfLines = 0
+        itemTitleLabel.lineBreakMode = .byWordWrapping
         
-        questionLabel.translatesAutoresizingMaskIntoConstraints = false
-        questionLabel.bottomAnchor.constraint(equalTo: tagLabel.topAnchor).isActive = true
-        questionLabel.trailingAnchor.constraint(equalTo: questionBackground.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        questionLabel.leadingAnchor.constraint(equalTo: tagLabel.leadingAnchor).isActive = true
-    
-    }
-    
-    ///Update Tag in header
-    fileprivate func addTag() {
-        questionBackground.addSubview(tagLabel)
-        tagLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
-        tagLabel.setBlurredBackground()
-        
-        tagLabel.translatesAutoresizingMaskIntoConstraints = false
-        tagLabel.centerYAnchor.constraint(equalTo: questionBackground.centerYAnchor, constant: questionBackground.frame.size.height * (1/6)).isActive = true
-        tagLabel.leadingAnchor.constraint(equalTo: questionBackground.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        tagLabel.layoutIfNeeded()
+        itemTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        itemTitleLabel.bottomAnchor.constraint(equalTo: footerBackground.topAnchor).isActive = true
+        itemTitleLabel.trailingAnchor.constraint(equalTo: footerBackground.trailingAnchor).isActive = true
+        itemTitleLabel.leadingAnchor.constraint(equalTo: footerBackground.leadingAnchor).isActive = true
     }
     
     ///Add Icon in header
-    func addIcon(_ iconColor: UIColor, backgroundColor : UIColor) {
-        iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue), iconColor: iconColor, iconBackgroundColor: backgroundColor.withAlphaComponent(0.7))
-        addSubview(iconContainer)
+    func addFooterButton() {
         
-        iconContainer.translatesAutoresizingMaskIntoConstraints = false
-        iconContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-        iconContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
-        iconContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        iconContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        iconContainer.layoutIfNeeded()
+        browseButton.setTitle("Browse", for: .normal)
+        browseButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .right)
+        browseButton.titleLabel?.setBlurredBackground()
+        
+        messageButton.setTitle("Message", for: .normal)
+        messageButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
+        messageButton.titleLabel?.setBlurredBackground()
+        
+        footerBackground.addSubview(browseButton)
+        footerBackground.addSubview(messageButton)
+        
+        browseButton.translatesAutoresizingMaskIntoConstraints = false
+        browseButton.bottomAnchor.constraint(equalTo: footerBackground.bottomAnchor).isActive = true
+        browseButton.heightAnchor.constraint(equalTo: footerBackground.heightAnchor).isActive = true
+        browseButton.trailingAnchor.constraint(equalTo: footerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
 
-        let iconTap = UITapGestureRecognizer(target: self, action: #selector(handleShowMenu))
-        iconContainer.addGestureRecognizer(iconTap)
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: browseButton.titleLabel!.font.pointSize, weight: UIFontWeightBold)]
+        let width = GlobalFunctions.getLabelWidth(title: browseButton.titleLabel!.text!, fontAttributes: fontAttributes)
+        browseButton.widthAnchor.constraint(equalToConstant: width).isActive = true
+        browseButton.layoutIfNeeded()
+
+        messageButton.translatesAutoresizingMaskIntoConstraints = false
+        messageButton.bottomAnchor.constraint(equalTo: footerBackground.bottomAnchor).isActive = true
+        messageButton.heightAnchor.constraint(equalTo: footerBackground.heightAnchor).isActive = true
+        messageButton.leadingAnchor.constraint(equalTo: footerBackground.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+
+        let messageAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: messageButton.titleLabel!.font.pointSize, weight: UIFontWeightBold)]
+        let messageWidth = GlobalFunctions.getLabelWidth(title: messageButton.titleLabel!.text!, fontAttributes: messageAttributes)
+        messageButton.widthAnchor.constraint(equalToConstant: messageWidth).isActive = true
+        messageButton.layoutIfNeeded()
+        
+        browseButton.addTarget(self, action: #selector(handleExploreTap), for: .touchUpInside)
+        browseButton.isExclusiveTouch = true
+        
+        messageButton.addTarget(self, action: #selector(handleSendMessage), for: .touchUpInside)
+        messageButton.isExclusiveTouch = true
         
         addRestIcons()
     }
     
     fileprivate func addRestIcons() {
-        addSubview(answerMenu)
+        footerBackground.addSubview(menu)
         
-        answerMenu.translatesAutoresizingMaskIntoConstraints = false
-        answerMenu.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
-        answerMenu.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        answerMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        answerMenu.layoutIfNeeded()
+        menu.distribution = .fillEqually
         
-        answerMenu.addArrangedSubview(saveButton)
-        answerMenu.addArrangedSubview(upVoteButton)
-        answerMenu.addArrangedSubview(downVoteButton)
+        menu.translatesAutoresizingMaskIntoConstraints = false
+        menu.centerYAnchor.constraint(equalTo: footerBackground.centerYAnchor).isActive = true
+        menu.centerXAnchor.constraint(equalTo: footerBackground.centerXAnchor).isActive = true
+        menu.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue * 3 + Spacing.s.rawValue * 2).isActive = true
+        menu.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+
+        menu.layoutIfNeeded()
+        
+        menu.addArrangedSubview(saveButton)
+        menu.addArrangedSubview(upVoteButton)
+        menu.addArrangedSubview(downVoteButton)
         
         downVoteButton.addTarget(self, action: #selector(handleDownvote), for: UIControlEvents.touchDown)
         upVoteButton.addTarget(self, action: #selector(handleUpvote), for: UIControlEvents.touchDown)
         saveButton.addTarget(self, action: #selector(handleFavorite), for: UIControlEvents.touchDown)
         
-        answerMenu.alpha = 0.7
+        menu.alpha = 0.7
     }
     
     func handleFavorite() {
-
+        if delegate != nil {
+            delegate.votedItem(.favorite)
+            addVote(.favorite)
+        }
     }
     
     func handleUpvote() {
@@ -276,23 +255,9 @@ class ContentOverlay: UIView {
         }
     }
     
-    func handleShowMenu() {
-        if delegate != nil {
-            delegate.userClickedShowMenu()
-        }
-    }
-    
     func handleExploreTap() {
         if delegate != nil {
-            toggleMenu(show: false)
             delegate.userClickedBrowseItems()
-        }
-    }
-    
-    func handleAddAnswerTap() {
-        if delegate != nil {
-            toggleMenu(show: false)
-            delegate.userClickedAddItem()
         }
     }
     
@@ -302,12 +267,24 @@ class ContentOverlay: UIView {
         }
     }
     
-    func getHeaderHeight() -> CGFloat {
-        return questionBackground.bounds.height
+    func handleSendMessage() {
+        if delegate != nil {
+            delegate.userClickedSendMessage()
+        }
     }
     
+    func itemSaved(type : VoteType) {
+        switch type {
+        case .downvote: downVoteButton.imageView?.tintColor = pulseRed
+        case .upvote: upVoteButton.imageView?.tintColor = pulseRed
+        case .favorite: saveButton.imageView?.tintColor = pulseRed
+        }
+    }
+    
+    
+    
     func showExploreDetail() {
-        exploreAnswer.setTitle("EXPLORE ANSWER", for: UIControlState())
+        exploreAnswer.setTitle("Explore", for: UIControlState())
         exploreAnswer.setEnabled()
         exploreAnswer.isHidden = false
     }
@@ -317,7 +294,7 @@ class ContentOverlay: UIView {
     }
     
     func updateExploreDetail() {
-        exploreAnswer.setTitle("EXPLORING", for: .disabled)
+        exploreAnswer.setTitle("Explore", for: .disabled)
         exploreAnswer.setDisabled()
     }
     
@@ -335,81 +312,40 @@ class ContentOverlay: UIView {
     }
     
     func setUserImage(_ image : UIImage?) {
-        userImage.image = image
-    }
-    
-    func getUserBackground() -> UIView {
-        return userBackground
+        userImage.setBackgroundImage(image, for: .normal)
     }
     
     func setTitle(_ title : String) {
-        questionLabel.text = title
+        itemTitleLabel.text = title
+    }
+    
+    func clearButtons() {
+        upVoteButton.imageView?.tintColor = .white
+        downVoteButton.imageView?.tintColor = .white
+        saveButton.imageView?.tintColor = .white
     }
     
     func setTagName(_ tagName : String?) {
         if let tagName = tagName {
-            tagLabel.text = "#" + tagName.lowercased()
-        }
-    }
-    
-    func createMenu() {
-        addSubview(detailMenu)
-        
-        detailMenu.translatesAutoresizingMaskIntoConstraints = false
-        detailMenu.bottomAnchor.constraint(equalTo: iconContainer.topAnchor).isActive = true
-        detailMenu.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1/2).isActive = true
-        detailMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        detailMenu.layoutIfNeeded()
-        
-        addAnswerStack.spacing = Spacing.s.rawValue
-        browseAnswersStack.spacing = Spacing.s.rawValue
-        
-        addAnswerStack.addArrangedSubview(addAnswerLabel)
-        addAnswerStack.addArrangedSubview(addAnswer)
-        
-        browseAnswersStack.addArrangedSubview(browseAnswersLabel)
-        browseAnswersStack.addArrangedSubview(browseAnswers)
-        
-        detailMenu.addArrangedSubview(addAnswerStack)
-        detailMenu.addArrangedSubview(browseAnswersStack)
-        
-        addAnswer.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchUpInside)
-        addAnswerLabel.addTarget(self, action: #selector(handleAddAnswerTap), for: UIControlEvents.touchUpInside)
-        
-        browseAnswers.addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchUpInside)
-        browseAnswersLabel.addTarget(self, action: #selector(handleExploreTap), for: UIControlEvents.touchUpInside)
-        
-        showMenuCreated = true
-        detailMenu.isHidden = true
-    }
-    
-    func toggleMenu(show : Bool) {
-        if show && !showMenuCreated {
-            createMenu()
-            detailMenu.isHidden = false
-            answerMenu.isHidden = true
-        } else if show {
-            detailMenu.isHidden = false
-            answerMenu.isHidden = true
-        } else if !show {
-            detailMenu.isHidden = true
-            answerMenu.isHidden = false
+            itemTagLabel.text = "#" + tagName.lowercased()
         }
     }
     
     /// Add clip countdown
     func addClipTimerCountdown() {
+        let iconSize : CGFloat = IconSizes.small.rawValue
+
         addSubview(videoTimer)
         
         videoTimer.translatesAutoresizingMaskIntoConstraints = false
-        videoTimer.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor, constant: iconSize / 2).isActive = true
+        videoTimer.centerYAnchor.constraint(equalTo: userImage.centerYAnchor, constant: iconSize / 2).isActive = true
+        videoTimer.centerXAnchor.constraint(equalTo: userImage.centerXAnchor, constant: iconSize / 2).isActive = true
         videoTimer.widthAnchor.constraint(equalToConstant: iconSize).isActive = true
-        videoTimer.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor, constant: iconSize / 2 + Spacing.m.rawValue / 2).isActive = true
         videoTimer.heightAnchor.constraint(equalToConstant: iconSize).isActive = true
         
         // draw the countdown
-        bgShapeLayer = drawBgShape((iconSize * 1.02) / 2, _stroke: countdownTimerRadiusStroke)
-        timeLeftShapeLayer = drawTimeLeftShape()
+        bgShapeLayer = drawBgShape(iconSize / 2, _stroke: countdownTimerRadiusStroke)
+        timeLeftShapeLayer = drawTimeLeftShape(iconSize: iconSize)
         
         videoTimer.layer.addSublayer(bgShapeLayer)
         videoTimer.layer.addSublayer(timeLeftShapeLayer)
@@ -421,10 +357,12 @@ class ContentOverlay: UIView {
         strokeIt.toValue = 1.0
         strokeIt.duration = videoDuration
         
+        timeLeftShapeLayer.strokeColor = UIColor.white.cgColor
         timeLeftShapeLayer.add(strokeIt, forKey: "stroke")
     }
     
     func resetTimer() {
+        timeLeftShapeLayer.strokeColor = UIColor.clear.cgColor
         timeLeftShapeLayer.strokeStart = 0.0
     }
     
@@ -432,19 +370,19 @@ class ContentOverlay: UIView {
         let bgShapeLayer = CAShapeLayer()
         bgShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0 , y: 0), radius:
             _radius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
-        bgShapeLayer.strokeColor = UIColor.white.cgColor
+        bgShapeLayer.strokeColor = UIColor.clear.cgColor
         bgShapeLayer.fillColor = UIColor.clear.cgColor
-        //bgShapeLayer.opacity = 0.7
+        bgShapeLayer.opacity = 0.5
         bgShapeLayer.lineWidth = _stroke
         
         return bgShapeLayer
     }
     
-    func drawTimeLeftShape() -> CAShapeLayer {
+    func drawTimeLeftShape(iconSize : CGFloat) -> CAShapeLayer {
         let timeLeftShapeLayer = CAShapeLayer()
-        timeLeftShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0, y: 0), radius:
-            iconSize / 2, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
-        timeLeftShapeLayer.strokeColor = pulseBlue.cgColor
+        timeLeftShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0, y: 0),
+                                               radius: iconSize / 2, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
+        timeLeftShapeLayer.strokeColor = UIColor.clear.cgColor
         timeLeftShapeLayer.fillColor = UIColor.clear.cgColor
         timeLeftShapeLayer.lineWidth = countdownTimerRadiusStroke
         //timeLeftShapeLayer.opacity = 0.7
@@ -457,6 +395,12 @@ class ContentOverlay: UIView {
         var _voteImage : UIImageView!
         
         switch _vote {
+        case .favorite:
+            _voteImage = UIImageView(image: UIImage(named: "save"))
+            addSubview(_voteImage)
+            _voteImage.translatesAutoresizingMaskIntoConstraints = false
+            _voteImage.centerYAnchor.constraint(equalTo: saveButton.centerYAnchor).isActive = true
+            _voteImage.centerXAnchor.constraint(equalTo: saveButton.centerXAnchor).isActive = true
         case .upvote:
             _voteImage = UIImageView(image: UIImage(named: "upvote"))
             addSubview(_voteImage)

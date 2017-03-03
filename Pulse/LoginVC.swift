@@ -13,7 +13,7 @@ import TwitterKit
 import FBSDKLoginKit
 
 class LoginVC: UIViewController, UITextFieldDelegate {
-    weak var loginVCDelegate : childVCDelegate?
+    weak var loginVCDelegate : ContentDelegate?
     var nav : PulseNavVC!
     
     @IBOutlet weak var emailLabelButton: UIButton!

@@ -16,6 +16,7 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
     
     // Set by MasterTabVC
     public var tabDelegate : tabVCDelegate!
+    public var universalLink : URL!
     
     fileprivate var headerNav : PulseNavVC?
     fileprivate var loadingView : LoadingView?
@@ -41,7 +42,7 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
             updateRootScopeSelection()
             extendedLayoutIncludesOpaqueBars = true
 
-            view.backgroundColor = .white
+            view.backgroundColor = UIColor.white
         }
     }
     
@@ -59,6 +60,13 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
             updateOnscreenRows()
         }
     }
+    
+    deinit {
+        headerNav = nil
+        loadingView = nil
+        allChannels = []
+        channelCollection = nil
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -71,7 +79,7 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
             channelCollection.register(ExploreChannelsCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             view.addSubview(channelCollection)
             
-            channelCollection.backgroundColor = .white
+            channelCollection.backgroundColor = UIColor.white
             channelCollection.showsVerticalScrollIndicator = false
             channelCollection.isMultipleTouchEnabled = true
             

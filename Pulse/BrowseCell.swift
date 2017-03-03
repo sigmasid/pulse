@@ -60,8 +60,19 @@ class BrowseCell: UICollectionViewCell, previewDelegate {
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?) {
-        titleLabel.text = _title
-        subtitleLabel.text = _subtitle
+        if let _title = _title {
+            titleLabel.isHidden = false
+            titleLabel.text = _title
+        } else {
+            titleLabel.isHidden = true
+        }
+        
+        if let _subtitle = _subtitle {
+            subtitleLabel.isHidden = false
+            subtitleLabel.text = _subtitle
+        } else {
+            subtitleLabel.isHidden = true
+        }
         
         titleStack.layoutIfNeeded()
     }
@@ -122,20 +133,25 @@ class BrowseCell: UICollectionViewCell, previewDelegate {
         super.prepareForReuse()
     }
     
+    public func setNumberOfLines(titleNum : Int, subTitleNum : Int) {
+        titleLabel.numberOfLines = titleNum
+        subtitleLabel.numberOfLines = subTitleNum
+    }
+    
     fileprivate func setupAnswerPreview() {
         addSubview(previewImage)
         addSubview(titleStack)
         
         titleStack.translatesAutoresizingMaskIntoConstraints = false
         titleStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
-        titleStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        titleStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         titleStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         
         titleStack.addArrangedSubview(titleLabel)
         titleStack.addArrangedSubview(subtitleLabel)
         
         previewImage.translatesAutoresizingMaskIntoConstraints = false
-        previewImage.bottomAnchor.constraint(equalTo: titleStack.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        previewImage.bottomAnchor.constraint(equalTo: titleStack.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         previewImage.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
         previewImage.widthAnchor.constraint(equalTo: contentView.widthAnchor).isActive = true
         previewImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true

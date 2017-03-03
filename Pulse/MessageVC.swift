@@ -221,10 +221,9 @@ class MessageVC: UIViewController, UITextViewDelegate{
         msgSend.layoutIfNeeded()
 
         msgBody.translatesAutoresizingMaskIntoConstraints = false
-        msgBody.topAnchor.constraint(equalTo: sendContainer.topAnchor).isActive = true
+        msgBody.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor).isActive = true
         msgBody.leadingAnchor.constraint(equalTo: sendContainer.leadingAnchor).isActive = true
-        msgBody.heightAnchor.constraint(equalTo: sendContainer.heightAnchor).isActive = true
-        msgBody.trailingAnchor.constraint(equalTo: sendContainer.trailingAnchor).isActive = true
+        msgBody.trailingAnchor.constraint(equalTo: msgSend.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
         textViewHeightConstraint = msgBody.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
         textViewHeightConstraint.isActive = true

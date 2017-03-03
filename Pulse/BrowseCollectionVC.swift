@@ -233,7 +233,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
-            headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "", count: allItems.count, image: selectedItem.content as? UIImage)
+            headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "")
             
             return headerView
             

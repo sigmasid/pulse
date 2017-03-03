@@ -100,7 +100,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
             Database.checkCurrentUser { success in
                 if let link = self.universalLink {
                     self.setupIcons(_selectedIndex: 1)
-                    //self.exploreChannelsVC.universalLink = link
+                    self.exploreChannelsVC.universalLink = link
                     self.setSelected(self.exploreButton)
                     self.initialLoadComplete = true
                 }

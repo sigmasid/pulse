@@ -9,9 +9,7 @@
 import UIKit
 
 protocol UserProfileDelegate: class {
-    func askQuestion()
-    func sendMessage()
-    func shareProfile()
+    func showMenu()
 }
 
 class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDelegate {
@@ -67,7 +65,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     
     /** Collection View Vars **/
     fileprivate let minCellHeight : CGFloat = 225
-    fileprivate let headerHeight : CGFloat = 225
+    fileprivate let headerHeight : CGFloat = 200
     fileprivate let headerReuseIdentifier = "UserProfileHeader"
     fileprivate let reuseIdentifier = "FeedAnswerCell"
     
@@ -107,16 +105,18 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
             if let nav = navigationController as? PulseNavVC {
                 headerNav = nav
                 updateHeader()
+            } else {
+                print("nav controller is not pulse")
             }
             
             view.backgroundColor = .white
             definesPresentationContext = true
             collectionView?.backgroundColor = .white
-            collectionView?.register(ItemFullWidthCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+            collectionView?.register(BrowseCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(UserProfileHeader.self,
                                      forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
                                      withReuseIdentifier: headerReuseIdentifier)
-            
+                    
             isLoaded = true
         }
     }
@@ -173,6 +173,25 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         }
     }
     
+    /** Show Menu **/
+    func showMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "Send Message", style: .default, handler: { (action: UIAlertAction!) in
+            self.sendMessage()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Share Profile", style: .default, handler: { (action: UIAlertAction!) in
+            self.shareProfile()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
     /** Start Delegate Functions **/
     func askQuestion() {
         let questionVC = AskQuestionVC()
@@ -206,10 +225,10 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemFullWidthCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseCell
         
         cell.contentView.backgroundColor = .white
-        cell.updateLabel(nil, _subtitle: nil, _image : nil)
+        cell.setNumberOfLines(titleNum: 0, subTitleNum: 2)
         
         let currentItem = allItems[indexPath.row]
         
@@ -221,7 +240,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         } else if itemStack[indexPath.row].gettingImageForPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
-        } else {
+        } else if currentItem.itemCreated {
             itemStack[indexPath.row].gettingImageForPreview = true
             
             Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
@@ -243,24 +262,44 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         /** GET NAME & BIO FROM DATABASE - SHOWING MANY ITEMS FROM MANY USERS CASE **/
         if currentItem.itemCreated, itemStack[indexPath.row].gettingInfoForPreview {
             
-            cell.updateLabel(currentItem.itemTitle, _subtitle: currentItem.getCreatedAt())
+            cell.updateLabel(nil, _subtitle: currentItem.itemTitle)
             
         } else if itemStack[indexPath.row].gettingInfoForPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
         } else {
-            
+            cell.updateLabel(nil, _subtitle: nil, _image : nil)
+
             itemStack[indexPath.row].gettingInfoForPreview = true
             
             // Get the user details
             Database.getItem(currentItem.itemID, completion: {(item, error) in
                 if let item = item {
+                    let tempImage = self.allItems[indexPath.row].content
                     self.allItems[indexPath.row] = item
+                    self.allItems[indexPath.row].content = tempImage
+                    
                     DispatchQueue.main.async {
                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            cell.updateLabel(self.allItems[indexPath.row].itemTitle, _subtitle: self.allItems[indexPath.row].getCreatedAt())
+                            cell.updateLabel(nil, _subtitle: self.allItems[indexPath.row].itemTitle)
                         }
                     }
+
+                    Database.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+                        if error == nil {
+                            let _previewImage = GlobalFunctions.createImageFromData(_data!)
+                            self.allItems[indexPath.row].content = _previewImage
+                            
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                DispatchQueue.main.async {
+                                    cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
+                                }
+                            }
+                        } else {
+                            cell.updateImage(image: nil)
+                        }
+                    })
+                
                 }
             })
         }
@@ -281,7 +320,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
             })
             
             cell.delegate = self
-            cell.showPreview(item: currentItem)
+            cell.showItemPreview(item: currentItem)
             
         } else if indexPath == deselectedIndex {
             cell.removePreview()
@@ -304,9 +343,9 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateCurrentCell(_ cell: ItemFullWidthCell, atIndexPath indexPath: IndexPath) {
+    func updateCurrentCell(_ cell: BrowseCell, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated  {
-            cell.updateLabel(allItems[indexPath.row].itemTitle, _subtitle: allItems[indexPath.row].getCreatedAt())
+            cell.updateLabel(nil, _subtitle: allItems[indexPath.row].itemTitle)
         }
         
         if let image = allItems[indexPath.row].content as? UIImage  {
@@ -317,7 +356,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     func updateOnscreenRows() {
         if let visiblePaths = collectionView?.indexPathsForVisibleItems {
             for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! ItemFullWidthCell
+                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseCell
                 updateCurrentCell(cell, atIndexPath: indexPath)
             }
         }
@@ -360,11 +399,15 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
 
 extension UserProfileVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: (collectionView.frame.width - 20), height: minCellHeight)
+        return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: collectionView.frame.width, height: headerHeight)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 10.0, left: 10.0, bottom: 0.0, right: 10.0)
     }
 }
 

@@ -57,7 +57,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
         }
     }
     
-    weak var delegate : childVCDelegate?
+    weak var delegate : ContentDelegate?
     
     fileprivate lazy var controlsOverlay : RecordingOverlay = RecordingOverlay(frame: self.view.bounds)
     fileprivate var itemFilters : FiltersOverlay?
@@ -67,6 +67,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
     fileprivate var aPlayer : AVQueuePlayer!
     fileprivate var avPlayerLayer : AVPlayerLayer!
     fileprivate var imageView : UIImageView!
+    fileprivate var currentVideo : AVPlayerItem!
+    fileprivate var looper : AVPlayerLooper!
     
     fileprivate var itemCollectionPost = [ String : String ]()
     
@@ -96,26 +98,33 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
     fileprivate func setupVideoForAnswer() {
         //don't create new AVPlayer if it already exists
         guard let contentURL = currentItem.contentURL else { return }
+        
+        currentVideo = AVPlayerItem(url: contentURL)
+        
         if !isVideoLoaded {
-            aPlayer = AVQueuePlayer()
+            aPlayer = AVQueuePlayer(items: [currentVideo])
             avPlayerLayer = AVPlayerLayer(player: aPlayer)
             avPlayerLayer.frame = view.bounds
-            avPlayerLayer.backgroundColor = UIColor.darkGray.cgColor
-            
+            avPlayerLayer.backgroundColor = UIColor.white.cgColor
+        
             isVideoLoaded = true
+        } else {
+            arrangeViews()
+
+            aPlayer.removeAllItems()
+            aPlayer.insert(currentVideo, after: nil)
+            aPlayer.advanceToNextItem()
         }
         
+
+        
         //reorder views so controls & filters are still on top
+        
+        looper = AVPlayerLooper(player: aPlayer, templateItem: currentVideo)
+        
         view.layer.addSublayer(avPlayerLayer)
         arrangeViews()
         
-        aPlayer.replaceCurrentItem(with: nil)
-        
-        let currentVideo = AVPlayerItem(url: contentURL)
-        aPlayer.replaceCurrentItem(with: currentVideo)
-        
-        let _ = AVPlayerLooper(player: aPlayer, templateItem: currentVideo)
-
         aPlayer.play()
         
         if isNewEntry && currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo {

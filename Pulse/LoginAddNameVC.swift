@@ -11,7 +11,7 @@ import FirebaseAuth
 import MobileCoreServices
 import CoreLocation
 
-class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class LoginAddNameVC: UIViewController, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!

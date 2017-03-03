@@ -90,6 +90,15 @@ class ChannelVC: UIViewController, ChannelDelegate {
 
         updateHeader()
     }
+    
+    deinit {
+        selectedChannel = nil
+        headerNav = nil //the category item - might be the question / tag / post etc.
+        contentVC = nil
+        
+        allItems = []
+        headerItems = []
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -149,6 +158,7 @@ class ChannelVC: UIViewController, ChannelDelegate {
             nav.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
             nav.updateBackgroundImage(image: selectedChannel.cPreviewImage)
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+            nav.hidesBarsOnSwipe = true
         } else {
             title = selectedChannel.cTitle ?? "Explore Channel"
         }
@@ -345,7 +355,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             showBrowse(selectedItem: item)
             
-        case .tag:
+        case .posts, .feedback:
 
             showTag(selectedItem: item)
             

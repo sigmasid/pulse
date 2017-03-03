@@ -116,9 +116,9 @@ class Database {
         var query = [String:Any]()
         
         switch type {
-        case .tag:
-            query["index"] = "tags"
-            query["type"] = "tags"
+        case .post:
+            query["index"] = "post"
+            query["type"] = "post"
         case .user:
             query["index"] = "firebase"
             query["type"] = "users"
@@ -126,9 +126,9 @@ class Database {
         case .question:
             query["index"] = "questions"
             query["type"] = "questions"
-        case .post:
-            query["index"] = "questions"
-            query["type"] = "questions"
+        case .answer:
+            query["index"] = "answer"
+            query["type"] = "answer"
         default: break
         }
         
@@ -141,7 +141,7 @@ class Database {
     
     static func searchItem(searchText : String, completion: @escaping (_ results : [Item]) -> Void) {
         
-        let query = buildQuery(searchTerm: searchText, type: .tag)
+        let query = buildQuery(searchTerm: searchText, type: .post)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
@@ -1296,7 +1296,7 @@ class Database {
             if User.currentUser?.savedItems != nil && User.currentUser!.savedItems[itemID] != nil { //remove item
                 let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems/\(itemID)")
                 _path.setValue("true", withCompletionBlock: { (completionError, ref) in
-                    completionError != nil ? completion(false, completionError!) : completion(true, nil)
+                    completionError != nil ? completion(false, completionError!) : completion(false, nil)
                 })
             } else { //pin item
                 let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems")

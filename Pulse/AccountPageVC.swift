@@ -10,12 +10,12 @@ import UIKit
 import MobileCoreServices
 import CoreLocation
 
-protocol accountDelegate: class {
+protocol AccountDelegate: class {
     func userClickedCamera()
     func updateNav(title : String?, image: UIImage?)
 }
 
-class AccountPageVC: UIViewController, accountDelegate, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     fileprivate var nav : PulseNavVC?
     fileprivate var profileSummary = ProfileSummary()

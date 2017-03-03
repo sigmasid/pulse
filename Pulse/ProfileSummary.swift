@@ -29,7 +29,7 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     fileprivate var tapGesture : UITapGestureRecognizer?
     fileprivate var isLoaded = false
     
-    var delegate : accountDelegate!
+    var delegate : AccountDelegate!
     
     override init(frame: CGRect) {
         super.init(frame: frame)

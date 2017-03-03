@@ -15,18 +15,18 @@ private let minItemsToShow = 4
 
 protocol ItemDetailDelegate : class {
     func userClickedProfile()
-    func userClosedMiniProfile(_ : UIView)
+    func userClickedProfileDetail()
+    func userClosedProfile(_ : UIView)
     func userClickedBrowseItems()
-    func userClickedAddItem()
-    func userClickedShowMenu()
     func userSelected(_ index : IndexPath)
     func userClickedExpandItem()
     func votedItem(_ _vote : VoteType)
     func userClickedSendMessage()
     func userClosedQuickBrowse()
+    func userClickedSeeAll()
 }
 
-class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDelegate {
+class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate {
     internal var itemIndex = 0
     internal var currentItem : Item?
     internal var nextItem : Item?
@@ -68,6 +68,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     fileprivate var _isMiniProfileShown = false
     fileprivate var _isImageViewShown = false
     fileprivate var _isQuickBrowseShown = false
+    fileprivate var _isExploring = false
+    public var _isShowingIntro = false
     
     fileprivate var startObserver : AnyObject!
     fileprivate var playedTillEndObserver : Any!
@@ -75,7 +77,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     fileprivate var miniProfile : MiniProfile?
     lazy var blurBackground = UIVisualEffectView()
     
-    weak var delegate : childVCDelegate!
+    weak var delegate : ContentDelegate!
     fileprivate var tap : UITapGestureRecognizer!
     fileprivate var detailTap : UITapGestureRecognizer!
     
@@ -86,6 +88,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             view.backgroundColor = UIColor.white
             
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+            tap.cancelsTouchesInView = false
+            tap.delegate = self
             view.addGestureRecognizer(tap)
             
             ContentDetailVC.qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.none
@@ -117,13 +121,18 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             _isLoaded = true
         }
     }
+
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(true)
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if let view = touch.view, view.isKind(of: PulseButton.self) {
+            return false
+        }
+        
+        return true
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
         removeObserverIfNeeded()
         
         if ContentDetailVC.qPlayer.currentItem != nil {
@@ -142,9 +151,9 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     }
     
     //so you cannot tap to next Item when miniprofile is shown - cancels all other gestures
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+    /**func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return _isMiniProfileShown ? true : false
-    }
+    }**/
     
     fileprivate func loadWatchedPreviewItem() {
         Database.updateItemViewCount(itemID: allItems[itemIndex].itemID)
@@ -216,6 +225,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         tap.isEnabled = false
         
         detailTap = UITapGestureRecognizer(target: self, action: #selector(handledetailTap))
+        detailTap.cancelsTouchesInView = false
+        detailTap.delegate = self
         view.addGestureRecognizer(detailTap)
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
@@ -312,9 +323,15 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
                 DispatchQueue.global(qos: .background).async {
                     if let imageURL = itemURL, let _imageData = try? Data(contentsOf: imageURL), let image = UIImage(data: _imageData) {
                         self.showImageView(image)
-                        self.delegate.removeQuestionPreview()
+                        if self._isShowingIntro {
+                            self.delegate.removeIntro()
+                            self._isShowingIntro = false
+                        }
                     } else {
-                        self.delegate.removeQuestionPreview()
+                        if self._isShowingIntro {
+                            self.delegate.removeIntro()
+                            self._isShowingIntro = false
+                        }
                         self.handleTap()
                     }
                 }
@@ -330,10 +347,10 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     }
     
     fileprivate func updateOverlayData(_ item : Item) {
-        print("item name is \(item.itemTitle, item.user?.name)")
         contentOverlay.setTitle(item.itemTitle ?? "")
         contentOverlay.setTagName(item.tag?.itemTitle)
-
+        contentOverlay.clearButtons()
+        
         if let user = item.user {
             contentOverlay.setUserName(user.name)
             contentOverlay.setUserSubtitle(user.shortBio)
@@ -424,7 +441,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        if keyPath == "status" {
+        if keyPath == "loadedTimeRanges" {
             switch ContentDetailVC.qPlayer.status {
             case AVPlayerStatus.readyToPlay:
                 readyToPlay()
@@ -447,13 +464,16 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             _tapReady = true
         }
         
-        delegate.removeQuestionPreview()
+        if self._isShowingIntro {
+            self.delegate.removeIntro()
+            self._isShowingIntro = false
+        }
     }
     
     fileprivate func addObserverForStatusReady() {
         if ContentDetailVC.qPlayer.currentItem != nil {
             ContentDetailVC.qPlayer.currentItem?.addObserver(self,
-                                                          forKeyPath: "status",
+                                                          forKeyPath: "loadedTimeRanges",
                                                           options: NSKeyValueObservingOptions.new,
                                                           context: nil)
             
@@ -471,7 +491,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     
     fileprivate func removeObserverIfNeeded() {
         if _isObserving, ContentDetailVC.qPlayer.currentItem != nil {
-            ContentDetailVC.qPlayer.currentItem?.removeObserver(self, forKeyPath: "status")
+            ContentDetailVC.qPlayer.currentItem?.removeObserver(self, forKeyPath: "loadedTimeRanges")
             
             if playedTillEndObserver != nil {
                 NotificationCenter.default.removeObserver(playedTillEndObserver)
@@ -519,20 +539,34 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     
     /* DELEGATE METHODS */
     func userClickedSendMessage() {
-        let messageVC = MessageVC()
-        messageVC.toUser = currentItem?.user
-        
-        if let image = currentItem?.user?.thumbPicImage {
-            messageVC.toUserImage = image
-        }
-        
-        navigationController?.pushViewController(messageVC, animated: true)
+        guard let selectedUser = currentItem?.user, User.currentUser!.uID != selectedUser.uID else { return }
+
+        let messageVC = MiniMessageVC()
+        messageVC.selectedUser = selectedUser
+        messageVC.delegate = self
+        GlobalFunctions.addNewVC(messageVC, parentVC: self)
     }
     
-    func votedItem(_ _vote : VoteType) {
+    func votedItem(_ vote : VoteType) {
         if let _currentItem = currentItem {
-            Database.addVote( _vote, itemID: _currentItem.itemID, completion: { (success, error) in })
+            if vote == .favorite {
+                Database.saveItem(_currentItem.itemID, completion: { success, error in
+                    if success {
+                        self.contentOverlay.itemSaved(type: vote)
+                    }
+                })
+            } else {
+                Database.addVote( vote, itemID: _currentItem.itemID, completion: { (success, error) in
+                    if success {
+                        self.contentOverlay.itemSaved(type: vote)
+                    }
+                })
+            }
         }
+    }
+    
+    func userClickedProfileDetail() {
+        delegate.userClickedProfileDetail()
     }
     
     func userClickedProfile() {
@@ -542,7 +576,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
         blurBackground.frame = view.bounds
         view.addSubview(blurBackground)
-        tap.isEnabled = false
         
         if let user = currentItem?.user {
             miniProfile = MiniProfile(frame: _profileFrame)
@@ -555,7 +588,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             }
             
             if !User.isLoggedIn() || User.currentUser?.uID == user.uID {
-                miniProfile?.setMessageButton(disabled: true)
+                miniProfile?.setProfileButton(disabled: true)
             }
             
             view.addSubview(miniProfile!)
@@ -563,11 +596,10 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         }
     }
     
-    func userClosedMiniProfile(_ _profileView : UIView) {
+    func userClosedProfile(_ _profileView : UIView) {
         _profileView.removeFromSuperview()
         blurBackground.removeFromSuperview()
         _isMiniProfileShown = false
-        tap.isEnabled = true
     }
     
     func userClickedAddItem() {
@@ -581,23 +613,17 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         loadItem(index: (index as NSIndexPath).row)
     }
     
-    func userClickedShowMenu() {
-        contentOverlay.toggleMenu(show: _isMenuShowing ? false : true)
-        _isMenuShowing = _isMenuShowing ? false : true
+    func userClickedSeeAll() {
+        delegate.userClickedSeeAll()
     }
     
     func userClickedBrowseItems() {
-        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.scrollDirection = UICollectionViewScrollDirection.horizontal
-        layout.minimumLineSpacing = 20
-        layout.minimumInteritemSpacing = 20
-        
-        quickBrowse = QuickBrowseVC(collectionViewLayout: layout)
+        quickBrowse = QuickBrowseVC()
         quickBrowse.view.frame = CGRect(x: 0, y: view.bounds.height * (2/3), width: view.bounds.width, height: view.bounds.height * (1/3))
+        
         quickBrowse.delegate = self
         quickBrowse.selectedChannel = selectedChannel
         quickBrowse.allItems = allItems
-        quickBrowse.delegate = self
         
         removeObserverIfNeeded()
         
@@ -615,17 +641,20 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         removeObserverIfNeeded()
         contentOverlay.updateExploreDetail()
         loadItemCollections(1)
+        _isExploring = true
+    }
+    
+    func dismiss(_ viewController: UIViewController) {
+        GlobalFunctions.dismissVC(viewController)
     }
     
     /* MARK : HANDLE GESTURES */
     func handleTap() {
         //ignore tap if mini profile is shown or if quick browse is shown
         guard !_isMiniProfileShown, !_isQuickBrowseShown else {
-            print("handle tap fired")
             return
         }
         
-        print("handle tap fired with itemIndex \(itemIndex) can advance \(_canAdvanceReady) nextitem ready \(_nextItemReady) quickBrowse is \(_isQuickBrowseShown)")
         if (itemIndex == minItemsToShow && !_hasUserBeenAskedQuestion && _canAdvanceReady) { //ask user to Item the question
             if (delegate != nil) {
                 ContentDetailVC.qPlayer.pause()
@@ -687,7 +716,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
 
     func handledetailTap() {
         guard !_isMiniProfileShown, !_isQuickBrowseShown else {
-            print("handle tap fired")
             return
         }
         

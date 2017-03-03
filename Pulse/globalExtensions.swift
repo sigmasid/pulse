@@ -61,9 +61,9 @@ extension UICollectionViewCell {
 extension UIView {
     func addShadow() {
         layer.shadowColor = UIColor.lightGray.cgColor
-        layer.shadowOffset = CGSize(width: 2, height: 4)
+        layer.shadowOffset = CGSize(width: 1, height: 2)
         layer.shadowRadius = 2.0
-        layer.shadowOpacity = 0.7
+        layer.shadowOpacity = 0.5
     }
 }
 
@@ -82,7 +82,9 @@ extension UIViewController {
     }
     
     func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
+        if let nav = navigationController {
+            let _ = nav.popViewController(animated: true)
+        }
     }
     
     func hideKeyboardWhenTappedAround() {
@@ -212,7 +214,7 @@ extension UIButton {
     func setEnabled() {
         self.isEnabled = true
         self.alpha = 1.0
-        self.backgroundColor = UIColor(red: 245/255, green: 44/255, blue: 90/255, alpha: 1.0 )
+        self.backgroundColor = pulseRed
     }
     
     func setDisabled() {
@@ -333,6 +335,7 @@ enum UserProfileUpdateType {
 }
 
 enum VoteType {
+    case favorite
     case upvote
     case downvote
 }

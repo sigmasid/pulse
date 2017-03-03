@@ -24,7 +24,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     fileprivate var countdownTimer : CALayer!
     
     var screenTitle : String? //set by delegate
-    weak var delegate : cameraDelegate?
+    weak var delegate : CameraDelegate?
     
     fileprivate var tap : UITapGestureRecognizer!
     fileprivate var longTap : UILongPressGestureRecognizer!
@@ -55,13 +55,8 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         }
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(true)
-
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
+    override var prefersStatusBarHidden : Bool {
+        return true
     }
     
     fileprivate func takeImage() {

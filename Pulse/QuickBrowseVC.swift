@@ -8,20 +8,29 @@
 
 import UIKit
 
-class QuickBrowseVC: UICollectionViewController {
+class QuickBrowseVC: UIViewController {
+    weak var delegate : ItemDetailDelegate!
+    internal var collectionViewLayout: QuickBrowseLayout!
+    internal var collectionView: UICollectionView!
     
-    fileprivate var headerReuseIdentifier = "QuickBrowseHeader"
     fileprivate var reuseIdentifier = "QuickBrowseCell"
-    fileprivate var isfirstTimeTransform = true
+    fileprivate var centerIndex = 0
+    fileprivate var isLoaded = false
     
-    fileprivate var cellWidth : CGFloat = 0
-    fileprivate var spacerBetweenCells : CGFloat = 0
+    internal var pageWidth: CGFloat {
+        return collectionViewLayout.itemSize.width + collectionViewLayout.minimumLineSpacing
+    }
     
-    fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound: true, hasBackground: false, tint: .black)
+    internal var contentOffset: CGFloat {
+        return collectionView.contentOffset.x + collectionView.contentInset.left
+    }
+    
+    fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound: true, hasBackground: false, tint: .white)
+    fileprivate var animationsCount = 0
+    fileprivate var seeAll = PulseButton(title: "see all", isRound: false)
     
     /* set by parent */
-    var selectedItem : Item!
-    var selectedChannel : Channel!
+    public var selectedChannel : Channel!
     
     public var allItems = [Item]() {
         didSet {
@@ -31,37 +40,60 @@ class QuickBrowseVC: UICollectionViewController {
     }
     
     internal var itemStack = [ItemMetaData]()
-    weak var delegate : ItemDetailDelegate!
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        cellWidth = view.frame.width / 3
-        
-        collectionView?.register(QuickBrowseCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-        collectionView?.showsHorizontalScrollIndicator = false
-        collectionView?.isUserInteractionEnabled = true
-        
-        addCloseButton()
-    }
-    
+
+
     override func viewWillAppear(_ animated: Bool) {
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.7)
-        collectionView?.backgroundColor = UIColor.white.withAlphaComponent(0.7)
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.8)
     }
     
-    internal func userClickedAddAnswer() {
-        delegate.userClickedAddItem()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        if !isLoaded {
+            addCollectionView()
+            setupLayout()
+            isLoaded = true
+        }
     }
     
-    fileprivate func addCloseButton() {
+    internal func addCollectionView() {
+        collectionView = UICollectionView(frame: CGRect(x: 0, y: Spacing.m.rawValue, width: view.bounds.width,height: view.bounds.height * 0.85),
+                                          collectionViewLayout: UICollectionViewFlowLayout())
+        
+        collectionViewLayout = QuickBrowseLayout.configureLayout(collectionView: collectionView,
+                                                       itemSize:   CGSize(width: collectionView.bounds.width * 0.3, height: collectionView.bounds.height - 10),
+                                                       minimumLineSpacing: collectionView.bounds.width * 0.05)
+        collectionView?.register(QuickBrowseCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+
+        view.addSubview(collectionView)
+        
+        collectionView?.dataSource = self
+        collectionView?.delegate = self
+        collectionView?.backgroundColor = UIColor.clear
+
+        collectionView?.layoutIfNeeded()
+        collectionView?.reloadData()
+    }
+    
+    fileprivate func setupLayout() {
         view.addSubview(closeButton)
+        view.addSubview(seeAll)
+
+        seeAll.removeShadow()
         
         closeButton.frame = CGRect(x: view.bounds.maxX - Spacing.s.rawValue - closeButton.frame.width,
-                                   y: Spacing.s.rawValue, width: closeButton.frame.width, height: closeButton.frame.height)
+                                   y: Spacing.xxs.rawValue, width: closeButton.frame.width, height: closeButton.frame.height)
         
         closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
         
+        seeAll.translatesAutoresizingMaskIntoConstraints = false
+        seeAll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        seeAll.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor).isActive = true
+
+        seeAll.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
+        seeAll.backgroundColor = .clear
+        seeAll.addTarget(self, action: #selector(userClickedSeeMore), for: .touchUpInside)
+
     }
     
     internal func close() {
@@ -69,45 +101,38 @@ class QuickBrowseVC: UICollectionViewController {
             delegate.userClosedQuickBrowse()
         }
     }
-}
-
-
-extension QuickBrowseVC: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: cellWidth, height: collectionView.frame.height * 0.75)
+    
+    internal func scrollToPage(index: Int, animated: Bool) {
+        collectionView.isUserInteractionEnabled = false
+        animationsCount += 1
+        
+        let pageOffset = CGFloat(index) * self.pageWidth - self.collectionView.contentInset.left
+        collectionView.setContentOffset(CGPoint(x: pageOffset, y: 0), animated: true)
+        
+        centerIndex = index
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsetsMake(30, collectionView.bounds.width * 0.1, 0, collectionView.bounds.width * 0.1)
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout,
-                        minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 20
+    internal func userClickedSeeMore() {
+        delegate.userClickedSeeAll()
     }
 }
 
-extension QuickBrowseVC {
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        collectionView.collectionViewLayout.invalidateLayout()
+extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return allItems.count
     }
     
-    override func numberOfSections(in collectionView: UICollectionView) -> Int{
+    func numberOfSections(in collectionView: UICollectionView) -> Int{
         return 1
     }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 10.0, left: 0.0, bottom: 10.0, right: 0.0)
+    }
 
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell{
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell{
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! QuickBrowseCell
-        
-        if ((indexPath as NSIndexPath).row == 0 && isfirstTimeTransform) {
-            // make a bool and set YES initially, this check will prevent fist load transform
-            isfirstTimeTransform = false
-        } else {
-            cell.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
-        }
             
-        cell.contentView.backgroundColor = .white
         cell.updateLabel(nil)
         cell.updateImage(image: nil)
 
@@ -179,69 +204,26 @@ extension QuickBrowseVC {
         return cell
     }
     
-    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        print("did select fired")
-        delegate.userSelected(indexPath)
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+
+        if collectionView.isDragging || collectionView.isDecelerating || collectionView.isTracking {
+            return
+        }
+        
+        if indexPath.row == centerIndex {
+            delegate.userSelected(indexPath)
+        } else {
+            self.scrollToPage(index: indexPath.row, animated: true)
+        }
     }
     
-    //center the incoming cell -- doesn't work w/ paging enabled
-    override func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-        let pageWidth : Float = Float(cellWidth + 20) // width + space
-        
-        let currentOffset = Float(scrollView.contentOffset.x)
-        let targetOffset = Float(targetContentOffset.pointee.x)
-        var newTargetOffset : Float = 0
-        
-        
-        if (targetOffset > currentOffset) {
-            newTargetOffset = ceilf(currentOffset / pageWidth) * pageWidth
-        } else {
-            newTargetOffset = floorf(currentOffset / pageWidth) * pageWidth
-        }
-        
-        if (newTargetOffset < 0) {
-            newTargetOffset = 0
-        } else if (newTargetOffset > Float(scrollView.contentSize.width)) {
-            newTargetOffset = Float(scrollView.contentSize.width)
-        }
-        
-        print("page width is \(pageWidth) currentOffset is \(currentOffset) targetOffset is \(targetOffset) newTargetOffset is \(newTargetOffset)")
-        
-        targetContentOffset.pointee.x = CGFloat(currentOffset)
-        scrollView.setContentOffset(CGPoint(x: CGFloat(newTargetOffset), y: scrollView.contentOffset.y), animated: true)
-        
-        let index : Int = Int(newTargetOffset / pageWidth)
-        
-        print("index is \(index)")
-        
-        if (index == 0) { // If first index
-            let cell = collectionView?.cellForItem(at: IndexPath(item: index, section: 0))
-            UIView.animate(withDuration: 0.2, animations: {
-                cell!.transform = CGAffineTransform.identity
-            }) 
-            
-            let nextCell = collectionView?.cellForItem(at: IndexPath(item: index + 1, section: 0))
-            UIView.animate(withDuration: 0.2, animations: {
-                nextCell!.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
-            }) 
-        } else {
-            if let cell = collectionView?.cellForItem(at: IndexPath(item: index, section: 0)) {
-                UIView.animate(withDuration: 0.2, animations: {
-                    cell.transform = CGAffineTransform.identity
-                }) 
-            }
-
-            if let priorCell = collectionView?.cellForItem(at: IndexPath(item: index - 1, section: 0)) {
-                UIView.animate(withDuration: 0.2, animations: {
-                    priorCell.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
-                }) 
-            }
-            
-            if let nextCell = collectionView?.cellForItem(at: IndexPath(item: index + 1, section: 0)) {
-                UIView.animate(withDuration: 0.2, animations: {
-                    nextCell.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
-                }) 
-            }
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        centerIndex = Int(self.contentOffset / self.pageWidth)
+    }
+    
+    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        if animationsCount - 1 == 0 {
+            collectionView.isUserInteractionEnabled = true
         }
     }
 }

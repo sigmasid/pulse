@@ -23,7 +23,7 @@ class SearchVC: UIViewController, XMSegmentedControlDelegate {
     
     fileprivate var isSetupComplete = false
     
-    fileprivate var searchScope : ItemTypes? = .tag
+    fileprivate var searchScope : ItemTypes? = .post
     var searchDelegate : searchVCDelegate!
 
     var results = [(key:String , value:String)]() {
@@ -101,7 +101,7 @@ class SearchVC: UIViewController, XMSegmentedControlDelegate {
     
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
         switch selectedSegment {
-        case 0: searchScope = .tag
+        case 0: searchScope = .post
         case 1: searchScope = .question
         case 2: searchScope = .user
         default: searchScope = nil
@@ -121,10 +121,10 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! SearchTableCell
-        cell.titleLabel.text = searchScope == .tag ? results[indexPath.row].key : results[indexPath.row].value
-        cell.subtitleLabel.text = searchScope == .tag ? results[indexPath.row].value : ""
+        cell.titleLabel.text = searchScope == .post ? results[indexPath.row].key : results[indexPath.row].value
+        cell.subtitleLabel.text = searchScope == .post ? results[indexPath.row].value : ""
         
-        cell.iconButton.setImage(searchScope == .tag ? UIImage(named: "tag") : UIImage(named: "question"), for: UIControlState())
+        cell.iconButton.setImage(searchScope == .post ? UIImage(named: "tag") : UIImage(named: "question"), for: UIControlState())
         
         return cell
     }

@@ -14,7 +14,8 @@ enum ItemTypes: String {
     case question
     case post
     case answer
-    case tag
+    case posts
+    case feedback
     case user
     case unknown
 }
@@ -124,12 +125,19 @@ class Item: NSObject {
     }
     
     internal func setType(type : String) {
-        if type == "question" {
+        switch type {
+        case "question":
             self.type = .question
-        } else if type == "post" {
+        case "post":
             self.type = .post
-        }  else if type == "answer" {
+        case "answer":
             self.type = .answer
+        case "posts":
+            self.type = .posts
+        case "feedback":
+            self.type = .feedback
+        default:
+            self.type = .unknown
         }
     }
     

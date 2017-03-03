@@ -124,7 +124,6 @@ extension ChannelHeaderTags: UICollectionViewDataSource, UICollectionViewDelegat
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedItem = items[indexPath.row]
-        selectedItem.type = .tag
         delegate.userSelected(item: selectedItem)
     }
 }

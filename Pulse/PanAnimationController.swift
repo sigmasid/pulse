@@ -132,7 +132,9 @@ class PanAnimationController: BaseAnimator  {
                 })
                 
                 if transitionContext.transitionWasCancelled {
-                    self.delegate.cancelledTransition()
+                    if self.delegate != nil {
+                        self.delegate.cancelledTransition()
+                    }
                 }
                 
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled)

@@ -40,8 +40,6 @@ class ExploreChannelsCell: UICollectionViewCell {
     }
     
     public func updateSubscribe(type : FollowToggle, tag: Int) {
-        print("setting button to type \(type)")
-
         DispatchQueue.main.async {
             type == .follow ? self.subscribeButton.setImage(UIImage(named: "add-circle"), for: .normal) : self.subscribeButton.setImage(UIImage(named: "remove-circle"), for: .normal)
         }

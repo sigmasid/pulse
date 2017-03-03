@@ -10,14 +10,21 @@ import UIKit
 private let headerReuseIdentifier = "PostsHeaderCell"
 private let reuseIdentifier = "PostsCell"
 
-class TagCollectionVC: UICollectionViewController {
+protocol HeaderDelegate: class {
+    func userClickedMenu()
+}
+
+protocol FooterDelegate : class {
+    func userClickedSeeMore()
+}
+
+class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegate {
     
     public var selectedChannel: Channel!
     //set by delegate
     public var selectedItem : Item! {
         didSet {
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
-                self.setupButton()
                 self.allItems = items
                 self.updateDataSource()
                 self.updateHeader()
@@ -33,7 +40,7 @@ class TagCollectionVC: UICollectionViewController {
     fileprivate var contentVC : ContentManagerVC!
     
     /** Collection View Vars **/
-    internal let headerHeight : CGFloat = 60
+    internal let headerHeight : CGFloat = 50
     
     fileprivate let headerReuseIdentifier = "ChannelHeader"
     fileprivate let reuseIdentifier = "ItemCell"
@@ -42,9 +49,6 @@ class TagCollectionVC: UICollectionViewController {
     fileprivate var initialFrame = CGRect.zero
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
-    
-    /** Main Button **/
-    fileprivate var screenButton : PulseButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -71,26 +75,53 @@ class TagCollectionVC: UICollectionViewController {
         view.backgroundColor = .white
     }
     
-    internal func setupButton() {
-        if selectedItem.type == .question {
-            screenButton = PulseButton(size: .medium, type: .question, isRound : true, hasBackground: true, tint: .white)
-            view.addSubview(screenButton)
-
-            screenButton.addTarget(self, action: #selector(askQuestion), for: UIControlEvents.touchUpInside)
-            
-            screenButton.translatesAutoresizingMaskIntoConstraints = false
-            screenButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-            screenButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-            screenButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-            screenButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-            screenButton.layoutIfNeeded()
-        }
+    func dismiss(_ viewController: UIViewController) {
+        GlobalFunctions.dismissVC(viewController)
+    }
+        
+    func userClickedMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "Ask", style: .default, handler: { (action: UIAlertAction!) in
+            self.askQuestion()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    //is showing answers
+    func showFeedbackMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "Add", style: .default, handler: { (action: UIAlertAction!) in
+            self.askQuestion()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Share", style: .default, handler: { (action: UIAlertAction!) in
+            self.askQuestion()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    func showPostMenu() {
+        
     }
     
     func askQuestion() {
         let questionVC = AskQuestionVC()
         questionVC.selectedTag = selectedItem
-        navigationController?.pushViewController(questionVC, animated: true)
+        questionVC.delegate = self
+        
+        GlobalFunctions.addNewVC(questionVC, parentVC: self)
     }
     
     override func didReceiveMemoryWarning() {
@@ -228,9 +259,10 @@ class TagCollectionVC: UICollectionViewController {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
+            headerView.delegate = self
             
             if let title = selectedItem.itemTitle {
-                headerView.updateLabel(title.lowercased(), count: allItems.count, image: selectedItem.content as? UIImage)
+                headerView.updateLabel("# \(title.lowercased())")
             }
             
             return headerView

@@ -32,6 +32,7 @@ class QuickBrowseCell: UICollectionViewCell {
         if let image = image {
             previewImage.image = image
             
+            previewImage.contentMode = .scaleAspectFill
             previewImage.layer.cornerRadius = 0
             previewImage.layer.masksToBounds = true
             previewImage.clipsToBounds = true
@@ -53,14 +54,14 @@ class QuickBrowseCell: UICollectionViewCell {
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
-        titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         titleLabel.layoutIfNeeded()
         
         previewImage.contentMode = UIViewContentMode.scaleAspectFill
         previewImage.clipsToBounds = true
         
-        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
+        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
         titleLabel.numberOfLines = 1
         titleLabel.lineBreakMode = .byTruncatingTail
         titleLabel.setBlurredBackground()

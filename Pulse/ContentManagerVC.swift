@@ -10,15 +10,15 @@ import UIKit
 import MobileCoreServices
 import CoreLocation
 
-protocol cameraDelegate : class {
+protocol CameraDelegate : class {
     func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
     func userDismissedCamera()
     func showAlbumPicker()
 }
 
-protocol childVCDelegate: class {
+protocol ContentDelegate: class {
     func noItemsToShow(_ : UIViewController)
-    func removeQuestionPreview()
+    func removeIntro()
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
     func doneUploadingAnswer(_: UIViewController)
@@ -27,12 +27,12 @@ protocol childVCDelegate: class {
     func minItemsShown()
     func askUserQuestion()
     func loadMoreFromTag()
-    //func goBack(_ : UIViewController)
-    func showPreviewOverlay()
     func addMoreItems(_ : UIViewController, recordedItems : [Item])
+    func userClickedSeeAll()
+    func userClickedProfileDetail()
 }
 
-class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     //set by delegate - questions or posts
     var selectedChannel : Channel! //all items need a channel - only for adding new posts / answers
     var selectedItem: Item! //the category item - might be the question / tag / post etc.
@@ -90,6 +90,27 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         }
     }
     
+    deinit {
+        selectedChannel = nil
+        selectedItem = nil //the category item - might be the question / tag / post etc.
+        allItems = []
+        
+        itemCollection = []
+        recordedItems = []
+        
+        contentDetailVC.delegate = nil
+        panDismissInteractionController.delegate = nil
+        recordedVideoVC.delegate = nil
+        
+        if cameraVC != nil {
+            cameraVC.delegate = nil
+            cameraVC = nil
+        }
+        
+        introVC = nil
+        cameraVC = nil
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
@@ -107,12 +128,15 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         contentDetailVC.selectedChannel = selectedChannel
         contentDetailVC.itemIndex = itemIndex
         
+        isNavigationBarHidden = true
         pushViewController(contentDetailVC, animated: false)
         
         contentDetailVC.allItems = allItems
         contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
         
-        showPreviewOverlay()
+        contentDetailVC._isShowingIntro = true
+        
+        showIntro()
     }
     
     func loadMoreFromTag() {
@@ -124,6 +148,27 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         } else {
             self.dismiss(animated: true, completion: nil)
         }
+    }
+    
+    func userClickedProfileDetail() {
+        let userProfileVC = UserProfileVC(collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
+        //popViewController(animated: false)
+        isNavigationBarHidden = false
+        pushViewController(userProfileVC, animated: true)
+        userProfileVC.selectedUser = selectedItem?.user
+    }
+    
+    func userClickedSeeAll() {
+        let layout = GlobalFunctions.getPulseCollectionLayout()
+        layout.sectionHeadersPinToVisibleBounds = true
+        
+        let itemCollection = BrowseCollectionVC(collectionViewLayout: layout)
+        itemCollection.selectedChannel = selectedChannel
+        itemCollection.selectedItem = selectedItem
+        
+        isNavigationBarHidden = false
+        popViewController(animated: false)
+        pushViewController(itemCollection, animated: true)
     }
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
@@ -214,12 +259,12 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
                 showCamera()
             } else {
                 hasMoreItems = false
-                dismiss(animated: true, completion: nil)
+                dismiss(animated: false, completion: nil)
             }
             })
         } else {
             hasMoreItems = false
-            dismiss(animated: true, completion: nil)
+            dismiss(animated: false, completion: nil)
         }
     }
     
@@ -248,6 +293,8 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         
         panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: self)
         panDismissInteractionController.delegate = self
+        
+        isNavigationBarHidden = true
         pushViewController(cameraVC, animated: animated)
     }
     
@@ -261,7 +308,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         present(albumPicker, animated: true, completion: nil)
     }
     
-    func showPreviewOverlay() {
+    func showIntro() {
         introVC = ContentIntroVC()
         if selectedItem != nil {
             switch selectedItem.type {
@@ -278,12 +325,13 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
                 introVC?.image = image
             }
             
+            isNavigationBarHidden = true
             pushViewController(introVC!, animated: true)
             isShowingIntro = true
         }
     }
     
-    func removeQuestionPreview() {
+    func removeIntro() {
         if isShowingIntro {
             popViewController(animated: true)
             isShowingIntro = false
@@ -316,7 +364,7 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
         if isAddingMoreItems {
             returnToRecordings()
         } else {
-            dismiss(animated: true, completion: nil)
+            dismiss(animated: false, completion: nil)
         }
     }
     
@@ -370,6 +418,11 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
                 let animator = FadeAnimationController()
                 animator.transitionType = .dismiss
                 return animator
+            }
+            else if fromVC is ContentIntroVC && toVC is ContentDetailVC {
+                let animator = FadeAnimationController()
+                animator.transitionType = .dismiss
+                return animator
             } else if fromVC is ContentDetailVC {
                 let animator = ShrinkDismissController()
                 animator.transitionType = .dismiss
@@ -392,7 +445,8 @@ class ContentManagerVC: UINavigationController, childVCDelegate, cameraDelegate,
                 animator.transitionType = .present
                 
                 return animator
-            } else if fromVC is CameraVC && toVC is ContentIntroVC {
+            }
+            else if fromVC is CameraVC && toVC is ContentIntroVC {
                 let animator = ShrinkDismissController()
                 animator.transitionType = .dismiss
                 animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))

@@ -18,7 +18,7 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
     
     fileprivate var lastProgress: CGFloat?
     
-    var delegate : cameraDelegate!
+    var delegate : CameraDelegate!
     
     func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController) {
         self.fromViewController = fromViewController

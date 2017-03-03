@@ -9,9 +9,10 @@
 import UIKit
 
 class ItemHeader: UICollectionReusableView {
+    public var delegate : HeaderDelegate!
+    
     fileprivate var titleLabel = UILabel()
-    lazy var answerCount = PulseButton(size: .small, type: .answerCount, isRound: false, hasBackground: false)
-    fileprivate var headerButton = PulseButton(size: .small, type: .logo, isRound: true, hasBackground: false)
+    lazy var headerMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
     
     fileprivate var reuseCell = false
     
@@ -20,57 +21,45 @@ class ItemHeader: UICollectionReusableView {
         
         addShadow()
         setupPreview()
+        headerMenu.removeShadow()
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
-    func updateLabel(_ _title : String?, count: Int, image: UIImage?) {
+    func updateLabel(_ _title : String?) {
         if let _title = _title {
             titleLabel.text = _title
-        }
-        
-        answerCount.setTitle("\(count)", for: .normal)
-        
-        if image != nil {
-            headerButton.setBackgroundImage(image, for: .normal)
-        } else {
-            headerButton.frame = CGRect.zero
-            titleLabel.frame = CGRect(x: Spacing.s.rawValue,
-                                      y: 0,
-                                      width: bounds.width - Spacing.m.rawValue - answerCount.bounds.width,
-                                      height: bounds.height)
         }
     }
     
     override func prepareForReuse() {
         titleLabel.text = ""
-        answerCount.setTitle("", for: UIControlState())
-        
         super.prepareForReuse()
     }
     
+    func clickedMenu() {
+        if delegate != nil {
+            delegate.userClickedMenu()
+        }
+    }
+    
     fileprivate func setupPreview() {
-        addSubview(headerButton)
         addSubview(titleLabel)
-        addSubview(answerCount)
+        addSubview(headerMenu)
         
-        headerButton.frame = CGRect(x: Spacing.xs.rawValue,
-                                   y: bounds.height / 2 - headerButton.bounds.height / 2,
-                                   width: headerButton.bounds.width,
-                                   height: headerButton.bounds.height)
+        headerMenu.addTarget(self, action: #selector(clickedMenu), for: .touchUpInside)
+        headerMenu.frame = CGRect(x: bounds.width - headerMenu.bounds.width - Spacing.xs.rawValue,
+                                   y: bounds.height / 2 - headerMenu.bounds.height / 2,
+                                   width: headerMenu.bounds.width,
+                                   height: headerMenu.bounds.height)
         
-        answerCount.frame = CGRect(x: bounds.width - answerCount.bounds.width - Spacing.xs.rawValue,
-                                   y: bounds.height / 2 - answerCount.bounds.height / 2,
-                                   width: answerCount.bounds.width,
-                                   height: answerCount.bounds.height)
-        
-        titleLabel.frame = CGRect(x: Spacing.s.rawValue + headerButton.bounds.width,
+        titleLabel.frame = CGRect(x: Spacing.s.rawValue,
                                   y: 0,
-                                  width: bounds.width - Spacing.m.rawValue - answerCount.bounds.width,
+                                  width: bounds.width - Spacing.s.rawValue - headerMenu.bounds.width,
                                   height: bounds.height)
         
-        titleLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightRegular, color: UIColor.black, alignment: .left)
+        titleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .left)
     }
 }
