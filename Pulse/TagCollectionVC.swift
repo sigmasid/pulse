@@ -14,11 +14,7 @@ protocol HeaderDelegate: class {
     func userClickedMenu()
 }
 
-protocol FooterDelegate : class {
-    func userClickedSeeMore()
-}
-
-class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegate {
+class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate, BrowseContentDelegate {
     
     public var selectedChannel: Channel!
     //set by delegate
@@ -36,10 +32,8 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
     /** main datasource var **/
     fileprivate var allItems = [Item]()
     
-    fileprivate var headerNav : PulseNavVC?
-    fileprivate var contentVC : ContentManagerVC!
-    
     /** Collection View Vars **/
+    internal var collectionView : UICollectionView!
     internal let headerHeight : CGFloat = 50
     
     fileprivate let headerReuseIdentifier = "ChannelHeader"
@@ -50,29 +44,40 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
+    fileprivate var isLayoutSetup = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        view.backgroundColor = .white
-        collectionView?.backgroundColor = .white
-        
-        collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
-        collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)        
-    
-        if let nav = navigationController as? PulseNavVC {
-            headerNav = nav
+        if !isLayoutSetup {
+            setupLayout()
+            
+            tabBarHidden = true
+            isLayoutSetup = true
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(false)
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        updateHeader()
+    }
+    
+    //Update Nav Header
+    fileprivate func updateHeader() {
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
         backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
         
-        extendedLayoutIncludesOpaqueBars = true
-        collectionView?.backgroundColor = .white
-        view.backgroundColor = .white
+        headerNav?.followScrollView(collectionView, delay: 25.0)
+    }
+    
+    func setupLayout() {
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
+        let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
+        
+        collectionView.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+        collectionView.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        
+        view.addSubview(collectionView)
     }
     
     func dismiss(_ viewController: UIViewController) {
@@ -123,39 +128,40 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
         
         GlobalFunctions.addNewVC(questionVC, parentVC: self)
     }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
-    //Update Nav Header
-    fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
 
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-    }
-    
     //once allItems var is set reload the data
     func updateDataSource() {
+        if !isLayoutSetup {
+            setupLayout()
+        }
+        
+        collectionView?.delegate = self
+        collectionView?.dataSource = self
         collectionView?.reloadData()
         collectionView?.layoutIfNeeded()
-        
-        if allItems.count > 0 {
-            collectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
-        }
     }
     
+    func clickedItemButton(itemRow : Int) {
+        if let user = allItems[itemRow].user {
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
+        }
+    }
+}
+
+extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource {
+    
     // MARK: UICollectionViewDataSource
-    override func numberOfSections(in collectionView: UICollectionView) -> Int {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
     
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return allItems.count
     }
     
-    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
@@ -164,8 +170,10 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
         userSelected(item : allItems[indexPath.row], index: indexPath.row)
     }
     
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
+        cell.delegate = self
+        cell.tag = indexPath.row
         
         let currentItem = allItems[indexPath.row]
 
@@ -176,8 +184,8 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
         if allItems[indexPath.row].itemCreated {
             
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
-            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
         } else {
             Database.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
@@ -189,7 +197,7 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
                             cell.itemType = item.type
-                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.itemTitle)
+                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: self.allItems[indexPath.row].tag?.itemTitle)
                         }
                     }
                     
@@ -239,7 +247,7 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
                                     
                                     DispatchQueue.main.async {
                                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                            cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage)
+                                            cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
                                         }
                                     }
                                 }
@@ -253,7 +261,7 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
         return cell
     }
     
-    override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         
         switch kind {
         case UICollectionElementKindSectionHeader:
@@ -275,12 +283,12 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
     func updateCell(_ cell: ItemCell, atIndexPath indexPath: IndexPath) {
         
         if let image = allItems[indexPath.row].user?.thumbPicImage  {
-            cell.updateButtonImage(image: image)
+            cell.updateButtonImage(image: image, itemTag : indexPath.row)
         }
         
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
         }
     }
     
@@ -293,11 +301,11 @@ class TagCollectionVC: UICollectionViewController, HeaderDelegate, ParentDelegat
         }
     }
     
-    override func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         updateOnscreenRows()
     }
     
-    override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
     }
     

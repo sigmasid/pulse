@@ -12,7 +12,7 @@ protocol UserProfileDelegate: class {
     func showMenu()
 }
 
-class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDelegate {
+class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     
     /** Delegate Vars **/
     public var selectedUser : User! {
@@ -36,13 +36,8 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
             }
         }
     }
-    
-    //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
-    var watchedFullPreview: Bool = false
+    public var watchedFullPreview: Bool = false     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     /** End Delegate Vars **/
-
-    fileprivate var headerNav : PulseNavVC?
-    fileprivate var contentVC : ContentManagerVC!
     
     /** Data Source Vars **/
     public var allItems = [Item]() {
@@ -58,12 +53,13 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         var gettingImageForPreview : Bool = false
         var gettingInfoForPreview : Bool = false
     }
-    private var itemStack = [ItemMetaData]()
+    internal var itemStack = [ItemMetaData]()
     /** End Data Source Vars **/
     
     fileprivate var isLoaded = false
     
     /** Collection View Vars **/
+    internal var collectionView : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
     fileprivate let headerHeight : CGFloat = 200
     fileprivate let headerReuseIdentifier = "UserProfileHeader"
@@ -102,35 +98,34 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         super.viewDidLoad()
         
         if !isLoaded {
-            if let nav = navigationController as? PulseNavVC {
-                headerNav = nav
-                updateHeader()
-            } else {
-                print("nav controller is not pulse")
-            }
-            
-            view.backgroundColor = .white
-            definesPresentationContext = true
-            collectionView?.backgroundColor = .white
-            collectionView?.register(BrowseCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-            collectionView?.register(UserProfileHeader.self,
-                                     forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                                     withReuseIdentifier: headerReuseIdentifier)
-                    
+            updateHeader()
+            setupLayout()
             isLoaded = true
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        guard selectedUser != nil else { return }
         updateHeader()
+
+        guard selectedUser != nil else { return }
         setHeaderTitle(title: selectedUser.name ?? "Explore User")
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    
+    func setupLayout() {
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
+        let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: false)
+        
+        collectionView?.register(BrowseContentCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        collectionView?.register(UserProfileHeader.self,
+                                 forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
+                                 withReuseIdentifier: headerReuseIdentifier)
+        
+        view.addSubview(collectionView)
     }
     
     internal func getDetailUserProfile() {
@@ -155,22 +150,21 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
     
     //once allItems var is set reload the data
     func updateDataSource() {
+        collectionView?.dataSource = self
+        collectionView?.delegate = self
         collectionView?.reloadData()
         collectionView?.layoutIfNeeded()
     }
     
     //Update Nav Header
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
     }
     
     fileprivate func setHeaderTitle(title: String) {
-        if let nav = headerNav {
-            nav.setNav(title: title)
-        }
+        headerNav?.setNav(title: title)
     }
     
     /** Show Menu **/
@@ -219,13 +213,48 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         navigationController?.pushViewController(messageVC, animated: true)
     }
     /** End Delegate Functions **/
+    
+    internal func showItemDetail(selectedItem : Item) {
+        //need to be set first
+        
+        contentVC = ContentManagerVC()
+        contentVC.watchedFullPreview = false
+        contentVC.allItems = [selectedItem]
+        contentVC.openingScreen = .item
+        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
+        
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    //reload data isn't called on existing cells so this makes sure visible cells always have data in them
+    func updateCurrentCell(_ cell: BrowseContentCell, atIndexPath indexPath: IndexPath) {
+        if allItems[indexPath.row].itemCreated  {
+            cell.updateLabel(nil, _subtitle: allItems[indexPath.row].itemTitle)
+        }
+        
+        if let image = allItems[indexPath.row].content as? UIImage  {
+            cell.updateImage(image: image)
+        }
+    }
+    
+    func updateOnscreenRows() {
+        if let visiblePaths = collectionView?.indexPathsForVisibleItems {
+            for indexPath in visiblePaths {
+                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseContentCell
+                updateCurrentCell(cell, atIndexPath: indexPath)
+            }
+        }
+    }
+}
 
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return allItems.count
     }
     
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseContentCell
         
         cell.contentView.backgroundColor = .white
         cell.setNumberOfLines(titleNum: 0, subTitleNum: 2)
@@ -329,49 +358,16 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         return cell
     }
     
-    internal func showItemDetail(selectedItem : Item) {
-        //need to be set first
-        
-        contentVC = ContentManagerVC()
-        contentVC.watchedFullPreview = false
-        contentVC.allItems = [selectedItem]
-        contentVC.openingScreen = .item
-        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateCurrentCell(_ cell: BrowseCell, atIndexPath indexPath: IndexPath) {
-        if allItems[indexPath.row].itemCreated  {
-            cell.updateLabel(nil, _subtitle: allItems[indexPath.row].itemTitle)
-        }
-        
-        if let image = allItems[indexPath.row].content as? UIImage  {
-            cell.updateImage(image: image)
-        }
-    }
-    
-    func updateOnscreenRows() {
-        if let visiblePaths = collectionView?.indexPathsForVisibleItems {
-            for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseCell
-                updateCurrentCell(cell, atIndexPath: indexPath)
-            }
-        }
-    }
-    
-    override func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         updateOnscreenRows()
     }
     
-    override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
     }
     
     //Did select item at index path
-    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
@@ -380,7 +376,7 @@ class UserProfileVC: UICollectionViewController, UserProfileDelegate, previewDel
         selectedIndex = indexPath
     }
     
-    override func collectionView(_ collectionView: UICollectionView,
+    func collectionView(_ collectionView: UICollectionView,
                         viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         
         switch kind {

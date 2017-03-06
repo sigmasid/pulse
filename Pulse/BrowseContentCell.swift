@@ -8,8 +8,8 @@
 
 import UIKit
 
-class BrowseCell: UICollectionViewCell, previewDelegate {
-    var delegate : previewDelegate!
+class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
+    var delegate : PreviewDelegate!
     
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()

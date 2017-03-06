@@ -43,7 +43,7 @@ class ChannelHeaderTags: UICollectionReusableView {
     fileprivate func setupChannelHeader() {
         addSubview(tagsLabel)
         tagsLabel.text = "featuring"
-        tagsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: pulseRed, alignment: .center)
+        tagsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
         
         let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: tagsLabel.font.pointSize, weight: UIFontWeightMedium)]
         let titleLabelHeight = GlobalFunctions.getLabelSize(title: tagsLabel.text!, width: frame.width, fontAttributes: fontAttributes)

@@ -8,7 +8,14 @@
 
 import UIKit
 
+protocol ItemCellDelegate : class {
+    func clickedItemButton(itemRow : Int)
+}
+
 class ItemCell: UICollectionViewCell {
+    
+    public var delegate : ItemCellDelegate!
+
     fileprivate var titleLabel = UILabel()
     fileprivate var subtitleLabel = UILabel()
     fileprivate var itemImage = UIImageView()
@@ -84,18 +91,27 @@ class ItemCell: UICollectionViewCell {
         }
     }
     
-    func updateButtonImage(image : UIImage?) {
+    func updateButtonImage(image : UIImage?, itemTag : Int) {
         if let image = image {
             itemButton.setBackgroundImage(image, for: .normal)
         }
+        
+        itemButton.tag = itemTag
     }
     
     override func prepareForReuse() {
         titleLabel.text = ""
         subtitleLabel.text = ""
         itemImage.image = nil
-        
+        itemHeightAnchor.constant = 0
+
         super.prepareForReuse()
+    }
+    
+    func clickedItemButton() {
+        if delegate != nil {
+            delegate.clickedItemButton(itemRow: tag)
+        }
     }
     
     fileprivate func setupCell() {
@@ -122,6 +138,7 @@ class ItemCell: UICollectionViewCell {
         
         itemButton.contentMode = .scaleAspectFill
         itemButton.clipsToBounds = true
+        itemButton.addTarget(self, action: #selector(clickedItemButton), for: .touchUpInside)
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.leadingAnchor.constraint(equalTo: itemButton.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true

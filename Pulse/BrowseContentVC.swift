@@ -1,5 +1,5 @@
 //
-//  BrowseCollectionVC.swift
+//  BrowseContentVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 2/17/17.
@@ -9,17 +9,18 @@
 import UIKit
 
 private let headerReuseIdentifier = "ItemHeaderCell"
-private let reuseIdentifier = "BrowseCell"
+private let reuseIdentifier = "BrowseContentCell"
 
-class BrowseCollectionVC: UICollectionViewController, previewDelegate {
+
+class BrowseContentVC: PulseVC, PreviewDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
+    var contentDelegate : BrowseContentDelegate!
     /** End Delegate Vars **/
     
     /** Transition Animation Vars **/
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
-    fileprivate var contentVC : ContentManagerVC!
     fileprivate var initialFrame = CGRect.zero
     
     //Main data source var -
@@ -29,24 +30,31 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
             itemStack = [ItemMetaData](repeating: ItemMetaData(), count: allItems.count)
         }
     }
-    private var itemStack = [ItemMetaData]()
+    internal var itemStack = [ItemMetaData]()
     
     //set by delegate
     public var selectedChannel : Channel!
     public var selectedItem : Item! {
         didSet {
-            Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
-                if success {
-                    let type = self.selectedItem.type == .question ? "answer" : "post"
-                    self.allItems = items.map{ item -> Item in Item(itemID: item.itemID, type: type) }
-                    self.updateDataSource()
-                }
-            })
+            if allItems.isEmpty {
+                Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+                    if success {
+                        let type = self.selectedItem.type == .question ? "answer" : "post"
+                        self.allItems = items.map{ item -> Item in
+                            Item(itemID: item.itemID, type: type)
+                        }
+                        self.updateDataSource()
+                    }
+                })
+            } else {
+                updateDataSource()
+            }
         }
     }
     //end set by delegate
     
     /** Collection View Vars **/
+    internal var collectionView : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
     fileprivate let headerHeight : CGFloat = 60
     
@@ -65,7 +73,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
             }
             
             if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! BrowseCell
+                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! BrowseContentCell
                 cell.removePreview()
             }
         }
@@ -75,55 +83,75 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
     
     //once allItems var is set reload the data
     func updateDataSource() {
+        if !isLayoutSetup {
+            setupLayout()
+            
+            tabBarHidden = true
+            isLayoutSetup = true
+        }
+        print("should update data source")
+        collectionView?.delegate = self
+        collectionView?.dataSource = self
         collectionView?.reloadData()
         collectionView?.layoutIfNeeded()
-        
-        if allItems.count > 0 {
-            collectionView?.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
-        }
     }
+    
+    fileprivate var isLayoutSetup = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
-        collectionView?.register(BrowseCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        if !isLayoutSetup {
+            setupLayout()
+            
+            tabBarHidden = true
+            isLayoutSetup = true
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        
-        extendedLayoutIncludesOpaqueBars = true
-        view.backgroundColor = .white
-        collectionView?.backgroundColor = .white
+        super.viewWillAppear(false)
+        updateHeader()
     }
     
-    internal func showItemDetail(item : Item, index : Int) {
-        //need to be set first
+    func setupLayout() {
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
+        let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
         
-        contentVC = ContentManagerVC()
-        contentVC.watchedFullPreview = false
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.allItems = allItems
-        contentVC.itemIndex = index
-        contentVC.openingScreen = .item
+        collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+        collectionView?.register(BrowseContentCell.self, forCellWithReuseIdentifier: reuseIdentifier)
         
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
+        view.addSubview(collectionView)
+    }
+    
+    //Update Nav Header
+    fileprivate func updateHeader() {
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        
+        headerNav?.followScrollView(collectionView, delay: 25.0)
     }
 
+    
+    internal func showItemDetail(item : Item, index : Int, itemCollection: [Item]) {
+        if contentDelegate != nil {
+            contentDelegate.showItemDetail(allItems: allItems, index: index, itemCollection: itemCollection, selectedItem : item, watchedPreview : watchedFullPreview)
+        }
+    }
+}
+
+extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource {
+
     // MARK: UICollectionViewDataSource
-    override func numberOfSections(in collectionView: UICollectionView) -> Int {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
     
-    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return allItems.count
     }
     
-    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
@@ -132,8 +160,8 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         selectedIndex = indexPath
     }
     
-    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseCell
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseContentCell
         
         cell.contentView.backgroundColor = .white
         cell.updateLabel(nil, _subtitle: nil, _image : nil)
@@ -202,12 +230,12 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         }
         
         if indexPath == selectedIndex && indexPath == deselectedIndex {
-            showItemDetail(item: selectedItem, index: indexPath.row)
+            showItemDetail(item: selectedItem, index: indexPath.row, itemCollection: itemStack[indexPath.row].itemCollection )
         } else if indexPath == selectedIndex {
             //if item has more than initial clip, show 'see more at the end'
             watchedFullPreview = false
             
-            Database.getItemCollection(selectedItem.itemID, completion: {(hasDetail, itemCollection) in
+            Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                 if hasDetail {
                     cell.showTapForMore = true
                     self.itemStack[indexPath.row].itemCollection = itemCollection
@@ -226,7 +254,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
         return cell
     }
     
-    override func collectionView(_ collectionView: UICollectionView,
+    func collectionView(_ collectionView: UICollectionView,
                         viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         
         switch kind {
@@ -242,7 +270,7 @@ class BrowseCollectionVC: UICollectionViewController, previewDelegate {
     }
 }
 
-extension BrowseCollectionVC: UICollectionViewDelegateFlowLayout {
+extension BrowseContentVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
     }
@@ -256,11 +284,11 @@ extension BrowseCollectionVC: UICollectionViewDelegateFlowLayout {
     }
 }
 
-/* COLLECTION VIEW */
-extension BrowseCollectionVC  {
+/* UPDATE ON SCREEN ROWS WHEN SCROLL STOPS */
+extension BrowseContentVC  {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateBrowseCell(_ cell: BrowseCell, atIndexPath indexPath: IndexPath) {
+    func updateBrowseContentCell(_ cell: BrowseContentCell, atIndexPath indexPath: IndexPath) {
         if let user = allItems[indexPath.row].user  {
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
         }
@@ -273,22 +301,22 @@ extension BrowseCollectionVC  {
     func updateOnscreenRows() {
         if let visiblePaths = collectionView?.indexPathsForVisibleItems {
             for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseCell
-                updateBrowseCell(cell, atIndexPath: indexPath)
+                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseContentCell
+                updateBrowseContentCell(cell, atIndexPath: indexPath)
             }
         }
     }
     
-    override func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         updateOnscreenRows()
     }
     
-    override func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
     }
 }
 
-extension BrowseCollectionVC: UIViewControllerTransitioningDelegate {
+extension BrowseContentVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {

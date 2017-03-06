@@ -15,7 +15,7 @@ public class PulseNavBar: UINavigationBar {
     fileprivate var searchContainer : UIView!
     fileprivate var isDetailSetup = false
     
-    public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.large.rawValue)
+    public var navBarSize : CGSize = CGSize(width: UIScreen.main.bounds.width, height: IconSizes.medium.rawValue * 1.2)
 
     /** SCOPE BAR VARS **/
     override public func sizeThatFits(_ size: CGSize) -> CGSize {
@@ -26,7 +26,7 @@ public class PulseNavBar: UINavigationBar {
         super.layoutSubviews()
         for view in self.subviews {
             if view.isKind(of: UIButton.self) {
-                view.frame.origin.y = Spacing.s.rawValue
+                view.frame.origin.y = Spacing.xs.rawValue
             }
         }
     }
@@ -34,9 +34,9 @@ public class PulseNavBar: UINavigationBar {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        self.clipsToBounds = false
-        self.contentMode = .redraw
-
+        clipsToBounds = false
+        contentMode = .redraw
+        
         isTranslucent = false
         tintColor = .white //need to set tint color vs. background color
         
@@ -67,12 +67,11 @@ public class PulseNavBar: UINavigationBar {
     fileprivate func setupDetailLayout() {
         addSubview(navTitle)
         
-        navTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: IconSizes.large.rawValue)
-        
-        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
-        
+        navTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: navBarSize.height)
+        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .left)
+        navTitle.setBlurredBackground()
         navTitle.lineBreakMode = .byTruncatingTail
-        navTitle.numberOfLines = 3
+        navTitle.numberOfLines = 2
         navTitle.tag = 10
         
         isDetailSetup = true

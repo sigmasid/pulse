@@ -8,7 +8,7 @@
 
 import UIKit
 
-class MiniMessageVC: UIViewController, UITextViewDelegate {
+class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedUser : User!
     public var delegate : ParentDelegate!
@@ -40,7 +40,7 @@ class MiniMessageVC: UIViewController, UITextViewDelegate {
             
             tap = UITapGestureRecognizer(target: self, action: #selector(dismissMsg))
             tap.cancelsTouchesInView = false
-            tap.isEnabled = false
+            tap.isEnabled = true
             view.addGestureRecognizer(tap)
             
             observersAdded = true
@@ -54,6 +54,11 @@ class MiniMessageVC: UIViewController, UITextViewDelegate {
             
             isLoaded = true
         }
+    }
+    
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        print("gesture recognizer fired")
+        return false
     }
     
     override func didReceiveMemoryWarning() {

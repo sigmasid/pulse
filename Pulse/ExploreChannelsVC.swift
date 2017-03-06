@@ -20,7 +20,7 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
     
     fileprivate var headerNav : PulseNavVC?
     fileprivate var loadingView : LoadingView?
-    fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, hasBackground: true)
+    fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
 
     fileprivate var allChannels = [Channel]() {
         didSet {

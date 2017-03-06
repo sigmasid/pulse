@@ -16,6 +16,14 @@ protocol CameraDelegate : class {
     func showAlbumPicker()
 }
 
+protocol PreviewDelegate: class {
+    var  watchedFullPreview : Bool { get set }
+}
+
+protocol BrowseContentDelegate: class {
+    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool)
+}
+
 protocol ContentDelegate: class {
     func noItemsToShow(_ : UIViewController)
     func removeIntro()
@@ -28,18 +36,16 @@ protocol ContentDelegate: class {
     func askUserQuestion()
     func loadMoreFromTag()
     func addMoreItems(_ : UIViewController, recordedItems : [Item])
-    func userClickedSeeAll()
+    func userClickedSeeAll(items : [Item])
     func userClickedProfileDetail()
 }
 
-class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseContentDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     //set by delegate - questions or posts
     var selectedChannel : Channel! //all items need a channel - only for adding new posts / answers
     var selectedItem: Item! //the category item - might be the question / tag / post etc.
     var allItems = [Item]()
-    
     var itemIndex = 0
-    
     var watchedFullPreview = false
     var itemCollection = [Item]()
     
@@ -73,6 +79,11 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, UIImagePick
         isNavigationBarHidden = true
     }
     
+    override init(navigationBarClass: AnyClass?, toolbarClass: AnyClass?) {
+        super.init(navigationBarClass: navigationBarClass, toolbarClass: toolbarClass)
+        isNavigationBarHidden = true
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -81,7 +92,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, UIImagePick
             pushViewController(loadingVC, animated: false)
             
             if openingScreen == .item {
-                showItem()
+                showItemDetail(shouldShowIntro: true)
             } else if openingScreen == .camera {
                 showCamera()
             }
@@ -116,9 +127,9 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, UIImagePick
     }
     
     /* QA Specific Methods */
-    func showItem() {
+    func showItemDetail(shouldShowIntro: Bool) {
+        isNavigationBarHidden = true
         contentDetailVC.delegate = self
-
         panDismissInteractionController.wireToViewController(contentDetailVC, toViewController: nil, parentViewController: self)
         panDismissInteractionController.delegate = self
 
@@ -128,15 +139,33 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, UIImagePick
         contentDetailVC.selectedChannel = selectedChannel
         contentDetailVC.itemIndex = itemIndex
         
-        isNavigationBarHidden = true
-        pushViewController(contentDetailVC, animated: false)
+        if shouldShowIntro {
+            pushViewController(contentDetailVC, animated: false)
+            
+            contentDetailVC.allItems = allItems
+            contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
+            
+            contentDetailVC._isShowingIntro = true
         
-        contentDetailVC.allItems = allItems
-        contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
-        
-        contentDetailVC._isShowingIntro = true
-        
-        showIntro()
+            showIntro()
+        } else {
+            //case where user is returning form quick browse
+            
+            contentDetailVC.allItems = allItems
+            contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
+            
+            popViewController(animated: true)
+        }
+    }
+    
+    //delegate from browse content
+    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+        self.allItems = allItems
+        self.itemIndex = index
+        self.itemCollection = itemCollection
+        self.watchedFullPreview = watchedPreview
+
+        showItemDetail(shouldShowIntro: false)
     }
     
     func loadMoreFromTag() {
@@ -146,28 +175,32 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, UIImagePick
                 self.allItems = items
             })
         } else {
-            self.dismiss(animated: true, completion: nil)
+            dismiss(animated: true, completion: nil)
         }
     }
     
     func userClickedProfileDetail() {
-        let userProfileVC = UserProfileVC(collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
-        //popViewController(animated: false)
+        let userProfileVC = UserProfileVC()
+       
+        popViewController(animated: false)
         isNavigationBarHidden = false
         pushViewController(userProfileVC, animated: true)
         userProfileVC.selectedUser = selectedItem?.user
     }
     
-    func userClickedSeeAll() {
-        let layout = GlobalFunctions.getPulseCollectionLayout()
-        layout.sectionHeadersPinToVisibleBounds = true
-        
-        let itemCollection = BrowseCollectionVC(collectionViewLayout: layout)
+    func userClosedBrowse() {
+        setNavigationBarHidden(true, animated: true)
+    }
+    
+    func userClickedSeeAll(items : [Item]) {
+        let itemCollection = BrowseContentVC()
         itemCollection.selectedChannel = selectedChannel
+        itemCollection.allItems = items
         itemCollection.selectedItem = selectedItem
+        itemCollection.contentDelegate = self
         
         isNavigationBarHidden = false
-        popViewController(animated: false)
+        //popViewController(animated: false)
         pushViewController(itemCollection, animated: true)
     }
     

@@ -11,10 +11,10 @@ import UIKit
 protocol ChannelDelegate: class {
     func userSelected(user : User)
     func userSelected(item : Item)
-    func currentItems(items : [Item])
+    func currentItems(items : [Item]) //to keep header cached between appearances
 }
 
-class ChannelVC: UIViewController, ChannelDelegate {
+class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegate, BrowseContentDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
@@ -36,10 +36,7 @@ class ChannelVC: UIViewController, ChannelDelegate {
     }
     //end set by delegate
     
-    fileprivate var headerNav : PulseNavVC?
-    fileprivate var contentVC : ContentManagerVC!
-
-    fileprivate var subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, hasBackground: true, tint: .white)
+    fileprivate var subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, background: .white, tint: .black)
     fileprivate var isSubscribed : Bool = false {
         didSet { setupSubscribe() }
     }
@@ -64,22 +61,22 @@ class ChannelVC: UIViewController, ChannelDelegate {
     fileprivate var initialFrame = CGRect.zero
     fileprivate var panPresentInteractionController = PanEdgeInteractionController()
     fileprivate var panDismissInteractionController = PanEdgeInteractionController()
+        
+    override init() {
+        super.init()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         if !isLoaded {
-            if let nav = navigationController as? PulseNavVC {
-                headerNav = nav
-            }
-            
-            extendedLayoutIncludesOpaqueBars = true
-            tabBarController?.tabBar.isHidden = true
-            edgesForExtendedLayout = .bottom
-            view.backgroundColor = .white
-            
+            statusBarStyle = .lightContent
+            tabBarHidden = true
             setupScreenLayout()
-            definesPresentationContext = true
             
             isLoaded = true
         }
@@ -87,21 +84,15 @@ class ChannelVC: UIViewController, ChannelDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
         updateHeader()
     }
     
     deinit {
         selectedChannel = nil
         headerNav = nil //the category item - might be the question / tag / post etc.
-        contentVC = nil
         
         allItems = []
         headerItems = []
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
     }
     
     internal func getChannelItems() {
@@ -113,19 +104,11 @@ class ChannelVC: UIViewController, ChannelDelegate {
     }
     
     //Once the channel is set and pulled from database -> reload the datasource for collection view
-    func updateDataSource() {
-        if !isLayoutSetup {
-            setupScreenLayout()
-        }
-        
+    func updateDataSource() {        
         channel.delegate = self
         channel.dataSource = self
         channel.reloadData()
         channel.layoutIfNeeded()
-        
-        if allItems.count > 0 {
-            channel.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
-        }
     }
     
     internal func subscribe() {
@@ -149,23 +132,52 @@ class ChannelVC: UIViewController, ChannelDelegate {
         })
     }
     
+    func clickedItemButton(itemRow : Int) {
+        if let user = allItems[itemRow].user {
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
+        }
+    }
+
+    
     /** HEADER FUNCTIONS **/
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
+        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+
+        headerNav?.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
+        headerNav?.updateBackgroundImage(image: processImage(selectedChannel.cPreviewImage))
+        headerNav?.showNavbar(animated: true)
+        headerNav?.followScrollView(channel, delay: 25.0)
+    }
+    
+    
+    func processImage(_ image : UIImage?) -> UIImage? {
+        guard let cgimg = image?.cgImage else {
+            return nil
+        }
         
-        if let nav = headerNav {
-            nav.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
-            nav.updateBackgroundImage(image: selectedChannel.cPreviewImage)
-            backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-            nav.hidesBarsOnSwipe = true
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
+        
+        let coreImage = CIImage(cgImage: cgimg)
+        
+        let filter = CIFilter(name: "CIPhotoEffectNoir")
+        filter?.setValue(coreImage, forKey: kCIInputImageKey)
+        
+        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
+            let cgimgresult = context.createCGImage(output, from: output.extent)
+            let result = UIImage(cgImage: cgimgresult!)
+            return result
         } else {
-            title = selectedChannel.cTitle ?? "Explore Channel"
+            return image
         }
     }
     
     internal func userSelected(user: User) {
-        let userProfileVC = UserProfileVC(collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
+        let userProfileVC = UserProfileVC()
         navigationController?.pushViewController(userProfileVC, animated: true)
         userProfileVC.selectedUser = user
     }
@@ -191,19 +203,15 @@ class ChannelVC: UIViewController, ChannelDelegate {
     
     fileprivate func setupScreenLayout() {
         if !isLayoutSetup {
+            channel = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
+            let _ = PulseFlowLayout.configureLayout(collectionView: channel, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
             
-            channel = UICollectionView(frame: view.bounds, collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
             channel?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             channel?.register(ChannelHeaderTags.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             //channel?.register(ChannelHeaderExperts.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             
             view.addSubview(channel!)
             
-            channel.backgroundColor = .clear
-            channel.backgroundView = nil
-            channel.showsVerticalScrollIndicator = false
-            
-            channel?.isMultipleTouchEnabled = true
             isLayoutSetup = true
         }
     }
@@ -219,6 +227,8 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
         let currentItem = allItems[indexPath.row]
+        cell.delegate = self
+        cell.tag = indexPath.row
         
         //clear the cells and set the item type first
         cell.updateLabel(nil, _subtitle: nil, _tag: nil)
@@ -228,7 +238,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
             cell.itemType = currentItem.type
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
-            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage)
+            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
         } else {
             Database.getItem(currentItem.itemID, completion: { (item, error) in
@@ -290,7 +300,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                     
                                     DispatchQueue.main.async {
                                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                            cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage)
+                                            cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
                                         }
                                     }
                                 }
@@ -309,7 +319,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
-            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage)
+            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
         }
     }
     
@@ -341,14 +351,14 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
         case .answer:
             
-            showItemDetail(allItems: [item], itemCollection: [], selectedItem: item, watchedPreview: false)
+            showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
 
         case .post:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 if success {
-                    self.showItemDetail(allItems: [item], itemCollection: items, selectedItem: item, watchedPreview: true)
+                    self.showItemDetail(allItems: [item], index: 0, itemCollection: items, selectedItem: item, watchedPreview: true)
                 } else {
-                    self.showItemDetail(allItems: [item], itemCollection: [item], selectedItem: item, watchedPreview: false)
+                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [item], selectedItem: item, watchedPreview: false)
                 }
             })
         case .question:
@@ -363,12 +373,13 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
     }
     
-    internal func showItemDetail(allItems: [Item], itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = watchedPreview
         contentVC.selectedChannel = selectedChannel
         contentVC.selectedItem = selectedItem
         contentVC.itemCollection = itemCollection
+        contentVC.itemIndex = index
         contentVC.allItems = allItems
         contentVC.openingScreen = .item
         
@@ -377,25 +388,21 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     internal func showBrowse(selectedItem: Item) {
-        let layout = GlobalFunctions.getPulseCollectionLayout()
-        layout.sectionHeadersPinToVisibleBounds = true
-        
-        let itemCollection = BrowseCollectionVC(collectionViewLayout: layout)
+        let itemCollection = BrowseContentVC()
         itemCollection.selectedChannel = selectedChannel
         itemCollection.selectedItem = selectedItem
+        itemCollection.contentDelegate = self
         
         navigationController?.pushViewController(itemCollection, animated: true)
     }
     
-    internal func showTag(selectedItem : Item) {
-        let layout = GlobalFunctions.getPulseCollectionLayout()
-        layout.sectionHeadersPinToVisibleBounds = true
-        
-        let tagDetailVC = TagCollectionVC(collectionViewLayout: layout)
+    internal func showTag(selectedItem : Item) {        
+        let tagDetailVC = TagCollectionVC()
         tagDetailVC.selectedChannel = selectedChannel
-        tagDetailVC.selectedItem = selectedItem
         
         navigationController?.pushViewController(tagDetailVC, animated: true)
+        tagDetailVC.selectedItem = selectedItem
+
     }
     
     func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
@@ -430,6 +437,10 @@ extension ChannelVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
         return CGSize(width: channel.frame.width - 20, height: cellHeight)
+    }
+    
+    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        return true
     }
 }
 

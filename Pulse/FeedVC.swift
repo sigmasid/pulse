@@ -8,13 +8,6 @@
 
 import UIKit
 
-protocol feedVCDelegate: class {
-    func userSelected(type : ItemTypes, item : Any)
-}
-
-protocol previewDelegate: class {
-    var watchedFullPreview : Bool { get set }
-}
 
 class FeedVC: UIViewController {
 /**

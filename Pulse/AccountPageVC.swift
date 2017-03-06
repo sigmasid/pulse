@@ -21,7 +21,7 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
     fileprivate var profileSummary = ProfileSummary()
     fileprivate var profileSettingsVC : SettingsTableVC!
     fileprivate var settingsLinks : AccountPageMenu!
-    fileprivate lazy var browseItemsVC : BrowseCollectionVC = BrowseCollectionVC(collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
+    fileprivate lazy var browseItemsVC : BrowseContentVC = BrowseContentVC()
 
     fileprivate var cameraVC : CameraVC!
     fileprivate var panDismissInteractionController = PanContainerInteractionController()

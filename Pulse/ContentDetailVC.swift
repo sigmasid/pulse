@@ -23,7 +23,7 @@ protocol ItemDetailDelegate : class {
     func votedItem(_ _vote : VoteType)
     func userClickedSendMessage()
     func userClosedQuickBrowse()
-    func userClickedSeeAll()
+    func userClickedSeeAll(items : [Item])
 }
 
 class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate {
@@ -613,11 +613,17 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         loadItem(index: (index as NSIndexPath).row)
     }
     
-    func userClickedSeeAll() {
-        delegate.userClickedSeeAll()
+    func userClickedSeeAll(items : [Item]) {
+        GlobalFunctions.dismissVC(quickBrowse)
+        delegate.userClickedSeeAll(items: items)
+        removeObserverIfNeeded()
     }
     
     func userClickedBrowseItems() {
+        if ContentDetailVC.qPlayer.currentItem != nil {
+            ContentDetailVC.qPlayer.pause()
+        }
+        
         quickBrowse = QuickBrowseVC()
         quickBrowse.view.frame = CGRect(x: 0, y: view.bounds.height * (2/3), width: view.bounds.width, height: view.bounds.height * (1/3))
         

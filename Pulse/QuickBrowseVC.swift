@@ -92,7 +92,7 @@ class QuickBrowseVC: UIViewController {
 
         seeAll.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
         seeAll.backgroundColor = .clear
-        seeAll.addTarget(self, action: #selector(userClickedSeeMore), for: .touchUpInside)
+        seeAll.addTarget(self, action: #selector(userClickedSeeAll), for: .touchUpInside)
 
     }
     
@@ -112,8 +112,8 @@ class QuickBrowseVC: UIViewController {
         centerIndex = index
     }
     
-    internal func userClickedSeeMore() {
-        delegate.userClickedSeeAll()
+    internal func userClickedSeeAll() {
+        delegate.userClickedSeeAll(items: allItems)
     }
 }
 

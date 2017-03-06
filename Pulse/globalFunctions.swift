@@ -67,6 +67,7 @@ class GlobalFunctions {
         layout.scrollDirection = UICollectionViewScrollDirection.vertical
         layout.minimumLineSpacing = 10
         layout.minimumInteritemSpacing = 10
+        layout.sectionHeadersPinToVisibleBounds = true
         
         return layout
     }

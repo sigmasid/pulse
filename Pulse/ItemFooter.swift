@@ -9,7 +9,6 @@
 import UIKit
 
 class ItemFooter: UICollectionReusableView {
-    public var delegate : FooterDelegate!
     lazy var seeMore = PulseButton()
     
     override init(frame: CGRect) {
@@ -26,9 +25,7 @@ class ItemFooter: UICollectionReusableView {
     }
     
     func userClickedSeeMore() {
-        if delegate != nil {
-            delegate.userClickedSeeMore()
-        }
+
     }
     
     fileprivate func setupFooter() {

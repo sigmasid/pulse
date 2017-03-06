@@ -136,6 +136,35 @@ open class PulseButton: UIButton {
         layer.shadowOffset = liftedShadowOffset
     }
     
+    convenience init(size: ButtonSizes, type : ButtonType, isRound : Bool, background : UIColor, tint: UIColor) {
+        var frame = CGRect()
+        
+        switch size {
+        case .xSmall: frame = CGRect(x: 0, y: 0, width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
+        case .small: frame = CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue)
+        case .medium: frame = CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)
+        case .large: frame = CGRect(x: 0, y: 0, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+        }
+        self.init(frame: frame)
+        
+        setupRipple()
+        setupButtonType(size: size, type: type)
+        adjustsImageWhenHighlighted = false
+        self.size = size
+        
+        if isRound {
+            makeRound()
+        }
+    
+        backgroundColor = background.withAlphaComponent(0.7)
+        rippleBackgroundColor = background
+        
+        setupRaised(isRaised: true, hasBackground: true)
+        regularTint = tint
+        tintColor = tint
+        
+    }
+    
     convenience init(size: ButtonSizes, type : ButtonType, isRound : Bool, hasBackground : Bool, tint: UIColor) {
         self.init(size: size, type: type, isRound : isRound, hasBackground: hasBackground)
         regularTint = tint

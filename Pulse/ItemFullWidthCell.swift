@@ -8,8 +8,8 @@
 
 import UIKit
 
-class ItemFullWidthCell: UICollectionViewCell, previewDelegate {
-    var delegate : previewDelegate!
+class ItemFullWidthCell: UICollectionViewCell, PreviewDelegate {
+    var delegate : PreviewDelegate!
     
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()

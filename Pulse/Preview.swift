@@ -20,7 +20,7 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     fileprivate var tapForMore = UILabel()
     
     //delegate vars
-    var delegate : previewDelegate!
+    var delegate : PreviewDelegate!
     var showTapForMore = false
     var currentItem : Item! {
         didSet {
@@ -50,7 +50,6 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     
     func removeClip() {
         Preview.aPlayer.pause()
-        Preview.aPlayer.replaceCurrentItem(with: nil)
     }
     
     func itemStatusReady() {
@@ -74,10 +73,11 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         
         if answerType == .recordedVideo || answerType == .albumVideo {
             
+            removeImageView()
+
             let aPlayerItem = PreviewPlayerItem(url: itemURL)
-            self.removeImageView()
-            aPlayerItem.delegate = self
             Preview.aPlayer.replaceCurrentItem(with: aPlayerItem)
+            aPlayerItem.delegate = self
             
             NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
                                                    name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: Preview.aPlayer.currentItem)
@@ -155,27 +155,45 @@ protocol PreviewPlayerItemDelegate {
 class PreviewPlayerItem: AVPlayerItem {
     
     var delegate : PreviewPlayerItemDelegate?
+    var isObserving = false
     
     init(url URL: URL) {
+        print("init fired with url \(URL)")
+
         super.init(asset: AVAsset(url: URL) , automaticallyLoadedAssetKeys:[])
-        self.addMyObservers()
+        addMyObservers()
     }
     
     deinit {
-        self.removeMyObservers()
+        print("remove observers fired in deinit")
+        removeMyObservers()
     }
     
     func addMyObservers() {
-        self.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
+        print("adding observer to \(self.asset)")
+        addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
+        isObserving = true
     }
     
     func removeMyObservers() {
-        self.removeObserver(self, forKeyPath: "status", context: nil)
+        if isObserving {
+            print("removing observer from \(self.asset)")
+            removeObserver(self, forKeyPath: "status", context: nil)
+            isObserving = false
+        }
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        print("observer fired with status \(Preview.aPlayer.status)")
         if keyPath == "status" {
-            self.delegate?.itemStatusReady()
+            switch Preview.aPlayer.status {
+            case AVPlayerStatus.readyToPlay:
+                delegate?.itemStatusReady()
+                removeMyObservers()
+                print("remove observers in actual observer")
+                break
+            default: break
+            }
         }
     }
     
