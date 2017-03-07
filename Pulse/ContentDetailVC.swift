@@ -138,12 +138,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         if ContentDetailVC.qPlayer.currentItem != nil {
             ContentDetailVC.qPlayer.pause()
         }
-        
-        if ContentDetailVC.qPlayer.items().count > 0 {
-            ContentDetailVC.qPlayer.removeAllItems()
-        }
-        
-        itemIndex = 0
     }
     
     override var prefersStatusBarHidden : Bool {
@@ -449,10 +443,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             default: break
             }
         }
-    }
-    
-    deinit {
-        removeObserverIfNeeded()
     }
     
     fileprivate func readyToPlay() {

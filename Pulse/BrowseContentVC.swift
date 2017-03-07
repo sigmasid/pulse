@@ -11,6 +11,10 @@ import UIKit
 private let headerReuseIdentifier = "ItemHeaderCell"
 private let reuseIdentifier = "BrowseContentCell"
 
+protocol BrowseContentDelegate: class {
+    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool)
+    func userClosedBrowse(_ viewController : UIViewController)
+}
 
 class BrowseContentVC: PulseVC, PreviewDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
@@ -79,8 +83,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
         }
     }
     fileprivate var deselectedIndex : IndexPath?
-    /** End Declarations **/
-    
+    /** End Collection View **/
+
     //once allItems var is set reload the data
     func updateDataSource() {
         if !isLayoutSetup {
@@ -89,7 +93,6 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
             tabBarHidden = true
             isLayoutSetup = true
         }
-        print("should update data source")
         collectionView?.delegate = self
         collectionView?.dataSource = self
         collectionView?.reloadData()
@@ -125,13 +128,29 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
     
     //Update Nav Header
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        if navigationController != nil {
+            let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
+            backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        } else {
+            statusBarHidden = true
+            setupClose()
+            closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+        }
         
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
-
+    
+    internal func setupClose() {
+        addScreenButton(button: closeButton)
+        closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+    }
+    
+    internal func closeBrowse() {
+        if contentDelegate != nil {
+            contentDelegate.userClosedBrowse(self)
+        }
+    }
     
     internal func showItemDetail(item : Item, index : Int, itemCollection: [Item]) {
         if contentDelegate != nil {

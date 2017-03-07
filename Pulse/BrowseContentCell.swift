@@ -142,10 +142,23 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
         addSubview(previewImage)
         addSubview(titleStack)
         
+        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
+        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
+        
+        titleLabel.numberOfLines = 1
+        subtitleLabel.numberOfLines = 1
+        
+        titleLabel.lineBreakMode = .byTruncatingTail
+        subtitleLabel.lineBreakMode = .byTruncatingTail
+        
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightBold)]
+        let titleLableHeight = GlobalFunctions.getLabelSize(title: "label", width: contentView.frame.width, fontAttributes: fontAttributes)
+        
         titleStack.translatesAutoresizingMaskIntoConstraints = false
         titleStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
         titleStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         titleStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        titleStack.heightAnchor.constraint(equalToConstant: titleLableHeight * 2).isActive = true
         
         titleStack.addArrangedSubview(titleLabel)
         titleStack.addArrangedSubview(subtitleLabel)
@@ -159,13 +172,6 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
         previewImage.contentMode = UIViewContentMode.scaleAspectFill
         previewImage.clipsToBounds = true
         
-        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
 
-        titleLabel.numberOfLines = 1
-        subtitleLabel.numberOfLines = 1
-        
-        titleLabel.lineBreakMode = .byTruncatingTail
-        subtitleLabel.lineBreakMode = .byTruncatingTail
     }
 }

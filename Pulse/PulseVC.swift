@@ -10,6 +10,9 @@ import UIKit
 
 class PulseVC: UIViewController, PulseNavControllerDelegate {
     
+    /** Close Button - Only Needed If Presented Modally **/
+    internal lazy var closeButton = PulseButton(size: .medium, type: .close, isRound : true, background: .white, tint: .black)
+    
     public var headerNav : PulseNavVC?
     public var statusBarHidden : Bool = false {
         didSet {
@@ -23,7 +26,8 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     public lazy var contentVC = ContentManagerVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-
+    public lazy var browseContentVC = BrowseContentVC()
+    
     open var tabBarHidden : Bool = false {
         didSet {
             if tabBarHidden {
@@ -80,6 +84,17 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     override public var preferredStatusBarStyle: UIStatusBarStyle {
         return statusBarStyle
+    }
+    
+    func addScreenButton(button : PulseButton) {
+        view.addSubview(button)
+        
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        button.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
+        button.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        button.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        button.layoutIfNeeded()
     }
     
     /**

@@ -308,6 +308,11 @@ enum AnimationStyle {
     case horizontalFlip
 }
 
+enum ContentManagerDismissalType {
+    case seeAll
+    case reachedEnd
+}
+
 enum FollowToggle {
     case follow
     case unfollow

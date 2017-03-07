@@ -158,39 +158,32 @@ class PreviewPlayerItem: AVPlayerItem {
     var isObserving = false
     
     init(url URL: URL) {
-        print("init fired with url \(URL)")
-
         super.init(asset: AVAsset(url: URL) , automaticallyLoadedAssetKeys:[])
         addMyObservers()
     }
     
     deinit {
-        print("remove observers fired in deinit")
         removeMyObservers()
     }
     
     func addMyObservers() {
-        print("adding observer to \(self.asset)")
         addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
         isObserving = true
     }
     
     func removeMyObservers() {
         if isObserving {
-            print("removing observer from \(self.asset)")
             removeObserver(self, forKeyPath: "status", context: nil)
             isObserving = false
         }
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        print("observer fired with status \(Preview.aPlayer.status)")
         if keyPath == "status" {
             switch Preview.aPlayer.status {
             case AVPlayerStatus.readyToPlay:
                 delegate?.itemStatusReady()
                 removeMyObservers()
-                print("remove observers in actual observer")
                 break
             default: break
             }

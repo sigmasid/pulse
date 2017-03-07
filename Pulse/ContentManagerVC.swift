@@ -20,10 +20,6 @@ protocol PreviewDelegate: class {
     var  watchedFullPreview : Bool { get set }
 }
 
-protocol BrowseContentDelegate: class {
-    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool)
-}
-
 protocol ContentDelegate: class {
     func noItemsToShow(_ : UIViewController)
     func removeIntro()
@@ -154,7 +150,9 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             contentDetailVC.allItems = allItems
             contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
             
-            popViewController(animated: true)
+            dismiss(animated: true, completion: { _ in
+                print("should dismiss browse collection vc")
+            })
         }
     }
     
@@ -181,15 +179,17 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     func userClickedProfileDetail() {
         let userProfileVC = UserProfileVC()
-       
-        popViewController(animated: false)
-        isNavigationBarHidden = false
-        pushViewController(userProfileVC, animated: true)
         userProfileVC.selectedUser = selectedItem?.user
+        userProfileVC.contentDelegate = self
+
+        present(userProfileVC, animated: true)
+        
     }
     
-    func userClosedBrowse() {
-        setNavigationBarHidden(true, animated: true)
+    func userClosedBrowse(_ viewController : UIViewController) {
+        dismiss(animated: true, completion: { _ in
+            print("should dismiss browse collection vc")
+        })
     }
     
     func userClickedSeeAll(items : [Item]) {
@@ -199,9 +199,9 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         itemCollection.selectedItem = selectedItem
         itemCollection.contentDelegate = self
         
-        isNavigationBarHidden = false
         //popViewController(animated: false)
-        pushViewController(itemCollection, animated: true)
+        
+        present(itemCollection, animated: true)
     }
     
     /* user finished recording video or image - send to user recorded answer to add more or post */

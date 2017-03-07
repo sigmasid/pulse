@@ -14,6 +14,8 @@ protocol UserProfileDelegate: class {
 
 class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     
+    var contentDelegate : BrowseContentDelegate!
+
     /** Delegate Vars **/
     public var selectedUser : User! {
         didSet {
@@ -128,6 +130,35 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         view.addSubview(collectionView)
     }
     
+    //Update Nav Header
+    fileprivate func updateHeader() {
+        if navigationController != nil {
+            let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+            backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        } else {
+            statusBarHidden = true
+            setupClose()
+            closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+        }
+    }
+
+    fileprivate func setHeaderTitle(title: String) {
+        headerNav?.setNav(title: title)
+    }
+    
+    //Setup close button
+    internal func setupClose() {
+        addScreenButton(button: closeButton)
+        closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+    }
+    
+    internal func closeBrowse() {
+        if contentDelegate != nil {
+            contentDelegate.userClosedBrowse(self)
+        }
+    }
+    
     internal func getDetailUserProfile() {
         Database.getDetailedUserProfile(user: selectedUser, completion: { updatedUser in
             let userImage = self.selectedUser.thumbPicImage
@@ -154,17 +185,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         collectionView?.delegate = self
         collectionView?.reloadData()
         collectionView?.layoutIfNeeded()
-    }
-    
-    //Update Nav Header
-    fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-    }
-    
-    fileprivate func setHeaderTitle(title: String) {
-        headerNav?.setNav(title: title)
     }
     
     /** Show Menu **/

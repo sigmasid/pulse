@@ -188,16 +188,8 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     
     internal func setupSubscribe() {
         if !isSubscribed {
-            view.addSubview(subscribeButton)
-            
+            addScreenButton(button: subscribeButton)
             subscribeButton.addTarget(self, action: #selector(subscribe), for: UIControlEvents.touchUpInside)
-            
-            subscribeButton.translatesAutoresizingMaskIntoConstraints = false
-            subscribeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-            subscribeButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-            subscribeButton.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-            subscribeButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-            subscribeButton.layoutIfNeeded()
         }
     }
     
@@ -394,6 +386,12 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         itemCollection.contentDelegate = self
         
         navigationController?.pushViewController(itemCollection, animated: true)
+    }
+    
+    func userClosedBrowse(_ viewController : UIViewController) {
+        dismiss(animated: true, completion: { _ in
+            print("should dismiss browse collection vc")
+        })
     }
     
     internal func showTag(selectedItem : Item) {        

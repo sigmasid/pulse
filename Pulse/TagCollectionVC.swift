@@ -334,6 +334,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
     
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
+        
         contentVC.watchedFullPreview = watchedPreview
         contentVC.selectedChannel = selectedChannel
         contentVC.selectedItem = selectedItem
@@ -345,7 +346,12 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         contentVC.transitioningDelegate = self
         present(contentVC, animated: true, completion: nil)
     }
-
+    
+    func userClosedBrowse(_ viewController : UIViewController) {
+        dismiss(animated: true, completion: { _ in
+            print("should dismiss browse collection vc")
+        })
+    }
 }
 
 extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
