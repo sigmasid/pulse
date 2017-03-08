@@ -10,9 +10,19 @@ import UIKit
 
 class PulseVC: UIViewController, PulseNavControllerDelegate {
     
+    /** Transition Vars **/
+    internal var initialFrame = CGRect.zero
+    internal var panPresentInteractionController = PanEdgeInteractionController()
+    internal var panDismissInteractionController = PanEdgeInteractionController()
+    
+    /** Collection View Vars **/
+    internal let headerReuseIdentifier = "HeaderCell"
+    internal let reuseIdentifier = "ItemCell"
+    
     /** Close Button - Only Needed If Presented Modally **/
     internal lazy var closeButton = PulseButton(size: .medium, type: .close, isRound : true, background: .white, tint: .black)
-    
+    internal lazy var backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
+
     public var headerNav : PulseNavVC?
     public var statusBarHidden : Bool = false {
         didSet {
@@ -52,10 +62,11 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         headerNav = navigationController as? PulseNavVC
+        
         headerNav?.navbarDelegate = self
-
+        headerNav?.updateBackgroundImage(image: nil)
+        
         view.backgroundColor = .white
         definesPresentationContext = true
     }
@@ -86,6 +97,11 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         return statusBarStyle
     }
     
+    internal func addBackButton() {
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+    }
+    
     func addScreenButton(button : PulseButton) {
         view.addSubview(button)
         
@@ -103,13 +119,8 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     func scrollingNavigationController(_ controller: PulseNavVC, didChangeState state: NavigationBarState) {
         if state != currentNavState {
             if state == .collapsed {
-                //statusBarHidden = true
-                //currentNavState = .collapsed
                 statusBarStyle = .lightContent
-
             } else if state == .expanded {
-                //statusBarHidden = false
-                //currentNavState = .expanded
                 statusBarStyle = .default
             }
             setNeedsStatusBarAppearanceUpdate()

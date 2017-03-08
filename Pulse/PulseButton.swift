@@ -16,7 +16,7 @@ enum ButtonSizes { case xSmall, small, medium, large }
 open class PulseButton: UIButton {
     
     var size : ButtonSizes!
-    @IBInspectable open var highlightedTint : UIColor = pulseBlue
+    @IBInspectable open var highlightedTint : UIColor = .pulseBlue
     
     @IBInspectable open var regularTint : UIColor = UIColor.white {
         didSet {
@@ -192,9 +192,9 @@ open class PulseButton: UIButton {
         }
         
         if hasBackground {
-            backgroundColor = pulseBlue
+            backgroundColor = .pulseBlue
         } else {
-            rippleBackgroundColor = pulseBlue
+            rippleBackgroundColor = .pulseBlue
         }
         
         setupRaised(isRaised: true, hasBackground: hasBackground)
@@ -211,8 +211,8 @@ open class PulseButton: UIButton {
         setTitle(title, for: state)
         setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
         
-        setTitleColor(pulseBlue, for: UIControlState.highlighted)
-        setTitleColor(pulseBlue, for: UIControlState.selected)
+        setTitleColor(.pulseBlue, for: UIControlState.highlighted)
+        setTitleColor(.pulseBlue, for: UIControlState.selected)
         switch size! {
         case .xSmall, .small:
             let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
@@ -239,8 +239,8 @@ open class PulseButton: UIButton {
         setTitle(title, for: state)
         setButtonFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .center)
         
-        setTitleColor(pulseBlue, for: UIControlState.highlighted)
-        setTitleColor(pulseBlue, for: UIControlState.selected)
+        setTitleColor(.pulseBlue, for: UIControlState.highlighted)
+        setTitleColor(.pulseBlue, for: UIControlState.selected)
         
         let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)]
         let labelTextWidth = GlobalFunctions.getLabelWidth(title: title,
@@ -504,6 +504,7 @@ open class PulseButton: UIButton {
             
         case . blank:
             setImage(nil, for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
         }
     }
     
@@ -511,6 +512,7 @@ open class PulseButton: UIButton {
         layer.shadowRadius = 0
         layer.shadowOffset = CGSize(width: 0, height: 0)
         layer.shadowColor = UIColor.clear.cgColor
+        layer.shadowOpacity = 0
     }
 
     fileprivate func setupRipple() {

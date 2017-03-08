@@ -33,7 +33,7 @@ class User {
     var subscriptions = [Channel : String?]()
     var subscriptionIDs = [String]()
     
-    var savedItems = [String : String?]()
+    var savedItems = [Item]()
     var savedVotes = [String : Bool]()
     var socialSources = [ Social : Bool ]()
     

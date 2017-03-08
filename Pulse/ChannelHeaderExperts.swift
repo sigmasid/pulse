@@ -38,7 +38,7 @@ class ChannelHeaderExperts: UICollectionReusableView {
     fileprivate func setupChannelHeader() {
         addSubview(expertsLabel)
         expertsLabel.text = "featuring"
-        expertsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: pulseRed, alignment: .center)
+        expertsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .pulseRed, alignment: .center)
 
         let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: expertsLabel.font.pointSize, weight: UIFontWeightMedium)]
         let titleLabelHeight = GlobalFunctions.getLabelSize(title: expertsLabel.text!, width: frame.width, fontAttributes: fontAttributes)

@@ -41,8 +41,10 @@ class UserProfileHeader: UICollectionReusableView {
         let bioFontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileLongBio.font.pointSize, weight: UIFontWeightMedium)]
         let longBioHeight = selectedUser.bio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.bio!, width: profileLongBio.frame.width, fontAttributes: bioFontAttributes) : 0
         
+        let maxHeight = GlobalFunctions.getLabelSize(title: "here is the bio", width: profileLongBio.frame.width, fontAttributes: bioFontAttributes) * 3
+        
         shortBioHeightConstraint.constant = shortBioHeight
-        longBioHeightConstraint.constant = longBioHeight
+        longBioHeightConstraint.constant = min(maxHeight, longBioHeight)
         
         profileShortBio.text = selectedUser.shortBio
         profileLongBio.text = selectedUser.bio
@@ -96,7 +98,7 @@ class UserProfileHeader: UICollectionReusableView {
         profileLongBio.layoutIfNeeded()
         
         profileLongBio.numberOfLines = 3
-        profileLongBio.lineBreakMode = .byWordWrapping
+        profileLongBio.lineBreakMode = .byTruncatingTail
         
         profileImage.layoutIfNeeded()
         profileImage.contentMode = .scaleAspectFill

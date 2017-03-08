@@ -15,11 +15,18 @@ protocol UserProfileDelegate: class {
 class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     
     var contentDelegate : BrowseContentDelegate!
-
+    var isCurrentUser = false
+    
     /** Delegate Vars **/
     public var selectedUser : User! {
         didSet {
-            if !selectedUser.uCreated {
+            if let user = User.currentUser, selectedUser.uID == user.uID! {
+                Database.getUserSavedItems(completion: { items in
+                    self.allItems = items
+                    self.updateDataSource()
+                })
+                isCurrentUser = true
+            } else if !selectedUser.uCreated {
                 Database.getUser(selectedUser.uID!, completion: {(user, error) in
                     if error == nil {
                         self.selectedUser = user
@@ -58,19 +65,12 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     internal var itemStack = [ItemMetaData]()
     /** End Data Source Vars **/
     
-    fileprivate var isLoaded = false
+    fileprivate var isLayoutSetup = false
     
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
     fileprivate let headerHeight : CGFloat = 200
-    fileprivate let headerReuseIdentifier = "UserProfileHeader"
-    fileprivate let reuseIdentifier = "FeedAnswerCell"
-    
-    /** Transition Vars **/
-    fileprivate var initialFrame = CGRect.zero
-    fileprivate var panPresentInteractionController = PanEdgeInteractionController()
-    fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
     fileprivate var activityController: UIActivityViewController? //Used for share screen
     
@@ -99,10 +99,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if !isLoaded {
+        if !isLayoutSetup {
             updateHeader()
             setupLayout()
-            isLoaded = true
+            isLayoutSetup = true
         }
     }
     
@@ -122,7 +122,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: false)
         
-        collectionView?.register(BrowseContentCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        collectionView?.register(BrowseContentCell.self,
+                                 forCellWithReuseIdentifier: reuseIdentifier)
         collectionView?.register(UserProfileHeader.self,
                                  forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
                                  withReuseIdentifier: headerReuseIdentifier)
@@ -132,14 +133,22 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     
     //Update Nav Header
     fileprivate func updateHeader() {
-        if navigationController != nil {
-            let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-            backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        
+        headerNav?.updateBackgroundImage(image: nil)
+        
+        if isCurrentUser {
+            tabBarHidden = false
+            headerNav?.isNavigationBarHidden = true
         } else {
-            statusBarHidden = true
-            setupClose()
-            closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+            tabBarHidden = true
+
+            if navigationController != nil {
+                addBackButton()
+            } else {
+                statusBarHidden = true
+                setupClose()
+                closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+            }
         }
     }
 
@@ -181,6 +190,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     
     //once allItems var is set reload the data
     func updateDataSource() {
+        if !isLayoutSetup  {
+            setupLayout()
+        }
+        
         collectionView?.dataSource = self
         collectionView?.delegate = self
         collectionView?.reloadData()
@@ -189,6 +202,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     
     /** Show Menu **/
     func showMenu() {
+        isCurrentUser ? showCurrentUserMenu() : showUserMenu()
+    }
+    
+    func showUserMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "Send Message", style: .default, handler: { (action: UIAlertAction!) in
@@ -204,6 +221,53 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         }))
         
         present(menu, animated: true, completion: nil)
+    }
+    
+    func showCurrentUserMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "Edit Profile", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            let profileSettingsVC = SettingsTableVC()
+            profileSettingsVC.settingSection = "personalInfo"
+            self.navigationController?.pushViewController(profileSettingsVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Settings", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            let profileSettingsVC = SettingsTableVC()
+            profileSettingsVC.settingSection = "account"
+            self.navigationController?.pushViewController(profileSettingsVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Logout", style: .destructive, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            self.clickedLogout()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    func clickedLogout() {
+        let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
+        
+        confirmLogout.addAction(UIAlertAction(title: "Logout", style: .default, handler: { (action: UIAlertAction!) in
+            Database.signOut({ success in
+                if !success {
+                    GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
+                }
+            })
+        }))
+        
+        confirmLogout.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            confirmLogout.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(confirmLogout, animated: true, completion: nil)
     }
     
     /** Start Delegate Functions **/
@@ -308,7 +372,6 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             })
         }
         
-        /** GET NAME & BIO FROM DATABASE - SHOWING MANY ITEMS FROM MANY USERS CASE **/
         if currentItem.itemCreated, itemStack[indexPath.row].gettingInfoForPreview {
             
             cell.updateLabel(nil, _subtitle: currentItem.itemTitle)

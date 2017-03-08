@@ -10,23 +10,7 @@ import Foundation
 import UIKit
 import SystemConfiguration
 
-let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
-let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
-let pulseBlue = UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0)
-let pulseRed = UIColor(red: 238/255, green: 49/255, blue: 93/255, alpha: 1.0)
-
-let highlightedColor = UIColor(red: 0/255, green: 233/255, blue: 178/255, alpha: 1.0)
-
 let maxImgSize : Int64 = 1242 * 2208
-let color1 = UIColor(red: 0/255, green: 84/255, blue: 166/255, alpha: 1.0)
-let color2 = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0)
-let color3 = UIColor(red: 22/255, green: 69/255, blue: 99/255, alpha: 1.0)
-let color4 = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
-let color5 = UIColor(red: 55/255, green: 71/255, blue: 79/255, alpha: 1.0)
-let color6 = UIColor(red: 149/255, green: 149/255, blue: 149/255, alpha: 1.0)
-let color7 = UIColor(red: 38/255, green: 58/255, blue: 69/255, alpha: 1.0)
-let color8 = UIColor(red: 97/255, green: 101/255, blue: 111/255, alpha: 1.0)
-
 let searchBarHeight : CGFloat = 44
 let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
 let defaultCellHeight : CGFloat = 225
@@ -34,7 +18,7 @@ let defaultCellHeight : CGFloat = 225
 let scopeBarHeight : CGFloat = 40
 let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
 
-let _backgroundColors = [color1, color2, color3, color4, color5, color6, color7, color8]
+
 
 class GlobalFunctions {
     

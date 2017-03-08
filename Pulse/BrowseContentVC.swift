@@ -22,11 +22,6 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
     var contentDelegate : BrowseContentDelegate!
     /** End Delegate Vars **/
     
-    /** Transition Animation Vars **/
-    fileprivate var panPresentInteractionController = PanEdgeInteractionController()
-    fileprivate var panDismissInteractionController = PanEdgeInteractionController()
-    fileprivate var initialFrame = CGRect.zero
-    
     //Main data source var -
     public var allItems = [Item]() {
         didSet {
@@ -129,16 +124,15 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
     //Update Nav Header
     fileprivate func updateHeader() {
         if navigationController != nil {
-            let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
-            backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+            //is in nav controller
+            addBackButton()
+            headerNav?.followScrollView(collectionView, delay: 25.0)
         } else {
+            //was shown modally
             statusBarHidden = true
             setupClose()
             closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
         }
-        
-        headerNav?.followScrollView(collectionView, delay: 25.0)
     }
     
     internal func setupClose() {
@@ -146,6 +140,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
         closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
     }
     
+    /** DELEGATE METHODS FOR CONTENT DETAIL **/
     internal func closeBrowse() {
         if contentDelegate != nil {
             contentDelegate.userClosedBrowse(self)

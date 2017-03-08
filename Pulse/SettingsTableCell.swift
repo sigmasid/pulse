@@ -34,7 +34,7 @@ class SettingsTableCell: UITableViewCell {
         _settingNameLabel.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.3).isActive = true
         _settingNameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
         _settingNameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        _settingNameLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .left)
+        _settingNameLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .left)
         _settingNameLabel.layoutIfNeeded()
         
         _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -42,7 +42,7 @@ class SettingsTableCell: UITableViewCell {
         _detailTextLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         _detailTextLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
         _detailTextLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        _detailTextLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .right)
+        _detailTextLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .right)
         _detailTextLabel.layoutIfNeeded()
 
         _detailTextLabel.numberOfLines = 0

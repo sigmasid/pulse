@@ -473,6 +473,18 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         NotificationCenter.default.removeObserver(self)
     }
     
+    override init(navigationBarClass: AnyClass?, toolbarClass: AnyClass?) {
+        super.init(navigationBarClass: navigationBarClass, toolbarClass: toolbarClass)
+    }
+    
+    override init(nibName: String?, bundle: Bundle?) {
+        super.init(nibName: nibName, bundle: bundle)
+    }
+    
+    required public init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
     override public func viewDidLoad() {
         super.viewDidLoad()
         navBar = self.navigationBar as? PulseNavBar
@@ -490,7 +502,14 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     
     public func updateBackgroundImage(image : UIImage?) {
         guard navBar != nil else { return }
-        navBar.setBackgroundImage(image, for: .default)
+       
+        if let image = image {
+            navBar.setDarkNav()
+            navBar.setBackgroundImage(image, for: .default)
+        } else {
+            navBar.setBackgroundImage(nil, for: .default)
+            navBar.setLightNav()
+        }
     }
     
     public func getSearchContainer() -> UIView? {

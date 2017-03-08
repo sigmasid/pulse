@@ -88,7 +88,7 @@ class MiniProfile: UIView {
     fileprivate func addProfileButton() {
         addSubview(profileButton)
         
-        profileButton.backgroundColor = pulseRed
+        profileButton.backgroundColor = .pulseRed
         
         profileButton.titleLabel?.setPreferredFont(UIColor.white, alignment : .center)
         profileButton.translatesAutoresizingMaskIntoConstraints = false

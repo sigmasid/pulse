@@ -152,7 +152,7 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         sendButton.setTitle("Send", for: UIControlState())
         sendButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
         sendButton.setDisabled()
-        sendButton.backgroundColor = pulseRed
+        sendButton.backgroundColor = .pulseRed
         msgContainer.layoutIfNeeded()
         
         sendButton.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)

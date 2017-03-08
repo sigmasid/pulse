@@ -275,9 +275,9 @@ class ContentOverlay: UIView {
     
     func itemSaved(type : VoteType) {
         switch type {
-        case .downvote: downVoteButton.imageView?.tintColor = pulseRed
-        case .upvote: upVoteButton.imageView?.tintColor = pulseRed
-        case .favorite: saveButton.imageView?.tintColor = pulseRed
+        case .downvote: downVoteButton.imageView?.tintColor = .pulseRed
+        case .upvote: upVoteButton.imageView?.tintColor = .pulseRed
+        case .favorite: saveButton.imageView?.tintColor = .pulseRed
         }
     }
     

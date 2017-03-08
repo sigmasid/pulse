@@ -12,13 +12,12 @@ protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
 }
 
-class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
+class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
     
     // Set by MasterTabVC
     public var tabDelegate : tabVCDelegate!
     public var universalLink : URL!
     
-    fileprivate var headerNav : PulseNavVC?
     fileprivate var loadingView : LoadingView?
     fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
 
@@ -30,42 +29,25 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
 
     fileprivate var channelCollection : UICollectionView!
     fileprivate var isLayoutSetup = false
-    fileprivate var isLoaded = false
-    fileprivate var reuseIdentifier = "channelCell"
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        if !isLoaded {
-
+    override func viewDidLayoutSubviews() {
+        if !isLayoutSetup {
             setupScreenLayout()
             updateRootScopeSelection()
-            extendedLayoutIncludesOpaqueBars = true
-
-            view.backgroundColor = UIColor.white
+            isLayoutSetup = true
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        if let nav = navigationController as? PulseNavVC {
-            headerNav = nav
-            headerNav?.setNav(title: "Explore Channels")
-            headerNav?.updateBackgroundImage(image: nil)
-            tabBarController?.tabBar.isHidden = false
+        headerNav?.setNav(title: "Explore Channels")
+        headerNav?.updateBackgroundImage(image: nil)
+        tabBarHidden = false
 
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
-            
-            updateOnscreenRows()
-        }
-    }
-    
-    deinit {
-        headerNav = nil
-        loadingView = nil
-        allChannels = []
-        channelCollection = nil
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
+        
+        updateOnscreenRows()
     }
 
     override func didReceiveMemoryWarning() {
@@ -75,14 +57,12 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
     fileprivate func setupScreenLayout() {
         if !isLayoutSetup {
             
-            channelCollection = UICollectionView(frame: view.frame, collectionViewLayout: GlobalFunctions.getPulseCollectionLayout())
+            channelCollection = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
+            let _ = PulseFlowLayout.configureLayout(collectionView: channelCollection, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
             channelCollection.register(ExploreChannelsCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+            
             view.addSubview(channelCollection)
-            
-            channelCollection.backgroundColor = UIColor.white
-            channelCollection.showsVerticalScrollIndicator = false
-            channelCollection.isMultipleTouchEnabled = true
-            
+
             searchButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
             
             isLayoutSetup = true
@@ -93,11 +73,7 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
         Database.getExploreChannels({ channels, error in
             if error == nil {
                 self.allChannels = channels
-                
-                if !self.isLoaded {
-                    if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
-                    self.isLoaded = true
-                }
+                if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
             }
         })
     }
@@ -111,10 +87,6 @@ class ExploreChannelsVC: UIViewController, ExploreChannelsDelegate {
         channelCollection.dataSource = self
         channelCollection.reloadData()
         channelCollection.layoutIfNeeded()
-        
-        if allChannels.count > 0 {
-            channelCollection.scrollToItem(at: IndexPath(item: 0, section: 0), at: .top, animated: true)
-        }
     }
     
     func userClickedSearch() {

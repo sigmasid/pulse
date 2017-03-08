@@ -9,6 +9,14 @@
 import Foundation
 import UIKit
 
+extension UIColor {
+    static var iconColor: UIColor  { return UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 ) }
+    static var iconBackgroundColor: UIColor  { return UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 ) }
+    static var pulseBlue: UIColor  { return UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0) }
+    static var pulseRed: UIColor  { return UIColor(red: 238/255, green: 49/255, blue: 93/255, alpha: 1.0) }
+    static var pulseGrey: UIColor  { return UIColor(red: 233/255, green: 233/255, blue: 233/255, alpha: 1.0) }
+}
+
 class PaddingLabel: UILabel {
     
     @IBInspectable var topInset: CGFloat = 2.5
@@ -56,14 +64,22 @@ extension UICollectionViewCell {
         layer.masksToBounds = false
         layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: contentView.layer.cornerRadius).cgPath
     }
+    
+    func addBottomBorder() {
+        contentView.layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+    }
 }
 
 extension UIView {
     func addShadow() {
+        layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+        
         layer.shadowColor = UIColor.lightGray.cgColor
         layer.shadowOffset = CGSize(width: 1, height: 2)
         layer.shadowRadius = 2.0
         layer.shadowOpacity = 0.5
+        
+        layer.masksToBounds = false
     }
 }
 
@@ -192,6 +208,14 @@ extension UILabel {
         layer.shadowOpacity = 1
         layer.shadowRadius = 3
     }
+    
+    func removeShadow() {
+        shadowColor = .clear
+        
+        layer.shadowOffset = CGSize(width: 0, height: 0)
+        layer.shadowOpacity = 0
+        layer.shadowRadius = 0
+    }
 }
 
 fileprivate let minimumHitArea = CGSize(width: 50, height: 50)
@@ -214,7 +238,7 @@ extension UIButton {
     func setEnabled() {
         self.isEnabled = true
         self.alpha = 1.0
-        self.backgroundColor = pulseRed
+        self.backgroundColor = .pulseRed
     }
     
     func setDisabled() {
@@ -251,6 +275,35 @@ extension UIButton {
             self.setImage(image, for: state)
             self.tintColor = color
         }
+    }
+}
+
+extension CALayer {
+    
+    func addBorder(edge: UIRectEdge, color: UIColor, thickness: CGFloat) {
+        
+        let border = CALayer()
+        
+        switch edge {
+        case UIRectEdge.top:
+            border.frame = CGRect.init(x: 0, y: 0, width: frame.width, height: thickness)
+            break
+        case UIRectEdge.bottom:
+            border.frame = CGRect.init(x: 0, y: frame.height - thickness, width: frame.width, height: thickness)
+            break
+        case UIRectEdge.left:
+            border.frame = CGRect.init(x: 0, y: 0, width: thickness, height: frame.height)
+            break
+        case UIRectEdge.right:
+            border.frame = CGRect.init(x: frame.width - thickness, y: 0, width: thickness, height: frame.height)
+            break
+        default:
+            break
+        }
+        
+        border.backgroundColor = color.cgColor;
+        
+        self.addSublayer(border)
     }
 }
 
@@ -435,6 +488,9 @@ enum Element : String {
     case Users = "users"
     case UserDetailedSummary = "userDetailedPublicSummary"
     case UserSummary = "userPublicSummary"
+    
+    case Subscriptions = "subscriptions"
+    case SavedItems = "savedItems"
 
     case Filters = "filters"
     case Settings = "settings"

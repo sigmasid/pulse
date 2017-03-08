@@ -32,7 +32,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     fileprivate var initialLoadComplete = false
     fileprivate var loadingView : LoadingView!
 
-    var accountVC : AccountLoginManagerVC = AccountLoginManagerVC()
+    var accountVC : AccountLoginManagerVC!
     var exploreChannelsVC : ExploreChannelsVC!
     var homeVC : HomeVC!
     fileprivate var deselectedIndex : Int!
@@ -151,10 +151,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
     }
     
     func setupControllers() {
-        let accountNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-        accountNavVC.setNav(title: "Account")
-        accountNavVC.viewControllers = [accountVC]
-
+        accountVC = AccountLoginManagerVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        
         exploreChannelsVC = ExploreChannelsVC()
         let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         exploreNavVC.setNav(title: "Explore")
@@ -167,13 +165,13 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         homeNavVC.viewControllers = [homeVC]
         homeVC.tabDelegate = self
 
-        viewControllers = [accountNavVC, exploreNavVC, homeNavVC]
+        viewControllers = [accountVC, exploreNavVC, homeNavVC]
         
         let tabAccount = UITabBarItem(title: nil, image: UIImage(named: "tab-profile"), tag: 10)
         let tabExplore = UITabBarItem(title: nil, image: UIImage(named: "tab-explore"), tag: 20)
         let tabHome = UITabBarItem(title: nil, image: UIImage(named: "tab-home"), tag: 30)
         
-        UITabBar.appearance().tintColor = pulseBlue
+        UITabBar.appearance().tintColor = .pulseBlue
         
         accountVC.tabBarItem = tabAccount
         exploreChannelsVC.tabBarItem = tabExplore
@@ -357,19 +355,19 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, tabVCDelegate
         case 0:
             profileButton.isHighlighted = true
             DispatchQueue.main.async {
-                self.profileLabel.textColor = pulseBlue
+                self.profileLabel.textColor = .pulseBlue
                 self.profileButton.transform = xScaleUp
             }
         case 1:
             exploreButton.isHighlighted = true
             DispatchQueue.main.async {
-                self.exploreLabel.textColor = pulseBlue
+                self.exploreLabel.textColor = .pulseBlue
                 self.exploreButton.transform = xScaleUp
             }
         case 2:
             feedButton.isHighlighted = true
             DispatchQueue.main.async {
-                self.feedLabel.textColor = pulseBlue
+                self.feedLabel.textColor = .pulseBlue
                 self.feedButton.transform = xScaleUp
             }
         default: break

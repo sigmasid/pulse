@@ -529,6 +529,30 @@ class Database {
             }
         })
     }
+    
+    //items a user has saved
+    static func getUserSavedItems(completion: @escaping (_ items : [Item]) -> Void) {
+        guard let user = User.currentUser else { return }
+        var allItems = [Item]()
+        
+        usersRef.child(user.uID!).child("savedItems").observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for item in snap.children {
+                    if let item = item as? FIRDataSnapshot, let type = item.value as? String{
+                        let savedItem = Item(itemID: item.key, type: type)
+                        
+                        if !User.currentUser!.savedItems.contains(savedItem) {
+                            User.currentUser!.savedItems.append(savedItem)
+                            allItems.append(savedItem)
+                        }
+                    }
+                }
+            }
+            completion(allItems)
+        })
+    }
+    
+    //items a user has created
     static func getUserItems(uID: String, completion: @escaping (_ items : [Item]) -> Void) {
         var allItems = [Item]()
         usersPublicDetailedRef.child(uID).child("items").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
@@ -760,9 +784,10 @@ class Database {
         currentUser.uID = nil
         currentUser.name = nil
         currentUser.items = []
-        currentUser.savedItems = [ : ]
+        currentUser.savedItems = []
 
         currentUser.subscriptions = [ : ]
+        currentUser.subscriptionIDs = []
 
         currentUser.approvedChannels = []
         
@@ -805,6 +830,9 @@ class Database {
             if snap.hasChild(SettingTypes.shortBio.rawValue) {
                 User.currentUser!.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
             }
+            
+            completion(true)
+
         }, withCancel: { error in
             //print("error getting user public summary \(error)")
         })
@@ -849,8 +877,8 @@ class Database {
             print("error getting user public detailed summary \(error)")
         })
 
-        usersRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
-            if snap.hasChild("subscriptions") {
+        usersRef.child(user.uid).child("subscriptions").observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
                 for channel in snap.childSnapshot(forPath: "subscriptions").children {
                     if let channel = channel as? FIRDataSnapshot {
                         let savedChannel = Channel(cID: channel.key)
@@ -863,18 +891,7 @@ class Database {
                     }
                 }
             }
-            
-            for profile in user.providerData {
-                let providerID = profile.providerID
-                if providerID == "facebook.com" {
-                    User.currentUser!.socialSources[.facebook] = true
-                } else if providerID == "twitter.com" {
-                    User.currentUser!.socialSources[.twitter] = true
-                }
-            }
-            
-            completion(true)
-            
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
         }, withCancel: { error in
             print("error getting user public summary \(error)")
         })
@@ -1291,16 +1308,17 @@ class Database {
     }
     
     //Save an item for a user
-    static func saveItem(_ itemID : String, completion: @escaping (Bool, Error?) -> Void) {
+    static func saveItem(item : Item, completion: @escaping (Bool, Error?) -> Void) {
         if User.isLoggedIn() {
-            if User.currentUser?.savedItems != nil && User.currentUser!.savedItems[itemID] != nil { //remove item
-                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems/\(itemID)")
+            if User.currentUser?.savedItems != nil, User.currentUser!.savedItems.contains(item) { //remove item
+                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems/\(item.itemID)")
                 _path.setValue("true", withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError!) : completion(false, nil)
                 })
             } else { //pin item
                 let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems")
-                _path.updateChildValues([itemID: "true"], withCompletionBlock: { (completionError, ref) in
+                _path.updateChildValues([item.itemID: item.type.rawValue], withCompletionBlock: { (completionError, ref) in
+                    User.currentUser!.savedItems.append(item)
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             }

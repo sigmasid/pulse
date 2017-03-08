@@ -540,7 +540,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     func votedItem(_ vote : VoteType) {
         if let _currentItem = currentItem {
             if vote == .favorite {
-                Database.saveItem(_currentItem.itemID, completion: { success, error in
+                Database.saveItem(item: _currentItem, completion: { success, error in
                     if success {
                         self.contentOverlay.itemSaved(type: vote)
                     }

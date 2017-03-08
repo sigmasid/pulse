@@ -15,11 +15,11 @@ class RecordingOverlay: UIView {
 
     fileprivate var addMoreStack = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
     fileprivate var addMoreLabel = UILabel()
-    fileprivate var addMoreButton = PulseButton(size: .large, type: .addCircle, isRound: true, hasBackground: false, tint: pulseBlue)
+    fileprivate var addMoreButton = PulseButton(size: .large, type: .addCircle, isRound: true, hasBackground: false, tint: .pulseBlue)
 
     fileprivate var postLabel = UILabel()
     fileprivate var postStack = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
-    fileprivate var postButton = PulseButton(size: .large, type: .postCircle, isRound: true, hasBackground: false, tint: pulseBlue)
+    fileprivate var postButton = PulseButton(size: .large, type: .postCircle, isRound: true, hasBackground: false, tint: .pulseBlue)
     
     fileprivate var progressLabel = UILabel()
     fileprivate var progressBar = UIProgressView()
@@ -262,7 +262,7 @@ class RecordingOverlay: UIView {
         let _pager = UIView()
         _pager.translatesAutoresizingMaskIntoConstraints = false
         _pager.heightAnchor.constraint(equalTo: _pager.widthAnchor).isActive = true
-        _pager.backgroundColor = pulseBlue
+        _pager.backgroundColor = .pulseBlue
         
         if pagersStack.arrangedSubviews.last != nil {
             pagersStack.arrangedSubviews.last!.backgroundColor = .white
@@ -283,7 +283,7 @@ class RecordingOverlay: UIView {
         }
         
         if pagersStack.arrangedSubviews.last != nil {
-            pagersStack.arrangedSubviews.last!.backgroundColor = pulseBlue
+            pagersStack.arrangedSubviews.last!.backgroundColor = .pulseBlue
         }
     }
     

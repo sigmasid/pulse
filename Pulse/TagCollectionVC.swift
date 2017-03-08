@@ -17,7 +17,8 @@ protocol HeaderDelegate: class {
 class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate, BrowseContentDelegate {
     
     public var selectedChannel: Channel!
-    //set by delegate
+    
+    //set by delegate - is of type feedback / posts since its a tag
     public var selectedItem : Item! {
         didSet {
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
@@ -35,14 +36,6 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
     internal let headerHeight : CGFloat = 50
-    
-    fileprivate let headerReuseIdentifier = "ChannelHeader"
-    fileprivate let reuseIdentifier = "ItemCell"
-    
-    /** Transition Vars **/
-    fileprivate var initialFrame = CGRect.zero
-    fileprivate var panPresentInteractionController = PanEdgeInteractionController()
-    fileprivate var panDismissInteractionController = PanEdgeInteractionController()
     
     fileprivate var isLayoutSetup = false
     
@@ -63,10 +56,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     
     //Update Nav Header
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
+        addBackButton()
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
     
@@ -85,28 +75,24 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     }
         
     func userClickedMenu() {
-        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "Ask", style: .default, handler: { (action: UIAlertAction!) in
-            self.askQuestion()
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
+        switch selectedItem.type {
+        case .posts:
+            showPostMenu()
+        case .question:
+            showFeedbackMenu()
+        default: return
+        }
     }
     
     //is showing answers
     func showFeedbackMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "Add", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "Ask", style: .default, handler: { (action: UIAlertAction!) in
             self.askQuestion()
         }))
         
-        menu.addAction(UIAlertAction(title: "Share", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "Share Tag", style: .default, handler: { (action: UIAlertAction!) in
             self.askQuestion()
         }))
         
@@ -118,7 +104,21 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     }
     
     func showPostMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
+        menu.addAction(UIAlertAction(title: "New Post", style: .default, handler: { (action: UIAlertAction!) in
+            self.askQuestion()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Share Tag", style: .default, handler: { (action: UIAlertAction!) in
+            self.askQuestion()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
     }
     
     func askQuestion() {

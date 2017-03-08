@@ -38,7 +38,11 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     
     fileprivate var subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, background: .white, tint: .black)
     fileprivate var isSubscribed : Bool = false {
-        didSet { setupSubscribe() }
+        didSet {
+            if isSubscribed {
+               setupSubscribe()
+            }
+        }
     }
     fileprivate var activityIndicator = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue))
     
@@ -52,15 +56,7 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     fileprivate var channel : UICollectionView!
     fileprivate let questionCellHeight : CGFloat = 125
     fileprivate let postCellHeight : CGFloat = 300
-
     fileprivate let headerHeight : CGFloat = 125
-    fileprivate let headerReuseIdentifier = "ChannelHeader"
-    fileprivate let reuseIdentifier = "ItemCell"
-    
-    /** Transition Vars **/
-    fileprivate var initialFrame = CGRect.zero
-    fileprivate var panPresentInteractionController = PanEdgeInteractionController()
-    fileprivate var panDismissInteractionController = PanEdgeInteractionController()
         
     override init() {
         super.init()
@@ -104,7 +100,11 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     }
     
     //Once the channel is set and pulled from database -> reload the datasource for collection view
-    func updateDataSource() {        
+    func updateDataSource() {
+        if !isLayoutSetup {
+            setupScreenLayout()
+        }
+        
         channel.delegate = self
         channel.dataSource = self
         channel.reloadData()
@@ -122,7 +122,8 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
                 if let user = User.currentUser, user.isSubscribedToChannel(cID: self.selectedChannel.cID) {
                     indicator.removeFromSuperview()
                     self.subscribeButton.setImage(UIImage(named: "check")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
-
+                    self.isSubscribed = true
+                    
                     UIView.animate(withDuration: 1, animations: { self.subscribeButton.alpha = 0 } , completion: {(value: Bool) in
                         self.subscribeButton.removeFromSuperview()
                         self.subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, hasBackground: true, tint: .white)
@@ -143,9 +144,7 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     
     /** HEADER FUNCTIONS **/
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        addBackButton()
 
         headerNav?.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
         headerNav?.updateBackgroundImage(image: processImage(selectedChannel.cPreviewImage))
@@ -187,10 +186,8 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     }
     
     internal func setupSubscribe() {
-        if !isSubscribed {
-            addScreenButton(button: subscribeButton)
-            subscribeButton.addTarget(self, action: #selector(subscribe), for: UIControlEvents.touchUpInside)
-        }
+        addScreenButton(button: subscribeButton)
+        subscribeButton.addTarget(self, action: #selector(subscribe), for: UIControlEvents.touchUpInside)
     }
     
     fileprivate func setupScreenLayout() {

@@ -202,7 +202,7 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         askButton.setTitle("Ask", for: UIControlState())
         askButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
         askButton.setDisabled()
-        askButton.backgroundColor = pulseRed
+        askButton.backgroundColor = .pulseRed
         questionContainer.layoutIfNeeded()
         
         askButton.addTarget(self, action: #selector(askQuestion), for: .touchUpInside)

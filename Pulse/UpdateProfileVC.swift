@@ -9,11 +9,10 @@
 import UIKit
 import CoreLocation
 
-class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
+class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     
     var _currentSetting : Setting! //set by delegate
     fileprivate var isLoaded = false
-    fileprivate var reuseIdentifier = "activityCell"
     
     fileprivate var settingDescription = UILabel()
     fileprivate var settingSection = UIView()
@@ -33,21 +32,17 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        settingsTable.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
 
         if !isLoaded {
+            settingsTable.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
+            
+            tabBarHidden = true
             hideKeyboardWhenTappedAround()
             addSettingDescription()
             addSettingSection()
-            view.backgroundColor = UIColor.white
 
             isLoaded = true
         }
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -56,16 +51,8 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
     }
     
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        navigationItem.rightBarButtonItem = nil
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Update Profile")
-        } else {
-            title = "Update Profile"
-        }
+        addBackButton()
+        headerNav?.setNav(title: "Update Profile")
     }
     
     fileprivate func addSettingDescription() {

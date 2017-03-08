@@ -8,10 +8,10 @@
 
 import UIKit
 
-class AccountLoginManagerVC: UIViewController {
+class AccountLoginManagerVC: PulseNavVC {
     
-    fileprivate var loginVC : LoginVC?
-    fileprivate var accountVC : AccountPageVC?
+    fileprivate lazy var loginVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "LoginVC") as? LoginVC
+    fileprivate lazy var accountVC = UserProfileVC()
     let _storyboard = UIStoryboard(name: "Main", bundle: nil)
     fileprivate var _currentLoadedView : currentLoadedView?
     
@@ -24,44 +24,36 @@ class AccountLoginManagerVC: UIViewController {
         super.init(coder: aDecoder)
     }
     
-    init() {
-        super.init(nibName: nil, bundle: nil)
+    override init(navigationBarClass: AnyClass?, toolbarClass: AnyClass?) {
+        super.init(navigationBarClass: navigationBarClass, toolbarClass: toolbarClass)
+        isNavigationBarHidden = false
         NotificationCenter.default.addObserver(self, selector: #selector(updateLoginOrAccount), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
+    override init(nibName: String?, bundle: Bundle?) {
+        super.init(nibName: nibName, bundle: bundle)
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-    }
-    
+    //This is the first notification fired once the user is updated from auth
     func updateLoginOrAccount() {
-        if User.isLoggedIn() && accountVC != nil && _currentLoadedView != .account {
-            if loginVC?._currentLoadedView != .createAccount {
-                GlobalFunctions.addNewVC(accountVC!, parentVC: self)
+        if User.isLoggedIn(), _currentLoadedView != .account, loginVC?._currentLoadedView != .createAccount {
+            accountVC.selectedUser = User.currentUser!
 
-                NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
-                NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
-                _currentLoadedView = .account
+            if !viewControllers.contains(accountVC) {
+                pushViewController(accountVC, animated: false)
+            } else {
+                popToViewController(accountVC, animated: false)
             }
-        } else if User.isLoggedIn() && _currentLoadedView != .account {
-            if loginVC?._currentLoadedView != .createAccount {
-                accountVC = AccountPageVC()
-                GlobalFunctions.addNewVC(accountVC!, parentVC: self)
-                NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
-                NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
-                _currentLoadedView = .account
-            }
-        } else if !User.isLoggedIn() {
-            loginVC = _storyboard.instantiateViewController(withIdentifier: "LoginVC") as? LoginVC
-            GlobalFunctions.addNewVC(loginVC!, parentVC: self)
             
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
+            NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
+            _currentLoadedView = .account
+        } else if !User.isLoggedIn() {
+            if !viewControllers.contains(loginVC!) {
+                pushViewController(loginVC!, animated: false)
+            } else {
+                popToViewController(loginVC!, animated: false)
+            }
             NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
             _currentLoadedView = .login
         }
@@ -71,36 +63,34 @@ class AccountLoginManagerVC: UIViewController {
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "LoginSucess"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
         
-        if User.isLoggedIn() && accountVC != nil && _currentLoadedView == .login {
-            GlobalFunctions.addNewVC(accountVC!, parentVC: self)
-            GlobalFunctions.dismissVC(loginVC!)
+        if User.isLoggedIn(), _currentLoadedView == .login {
+            
+            accountVC.selectedUser = User.currentUser!
+            
+            if !self.viewControllers.contains(accountVC) {
+                popToRootViewController(animated: false)
+                pushViewController(accountVC, animated: true)
+            } else {
+                popToViewController(accountVC, animated: false)
+            }
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
-        }  else if User.isLoggedIn() && _currentLoadedView == .account {
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
-        } else if User.isLoggedIn() && _currentLoadedView == .login {
-            accountVC = AccountPageVC()
-            GlobalFunctions.cycleBetweenVC(loginVC!, newVC: accountVC!, parentVC: self)
+
+        }  else if User.isLoggedIn(), _currentLoadedView == .account {
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
         }
     }
     
     func logoutSuccess() {
         if _currentLoadedView == .account {
-            if loginVC != nil  && accountVC != nil {
-                GlobalFunctions.addNewVC(loginVC!, parentVC: self)
-                GlobalFunctions.dismissVC(accountVC!)
-                _currentLoadedView = .login
-                NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
-                NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
-            } else if accountVC != nil {
-                loginVC = _storyboard.instantiateViewController(withIdentifier: "LoginVC") as? LoginVC
-                GlobalFunctions.addNewVC(loginVC!, parentVC: self)
-                GlobalFunctions.dismissVC(accountVC!)
-                _currentLoadedView = .login
-
-                NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
-                NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
+            if !self.viewControllers.contains(loginVC!) {
+                popToRootViewController(animated: false)
+                pushViewController(loginVC!, animated: true)
+            } else {
+                popToViewController(loginVC!, animated: false)
             }
+            _currentLoadedView = .login
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
         }
     }
 }

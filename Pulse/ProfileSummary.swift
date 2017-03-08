@@ -125,7 +125,7 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
             expertTagList.addArrangedSubview(tagButton)
 
             tagButton.contentEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
-            tagButton.backgroundColor = pulseBlue
+            tagButton.backgroundColor = .pulseBlue
             tagButton.setTitleColor(.white, for: UIControlState())
         }
     }

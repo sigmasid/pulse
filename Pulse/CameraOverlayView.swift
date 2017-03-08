@@ -113,7 +113,7 @@ class CameraOverlayView: UIView {
         let circleLayer = CAShapeLayer()
         circleLayer.frame = CGRect(x: 0,y: 0,width: _shutterButtonRadius * 2,height: _shutterButtonRadius * 2)
         circleLayer.path = circlePath.cgPath
-        circleLayer.fillColor = iconBackgroundColor.withAlphaComponent(0.5).cgColor
+        circleLayer.fillColor = UIColor.iconBackgroundColor.withAlphaComponent(0.5).cgColor
         circleLayer.strokeColor = UIColor.white.cgColor
         circleLayer.lineWidth = 4.0
         

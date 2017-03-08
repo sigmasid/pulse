@@ -15,17 +15,18 @@ protocol AccountDelegate: class {
     func updateNav(title : String?, image: UIImage?)
 }
 
-class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class AccountPageVC: PulseVC, AccountDelegate, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    //navigation controller delegate needed for uiimage picker
     
-    fileprivate var nav : PulseNavVC?
     fileprivate var profileSummary = ProfileSummary()
-    fileprivate var profileSettingsVC : SettingsTableVC!
     fileprivate var settingsLinks : AccountPageMenu!
-    fileprivate lazy var browseItemsVC : BrowseContentVC = BrowseContentVC()
+    fileprivate lazy var browseItemsVC : UserProfileVC = UserProfileVC()
 
-    fileprivate var cameraVC : CameraVC!
-    fileprivate var panDismissInteractionController = PanContainerInteractionController()
+    fileprivate lazy var cameraVC : CameraVC = CameraVC()
+    fileprivate lazy var profileSettingsVC = SettingsTableVC()
+    fileprivate lazy var inboxVC = InboxVC()
 
+    
     fileprivate var loadingOverlay : LoadingView!
     //fileprivate var icon : IconContainer!
     
@@ -34,22 +35,17 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
     fileprivate var isShowingAnswers = false
     
     fileprivate var leadingProfileConstraint : NSLayoutConstraint!
+    internal var panDismissCameraInteractionController = PanContainerInteractionController()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        if let _nav = navigationController as? PulseNavVC {
-            nav = _nav
-        }
     }
     
     override func viewDidLayoutSubviews() {
         if !isLoaded {
             view.backgroundColor = UIColor.white
-            //icon = addIcon(text: "ACCOUNT")
             
-            setupProfileSummary()
-            setupSettingsMenuLayout() //needs to be top layer
+            setupLayout()
             setupLoading()
             
             profileSummary.delegate = self
@@ -68,6 +64,7 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = false
         updateHeader(title: "Account", leftButton: .menu)
     }
     
@@ -101,7 +98,6 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
     func clickedSettings() {
         settingsLinks.setSelectedButton(type: .settings)
         
-        profileSettingsVC = SettingsTableVC()
         profileSettingsVC.settingSection = "account"
         navigationController?.pushViewController(profileSettingsVC, animated: true)
     }
@@ -109,28 +105,41 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
     func clickedProfile() {
         settingsLinks.setSelectedButton(type: .profile)
         
-        profileSettingsVC = SettingsTableVC()
         profileSettingsVC.settingSection = "personalInfo"
         navigationController?.pushViewController(profileSettingsVC, animated: true)
     }
     
     func clickedMessages() {
         settingsLinks.setSelectedButton(type: .messages)
+        navigationController?.pushViewController(inboxVC, animated: true)
 
         Database.getConversations(completion: { conversations in
-            let inboxVC = InboxVC()
-            inboxVC.conversations = conversations
-            self.navigationController?.pushViewController(inboxVC, animated: true)
+            self.inboxVC.conversations = conversations
         })
     }
     
-    func clickedActivity() {
-        settingsLinks.setSelectedButton(type: .activity)
-
+    func clickedSavedItems() {
+        
+        settingsLinks.setSelectedButton(type: .saved)
+        navigationController?.pushViewController(browseItemsVC, animated: true)
+        
+        Database.getUserSavedItems(completion: { items in
+            if items.count > 0 {
+                self.browseItemsVC.allItems = items
+                self.browseItemsVC.selectedUser = User.currentUser
+                DispatchQueue.main.async {
+                    self.toggleLoading(show: false, message: nil)
+                }
+            }
+            else {
+                self.toggleLoading(show: true, message: "You haven't saved any items yet")
+            }
+        })
     }
     
-    func clickedAnswers() {
-        settingsLinks.setSelectedButton(type: .answers)
+    func clickedSubscriptions() {
+        settingsLinks.setSelectedButton(type: .subscriptions)
+        
         GlobalFunctions.addNewVC(browseItemsVC, parentVC: self)
         isShowingAnswers = true
 
@@ -140,8 +149,8 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
         browseItemsVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         browseItemsVC.view.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
 
-        toggleLoading(show: true, message: "Loading your answers...")
-        updateHeader(title: "Your Answers", leftButton: .back)
+        toggleLoading(show: true, message: "Loading your saved Items...")
+        updateHeader(title: "Saved Items", leftButton: .back)
 
         if let _user = User.currentUser {
             Database.getUserItems(uID: _user.uID!, completion: { items in
@@ -150,7 +159,7 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
                     self.toggleLoading(show: false, message: nil)
                 }
                 else {
-                    self.toggleLoading(show: true, message: "You haven't created any content yet")
+                    self.toggleLoading(show: true, message: "You haven't saved any items yet")
                     UIView.animate(withDuration: 0.1, animations: { self.loadingOverlay.alpha = 0.0 } ,
                                    completion: {(value: Bool) in
                                     self.toggleLoading(show: false, message: nil)
@@ -207,27 +216,24 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
     }
     
     func updateNav(title : String?, image: UIImage?) {
-        if let nav = nav {
-            nav.setNav(title: title)
-        }
+        headerNav?.setNav(title: title)
     }
     
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
     func showCamera() {
-        guard let nav = parent?.navigationController else { return }
+        guard let nav = navigationController else { return }
 
-        cameraVC = CameraVC()
         cameraVC.delegate = self
         cameraVC.screenTitle = "smile!"
-        
-        panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav)
-        panDismissInteractionController.delegate = self
+                
+        panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav)
+        panDismissCameraInteractionController.delegate = self
         
         present(cameraVC, animated: true, completion: nil)
     }
     
     func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
+        guard let imageData = image?.mediumQualityJPEGNSData else { return }
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
 
@@ -293,37 +299,27 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
     
     /* LAYOUT FUNCTION */
     fileprivate func updateHeader(title : String, leftButton : ButtonType) {
-        if parent?.navigationController != nil {
-            
-            if leftButton == .menu {
-                let button = PulseButton(size: .small, type: .menu, isRound : true, hasBackground: true)
-                button.addTarget(self, action: #selector(clickedMenu), for: UIControlEvents.touchUpInside)
-                parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
-            } else if leftButton == .back {
-                let button = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-                button.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-                parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
-            }
+        
+        if leftButton == .menu {
+            let button = PulseButton(size: .small, type: .menu, isRound : true, background: .white, tint: .black)
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: button)
+            button.addTarget(self, action: #selector(clickedMenu), for: UIControlEvents.touchUpInside)
+        } else if leftButton == .back {
+            addBackButton()
         }
         
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: title)
-        } else {
-            parent?.title = title
-        }
+        headerNav?.setNav(title: title)
     }
     
-    fileprivate func setupProfileSummary() {
+    fileprivate func setupLayout() {
         profileSummary.frame = view.frame
         view.addSubview(profileSummary)
-    }
-    
-    fileprivate func setupSettingsMenuLayout() {
+        
         settingsLinks = AccountPageMenu(frame: CGRect.zero)
         view.addSubview(settingsLinks)
         
         settingsLinks.translatesAutoresizingMaskIntoConstraints = false
-        settingsLinks.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.15).isActive = true
+        settingsLinks.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.1).isActive = true
         settingsLinks.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         settingsLinks.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         settingsLinks.layoutIfNeeded()
@@ -332,8 +328,8 @@ class AccountPageVC: UIViewController, AccountDelegate, CameraDelegate, UIImageP
         
         settingsLinks.getButton(type: .profile).addTarget(self, action: #selector(clickedProfile), for: .touchUpInside)
         settingsLinks.getButton(type: .messages).addTarget(self, action: #selector(clickedMessages), for: .touchUpInside)
-        settingsLinks.getButton(type: .activity).addTarget(self, action: #selector(clickedActivity), for: .touchUpInside)
-        settingsLinks.getButton(type: .answers).addTarget(self, action: #selector(clickedAnswers), for: .touchUpInside)
+        settingsLinks.getButton(type: .saved).addTarget(self, action: #selector(clickedSavedItems), for: .touchUpInside)
+        settingsLinks.getButton(type: .subscriptions).addTarget(self, action: #selector(clickedSubscriptions), for: .touchUpInside)
         settingsLinks.getButton(type: .settings).addTarget(self, action: #selector(clickedSettings), for: .touchUpInside)
         settingsLinks.getButton(type: .logout).addTarget(self, action: #selector(clickedLogout), for: .touchUpInside)
         

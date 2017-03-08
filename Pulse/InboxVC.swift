@@ -8,30 +8,47 @@
 
 import UIKit
 
-class InboxVC: UITableViewController {
-    let reuseIdentifier = "InboxTableCell"
+class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
+    
+    var tableView : UITableView!
+    var isLoaded = false
+    
     var conversations = [Conversation]() {
         didSet {
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-            }
+            updateDataSource()
         }
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.register(InboxTableCell.self, forCellReuseIdentifier: reuseIdentifier)
+        if !isLoaded {
+            setupLayout()
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationController?.isNavigationBarHidden = false
         updateHeader()
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    internal func setupLayout() {
+        tableView = UITableView(frame: view.bounds)
+        tableView.register(InboxTableCell.self, forCellReuseIdentifier: reuseIdentifier)
+        view.addSubview(tableView)
+        
+        isLoaded = true
+    }
+    
+    internal func updateDataSource() {
+        if !isLoaded {
+            setupLayout()
+        }
+        
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.reloadData()
+        
+        tableView.layoutIfNeeded()
     }
     
     fileprivate func addImage(cell : InboxTableCell, url : String, user : User) {
@@ -48,32 +65,25 @@ class InboxVC: UITableViewController {
     
     //Update Nav Header
     fileprivate func updateHeader() {
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Conversations")
-        } else {
-            title = "Conversations"
-        }
-        
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+        addBackButton()
+        headerNav?.setNav(title: "Conversations")
     }
     
     // MARK: - Table view data source
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return conversations.count
     }
     
-    override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         return UIView()
     }
     
     //must be implemented for viewForFooterInSection to fire
-    override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         return Spacing.xs.rawValue
     }
     
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! InboxTableCell
         let user = conversations[indexPath.row].cUser!
         
@@ -99,7 +109,7 @@ class InboxVC: UITableViewController {
         return cell
     }
     
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let conversation = conversations[indexPath.row]
         
         let messageVC = MessageVC()
@@ -112,7 +122,7 @@ class InboxVC: UITableViewController {
         navigationController?.pushViewController(messageVC, animated: true)
     }
     
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return IconSizes.medium.rawValue + Spacing.s.rawValue * 2
     }
 }

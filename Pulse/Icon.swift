@@ -159,7 +159,7 @@ class Icon : UIView {
         
         layer.addSublayer(circleShape)
         
-        layer.shadowColor = pulseBlue.cgColor
+        layer.shadowColor = UIColor.pulseBlue.cgColor
         layer.shadowOpacity = 0.5
         layer.shadowRadius = 1.5
         layer.shadowPath = circleShape.path

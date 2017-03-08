@@ -8,7 +8,7 @@
 
 import UIKit
 
-class MessageVC: UIViewController, UITextViewDelegate{
+class MessageVC: PulseVC, UITextViewDelegate{
     
     //model elements
     fileprivate var messages = [Message]()
@@ -43,7 +43,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
     fileprivate var hasConversationObserver = false
     fileprivate var isUserLoaded = false
     
-    fileprivate var reuseIdentifier = "messageCell"
     fileprivate var isLoaded = false
     fileprivate var observersAdded = false
     
@@ -51,32 +50,23 @@ class MessageVC: UIViewController, UITextViewDelegate{
         super.viewDidLoad()
         
         if !observersAdded {
-            extendedLayoutIncludesOpaqueBars = true
+            tabBarHidden = true
             hideKeyboardWhenTappedAround()
 
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+            
             observersAdded = true
         }
     }
     
     override func viewDidLayoutSubviews() {
         if !isLoaded {
-            
-            view.backgroundColor = UIColor.white
-            view.layoutIfNeeded()
-
             setupLayout()
             updateHeader()
             
             isLoaded = true
         }
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        tabBarController?.tabBar.isHidden = false
-        extendedLayoutIncludesOpaqueBars = false
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -86,24 +76,11 @@ class MessageVC: UIViewController, UITextViewDelegate{
             Database.removeConversationObserver(conversationID: _conversationID)
         }
     }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
 
     //Update Nav Header
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: msgToUserName.text != nil ? "Message \(msgToUserName.text!.components(separatedBy: " ")[0])" : "New Message")
-        }
+        addBackButton()
+        headerNav?.setNav(title: msgToUserName.text != nil ? "Message \(msgToUserName.text!.components(separatedBy: " ")[0])" : "New Message")
     }
     
     func keyboardWillShow(notification: NSNotification) {
@@ -287,7 +264,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
             self.msgSend.setEnabled()
             
             let sizeThatFitsTextView = textView.sizeThatFits(CGSize(width: textView.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
-            textViewHeightConstraint.constant = sizeThatFitsTextView.height
+            textViewHeightConstraint.constant = max(IconSizes.medium.rawValue, sizeThatFitsTextView.height)
         }
     }
     

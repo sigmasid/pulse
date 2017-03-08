@@ -49,6 +49,7 @@ public class PulseNavBar: UINavigationBar {
     
     public func setTitles(title : String?) {
         self.navTitle.text = title?.uppercased()
+        
     }
     
     public func toggleSearch(show: Bool) {
@@ -63,13 +64,25 @@ public class PulseNavBar: UINavigationBar {
         return searchContainer
     }
     
+    public func setDarkNav() {
+        barStyle = .black
+        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .left)
+        navTitle.setBlurredBackground()
+    }
+    
+    public func setLightNav() {
+        barStyle = .default
+        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
+        navTitle.removeShadow()
+    }
+    
+    
     /** LAYOUT SCREEN **/
     fileprivate func setupDetailLayout() {
         addSubview(navTitle)
         
         navTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: navBarSize.height)
-        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .left)
-        navTitle.setBlurredBackground()
+        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
         navTitle.lineBreakMode = .byTruncatingTail
         navTitle.numberOfLines = 2
         navTitle.tag = 10

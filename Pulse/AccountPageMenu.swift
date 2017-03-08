@@ -9,14 +9,14 @@
 import UIKit
 
 class AccountPageMenu: UIStackView {
-    enum menuOptions { case profile, messages, activity, answers, logout, settings }
+    enum menuOptions { case profile, messages, saved, subscriptions, logout, settings }
 
     fileprivate var sAboutButton = PulseButton()
     fileprivate var sMessagesButton = PulseButton()
     fileprivate var sSettingsButton = PulseButton()
-    fileprivate var sActivityButton = PulseButton()
+    fileprivate var sSavedButton = PulseButton()
     fileprivate var sLogoutButton = PulseButton()
-    fileprivate var sAnswersButton = PulseButton()
+    fileprivate var sSubscriptionsButton = PulseButton()
     
     fileprivate var selectedButton : menuOptions?
     
@@ -33,8 +33,8 @@ class AccountPageMenu: UIStackView {
         switch type {
         case .profile: return sAboutButton
         case .messages: return sMessagesButton
-        case .activity: return sActivityButton
-        case .answers: return sAnswersButton
+        case .saved: return sSavedButton
+        case .subscriptions: return sSubscriptionsButton
         case .settings: return sSettingsButton
         case .logout: return sLogoutButton
         }
@@ -59,9 +59,9 @@ class AccountPageMenu: UIStackView {
         
         selectedButton = type
         if let type = type {
-            getButton(type: type).backgroundColor = pulseBlue
+            getButton(type: type).backgroundColor = .pulseBlue
             getButton(type: type).changeTint(color: .white, state: UIControlState())
-            getButton(type: type).setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightHeavy, color: pulseBlue, alignment: .center)
+            getButton(type: type).setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightHeavy, color: .pulseBlue, alignment: .center)
         }
     }
     
@@ -70,31 +70,31 @@ class AccountPageMenu: UIStackView {
         
         sAboutButton = updatePulseButton(button: sAboutButton, title: "profile", image: UIImage(named: "profile")!)
         sMessagesButton = updatePulseButton(button: sMessagesButton, title: "messaging", image: UIImage(named: "messenger")!)
-        sActivityButton = updatePulseButton(button: sActivityButton, title: "activity", image: UIImage(named: "notifications")!)
-        sAnswersButton = updatePulseButton(button: sAnswersButton, title: "answers", image: UIImage(named: "answers")!)
+        sSavedButton = updatePulseButton(button: sSavedButton, title: "saved", image: UIImage(named: "save")!)
+        sSubscriptionsButton = updatePulseButton(button: sSubscriptionsButton, title: "subscriptions", image: UIImage(named: "answers")!)
         sSettingsButton = updatePulseButton(button: sSettingsButton, title: "account", image: UIImage(named: "settings")!)
         sLogoutButton = updatePulseButton(button: sLogoutButton, title: "logout", image: UIImage(named: "login")!)
 
         addArrangedSubview(sAboutButton)
         addArrangedSubview(sMessagesButton)
-        addArrangedSubview(sActivityButton)
-        addArrangedSubview(sAnswersButton)
+        addArrangedSubview(sSavedButton)
+        addArrangedSubview(sSubscriptionsButton)
         addArrangedSubview(sSettingsButton)
         addArrangedSubview(sLogoutButton)
         
         let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
         sAboutButton.imageEdgeInsets = imageInset
         sMessagesButton.imageEdgeInsets = imageInset
-        sActivityButton.imageEdgeInsets = imageInset
-        sAnswersButton.imageEdgeInsets = imageInset
+        sSavedButton.imageEdgeInsets = imageInset
+        sSubscriptionsButton.imageEdgeInsets = imageInset
         sSettingsButton.imageEdgeInsets = imageInset
         sLogoutButton.imageEdgeInsets = imageInset
         
         let titleInset = UIEdgeInsetsMake(IconSizes.medium.rawValue, -sAboutButton.titleLabel!.frame.width, 0, 0)
         sAboutButton.titleEdgeInsets = titleInset
         sMessagesButton.titleEdgeInsets = titleInset
-        sActivityButton.titleEdgeInsets = titleInset
-        sAnswersButton.titleEdgeInsets = titleInset
+        sSavedButton.titleEdgeInsets = titleInset
+        sSubscriptionsButton.titleEdgeInsets = titleInset
         sSettingsButton.titleEdgeInsets = titleInset
         sLogoutButton.titleEdgeInsets = titleInset
         

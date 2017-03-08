@@ -7,28 +7,39 @@
 //
 
 import UIKit
+import MobileCoreServices
+import CoreLocation
 
-class SettingsTableVC: UIViewController {
-    fileprivate var _sections : [SettingSection]?
-    fileprivate var _settings = [[Setting]]()
-    fileprivate var _selectedSettingRow : IndexPath?
-
+class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    fileprivate var sections : [SettingSection]?
+    fileprivate var settings = [[Setting]]()
+    fileprivate var selectedSettingRow : IndexPath?
     fileprivate var settingsTable = UITableView()
-    fileprivate let _reuseIdentifier = "SettingsTableCell"
     
     fileprivate var isLoaded = false
     
+    //Update Profile Image
+    internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
+    fileprivate lazy var cameraVC : CameraVC = CameraVC()
+    
+    //View for Profile Image
+    internal var profilePicView = UIView()
+    internal var profilePicButton = UIButton()
+    internal var profilePic = PulseButton(size: .large, type: .blank, isRound: true, hasBackground: false)
+
     public var settingSection : String! {
         didSet {
+            addUserProfilePic()
             Database.getSectionsSection(sectionName: settingSection, completion: { (section , error) in
-                if error == nil, let section = section{
-                    self._sections = [section]
-                    for _ in self._sections! {
-                        self._settings.append([])
+                if error == nil, let section = section {
+                    self.sections = [section]
+                    for _ in self.sections! {
+                        self.settings.append([])
                     }
                     self.settingsTable.delegate = self
                     self.settingsTable.dataSource = self
-                    self.settingsTable.reloadData()                }
+                    self.settingsTable.reloadData()
+                }
             })
         }
     }
@@ -38,19 +49,26 @@ class SettingsTableVC: UIViewController {
         super.viewWillAppear(animated)
         
         //force refresh of the selected row
-        if _selectedSettingRow != nil {
-            settingsTable.reloadRows(at: [_selectedSettingRow!], with: .fade)
-            _selectedSettingRow = nil
+        if selectedSettingRow != nil {
+            settingsTable.reloadRows(at: [selectedSettingRow!], with: .fade)
+            selectedSettingRow = nil
         }
     }
     
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        headerNav?.isNavigationBarHidden = false
+        tabBarHidden = true
+    }
+    
     override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         if !isLoaded {
             updateHeader()
-            setupTable()
+            setupLayout()
             
             view.backgroundColor = UIColor.white
-            settingsTable.register(SettingsTableCell.self, forCellReuseIdentifier: _reuseIdentifier)
+            settingsTable.register(SettingsTableCell.self, forCellReuseIdentifier: reuseIdentifier)
         }
     }
 
@@ -59,38 +77,8 @@ class SettingsTableVC: UIViewController {
     }
     
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Update Profile")
-        } else {
-            title = "Update Profile"
-        }
-    }
-    
-    func setupTable() {
-        view.addSubview(settingsTable)
-        
-        settingsTable.translatesAutoresizingMaskIntoConstraints = false
-        settingsTable.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        settingsTable.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-        settingsTable.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        settingsTable.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        settingsTable.layoutIfNeeded()
-        
-        settingsTable.backgroundView = nil
-        settingsTable.backgroundColor = UIColor.clear
-        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.singleLine
-        settingsTable.separatorColor = UIColor.lightGray
-        settingsTable.tableFooterView = UIView() //removes extra rows at bottom
-        settingsTable.showsVerticalScrollIndicator = false
-        
-        settingsTable.isScrollEnabled = false
-        automaticallyAdjustsScrollViewInsets = false
-        //        settingsTable.rowHeight = UITableViewAutomaticDimension //supposed to give dynamic height but doesn't work
-
+        addBackButton()
+        headerNav?.setNav(title: "Update Profile")
     }
     
     func showSettingDetail(_ selectedSetting : Setting) {
@@ -98,36 +86,61 @@ class SettingsTableVC: UIViewController {
         updateSetting._currentSetting = selectedSetting
         navigationController?.pushViewController(updateSetting, animated: true)
     }
+    
+    internal func updateHeaderImage(img : Data) {
+        //add profile pic or use default image
+        User.currentUser?.thumbPicImage = UIImage(data: img)
+        profilePic.setImage(User.currentUser?.thumbPicImage, for: .normal)
+        profilePic.makeRound()
+    }
+    
+    internal func addUserProfilePic() {
+        if let thumbPic = User.currentUser?.thumbPicImage {
+            profilePic.setImage(thumbPic, for: .normal)
+            profilePic.makeRound()
+        } else if let _userImageURL = User.currentUser?.thumbPic, let url = URL(string: _userImageURL) {
+            DispatchQueue.global().async {
+                if let _userImageData = try? Data(contentsOf: url) {
+                    User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
+                    DispatchQueue.main.async(execute: {
+                        self.profilePic.setImage(User.currentUser?.thumbPicImage, for: .normal)
+                        self.profilePic.makeRound()
+                    })
+                }
+            }
+        }
+        
+    }
 }
 
 extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     // MARK: - Table view data source
     func numberOfSections(in tableView: UITableView) -> Int {
-        return _sections?.count ?? 0
+        return sections?.count ?? 0
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return _sections?[section].sectionSettingsCount ?? 0
+        return sections?[section].sectionSettingsCount ?? 0
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        let _sectionID = _sections![section].sectionID
+        let _sectionID = sections![section].sectionID
         return SectionTypes.getSectionDisplayName(_sectionID)
     }
     
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.backgroundView?.backgroundColor = UIColor.clear
-            header.textLabel!.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: pulseBlue, alignment: .left)
+            header.textLabel!.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .pulseBlue, alignment: .left)
         }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let _settingID = _sections![(indexPath as NSIndexPath).section].settings![(indexPath as NSIndexPath).row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: _reuseIdentifier) as! SettingsTableCell
+        let _settingID = sections![(indexPath as NSIndexPath).section].settings![(indexPath as NSIndexPath).row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! SettingsTableCell
 
-        if _settings[(indexPath as NSIndexPath).section].count > (indexPath as NSIndexPath).row {
-            let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
+        if settings[(indexPath as NSIndexPath).section].count > (indexPath as NSIndexPath).row {
+            let _setting = settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
             cell._settingNameLabel.text = _setting.display!
             if _setting.type == .location {
                 User.currentUser?.getLocation(completion: {(city) in
@@ -153,7 +166,7 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
                             cell._detailTextLabel.text = location
                         })
                     }
-                    self._settings[(indexPath as NSIndexPath).section].append(_setting)
+                    self.settings[(indexPath as NSIndexPath).section].append(_setting)
                     if _setting.editable {
                         cell.accessoryType = .disclosureIndicator
                     }
@@ -164,13 +177,153 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let _setting = _settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
-        _selectedSettingRow = indexPath
+        let _setting = settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
+        selectedSettingRow = indexPath
         showSettingDetail(_setting)
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return IconSizes.medium.rawValue
+    }
+}
+
+extension SettingsTableVC: CameraDelegate {
+    /* CAMERA FUNCTIONS & DELEGATE METHODS */
+    func showCamera() {
+        guard let nav = navigationController else { return }
+        
+        cameraVC.delegate = self
+        cameraVC.screenTitle = "smile!"
+        
+        panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
+        panDismissCameraInteractionController.delegate = self
+        
+        present(cameraVC, animated: true, completion: nil)
+    }
+    
+    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
+        guard let imageData = image?.mediumQualityJPEGNSData else { return }
+        
+        cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+        
+        Database.uploadProfileImage(imageData, completion: {(URL, error) in
+            if error != nil {
+                GlobalFunctions.showErrorBlock("Sorry!", erMessage: "There was an error saving the photo. Please try again")
+            } else {
+                UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
+                               completion: {(value: Bool) in
+                                self.cameraVC.toggleLoading(show: false, message: nil)
+                                
+                                //update the header
+                                self.updateHeaderImage(img: imageData)
+                                self.cameraVC.dismiss(animated: true, completion: nil)
+                })
+            }
+        })
+    }
+    
+    func userDismissedCamera() {
+        cameraVC.dismiss(animated: true, completion: nil)
+    }
+    
+    func showAlbumPicker() {
+        let albumPicker = UIImagePickerController()
+        
+        albumPicker.delegate = self
+        albumPicker.allowsEditing = false
+        albumPicker.sourceType = .photoLibrary
+        albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
+        
+        cameraVC.present(albumPicker, animated: true, completion: nil)
+    }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
+        picker.dismiss(animated: true, completion: nil)
+        
+        cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+        
+        if mediaType.isEqual(to: kUTTypeImage as String) {
+            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+            let pickedImageData = pickedImage.highQualityJPEGNSData
+            
+            Database.uploadProfileImage(pickedImageData, completion: {(URL, error) in
+                if error != nil {
+                    self.cameraVC.toggleLoading(show: false, message: nil)
+                } else {
+                    UIView.animate(withDuration: 0.2, animations: { self.cameraVC.view.alpha = 0.0 } ,
+                                   completion: {(value: Bool) in
+                                    
+                                    self.updateHeaderImage(img: pickedImageData)
+                                    self.cameraVC.dismiss(animated: true, completion: nil)
+                    })
+                }
+            })
+        }
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
+    }
+}
+
+//layout functions
+extension SettingsTableVC {
+    func setupLayout() {
+        view.addSubview(settingsTable)
+        view.addSubview(profilePicView)
+        
+        profilePicView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: 150)
+        profilePicView.addShadow()
+
+        settingsTable.translatesAutoresizingMaskIntoConstraints = false
+        settingsTable.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        settingsTable.topAnchor.constraint(equalTo: profilePicView.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        settingsTable.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        settingsTable.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        settingsTable.layoutIfNeeded()
+        
+        settingsTable.backgroundView = nil
+        settingsTable.backgroundColor = UIColor.clear
+        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.singleLine
+        settingsTable.separatorColor = UIColor.lightGray
+        settingsTable.tableFooterView = UIView() //removes extra rows at bottom
+        settingsTable.showsVerticalScrollIndicator = false
+        
+        settingsTable.isScrollEnabled = false
+        automaticallyAdjustsScrollViewInsets = false
+        
+        setupProfileSummaryLayout()
+    }
+    
+    fileprivate func setupProfileSummaryLayout() {
+        profilePicView.addSubview(profilePic)
+        profilePicView.addSubview(profilePicButton)
+        
+        profilePic.translatesAutoresizingMaskIntoConstraints = false
+        profilePic.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        profilePic.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        profilePic.centerYAnchor.constraint(equalTo: profilePicView.centerYAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        profilePic.centerXAnchor.constraint(equalTo: profilePicView.centerXAnchor).isActive = true
+        profilePic.layoutIfNeeded()
+        
+        profilePicButton.translatesAutoresizingMaskIntoConstraints = false
+        profilePicButton.topAnchor.constraint(equalTo: profilePic.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        profilePicButton.centerXAnchor.constraint(equalTo: profilePic.centerXAnchor).isActive = true
+        profilePicButton.heightAnchor.constraint(equalToConstant: Spacing.s.rawValue).isActive = true
+        profilePicButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .lightGray, alignment: .center)
+        profilePicButton.setTitle("edit image", for: .normal)
+        
+        profilePicButton.backgroundColor = .clear
+        profilePicButton.layoutIfNeeded()
+        
+        profilePic.imageView?.contentMode = .scaleAspectFill
+        profilePic.imageView?.frame = profilePicButton.bounds
+        profilePic.imageView?.clipsToBounds = true
+        profilePic.clipsToBounds = true
+
+        profilePic.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
+        profilePicButton.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
     }
 }

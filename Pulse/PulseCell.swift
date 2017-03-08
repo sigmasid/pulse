@@ -51,7 +51,7 @@ class PulseCell: UICollectionViewCell {
             pulseLayer.rippleScaleRatio = rippleScaleRatio
         }
     }
-    @IBInspectable public var rippleLayerColor: UIColor = pulseBlue {
+    @IBInspectable public var rippleLayerColor: UIColor = .pulseBlue {
         didSet {
             pulseLayer.setRippleColor(color: rippleLayerColor)
         }
