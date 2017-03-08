@@ -20,7 +20,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     /** Delegate Vars **/
     public var selectedUser : User! {
         didSet {
-            if let user = User.currentUser, selectedUser.uID == user.uID! {
+            if User.currentUser?.uID != nil, selectedUser.uID == User.currentUser?.uID! {
                 Database.getUserSavedItems(completion: { items in
                     self.allItems = items
                     self.updateDataSource()
@@ -89,7 +89,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
             }
             
             if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! ItemFullWidthCell
+                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! BrowseContentCell
                 cell.removePreview()
             }
         }
@@ -138,7 +138,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         
         if isCurrentUser {
             tabBarHidden = false
-            headerNav?.isNavigationBarHidden = true
         } else {
             tabBarHidden = true
 
@@ -228,16 +227,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         
         menu.addAction(UIAlertAction(title: "Edit Profile", style: .default, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
-            let profileSettingsVC = SettingsTableVC()
-            profileSettingsVC.settingSection = "personalInfo"
-            self.navigationController?.pushViewController(profileSettingsVC, animated: true)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "Settings", style: .default, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-            let profileSettingsVC = SettingsTableVC()
-            profileSettingsVC.settingSection = "account"
-            self.navigationController?.pushViewController(profileSettingsVC, animated: true)
+            self.navigationController?.pushViewController(SettingsTableVC(), animated: true)
         }))
         
         menu.addAction(UIAlertAction(title: "Logout", style: .destructive, handler: { (action: UIAlertAction!) in

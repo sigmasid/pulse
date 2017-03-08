@@ -9,7 +9,7 @@
 import UIKit
 import FirebaseAuth
 
-class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
+class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
 
     @IBOutlet weak var logoView: UIView!
     @IBOutlet weak var userPassword: UITextField!
@@ -82,15 +82,8 @@ class LoginCreateAccountVC: UIViewController, UITextFieldDelegate {
     }
     
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Create Account")
-        } else {
-            title = "Create Account"
-        }
+        addBackButton()
+        headerNav?.setNav(title: "Create Account")
     }
     
     @IBAction func createEmailAccount(_ sender: UIButton) {

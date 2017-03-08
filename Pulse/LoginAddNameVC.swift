@@ -11,7 +11,7 @@ import FirebaseAuth
 import MobileCoreServices
 import CoreLocation
 
-class LoginAddNameVC: UIViewController, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
@@ -21,7 +21,7 @@ class LoginAddNameVC: UIViewController, CameraDelegate, UIImagePickerControllerD
     @IBOutlet weak var profilePicButton: UIButton!
     
     fileprivate var cameraVC : CameraVC!
-    fileprivate var panDismissInteractionController = PanContainerInteractionController()
+    internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
 
     fileprivate var isLoaded = false
     
@@ -56,14 +56,9 @@ class LoginAddNameVC: UIViewController, CameraDelegate, UIImagePickerControllerD
     }
     
     fileprivate func updateHeader() {
-        let checkButton = PulseButton(size: .small, type: .check, isRound : true, hasBackground: true)
+        let checkButton = PulseButton(size: .small, type: .check, isRound : true, background: .white, tint: .black)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Add Name")
-        } else {
-            title = "Add Name"
-        }
+        headerNav?.setNav(title: "Add Name")
     }
     
     @IBAction func addPic(_ sender: UIButton) {
@@ -73,8 +68,8 @@ class LoginAddNameVC: UIViewController, CameraDelegate, UIImagePickerControllerD
         cameraVC.delegate = self
         cameraVC.screenTitle = "smile!"
         
-        panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav)
-        panDismissInteractionController.delegate = self
+        panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
+        panDismissCameraInteractionController.delegate = self
         
         present(cameraVC, animated: true, completion: nil)
 

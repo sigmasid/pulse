@@ -79,24 +79,10 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         updateHeader()
     }
     
-    override func viewDidDisappear(_ animated : Bool) {
-        super.viewDidDisappear(true)
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
     fileprivate func updateHeader() {
-        if parent?.navigationController != nil {
-            let loginButton = PulseButton(size: .small, type: .login, isRound : true, hasBackground: true)
-            parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
-        }
-        
-        if let nav = navigationController as? PulseNavVC {
-            self.nav = nav
-            self.nav.setNav(title: "Login")
-        }
+        let loginButton = PulseButton(size: .small, type: .login, isRound : true, background: .white, tint: .black)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
+        headerNav?.setNav(title: "Login")
     }
     
     fileprivate func setupView() {
@@ -207,7 +193,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     @IBAction func createAccount(_ sender: UIButton) {
         if let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
             _currentLoadedView = .createAccount
-            self.parent?.navigationController?.pushViewController(createAccountVC, animated: true)
+            navigationController?.pushViewController(createAccountVC, animated: true)
         }
     }
     

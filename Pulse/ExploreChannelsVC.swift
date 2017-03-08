@@ -15,7 +15,6 @@ protocol ExploreChannelsDelegate: class {
 class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
     
     // Set by MasterTabVC
-    public var tabDelegate : tabVCDelegate!
     public var universalLink : URL!
     
     fileprivate var loadingView : LoadingView?
@@ -73,7 +72,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
         Database.getExploreChannels({ channels, error in
             if error == nil {
                 self.allChannels = channels
-                if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
             }
         })
     }

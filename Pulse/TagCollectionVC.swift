@@ -58,6 +58,8 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     fileprivate func updateHeader() {
         addBackButton()
         headerNav?.followScrollView(collectionView, delay: 25.0)
+        headerNav?.setNav(title: selectedChannel.cTitle ?? selectedItem.itemTitle)
+        headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
     }
     
     func setupLayout() {
@@ -217,7 +219,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                             }
                         }
                     } else if item.contentType == .recordedVideo || item.contentType == .albumVideo {
-                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .cover, maxImgSize: maxImgSize, completion: { (data, error) in
+                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
                                 

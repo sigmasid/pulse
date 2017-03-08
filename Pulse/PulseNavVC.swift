@@ -105,7 +105,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
      */
     open func followScrollView(_ scrollableView: UIView, delay: Double = 0, scrollSpeedFactor: Double = 1, followers: [UIView] = []) {
         self.scrollableView = scrollableView
-        setupBlurEffect()
         
         gestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(PulseNavVC.handlePan(_:)))
         gestureRecognizer?.maximumNumberOfTouches = 1
@@ -506,6 +505,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         if let image = image {
             navBar.setDarkNav()
             navBar.setBackgroundImage(image, for: .default)
+            setupBlurEffect()
         } else {
             navBar.setBackgroundImage(nil, for: .default)
             navBar.setLightNav()

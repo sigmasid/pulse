@@ -259,7 +259,7 @@ class GlobalFunctions {
         viewController.present(alertController, animated: true, completion:nil)
     }
     
-    //rotate images if they are not correctly aligned
+    /** IMAGE FUNCTIONS **/
     static func fixOrientation(_ img:UIImage) -> UIImage {
         
         if (img.imageOrientation == UIImageOrientation.up) {
@@ -295,23 +295,25 @@ class GlobalFunctions {
         return recoloredImageView
     }
     
-    /* NEED TO FIX */
-    static func addHeader(_ parent : UIView, appTitle : String?, screenTitle : String?) -> LoginHeaderView {
-        let _headerView = UIView()
-        parent.addSubview(_headerView)
+    static func processImage(_ image : UIImage?) -> UIImage? {
+        guard let cgimg = image?.cgImage else {
+            return nil
+        }
         
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        parent.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .top, relatedBy: .equal, toItem: parent, attribute: .topMargin , multiplier: 2, constant: 0))
-        _headerView.centerXAnchor.constraint(equalTo: parent.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: parent.heightAnchor, multiplier: 1/13).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: parent.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/parent.frame.width)).isActive = true
-        _headerView.layoutIfNeeded()
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
         
-        let _LoginHeader = LoginHeaderView(frame: _headerView.frame)
-        appTitle != nil ? _LoginHeader.setAppTitleLabel(_message: appTitle!) :
-        screenTitle != nil ? _LoginHeader.setScreenTitleLabel(_message: screenTitle!) :
-        parent.addSubview(_LoginHeader)
-
-        return _LoginHeader
+        let coreImage = CIImage(cgImage: cgimg)
+        
+        let filter = CIFilter(name: "CIPhotoEffectNoir")
+        filter?.setValue(coreImage, forKey: kCIInputImageKey)
+        
+        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
+            let cgimgresult = context.createCGImage(output, from: output.extent)
+            let result = UIImage(cgImage: cgimgresult!)
+            return result
+        } else {
+            return image
+        }
     }
 }

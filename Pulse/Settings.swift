@@ -11,7 +11,7 @@ import Firebase
 
 class SettingSection {
     var sectionID : String
-    var settings : [String]?
+    var settings = [String]()
     var sectionSettingsCount : Int
     
     struct _setting {
@@ -30,11 +30,14 @@ class SettingSection {
         self.sectionSettingsCount = Int(snapshot.childrenCount)
         
         if snapshot.childrenCount > 0 {
+            var unsortedSettings = [String : Int]()
             for settingID in snapshot.children {
-                if (self.settings?.append((settingID as AnyObject).key) == nil) {
-                    self.settings = [(settingID as AnyObject).key]
+                if let settingID = settingID as? FIRDataSnapshot, let settingValue = settingID.value as? Int {
+                    unsortedSettings[settingID.key] = settingValue
                 }
             }
+            let sortedDict = unsortedSettings.sorted{ $0.value < $1.value }
+            self.settings = sortedDict.map({$0.key})
         }
     }
 }

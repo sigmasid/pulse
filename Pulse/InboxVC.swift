@@ -13,16 +13,13 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     var tableView : UITableView!
     var isLoaded = false
     
-    var conversations = [Conversation]() {
-        didSet {
-            updateDataSource()
-        }
-    }
+    var conversations = [Conversation]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
             setupLayout()
+            updateDataSource()
         }
     }
     
@@ -44,10 +41,14 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
             setupLayout()
         }
         
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.reloadData()
+        Database.getConversations(completion: { conversations in
+            self.conversations = conversations
+            self.tableView.dataSource = self
+            self.tableView.delegate = self
+            self.tableView.reloadData()
+        })
         
+
         tableView.layoutIfNeeded()
     }
     

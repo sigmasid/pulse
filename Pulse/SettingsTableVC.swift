@@ -11,13 +11,14 @@ import MobileCoreServices
 import CoreLocation
 
 class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-    fileprivate var sections : [SettingSection]?
+    fileprivate var sections = [SettingSection]()
     fileprivate var settings = [[Setting]]()
     fileprivate var selectedSettingRow : IndexPath?
     fileprivate var settingsTable = UITableView()
     
+    fileprivate var isLayoutSetup = false
     fileprivate var isLoaded = false
-    
+
     //Update Profile Image
     internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
     fileprivate lazy var cameraVC : CameraVC = CameraVC()
@@ -26,28 +27,11 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
     internal var profilePicView = UIView()
     internal var profilePicButton = UIButton()
     internal var profilePic = PulseButton(size: .large, type: .blank, isRound: true, hasBackground: false)
-
-    public var settingSection : String! {
-        didSet {
-            addUserProfilePic()
-            Database.getSectionsSection(sectionName: settingSection, completion: { (section , error) in
-                if error == nil, let section = section {
-                    self.sections = [section]
-                    for _ in self.sections! {
-                        self.settings.append([])
-                    }
-                    self.settingsTable.delegate = self
-                    self.settingsTable.dataSource = self
-                    self.settingsTable.reloadData()
-                }
-            })
-        }
-    }
-    
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
+        updateHeader()
+
         //force refresh of the selected row
         if selectedSettingRow != nil {
             settingsTable.reloadRows(at: [selectedSettingRow!], with: .fade)
@@ -57,18 +41,18 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        headerNav?.isNavigationBarHidden = false
-        tabBarHidden = true
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+        
         if !isLoaded {
-            updateHeader()
+            headerNav?.isNavigationBarHidden = false
+            tabBarHidden = true
             setupLayout()
+
+            addUserProfilePic()
+            loadSettingSections()
             
-            view.backgroundColor = UIColor.white
             settingsTable.register(SettingsTableCell.self, forCellReuseIdentifier: reuseIdentifier)
+
+            isLoaded = true
         }
     }
 
@@ -79,6 +63,18 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
     fileprivate func updateHeader() {
         addBackButton()
         headerNav?.setNav(title: "Update Profile")
+    }
+    
+    fileprivate func loadSettingSections() {
+        Database.getSettingsSections(completion: { (sections , error) in
+            self.sections = sections
+            for _ in self.sections {
+                self.settings.append([])
+            }
+            self.settingsTable.delegate = self
+            self.settingsTable.dataSource = self
+            self.settingsTable.reloadData()
+        })
     }
     
     func showSettingDetail(_ selectedSetting : Setting) {
@@ -116,27 +112,27 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
 extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     // MARK: - Table view data source
     func numberOfSections(in tableView: UITableView) -> Int {
-        return sections?.count ?? 0
+        return sections.count
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sections?[section].sectionSettingsCount ?? 0
+        return sections[section].sectionSettingsCount
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        let _sectionID = sections![section].sectionID
+        let _sectionID = sections[section].sectionID
         return SectionTypes.getSectionDisplayName(_sectionID)
     }
     
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
-            header.backgroundView?.backgroundColor = UIColor.clear
+            header.backgroundView?.backgroundColor = .white
             header.textLabel!.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .pulseBlue, alignment: .left)
         }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let _settingID = sections![(indexPath as NSIndexPath).section].settings![(indexPath as NSIndexPath).row]
+        let _settingID = sections[(indexPath as NSIndexPath).section].settings[(indexPath as NSIndexPath).row]
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! SettingsTableCell
 
         if settings[(indexPath as NSIndexPath).section].count > (indexPath as NSIndexPath).row {
@@ -278,20 +274,19 @@ extension SettingsTableVC {
         profilePicView.addShadow()
 
         settingsTable.translatesAutoresizingMaskIntoConstraints = false
-        settingsTable.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         settingsTable.topAnchor.constraint(equalTo: profilePicView.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         settingsTable.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        settingsTable.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         settingsTable.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         settingsTable.layoutIfNeeded()
         
         settingsTable.backgroundView = nil
-        settingsTable.backgroundColor = UIColor.clear
-        settingsTable.separatorStyle = UITableViewCellSeparatorStyle.singleLine
-        settingsTable.separatorColor = UIColor.lightGray
+        settingsTable.backgroundColor = .white
+        settingsTable.separatorStyle = .singleLine
+        settingsTable.separatorColor = .pulseGrey
         settingsTable.tableFooterView = UIView() //removes extra rows at bottom
         settingsTable.showsVerticalScrollIndicator = false
         
-        settingsTable.isScrollEnabled = false
         automaticallyAdjustsScrollViewInsets = false
         
         setupProfileSummaryLayout()

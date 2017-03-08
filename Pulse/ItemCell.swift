@@ -93,7 +93,7 @@ class ItemCell: UICollectionViewCell {
     
     func updateButtonImage(image : UIImage?, itemTag : Int) {
         if let image = image {
-            itemButton.setBackgroundImage(image, for: .normal)
+            itemButton.setImage(image, for: .normal)
         }
         
         itemButton.tag = itemTag
@@ -136,9 +136,13 @@ class ItemCell: UICollectionViewCell {
         itemButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         itemButton.heightAnchor.constraint(equalTo: itemButton.widthAnchor).isActive = true
         
+        itemButton.addTarget(self, action: #selector(clickedItemButton), for: .touchUpInside)
+        
+        itemButton.imageView?.contentMode = .scaleAspectFill
+        itemButton.imageView?.frame = itemButton.bounds
+        itemButton.imageView?.clipsToBounds = true
         itemButton.contentMode = .scaleAspectFill
         itemButton.clipsToBounds = true
-        itemButton.addTarget(self, action: #selector(clickedItemButton), for: .touchUpInside)
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.leadingAnchor.constraint(equalTo: itemButton.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true

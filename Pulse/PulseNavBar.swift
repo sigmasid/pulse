@@ -75,7 +75,7 @@ public class PulseNavBar: UINavigationBar {
         navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
         navTitle.removeShadow()
     }
-    
+
     
     /** LAYOUT SCREEN **/
     fileprivate func setupDetailLayout() {

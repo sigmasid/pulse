@@ -48,6 +48,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 tabBarController?.tabBar.isHidden = false
                 edgesForExtendedLayout = []
                 extendedLayoutIncludesOpaqueBars = false
+                automaticallyAdjustsScrollViewInsets = true
             }
         }
     }

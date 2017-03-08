@@ -9,9 +9,7 @@
 import UIKit
 
 class HomeVC: UIViewController {
-    
-    public var tabDelegate : tabVCDelegate!
-    
+        
     fileprivate var isLoaded = false
     fileprivate var homeFeedVC : FeedVC!
     fileprivate var loadingView : LoadingView?
@@ -52,7 +50,6 @@ class HomeVC: UIViewController {
     
     
     func loadFeed() {
-        if self.tabDelegate != nil { self.tabDelegate.removeLoading() }
 
         /**
         if User.isLoggedIn() && !initialLoadComplete {

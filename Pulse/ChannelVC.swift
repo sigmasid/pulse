@@ -140,39 +140,15 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
             userProfileVC.selectedUser = user
         }
     }
-
     
     /** HEADER FUNCTIONS **/
     fileprivate func updateHeader() {
         addBackButton()
 
         headerNav?.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
-        headerNav?.updateBackgroundImage(image: processImage(selectedChannel.cPreviewImage))
+        headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
         headerNav?.showNavbar(animated: true)
         headerNav?.followScrollView(channel, delay: 25.0)
-    }
-    
-    
-    func processImage(_ image : UIImage?) -> UIImage? {
-        guard let cgimg = image?.cgImage else {
-            return nil
-        }
-        
-        let openGLContext = EAGLContext(api: .openGLES2)
-        let context = CIContext(eaglContext: openGLContext!)
-        
-        let coreImage = CIImage(cgImage: cgimg)
-        
-        let filter = CIFilter(name: "CIPhotoEffectNoir")
-        filter?.setValue(coreImage, forKey: kCIInputImageKey)
-        
-        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
-            let cgimgresult = context.createCGImage(output, from: output.extent)
-            let result = UIImage(cgImage: cgimgresult!)
-            return result
-        } else {
-            return image
-        }
     }
     
     internal func userSelected(user: User) {
@@ -259,7 +235,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             }
                         }
                     } else if item.contentType == .recordedVideo || item.contentType == .albumVideo {
-                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .cover, maxImgSize: maxImgSize, completion: { (data, error) in
+                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
                                 

@@ -419,12 +419,20 @@ class Database {
         })
     }
     
-    static func getSectionsSection(sectionName : String, completion: @escaping (_ section : SettingSection?, _ error : Error?) -> Void) {
-        settingSectionsRef.child(sectionName).queryOrderedByValue().observeSingleEvent(of: .value, with: { snapshot in
-            let section = SettingSection(sectionID: snapshot.key, snapshot: snapshot)
-            completion(section, nil)
+    static func getSettingsSections(completion: @escaping (_ sections : [SettingSection], _ error : Error?) -> Void) {
+        var settings = [SettingSection]()
+        
+        settingSectionsRef.observeSingleEvent(of: .value, with: { snapshot in
+            for settingsSection in snapshot.children {
+                if let settingsSection = settingsSection as? FIRDataSnapshot {
+                    let section = SettingSection(sectionID: settingsSection.key, snapshot: settingsSection)
+                    settings.append(section)
+                }
+            }
+            completion(settings, nil)
+
         }, withCancel: { error in
-            completion(nil, error)
+            completion(settings, error)
         })
     }
     

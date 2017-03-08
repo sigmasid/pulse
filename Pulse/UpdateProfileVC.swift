@@ -32,7 +32,6 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-
         if !isLoaded {
             settingsTable.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
             
