@@ -132,34 +132,34 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let _settingID = sections[(indexPath as NSIndexPath).section].settings[(indexPath as NSIndexPath).row]
+        let settingID = sections[(indexPath as NSIndexPath).section].settings[(indexPath as NSIndexPath).row]
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! SettingsTableCell
 
         if settings[(indexPath as NSIndexPath).section].count > (indexPath as NSIndexPath).row {
             let _setting = settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
-            cell._settingNameLabel.text = _setting.display!
+            cell.settingNameLabel.text = _setting.display!
             if _setting.type == .location {
                 User.currentUser?.getLocation(completion: {(city) in
-                    cell._detailTextLabel.text = city
+                    cell.detailLabel.text = city
                 })
             }
                 
             else if _setting.type != nil {
-                cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                cell.detailLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
             }
             
             if _setting.editable {
                 cell.accessoryType = .disclosureIndicator
             }
         } else {
-            Database.getSetting(_settingID, completion: {(_setting, error) in
+            Database.getSetting(settingID, completion: {(_setting, error) in
                 if error == nil, let _setting = _setting {
-                    cell._settingNameLabel.text = _setting.display!
+                    cell.settingNameLabel.text = _setting.display!
                     if _setting.type != nil && _setting.type != .location {
-                        cell._detailTextLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                        cell.detailLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
                     } else if _setting.type == .location {
                         User.currentUser?.getLocation(completion: { location in
-                            cell._detailTextLabel.text = location
+                            cell.detailLabel.text = location
                         })
                     }
                     self.settings[(indexPath as NSIndexPath).section].append(_setting)

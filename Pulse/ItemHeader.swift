@@ -19,7 +19,7 @@ class ItemHeader: UICollectionReusableView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        addShadow()
+        addBottomBorder()
         setupPreview()
         headerMenu.removeShadow()
     }

@@ -9,8 +9,8 @@
 import UIKit
 
 class SettingsTableCell: UITableViewCell {
-    let _settingNameLabel = UILabel()
-    let _detailTextLabel = UILabel()
+    let settingNameLabel = UILabel()
+    let detailLabel = UILabel()
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -26,27 +26,27 @@ class SettingsTableCell: UITableViewCell {
     }
     
     fileprivate func setupCellLayout() {
-        contentView.addSubview(_settingNameLabel)
-        contentView.addSubview(_detailTextLabel)
+        contentView.addSubview(settingNameLabel)
+        contentView.addSubview(detailLabel)
 
-        _settingNameLabel.translatesAutoresizingMaskIntoConstraints = false
-        _settingNameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        _settingNameLabel.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.3).isActive = true
-        _settingNameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        _settingNameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        _settingNameLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .left)
-        _settingNameLabel.layoutIfNeeded()
+        settingNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        settingNameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        settingNameLabel.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.3).isActive = true
+        settingNameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        settingNameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        settingNameLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .left)
+        settingNameLabel.layoutIfNeeded()
         
-        _detailTextLabel.translatesAutoresizingMaskIntoConstraints = false
-        _detailTextLabel.leadingAnchor.constraint(equalTo: _settingNameLabel.trailingAnchor).isActive = true
-        _detailTextLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        _detailTextLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        _detailTextLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        _detailTextLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .right)
-        _detailTextLabel.layoutIfNeeded()
+        detailLabel.translatesAutoresizingMaskIntoConstraints = false
+        detailLabel.leadingAnchor.constraint(equalTo: settingNameLabel.trailingAnchor).isActive = true
+        detailLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        detailLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        detailLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        detailLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightMedium, color: .darkGray, alignment: .right)
+        detailLabel.layoutIfNeeded()
 
-        _detailTextLabel.numberOfLines = 0
-        _detailTextLabel.lineBreakMode = .byWordWrapping
+        detailLabel.numberOfLines = 0
+        detailLabel.lineBreakMode = .byWordWrapping
         
         backgroundColor = UIColor.clear
     }

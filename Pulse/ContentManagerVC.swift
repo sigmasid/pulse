@@ -31,7 +31,7 @@ protocol ContentDelegate: class {
     func minItemsShown()
     func askUserQuestion()
     func loadMoreFromTag()
-    func addMoreItems(_ : UIViewController, recordedItems : [Item])
+    func addMoreItems(_ : UIViewController, recordedItems : [Item], isCover : Bool)
     func userClickedSeeAll(items : [Item])
     func userClickedProfileDetail()
 }
@@ -61,6 +61,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     fileprivate var hasMoreItems = false
     fileprivate var isCameraLoaded = false
     fileprivate var isAddingMoreItems = false
+    fileprivate var isAddingCover = false
     fileprivate var isShowingIntro = false
     fileprivate var isLoaded = false
     
@@ -206,8 +207,11 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
     func doneRecording(_ assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
-        let itemKey = databaseRef.child("items").childByAutoId().key
-        let item = Item(itemID: itemKey,
+        if isAddingCover {
+            recordedItems.first?.content = image
+        } else {
+            let itemKey = databaseRef.child("items").childByAutoId().key
+            let item = Item(itemID: itemKey,
                         itemUserID: User.currentUser!.uID!,
                         itemTitle: selectedItem.type == .question ? selectedItem.itemTitle : "",
                         type: selectedItem.type == .question ? .answer : .post,
@@ -215,16 +219,25 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
                         content: image,
                         contentType: assetType,
                         tag: selectedItem.tag,
-                        cID: selectedChannel.cID)
+                        cID: selectedChannel.cID ?? selectedItem.cID)
+            recordedItems.append(item)
+        }
         
         recordedVideoVC.delegate = self
-        recordedItems.append(item)
-
+        
         recordedVideoVC.selectedChannelID = selectedChannel.cID
         recordedVideoVC.parentItemID = selectedItem.itemID
         recordedVideoVC.isNewEntry = true
         recordedVideoVC.recordedItems = recordedItems
-        recordedVideoVC.currentItemIndex += 1
+        
+        if isAddingCover {
+            recordedVideoVC.coverAdded = true
+            isAddingCover = false
+            recordedVideoVC.isNewEntry = false
+        } else {
+            recordedVideoVC.isNewEntry = true
+            recordedVideoVC.currentItemIndex += 1
+        }
         
         pushViewController(recordedVideoVC, animated: true)
     }
@@ -371,10 +384,28 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         }
     }
     
-    func addMoreItems(_ currentVC : UIViewController, recordedItems : [Item]) {
+    func addCover(_ currentVC : UIViewController, recordedItems : [Item]) {
         recordedVideoVC = currentVC as! RecordedVideoVC
         self.recordedItems = recordedItems
-        isAddingMoreItems = true
+        isAddingCover = true
+        
+        if !self.viewControllers.contains(cameraVC) {
+            popViewController(animated: false)
+            pushViewController(cameraVC, animated: false)
+        } else {
+            popViewController(animated: true)
+        }
+    }
+    
+    func addMoreItems(_ currentVC : UIViewController, recordedItems : [Item], isCover : Bool) {
+        recordedVideoVC = currentVC as! RecordedVideoVC
+        self.recordedItems = recordedItems
+        
+        if isCover {
+            isAddingCover = true
+        } else {
+            isAddingMoreItems = true
+        }
         
         if !self.viewControllers.contains(cameraVC) {
             popViewController(animated: false)
@@ -394,7 +425,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     func userDismissedCamera() {
-        if isAddingMoreItems {
+        if isAddingMoreItems || isAddingCover {
             returnToRecordings()
         } else {
             dismiss(animated: false, completion: nil)

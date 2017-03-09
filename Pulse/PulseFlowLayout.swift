@@ -18,8 +18,8 @@ class PulseFlowLayout: UICollectionViewFlowLayout {
         
         collectionView.collectionViewLayout = layout
         collectionView.showsVerticalScrollIndicator = false
-        collectionView.backgroundColor = .white
-        
+        collectionView.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.4)
+
         return layout
     }
     

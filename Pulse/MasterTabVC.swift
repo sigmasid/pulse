@@ -72,7 +72,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
                 }
                     // get feed and show initial view controller
                 else if success && !self.initialLoadComplete {
-                    self.selectedIndex = 2
+                    self.selectedIndex = 3
                     self.initialLoadComplete = true
                     
                 } else if !success && !self.initialLoadComplete {
@@ -81,6 +81,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
                 }
                 
                 self.isLoaded = true
+                self.removeLoading()
             }
         } else if r.isReachable, isLoaded {
             removeLoading()
@@ -123,7 +124,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         
         homeVC = HomeVC()
         let homeNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-        homeNavVC.isNavigationBarHidden = true
         homeNavVC.viewControllers = [homeVC]
 
         viewControllers = [accountVC, exploreNavVC, inboxNavVC, homeNavVC]
@@ -153,7 +153,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     
     fileprivate func setupLoading() {
         loadingView = LoadingView(frame: view.bounds, backgroundColor: .white)
-        //view.addSubview(loadingView!)
+        view.addSubview(loadingView!)
         
         loadingView?.addLongIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
         loadingView?.addMessage("P U L S E", _color: .black)

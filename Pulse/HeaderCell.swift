@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ChannelHeaderCell: UICollectionViewCell {
+class HeaderCell: UICollectionViewCell {
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var previewContainer = UIView()
     fileprivate lazy var previewImage = UIImageView()

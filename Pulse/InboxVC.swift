@@ -31,6 +31,14 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     internal func setupLayout() {
         tableView = UITableView(frame: view.bounds)
         tableView.register(InboxTableCell.self, forCellReuseIdentifier: reuseIdentifier)
+        
+        tableView.backgroundView = nil
+        tableView.backgroundColor = .white
+        tableView.separatorStyle = .singleLine
+        tableView.separatorColor = .pulseGrey
+        tableView.tableFooterView = UIView() //removes extra rows at bottom
+        tableView.showsVerticalScrollIndicator = false
+        
         view.addSubview(tableView)
         
         isLoaded = true

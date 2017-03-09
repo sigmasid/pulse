@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ChannelHeaderExperts: UICollectionReusableView {
+class HeaderExperts: UICollectionReusableView {
     public var experts = [User]() {
         didSet {
             expertsPreview?.delegate = self
@@ -48,7 +48,7 @@ class ChannelHeaderExperts: UICollectionReusableView {
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
         expertsPreview = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        expertsPreview.register(ChannelHeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        expertsPreview.register(HeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
         addSubview(expertsPreview)
         expertsPreview.translatesAutoresizingMaskIntoConstraints = false
@@ -63,13 +63,13 @@ class ChannelHeaderExperts: UICollectionReusableView {
     }
 }
 
-extension ChannelHeaderExperts: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
+extension HeaderExperts: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return experts.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! ChannelHeaderCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
         
         let _user = experts[indexPath.row]
         

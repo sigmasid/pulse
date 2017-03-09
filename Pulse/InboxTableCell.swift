@@ -88,7 +88,7 @@ class InboxTableCell: UITableViewCell {
         lastMessage.topAnchor.constraint(equalTo: userName.bottomAnchor).isActive = true
         lastMessage.layoutIfNeeded()
         
-        lastMessage.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
+        lastMessage.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .darkGray, alignment: .left)
         lastMessage.lineBreakMode = .byTruncatingTail
     }
 }

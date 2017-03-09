@@ -362,13 +362,13 @@ extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 10.0, left: 0.0, bottom: 1.0, right: 0.0)
+        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: Spacing.xs.rawValue, right: 0.0)
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
 
-        return CGSize(width: collectionView.frame.width - 20, height: cellHeight)
+        return CGSize(width: collectionView.frame.width, height: cellHeight)
     }
 }
 

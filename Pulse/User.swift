@@ -30,7 +30,7 @@ class User {
     
     var shownCameraForQuestion = [ String : String ]()
     var _totalItems : Int?
-    var subscriptions = [Channel : String?]()
+    var subscriptions = [Channel]()
     var subscriptionIDs = [String]()
     
     var savedItems = [Item]()

@@ -17,6 +17,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     /** Collection View Vars **/
     internal let headerReuseIdentifier = "HeaderCell"
+    internal let sectionReuseIdentifier = "SectionHeaderCell"
     internal let reuseIdentifier = "ItemCell"
     
     /** Close Button - Only Needed If Presented Modally **/

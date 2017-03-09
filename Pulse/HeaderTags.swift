@@ -1,5 +1,5 @@
 //
-//  ChannelHeaderTags.swift
+//  HeaderTags.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 2/18/17.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ChannelHeaderTags: UICollectionReusableView {
+class HeaderTagsCell: UICollectionViewCell {
     public var items = [Item]() {
         didSet {
             tagsList?.delegate = self
@@ -20,15 +20,14 @@ class ChannelHeaderTags: UICollectionReusableView {
     public var selectedChannel : Channel!
     
     private var tagsList : UICollectionView!
-    private var tagsLabel = UILabel()
     internal var tagCount = 10
     let collectionReuseIdentifier = "expertThumbCell"
     
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor.clear
-        addShadow()
+        contentView.backgroundColor = UIColor.white
+        addBottomBorder()
         setupChannelHeader()
     }
     
@@ -41,25 +40,17 @@ class ChannelHeaderTags: UICollectionReusableView {
     }
     
     fileprivate func setupChannelHeader() {
-        addSubview(tagsLabel)
-        tagsLabel.text = "featuring"
-        tagsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .black, alignment: .center)
-        
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: tagsLabel.font.pointSize, weight: UIFontWeightMedium)]
-        let titleLabelHeight = GlobalFunctions.getLabelSize(title: tagsLabel.text!, width: frame.width, fontAttributes: fontAttributes)
-        tagsLabel.frame = CGRect(x: 0, y: 10, width: frame.width, height: titleLabelHeight)
-        
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
         tagsList = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        tagsList.register(ChannelHeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        tagsList.register(HeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
         
         addSubview(tagsList)
         tagsList.translatesAutoresizingMaskIntoConstraints = false
-        tagsList.topAnchor.constraint(equalTo: tagsLabel.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
-        tagsList.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        tagsList.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        tagsList.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        tagsList.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+        tagsList.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
         tagsList.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
         tagsList.layoutIfNeeded()
         
@@ -68,13 +59,13 @@ class ChannelHeaderTags: UICollectionReusableView {
     }
 }
 
-extension ChannelHeaderTags: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
+extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return items.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! ChannelHeaderCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
         
         let item = items[indexPath.row]
         

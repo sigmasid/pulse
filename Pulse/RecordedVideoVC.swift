@@ -33,6 +33,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
     
     public var selectedChannelID : String! //used to upload to right folders
     public var parentItemID : String! //to add to right collection
+    public var coverAdded : Bool = false {
+        didSet {
+            if coverAdded {
+                _post()
+            }
+        }
+    }
     
     //includes currentItem - set by delegate - the image / video is replaced after processing when uploading file or adding more
     var recordedItems = [Item]()
@@ -208,7 +215,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
 
     func _addMore() {
         if let delegate = delegate {
-            delegate.addMoreItems(self, recordedItems: recordedItems)
+            delegate.addMoreItems(self, recordedItems: recordedItems, isCover : false)
         }
     }
     
@@ -224,17 +231,37 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
     func _post() {
         controlsOverlay.getButton(.post).isEnabled = false
         aPlayer.pause()
-
-        if User.isLoggedIn() {
+        
+        if coverAdded {
             controlsOverlay.addProgressLabel("Posting...")
             controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
             uploadItems(allItems: recordedItems)
         } else {
-            if let delegate = delegate {
-                controlsOverlay.getButton(.post).isEnabled = true
-                delegate.askUserToLogin(self)
-            }
+            confirmPost()
         }
+    }
+    
+    fileprivate func confirmPost() {
+        let confirmLogout = UIAlertController(title: "Post", message: "Would you like to add a cover image? Cover images help content stand out.",
+                                              preferredStyle: .actionSheet)
+        
+        confirmLogout.addAction(UIAlertAction(title: "Choose Cover", style: .default, handler: { (action: UIAlertAction!) in
+            if let delegate = self.delegate {
+                delegate.addMoreItems(self, recordedItems: self.recordedItems, isCover : true)
+            }
+        }))
+        
+        confirmLogout.addAction(UIAlertAction(title: "Continue Posting", style: .destructive, handler: { (action: UIAlertAction!) in
+            self.controlsOverlay.addProgressLabel("Posting...")
+            self.controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
+            self.uploadItems(allItems: self.recordedItems)
+        }))
+        
+        confirmLogout.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            confirmLogout.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(confirmLogout, animated: true, completion: nil)
     }
     
     ///upload video to firebase and update current answer with URL upon success

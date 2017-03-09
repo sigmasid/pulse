@@ -39,7 +39,7 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     fileprivate var subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, background: .white, tint: .black)
     fileprivate var isSubscribed : Bool = false {
         didSet {
-            if isSubscribed {
+            if !isSubscribed {
                setupSubscribe()
             }
         }
@@ -53,10 +53,10 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     fileprivate var isLayoutSetup = false
     
     /** Collection View Vars **/
-    fileprivate var channel : UICollectionView!
+    fileprivate var collectionView : UICollectionView!
     fileprivate let questionCellHeight : CGFloat = 125
     fileprivate let postCellHeight : CGFloat = 300
-    fileprivate let headerHeight : CGFloat = 125
+    fileprivate let headerHeight : CGFloat = 20
         
     override init() {
         super.init()
@@ -105,10 +105,10 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
             setupScreenLayout()
         }
         
-        channel.delegate = self
-        channel.dataSource = self
-        channel.reloadData()
-        channel.layoutIfNeeded()
+        collectionView.delegate = self
+        collectionView.dataSource = self
+        collectionView.reloadData()
+        collectionView.layoutIfNeeded()
     }
     
     internal func subscribe() {
@@ -148,13 +148,7 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
         headerNav?.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
         headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
         headerNav?.showNavbar(animated: true)
-        headerNav?.followScrollView(channel, delay: 25.0)
-    }
-    
-    internal func userSelected(user: User) {
-        let userProfileVC = UserProfileVC()
-        navigationController?.pushViewController(userProfileVC, animated: true)
-        userProfileVC.selectedUser = user
+        headerNav?.followScrollView(collectionView, delay: 25.0)
     }
     
     internal func currentItems(items : [Item]) {
@@ -168,14 +162,16 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
     
     fileprivate func setupScreenLayout() {
         if !isLayoutSetup {
-            channel = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
-            let _ = PulseFlowLayout.configureLayout(collectionView: channel, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
+            collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
+            let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
             
-            channel?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-            channel?.register(ChannelHeaderTags.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+            collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+            collectionView?.register(HeaderTagsCell.self, forCellWithReuseIdentifier: sectionReuseIdentifier)
+            collectionView?.register(HeaderTitle.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+            
             //channel?.register(ChannelHeaderExperts.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             
-            view.addSubview(channel!)
+            view.addSubview(collectionView!)
             
             isLayoutSetup = true
         }
@@ -184,99 +180,118 @@ class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegat
 
 /* COLLECTION VIEW */
 extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 2
+    }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return allItems.count
+        switch section {
+        case 0: return 1
+        case 1: return self.allItems.count
+        default: return 0
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
-        let currentItem = allItems[indexPath.row]
-        cell.delegate = self
-        cell.tag = indexPath.row
-        
-        //clear the cells and set the item type first
-        cell.updateLabel(nil, _subtitle: nil, _tag: nil)
-        
-        //Already fetched this item
-        if currentItem.itemCreated {
-
-            cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
-            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
+        switch indexPath.section {
+        case 0:
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: sectionReuseIdentifier, for: indexPath) as! HeaderTagsCell
+            cell.selectedChannel = selectedChannel
+            cell.items = headerItems.isEmpty ? selectedChannel.tags : headerItems
+            cell.delegate = self
+            return cell
+        case 1:
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
+            let currentItem = allItems[indexPath.row]
+            cell.delegate = self
+            cell.tag = indexPath.row
             
-        } else {
-            Database.getItem(currentItem.itemID, completion: { (item, error) in
+            //clear the cells and set the item type first
+            cell.updateLabel(nil, _subtitle: nil, _tag: nil)
+            
+            //Already fetched this item
+            if currentItem.itemCreated {
 
-                if let item = item {
+                cell.itemType = currentItem.type
+                cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+                cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
+                
+            } else {
+                Database.getItem(currentItem.itemID, completion: { (item, error) in
 
-                    cell.itemType = currentItem.type
+                    if let item = item {
 
-                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                        DispatchQueue.main.async {
-                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.itemTitle)
-                        }
-                    }
-                    
-                    item.tag = self.allItems[indexPath.row].tag
-                    self.allItems[indexPath.row] = item
-                    
-                    //Get the cover image
-                    if let imageURL = item.contentURL, item.contentType == .recordedImage || item.contentType == .albumImage {
-                        DispatchQueue.global(qos: .background).async {
-                            if let data = try? Data(contentsOf: imageURL) {
-                                self.allItems[indexPath.row].content = UIImage(data: data)
-                            
-                                DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
-                                    }
-                                }
-                            }
-                        }
-                    } else if item.contentType == .recordedVideo || item.contentType == .albumVideo {
-                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
-                            if let data = data {
-                                self.allItems[indexPath.row].content = UIImage(data: data)
-                                
-                                DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
-                                    }
-                                }
-                            }
-                        })
-                    }
-                    
-                    // Get the user details
-                    Database.getUser(item.itemUserID, completion: {(user, error) in
-                        if let user = user {
-                            self.allItems[indexPath.row].user = user
+                        cell.itemType = currentItem.type
+
+                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
                             DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.itemTitle)
-                                }
+                                cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.itemTitle)
                             }
-                            
-                            
+                        }
+                        
+                        item.tag = self.allItems[indexPath.row].tag
+                        self.allItems[indexPath.row] = item
+                        
+                        //Get the cover image
+                        if let imageURL = item.contentURL, item.contentType == .recordedImage || item.contentType == .albumImage {
                             DispatchQueue.global(qos: .background).async {
-                                if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
-                                    self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
-                                    
+                                if let data = try? Data(contentsOf: imageURL) {
+                                    self.allItems[indexPath.row].content = UIImage(data: data)
+                                
                                     DispatchQueue.main.async {
                                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                            cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
+                                            cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
                                         }
                                     }
                                 }
                             }
+                        } else if item.contentType == .recordedVideo || item.contentType == .albumVideo {
+                            Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                                if let data = data {
+                                    self.allItems[indexPath.row].content = UIImage(data: data)
+                                    
+                                    DispatchQueue.main.async {
+                                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                            cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                        }
+                                    }
+                                }
+                            })
                         }
-                    })
+                        
+                        // Get the user details
+                        Database.getUser(item.itemUserID, completion: {(user, error) in
+                            if let user = user {
+                                self.allItems[indexPath.row].user = user
+                                DispatchQueue.main.async {
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.itemTitle)
+                                    }
+                                }
+                                
+                                
+                                DispatchQueue.global(qos: .background).async {
+                                    if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
+                                        self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
+                                        
+                                        DispatchQueue.main.async {
+                                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                                cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        })
 
-                }
-            })
+                    }
+                })
+            }
+            return cell
+        default:
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
+            return cell
         }
-        return cell
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
@@ -289,10 +304,12 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func updateOnscreenRows() {
-        let visiblePaths = channel.indexPathsForVisibleItems
+        let visiblePaths = collectionView.indexPathsForVisibleItems
         for indexPath in visiblePaths {
-            let cell = channel.cellForItem(at: indexPath) as! ItemCell
-            updateCell(cell, inCollectionView: channel, atIndexPath: indexPath)
+            if indexPath.section == 1 {
+                let cell = collectionView.cellForItem(at: indexPath) as! ItemCell
+                updateCell(cell, inCollectionView: collectionView, atIndexPath: indexPath)
+            }
         }
     }
     
@@ -306,18 +323,24 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     //Did select item at index path
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedItem = allItems[indexPath.row]
-        userSelected(item: selectedItem)
+        if indexPath.section == 1 {
+            let selectedItem = allItems[indexPath.row]
+            userSelected(item: selectedItem)
+        }
+    }
+    
+    /** Delegate Functions **/
+    internal func userSelected(user: User) {
+        let userProfileVC = UserProfileVC()
+        navigationController?.pushViewController(userProfileVC, animated: true)
+        userProfileVC.selectedUser = user
     }
     
     func userSelected(item : Item) {
         
         switch item.type {
-            
         case .answer:
-            
             showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-
         case .post:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 if success {
@@ -380,14 +403,17 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         switch kind {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ChannelHeaderTags
-            
-            headerView.backgroundColor = .white
-            headerView.selectedChannel = selectedChannel
-            headerView.items = headerItems.isEmpty ? selectedChannel.tags : headerItems
-            
-            //headerView.experts = selectedChannel.experts
-            headerView.delegate = self
+                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! HeaderTitle
+            switch indexPath.section {
+            case 0:
+                headerView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
+                headerView.setTitle(title: "featured tags")
+            case 1:
+                headerView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
+                headerView.setTitle(title: "recent updates")
+            default:
+                break
+            }
             return headerView
             
         default: assert(false, "Unexpected element kind")
@@ -398,16 +424,31 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
 extension ChannelVC: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: channel.frame.width, height: headerHeight)
+        switch section {
+        case 0:
+            return CGSize(width: collectionView.frame.width, height: headerHeight)
+        case 1:
+            return CGSize(width: collectionView.frame.width, height: headerHeight)
+        default:
+            return CGSize(width: collectionView.frame.width, height: 0)
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 10.0, left: 0.0, bottom: 1.0, right: 0.0)
+        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: Spacing.xs.rawValue, right: 0.0)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
-        return CGSize(width: channel.frame.width - 20, height: cellHeight)
+        var cellHeight : CGFloat = 125
+        switch indexPath.section {
+        case 0:
+            return CGSize(width: collectionView.frame.width, height: 100)
+        case 1:
+            cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
+            return CGSize(width: collectionView.frame.width, height: cellHeight)
+        default:
+            return CGSize(width: collectionView.frame.width, height: cellHeight)
+        }
     }
     
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {

@@ -44,7 +44,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     
     public var navBar : PulseNavBar!
     public var statusBarHidden = false
-    private var visualEffectView : UIVisualEffectView!
+    private lazy var visualEffectView : UIVisualEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
     
     open fileprivate(set) var state: NavigationBarState = .expanded {
         willSet {
@@ -401,7 +401,6 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         // Add blur view
         guard let navBar = navBar else { return }
         
-        visualEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
         visualEffectView.frame = navBar.bounds
         visualEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         visualEffectView.alpha = 0.0

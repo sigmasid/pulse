@@ -65,7 +65,7 @@ extension UICollectionViewCell {
         layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: contentView.layer.cornerRadius).cgPath
     }
     
-    func addBottomBorder() {
+    override func addBottomBorder() {
         contentView.layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
     }
 }
@@ -80,6 +80,10 @@ extension UIView {
         layer.shadowOpacity = 0.5
         
         layer.masksToBounds = false
+    }
+    
+    func addBottomBorder() {
+        layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
     }
 }
 

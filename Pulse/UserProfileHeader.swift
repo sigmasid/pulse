@@ -23,8 +23,8 @@ class UserProfileHeader: UICollectionReusableView {
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor.clear
-        addShadow()
+        backgroundColor = UIColor.white
+        addBottomBorder()
         setupProfileDetails()
     }
     
