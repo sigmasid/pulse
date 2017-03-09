@@ -57,6 +57,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     fileprivate var imageView : UIImageView!
     
     /* bools to make sure can click next video and no errors from unhandled observers */
+    public var _isShowingIntro = false
+
     fileprivate var _tapReady = false
     fileprivate var _nextItemReady = false
     fileprivate var _canAdvanceReady = false
@@ -69,7 +71,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     fileprivate var _isImageViewShown = false
     fileprivate var _isQuickBrowseShown = false
     fileprivate var _isExploring = false
-    public var _isShowingIntro = false
     
     fileprivate var startObserver : AnyObject!
     fileprivate var playedTillEndObserver : Any!

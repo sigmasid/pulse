@@ -114,16 +114,25 @@ class ItemCell: UICollectionViewCell {
     }
     
     fileprivate func setupCell() {
-        cellCard.frame = contentView.frame
         addSubview(cellCard)
+        
+        cellCard.translatesAutoresizingMaskIntoConstraints = false
+        cellCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+        cellCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
+        cellCard.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
+        cellCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
+        cellCard.layoutIfNeeded()
         
         cellCard.addArrangedSubview(itemImage)
         cellCard.addArrangedSubview(itemFooter)
         
         itemButton.translatesAutoresizingMaskIntoConstraints = false
-        itemHeightAnchor = itemImage.heightAnchor.constraint(equalToConstant: 0)
+        itemHeightAnchor = itemImage.heightAnchor.constraint(lessThanOrEqualToConstant: 225)
+        itemHeightAnchor.priority = 100
         itemHeightAnchor.isActive = true
         
+        itemFooter.heightAnchor.constraint(greaterThanOrEqualToConstant: 75).isActive = true
+
         itemFooter.addSubview(itemButton)
         itemFooter.addSubview(titleLabel)
         itemFooter.addSubview(itemTag)
@@ -134,7 +143,6 @@ class ItemCell: UICollectionViewCell {
         itemButton.centerYAnchor.constraint(equalTo: itemFooter.centerYAnchor).isActive = true
         itemButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         itemButton.heightAnchor.constraint(equalTo: itemButton.widthAnchor).isActive = true
-        
         itemButton.addTarget(self, action: #selector(clickedItemButton), for: .touchUpInside)
         
         itemButton.imageView?.contentMode = .scaleAspectFill

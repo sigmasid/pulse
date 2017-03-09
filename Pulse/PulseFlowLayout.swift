@@ -15,11 +15,12 @@ class PulseFlowLayout: UICollectionViewFlowLayout {
         layout.minimumLineSpacing = minimumLineSpacing
         layout.minimumInteritemSpacing = itemSpacing
         layout.sectionHeadersPinToVisibleBounds = stickyHeader
+        layout.estimatedItemSize = CGSize(width: collectionView.frame.width, height: 125)
         
         collectionView.collectionViewLayout = layout
         collectionView.showsVerticalScrollIndicator = false
         collectionView.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.4)
-
+        
         return layout
     }
     

@@ -201,8 +201,11 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.delegate = self
             return cell
         case 1:
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
+
             let currentItem = allItems[indexPath.row]
+            
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
+            
             cell.delegate = self
             cell.tag = indexPath.row
             

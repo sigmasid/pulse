@@ -643,7 +643,6 @@ class Database {
             let item = Item(itemID: snap.key, snapshot: snap, feedUpdate: true)
             item.cID = channelID
             
-            print("got snap \(item)")
             completion(item)
         })
     }

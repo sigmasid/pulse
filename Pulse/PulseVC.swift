@@ -119,14 +119,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
      Called when the state of the navigation bar changes
      */
     func scrollingNavigationController(_ controller: PulseNavVC, didChangeState state: NavigationBarState) {
-        if state != currentNavState {
-            if state == .collapsed {
-                statusBarStyle = .lightContent
-            } else if state == .expanded {
-                statusBarStyle = .default
-            }
-            setNeedsStatusBarAppearanceUpdate()
-        }
+
     }
     
     /**
