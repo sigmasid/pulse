@@ -20,6 +20,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     public var selectedItem : Item! {
         didSet {
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+                print("setting all items to \(items.count)")
                 self.allItems = items
                 self.updateDataSource()
                 self.updateHeader()
@@ -30,6 +31,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     
     /** main datasource var **/
     fileprivate var allItems = [Item]()
+    fileprivate var hasReachedEnd = false
     
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
@@ -123,7 +125,6 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     
     func askQuestion() {
         let questionVC = AskQuestionVC()
-        questionVC.view.frame = view.frame
         questionVC.selectedTag = selectedItem
         questionVC.delegate = self
         
@@ -140,6 +141,30 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
         collectionView?.dataSource = self
         collectionView?.reloadData()
         collectionView?.layoutIfNeeded()
+    }
+    
+    //get more items if scrolled to end
+    func getMoreItems() {
+        
+        if let lastItemID = allItems.last?.itemID, !hasReachedEnd {
+
+            Database.getItemCollection(selectedItem.itemID, lastItem: lastItemID, completion: { success, items in
+                if items.count > 0 {
+                    
+                    var indexPaths = [IndexPath]()
+                    for (index, _) in items.enumerated() {
+                        let newIndexPath = IndexPath(row: self.allItems.count + index - 1, section: 0)
+                        indexPaths.append(newIndexPath)
+                    }
+                    self.allItems.append(contentsOf: items)
+                    self.collectionView?.insertItems(at: indexPaths)
+
+                    print("new all items length is \(self.allItems.count)")
+                } else {
+                    self.hasReachedEnd = true
+                }
+            })
+        }
     }
     
     func clickedItemButton(itemRow : Int) {
@@ -172,6 +197,12 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        
+        //if near the end then get more items
+        if indexPath.row == allItems.count - 1 {
+            getMoreItems()
+        }
+        
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
         cell.delegate = self
         cell.tag = indexPath.row
@@ -310,6 +341,16 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         if !decelerate { updateOnscreenRows() }
     }
     
+    /**
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let bottomEdge = scrollView.contentOffset.y + scrollView.frame.size.height
+        let bottomInset = scrollView.contentInset.bottom
+        
+        if bottomEdge >= scrollView.contentSize.height - bottomInset {
+            print("reached end of scroll view")
+            getMoreItems()
+        }
+    } **/
     
     func userSelected(item : Item, index : Int) {
         

@@ -12,7 +12,7 @@ protocol ParentDelegate: class {
     func dismiss(_ viewController : UIViewController)
 }
 
-class AskQuestionVC: PulseVC, UITextViewDelegate {
+class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedTag : Item!
     public var selectedUser : User!
@@ -48,6 +48,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate {
             tap = UITapGestureRecognizer(target: self, action: #selector(dismissAsk))
             tap.cancelsTouchesInView = false
             tap.isEnabled = true
+            tap.delegate = self
             view.addGestureRecognizer(tap)
             
             observersAdded = true
@@ -70,6 +71,15 @@ class AskQuestionVC: PulseVC, UITextViewDelegate {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         view.removeGestureRecognizer(tap)
+    }
+    
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        print("gesture recognizer should receive touch fired")
+        if touch.view == askButton {
+            return false
+        }
+        
+        return true
     }
     
     func dismissAsk() {
@@ -164,6 +174,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate {
     }
     
     fileprivate func setupQuestionBox() {
+        print("view size is \(view.frame)")
         view.addSubview(questionContainer)
         
         questionContainer.addSubview(questionBody)

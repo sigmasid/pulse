@@ -234,7 +234,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         present(menu, animated: true, completion: nil)
     }
     
-    func showCurrentUserMenu() {
+    internal func showCurrentUserMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "Edit Profile", style: .default, handler: { (action: UIAlertAction!) in
@@ -254,7 +254,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         present(menu, animated: true, completion: nil)
     }
     
-    func clickedLogout() {
+    internal func clickedLogout() {
         let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
         
         confirmLogout.addAction(UIAlertAction(title: "Logout", style: .default, handler: { (action: UIAlertAction!) in
@@ -272,14 +272,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         present(confirmLogout, animated: true, completion: nil)
     }
     
-    /** Start Delegate Functions **/
-    func askQuestion() {
-        let questionVC = AskQuestionVC()
-        questionVC.selectedUser = selectedUser
-        navigationController?.pushViewController(questionVC, animated: true)
-    }
-    
-    func shareProfile() {
+    internal func share() {
         selectedUser.createShareLink(completion: { link in
             guard let link = link else { return }
             self.activityController = GlobalFunctions.shareContent(shareType: "person",
@@ -288,7 +281,23 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         })
     }
     
-    func sendMessage() {
+    /** Start Delegate Functions **/
+    internal func askQuestion() {
+        let questionVC = AskQuestionVC()
+        questionVC.selectedUser = selectedUser
+        navigationController?.pushViewController(questionVC, animated: true)
+    }
+    
+    internal func shareProfile() {
+        selectedUser.createShareLink(completion: { link in
+            guard let link = link else { return }
+            self.activityController = GlobalFunctions.shareContent(shareType: "person",
+                                                                   shareText: self.selectedUser.name ?? "",
+                                                                   shareLink: link, presenter: self)
+        })
+    }
+    
+    internal func sendMessage() {
         let messageVC = MessageVC()
         messageVC.toUser = selectedUser
         

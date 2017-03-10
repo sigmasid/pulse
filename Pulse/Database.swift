@@ -46,7 +46,7 @@ class Database {
     static var masterQuestionIndex = [String : String]()
     static var masterTagIndex = [String : String]()
 
-    static let querySize : UInt = 50
+    static let querySize : UInt = 5
     static var activeListeners = [FIRDatabaseReference]()
     static var profileListenersAdded = false
     
@@ -478,16 +478,37 @@ class Database {
         })
     }
     
-    static func getItemCollection(_ itemID : String, completion: @escaping (_ hasDetail : Bool, _ items : [Item]) -> Void) {
+    static func getItemCollection(_ itemID : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
         var items = [Item]()
         
-        itemCollectionRef.child(itemID).observeSingleEvent(of: .value, with: { snap in
+        itemCollectionRef.child(itemID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
                     let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
                     items.append(item)
                 }
+                items.reverse()
                 completion(true, items)
+            } else {
+                completion(false, items)
+            }
+        })
+    }
+    
+    static func getItemCollection(_ itemID : String, lastItem : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
+        var items = [Item]()
+        
+        itemCollectionRef.child(itemID).queryOrderedByKey().queryEnding(atValue: lastItem).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    if (child as AnyObject).key != lastItem {
+                        let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
+                        items.append(item)
+                        print("should append item \(item.itemID)")
+                    }
+                }
+                items.reverse()
+                completion(false, items)
             } else {
                 completion(false, items)
             }
