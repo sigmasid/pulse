@@ -66,7 +66,7 @@ class ItemCell: UICollectionViewCell {
     
     func updateLabel(_ _title : String?, _subtitle : String?, _tag : String?) {
         titleLabel.text = _title
-        subtitleLabel.text = _subtitle
+        subtitleLabel.text = _subtitle?.capitalized
         itemTag.text = _tag != nil ? "# \(_tag!)" : nil
     }
     

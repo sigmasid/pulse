@@ -74,7 +74,6 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        print("gesture recognizer should receive touch fired")
         if touch.view == askButton {
             return false
         }
@@ -109,7 +108,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         dismissKeyboard()
         
         if selectedTag != nil {
-            Database.askQuestion(item: selectedTag, qText: questionBody.text, completion: {(success, error) in
+            Database.askQuestion(parentItem: selectedTag, qText: questionBody.text, completion: {(success, error) in
                 if success {
                     let questionConfirmation = UIAlertController(title: "Question Posted!",
                                                                  message: "Thanks for your question. You will get a notification as soon as someone posts an answer",

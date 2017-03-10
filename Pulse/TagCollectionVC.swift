@@ -20,7 +20,6 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     public var selectedItem : Item! {
         didSet {
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
-                print("setting all items to \(items.count)")
                 self.allItems = items
                 self.updateDataSource()
                 self.updateHeader()
@@ -158,8 +157,6 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
                     }
                     self.allItems.append(contentsOf: items)
                     self.collectionView?.insertItems(at: indexPaths)
-
-                    print("new all items length is \(self.allItems.count)")
                 } else {
                     self.hasReachedEnd = true
                 }

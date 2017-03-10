@@ -358,6 +358,11 @@ extension TimeInterval {
     }
 }
 
+enum AuthStates {
+    case loggedIn
+    case loggedOut
+}
+
 enum AnimationStyle {
     case verticalUp
     case verticalDown

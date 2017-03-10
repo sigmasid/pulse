@@ -21,7 +21,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     /** Delegate Vars **/
     public var selectedUser : User! {
         didSet {
-            if selectedUser == nil {
+            if selectedUser == nil || selectedUser.uID == nil {
                 allItems = []
                 updateDataSource()
             } else if User.currentUser?.uID != nil, selectedUser.uID == User.currentUser?.uID! {
@@ -135,6 +135,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: false)
         
+        collectionView?.register(EmptyCell.self,
+                                 forCellWithReuseIdentifier: emptyReuseIdentifier)
         collectionView?.register(BrowseContentCell.self,
                                  forCellWithReuseIdentifier: reuseIdentifier)
         collectionView?.register(UserProfileHeader.self,
@@ -345,10 +347,16 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
 
 extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return allItems.count
+        return allItems.count == 0 ? 1 : allItems.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard allItems.count > 0 else {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: emptyReuseIdentifier, for: indexPath) as! EmptyCell
+            cell.setMessage(message: "nothing to see yet!", color: .black)
+            return cell
+        }
+        
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseContentCell
         
         cell.contentView.backgroundColor = .white
@@ -462,12 +470,12 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     //Did select item at index path
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
+        if allItems.count > 0, let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
+            
+            selectedIndex = indexPath
         }
-        
-        selectedIndex = indexPath
     }
     
     func collectionView(_ collectionView: UICollectionView,
@@ -490,6 +498,9 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
 extension UserProfileVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        if allItems.count == 0 {
+            return CGSize(width: view.frame.width, height: view.frame.height - headerHeight)
+        }
         return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
     }
     
@@ -498,6 +509,9 @@ extension UserProfileVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        if allItems.count == 0 {
+            return UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0, right: 0.0)
+        }
         return UIEdgeInsets(top: 10.0, left: 10.0, bottom: (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue, right: 10.0)
     }
 }

@@ -85,6 +85,7 @@
 		BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */; };
 		BAC892D91D7A28870060A928 /* PanEdgeInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */; };
 		BAC892DC1D7A291E0060A928 /* PanAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */; };
+		BAC918521E73241F005772EC /* EmptyCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC918511E73241E005772EC /* EmptyCell.swift */; };
 		BAD363A81D51319600560EB5 /* ContentIntroVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD363A71D51319600560EB5 /* ContentIntroVC.swift */; };
 		BAD37D621D2640E800BACB04 /* Database.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD37D611D2640E800BACB04 /* Database.swift */; };
 		BAE51E201D87353600677A50 /* MasterTabVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE51E1F1D87353600677A50 /* MasterTabVC.swift */; };
@@ -186,6 +187,7 @@
 		BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginHeaderView.swift; sourceTree = "<group>"; };
 		BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanEdgeInteractionController.swift; sourceTree = "<group>"; };
 		BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanAnimationController.swift; sourceTree = "<group>"; };
+		BAC918511E73241E005772EC /* EmptyCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmptyCell.swift; sourceTree = "<group>"; };
 		BAD363A71D51319600560EB5 /* ContentIntroVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentIntroVC.swift; sourceTree = "<group>"; };
 		BAD37D611D2640E800BACB04 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		BAE51E1F1D87353600677A50 /* MasterTabVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MasterTabVC.swift; sourceTree = "<group>"; };
@@ -412,6 +414,7 @@
 				BAF0FC151E6746E30069BA9A /* QuickBrowseLayout.swift */,
 				BA722DEB1E5A4AE400E9699D /* ItemHeader.swift */,
 				BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */,
+				BAC918511E73241E005772EC /* EmptyCell.swift */,
 			);
 			name = Items;
 			sourceTree = "<group>";
@@ -691,6 +694,7 @@
 				BA434FB41E5943A1004686CB /* ExploreChannelsVC.swift in Sources */,
 				BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */,
 				BA7D677D1D30D07400883B88 /* LoginCreateAccountVC.swift in Sources */,
+				BAC918521E73241F005772EC /* EmptyCell.swift in Sources */,
 				BA06EDED1DA7081C00F880EE /* XMSegmentedControl.swift in Sources */,
 				BA53EAB91D70E08100357E5A /* ExploreVC.swift in Sources */,
 				BAA794A01D7A50C700700AF7 /* BaseAnimator.swift in Sources */,

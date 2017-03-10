@@ -18,6 +18,7 @@ let storage = FIRStorage.storage()
 let storageRef = storage.reference(forURL: "gs://pulse-84022.appspot.com")
 let databaseRef = FIRDatabase.database().reference()
 var initialFeedUpdateComplete = false
+var currentAuthState : AuthStates = .loggedOut
 
 class Database {
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
@@ -448,7 +449,7 @@ class Database {
  
     /*** MARK START : GET FEED ITEMS ***/
     static func getChannel(cID : String, completion: @escaping (_ channel : Channel, _ error : NSError?) -> Void) {
-        channelsRef.child(cID).observeSingleEvent(of: .value, with: { snap in
+        channelsRef.child(cID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
             let _currentChannel = Channel(cID: cID, snapshot: snap)
             completion(_currentChannel, nil)
         }, withCancel: { error in
@@ -462,6 +463,25 @@ class Database {
             completion(channel)
         }, withCancel: { error in
             completion(nil)
+        })
+    }
+    
+    static func getChannelItems(channelID : String, lastItem : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
+        var items = [Item]()
+        
+        channelItemsRef.child(channelID).queryOrderedByKey().queryEnding(atValue: lastItem).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    if (child as AnyObject).key != lastItem {
+                        let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
+                        items.append(item)
+                    }
+                }
+                items.reverse()
+                completion(false, items)
+            } else {
+                completion(false, items)
+            }
         })
     }
     
@@ -504,7 +524,6 @@ class Database {
                     if (child as AnyObject).key != lastItem {
                         let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
                         items.append(item)
-                        print("should append item \(item.itemID)")
                     }
                 }
                 items.reverse()
@@ -748,6 +767,8 @@ class Database {
                 cleanupListeners()
                 removeCurrentUser()
                 initialFeedUpdateComplete = false
+                currentAuthState = .loggedOut
+                
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "LogoutSuccess"), object: self)
                 completion(true)
             } catch {
@@ -788,7 +809,9 @@ class Database {
         })
 
         FIRAuth.auth()?.addStateDidChangeListener { auth, user in
-            if let _user = user {
+            if let _user = user, currentAuthState != .loggedIn {
+                currentAuthState = .loggedIn
+                
                 setCurrentUserPaths()
                 
                 populateCurrentUser(_user, completion: { (success) in
@@ -797,6 +820,8 @@ class Database {
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdateLogin"), object: self)
                     }
                 })
+            } else if currentAuthState == .loggedIn {
+                //ignore the call - state is logged in and auth fired again
             } else {
                 removeCurrentUser()
                 completion(false)
@@ -912,7 +937,6 @@ class Database {
                 if let channel = channel as? FIRDataSnapshot {
                     let savedChannel = Channel(cID: channel.key)
                     savedChannel.cTitle = channel.value as? String
-                    print("got channel with \(savedChannel.cID)")
                     
                     if !User.currentUser!.subscriptionIDs.contains(channel.key) {
                         User.currentUser!.subscriptions.append(savedChannel)
@@ -1183,10 +1207,16 @@ class Database {
     }
     
     /** ASK QUESTIONS **/
-    static func askQuestion(item : Item, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func askQuestion(parentItem : Item, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to ask a question" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard let channelID = parentItem.cID else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "please select a channel first" ]
+            completion(false, NSError.init(domain: "WrongChannel", code: 404, userInfo: errorInfo))
             return
         }
         
@@ -1194,10 +1224,19 @@ class Database {
         
         let itemPost = ["title": qText,
                         "type":"question",
-                        "uID": user.uid]
+                        "uID": user.uid,
+                        "cID":parentItem.cID]
         
-        let post = ["items/\(itemKey)":itemPost,
-                    "itemCollection/\(item.itemID)/\(itemKey)":"question",
+        let channelPost : [String : AnyObject] = ["type" : "question" as AnyObject,
+                                                  "tagID" : parentItem.itemID as AnyObject,
+                                                  "tagTitle" : parentItem.itemTitle as AnyObject,
+                                                  "title" : qText as AnyObject,
+                                                  "uID" : user.uid as AnyObject,
+                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        let post = ["channelItems/\(channelID)/\(itemKey)":channelPost,
+                    "items/\(itemKey)":itemPost,
+                    "itemCollection/\(parentItem.itemID)/\(itemKey)":"question",
                     "users/\(user.uid)/askedQuestions/\(itemKey)":true] as [String: Any]
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
@@ -1391,6 +1430,9 @@ class Database {
                         completion(false, completionError as NSError?)
                     }
                     else {
+                        if user.subscriptions.isEmpty {
+                            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
+                        }
 
                         user.subscriptions.append(channel)
                         
@@ -1403,7 +1445,7 @@ class Database {
                 })
             }
         } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please login to save tags" ]
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to subscribe to channels" ]
             completion(false, NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
         }
     }

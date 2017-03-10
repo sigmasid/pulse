@@ -35,7 +35,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
             
             toggleLoading(show: true, message: "Loading feed...")
             setupScreenLayout()
-            setupNotifications()
             
             isLoaded = true
         }
@@ -50,6 +49,15 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    
+    override init() {
+        super.init()
+        setupNotifications()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     func createFeed() {

@@ -71,7 +71,7 @@ class Channel : NSObject {
             
             items.append(currentItem)
         }
-        
+        items.reverse()
         cDetailedCreated = true
     }
 

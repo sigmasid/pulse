@@ -44,8 +44,10 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
     }
     fileprivate var activityIndicator = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue))
     
+    /** Data Source Vars **/
     fileprivate var allItems = [Item]()
     fileprivate var headerItems = [Item]()
+    fileprivate var hasReachedEnd = false
     
     fileprivate var isLoaded = false
     fileprivate var isLayoutSetup = false
@@ -95,6 +97,29 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
                 self.selectedChannel = updatedChannel
             }
         })
+    }
+    
+    //get more items if scrolled to end
+    func getMoreChannelItems() {
+        
+        if let lastItemID = allItems.last?.itemID, !hasReachedEnd {
+            
+            Database.getChannelItems(channelID: selectedChannel.cID, lastItem: lastItemID, completion: { success, items in
+                if items.count > 0 {
+                    
+                    var indexPaths = [IndexPath]()
+                    for (index, _) in items.enumerated() {
+                        let newIndexPath = IndexPath(row: self.allItems.count + index - 1, section: 0)
+                        indexPaths.append(newIndexPath)
+                    }
+                    self.selectedChannel.items.append(contentsOf: items)
+                    self.allItems.append(contentsOf: items)
+                    self.collectionView?.insertItems(at: indexPaths)
+                } else {
+                    self.hasReachedEnd = true
+                }
+            })
+        }
     }
     
     //Once the channel is set and pulled from database -> reload the datasource for collection view
@@ -199,7 +224,11 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.delegate = self
             return cell
         case 1:
-
+            //if near the end then get more items
+            if indexPath.row == allItems.count - 1 {
+                getMoreChannelItems()
+            }
+            
             let currentItem = allItems[indexPath.row]
             
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
@@ -349,7 +378,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 showBrowse(selectedItem: item)
                 
             case .posts, .feedback:
-
+                
                 showTag(selectedItem: item)
                 
             default: break
