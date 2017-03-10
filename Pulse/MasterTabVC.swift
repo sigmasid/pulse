@@ -114,12 +114,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         
         exploreChannelsVC = ExploreChannelsVC()
         let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-        exploreNavVC.setNav(title: "Explore")
         exploreNavVC.viewControllers = [exploreChannelsVC]
         
         inboxVC = InboxVC()
         let inboxNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-        inboxNavVC.setNav(title: "Inbox")
         inboxNavVC.viewControllers = [inboxVC]
         
         homeVC = HomeVC()

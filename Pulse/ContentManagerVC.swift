@@ -36,7 +36,7 @@ protocol ContentDelegate: class {
     func userClickedProfileDetail()
 }
 
-class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseContentDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseContentDelegate, ModalDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     //set by delegate - questions or posts
     var selectedChannel : Channel! //all items need a channel - only for adding new posts / answers
     var selectedItem: Item! //the category item - might be the question / tag / post etc.
@@ -179,17 +179,19 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     func userClickedProfileDetail() {
-        let userProfileVC = UserProfileVC()
+        
+        
+        let userProfileVC = UserProfileVC()        
         userProfileVC.selectedUser = selectedItem?.user
-        userProfileVC.contentDelegate = self
+        userProfileVC.modalDelegate = self
 
         present(userProfileVC, animated: true)
         
     }
     
-    func userClosedBrowse(_ viewController : UIViewController) {
+    func userClosedModal(_ viewController : UIViewController) {
         dismiss(animated: true, completion: { _ in
-            print("should dismiss browse collection vc")
+            self.isNavigationBarHidden = true
         })
     }
     

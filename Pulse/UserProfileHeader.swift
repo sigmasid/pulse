@@ -12,11 +12,13 @@ class UserProfileHeader: UICollectionReusableView {
     fileprivate var menuButton = PulseButton(size: .medium, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
 
     fileprivate var profileImage = UIImageView()
+    fileprivate var profileName = PaddingLabel()
     fileprivate var profileShortBio = UILabel()
     fileprivate var profileLongBio = UILabel()
     
     fileprivate var shortBioHeightConstraint: NSLayoutConstraint!
     fileprivate var longBioHeightConstraint : NSLayoutConstraint!
+    fileprivate var nameHeightAnchor: NSLayoutConstraint!
     
     public var profileDelegate : UserProfileDelegate!
     
@@ -32,11 +34,12 @@ class UserProfileHeader: UICollectionReusableView {
         super.init(coder: aDecoder)
     }
     
-    public func updateUserDetails(selectedUser: User) {
-        profileImage.image = selectedUser.thumbPicImage
+    public func updateUserDetails(selectedUser: User, isModal : Bool) {
+        profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
         
         let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileShortBio.font.pointSize, weight: UIFontWeightMedium)]
         let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!, width: profileShortBio.frame.width, fontAttributes: fontAttributes) : 0
+        let nameHeight = selectedUser.name != nil ? GlobalFunctions.getLabelSize(title: selectedUser.name!, width: profileName.frame.width, fontAttributes: fontAttributes) : 0
         
         let bioFontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileLongBio.font.pointSize, weight: UIFontWeightMedium)]
         let longBioHeight = selectedUser.bio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.bio!, width: profileLongBio.frame.width, fontAttributes: bioFontAttributes) : 0
@@ -45,7 +48,9 @@ class UserProfileHeader: UICollectionReusableView {
         
         shortBioHeightConstraint.constant = shortBioHeight
         longBioHeightConstraint.constant = min(maxHeight, longBioHeight)
+        nameHeightAnchor.constant = isModal ? nameHeight : 0
         
+        profileName.text = isModal ? selectedUser.name : ""
         profileShortBio.text = selectedUser.shortBio
         profileLongBio.text = selectedUser.bio
         
@@ -60,6 +65,7 @@ class UserProfileHeader: UICollectionReusableView {
     
     fileprivate func setupProfileDetails() {
         addSubview(profileImage)
+        addSubview(profileName)
         addSubview(profileShortBio)
         addSubview(profileLongBio)
         addSubview(menuButton)
@@ -77,12 +83,22 @@ class UserProfileHeader: UICollectionReusableView {
         menuButton.removeShadow()
         menuButton.addTarget(self, action: #selector(showMenu), for: .touchUpInside)
         
+        profileName.translatesAutoresizingMaskIntoConstraints = false
+        profileName.topAnchor.constraint(equalTo: profileImage.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        profileName.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        profileName.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7)
+        
+        nameHeightAnchor = profileShortBio.heightAnchor.constraint(equalToConstant: 0)
+        nameHeightAnchor.priority = 900
+        nameHeightAnchor.isActive = true
+        
         profileShortBio.translatesAutoresizingMaskIntoConstraints = false
-        profileShortBio.topAnchor.constraint(equalTo: profileImage.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        profileShortBio.topAnchor.constraint(equalTo: profileName.bottomAnchor).isActive = true
         profileShortBio.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         profileShortBio.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7)
         
         shortBioHeightConstraint = profileShortBio.heightAnchor.constraint(equalToConstant: 0)
+        shortBioHeightConstraint.priority = 900
         shortBioHeightConstraint.isActive = true
         
         profileLongBio.translatesAutoresizingMaskIntoConstraints = false
@@ -91,8 +107,10 @@ class UserProfileHeader: UICollectionReusableView {
         profileLongBio.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7).isActive = true
         
         longBioHeightConstraint = profileLongBio.heightAnchor.constraint(equalToConstant: 0)
+        longBioHeightConstraint.priority = 900
         longBioHeightConstraint.isActive = true
         
+        profileName.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
         profileShortBio.setFont(FontSizes.body.rawValue, weight: UIFontWeightMedium, color: .lightGray, alignment: .center)
         profileLongBio.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .lightGray, alignment: .center)
         profileLongBio.layoutIfNeeded()

@@ -48,7 +48,8 @@ public class PulseNavBar: UINavigationBar {
     }
     
     public func setTitles(title : String?) {
-        self.navTitle.text = title?.uppercased()
+        navTitle.text = title?.capitalized
+        navTitle.textAlignment = .center
         
     }
     
@@ -75,14 +76,13 @@ public class PulseNavBar: UINavigationBar {
         navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
         navTitle.removeShadow()
     }
-
     
     /** LAYOUT SCREEN **/
     fileprivate func setupDetailLayout() {
         addSubview(navTitle)
         
-        navTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - IconSizes.large.rawValue, height: navBarSize.height)
-        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
+        navTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - ( 2 * IconSizes.large.rawValue ), height: navBarSize.height)
+        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .center)
         navTitle.lineBreakMode = .byTruncatingTail
         navTitle.numberOfLines = 2
         navTitle.tag = 10

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HomeVC: PulseVC {
+class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
     
     //Main data source vars
     var allItems = [Item]()
@@ -155,6 +155,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         case 0:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: sectionReuseIdentifier, for: indexPath) as! HeaderChannelsCell
             cell.channels = allChannels
+            cell.delegate = self
             return cell
         case 1:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
@@ -166,7 +167,6 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Already fetched this item
             if currentItem.itemCreated {
-                
                 cell.itemType = currentItem.type
                 cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
                 cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
@@ -279,15 +279,15 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     //Did select item at index path
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedItem = allItems[indexPath.row]
-        userSelected(item: selectedItem)
+        if indexPath.section == 1 {
+            let selectedItem = allItems[indexPath.row]
+            userSelected(item: selectedItem)
+        }
     }
     
     /** Delegate Functions **/
     internal func userSelected(user: User) {
-        let userProfileVC = UserProfileVC()
-        navigationController?.pushViewController(userProfileVC, animated: true)
-        userProfileVC.selectedUser = user
+
     }
     
     fileprivate func updateHeader() {
@@ -299,35 +299,48 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
     
-    func userSelected(item : Item) {
+    func userSelected(item : Any) {
         
-        switch item.type {
-        case .answer:
-            showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-        case .post:
-            Database.getItemCollection(item.itemID, completion: {(success, items) in
-                if success {
-                    self.showItemDetail(allItems: [item], index: 0, itemCollection: items, selectedItem: item, watchedPreview: true)
-                } else {
-                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [item], selectedItem: item, watchedPreview: false)
-                }
-            })
-        case .question:
+        if let item = item as? Item {
+            switch item.type {
+            case .answer:
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+            case .post:
+                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                    if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: items, selectedItem: item, watchedPreview: true)
+                    } else {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [item], selectedItem: item, watchedPreview: false)
+                    }
+                })
+            case .question:
+                
+                showBrowse(selectedItem: item)
+                
+            case .posts, .feedback:
+                
+                showTag(selectedItem: item)
+                
+            default: break
+        }
+        } else if let user = item as? User {
             
-            showBrowse(selectedItem: item)
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
             
-        case .posts, .feedback:
+        } else if let channel = item as? Channel {
+            let channelVC = ChannelVC()
             
-            showTag(selectedItem: item)
-            
-        default: break
+            navigationController?.pushViewController(channelVC, animated: true)
+            channelVC.selectedChannel = channel
         }
     }
     
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = watchedPreview
-        //contentVC.selectedChannel = selectedChannel
+        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
         contentVC.selectedItem = selectedItem
         contentVC.itemCollection = itemCollection
         contentVC.itemIndex = index
@@ -339,10 +352,11 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     internal func showBrowse(selectedItem: Item) {
+        print("selected item channel id is \(selectedItem.cID)")
         let itemCollection = BrowseContentVC()
-        //itemCollection.selectedChannel = selectedChannel
+        itemCollection.selectedChannel = Channel(cID: selectedItem.cID)
         itemCollection.selectedItem = selectedItem
-        //itemCollection.contentDelegate = self
+        itemCollection.contentDelegate = self
         
         navigationController?.pushViewController(itemCollection, animated: true)
     }
@@ -414,13 +428,13 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        var cellHeight : CGFloat = 125
+        let cellHeight : CGFloat = 125
         switch indexPath.section {
         case 0:
-            return CGSize(width: collectionView.frame.width, height: 100)
+            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: 100) : CGSize(width: collectionView.frame.width, height: 0)
         case 1:
-            cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
-            return CGSize(width: collectionView.frame.width, height: cellHeight)
+            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)) :
+                                        CGSize(width: collectionView.frame.width, height: 0)
         default:
             return CGSize(width: collectionView.frame.width, height: cellHeight)
         }

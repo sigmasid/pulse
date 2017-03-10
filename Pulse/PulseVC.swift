@@ -100,8 +100,10 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     }
     
     internal func addBackButton() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        if let headerNav = headerNav, headerNav.viewControllers.count > 1 {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+            backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        }
     }
     
     func addScreenButton(button : PulseButton) {

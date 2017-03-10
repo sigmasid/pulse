@@ -16,7 +16,7 @@ class HeaderTagsCell: UICollectionViewCell {
             tagsList?.reloadData()
         }
     }
-    public var delegate: ChannelDelegate!
+    public var delegate: SelectionDelegate!
     public var selectedChannel : Channel!
     
     private var tagsList : UICollectionView!
@@ -33,10 +33,6 @@ class HeaderTagsCell: UICollectionViewCell {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-    }
-    
-    deinit {
-        delegate.currentItems(items: items)
     }
     
     fileprivate func setupChannelHeader() {

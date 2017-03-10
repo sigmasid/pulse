@@ -17,7 +17,7 @@ class HeaderChannelsCell: UICollectionViewCell {
             collectionView?.reloadData()
         }
     }
-    public var delegate: ChannelDelegate!
+    public var delegate: SelectionDelegate!
     public var selectedChannel : Channel!
     
     private var collectionView : UICollectionView!
@@ -92,6 +92,8 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        //delegate.userSelected(channel: channels[indexPath.row])
+        if delegate != nil {
+            delegate.userSelected(item: channels[indexPath.row])
+        }
     }
 }

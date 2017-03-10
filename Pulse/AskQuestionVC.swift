@@ -12,7 +12,7 @@ protocol ParentDelegate: class {
     func dismiss(_ viewController : UIViewController)
 }
 
-class AskQuestionVC: UIViewController, UITextViewDelegate {
+class AskQuestionVC: PulseVC, UITextViewDelegate {
     
     public var selectedTag : Item!
     public var selectedUser : User!
@@ -39,6 +39,8 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         if !observersAdded {
+            tabBarHidden = true
+            
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
             view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
@@ -80,7 +82,8 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
-            questionBottomConstraint.constant = -keyboardHeight
+            questionBottomConstraint.constant = -keyboardHeight - (tabBarController?.tabBar.frame.height ?? 0) - Spacing.m.rawValue
+            questionContainer.layoutIfNeeded()
         }
     }
     

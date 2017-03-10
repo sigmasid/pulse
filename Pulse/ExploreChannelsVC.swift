@@ -39,13 +39,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        headerNav?.setNav(title: "Explore Channels")
-        headerNav?.updateBackgroundImage(image: nil)
-        tabBarHidden = false
-
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
-        
+        updateHeader()
         updateOnscreenRows()
     }
 
@@ -68,6 +62,14 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
         }
     }
     
+    fileprivate func updateHeader() {
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
+        
+        tabBarHidden = false
+        headerNav?.updateBackgroundImage(image: nil)
+        headerNav?.setNav(title: "Explore Channels")
+    }
+    
     fileprivate func updateRootScopeSelection() {
         Database.getExploreChannels({ channels, error in
             if error == nil {
@@ -75,6 +77,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
             }
         })
     }
+    
+    
     
     func updateDataSource() {
         if !isLayoutSetup {

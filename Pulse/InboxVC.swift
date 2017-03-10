@@ -25,6 +25,8 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = false
+        statusBarHidden = false
         updateHeader()
     }
 
@@ -74,7 +76,6 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     
     //Update Nav Header
     fileprivate func updateHeader() {
-        addBackButton()
         headerNav?.setNav(title: "Conversations")
     }
     

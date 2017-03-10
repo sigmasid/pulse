@@ -7,8 +7,6 @@
 //
 
 import UIKit
-private let headerReuseIdentifier = "PostsHeaderCell"
-private let reuseIdentifier = "PostsCell"
 
 protocol HeaderDelegate: class {
     func userClickedMenu()
@@ -80,7 +78,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
         switch selectedItem.type {
         case .posts:
             showPostMenu()
-        case .question:
+        case .feedback:
             showFeedbackMenu()
         default: return
         }
@@ -125,6 +123,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     
     func askQuestion() {
         let questionVC = AskQuestionVC()
+        questionVC.view.frame = view.frame
         questionVC.selectedTag = selectedItem
         questionVC.delegate = self
         

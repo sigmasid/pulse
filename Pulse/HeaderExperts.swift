@@ -16,7 +16,7 @@ class HeaderExperts: UICollectionReusableView {
             expertsPreview?.reloadData()
         }
     }
-    public var delegate: ChannelDelegate!
+    public var delegate: SelectionDelegate!
     
     private var expertsPreview : UICollectionView!
     private var expertsLabel = UILabel()
@@ -132,7 +132,7 @@ extension HeaderExperts: UICollectionViewDataSource, UICollectionViewDelegate, U
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        delegate.userSelected(user: experts[indexPath.row])
+        delegate.userSelected(item: experts[indexPath.row])
     }
 }
 

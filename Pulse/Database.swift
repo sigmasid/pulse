@@ -817,6 +817,7 @@ class Database {
         if let userPicPath = userPicPath {
             if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
                 User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
             }
         }
     }
@@ -893,11 +894,8 @@ class Database {
                     print("got channel with \(savedChannel.cID)")
                     
                     if !User.currentUser!.subscriptionIDs.contains(channel.key) {
-                        print("appending channel to subscriptions")
                         User.currentUser!.subscriptions.append(savedChannel)
                         User.currentUser!.subscriptionIDs.append(channel.key)
-                    } else {
-                        print("couldn't append channel to subscriptions")
                     }
                 }
             }

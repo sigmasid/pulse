@@ -13,13 +13,17 @@ private let reuseIdentifier = "BrowseContentCell"
 
 protocol BrowseContentDelegate: class {
     func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool)
-    func userClosedBrowse(_ viewController : UIViewController)
+}
+
+protocol ModalDelegate : class {
+    func userClosedModal(_ viewController : UIViewController)
 }
 
 class BrowseContentVC: PulseVC, PreviewDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
     var contentDelegate : BrowseContentDelegate!
+    var modalDelegate : ModalDelegate!
     /** End Delegate Vars **/
     
     //Main data source var -
@@ -142,8 +146,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
     
     /** DELEGATE METHODS FOR CONTENT DETAIL **/
     internal func closeBrowse() {
-        if contentDelegate != nil {
-            contentDelegate.userClosedBrowse(self)
+        if modalDelegate != nil {
+            modalDelegate.userClosedModal(self)
         }
     }
     

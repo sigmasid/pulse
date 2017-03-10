@@ -14,14 +14,20 @@ protocol UserProfileDelegate: class {
 
 class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     
-    var contentDelegate : BrowseContentDelegate!
+    var modalDelegate : ModalDelegate!
     var isCurrentUser = false
+    var isModal = false
     
     /** Delegate Vars **/
     public var selectedUser : User! {
         didSet {
-            if User.currentUser?.uID != nil, selectedUser.uID == User.currentUser?.uID! {
-                Database.getUserSavedItems(completion: { items in
+            if selectedUser == nil {
+                allItems = []
+                updateDataSource()
+            } else if User.currentUser?.uID != nil, selectedUser.uID == User.currentUser?.uID! {
+                NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+
+                Database.getUserItems(uID: User.currentUser!.uID!, completion: { items in
                     self.allItems = items
                     self.updateDataSource()
                 })
@@ -30,7 +36,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
                 Database.getUser(selectedUser.uID!, completion: {(user, error) in
                     if error == nil {
                         self.selectedUser = user
-                        self.setHeaderTitle(title: user?.name ?? "Explore User")
+                        self.updateHeader()
+                        self.headerNav?.setNav(title: user?.name ?? "User Profile")
                     }
                 })
             } else if !selectedUser.uDetailedCreated {
@@ -70,7 +77,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
-    fileprivate let headerHeight : CGFloat = 200
+    fileprivate let headerHeight : CGFloat = 220
     
     fileprivate var activityController: UIActivityViewController? //Used for share screen
     
@@ -107,15 +114,21 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+        super.viewWillAppear(animated)        
         updateHeader()
 
         guard selectedUser != nil else { return }
-        setHeaderTitle(title: selectedUser.name ?? "Explore User")
+        headerNav?.setNav(title: selectedUser.name ?? "Profile")
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    
+    func userUpdated() {
+        if let user = User.currentUser {
+            selectedUser = user
+        }
     }
     
     func setupLayout() {
@@ -142,28 +155,26 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
             tabBarHidden = true
 
             if navigationController != nil {
+                isModal = false
                 addBackButton()
             } else {
+                isModal = true
                 statusBarHidden = true
                 setupClose()
-                closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+                closeButton.addTarget(self, action: #selector(closeModal), for: UIControlEvents.touchUpInside)
             }
         }
-    }
-
-    fileprivate func setHeaderTitle(title: String) {
-        headerNav?.setNav(title: title)
     }
     
     //Setup close button
     internal func setupClose() {
         addScreenButton(button: closeButton)
-        closeButton.addTarget(self, action: #selector(closeBrowse), for: UIControlEvents.touchUpInside)
+        closeButton.addTarget(self, action: #selector(closeModal), for: UIControlEvents.touchUpInside)
     }
     
-    internal func closeBrowse() {
-        if contentDelegate != nil {
-            contentDelegate.userClosedBrowse(self)
+    internal func closeModal() {
+        if modalDelegate != nil {
+            modalDelegate.userClosedModal(self)
         }
     }
     
@@ -196,7 +207,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         collectionView?.dataSource = self
         collectionView?.delegate = self
         collectionView?.reloadData()
-        collectionView?.layoutIfNeeded()
+        
+        collectionView?.collectionViewLayout.invalidateLayout()
     }
     
     /** Show Menu **/
@@ -456,7 +468,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! UserProfileHeader
             headerView.backgroundColor = .white
-            headerView.updateUserDetails(selectedUser: selectedUser)
+            
+            headerView.updateUserDetails(selectedUser: selectedUser, isModal : isModal)
             headerView.profileDelegate = self
             
             return headerView
@@ -476,7 +489,7 @@ extension UserProfileVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 10.0, left: 10.0, bottom: 0.0, right: 10.0)
+        return UIEdgeInsets(top: 10.0, left: 10.0, bottom: (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue, right: 10.0)
     }
 }
 

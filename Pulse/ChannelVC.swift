@@ -8,13 +8,11 @@
 
 import UIKit
 
-protocol ChannelDelegate: class {
-    func userSelected(user : User)
-    func userSelected(item : Item)
-    func currentItems(items : [Item]) //to keep header cached between appearances
+protocol SelectionDelegate: class {
+    func userSelected(item : Any)
 }
 
-class ChannelVC: PulseVC, ChannelDelegate, UIScrollViewDelegate, ItemCellDelegate, BrowseContentDelegate {
+class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDelegate, BrowseContentDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
@@ -333,34 +331,33 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     /** Delegate Functions **/
-    internal func userSelected(user: User) {
-        let userProfileVC = UserProfileVC()
-        navigationController?.pushViewController(userProfileVC, animated: true)
-        userProfileVC.selectedUser = user
-    }
-    
-    func userSelected(item : Item) {
-        
-        switch item.type {
-        case .answer:
-            showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-        case .post:
-            Database.getItemCollection(item.itemID, completion: {(success, items) in
-                if success {
-                    self.showItemDetail(allItems: [item], index: 0, itemCollection: items, selectedItem: item, watchedPreview: true)
-                } else {
-                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [item], selectedItem: item, watchedPreview: false)
-                }
-            })
-        case .question:
-            
-            showBrowse(selectedItem: item)
-            
-        case .posts, .feedback:
+    func userSelected(item : Any) {
+        if let item = item as? Item {
+            switch item.type {
+            case .answer:
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+            case .post:
+                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                    if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: items, selectedItem: item, watchedPreview: true)
+                    } else {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [item], selectedItem: item, watchedPreview: false)
+                    }
+                })
+            case .question:
+                
+                showBrowse(selectedItem: item)
+                
+            case .posts, .feedback:
 
-            showTag(selectedItem: item)
-            
-        default: break
+                showTag(selectedItem: item)
+                
+            default: break
+            }
+        } else if let user = item as? User {
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
         }
     }
     
@@ -385,12 +382,6 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         itemCollection.contentDelegate = self
         
         navigationController?.pushViewController(itemCollection, animated: true)
-    }
-    
-    func userClosedBrowse(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in
-            print("should dismiss browse collection vc")
-        })
     }
     
     internal func showTag(selectedItem : Item) {        
