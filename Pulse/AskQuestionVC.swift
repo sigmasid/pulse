@@ -8,15 +8,11 @@
 
 import UIKit
 
-protocol ParentDelegate: class {
-    func dismiss(_ viewController : UIViewController)
-}
-
 class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedTag : Item!
     public var selectedUser : User!
-    public var delegate : ParentDelegate!
+    public var delegate : ModalDelegate!
     
     fileprivate var isLoaded = false
     fileprivate var observersAdded = false
@@ -84,7 +80,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     func dismissAsk() {
         if delegate != nil {
             questionBody.resignFirstResponder()
-            delegate.dismiss(self)
+            delegate.userClosedModal(self)
         }
     }
     

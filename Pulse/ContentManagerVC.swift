@@ -10,32 +10,6 @@ import UIKit
 import MobileCoreServices
 import CoreLocation
 
-protocol CameraDelegate : class {
-    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
-    func userDismissedCamera()
-    func showAlbumPicker()
-}
-
-protocol PreviewDelegate: class {
-    var  watchedFullPreview : Bool { get set }
-}
-
-protocol ContentDelegate: class {
-    func noItemsToShow(_ : UIViewController)
-    func removeIntro()
-    func askUserToLogin(_: UIViewController)
-    func loginSuccess(_ : UIViewController)
-    func doneUploadingAnswer(_: UIViewController)
-
-    func userDismissedRecording(_: UIViewController, recordedItems : [Item])
-    func minItemsShown()
-    func askUserQuestion()
-    func loadMoreFromTag()
-    func addMoreItems(_ : UIViewController, recordedItems : [Item], isCover : Bool)
-    func userClickedSeeAll(items : [Item])
-    func userClickedProfileDetail()
-}
-
 class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseContentDelegate, ModalDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     //set by delegate - questions or posts
     var selectedChannel : Channel! //all items need a channel - only for adding new posts / answers
@@ -157,8 +131,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         }
     }
     
-    //delegate from browse content
-    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+    /** Browse Content Delegate **/
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         self.allItems = allItems
         self.itemIndex = index
         self.itemCollection = itemCollection
@@ -167,6 +141,14 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         showItemDetail(shouldShowIntro: false)
     }
     
+    internal func addNewItem(selectedItem: Item) {
+        dismiss(animated: true, completion: { _ in
+            self.isNavigationBarHidden = true
+            self.showCamera(true)
+        })
+    }
+    /** End Browse Content Delegate **/
+
     func loadMoreFromTag() {
         if let selectedTag = selectedItem.tag, !selectedTag.itemCreated {
             Database.getItemCollection(selectedTag.itemID, completion: { (success, items) in

@@ -267,7 +267,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
     ///upload video to firebase and update current answer with URL upon success
     fileprivate func uploadItems( allItems : [Item]) {
         
-        var allItems = allItems //needed because parameters are lets so can't edit
+        var allItems = allItems //needed because parameters are lets so can't mutate
+        
         guard let item = allItems.last else {
             self.doneCreatingAnswer()
             return

@@ -55,20 +55,7 @@ class Channel : NSObject {
     
     func updateChannel(detailedSnapshot : FIRDataSnapshot) {
         for child in detailedSnapshot.children {
-            let currentItem = Item(itemID: (child as AnyObject).key)
-            
-            if let childSnap = child as? FIRDataSnapshot {
-                
-                if let tagID = childSnap.childSnapshot(forPath: "tagID").value as? String, let tagTitle = childSnap.childSnapshot(forPath: "tagTitle").value as? String{
-                    currentItem.tag = Item(itemID: tagID)
-                    currentItem.tag?.itemTitle = tagTitle
-                }
-            
-                if let type = childSnap.childSnapshot(forPath: "type").value as? String {
-                    currentItem.setType(type: type)
-                }
-            }
-            
+            let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
             items.append(currentItem)
         }
         items.reverse()

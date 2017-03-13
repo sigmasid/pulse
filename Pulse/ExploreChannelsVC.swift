@@ -17,7 +17,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
     // Set by MasterTabVC
     public var universalLink : URL!
     
-    fileprivate var loadingView : LoadingView?
     fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
 
     fileprivate var allChannels = [Channel]() {

@@ -168,7 +168,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             let _itemID = allItems[index].itemID
             addExploreItemDetail(_itemID)
             
-            if !allItems[index].itemCreated {
+            if !allItems[index].itemCreated || allItems[index].contentURL == nil {
 
                 //fetch Item from DB first
                 Database.getItem(_itemID, completion: { (item, error) in
@@ -283,7 +283,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     //adds the first clip to the Items
     fileprivate func addClip(_ item : Item, completion: @escaping (_ success : Bool) -> Void) {
         
-        if !item.itemCreated {
+        if !item.itemCreated || item.contentURL == nil {
             
             addClip(item.itemID, completion: { _ in })
             
@@ -394,7 +394,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     fileprivate func addNextClipToQueue(_ _nextItem : Item) {
         _nextItemReady = false
         
-        if !_nextItem.itemCreated {
+        if !_nextItem.itemCreated || _nextItem.contentURL == nil {
             addNextClipToQueue(_nextItem.itemID)
         } else {
             nextItem = _nextItem

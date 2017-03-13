@@ -14,8 +14,7 @@ protocol searchVCDelegate: class {
 }
 
 
-class SearchVC: UIViewController, XMSegmentedControlDelegate {
-    fileprivate var reuseIdentifier = "tableViewCell"
+class SearchVC: PulseVC, XMSegmentedControlDelegate {
     fileprivate var searchController = UISearchController(searchResultsController: nil)
     fileprivate var searchBarContainer = UIView()
     fileprivate var scopeBarContainer = UIView()
@@ -57,6 +56,7 @@ class SearchVC: UIViewController, XMSegmentedControlDelegate {
     }
     
     fileprivate func addSearchBar() {
+        headerNav?.toggleSearch(show: true)
         view.addSubview(searchBarContainer)
         searchBarContainer.translatesAutoresizingMaskIntoConstraints = false
         searchBarContainer.topAnchor.constraint(equalTo: view.topAnchor).isActive = true

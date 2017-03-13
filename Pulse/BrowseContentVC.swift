@@ -11,15 +11,7 @@ import UIKit
 private let headerReuseIdentifier = "ItemHeaderCell"
 private let reuseIdentifier = "BrowseContentCell"
 
-protocol BrowseContentDelegate: class {
-    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool)
-}
-
-protocol ModalDelegate : class {
-    func userClosedModal(_ viewController : UIViewController)
-}
-
-class BrowseContentVC: PulseVC, PreviewDelegate {
+class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
     var contentDelegate : BrowseContentDelegate!
@@ -46,6 +38,9 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
                         self.allItems = items.map{ item -> Item in
                             Item(itemID: item.itemID, type: type)
                         }
+                        self.updateDataSource()
+                    } else {
+                        self.allItems = items
                         self.updateDataSource()
                     }
                 })
@@ -119,6 +114,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
         
+        collectionView?.register(EmptyCell.self, forCellWithReuseIdentifier: emptyReuseIdentifier)
         collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
         collectionView?.register(BrowseContentCell.self, forCellWithReuseIdentifier: reuseIdentifier)
         
@@ -156,6 +152,50 @@ class BrowseContentVC: PulseVC, PreviewDelegate {
             contentDelegate.showItemDetail(allItems: allItems, index: index, itemCollection: itemCollection, selectedItem : item, watchedPreview : watchedFullPreview)
         }
     }
+    
+    internal func userClickedMenu() {
+        switch selectedItem.type {
+        case .posts:
+            break
+        case .question:
+            showFeedbackMenu()
+        default: return
+        }
+    }
+    
+    //is showing answers
+    func showFeedbackMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "Add \(selectedItem.childType())", style: .default, handler: { (action: UIAlertAction!) in
+            self.clickedAddItem()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Share Tag", style: .default, handler: { (action: UIAlertAction!) in
+            self.clickedShare()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func clickedShare() {
+        selectedItem.createShareLink(completion: { link in
+            guard let link = link else { return }
+            self.activityController = GlobalFunctions.shareContent(shareType: "channel",
+                                                                   shareText: self.selectedItem.itemTitle ?? "",
+                                                                   shareLink: link, presenter: self)
+        })
+    }
+    
+    internal func clickedAddItem() {
+        if contentDelegate != nil {
+            contentDelegate.addNewItem(selectedItem: selectedItem)
+        }
+    }
 }
 
 extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource {
@@ -166,19 +206,25 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return allItems.count
+        return allItems.count == 0 ? 1 : allItems.count
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
+        if allItems.count > 0, let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
             let cellRect = attributes.frame
             initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
-        }
         
-        selectedIndex = indexPath
+            selectedIndex = indexPath
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard allItems.count > 0 else {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: emptyReuseIdentifier, for: indexPath) as! EmptyCell
+            cell.setMessage(message: "nothing to see yet!", color: .black)
+            return cell
+        }
+        
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseContentCell
         
         cell.contentView.backgroundColor = .white
@@ -196,7 +242,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(channelID: selectedItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            Database.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -279,6 +325,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
+            headerView.delegate = self
             headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "")
             
             return headerView
@@ -290,6 +337,9 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
 
 extension BrowseContentVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        if allItems.count == 0 {
+            return CGSize(width: view.frame.width, height: view.frame.height - headerHeight)
+        }
         return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
     }
     
@@ -298,6 +348,9 @@ extension BrowseContentVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        if allItems.count == 0 {
+            return UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0, right: 0.0)
+        }
         return UIEdgeInsets(top: 10.0, left: 10.0, bottom: 0.0, right: 10.0)
     }
 }

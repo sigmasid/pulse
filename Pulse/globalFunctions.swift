@@ -14,11 +14,10 @@ let maxImgSize : Int64 = 1242 * 2208
 let searchBarHeight : CGFloat = 44
 let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
 let defaultCellHeight : CGFloat = 225
+let defaultPostHeight : CGFloat = 325
 
 let scopeBarHeight : CGFloat = 40
 let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
-
-
 
 class GlobalFunctions {
     
@@ -167,8 +166,13 @@ class GlobalFunctions {
     }
     
     static func getFormattedTime(timeString : Date) -> String {
+        
+        return getFormattedTime(timeString: timeString, style : .medium)
+    }
+    
+    static func getFormattedTime(timeString : Date, style: DateFormatter.Style) -> String {
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
+        formatter.dateStyle = style
         formatter.timeStyle = .none
         let stringDate: String = formatter.string(from: timeString)
         
@@ -177,10 +181,10 @@ class GlobalFunctions {
     
     static func getCellHeight(type : ItemTypes) -> CGFloat {
         switch type {
-        case .question: return 125
-        case .answer: return 125
-        case .post: return 300
-        default: return 225
+        case .question: return 130
+        case .answer: return 130
+        case .post: return 420
+        default: return 130
         }
     }
     
@@ -261,7 +265,7 @@ class GlobalFunctions {
     
     /** IMAGE FUNCTIONS **/
     static func fixOrientation(_ img:UIImage) -> UIImage {
-        
+        print("image orientation is \(img.imageOrientation)")
         if (img.imageOrientation == UIImageOrientation.up) {
             return img;
         }

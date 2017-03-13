@@ -11,7 +11,7 @@ import FirebaseAuth
 import UIKit
 import CoreLocation
 
-class User {
+class User: NSObject {
     var uID : String?
     var name : String?
     var bio : String?
@@ -58,7 +58,7 @@ class User {
         return Static.instance
     }
     
-    init() {
+    override init() {
         self.uID = nil
         self.name = nil
     }
@@ -204,5 +204,13 @@ class User {
         Database.createShareLink(linkString: "u/"+uID, completion: { link in
             completion(link)
         })
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let object = object as? User {
+            return uID == object.uID
+        } else {
+            return false
+        }
     }
 }

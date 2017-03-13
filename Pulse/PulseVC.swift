@@ -10,6 +10,12 @@ import UIKit
 
 class PulseVC: UIViewController, PulseNavControllerDelegate {
     
+    /** Loading Overlay **/
+    internal var loadingView : LoadingView!
+    
+    /** Share content **/
+    internal var activityController: UIActivityViewController?
+    
     /** Transition Vars **/
     internal var initialFrame = CGRect.zero
     internal var panPresentInteractionController = PanEdgeInteractionController()
@@ -20,6 +26,8 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     internal let sectionReuseIdentifier = "SectionHeaderCell"
     internal let emptyReuseIdentifier = "EmptyCell"
     internal let reuseIdentifier = "ItemCell"
+    internal let skinnyHeaderHeight : CGFloat = 20
+    internal let headerSectionHeight : CGFloat = 100
     
     /** Close Button - Only Needed If Presented Modally **/
     internal lazy var closeButton = PulseButton(size: .medium, type: .close, isRound : true, background: .white, tint: .black)
@@ -107,7 +115,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
-    func addScreenButton(button : PulseButton) {
+    internal func addScreenButton(button : PulseButton) {
         view.addSubview(button)
         
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -116,6 +124,28 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         button.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         button.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         button.layoutIfNeeded()
+    }
+    
+    internal func toggleLoading(show: Bool, message: String?, showIcon: Bool = false) {
+        if show {
+            if loadingView == nil {
+                loadingView = LoadingView(frame: view.bounds, backgroundColor: .white)
+            }
+            view.addSubview(loadingView)
+            
+            if showIcon {
+                loadingView.addLongIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
+            }
+            
+            loadingView.addMessage(message, _color: .black)
+        } else {
+            if loadingView != nil {
+                UIView.animate(withDuration: 0.2, animations: { self.loadingView!.alpha = 0.0 } ,
+                               completion: {(value: Bool) in
+                                self.loadingView.removeFromSuperview()
+                })
+            }
+        }
     }
     
     /**

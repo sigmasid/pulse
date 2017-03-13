@@ -38,7 +38,6 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     
     var currentTWTRSession : TWTRSession?
     
-    fileprivate var loadingView : LoadingView?
     fileprivate var _hasMovedUp = false
     
     fileprivate var emailValidated = false {
@@ -243,15 +242,15 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     }
     
     @IBAction func fbLogin(_ sender: UIButton) {
-        addLoading()
+        toggleLoading(show: true, message: "Signing in...", showIcon: true)
         let facebookReadPermissions = ["public_profile", "email", "user_friends"]
         let loginButton = FBSDKLoginManager()
         loginButton.logIn(withReadPermissions: facebookReadPermissions, from: self, handler: { (result, blockError) -> Void in
             if blockError != nil {
-                self.removeLoading()
+                self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
             } else if result!.isCancelled {
-                self.removeLoading()
+                self.toggleLoading(show: false, message: nil)
             } else {
                 //login sucess - will get handled by FB profile updated notification
             }
@@ -274,11 +273,11 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         let credential = FIRFacebookAuthProvider.credential(withAccessToken: _accessToken.tokenString)
         FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
             if error != nil {
-                self.removeLoading()
+                self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
             }
             else {
-                self.removeLoading()
+                self.toggleLoading(show: false, message: nil)
                 self.nav?.setNav(title: aUser!.displayName)
                 self._loggedInSuccess()
                 print("posted facebook login success update")
@@ -288,22 +287,22 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     }
     
     @IBAction func twtrLogin(_ sender: UIButton) {
-        addLoading()
+        self.toggleLoading(show: true, message: "Signing in...", showIcon: true)
         Twitter.sharedInstance().logIn { session, error in
             if (session != nil) {
                 self.currentTWTRSession = session
                 let credential = FIRTwitterAuthProvider.credential(withToken: session!.authToken, secret: session!.authTokenSecret)
                 FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
                     if let blockError = blockError as? NSError {
-                        self.removeLoading()
+                        self.toggleLoading(show: false, message: nil)
                         self.nav?.setNav(title: blockError.description)
                     } else {
-                        self.removeLoading()
+                        self.toggleLoading(show: false, message: nil)
                         self._loggedInSuccess()
                     }
                 }
             } else {
-                self.removeLoading()
+                self.toggleLoading(show: false, message: nil)
                 self.nav?.setNav(title: "Uh oh! That didn't work")
             }
         }
@@ -313,23 +312,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
     }
     
-    func addLoading() {
-        loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white)
-        loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
-        loadingView?.addMessage("Signing in...")
-        view.addSubview(loadingView!)
-    }
-    
     func returnToParent(_ currentVC : UIViewController) {
         GlobalFunctions.dismissVC(currentVC)
-    }
-    
-    func removeLoading() {
-        if loadingView != nil {
-            UIView.animate(withDuration: 0.2, animations: { self.loadingView!.alpha = 0.0 } ,
-                                       completion: {(value: Bool) in
-                                        self.loadingView!.removeFromSuperview()
-            })
-        }
     }
 }

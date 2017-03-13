@@ -79,8 +79,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     fileprivate let minCellHeight : CGFloat = 225
     fileprivate let headerHeight : CGFloat = 220
     
-    fileprivate var activityController: UIActivityViewController? //Used for share screen
-    
     fileprivate var selectedIndex : IndexPath? {
         didSet {
             if selectedIndex != nil {

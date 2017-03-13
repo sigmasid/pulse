@@ -73,6 +73,7 @@
 		BA92F7561DA44A6200B89D66 /* MessageTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7551DA44A6200B89D66 /* MessageTableCell.swift */; };
 		BA93BD671DC135B5003F13B9 /* PulseButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA93BD661DC135B5003F13B9 /* PulseButton.swift */; };
 		BA94D41C1E405F2800DF7DD9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BA94D41B1E405F2800DF7DD9 /* GoogleService-Info.plist */; };
+		BA9522041E737681003DC925 /* PulseProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA9522031E737681003DC925 /* PulseProtocols.swift */; };
 		BAA794A01D7A50C700700AF7 /* BaseAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */; };
 		BAA815911D2C710D00507E02 /* ContentOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA815901D2C710D00507E02 /* ContentOverlay.swift */; };
 		BAB03AC01D7F510C00090147 /* ExpandAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */; };
@@ -175,6 +176,7 @@
 		BA92F7551DA44A6200B89D66 /* MessageTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageTableCell.swift; sourceTree = "<group>"; };
 		BA93BD661DC135B5003F13B9 /* PulseButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseButton.swift; sourceTree = "<group>"; };
 		BA94D41B1E405F2800DF7DD9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		BA9522031E737681003DC925 /* PulseProtocols.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseProtocols.swift; sourceTree = "<group>"; };
 		BAA7949F1D7A50C700700AF7 /* BaseAnimator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseAnimator.swift; sourceTree = "<group>"; };
 		BAA815901D2C710D00507E02 /* ContentOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentOverlay.swift; sourceTree = "<group>"; };
 		BAB03ABF1D7F510C00090147 /* ExpandAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExpandAnimationController.swift; sourceTree = "<group>"; };
@@ -278,6 +280,7 @@
 				BAF76D8A1DB05B9B00FB72EE /* PulseNavVC.swift */,
 				BA0387071DB1B2BA00A7BB79 /* PulseNavBar.swift */,
 				BA1DE8731E6A6C5900AD5A46 /* PulseVC.swift */,
+				BA9522031E737681003DC925 /* PulseProtocols.swift */,
 			);
 			name = "Pulse Shared";
 			sourceTree = "<group>";
@@ -658,6 +661,7 @@
 				BA92F7521DA2C5ED00B89D66 /* MessageVC.swift in Sources */,
 				BAB03AC01D7F510C00090147 /* ExpandAnimationController.swift in Sources */,
 				BA1DE1451D244D6B004F3ED2 /* LoginVC.swift in Sources */,
+				BA9522041E737681003DC925 /* PulseProtocols.swift in Sources */,
 				BA1DE1291D244440004F3ED2 /* Icon.swift in Sources */,
 				BA710BE01DA6F6860018D88D /* SearchTableCell.swift in Sources */,
 				BA56400F1E70B1660001A534 /* HeaderChannels.swift in Sources */,

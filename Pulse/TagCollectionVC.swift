@@ -8,21 +8,19 @@
 
 import UIKit
 
-protocol HeaderDelegate: class {
-    func userClickedMenu()
-}
-
-class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate, BrowseContentDelegate {
+class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate {
     
     public var selectedChannel: Channel!
     
     //set by delegate - is of type feedback / posts since its a tag
     public var selectedItem : Item! {
         didSet {
+            toggleLoading(show: true, message: "Loading Tag...", showIcon: true)
             Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
                 self.allItems = items
                 self.updateDataSource()
                 self.updateHeader()
+                self.toggleLoading(show: false, message: nil)
             })
         }
     }
@@ -30,6 +28,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
     
     /** main datasource var **/
     fileprivate var allItems = [Item]()
+    fileprivate var allUsers = [User]() //caches user image / user for reuse
     fileprivate var hasReachedEnd = false
     
     /** Collection View Vars **/
@@ -71,7 +70,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ParentDelegate, ItemCellDelegate
         view.addSubview(collectionView)
     }
     
-    func dismiss(_ viewController: UIViewController) {
+    func userClosedModal(_ viewController: UIViewController) {
         GlobalFunctions.dismissVC(viewController)
     }
         
@@ -207,13 +206,14 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         let currentItem = allItems[indexPath.row]
 
         //clear the cells and set the item type first
-        cell.updateLabel(nil, _subtitle: nil, _tag: nil)
-        
+        cell.updateLabel(currentItem.itemTitle, _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: selectedItem.itemTitle)
+        cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
+
         //Already fetched this item
         if allItems[indexPath.row].itemCreated {
             
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
         } else {
@@ -226,7 +226,8 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
                             cell.itemType = item.type
-                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: self.allItems[indexPath.row].tag?.itemTitle)
+                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil,  _createdAt: self.allItems[indexPath.row].createdAt,
+                                             _tag: self.allItems[indexPath.row].tag?.itemTitle)
                         }
                     }
                     
@@ -260,19 +261,15 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                     }
                     
                     // Get the user details
-                    Database.getUser(item.itemUserID, completion: {(user, error) in
-                        if let user = user {
-                            self.allItems[indexPath.row].user = user
-                            DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.itemTitle)
-                                }
-                            }
-                            
-                            
+                    if let user = self.checkUserDownloaded(user: User(uID: item.itemUserID)) {
+                        self.allItems[indexPath.row].user = user
+                        cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
+                        
+                        if user.thumbPicImage == nil {
                             DispatchQueue.global(qos: .background).async {
                                 if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
                                     self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
+                                    self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
                                     
                                     DispatchQueue.main.async {
                                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
@@ -282,7 +279,34 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                                 }
                             }
                         }
-                    })
+                    } else {
+                        Database.getUser(item.itemUserID, completion: {(user, error) in
+                            if let user = user {
+                                self.allItems[indexPath.row].user = user
+                                self.allUsers.append(user)
+                                
+                                DispatchQueue.main.async {
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        cell.updateLabel(item.itemTitle, _subtitle: user.name,  _createdAt: item.createdAt, _tag: currentItem.tag?.itemTitle)
+                                    }
+                                }
+                                
+                                
+                                DispatchQueue.global(qos: .background).async {
+                                    if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
+                                        self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
+                                        self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
+
+                                        DispatchQueue.main.async {
+                                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                                cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        })
+                    }
                 }
             })
         }
@@ -308,6 +332,21 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         }
     }
     
+    //Find the index of downloaded user and return that user
+    func checkUserDownloaded(user: User) -> User? {
+        if let index = allUsers.index(of: user) {
+            return allUsers[index]
+        }
+        return nil
+    }
+    
+    //Add user downloaded image for a newly downloaded user
+    func updateUserImageDownloaded(user: User, thumbPicImage : UIImage?) {
+        if let image = thumbPicImage , let index = allUsers.index(of: user) {
+            allUsers[index].thumbPicImage = image
+        }
+    }
+    
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     func updateCell(_ cell: ItemCell, atIndexPath indexPath: IndexPath) {
         
@@ -317,7 +356,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
         }
     }
     

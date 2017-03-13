@@ -1126,12 +1126,20 @@ class Database {
         let _user = FIRAuth.auth()?.currentUser
         var collectionPost : [AnyHashable: Any]!
         
-        let channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
+        var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
                                                 "tagID" : item.tag?.itemID as AnyObject,
                                                 "tagTitle" : item.tag?.itemTitle as AnyObject,
                                                 "title" : item.itemTitle as AnyObject,
                                                 "uID" : item.itemUserID as AnyObject,
                                                 "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        if let contentType = item.contentType {
+            channelPost["contentType"] = contentType.rawValue as AnyObject?
+        }
+        
+        if let url = item.contentURL?.absoluteString {
+            channelPost["url"] = url as AnyObject?
+        }
 
         switch item.type {
         case .answer:
@@ -1457,7 +1465,7 @@ class Database {
         let _metadata = FIRStorageMetadata()
         _metadata.contentType = "image/jpeg"
         
-        if let _thumbImageData = resizeImage(image, newWidth: 150) {
+        if let _thumbImageData = resizeImageHeight(image, newHeight: defaultPostHeight) {
             let _metadata = FIRStorageMetadata()
             _metadata.contentType = "image/jpeg"
             
@@ -1501,6 +1509,7 @@ class Database {
     }
     
     static func resizeImage(_ image: UIImage, newWidth: CGFloat) -> Data? {
+        print("actual image dimensions are \(image.size)")
         let scale = newWidth / image.size.width
         let newHeight = image.size.height * scale
         UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
@@ -1508,6 +1517,20 @@ class Database {
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        return UIImageJPEGRepresentation(newImage!, 0.7)
+        return UIImageJPEGRepresentation(newImage!, 1.0)
+    }
+    
+    static func resizeImageHeight(_ image: UIImage, newHeight: CGFloat) -> Data? {
+        print("actual image dimensions are \(image.size.height, image.size.width)")
+        let scale = newHeight / image.size.height
+        let newWidth = image.size.width * scale
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
+        image.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        print("final image dimensions are \(newImage?.size.height, newImage?.size.width)")
+
+        UIGraphicsEndImageContext()
+        
+        return UIImageJPEGRepresentation(newImage!, 1.0)
     }
 }

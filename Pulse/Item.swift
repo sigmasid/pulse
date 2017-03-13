@@ -35,7 +35,7 @@ class Item: NSObject {
     var contentURL : URL?
     var content : Any?
     var contentType : CreatedAssetType?
-    var createdAt : Date!
+    var createdAt : Date?
     
     var user : User?
     var tag : Item?
@@ -120,6 +120,11 @@ class Item: NSObject {
             self.createdAt = convertedDate
         }
         
+        if let tagID = snapshot.childSnapshot(forPath: "tagID").value as? String, let tagTitle = snapshot.childSnapshot(forPath: "tagTitle").value as? String {
+            self.tag = Item(itemID: tagID, type: "tag")
+            self.tag?.itemTitle = tagTitle
+        }
+        
         itemCreated = true
     }
     
@@ -140,13 +145,42 @@ class Item: NSObject {
         }
     }
     
-    func getCreatedAt() -> String {
-        return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt) : ""
+    func childType() -> String {
+        switch type {
+        case .feedback: return " question"
+        case .posts: return " post"
+        case .question: return " answer"
+        default: return ""
+        }
+    }
+    
+    func getCreatedAt() -> String? {
+        return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt!) : nil
     }
     
     func createShareLink(completion: @escaping (String?) -> Void) {
-        Database.createShareLink(linkString: "q/"+itemID, completion: { link in
-            completion(link)
-        })
+        switch type {
+        case .posts:
+            Database.createShareLink(linkString: "tag/"+itemID, completion: { link in
+                completion(link)
+            })
+        case .post:
+            Database.createShareLink(linkString: "p/"+itemID, completion: { link in
+                completion(link)
+            })
+        case .feedback:
+            Database.createShareLink(linkString: "tag/"+itemID, completion: { link in
+                completion(link)
+            })
+        case .question:
+            Database.createShareLink(linkString: "q/"+itemID, completion: { link in
+                completion(link)
+            })
+        case .answer:
+            Database.createShareLink(linkString: "a/"+itemID, completion: { link in
+                completion(link)
+            })
+        default: completion(nil)
+        }
     }
 }

@@ -16,7 +16,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
     
     fileprivate var isLoaded = false
     fileprivate var isLayoutSetup = false
-    fileprivate var loadingView : LoadingView?
     
     //fileprivate var feed : Tag!
     fileprivate var notificationsSetup : Bool = false
@@ -33,7 +32,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
             statusBarHidden = true
             tabBarHidden = false
             
-            toggleLoading(show: true, message: "Loading feed...")
+            toggleLoading(show: true, message: "Loading feed...", showIcon: true)
             setupScreenLayout()
             
             isLoaded = true
@@ -101,7 +100,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
         
         collectionView.dataSource = self
         collectionView.delegate = self
-        collectionView.reloadData()
     }
     
     func setupNotifications() {
@@ -112,18 +110,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
             
             notificationsSetup = true
         }
-    }
-    
-    fileprivate func toggleLoading(show: Bool, message: String?) {
-        if loadingView == nil {
-            loadingView = LoadingView(frame: view.frame, backgroundColor: UIColor.white)
-            loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
-            toggleLoading(show: true, message: nil)
-            view.addSubview(loadingView!)
-        }
-        
-        loadingView?.isHidden = show ? false : true
-        loadingView?.addMessage(message)
     }
     
     fileprivate func setupScreenLayout() {
@@ -171,12 +157,13 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.tag = indexPath.row
             
             //clear the cells and set the item type first
-            cell.updateLabel(nil, _subtitle: nil, _tag: nil)
+            cell.updateLabel(nil, _subtitle: nil, _createdAt: nil, _tag: nil)
             
             //Already fetched this item
             if currentItem.itemCreated {
                 cell.itemType = currentItem.type
-                cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+                cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle,
+                                _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
                 cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
                 
             } else {
@@ -188,7 +175,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         
                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
                             DispatchQueue.main.async {
-                                cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _tag: currentItem.tag?.itemTitle)
+                                cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil, _createdAt: item.createdAt, _tag: currentItem.tag?.itemTitle)
                             }
                         }
                         
@@ -229,7 +216,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                 self.allItems[indexPath.row].user = user
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateLabel(item.itemTitle, _subtitle: user.name, _tag: currentItem.tag?.itemTitle)
+                                        cell.updateLabel(item.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
                                     }
                                 }
                                 
@@ -262,7 +249,8 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle,
+                            _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
         }
     }
@@ -345,6 +333,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
     }
     
+    /** Browse Content Delegate **/
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = watchedPreview
@@ -359,8 +348,19 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         present(contentVC, animated: true, completion: nil)
     }
     
+    internal func addNewItem(selectedItem: Item) {
+        contentVC = ContentManagerVC()
+        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
+        contentVC.selectedItem = selectedItem
+        contentVC.openingScreen = .camera
+        
+        //contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    /** End Browse Content Delegate **/
+    
     internal func showBrowse(selectedItem: Item) {
-        print("selected item channel id is \(selectedItem.cID)")
         let itemCollection = BrowseContentVC()
         itemCollection.selectedChannel = Channel(cID: selectedItem.cID)
         itemCollection.selectedItem = selectedItem
@@ -439,7 +439,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         let cellHeight : CGFloat = 125
         switch indexPath.section {
         case 0:
-            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: 100) : CGSize(width: collectionView.frame.width, height: 0)
+            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: headerSectionHeight) : CGSize(width: collectionView.frame.width, height: 0)
         case 1:
             return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)) :
                                         CGSize(width: collectionView.frame.width, height: 0)
