@@ -8,10 +8,6 @@
 
 import UIKit
 
-protocol SelectionDelegate: class {
-    func userSelected(item : Any)
-}
-
 class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDelegate, BrowseContentDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
@@ -174,10 +170,6 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
     
-    internal func currentItems(items : [Item]) {
-        headerItems = items
-    }
-    
     internal func setupSubscribe() {
         addScreenButton(button: subscribeButton)
         subscribeButton.addTarget(self, action: #selector(subscribe), for: UIControlEvents.touchUpInside)
@@ -222,6 +214,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.selectedChannel = selectedChannel
             cell.items = headerItems.isEmpty ? selectedChannel.tags : headerItems
             cell.delegate = self
+            
             return cell
         case 1:
             //if near the end then get more items
@@ -241,7 +234,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
 
-            //Add additional details as needed
+            //Add additional user details as needed
             if currentItem.user == nil || !currentItem.user!.uCreated {
                 if let user = checkUserDownloaded(user: User(uID: currentItem.itemUserID)) {
                     allItems[indexPath.row].user = user
@@ -292,7 +285,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             }
             
             //Get the image if content type is a post
-            if currentItem.content == nil, currentItem.type == .post {
+            if currentItem.content == nil, currentItem.type == .post, !currentItem.fetchedContent {
                 Database.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
@@ -303,6 +296,8 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             }
                         }
                     }
+                    
+                    self.allItems[indexPath.row].fetchedContent = true
                 })
             }
             
@@ -335,18 +330,10 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
     }
     
-    func updateTagsCell(_ cell: HeaderTagsCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
-        
-    }
-    
     func updateOnscreenRows() {
         let visiblePaths = collectionView.indexPathsForVisibleItems
         for indexPath in visiblePaths {
-            if indexPath.section == 0 {
-                let cell = collectionView.cellForItem(at: indexPath) as! HeaderTagsCell
-                //update the header cells _ TO COME
-                
-            } else if indexPath.section == 1 {
+            if indexPath.section == 1 {
                 let cell = collectionView.cellForItem(at: indexPath) as! ItemCell
                 updateCell(cell, inCollectionView: collectionView, atIndexPath: indexPath)
             }

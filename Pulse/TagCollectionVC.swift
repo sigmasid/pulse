@@ -142,7 +142,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
     }
     
     //get more items if scrolled to end
-    func getMoreItems() {
+    internal func getMoreItems() {
         
         if let lastItemID = allItems.last?.itemID, !hasReachedEnd {
 
@@ -163,7 +163,8 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
         }
     }
     
-    func clickedItemButton(itemRow : Int) {
+    /** ItemCellDelegate Methods **/
+    internal func clickedItemButton(itemRow : Int) {
         if let user = allItems[itemRow].user {
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)

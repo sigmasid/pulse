@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HeaderCell: UICollectionViewCell {
+class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var previewContainer = UIView()
     fileprivate lazy var previewImage = UIImageView()

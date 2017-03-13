@@ -11,15 +11,24 @@ import UIKit
 class HeaderTagsCell: UICollectionViewCell {
     public var items = [Item]() {
         didSet {
-            tagsList?.delegate = self
-            tagsList?.dataSource = self
-            tagsList?.reloadData()
+            if headerItems.isEmpty {
+                headerItems = items
+            }
+        }
+    }
+    
+    //Use the existing cache so not fetching each time
+    fileprivate var headerItems = [Item]() {
+        didSet {
+            collectionView?.delegate = self
+            collectionView?.dataSource = self
+            collectionView?.reloadData()
         }
     }
     public var delegate: SelectionDelegate!
     public var selectedChannel : Channel!
     
-    private var tagsList : UICollectionView!
+    private var collectionView : UICollectionView!
     internal var tagCount = 10
     let collectionReuseIdentifier = "expertThumbCell"
     
@@ -39,45 +48,54 @@ class HeaderTagsCell: UICollectionViewCell {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
-        tagsList = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        tagsList.register(HeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        collectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
+        collectionView.register(HeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
         
-        addSubview(tagsList)
-        tagsList.translatesAutoresizingMaskIntoConstraints = false
-        tagsList.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        tagsList.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
-        tagsList.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
-        tagsList.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
-        tagsList.layoutIfNeeded()
+        addSubview(collectionView)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+        collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
+        collectionView.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
+        collectionView.layoutIfNeeded()
         
-        tagsList.backgroundColor = .white
-        tagsList.showsHorizontalScrollIndicator = false
+        collectionView.backgroundColor = .white
+        collectionView.showsHorizontalScrollIndicator = false
+    }
+    
+    internal func updateOnscreenRows() {
+        let visiblePaths = collectionView.indexPathsForVisibleItems
+        for indexPath in visiblePaths {
+            let cell = collectionView.cellForItem(at: indexPath) as! HeaderCell
+            updateCell(cell, inCollectionView: collectionView, atIndexPath: indexPath)
+        }
+    }
+    
+    //reload data isn't called on existing cells so this makes sure visible cells always have data in them
+    internal func updateCell(_ cell: HeaderCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
+        if headerItems[indexPath.row].itemCreated {
+            let currentItem = headerItems[indexPath.row]
+            cell.updateCell(currentItem.itemTitle.capitalized, _image : currentItem.content as? UIImage)
+        }
     }
 }
 
 extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return items.count
+        return headerItems.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
         
-        let item = items[indexPath.row]
+        let item = headerItems[indexPath.row]
+        cell.updateCell(item.itemTitle.capitalized, _image : item.content as? UIImage)
         
-        if !item.itemCreated { //search case - get question from database
-            Database.getItem(item.itemID, completion: { (item, error) in
-                if let item = item {
-                    cell.updateCell(item.itemTitle.lowercased(), _image: nil)
-                    
-                    self.items[indexPath.row] = item
-                
-                }
-            })
-            
+        if item.content == nil, !item.fetchedContent {
             Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
                 if let data = data {
-                    self.items[indexPath.row].content = UIImage(data: data)
+                    
+                    self.headerItems[indexPath.row].content = UIImage(data: data)
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
@@ -85,14 +103,9 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
                         }
                     }
                 }
+                
+                self.headerItems[indexPath.row].fetchedContent = true //so we don't try to fetch again
             })
-            
-        } else {
-            if let itemImage = item.content as? UIImage {
-                cell.updateCell(item.itemTitle.lowercased(), _image : itemImage)
-            } else {
-                cell.updateCell(item.itemTitle.capitalized, _image: nil)
-            }
         }
         
         return cell
@@ -110,7 +123,15 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedItem = items[indexPath.row]
+        let selectedItem = headerItems[indexPath.row]
         delegate.userSelected(item: selectedItem)
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        updateOnscreenRows()
+    }
+    
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { updateOnscreenRows() }
     }
 }

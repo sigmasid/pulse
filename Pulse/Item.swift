@@ -41,6 +41,7 @@ class Item: NSObject {
     var tag : Item?
     
     dynamic var itemCreated = false
+    var fetchedContent = false
     
     init(itemID: String) {
         self.itemID = itemID

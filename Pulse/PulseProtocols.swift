@@ -14,6 +14,10 @@ protocol HeaderDelegate: class {
     func userClickedMenu()
 }
 
+protocol SelectionDelegate: class {
+    func userSelected(item : Any)
+}
+
 protocol ParentDelegate: class {
     func dismiss(_ viewController : UIViewController)
 }
