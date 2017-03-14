@@ -76,19 +76,6 @@ class Item: NSObject {
         }
     }
     
-    init(itemID: String, snapshot: FIRDataSnapshot, feedUpdate:Bool) {
-        self.itemID = itemID
-        super.init()
-        if let tagID = snapshot.childSnapshot(forPath: "tagID").value as? String, let tagTitle = snapshot.childSnapshot(forPath: "tagTitle").value as? String {
-            self.tag = Item(itemID: tagID, type: "tag")
-            self.tag?.itemTitle = tagTitle
-        }
-        
-        if let type = snapshot.childSnapshot(forPath: "type").value as? String {
-            setType(type: type)
-        }
-    }
-    
     init(itemID: String, snapshot: FIRDataSnapshot) {
         self.itemID = itemID
         super.init()

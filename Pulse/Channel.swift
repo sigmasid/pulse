@@ -38,9 +38,9 @@ class Channel : NSObject {
         self.cImageURL = snapshot.childSnapshot(forPath: "image").value as? String
         
         for tag in snapshot.childSnapshot(forPath: "tags").children {
-            if let tag = tag as? FIRDataSnapshot {
-                let _tag = Item(itemID: (tag as AnyObject).key, type: "tag")
-                _tag.itemTitle = tag.value as? String
+            if let tag = tag as? FIRDataSnapshot, let type = tag.childSnapshot(forPath: "type").value as? String {
+                let _tag = Item(itemID: (tag as AnyObject).key, type: type)
+                _tag.itemTitle = tag.childSnapshot(forPath: "title").value as? String
                 self.tags.append(_tag)
             }
         }

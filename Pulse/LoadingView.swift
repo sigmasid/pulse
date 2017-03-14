@@ -85,7 +85,7 @@ class LoadingView: UIView {
         iconManager.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         iconManager.layoutIfNeeded()
 
-        iconManager.drawLongIcon(.black, iconThickness: IconThickness.medium.rawValue, tillEnd : true)
+        iconManager.drawLongIcon(_iconColor, iconThickness: IconThickness.medium.rawValue, tillEnd : true)
 
     }
     

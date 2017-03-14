@@ -11,10 +11,11 @@ import UIKit
 class HeaderChannelsCell: UICollectionViewCell {
     public var channels = [Channel]() {
         didSet {
-            print("did set channels")
-            collectionView?.delegate = self
-            collectionView?.dataSource = self
-            collectionView?.reloadData()
+            if channels != oldValue {
+                collectionView?.delegate = self
+                collectionView?.dataSource = self
+                collectionView?.reloadData()
+            }
         }
     }
     public var delegate: SelectionDelegate!

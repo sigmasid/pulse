@@ -679,8 +679,8 @@ class Database {
         let channelItems : FIRDatabaseQuery = channelItemsRef.child(channelID)
         activeListeners.append(channelItemsRef.child(channelID))
         
-        channelItems.queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: startingAt.timeIntervalSince1970)).queryLimited(toLast: querySize).observe(.childAdded, with: { snap in
-            let item = Item(itemID: snap.key, snapshot: snap, feedUpdate: true)
+        channelItems.queryOrdered(byChild: "createdAt").queryEnding(atValue: NSNumber(value: startingAt.timeIntervalSince1970 * 1000)).queryLimited(toLast: querySize).observe(.childAdded, with: { snap in
+            let item = Item(itemID: snap.key, snapshot: snap)
             item.cID = channelID
             
             completion(item)
@@ -710,6 +710,8 @@ class Database {
             })
         }
     }
+    
+    
     
     static func cleanupListeners() {
         for listener in activeListeners {
@@ -870,7 +872,6 @@ class Database {
     
     ///Populate current user
     static func populateCurrentUser(_ user: FIRUser!, completion: @escaping (_ success: Bool) -> Void) {
-        print("populate current user fired")
         
         User.currentUser!.uID = user.uid
         
@@ -1230,10 +1231,11 @@ class Database {
         
         let itemKey = itemsRef.childByAutoId().key
         
-        let itemPost = ["title": qText,
-                        "type":"question",
-                        "uID": user.uid,
-                        "cID":parentItem.cID]
+        let itemPost : [String : Any] = ["title": qText,
+                                         "type":"question",
+                                         "uID": user.uid,
+                                         "cID":parentItem.cID,
+                                         "createdAt" : FIRServerValue.timestamp() as AnyObject]
         
         let channelPost : [String : AnyObject] = ["type" : "question" as AnyObject,
                                                   "tagID" : parentItem.itemID as AnyObject,
@@ -1266,9 +1268,10 @@ class Database {
 
         let itemKey = itemsRef.childByAutoId().key
         
-        let itemPost = ["title": qText,
-                    "type":"question",
-                    "uID": user.uid]
+        let itemPost : [String : Any] = ["title": qText,
+                                         "type":"question",
+                                         "uID": user.uid,
+                                         "createdAt" : FIRServerValue.timestamp() as AnyObject]
 
         let post = ["items/\(itemKey)": itemPost,
                     "users/\(user.uid)/askedQuestions/\(itemKey)":true,
@@ -1509,7 +1512,6 @@ class Database {
     }
     
     static func resizeImage(_ image: UIImage, newWidth: CGFloat) -> Data? {
-        print("actual image dimensions are \(image.size)")
         let scale = newWidth / image.size.width
         let newHeight = image.size.height * scale
         UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
@@ -1521,13 +1523,11 @@ class Database {
     }
     
     static func resizeImageHeight(_ image: UIImage, newHeight: CGFloat) -> Data? {
-        print("actual image dimensions are \(image.size.height, image.size.width)")
         let scale = newHeight / image.size.height
         let newWidth = image.size.width * scale
         UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
         image.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
-        print("final image dimensions are \(newImage?.size.height, newImage?.size.width)")
 
         UIGraphicsEndImageContext()
         

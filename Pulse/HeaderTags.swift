@@ -11,20 +11,14 @@ import UIKit
 class HeaderTagsCell: UICollectionViewCell {
     public var items = [Item]() {
         didSet {
-            if headerItems.isEmpty {
-                headerItems = items
+            if items != oldValue {
+                collectionView?.delegate = self
+                collectionView?.dataSource = self
+                collectionView?.reloadData()
             }
         }
     }
     
-    //Use the existing cache so not fetching each time
-    fileprivate var headerItems = [Item]() {
-        didSet {
-            collectionView?.delegate = self
-            collectionView?.dataSource = self
-            collectionView?.reloadData()
-        }
-    }
     public var delegate: SelectionDelegate!
     public var selectedChannel : Channel!
     
@@ -73,8 +67,8 @@ class HeaderTagsCell: UICollectionViewCell {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     internal func updateCell(_ cell: HeaderCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
-        if headerItems[indexPath.row].itemCreated {
-            let currentItem = headerItems[indexPath.row]
+        if items[indexPath.row].itemCreated {
+            let currentItem = items[indexPath.row]
             cell.updateCell(currentItem.itemTitle.capitalized, _image : currentItem.content as? UIImage)
         }
     }
@@ -82,20 +76,20 @@ class HeaderTagsCell: UICollectionViewCell {
 
 extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return headerItems.count
+        return items.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
         
-        let item = headerItems[indexPath.row]
+        let item = items[indexPath.row]
         cell.updateCell(item.itemTitle.capitalized, _image : item.content as? UIImage)
         
         if item.content == nil, !item.fetchedContent {
             Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
                 if let data = data {
                     
-                    self.headerItems[indexPath.row].content = UIImage(data: data)
+                    self.items[indexPath.row].content = UIImage(data: data)
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
@@ -104,7 +98,7 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
                     }
                 }
                 
-                self.headerItems[indexPath.row].fetchedContent = true //so we don't try to fetch again
+                self.items[indexPath.row].fetchedContent = true //so we don't try to fetch again
             })
         }
         
@@ -123,7 +117,7 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedItem = headerItems[indexPath.row]
+        let selectedItem = items[indexPath.row]
         delegate.userSelected(item: selectedItem)
     }
     

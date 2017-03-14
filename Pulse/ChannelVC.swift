@@ -45,7 +45,6 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
     
     /** Data Source Vars **/
     fileprivate var allItems = [Item]()
-    fileprivate var headerItems = [Item]()
     fileprivate var hasReachedEnd = false
     
     fileprivate var isLoaded = false
@@ -84,7 +83,6 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
         headerNav = nil //the category item - might be the question / tag / post etc.
         
         allItems = []
-        headerItems = []
     }
     
     internal func getChannelItems() {
@@ -212,7 +210,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         case 0:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: sectionReuseIdentifier, for: indexPath) as! HeaderTagsCell
             cell.selectedChannel = selectedChannel
-            cell.items = headerItems.isEmpty ? selectedChannel.tags : headerItems
+            cell.items = selectedChannel.tags
             cell.delegate = self
             
             return cell
@@ -440,7 +438,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             switch indexPath.section {
             case 0:
                 headerView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
-                headerView.setTitle(title: "featured tags")
+                headerView.setTitle(title: "featured series")
             case 1:
                 headerView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
                 headerView.setTitle(title: "recent updates")

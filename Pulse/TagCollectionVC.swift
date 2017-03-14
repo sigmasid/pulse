@@ -92,7 +92,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
             self.askQuestion()
         }))
         
-        menu.addAction(UIAlertAction(title: "Share Tag", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "Share This", style: .default, handler: { (action: UIAlertAction!) in
             self.askQuestion()
         }))
         
@@ -121,16 +121,40 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
         present(menu, animated: true, completion: nil)
     }
     
-    func askQuestion() {
+    internal func showNoAnswersMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Sorry! No answers yet", message: "We are still waiting to get an answer - want to add one?", preferredStyle: .actionSheet)
+
+        menu.addAction(UIAlertAction(title: "Add Answer", style: .default, handler: { (action: UIAlertAction!) in
+            self.addAnswer(selectedItem: selectedItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func askQuestion() {
         let questionVC = AskQuestionVC()
         questionVC.selectedTag = selectedItem
         questionVC.delegate = self
         
         GlobalFunctions.addNewVC(questionVC, parentVC: self)
     }
+    
+    internal func addAnswer(selectedItem: Item) {
+        contentVC = ContentManagerVC()
+        contentVC.selectedChannel = selectedChannel
+        contentVC.selectedItem = selectedItem
+        contentVC.openingScreen = .camera
+        
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
 
     //once allItems var is set reload the data
-    func updateDataSource() {
+    internal func updateDataSource() {
         if !isLayoutSetup {
             setupLayout()
         }
@@ -207,14 +231,14 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         let currentItem = allItems[indexPath.row]
 
         //clear the cells and set the item type first
-        cell.updateLabel(currentItem.itemTitle, _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: selectedItem.itemTitle)
+        cell.updateLabel(currentItem.itemTitle, _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: nil)
         cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
 
         //Already fetched this item
         if allItems[indexPath.row].itemCreated {
             
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
         } else {
@@ -223,12 +247,10 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                     
                     cell.itemType = item.type
 
-
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
                             cell.itemType = item.type
-                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil,  _createdAt: self.allItems[indexPath.row].createdAt,
-                                             _tag: self.allItems[indexPath.row].tag?.itemTitle)
+                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil,  _createdAt: item.createdAt, _tag: nil)
                         }
                     }
                     
@@ -236,19 +258,9 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                     self.allItems[indexPath.row] = item
                     
                     //Get the cover image
-                    if let imageURL = item.contentURL, item.contentType == .recordedImage || item.contentType == .albumImage, let _imageData = try? Data(contentsOf: imageURL) {
-                        DispatchQueue.global(qos: .background).async {
-                            
-                            self.allItems[indexPath.row].content = UIImage(data: _imageData)
-                            
-                            DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
-                                }
-                            }
-                        }
-                    } else if item.contentType == .recordedVideo || item.contentType == .albumVideo {
-                        Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                    //Get the image if content type is a post
+                    if item.content == nil, item.type == .post, !item.fetchedContent {
+                        Database.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
                                 
@@ -258,13 +270,15 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                                     }
                                 }
                             }
+                            
+                            self.allItems[indexPath.row].fetchedContent = true
                         })
                     }
                     
                     // Get the user details
                     if let user = self.checkUserDownloaded(user: User(uID: item.itemUserID)) {
                         self.allItems[indexPath.row].user = user
-                        cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
+                        cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: nil)
                         
                         if user.thumbPicImage == nil {
                             DispatchQueue.global(qos: .background).async {
@@ -288,7 +302,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
                                 
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateLabel(item.itemTitle, _subtitle: user.name,  _createdAt: item.createdAt, _tag: currentItem.tag?.itemTitle)
+                                        cell.updateLabel(item.itemTitle, _subtitle: user.name,  _createdAt: item.createdAt, _tag: nil)
                                     }
                                 }
                                 
@@ -357,7 +371,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: selectedItem.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
         }
     }
     
@@ -378,18 +392,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         if !decelerate { updateOnscreenRows() }
     }
     
-    /**
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let bottomEdge = scrollView.contentOffset.y + scrollView.frame.size.height
-        let bottomInset = scrollView.contentInset.bottom
-        
-        if bottomEdge >= scrollView.contentSize.height - bottomInset {
-            print("reached end of scroll view")
-            getMoreItems()
-        }
-    } **/
-    
-    func userSelected(item : Item, index : Int) {
+    internal func userSelected(item : Item, index : Int) {
         
         item.tag = selectedItem //since we are in tagVC
         
@@ -405,7 +408,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 success ?
                     self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) :
-                    GlobalFunctions.showErrorBlock("Sorry! No answers yet", erMessage: "We are still waiting to get an answer - want to add one?")
+                    self.showNoAnswersMenu(selectedItem : item)
             })
         default: break
         }
@@ -426,7 +429,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         present(contentVC, animated: true, completion: nil)
     }
     
-    func userClosedBrowse(_ viewController : UIViewController) {
+    internal func userClosedBrowse(_ viewController : UIViewController) {
         dismiss(animated: true, completion: { _ in
             print("should dismiss browse collection vc")
         })
