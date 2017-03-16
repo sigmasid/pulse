@@ -11,7 +11,7 @@ import Firebase
 import AVFoundation
 import Photos
 
-class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextViewDelegate {
+class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     fileprivate var uploadTask : FIRStorageUploadTask!
     
@@ -79,12 +79,20 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
     
     fileprivate var itemCollectionPost = [ String : String ]()
     
+    fileprivate var mode : AddOrPostMode?
+    enum AddOrPostMode {
+        case post
+        case add
+    }
+    fileprivate var placeholderText = "add a title"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        aPlayer.pause()
     }
     
     fileprivate func setupImageForAnswer() {
@@ -122,8 +130,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
             aPlayer.insert(currentVideo, after: nil)
             aPlayer.advanceToNextItem()
         }
-        
-
         
         //reorder views so controls & filters are still on top
         
@@ -183,38 +189,16 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
         recordedItems[self.currentItemIndex - 1].itemTitle = text
     }
     
-    func textViewDidEndEditing(_ textView: UITextView) {
-        if textView.text != "" {
-            updateItemTitle(text: textView.text)
-            textView.resignFirstResponder()
-        } else {
-            textView.resignFirstResponder()
-        }
-    }
-    
-    func textViewShouldReturn(_ textView: UITextView) -> Bool {
-        updateItemTitle(text: textView.text)
-        textView.resignFirstResponder()
-        return true
-    }
-    
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if text == "\n" {
-            updateItemTitle(text: textView.text)
-            textView.resignFirstResponder()
-            return false
-        }
-        
-        return textView.text.characters.count + (text.characters.count - range.length) <= 120
-    }
-    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         controlsOverlay.endEditing(true)
     }
 
     func _addMore() {
-        if let delegate = delegate {
+        if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
+            mode = .add
+            controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
+        } else if let delegate = delegate {
             delegate.addMoreItems(self, recordedItems: recordedItems, isCover : false)
         }
     }
@@ -229,15 +213,20 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
     
     ///post video to firebase
     func _post() {
-        controlsOverlay.getButton(.post).isEnabled = false
-        aPlayer.pause()
-        
-        if coverAdded {
-            controlsOverlay.addProgressLabel("Posting...")
-            controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
-            uploadItems(allItems: recordedItems)
+        if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
+            mode = .add
+            controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
         } else {
-            confirmPost()
+            controlsOverlay.getButton(.post).isEnabled = false
+            aPlayer.pause()
+            
+            if coverAdded {
+                controlsOverlay.addProgressLabel("Posting...")
+                controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
+                uploadItems(allItems: recordedItems)
+            } else {
+                confirmPost()
+            }
         }
     }
     
@@ -281,6 +270,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
         
         if contentType == .recordedVideo || contentType == .albumVideo {
             uploadVideo(item, completion: {(success, _itemID) in
+                self.itemCollectionPost[item.itemID] = item.type.rawValue
                 allItems.removeLast()
                 self.uploadItems(allItems: allItems)
             })
@@ -424,5 +414,50 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, UITextView
                 }
             }
         })
+    }
+}
+
+extension RecordedVideoVC: UITextViewDelegate {
+    func textViewDidEndEditing(_ textView: UITextView) {
+        if textView.text != "" {
+            updateItemTitle(text: textView.text)
+            textView.resignFirstResponder()
+        } else {
+            textView.resignFirstResponder()
+        }
+        
+        if mode == .post {
+            _post()
+        } else if mode == .add {
+            _addMore()
+        }
+    }
+    
+    func textViewShouldReturn(_ textView: UITextView) -> Bool {
+        updateItemTitle(text: textView.text)
+        textView.resignFirstResponder()
+        
+        if mode == .post {
+            _post()
+        } else if mode == .add {
+            _addMore()
+        }
+        
+        return true
+    }
+    
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if textView.text == placeholderText {
+            textView.text = ""
+            textView.textColor = UIColor.white
+        }
+        
+        if text == "\n" {
+            updateItemTitle(text: textView.text)
+            textView.resignFirstResponder()
+            return false
+        }
+        
+        return textView.text.characters.count + (text.characters.count - range.length) <= 120
     }
 }

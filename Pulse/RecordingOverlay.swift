@@ -127,17 +127,21 @@ class RecordingOverlay: UIView {
         showAddTitleField(makeFirstResponder: true)
     }
     
-    func showAddTitleField(makeFirstResponder: Bool) {
+    func showAddTitleField(makeFirstResponder: Bool, placeholderText: String) {
         if !isTitleSetup {
             setupTitleField()
         }
         
-        addTitleField.text = title
+        addTitleField.text = placeholderText
         titleBottomConstraint.constant = -Spacing.xl.rawValue - IconSizes.medium.rawValue
-
+        
         if makeFirstResponder {
             addTitleField.becomeFirstResponder()
         }
+    }
+    
+    func showAddTitleField(makeFirstResponder: Bool) {
+        showAddTitleField(makeFirstResponder: makeFirstResponder, placeholderText: title)
     }
     
     func clearAddTitleField() {

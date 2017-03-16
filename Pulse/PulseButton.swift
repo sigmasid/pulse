@@ -382,9 +382,10 @@ open class PulseButton: UIButton {
             imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
 
         case .profile:
-            let tintedTimage = UIImage(named: "profile")?.withRenderingMode(.alwaysTemplate)
+            let tintedTimage = UIImage(named: "default-profile")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            
+            imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+
         case .browse:
             let tintedTimage = UIImage(named: "browse")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)

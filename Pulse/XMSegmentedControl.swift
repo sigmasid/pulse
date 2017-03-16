@@ -167,7 +167,7 @@ open class XMSegmentedControl: UIView {
                         ((self.subviews.filter(isUIButton)) as! [UIButton]).forEach {
                             if $0.tag == self.selectedSegment {
                                 $0.tintColor = self.highlightTint
-                                self.highlightView.frame.origin.x = $0.frame.origin.x
+                                self.highlightView.frame.origin.x = $0.frame.origin.x + $0.frame.width * 0.2
                             } else {
                                 $0.tintColor = self.tint
                             }
@@ -176,7 +176,7 @@ open class XMSegmentedControl: UIView {
                         ((self.subviews.filter(isUIButton)) as! [UIButton]).forEach {
                             if $0.tag == self.selectedSegment {
                                 $0.setTitleColor(self.highlightTint, for: UIControlState())
-                                self.highlightView.frame.origin.x = $0.frame.origin.x
+                                self.highlightView.frame.origin.x = $0.frame.origin.x + $0.frame.width * 0.2
                             } else {
                                 $0.setTitleColor(self.tint, for: UIControlState())
                             }
@@ -193,7 +193,7 @@ open class XMSegmentedControl: UIView {
      Sets the font for the text displayed in the segmented control if `contentType` is `Text`
      - Note: Changes only take place if `contentType` is `Text`
      */
-    open var font = UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightRegular)
+    open var font = UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightBold)
     
     /// Sets the segmented control selected item highlight style to `Background`, `TopEdge` or `BottomEdge`.
     open var selectedItemHighlightStyle: XMSelectedItemHighlightStyle = .background

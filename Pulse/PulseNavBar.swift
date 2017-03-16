@@ -91,12 +91,12 @@ public class PulseNavBar: UINavigationBar {
     }
 
     fileprivate func addSearch() {
-        searchContainer = UIView(frame: CGRect(x: IconSizes.large.rawValue,
-                                               y: Spacing.s.rawValue,
-                                               width: UIScreen.main.bounds.width - IconSizes.large.rawValue,
+        searchContainer = UIView(frame: CGRect(x: Spacing.xs.rawValue,
+                                               y: Spacing.xs.rawValue,
+                                               width: UIScreen.main.bounds.width - Spacing.s.rawValue,
                                                height: IconSizes.medium.rawValue))
 
-        self.addSubview(searchContainer)
+        addSubview(searchContainer)
         searchContainer.tag = 30
     }
 }

@@ -57,7 +57,6 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        print("gesture recognizer fired")
         return false
     }
     

@@ -23,6 +23,7 @@ protocol ItemDetailDelegate : class {
     func votedItem(_ _vote : VoteType)
     func userClickedSendMessage()
     func userClosedQuickBrowse()
+    func userClickedNextItem()
     func userClickedSeeAll(items : [Item])
 }
 
@@ -71,6 +72,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     fileprivate var _isImageViewShown = false
     fileprivate var _isQuickBrowseShown = false
     fileprivate var _isExploring = false
+    fileprivate var _shouldShowExplore = false
     
     fileprivate var startObserver : AnyObject!
     fileprivate var playedTillEndObserver : Any!
@@ -86,7 +88,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         super.viewDidLoad()
         
         if !_isLoaded {
-            view.backgroundColor = UIColor.white
+            view.backgroundColor = UIColor.black.withAlphaComponent(0.7)
             
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             tap.cancelsTouchesInView = false
@@ -110,6 +112,11 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             NotificationCenter.default.addObserver(self,
                                                    selector: #selector(startCountdownTimer),
                                                    name: NSNotification.Name(rawValue: "PlaybackStartedNotification"),
+                                                   object: currentPlayerItem)
+            
+            NotificationCenter.default.addObserver(self,
+                                                   selector: #selector(didPlayTillEnd),
+                                                   name: .AVPlayerItemDidPlayToEndTime,
                                                    object: currentPlayerItem)
             
             //align the timer to actually when the video starts
@@ -145,16 +152,19 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         return true
     }
     
-    //so you cannot tap to next Item when miniprofile is shown - cancels all other gestures
-    /**func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return _isMiniProfileShown ? true : false
-    }**/
+    internal func didPlayTillEnd() {
+        if _shouldShowExplore {
+            contentOverlay.showExploreDetail()
+            _shouldShowExplore = false
+        }
+        
+        
+    }
     
     fileprivate func loadWatchedPreviewItem() {
         Database.updateItemViewCount(itemID: allItems[itemIndex].itemID)
         currentItem = allItems[itemIndex]
         updateOverlayData(allItems[itemIndex])
-        contentOverlay.addClipTimerCountdown()
         addExploreItemDetail(allItems[itemIndex].itemID)
                 
         userClickedExpandItem()
@@ -183,7 +193,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
                                 self._canAdvanceReady = false
                             }
                         })
-                        self.contentOverlay.addClipTimerCountdown()
                         self.updateOverlayData(item)
                     }
                     UIApplication.shared.isNetworkActivityIndicatorVisible = false
@@ -206,7 +215,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
                 })
                 
                 updateOverlayData(allItems[index])
-                contentOverlay.addClipTimerCountdown()
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
         } else {
@@ -218,8 +226,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     
     fileprivate func loadItemCollections(_ index : Int) {
         tap.isEnabled = false
-        
-        detailTap = UITapGestureRecognizer(target: self, action: #selector(handledetailTap))
+
+        detailTap = UITapGestureRecognizer(target: self, action: #selector(handleDetailTap))
         detailTap.cancelsTouchesInView = false
         detailTap.delegate = self
         view.addGestureRecognizer(detailTap)
@@ -245,22 +253,21 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
                     self._canAdvanceReady = false
                 }
             }
-        
         })
-        contentOverlay.addClipTimerCountdown()
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
     
     fileprivate func addExploreItemDetail(_ _itemID : String) {
         if itemDetailCollection.count > 1 {
-            contentOverlay.showExploreDetail()
+            _shouldShowExplore = true
         } else {
             Database.getItemCollection(_itemID, completion: {(hasDetail, itemCollection) in
                 if hasDetail {
-                    self.contentOverlay.showExploreDetail()
-                    self.itemDetailCollection = itemCollection
+                    self._shouldShowExplore = true
+                    self.itemDetailCollection = itemCollection.reversed() //otherwise items are in chron order - need to get oldest first
                 } else {
+                    self._shouldShowExplore = false
                     self.contentOverlay.hideExploreDetail()
                 }
             })
@@ -285,8 +292,11 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         
         if !item.itemCreated || item.contentURL == nil {
             
-            addClip(item.itemID, completion: { _ in })
-            
+            addClip(item.itemID, completion: { success in
+                if success {
+                    completion(true)
+                }
+            })
         } else {
             guard let itemType = item.contentType else { return }
             
@@ -304,6 +314,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
                     if let _currentPlayerItem = currentPlayerItem {
                         if ContentDetailVC.qPlayer.currentItem != nil {
                             ContentDetailVC.qPlayer.insert(_currentPlayerItem, after: ContentDetailVC.qPlayer.currentItem)
+                            contentOverlay.resetTimer()
+
                             ContentDetailVC.qPlayer.advanceToNextItem()
                             addObserverForStatusReady()
                             completion(true)
@@ -459,6 +471,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             self.delegate.removeIntro()
             self._isShowingIntro = false
         }
+        
+        removeObserverIfNeeded()
     }
     
     fileprivate func addObserverForStatusReady() {
@@ -560,6 +574,10 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         delegate.userClickedProfileDetail()
     }
     
+    func userClickedNextItem() {
+        handleTap()
+    }
+    
     func userClickedProfile() {
         let _profileFrame = CGRect(x: view.bounds.width * (1/5), y: view.bounds.height * (1/4), width: view.bounds.width * (3/5), height: view.bounds.height * (1/2))
         
@@ -636,7 +654,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     
     func userClickedExpandItem() {
         removeObserverIfNeeded()
-        contentOverlay.updateExploreDetail()
         loadItemCollections(1)
         _isExploring = true
     }
@@ -711,7 +728,7 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         }
     }
 
-    func handledetailTap() {
+    func handleDetailTap() {
         guard !_isMiniProfileShown, !_isQuickBrowseShown else {
             return
         }

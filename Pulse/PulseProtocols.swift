@@ -22,6 +22,11 @@ protocol ParentDelegate: class {
     func dismiss(_ viewController : UIViewController)
 }
 
+protocol ParentTextViewDelegate {
+    func dismiss(_ view : UIView)
+    func buttonClicked(_ text: String)
+}
+
 protocol ItemCellDelegate : class {
     func clickedItemButton(itemRow : Int)
 }

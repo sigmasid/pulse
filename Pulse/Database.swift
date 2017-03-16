@@ -635,13 +635,15 @@ class Database {
     /*** MARK END : GET USER ITEMS ***/
     
     //Create Feed for current user from followed tags
-    static func createFeed(_ completion: @escaping (_ item : Item) -> Void) {
+    static func createFeed(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
         guard let user = User.currentUser else { return }
+        var allNewsItems = [Item]()
+        var itemStack = [Bool](repeating: false, count: user.subscriptions.count)
         
         if user.subscriptions.count == 0 && !initialFeedUpdateComplete {
             
-            keepChannelsUpdated(completion: { newItem in
-                completion(newItem)
+            keepChannelsUpdated(completion: { newItems in
+                completion(newItems)
             })
             
             //add listener if user subscribes to new channel
@@ -649,23 +651,51 @@ class Database {
 
         } else if user.subscriptions.count > 0 && !initialFeedUpdateComplete {
             
-            keepChannelsUpdated(completion: { newItem in
-                completion(newItem)
+            keepChannelsUpdated(completion: { newItems in
+                completion(newItems)
             })
             
             //add in new posts before returning feed
-            for channel in user.subscriptions {
-                Database.addNewItemsToFeed(channelID: channel.cID, startingAt: Date(), completion: { newItem in
+            for (index, channel) in user.subscriptions.enumerated() {
+                Database.addNewItemsToFeed(channelID: channel.cID, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
                     
-                    completion(newItem)
-
-                    if channel == user.subscriptions.last {
-                        //reached last subscribed channel
+                    allNewsItems.append(contentsOf: newItems)
+                    itemStack[index] = true
+                    
+                    if isUpdateComplete(stack: itemStack) {
                         initialFeedUpdateComplete = true
+                        completion(sortNewItems(items: allNewsItems))
                     }
                 })
             }
         }
+    }
+    
+    static func fetchMoreItems(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
+        guard let user = User.currentUser else { return }
+        var allNewsItems = [Item]()
+        var itemStack = [Bool](repeating: false, count: user.subscriptions.count)
+        
+        //add in new posts before returning feed
+        for (index, channel) in user.subscriptions.enumerated() {
+            
+            Database.addNewItemsToFeed(channelID: channel.cID, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
+                allNewsItems.append(contentsOf: newItems)
+                itemStack[index] = true
+                
+                if isUpdateComplete(stack: itemStack) {
+                    completion(sortNewItems(items: allNewsItems))
+                }
+            })
+        }
+    }
+    
+    static func sortNewItems(items : [Item]) -> [Item] {
+        return items.sorted(by: { $0.createdAt! > $1.createdAt! })
+    }
+    
+    static func isUpdateComplete(stack : [Bool]) -> Bool {
+        return !stack.contains(false)
     }
     
     static func removeItemsFromFeed(_ channelID : String) {
@@ -674,29 +704,42 @@ class Database {
 
     }
     
-    static func addNewItemsToFeed(channelID : String, startingAt : Date, completion: @escaping (_ item : Item) -> Void) {
+    static func addNewItemsToFeed(channelID : String, startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
+        var channelNewItems = [Item]()
         
         let channelItems : FIRDatabaseQuery = channelItemsRef.child(channelID)
-        activeListeners.append(channelItemsRef.child(channelID))
         
-        channelItems.queryOrdered(byChild: "createdAt").queryEnding(atValue: NSNumber(value: startingAt.timeIntervalSince1970 * 1000)).queryLimited(toLast: querySize).observe(.childAdded, with: { snap in
-            let item = Item(itemID: snap.key, snapshot: snap)
-            item.cID = channelID
-            
-            completion(item)
+        if !activeListeners.contains(channelItemsRef.child(channelID)) {
+            activeListeners.append(channelItemsRef.child(channelID))
+        }
+        
+        channelItems.queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for item in snap.children {
+                    if let item = item as? FIRDataSnapshot {
+                        let item = Item(itemID: item.key, snapshot: item)
+                        item.cID = channelID
+                        
+                        channelNewItems.append(item)
+                    }
+                }
+            }
+            channelNewItems.reverse()
+            completion(channelNewItems)
         })
     }
     
-    static func keepChannelsUpdated(completion: @escaping (_ item : Item) -> Void) {
+    static func keepChannelsUpdated(completion: @escaping (_ items : [Item]) -> Void) {
         if User.isLoggedIn() {
             
             let subscriptions : FIRDatabaseQuery = currentUserRef.child("subscriptions")
             activeListeners.append(currentUserRef.child("subscriptions"))
-            
+            let endUpdateAt : Date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+
             subscriptions.observe(.childAdded, with: { channelSnap in
                 if initialFeedUpdateComplete {
-                    addNewItemsToFeed(channelID: channelSnap.key, startingAt: Date(), completion: { item in
-                        completion(item)
+                    addNewItemsToFeed(channelID: channelSnap.key, startingAt: Date(), endingAt: endUpdateAt, completion: { items in
+                        completion(items)
                     })
                 } else {
                     print("ignoring child added)")
@@ -1141,7 +1184,8 @@ class Database {
         if let url = item.contentURL?.absoluteString {
             channelPost["url"] = url as AnyObject?
         }
-
+        print("item type is \(item.type), itemID is \(item.itemID) and post is \(post), parent item is \(parentItemID)")
+        
         switch item.type {
         case .answer:
             collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.itemID,

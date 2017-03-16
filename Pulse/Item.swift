@@ -17,6 +17,7 @@ enum ItemTypes: String {
     case posts
     case feedback
     case user
+    case channel
     case unknown
 }
 

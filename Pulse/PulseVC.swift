@@ -134,7 +134,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
             view.addSubview(loadingView)
             
             if showIcon {
-                loadingView.addLongIcon(IconSizes.medium, _iconColor: .gray, _iconBackgroundColor: nil)
+                loadingView.addIcon(.medium, _iconColor: .gray, _iconBackgroundColor: .white)
             }
             
             loadingView.addMessage(message, _color: .gray)

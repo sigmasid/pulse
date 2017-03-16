@@ -22,7 +22,7 @@ class ItemCell: UICollectionViewCell {
     fileprivate lazy var itemTag = UILabel()
     fileprivate var itemHeightAnchor : NSLayoutConstraint!
     
-    fileprivate var itemButton = PulseButton(size: .small, type: .logo, isRound: true, hasBackground: false)
+    fileprivate var itemButton = PulseButton(size: .small, type: .logoCircle, isRound: true, hasBackground: false)
     
     public var itemType : ItemTypes? {
         didSet {
@@ -126,7 +126,7 @@ class ItemCell: UICollectionViewCell {
     }
     
     func updateButtonImage(image : UIImage?, itemTag : Int) {
-        itemButton.setImage(image, for: .normal)
+        itemButton.setImage(image ?? UIImage(named: "pulse-logo"), for: .normal)
         itemButton.tag = itemTag
     }
     
@@ -221,7 +221,7 @@ class ItemCell: UICollectionViewCell {
         itemTag.bottomAnchor.constraint(equalTo: createdAtLabel.bottomAnchor).isActive = true
         itemTag.heightAnchor.constraint(equalToConstant: createdAtHeight).isActive = true
         
-        itemImage.contentMode = UIViewContentMode.center
+        itemImage.contentMode = UIViewContentMode.scaleAspectFill
         itemImage.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.7)
         itemImage.clipsToBounds = true
                 

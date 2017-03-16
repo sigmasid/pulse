@@ -16,7 +16,9 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
 
             if !selectedChannel.cCreated {
                 Database.getChannel(cID: selectedChannel.cID!, completion: { channel, error in
+                    channel.cPreviewImage = self.selectedChannel.cPreviewImage
                     self.selectedChannel = channel
+                    
                     self.updateHeader()
                 })
             } else if !selectedChannel.cDetailedCreated {
@@ -88,6 +90,7 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
     internal func getChannelItems() {
         Database.getChannelItems(channel: selectedChannel, completion: { updatedChannel in
             if let updatedChannel = updatedChannel {
+                updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
             }
         })
@@ -359,15 +362,13 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         if let item = item as? Item {
             switch item.type {
             case .answer:
+                
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                
             case .post:
-                Database.getItemCollection(item.itemID, completion: {(success, items) in
-                    if success {
-                        self.showItemDetail(allItems: [item], index: 0, itemCollection: items, selectedItem: item, watchedPreview: true)
-                    } else {
-                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [item], selectedItem: item, watchedPreview: false)
-                    }
-                })
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+
             case .question:
                 
                 showBrowse(selectedItem: item)

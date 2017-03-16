@@ -12,7 +12,7 @@ protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
 }
 
-class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
+class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
     
     // Set by MasterTabVC
     public var universalLink : URL!
@@ -30,6 +30,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
     
     override func viewDidLayoutSubviews() {
         if !isLayoutSetup {
+            toggleLoading(show: true, message: "Loading...", showIcon: true)
             setupScreenLayout()
             updateRootScopeSelection()
             isLayoutSetup = true
@@ -73,6 +74,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
         Database.getExploreChannels({ channels, error in
             if error == nil {
                 self.allChannels = channels
+                self.toggleLoading(show: false, message: nil)
             }
         })
     }
@@ -91,7 +93,18 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate {
     }
     
     func userClickedSearch() {
+        let searchNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        let searchVC = SearchVC()
+        searchNavVC.modalTransitionStyle = .crossDissolve
+
+        searchVC.modalDelegate = self
+        searchNavVC.viewControllers = [searchVC]
         
+        navigationController?.present(searchNavVC, animated: true, completion: nil)
+    }
+    
+    func userClosedModal(_ viewController : UIViewController) {
+        dismiss(animated: true, completion: { _ in })
     }
     
     func userClickedSubscribe(senderTag: Int) {
