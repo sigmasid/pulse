@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDelegate, BrowseContentDelegate {
+class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDelegate, HeaderDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
@@ -183,7 +183,7 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
             
             collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(HeaderTagsCell.self, forCellWithReuseIdentifier: sectionReuseIdentifier)
-            collectionView?.register(HeaderTitle.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+            collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             
             //channel?.register(ChannelHeaderExperts.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             
@@ -191,6 +191,160 @@ class ChannelVC: PulseVC, SelectionDelegate, UIScrollViewDelegate, ItemCellDeleg
             
             isLayoutSetup = true
         }
+    }
+    
+
+}
+
+/** Protocols **/
+extension ChannelVC {
+    internal func userClickedMenu() {
+        guard let user = User.currentUser else {
+            return
+        }
+        
+        if user.hasExpertiseIn(channel: selectedChannel) {
+            showExpertMenu()
+        } else {
+            showRegularMenu()
+        }
+    }
+    
+    //is showing answers
+    func showExpertMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "Start New Series", style: .default, handler: { (action: UIAlertAction!) in
+            //self.askQuestion()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Invite Experts", style: .default, handler: { (action: UIAlertAction!) in
+            //self.askQuestion()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Share Channel", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedChannel.createShareLink(completion: { link in
+                guard let link = link else { return }
+                self.activityController = GlobalFunctions.shareContent(shareType: "channel",
+                                                                       shareText: self.selectedChannel.cTitle ?? "",
+                                                                       shareLink: link, presenter: self)
+            })
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    func showRegularMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "Become an Expert", style: .default, handler: { (action: UIAlertAction!) in
+            let applyExpertVC = ApplyExpertVC()
+            applyExpertVC.selectedChannel = self.selectedChannel
+            
+            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "See Experts", style: .default, handler: { (action: UIAlertAction!) in
+            let browseExpertsVC = BrowseUsersVC()
+            browseExpertsVC.selectedChannel = self.selectedChannel
+            browseExpertsVC.delegate = self
+            
+            self.navigationController?.pushViewController(browseExpertsVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "Share Channel", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedChannel.createShareLink(completion: { link in
+                guard let link = link else { return }
+                self.activityController = GlobalFunctions.shareContent(shareType: "channel",
+                                                                       shareText: self.selectedChannel.cTitle ?? "",
+                                                                       shareLink: link, presenter: self)
+            })
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    func userSelected(item : Any) {
+        if let item = item as? Item {
+            switch item.type {
+            case .answer:
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                
+            case .post:
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                
+            case .question:
+                
+                showBrowse(selectedItem: item)
+                
+            case .posts, .feedback:
+                
+                showTag(selectedItem: item)
+                
+            default: break
+            }
+        } else if let user = item as? User {
+            
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
+            
+        }
+    }
+    
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+        contentVC = ContentManagerVC()
+        contentVC.watchedFullPreview = watchedPreview
+        contentVC.selectedChannel = selectedChannel
+        contentVC.selectedItem = selectedItem
+        contentVC.itemCollection = itemCollection
+        contentVC.itemIndex = index
+        contentVC.allItems = allItems
+        contentVC.openingScreen = .item
+        
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    internal func addNewItem(selectedItem: Item) {
+        contentVC = ContentManagerVC()
+        contentVC.selectedChannel = selectedChannel
+        contentVC.selectedItem = selectedItem
+        contentVC.openingScreen = .camera
+        
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    internal func showBrowse(selectedItem: Item) {
+        let _selectedItem = selectedItem
+        _selectedItem.cID = selectedChannel.cID
+        
+        let itemCollection = BrowseContentVC()
+        itemCollection.selectedChannel = selectedChannel
+        itemCollection.selectedItem = _selectedItem
+        itemCollection.contentDelegate = self
+        
+        navigationController?.pushViewController(itemCollection, animated: true)
+    }
+    
+    internal func showTag(selectedItem : Item) {
+        let tagDetailVC = TagCollectionVC()
+        tagDetailVC.selectedChannel = selectedChannel
+        
+        navigationController?.pushViewController(tagDetailVC, animated: true)
+        tagDetailVC.selectedItem = selectedItem
+        
     }
 }
 
@@ -321,7 +475,72 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             allUsers[index].thumbPicImage = image
         }
     }
+    
+    //Did select item at index path
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if indexPath.section == 1 {
+            let selectedItem = allItems[indexPath.row]
+            userSelected(item: selectedItem)
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        switch kind {
+        case UICollectionElementKindSectionHeader:
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
+            switch indexPath.section {
+            case 0:
+                headerView.backgroundColor = UIColor.white
+                headerView.delegate = self
+                headerView.updateLabel("featured series")
+            case 1:
+                break
+            default:
+                break
+            }
+            return headerView
+            
+        default: assert(false, "Unexpected element kind")
+        }
+    }
+}
 
+extension ChannelVC: UICollectionViewDelegateFlowLayout {
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        switch section {
+        case 0:
+            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
+        case 1:
+            return CGSize(width: collectionView.frame.width, height: 0)
+        default:
+            return CGSize(width: collectionView.frame.width, height: 0)
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: Spacing.xs.rawValue, right: 0.0)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        switch indexPath.section {
+        case 0:
+            return CGSize(width: collectionView.frame.width, height: headerSectionHeight)
+        case 1:
+            let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
+            return CGSize(width: collectionView.frame.width, height: cellHeight)
+        default:
+            return CGSize(width: collectionView.frame.width, height: 0)
+        }
+    }
+    
+    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        return true
+    }
+}
+
+extension ChannelVC: UIScrollViewDelegate {
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
@@ -347,143 +566,6 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
-    }
-    
-    //Did select item at index path
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if indexPath.section == 1 {
-            let selectedItem = allItems[indexPath.row]
-            userSelected(item: selectedItem)
-        }
-    }
-    
-    /** Delegate Functions **/
-    func userSelected(item : Any) {
-        if let item = item as? Item {
-            switch item.type {
-            case .answer:
-                
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-                
-            case .post:
-                
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-
-            case .question:
-                
-                showBrowse(selectedItem: item)
-                
-            case .posts, .feedback:
-                
-                showTag(selectedItem: item)
-                
-            default: break
-            }
-        } else if let user = item as? User {
-            let userProfileVC = UserProfileVC()
-            navigationController?.pushViewController(userProfileVC, animated: true)
-            userProfileVC.selectedUser = user
-        }
-    }
-    
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
-        contentVC = ContentManagerVC()
-        contentVC.watchedFullPreview = watchedPreview
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.itemCollection = itemCollection
-        contentVC.itemIndex = index
-        contentVC.allItems = allItems
-        contentVC.openingScreen = .item
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    internal func addNewItem(selectedItem: Item) {
-        contentVC = ContentManagerVC()
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.openingScreen = .camera
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    internal func showBrowse(selectedItem: Item) {
-        let _selectedItem = selectedItem
-        _selectedItem.cID = selectedChannel.cID
-        
-        let itemCollection = BrowseContentVC()
-        itemCollection.selectedChannel = selectedChannel
-        itemCollection.selectedItem = _selectedItem
-        itemCollection.contentDelegate = self
-        
-        navigationController?.pushViewController(itemCollection, animated: true)
-    }
-    
-    internal func showTag(selectedItem : Item) {        
-        let tagDetailVC = TagCollectionVC()
-        tagDetailVC.selectedChannel = selectedChannel
-        
-        navigationController?.pushViewController(tagDetailVC, animated: true)
-        tagDetailVC.selectedItem = selectedItem
-
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        switch kind {
-        case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! HeaderTitle
-            switch indexPath.section {
-            case 0:
-                headerView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
-                headerView.setTitle(title: "featured series")
-            case 1:
-                headerView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
-                headerView.setTitle(title: "recent updates")
-            default:
-                break
-            }
-            return headerView
-            
-        default: assert(false, "Unexpected element kind")
-        }
-    }
-}
-
-extension ChannelVC: UICollectionViewDelegateFlowLayout {
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        switch section {
-        case 0:
-            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
-        case 1:
-            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
-        default:
-            return CGSize(width: collectionView.frame.width, height: 0)
-        }
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: Spacing.xs.rawValue, right: 0.0)
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        switch indexPath.section {
-        case 0:
-            return CGSize(width: collectionView.frame.width, height: headerSectionHeight)
-        case 1:
-            let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
-            return CGSize(width: collectionView.frame.width, height: cellHeight)
-        default:
-            return CGSize(width: collectionView.frame.width, height: 0)
-        }
-    }
-    
-    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-        return true
     }
 }
 

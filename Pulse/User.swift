@@ -26,7 +26,7 @@ class User: NSObject {
     var thumbPic : String?
     var thumbPicImage : UIImage?
     
-    var approvedChannels = [Channel]()
+    var expertiseChannels = [Channel]()
     
     var shownCameraForQuestion = [ String : String ]()
     var _totalItems : Int?
@@ -109,11 +109,11 @@ class User: NSObject {
             }
         }
         
-        if detailedSnapshot.hasChild("approvedChannels") {
-            for child in detailedSnapshot.childSnapshot(forPath: "approvedChannels").children {
+        if detailedSnapshot.hasChild("expertiseChannels") {
+            for child in detailedSnapshot.childSnapshot(forPath: "expertiseChannels").children {
                 let channel = Channel(cID: (child as AnyObject).key)
                 channel.cTitle = (child as! FIRDataSnapshot).value as? String
-                self.approvedChannels.append(channel)
+                self.expertiseChannels.append(channel)
             }
         }
         
@@ -154,9 +154,10 @@ class User: NSObject {
         return FIRAuth.auth()?.currentUser?.email
     }
     
-    func hasExpertise() -> Bool {
-        return self.approvedChannels.isEmpty ? false : true
+    func hasExpertiseIn(channel : Channel) -> Bool {
+        return expertiseChannels.contains(channel) ? true : false
     }
+
     
     func getLocation(completion: @escaping (String?) -> Void) {
         if let sLocation = self.sLocation {

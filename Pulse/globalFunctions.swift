@@ -191,7 +191,7 @@ class GlobalFunctions {
     ///Share content
     static func shareContent(shareType: String, shareText: String, shareLink: String, presenter: UIViewController) -> UIActivityViewController {
         // set up activity view controller
-        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + shareLink
+        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + " " + shareLink
         let activityViewController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
         activityViewController.popoverPresentationController?.sourceView = presenter.view // so that iPads won't crash
         

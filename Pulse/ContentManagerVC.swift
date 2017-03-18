@@ -183,9 +183,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         itemCollection.allItems = items
         itemCollection.selectedItem = selectedItem
         itemCollection.contentDelegate = self
-        
-        //popViewController(animated: false)
-        
+        itemCollection.modalDelegate = self
+                
         present(itemCollection, animated: true)
     }
     
@@ -319,7 +318,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     func showCamera(_ animated : Bool) {
         cameraVC = CameraVC()
         cameraVC.delegate = self
-        cameraVC.screenTitle = selectedItem.type == .question ? selectedItem.itemTitle : selectedItem.tag?.itemTitle ?? ""
+        cameraVC.screenTitle = selectedItem.itemTitle
         
         panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: self)
         panDismissInteractionController.delegate = self

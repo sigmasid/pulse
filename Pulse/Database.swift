@@ -23,7 +23,8 @@ var currentAuthState : AuthStates = .loggedOut
 class Database {
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
     static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
-    
+    static let channelExpertsRef = databaseRef.child(Element.ChannelExperts.rawValue)
+
     static let itemsRef = databaseRef.child(Element.Items.rawValue)
     static let itemStatsRef = databaseRef.child(Element.ItemStats.rawValue)
     static let itemCollectionRef = databaseRef.child(Element.ItemCollection.rawValue)
@@ -185,8 +186,7 @@ class Database {
                         
                         if let result = result as? FIRDataSnapshot, let id = result.childSnapshot(forPath: "_id").value as? String {
                             
-                            let channel = Channel(cID: id)
-                            channel.cTitle = result.childSnapshot(forPath: "_source/title").value as? String
+                            let channel = Channel(cID: id, title: result.childSnapshot(forPath: "_source/title").value as? String ?? "")
                             channel.cDescription = result.childSnapshot(forPath: "_source/description").value as? String
 
                             _results.append(channel)
@@ -447,7 +447,7 @@ class Database {
     }
     /*** MARK END : SETTINGS ***/
  
-    /*** MARK START : GET FEED ITEMS ***/
+    /*** MARK START : GET ITEMS ***/
     static func getChannel(cID : String, completion: @escaping (_ channel : Channel, _ error : NSError?) -> Void) {
         channelsRef.child(cID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
             let _currentChannel = Channel(cID: cID, snapshot: snap)
@@ -481,6 +481,22 @@ class Database {
                 completion(false, items)
             } else {
                 completion(false, items)
+            }
+        })
+    }
+    
+    static func getChannelExperts(channelID : String, completion: @escaping (_ success : Bool, _ users : [User]) -> Void) {
+        var users = [User]()
+        
+        channelExpertsRef.child(channelID).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    let user = User(uID: (child as AnyObject).key)
+                    users.append(user)
+                }
+                completion(false, users)
+            } else {
+                completion(false, users)
             }
         })
     }
@@ -620,7 +636,7 @@ class Database {
     static func getUserExpertTags(uID: String, completion: @escaping (_ tags : [Channel]) -> Void) {
         var allChannels = [Channel]()
         
-        usersPublicDetailedRef.child(uID).child("approvedChannels").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        usersPublicDetailedRef.child(uID).child("expertiseChannels").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
                     let channel = Channel(cID: (child as AnyObject).key)
@@ -657,7 +673,7 @@ class Database {
             
             //add in new posts before returning feed
             for (index, channel) in user.subscriptions.enumerated() {
-                Database.addNewItemsToFeed(channelID: channel.cID, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
+                Database.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
                     
                     allNewsItems.append(contentsOf: newItems)
                     itemStack[index] = true
@@ -679,7 +695,7 @@ class Database {
         //add in new posts before returning feed
         for (index, channel) in user.subscriptions.enumerated() {
             
-            Database.addNewItemsToFeed(channelID: channel.cID, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
+            Database.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
                 allNewsItems.append(contentsOf: newItems)
                 itemStack[index] = true
                 
@@ -704,13 +720,13 @@ class Database {
 
     }
     
-    static func addNewItemsToFeed(channelID : String, startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
+    static func addNewItemsToFeed(channel : Channel, startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
         var channelNewItems = [Item]()
         
-        let channelItems : FIRDatabaseQuery = channelItemsRef.child(channelID)
+        let channelItems : FIRDatabaseQuery = channelItemsRef.child(channel.cID)
         
-        if !activeListeners.contains(channelItemsRef.child(channelID)) {
-            activeListeners.append(channelItemsRef.child(channelID))
+        if !activeListeners.contains(channelItemsRef.child(channel.cID)) {
+            activeListeners.append(channelItemsRef.child(channel.cID))
         }
         
         channelItems.queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
@@ -718,7 +734,8 @@ class Database {
                 for item in snap.children {
                     if let item = item as? FIRDataSnapshot {
                         let item = Item(itemID: item.key, snapshot: item)
-                        item.cID = channelID
+                        item.cID = channel.cID
+                        item.cTitle = channel.cTitle
                         
                         channelNewItems.append(item)
                     }
@@ -738,7 +755,8 @@ class Database {
 
             subscriptions.observe(.childAdded, with: { channelSnap in
                 if initialFeedUpdateComplete {
-                    addNewItemsToFeed(channelID: channelSnap.key, startingAt: Date(), endingAt: endUpdateAt, completion: { items in
+                    let channel = Channel(cID: channelSnap.key, title: channelSnap.value as? String ?? "")
+                    addNewItemsToFeed(channel: channel, startingAt: Date(), endingAt: endUpdateAt, completion: { items in
                         completion(items)
                     })
                 } else {
@@ -886,7 +904,7 @@ class Database {
         currentUser.subscriptions = []
         currentUser.subscriptionIDs = []
 
-        currentUser.approvedChannels = []
+        currentUser.expertiseChannels = []
         
         currentUser.profilePic = nil
         currentUser.thumbPic = nil
@@ -957,13 +975,12 @@ class Database {
                 }
             }
             
-            if snap.hasChild("approvedChannels") {
-                User.currentUser!.approvedChannels = []
-                for channel in snap.childSnapshot(forPath: "approvedChannels").children {
+            if snap.hasChild("expertiseChannels") {
+                User.currentUser!.expertiseChannels = []
+                for channel in snap.childSnapshot(forPath: "expertiseChannels").children {
                     if let channelSnap = channel as? FIRDataSnapshot {
-                        let channel = Channel(cID: channelSnap.key)
-                        channel.cTitle = channelSnap.value as? String
-                        User.currentUser!.approvedChannels.append(channel)
+                        let channel = Channel(cID: channelSnap.key, title: channelSnap.value as? String ?? "")
+                        User.currentUser!.expertiseChannels.append(channel)
                     }
                 }
             }
@@ -979,8 +996,7 @@ class Database {
         usersRef.child(user.uid).child("subscriptions").observeSingleEvent(of: .value, with: { snap in
             for channel in snap.children {
                 if let channel = channel as? FIRDataSnapshot {
-                    let savedChannel = Channel(cID: channel.key)
-                    savedChannel.cTitle = channel.value as? String
+                    let savedChannel = Channel(cID: channel.key, title: channel.value as? String ?? "")
                     
                     if !User.currentUser!.subscriptionIDs.contains(channel.key) {
                         User.currentUser!.subscriptions.append(savedChannel)
@@ -1461,7 +1477,7 @@ class Database {
     
     static func subscribeChannel(_ channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
         if let user = User.currentUser {
-            if let savedIndex = user.subscriptionIDs.index(of: channel.cID), let channelID = channel.cID  { //remove subscription case
+            if let savedIndex = user.subscriptionIDs.index(of: channel.cID), let channelID = channel.cID  { //unsubscribe
                 let _path = currentUserRef.child("subscriptions/\(channelID)")
                 
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
@@ -1477,7 +1493,7 @@ class Database {
                         _path.removeAllObservers()
                     }
                 })
-            } else { //save tag
+            } else { //subscribe
                 let _path = getDatabasePath(Element.Users, itemID: user.uID!).child("subscriptions")
                 
                 _path.updateChildValues([channel.cID!: channel.cTitle ?? ""], withCompletionBlock: { (completionError, ref) in

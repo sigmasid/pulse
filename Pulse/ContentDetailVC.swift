@@ -157,8 +157,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
             contentOverlay.showExploreDetail()
             _shouldShowExplore = false
         }
-        
-        
     }
     
     fileprivate func loadWatchedPreviewItem() {
@@ -626,6 +624,8 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         GlobalFunctions.dismissVC(quickBrowse)
         delegate.userClickedSeeAll(items: items)
         removeObserverIfNeeded()
+        
+        _isQuickBrowseShown = false
     }
     
     func userClickedBrowseItems() {

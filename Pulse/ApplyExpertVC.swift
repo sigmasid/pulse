@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
+class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
 
     public var selectedChannel : Channel!
     
@@ -33,54 +33,50 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
     fileprivate var nameVerified = false
     fileprivate var reasonVerified = false
     
-    fileprivate var apply = UIStackView()
-    fileprivate var applyTitle = UILabel()
+    fileprivate var applyStack = UIStackView()
     fileprivate var applySubtitle = UILabel()
     
+    fileprivate var scopeBar : XMSegmentedControl!
+    
     fileprivate var isMovedUp = false
-    fileprivate let subText1 = "briefly tell us why you will make a great expert"
+    fileprivate let subText1 = "tell us why you will make a great expert"
     fileprivate let subText2 = "tell us why this person would be a great expert"
-
-    fileprivate var hideStatusBar = false {
-        didSet {
-            setNeedsStatusBarAppearanceUpdate()
-        }
-    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
+            setupScope()
             setupApply()
             updateHeader()
-
-            view.backgroundColor = UIColor.white
-            self.hideKeyboardWhenTappedAround()
+            
+            hideKeyboardWhenTappedAround()
             isLoaded = true
         }
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
-    override var prefersStatusBarHidden: Bool {
-        return hideStatusBar
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
     }
     
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(title: "Recommend Experts")
-            
-            /** Need to update **/
-            //xmSegmentedControl(nav.getScopeBar()!, selectedSegment: 0)
+        addBackButton()
+        tabBarHidden = true
 
-        } else {
-            title = "Recommend an Expert"
-        }
+        headerNav?.setNav(title: "Become Expert")
+    }
+    
+    fileprivate func setupScope() {
+        let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: scopeBarHeight)
+        scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Apply", "Recommend"] , selectedItemHighlightStyle: .bottomEdge)
+        scopeBar.delegate = self
+        scopeBar.addBottomBorder()
+        
+        scopeBar.backgroundColor = .white
+        scopeBar.highlightColor = .pulseBlue
+        scopeBar.highlightTint = .black
+        scopeBar.tint = .gray
+        
+        view.addSubview(scopeBar)
     }
     
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
@@ -97,11 +93,12 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
             
             reasonVerified = false
             
-            if let tagTitle = selectedChannel.cTitle {
-                applyTitle.text = "Become a Verified Expert in\n\(tagTitle.capitalized)"
-                applySubtitle.text = "apply to be featured as a trusted expert, respond to questions and showcase your expertise!"
+            if let title = selectedChannel.cTitle {
+                headerNav?.setNav(title: "Become Expert:\n\(title)")
+                applySubtitle.text = "Experts are thought leaders who create & shape content, start conversations & answer questions!"
                 applyText.text = subText1
             }
+            view.layoutIfNeeded()
             
         case 1:
             if !isRecommendSetup {
@@ -115,17 +112,18 @@ class ApplyExpertVC: UIViewController, XMSegmentedControlDelegate {
             nameVerified = false
             reasonVerified = false
             
-            if let tagTitle = selectedChannel.cTitle {
-                applyTitle.text = "Recommend an Expert for\n\(tagTitle.capitalized)"
-                applySubtitle.text = "we feature experts so interested users can hear directly from the best trusted voices!"
+            if let title = selectedChannel.cTitle {
+                headerNav?.setNav(title: "Recommend Expert:\n\(title)")
+                applySubtitle.text = "Know someone with standout ideas who should be featured on this topic? Tell us below!"
                 applyText.text = subText2
             }
+            view.layoutIfNeeded()
             
         default: return
         }
     }
     
-    internal func askQuestion() {
+    internal func clickedApply() {
         applyButton.setDisabled()
         let _loadingIndicator = applyButton.addLoadingIndicator()
         dismissKeyboard()
@@ -221,7 +219,7 @@ extension ApplyExpertVC {
         view.addSubview(recommendView)
 
         recommendView.translatesAutoresizingMaskIntoConstraints = false
-        recommendView.topAnchor.constraint(equalTo: apply.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        recommendView.topAnchor.constraint(equalTo: applyStack.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         recommendView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
         recommendView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         recommendView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
@@ -303,10 +301,6 @@ extension ApplyExpertVC {
         emailErrorLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
         nameErrorLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
 
-        recommendName.tag = 25
-        recommendEmail.tag = 50
-        recommendText.tag = 75
-
         recommendName.delegate = self
         recommendEmail.delegate = self
         recommendText.delegate = self
@@ -318,7 +312,7 @@ extension ApplyExpertVC {
         view.addSubview(applyView)
         
         applyView.translatesAutoresizingMaskIntoConstraints = false
-        applyView.topAnchor.constraint(equalTo: apply.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        applyView.topAnchor.constraint(equalTo: applyStack.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         applyView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
         applyView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         applyView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
@@ -342,10 +336,9 @@ extension ApplyExpertVC {
         applyText.text = subText1
         applyText.textColor = UIColor.lightGray
         applyText.delegate = self
-        applyText.tag = 100
         
         applyButton.translatesAutoresizingMaskIntoConstraints = false
-        applyButton.topAnchor.constraint(equalTo: applyText.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        applyButton.topAnchor.constraint(equalTo: applyText.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         applyButton.centerXAnchor.constraint(equalTo: applyView.centerXAnchor).isActive = true
         applyButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
         applyButton.widthAnchor.constraint(equalTo: applyView.widthAnchor).isActive = true
@@ -356,46 +349,45 @@ extension ApplyExpertVC {
         applyButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         applyButton.setDisabled()
         
-        applyButton.addTarget(self, action: #selector(askQuestion), for: .touchUpInside)
+        applyButton.addTarget(self, action: #selector(clickedApply), for: .touchUpInside)
         
         isApplySetup = true
     }
     
     fileprivate func setupApply() {
-        view.addSubview(apply)
+        view.addSubview(applyStack)
         
-        apply.translatesAutoresizingMaskIntoConstraints = false
-        apply.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        apply.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        apply.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        applyStack.translatesAutoresizingMaskIntoConstraints = false
+        applyStack.topAnchor.constraint(equalTo: scopeBar.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        applyStack.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        applyStack.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
-        apply.axis = .vertical
+        applyStack.axis = .vertical
         
-        applyTitle.numberOfLines = 0
         applySubtitle.numberOfLines = 0
-        applyTitle.lineBreakMode = .byWordWrapping
         applySubtitle.lineBreakMode = .byWordWrapping
-        
-        applyTitle.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)
-        applySubtitle.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.gray, alignment: .center)
+        applySubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: UIColor.gray, alignment: .center)
 
-        apply.addArrangedSubview(applyTitle)
-        apply.addArrangedSubview(applySubtitle)
+        applyStack.addArrangedSubview(applySubtitle)
+        applySubtitle.text = "Experts are thought leaders who create & shape content, start conversations & answer questions!"
+
+        setupApplyView()
     }
 }
 
 //MARK: Text View and Text Field Delegate Methods
 extension ApplyExpertVC: UITextFieldDelegate, UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if !isMovedUp {
-            apply.frame.origin.y -= 100
+        if !isMovedUp, textView == recommendText {
+            print("apply stack original frame is \(self.applyStack.frame)")
+
+            UIView.animate(withDuration: 0.5, animations: {
+                self.applyStack.frame.origin.y -= 100
+                self.recommendView.frame.origin.y -= 100
+                print("apply stack frame is \(self.applyStack.frame)")
+            })
             
-            if textView.tag == applyText.tag {
-                applyView.frame.origin.y -= 100
-            } else if textView.tag == recommendText.tag {
-                recommendView.frame.origin.y -= 100
-            }
-            
+            view.bringSubview(toFront: scopeBar)
             isMovedUp = true
         }
         
@@ -413,20 +405,18 @@ extension ApplyExpertVC: UITextFieldDelegate, UITextViewDelegate {
     }
     
     func textViewDidEndEditing(_ textView: UITextView) {
-        if isMovedUp {
-            apply.frame.origin.y += 100
+        if isMovedUp, textView == recommendText {
             
-            if textView.tag == applyText.tag {
-                applyView.frame.origin.y += 100
-            } else if textView.tag == recommendText.tag {
-                recommendView.frame.origin.y += 100
-            }
+            UIView.animate(withDuration: 0.5, animations: {
+                self.applyStack.frame.origin.y += 100
+                self.recommendView.frame.origin.y += 100
+            })
             
             isMovedUp = false
         }
         
         if textView.text == "" {
-            textView.text = textView.tag == applyText.tag ? subText1 : subText2
+            textView.text = textView == applyText ? subText1 : subText2
             textView.textColor = UIColor.lightGray
             reasonVerified = false
         } else {
@@ -441,7 +431,7 @@ extension ApplyExpertVC: UITextFieldDelegate, UITextViewDelegate {
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        if textField.tag == recommendEmail.tag {
+        if textField == recommendEmail {
             GlobalFunctions.validateEmail(recommendEmail.text, completion: {(verified, error) in
                 if !verified {
                     self.emailVerified = false
@@ -453,7 +443,7 @@ extension ApplyExpertVC: UITextFieldDelegate, UITextViewDelegate {
                     self.emailErrorLabel.text = ""
                 }
             })
-        } else if textField.tag == recommendName.tag {
+        } else if textField == recommendName {
             GlobalFunctions.validateName(recommendName.text, completion: {(verified, error) in
                 if !verified {
                     self.nameVerified = false

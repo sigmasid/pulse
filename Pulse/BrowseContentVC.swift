@@ -8,9 +8,6 @@
 
 import UIKit
 
-private let headerReuseIdentifier = "ItemHeaderCell"
-private let reuseIdentifier = "BrowseContentCell"
-
 class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     var watchedFullPreview: Bool = false
@@ -54,7 +51,6 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
-    fileprivate let headerHeight : CGFloat = 60
     
     fileprivate var selectedIndex : IndexPath? {
         didSet {
@@ -338,13 +334,13 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
 extension BrowseContentVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         if allItems.count == 0 {
-            return CGSize(width: view.frame.width, height: view.frame.height - headerHeight)
+            return CGSize(width: view.frame.width, height: view.frame.height - skinnyHeaderHeight)
         }
         return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: view.frame.width, height: selectedItem != nil ? headerHeight : 0)
+        return CGSize(width: view.frame.width, height: selectedItem != nil ? skinnyHeaderHeight : 0)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {

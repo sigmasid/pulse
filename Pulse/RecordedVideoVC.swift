@@ -18,15 +18,17 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     // set by the delegate
     public var currentItem : Item! {
         didSet {
-            view.addSubview(controlsOverlay)
-            controlsOverlay.title = currentItem.itemTitle
-            currentItem.itemTitle != "" ? controlsOverlay.showAddTitleField(makeFirstResponder: false) : controlsOverlay.clearAddTitleField()
-            setupOverlayButtons()
-            
-            if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo {
-                setupVideoForAnswer()
-            } else if currentItem.contentType == .recordedImage || currentItem.contentType == .albumImage {
-                setupImageForAnswer()
+            if currentItem != nil {
+                view.addSubview(controlsOverlay)
+                controlsOverlay.title = currentItem.itemTitle
+                currentItem.itemTitle != "" ? controlsOverlay.showAddTitleField(makeFirstResponder: false) : controlsOverlay.clearAddTitleField()
+                setupOverlayButtons()
+                
+                if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo {
+                    setupVideoForAnswer()
+                } else if currentItem.contentType == .recordedImage || currentItem.contentType == .albumImage {
+                    setupImageForAnswer()
+                }
             }
         }
     }
@@ -363,6 +365,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                                              post: itemCollectionPost,
                                              completion: {(success, error) in
             if let delegate = self.delegate {
+                self.itemCollectionPost.removeAll()
+                self.recordedItems.removeAll()
+                self.currentVideo = nil
+                self.looper.disableLooping()
+                
                 delegate.doneUploadingAnswer(self)
             }
         })

@@ -28,6 +28,11 @@ class Channel : NSObject {
     init(cID: String) {
         self.cID = cID
     }
+    
+    init(cID: String, title: String) {
+        self.cID = cID
+        self.cTitle = title
+    }
 
     init(cID: String, snapshot: FIRDataSnapshot) {
         self.cID = cID

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
+class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate {
     
     //Main data source vars
     var allItems = [Item]()
@@ -145,7 +145,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate {
             
             collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(HeaderChannelsCell.self, forCellWithReuseIdentifier: sectionReuseIdentifier)
-            collectionView?.register(HeaderTitle.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+            collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             
             view.addSubview(collectionView)
             
@@ -189,7 +189,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.itemType = currentItem.type
 
             //clear the cells and set the item type first
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
 
             //Get the image if content type is a post
@@ -213,7 +213,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if currentItem.user == nil || !currentItem.user!.uCreated {
                 if let user = self.checkUserDownloaded(user: User(uID: currentItem.itemUserID)) {
                     self.allItems[indexPath.row].user = user
-                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
+                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                     
                     if user.thumbPicImage == nil {
                         DispatchQueue.global(qos: .background).async {
@@ -237,7 +237,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             self.allUsers.append(user)
                             DispatchQueue.main.async {
                                 if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
+                                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                                 }
                             }
                             
@@ -283,7 +283,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     internal func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle,
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle,
                             _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
         }
@@ -414,20 +414,24 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         
     }
     
+    internal func userClickedMenu() {
+        //implement user selected menu
+    }
+    
     func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         switch kind {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! HeaderTitle
+                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             
-            
+            headerView.backgroundColor = .white
+
             switch indexPath.section {
             case 0:
-                headerView.backgroundColor = UIColor.white.withAlphaComponent(0.8)
-                headerView.setTitle(title: "subscriptions")
+                headerView.delegate = self
+                headerView.updateLabel("subscriptions")
             case 1:
-                headerView.backgroundColor = .clear
-                headerView.setTitle(title: "")
+                break
             default:
                 break
             }

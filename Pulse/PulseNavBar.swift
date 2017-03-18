@@ -11,7 +11,7 @@ enum NavMode { case browseImage, browse, detail, none }
 
 public class PulseNavBar: UINavigationBar {
     public var navTitle = UILabel()
-    
+
     fileprivate var searchContainer : UIView!
     fileprivate var isDetailSetup = false
     
@@ -89,6 +89,7 @@ public class PulseNavBar: UINavigationBar {
         
         isDetailSetup = true
     }
+
 
     fileprivate func addSearch() {
         searchContainer = UIView(frame: CGRect(x: Spacing.xs.rawValue,

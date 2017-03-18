@@ -32,6 +32,7 @@ class Item: NSObject {
     var itemTitle : String!
     var type : ItemTypes = .unknown
     var cID : String!
+    var cTitle : String!
     
     var contentURL : URL?
     var content : Any?

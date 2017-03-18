@@ -33,7 +33,6 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
     
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
-    internal let headerHeight : CGFloat = 50
     
     fileprivate var isLayoutSetup = false
     
@@ -107,11 +106,16 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "New Post", style: .default, handler: { (action: UIAlertAction!) in
-            self.askQuestion()
+            self.addItem(for: self.selectedItem)
         }))
         
-        menu.addAction(UIAlertAction(title: "Share Tag", style: .default, handler: { (action: UIAlertAction!) in
-            self.askQuestion()
+        menu.addAction(UIAlertAction(title: "Share This", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedItem.createShareLink(completion: { link in
+                guard let link = link else { return }
+                self.activityController = GlobalFunctions.shareContent(shareType: "series",
+                                                                       shareText: self.selectedItem.itemTitle ?? "",
+                                                                       shareLink: link, presenter: self)
+            })
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -125,7 +129,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
         let menu = UIAlertController(title: "Sorry! No answers yet", message: "We are still waiting to get an answer - want to add one?", preferredStyle: .actionSheet)
 
         menu.addAction(UIAlertAction(title: "Add Answer", style: .default, handler: { (action: UIAlertAction!) in
-            self.addAnswer(selectedItem: selectedItem)
+            self.addItem(for: selectedItem)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -143,7 +147,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
         GlobalFunctions.addNewVC(questionVC, parentVC: self)
     }
     
-    internal func addAnswer(selectedItem: Item) {
+    internal func addItem(for selectedItem: Item) {
         contentVC = ContentManagerVC()
         contentVC.selectedChannel = selectedChannel
         contentVC.selectedItem = selectedItem
@@ -399,11 +403,9 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         //can only be a question or a post that user selects since it's in a tag already
         switch item.type {
         case .post:
-            Database.getItemCollection(item.itemID, completion: {(success, items) in
-                success ?
-                    self.showItemDetail(allItems: self.allItems, index: index, itemCollection: items, selectedItem: self.selectedItem, watchedPreview: true) :
-                    self.showItemDetail(allItems: self.allItems, index: index, itemCollection: [item], selectedItem: self.selectedItem, watchedPreview: false)
-            })
+            
+            showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: self.selectedItem, watchedPreview: false)
+
         case .question:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 success ?
@@ -438,7 +440,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
 
 extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
-        return CGSize(width: collectionView.frame.width, height: headerHeight)
+        return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {

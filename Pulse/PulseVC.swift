@@ -26,7 +26,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     internal let sectionReuseIdentifier = "SectionHeaderCell"
     internal let emptyReuseIdentifier = "EmptyCell"
     internal let reuseIdentifier = "ItemCell"
-    internal let skinnyHeaderHeight : CGFloat = 20
+    internal let skinnyHeaderHeight : CGFloat = 40
     internal let headerSectionHeight : CGFloat = 100
     
     /** Close Button - Only Needed If Presented Modally **/

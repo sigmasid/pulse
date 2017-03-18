@@ -488,7 +488,8 @@ enum PageType {
 enum Element : String {
     case Channels = "channels"
     case ChannelItems = "channelItems"
-    
+    case ChannelExperts = "channelExperts"
+
     case Items = "items"
     case ItemThumbs = "itemThumbnails"
     case ItemCollection = "itemCollection"
