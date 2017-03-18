@@ -493,6 +493,11 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         navBar.setTitles(title: title)
     }
     
+    public func setNav(title: String?, subtitle: String?) {
+        guard navBar != nil else { return }
+        navBar.setTitles(title: title, subtitle: subtitle)
+    }
+    
     public func toggleSearch(show : Bool) {
         guard navBar != nil else { return }
         navBar.toggleSearch(show : show)

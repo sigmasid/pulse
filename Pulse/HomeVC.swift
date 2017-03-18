@@ -143,6 +143,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
             collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
             let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
             
+            collectionView?.register(EmptyCell.self, forCellWithReuseIdentifier: emptyReuseIdentifier)
             collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(HeaderChannelsCell.self, forCellWithReuseIdentifier: sectionReuseIdentifier)
             collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
@@ -173,10 +174,17 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         
         switch indexPath.section {
         case 0:
+            guard allChannels.count > 0 else {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: emptyReuseIdentifier, for: indexPath) as! EmptyCell
+                cell.setMessage(message: "discover & add new channels to your feed", color: .black)
+                return cell
+            }
+            
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: sectionReuseIdentifier, for: indexPath) as! HeaderChannelsCell
             cell.channels = allChannels
             cell.delegate = self
             return cell
+
         case 1:
             //if near the end then get more items
             if indexPath.row == allItems.count - 3 {
@@ -292,7 +300,10 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     internal func updateOnscreenRows() {
         let visiblePaths = collectionView.indexPathsForVisibleItems
         for indexPath in visiblePaths {
-            if indexPath.section == 1 {
+            if indexPath.section == 0 {
+                let cell = collectionView.cellForItem(at: indexPath) as! HeaderChannelsCell
+                cell.channels = allChannels
+            } else if indexPath.section == 1 {
                 let cell = collectionView.cellForItem(at: indexPath) as! ItemCell
                 updateCell(cell, inCollectionView: collectionView, atIndexPath: indexPath)
             }
@@ -384,7 +395,6 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         contentVC.selectedItem = selectedItem
         contentVC.openingScreen = .camera
         
-        //contentVC.transitioningDelegate = self
         present(contentVC, animated: true, completion: nil)
     }
     
@@ -400,9 +410,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func userClosedBrowse(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in
-            print("should dismiss browse collection vc")
-        })
+        dismiss(animated: true, completion: { _ in })
     }
     
     internal func showTag(selectedItem : Item) {

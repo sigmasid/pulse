@@ -11,6 +11,7 @@ enum NavMode { case browseImage, browse, detail, none }
 
 public class PulseNavBar: UINavigationBar {
     public var navTitle = UILabel()
+    public var navSubtitle = UILabel()
 
     fileprivate var searchContainer : UIView!
     fileprivate var isDetailSetup = false
@@ -48,9 +49,20 @@ public class PulseNavBar: UINavigationBar {
     }
     
     public func setTitles(title : String?) {
+        navTitle.frame.origin.y = 0
         navTitle.text = title?.capitalized
         navTitle.textAlignment = .center
         
+        navSubtitle.text = ""
+    }
+    
+    public func setTitles(title : String?, subtitle : String?) {
+        navTitle.frame.origin.y = -Spacing.xs.rawValue
+        navTitle.text = title?.capitalized
+        navTitle.textAlignment = .center
+        
+        navSubtitle.text = subtitle?.capitalized
+        navSubtitle.textAlignment = .center
     }
     
     public func toggleSearch(show: Bool) {
@@ -67,25 +79,33 @@ public class PulseNavBar: UINavigationBar {
     
     public func setDarkNav() {
         barStyle = .black
-        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .left)
+        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
         navTitle.setBlurredBackground()
     }
     
     public func setLightNav() {
         barStyle = .default
-        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
+        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .center)
         navTitle.removeShadow()
     }
     
     /** LAYOUT SCREEN **/
     fileprivate func setupDetailLayout() {
         addSubview(navTitle)
-        
+        addSubview(navSubtitle)
+
         navTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - ( 2 * IconSizes.large.rawValue ), height: navBarSize.height)
         navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .center)
         navTitle.lineBreakMode = .byTruncatingTail
-        navTitle.numberOfLines = 2
-        navTitle.tag = 10
+        navTitle.numberOfLines = 1
+        
+        navSubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
+        let navSubtitlefontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: navSubtitle.font.pointSize, weight: UIFontWeightThin)]
+        let navSubtitleHeight = GlobalFunctions.getLabelSize(title: "Channel Name", width: navTitle.frame.width, fontAttributes: navSubtitlefontAttributes)
+        navSubtitle.frame = CGRect(x: IconSizes.large.rawValue, y: navBarSize.height - navSubtitleHeight - Spacing.xs.rawValue,
+                                   width: UIScreen.main.bounds.width - ( 2 * IconSizes.large.rawValue ), height: navSubtitleHeight)
+        navSubtitle.lineBreakMode = .byTruncatingTail
+        navSubtitle.numberOfLines = 1
         
         isDetailSetup = true
     }
@@ -98,6 +118,5 @@ public class PulseNavBar: UINavigationBar {
                                                height: IconSizes.medium.rawValue))
 
         addSubview(searchContainer)
-        searchContainer.tag = 30
     }
 }

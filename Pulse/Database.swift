@@ -1289,6 +1289,12 @@ class Database {
             return
         }
         
+        guard User.currentUser!.subscriptionIDs.contains(parentItem.cID) else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you need to be subscribed to the channel to ask a question" ]
+            completion(false, NSError.init(domain: "NotSubscribed", code: 404, userInfo: errorInfo))
+            return
+        }
+        
         let itemKey = itemsRef.childByAutoId().key
         
         let itemPost : [String : Any] = ["title": qText,

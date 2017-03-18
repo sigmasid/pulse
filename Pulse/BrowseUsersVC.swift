@@ -79,11 +79,26 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     fileprivate func updateHeader() {
         //is in nav controller
         addBackButton()
+        headerNav?.setNav(title: "Featured Experts", subtitle: selectedChannel.cTitle)
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
 
     internal func userClickedMenu() {
-        //IMPLEMENT CLICKED MENU
+
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "become an Expert", style: .default, handler: { (action: UIAlertAction!) in
+            let applyExpertVC = ApplyExpertVC()
+            applyExpertVC.selectedChannel = self.selectedChannel
+            
+            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
     }
 }
 

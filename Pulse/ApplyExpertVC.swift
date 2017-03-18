@@ -94,7 +94,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             reasonVerified = false
             
             if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Become Expert:\n\(title)")
+                headerNav?.setNav(title: "Become Expert", subtitle: title)
                 applySubtitle.text = "Experts are thought leaders who create & shape content, start conversations & answer questions!"
                 applyText.text = subText1
             }
@@ -113,7 +113,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             reasonVerified = false
             
             if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Recommend Expert:\n\(title)")
+                headerNav?.setNav(title: "Recommend Experts", subtitle: title)
                 applySubtitle.text = "Know someone with standout ideas who should be featured on this topic? Tell us below!"
                 applyText.text = subText2
             }
@@ -350,6 +350,9 @@ extension ApplyExpertVC {
         applyButton.setDisabled()
         
         applyButton.addTarget(self, action: #selector(clickedApply), for: .touchUpInside)
+        
+        applyView.isHidden = false
+        recommendView.isHidden = true
         
         isApplySetup = true
     }

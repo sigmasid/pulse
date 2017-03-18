@@ -129,7 +129,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
                     questionConfirmation.addAction(UIAlertAction(title: "okay",
                                                                  style: .default,
                                                                  handler: { (action: UIAlertAction!) in
-                        questionConfirmation.dismiss(animated: true, completion: nil)
+                           self.dismissAsk()
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)

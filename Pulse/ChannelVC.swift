@@ -18,7 +18,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 Database.getChannel(cID: selectedChannel.cID!, completion: { channel, error in
                     channel.cPreviewImage = self.selectedChannel.cPreviewImage
                     self.selectedChannel = channel
-                    
                     self.updateHeader()
                 })
             } else if !selectedChannel.cDetailedCreated {
@@ -135,7 +134,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         subscribeButton.setImage(nil, for: .normal)
         let indicator = subscribeButton.addLoadingIndicator()
         
-        Database.subscribeChannel(selectedChannel, completion: {(success, error) in
+        subscribeChannel(channel: selectedChannel, completion: {( success, error ) in
             if !success {
                 GlobalFunctions.showErrorBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
             } else {
@@ -153,6 +152,13 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         })
     }
     
+    internal func subscribeChannel(channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
+        Database.subscribeChannel(selectedChannel, completion: {(success, error) in
+            completion(success, error)
+        })
+    }
+    
+    /** Delegate Function **/
     func clickedItemButton(itemRow : Int) {
         if let user = allItems[itemRow].user {
             let userProfileVC = UserProfileVC()
@@ -214,15 +220,15 @@ extension ChannelVC {
     func showExpertMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "Start New Series", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "start New Series", style: .default, handler: { (action: UIAlertAction!) in
             //self.askQuestion()
         }))
         
-        menu.addAction(UIAlertAction(title: "Invite Experts", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
             //self.askQuestion()
         }))
         
-        menu.addAction(UIAlertAction(title: "Share Channel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedChannel.createShareLink(completion: { link in
                 guard let link = link else { return }
                 self.activityController = GlobalFunctions.shareContent(shareType: "channel",
@@ -241,14 +247,7 @@ extension ChannelVC {
     func showRegularMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "Become an Expert", style: .default, handler: { (action: UIAlertAction!) in
-            let applyExpertVC = ApplyExpertVC()
-            applyExpertVC.selectedChannel = self.selectedChannel
-            
-            self.navigationController?.pushViewController(applyExpertVC, animated: true)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "See Experts", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "meet the Experts", style: .default, handler: { (action: UIAlertAction!) in
             let browseExpertsVC = BrowseUsersVC()
             browseExpertsVC.selectedChannel = self.selectedChannel
             browseExpertsVC.delegate = self
@@ -256,12 +255,18 @@ extension ChannelVC {
             self.navigationController?.pushViewController(browseExpertsVC, animated: true)
         }))
         
-        menu.addAction(UIAlertAction(title: "Share Channel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedChannel.createShareLink(completion: { link in
                 guard let link = link else { return }
                 self.activityController = GlobalFunctions.shareContent(shareType: "channel",
                                                                        shareText: self.selectedChannel.cTitle ?? "",
                                                                        shareLink: link, presenter: self)
+            })
+        }))
+        
+        menu.addAction(UIAlertAction(title: isSubscribed ? "unsubscribe" : "subscribe", style: .destructive, handler: { (action: UIAlertAction!) in
+            self.subscribeChannel(channel: self.selectedChannel, completion: {(success, error) in
+                menu.dismiss(animated: true, completion: nil)
             })
         }))
         

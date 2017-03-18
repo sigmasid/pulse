@@ -87,12 +87,17 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
     func showFeedbackMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "Ask", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "ask Question", style: .default, handler: { (action: UIAlertAction!) in
             self.askQuestion()
         }))
         
-        menu.addAction(UIAlertAction(title: "Share This", style: .default, handler: { (action: UIAlertAction!) in
-            self.askQuestion()
+        menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedItem.createShareLink(completion: { link in
+                guard let link = link else { return }
+                self.activityController = GlobalFunctions.shareContent(shareType: "series",
+                                                                       shareText: self.selectedItem.itemTitle ?? "",
+                                                                       shareLink: link, presenter: self)
+            })
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -105,11 +110,11 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
     func showPostMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "New Post", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "new Post", style: .default, handler: { (action: UIAlertAction!) in
             self.addItem(for: self.selectedItem)
         }))
         
-        menu.addAction(UIAlertAction(title: "Share This", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedItem.createShareLink(completion: { link in
                 guard let link = link else { return }
                 self.activityController = GlobalFunctions.shareContent(shareType: "series",
@@ -126,11 +131,20 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
     }
     
     internal func showNoAnswersMenu(selectedItem : Item) {
-        let menu = UIAlertController(title: "Sorry! No answers yet", message: "We are still waiting to get an answer - want to add one?", preferredStyle: .actionSheet)
-
-        menu.addAction(UIAlertAction(title: "Add Answer", style: .default, handler: { (action: UIAlertAction!) in
-            self.addItem(for: selectedItem)
-        }))
+        var isExpert = false
+        
+        if let user = User.currentUser, user.hasExpertiseIn(channel: selectedChannel) {
+            isExpert = true
+        }
+        let message = isExpert ? "We are still waiting to get an answer - want to add one?" : "We are still waiting to get an answer"
+        
+        let menu = UIAlertController(title: "Sorry! No answers yet", message: message, preferredStyle: .actionSheet)
+        
+        if isExpert {
+            menu.addAction(UIAlertAction(title: "add Answer", style: .default, handler: { (action: UIAlertAction!) in
+                self.addItem(for: selectedItem)
+            }))
+        }
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)

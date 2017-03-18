@@ -117,8 +117,12 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedItem = items[indexPath.row]
-        delegate.userSelected(item: selectedItem)
+        if delegate != nil {
+            let selectedItem = items[indexPath.row]
+            selectedItem.cID = selectedChannel.cID
+            selectedItem.cTitle = selectedChannel.cTitle
+            delegate.userSelected(item: selectedItem)
+        }
     }
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
