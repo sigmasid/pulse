@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera}
 enum ButtonSizes { case xSmall, small, medium, large }
 
 @IBDesignable
@@ -316,7 +316,7 @@ open class PulseButton: UIButton {
         switch size {
         case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) //smaller insets for xSmall button
         case .medium: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15) //smaller insets for xSmall button
-        case .large: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15) //smaller insets for xSmall button
+        case .large: imageEdgeInsets = UIEdgeInsetsMake(22.5, 22.5, 22.5, 22.5) //smaller insets for xSmall button
 
         default: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //standard insets
         }
@@ -362,6 +362,10 @@ open class PulseButton: UIButton {
             
         case .message:
             let tintedTimage = UIImage(named: "message")?.withRenderingMode(.alwaysTemplate)
+            setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .camera:
+            let tintedTimage = UIImage(named: "camera")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             
         case .refresh:

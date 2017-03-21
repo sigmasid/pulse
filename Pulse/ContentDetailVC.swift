@@ -25,6 +25,7 @@ protocol ItemDetailDelegate : class {
     func userClosedQuickBrowse()
     func userClickedNextItem()
     func userClickedSeeAll(items : [Item])
+    func userClickedHeaderMenu()
 }
 
 class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate {
@@ -353,7 +354,6 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     
     fileprivate func updateOverlayData(_ item : Item) {
         contentOverlay.setTitle(item.itemTitle ?? "")
-        contentOverlay.setTagName(item.tag?.itemTitle)
         contentOverlay.clearButtons()
         
         if let user = item.user {
@@ -570,6 +570,37 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     
     func userClickedProfileDetail() {
         delegate.userClickedProfileDetail()
+    }
+    
+    func userClickedHeaderMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        var activityController: UIActivityViewController?
+        
+        if ContentDetailVC.qPlayer.currentItem != nil {
+            ContentDetailVC.qPlayer.pause()
+        }
+        
+        menu.addAction(UIAlertAction(title: "new Post", style: .default, handler: { (action: UIAlertAction!) in
+            //self.addItem(for: self.selectedItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "share This", style: .default, handler: { (action: UIAlertAction!) in
+            self.currentItem?.createShareLink(completion: { link in
+                guard let link = link else { return }
+                activityController = GlobalFunctions.shareContent(shareType: "item",
+                                                                       shareText: self.currentItem?.itemTitle ?? "",
+                                                                       shareLink: link, presenter: self)
+            })
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            if ContentDetailVC.qPlayer.currentItem != nil {
+                ContentDetailVC.qPlayer.play()
+            }
+        }))
+        
+        present(menu, animated: true, completion: nil)
     }
     
     func userClickedNextItem() {

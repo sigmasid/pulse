@@ -14,6 +14,8 @@ protocol CameraManagerProtocol: class {
 }
 
 class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProtocol {
+    public var cameraMode : CameraOutputMode = .videoWithMic
+    
     fileprivate let camera = CameraManager()
     fileprivate var cameraOverlay : CameraOverlayView!
     fileprivate var loadingOverlay : LoadingView!
@@ -59,8 +61,22 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         return true
     }
     
+    //Camera is in video mode - so will take a 0.3 second image
     fileprivate func takeImage() {
         camera.startRecordingVideo()
+    }
+    
+    //Camera is in still image mode
+    fileprivate func takeStillImage() {
+        camera.capturePictureWithCompletion({ (image, capturing, error) in
+            if capturing {
+                self.delegate!.doneRecording(isCapturing: true, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+            } else if let image = image {
+                self.delegate!.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+            } else {
+                self.delegate!.doneRecording(isCapturing: false, url: nil, image: nil, location: nil, assetType: nil)
+            }
+        })
     }
     
     fileprivate func startVideoCapture() {
@@ -75,12 +91,11 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
                 self.camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
                 if image != nil {
-                    self.delegate!.doneRecording(nil, image: image, location: self.camera.location, assetType: .recordedImage)
+                    self.delegate!.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
                 } else if videoURL != nil {
-                    self.delegate!.doneRecording(videoURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+                    self.delegate!.doneRecording(isCapturing: false, url: videoURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
                 }
                 self.camera.stopCaptureSession()
-//                self._Camera.stopAndRemoveCaptureSession()
             }
         })
     }
@@ -93,7 +108,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                delegate!.doneRecording(nil, image: image, location: self.camera.location, assetType: .recordedImage)
+                delegate!.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
                 camera.stopCaptureSession()
             }
         } else {
@@ -103,7 +118,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                delegate!.doneRecording(fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+                delegate!.doneRecording(isCapturing: false, url: fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
                 camera.stopCaptureSession()
             }
         }
@@ -139,7 +154,6 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         loadingOverlay = LoadingView(frame: view.bounds, backgroundColor : UIColor.black)
         view.addSubview(loadingOverlay)
     }
-
     
     fileprivate func setupCamera() {
         camera.showAccessPermissionPopupAutomatically = true
@@ -147,7 +161,7 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         camera.cameraDevice = .front
         camera.cameraVideoDuration = videoDuration
 
-        let _ = camera.addPreviewLayerToView(view, newCameraOutputMode: .videoWithMic, completition: {() in
+        let _ = camera.addPreviewLayerToView(view, newCameraOutputMode: cameraMode, completition: {() in
             DispatchQueue.main.async {
                 UIView.animate(withDuration: 0.2, animations: { self.loadingOverlay.alpha = 0.0 } ,
                     completion: {(value: Bool) in
@@ -155,7 +169,10 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
                         self.loadingOverlay.alpha = 1.0
                 })
                 self.tap.isEnabled = true //enables tap when camera is ready
-                self.longTap.isEnabled = true
+                
+                if self.cameraMode != .stillImage {
+                    self.longTap.isEnabled = true
+                }
             }
         })
         
@@ -182,10 +199,12 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         cameraOverlay.getButton(.shutter).addGestureRecognizer(tap)
         tap.isEnabled = false
         
-        longTap = UILongPressGestureRecognizer(target: self, action: #selector(respondToShutterLongTap))
-        longTap.minimumPressDuration = 0.3
-        cameraOverlay.getButton(.shutter).addGestureRecognizer(longTap)
-        longTap.isEnabled = false
+        if cameraMode != .stillImage {
+            longTap = UILongPressGestureRecognizer(target: self, action: #selector(respondToShutterLongTap))
+            longTap.minimumPressDuration = 0.3
+            cameraOverlay.getButton(.shutter).addGestureRecognizer(longTap)
+            longTap.isEnabled = false
+        }
         
         cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
@@ -193,8 +212,12 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
     }
     
     func respondToShutterTap() {
-        camera.cameraVideoDuration = 0.1
-        takeImage()
+        if cameraMode == .stillImage {
+            takeStillImage()
+        } else {
+            camera.cameraVideoDuration = 0.1
+            takeImage()
+        }
     }
     
     func respondToShutterLongTap(_ longPress : UILongPressGestureRecognizer) {
@@ -211,40 +234,3 @@ class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProt
         }
     }
 }
-
-//    func respondToPanGesture(pan: UIPanGestureRecognizer) {
-//        let _ = pan.view!.center.x
-//        let panCurrentPointY = pan.view!.center.y
-//        
-//        if (pan.state == UIGestureRecognizerState.Began) {
-//            panStartingPointX = pan.view!.center.x
-//            panStartingPointY = pan.view!.center.y
-//        }
-//        else if (pan.state == UIGestureRecognizerState.Ended) {
-//            switch panCurrentPointY {
-//            case _ where panCurrentPointY > panStartingPointY + (view.bounds.height / 3) :
-//                if (childDelegate != nil) {
-//                    childDelegate!.userDismissedCamera()
-//                }
-//                pan.setTranslation(CGPointZero, inView: view)
-//                view.center = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
-//            default:
-//                view.center = CGPoint(x: view.bounds.width / 2, y: view.bounds.height / 2)
-//                pan.setTranslation(CGPointZero, inView: view)
-//            }
-//        } else {
-//            let translation = pan.translationInView(view)
-//            if translation.y > 20 { ///only allow vertical pulldown
-//                view.center = CGPoint(x: pan.view!.center.x, y: pan.view!.center.y + translation.y)
-//                pan.setTranslation(CGPointZero, inView: view)
-//            }
-//        }
-//    }
-
-//        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(respondToPanGesture(_:)))
-//        panGesture.minimumNumberOfTouches = 1
-//        view.addGestureRecognizer(panGesture)
-
-//        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(startVideoCapture), forControlEvents: UIControlEvents.TouchDown)
-//        _cameraOverlay.getButton(.Shutter).enabled = false
-//        _cameraOverlay.getButton(.Shutter).addTarget(self, action: #selector(stopVideoCapture), forControlEvents: UIControlEvents.TouchUpInside)

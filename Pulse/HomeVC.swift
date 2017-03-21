@@ -84,11 +84,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
             
             Database.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
                 var indexPaths = [IndexPath]()
-                for (index, _) in items.enumerated() {
+                for (index, item) in items.enumerated() {
+                    self.allItems.append(item)
                     let newIndexPath = IndexPath(row: index , section: 1)
                     indexPaths.append(newIndexPath)
                 }
-                self.allItems.append(contentsOf: items)
                 self.collectionView?.insertItems(at: indexPaths)
             })
             
@@ -107,11 +107,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
         
         Database.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
             var indexPaths = [IndexPath]()
-            for (index, _) in items.enumerated() {
+            for (index, item) in items.enumerated() {
+                self.allItems.append(item)
                 let newIndexPath = IndexPath(row: self.allItems.count + index - 1, section: 1)
                 indexPaths.append(newIndexPath)
             }
-            self.allItems.append(contentsOf: items)
             self.collectionView?.insertItems(at: indexPaths)
         })
         

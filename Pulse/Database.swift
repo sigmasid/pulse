@@ -514,6 +514,18 @@ class Database {
         })
     }
     
+    static func getSeriesTypes(completion: @escaping (_ allItems : [Item]) -> Void) {
+        var allItems = [Item]()
+        
+        databaseRef.child("seriesTypes").observeSingleEvent(of: .value, with: { snap in
+            for child in snap.children {
+                let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+                allItems.append(currentItem)
+            }
+            completion(allItems)
+        })
+    }
+    
     static func getItemCollection(_ itemID : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
         var items = [Item]()
         
@@ -1184,7 +1196,7 @@ class Database {
                                             completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         
         let _user = FIRAuth.auth()?.currentUser
-        var collectionPost : [AnyHashable: Any]!
+        var collectionPost : [AnyHashable: Any?]!
         
         var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
                                                 "tagID" : item.tag?.itemID as AnyObject,
@@ -1200,22 +1212,20 @@ class Database {
         if let url = item.contentURL?.absoluteString {
             channelPost["url"] = url as AnyObject?
         }
-        print("item type is \(item.type), itemID is \(item.itemID) and post is \(post), parent item is \(parentItemID)")
-        
         switch item.type {
         case .answer:
             collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.itemID,
-                              "itemCollection/\(item.itemID)" : post,
+                              "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
                               "channelItems/\(channelID)/\(item.itemID)":channelPost,
-                              "itemCollection/\(parentItemID)/\(item.itemID)" : "answer" as AnyObject]
+                              "itemCollection/\(parentItemID)/\(item.itemID)" : "answer"]
         case .post:
             collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.itemID,
-                              "itemCollection/\(item.itemID)" : post,
+                              "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
                               "channelItems/\(channelID)/\(item.itemID)":channelPost,
-                              "itemCollection/\(parentItemID)/\(item.itemID)" : "post" as AnyObject]
+                              "itemCollection/\(parentItemID)/\(item.itemID)" : "post"]
         default:
             collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": true,
-                              "itemCollection/\(item.itemID)" : post,
+                              "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
                               "channelItems/\(channelID)/\(item.itemID)":channelPost]
         }
 
@@ -1421,7 +1431,27 @@ class Database {
             }
         })
     }
-
+    
+    /** ADD NEW SERIES TO CHANNEL **/
+    static func addNewSeries(channelID: String, item : Item, completion: @escaping (_ success : Bool) -> Void) {
+        let itemPost : [String : Any] = ["title" : item.itemTitle,
+                                        "description" : item.itemDescription,
+                                        "type" : item.type.rawValue,
+                                        "uID" : item.itemUserID,
+                                        "createdAt" : FIRServerValue.timestamp(),
+                                        "cID":channelID]
+        
+        let channelPost : [String : Any] = ["title" : item.itemTitle,
+                                         "type" : item.type.rawValue]
+        
+        
+        let collectionPost = ["channels/\(channelID)/tags/\(item.itemID)": channelPost,
+                              "items/\(item.itemID)" : itemPost]
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
+            error != nil ? completion(false) : completion(true)
+        })
+    }
     
     /* STORAGE METHODS */
     static func getItemURL(channelID: String, fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
@@ -1435,6 +1465,13 @@ class Database {
     static func getImage(channelID: String, itemID : String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = storageRef.child("channels/\(channelID)").child(itemID).child(fileType.rawValue)
         
+        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
+            error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
+        }
+    }
+    
+    static func getSeriesImage(seriesName: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
+        let path = storageRef.child("seriesTypes/\(seriesName)").child(fileType.rawValue)
         path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
@@ -1490,8 +1527,10 @@ class Database {
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     } else {
+                        if let savedChannelIndex = user.subscriptions.index(of: channel) {
+                            user.subscriptions.remove(at: savedChannelIndex)
+                        }
                         
-                        user.subscriptions.append(channel)
                         user.subscriptionIDs.remove(at: savedIndex)
 
                         completion(true, nil)
@@ -1499,22 +1538,25 @@ class Database {
                         _path.removeAllObservers()
                     }
                 })
-            } else { //subscribe
-                let _path = getDatabasePath(Element.Users, itemID: user.uID!).child("subscriptions")
                 
-                _path.updateChildValues([channel.cID!: channel.cTitle ?? ""], withCompletionBlock: { (completionError, ref) in
+                databaseRef.child("channelSubscribers").child(channel.cID).child(user.uID!).setValue(nil)
+                
+            } else { //subscribe
+                let subscriberPost = ["users/\(user.uID!)/subscriptions/\(channel.cID!)":channel.cTitle ?? "",
+                            "channelSubscribers/\(channel.cID!)/\(user.uID!)":true] as [String: Any]
+                
+                databaseRef.updateChildValues(subscriberPost, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     }
                     else {
-                        if user.subscriptions.isEmpty {
-                            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
-                        }
-
-                        user.subscriptions.append(channel)
-                        
                         if !User.currentUser!.subscriptionIDs.contains(channel.cID) {
                             user.subscriptionIDs.append(channel.cID)
+                            user.subscriptions.append(channel)
+                        }
+                        
+                        if user.subscriptions.isEmpty {
+                            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
                         }
                         
                         completion(true, nil)
@@ -1529,16 +1571,25 @@ class Database {
     
     /* UPLOAD IMAGE TO STORAGE */
     static func uploadThumbImage(channelID: String, itemID : String, image : UIImage, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        let path = storageRef.child("channels").child(channelID).child(itemID).child("thumb")
+        uploadImage(channelID: channelID, itemID: itemID, image: image, fileType: .thumb, completion: {(success, error) in
+            completion(success, error)
+        })
+    }
+    
+    static func uploadImage(channelID: String, itemID : String, image : UIImage, fileType : FileTypes,
+                                 completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        let path = storageRef.child("channels").child(channelID).child(itemID).child(fileType.rawValue)
         
         let _metadata = FIRStorageMetadata()
         _metadata.contentType = "image/jpeg"
         
-        if let _thumbImageData = resizeImageHeight(image, newHeight: defaultPostHeight) {
+        let data : Data? = fileType == .content ? resizeImageHeight(image, newHeight: min(UIScreen.main.bounds.height, image.size.height)) : resizeImageHeight(image, newHeight: defaultPostHeight)
+
+        if let data = data {
             let _metadata = FIRStorageMetadata()
             _metadata.contentType = "image/jpeg"
             
-            path.put(_thumbImageData, metadata: _metadata) { (metadata, error) in
+            path.put(data, metadata: _metadata) { (metadata, error) in
                 if (error != nil) {
                     completion(false, error as NSError?)
                 } else {

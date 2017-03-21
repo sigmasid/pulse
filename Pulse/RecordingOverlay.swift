@@ -129,7 +129,7 @@ class RecordingOverlay: UIView {
     
     func showAddTitleField(makeFirstResponder: Bool, placeholderText: String) {
         if !isTitleSetup {
-            setupTitleField()
+            setupTitleField(placeholderText: placeholderText)
         }
         
         addTitleField.text = placeholderText
@@ -152,7 +152,7 @@ class RecordingOverlay: UIView {
         }
     }
     
-    fileprivate func setupTitleField() {
+    fileprivate func setupTitleField(placeholderText : String) {
         addSubview(addTitleField)
         
         addTitleField.backgroundColor = UIColor.black.withAlphaComponent(0.5)
@@ -168,10 +168,13 @@ class RecordingOverlay: UIView {
         titleBottomConstraint = addTitleField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.xl.rawValue - IconSizes.medium.rawValue)
         titleBottomConstraint.isActive = true
         
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)]
+        let labelHeight = GlobalFunctions.getLabelSize(title: placeholderText, width: frame.width, fontAttributes: fontAttributes)
+        
         addTitleField.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         addTitleField.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        addTitleField.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        
+        addTitleField.heightAnchor.constraint(equalToConstant: max(IconSizes.small.rawValue,labelHeight * 1.2)).isActive = true
+
         addTitleField.layoutIfNeeded()
         
         isTitleSetup = true
@@ -206,6 +209,8 @@ class RecordingOverlay: UIView {
         closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         
         closeButton.layoutIfNeeded()
+        
+        closeButton.removeShadow()
     }
     
     fileprivate func addSaveButton() {
@@ -216,6 +221,8 @@ class RecordingOverlay: UIView {
         saveButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         saveButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         saveButton.layoutIfNeeded()
+        
+        saveButton.removeShadow()
     }
 
     
@@ -230,6 +237,8 @@ class RecordingOverlay: UIView {
         titleButton.layoutIfNeeded()
         
         titleButton.addTarget(self, action: #selector(userClickedAddTitle), for: .touchUpInside)
+        
+        titleButton.removeShadow()
     }
     
     func addProgressLabel(_ label : String) {

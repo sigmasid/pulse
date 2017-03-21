@@ -12,8 +12,9 @@ import UIKit
 
 enum ItemTypes: String {
     case question
-    case post
+    case questions
     case answer
+    case post
     case posts
     case feedback
     case user
@@ -27,13 +28,18 @@ enum FileTypes: String {
 }
 
 class Item: NSObject {
+    //Item Meta
     var itemID = String()
     var itemUserID : String!
     var itemTitle : String!
+    var itemDescription : String!
     var type : ItemTypes = .unknown
+    
+    //Channel items
     var cID : String!
     var cTitle : String!
     
+    //Content items
     var contentURL : URL?
     var content : Any?
     var contentType : CreatedAssetType?
@@ -85,6 +91,10 @@ class Item: NSObject {
             self.itemTitle = snapshot.childSnapshot(forPath: "title").value as? String
         }
         
+        if snapshot.hasChild("description") {
+            self.itemDescription = snapshot.childSnapshot(forPath: "description").value as? String
+        }
+        
         if let type = snapshot.childSnapshot(forPath: "type").value as? String {
             setType(type: type)
         }
@@ -122,10 +132,12 @@ class Item: NSObject {
         switch type {
         case "question":
             self.type = .question
-        case "post":
-            self.type = .post
+        case "questions":
+            self.type = .questions
         case "answer":
             self.type = .answer
+        case "post":
+            self.type = .post
         case "posts":
             self.type = .posts
         case "feedback":

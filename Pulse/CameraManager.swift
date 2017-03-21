@@ -399,41 +399,41 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      
      :param: imageCompletition Completition block containing the captured UIImage
      */
-    open func capturePictureWithCompletition(_ imageCompletion: @escaping (UIImage?, NSError?) -> Void) {
-        self.capturePhoto { data, error in
+    open func capturePictureWithCompletion(_ imageCompletion: @escaping (UIImage?, Bool, NSError?) -> Void) {
+        self.capturePhoto { data, capturing, error in
             
             guard error == nil, let imageData = data else {
-                imageCompletion(nil, error)
+                imageCompletion(nil, capturing, error)
                 return
             }
             
-            self._performShutterAnimation() {
-                if self.writeFilesToPhoneLibrary == true, let library = self.library  {
-                    var flippedImage = UIImage(data: imageData)!
-                    if self.cameraDevice == .front {
-                        flippedImage = UIImage(cgImage: flippedImage.cgImage!, scale: (flippedImage.scale), orientation:.rightMirrored)
+            DispatchQueue.main.async(execute: {
+
+            if self.writeFilesToPhoneLibrary == true, let library = self.library  {
+                var flippedImage = UIImage(data: imageData)!
+                if self.cameraDevice == .front {
+                    flippedImage = UIImage(cgImage: flippedImage.cgImage!, scale: (flippedImage.scale), orientation:.rightMirrored)
+                }
+                
+                library.performChanges({
+                    let request = PHAssetChangeRequest.creationRequestForAsset(from: flippedImage)
+                    request.creationDate = Date()
+                    
+                    if let location = self.locationManager.latestLocation {
+                        request.location = location
+                    }
+                }, completionHandler: { success, error in
+                    guard error != nil else {
+                        return
                     }
                     
-                    library.performChanges({
-                        let request = PHAssetChangeRequest.creationRequestForAsset(from: flippedImage)
-                        request.creationDate = Date()
-                        
-                        if let location = self.locationManager.latestLocation {
-                            request.location = location
-                        }
-                    }, completionHandler: { success, error in
-                        guard error != nil else {
-                            return
-                        }
-                        
-                        DispatchQueue.main.async(execute: {
-                            self._show(NSLocalizedString("Error", comment:""), message: (error?.localizedDescription)!)
-                        })
-                    })
-                }
-                imageCompletion(UIImage(data: imageData), nil)
+                self._show(NSLocalizedString("Error", comment:""), message: (error?.localizedDescription)!)
+                    
+                })
             }
-            
+            imageCompletion(UIImage(data: imageData), capturing, nil)
+                
+            })
         }
         
     }
@@ -457,6 +457,15 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         }
         
     }
+    
+    public func capture(_ captureOutput: AVCapturePhotoOutput,
+                         didFinishProcessingPhotoSampleBuffer photoSampleBuffer: CMSampleBuffer?,
+                         previewPhotoSampleBuffer: CMSampleBuffer?,
+                         resolvedSettings: AVCaptureResolvedPhotoSettings,
+                         bracketSettings: AVCaptureBracketedStillImageSettings?,
+                         error: Error?) {
+        //Unclear if needed
+    }
 
     
     /**
@@ -469,7 +478,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
 
     private var inProgressLivePhotoCapturesCount = 0
 
-    private func capturePhoto(_ imageCompletion: @escaping (Data?, NSError?) -> Void) {
+    private func capturePhoto(_ imageCompletion: @escaping (Data?, Bool, NSError?) -> Void) {
         
         guard cameraIsSetup else {
             _show(NSLocalizedString("No capture session setup", comment:""), message: NSLocalizedString("I can't take any pictures", comment:""))
@@ -481,20 +490,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             return
         }
         
-        sessionQueue.async(execute: {
-            
-            let settings = AVCapturePhotoSettings()
-            settings.flashMode = .auto
-            settings.isHighResolutionPhotoEnabled = true
-            
-            if settings.availablePreviewPhotoPixelFormatTypes.count > 0 {
-                settings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : settings.availablePreviewPhotoPixelFormatTypes.first!]
-            }
-            
-            self._getStillImageOutput().capturePhoto(with: settings, delegate: self)
-            
-        })
         
+        self._performShutterAnimation() {}
         /*
          Retrieve the video preview layer's video orientation on the main queue before
          entering the session queue. We do this to ensure UI elements are accessed on
@@ -510,20 +507,17 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             
             // Capture a JPEG photo with flash set to auto and high resolution photo enabled.
             let photoSettings = AVCapturePhotoSettings()
-            photoSettings.flashMode = .auto
-            photoSettings.isHighResolutionPhotoEnabled = true
+            photoSettings.flashMode = self.cameraDevice == .front ? .off : .auto
+            
             if photoSettings.availablePreviewPhotoPixelFormatTypes.count > 0 {
                 photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
             }
             
             // Use a separate object for the photo capture delegate to isolate each capture life cycle.
-            let photoCaptureDelegate = PhotoCaptureDelegate(with: photoSettings, willCapturePhotoAnimation: {
-                DispatchQueue.main.async { [unowned self] in
-                    self.previewLayer?.opacity = 0
-                    UIView.animate(withDuration: 0.25) { [unowned self] in
-                        self.previewLayer?.opacity = 1
-                    }
-                }
+            let photoCaptureDelegate = PhotoCaptureDelegate(with: photoSettings, shouldSaveToLibrary: false, willCapturePhotoAnimation: {
+                
+                imageCompletion(nil, true, nil)
+                
             }, capturingLivePhoto: { capturing in
                 /*
                  Because Live Photo captures can overlap, we need to keep track of the
@@ -537,7 +531,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                     self.inProgressPhotoCaptureDelegates[photoCaptureDelegate.requestedPhotoSettings.uniqueID] = nil
                 }
                 
-                imageCompletion(photoData, nil)
+                imageCompletion(photoData, false, nil)
+                
                 }
             )
             

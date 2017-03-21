@@ -221,7 +221,7 @@ extension ChannelVC {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "start New Series", style: .default, handler: { (action: UIAlertAction!) in
-            //self.askQuestion()
+            self.startSeries()
         }))
         
         menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
@@ -277,7 +277,14 @@ extension ChannelVC {
         present(menu, animated: true, completion: nil)
     }
     
-    func userSelected(item : Any) {
+    internal func startSeries() {
+        let newSeries = NewSeries()
+        newSeries.selectedChannel = selectedChannel
+        
+        navigationController?.pushViewController(newSeries, animated: true)
+    }
+    
+    internal func userSelected(item : Any) {
         if let item = item as? Item {
             switch item.type {
             case .answer:

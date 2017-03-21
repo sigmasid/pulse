@@ -219,11 +219,11 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     func showUserMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "Send Message", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "send Message", style: .default, handler: { (action: UIAlertAction!) in
             self.sendMessage()
         }))
         
-        menu.addAction(UIAlertAction(title: "Share Profile", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Profile", style: .default, handler: { (action: UIAlertAction!) in
             self.shareProfile()
         }))
         
@@ -237,12 +237,12 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     internal func showCurrentUserMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "Edit Profile", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "edit Profile", style: .default, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
             self.navigationController?.pushViewController(SettingsTableVC(), animated: true)
         }))
         
-        menu.addAction(UIAlertAction(title: "Logout", style: .destructive, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "logout", style: .destructive, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
             self.clickedLogout()
         }))

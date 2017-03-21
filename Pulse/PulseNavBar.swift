@@ -80,12 +80,14 @@ public class PulseNavBar: UINavigationBar {
     public func setDarkNav() {
         barStyle = .black
         navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
+        navSubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .white, alignment: .center)
         navTitle.setBlurredBackground()
     }
     
     public func setLightNav() {
         barStyle = .default
         navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .center)
+        navSubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         navTitle.removeShadow()
     }
     

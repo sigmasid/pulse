@@ -65,6 +65,7 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         guard let nav = navigationController else { return }
         
         cameraVC = CameraVC()
+        cameraVC.cameraMode = .stillImage
         cameraVC.delegate = self
         cameraVC.screenTitle = "smile!"
         
@@ -119,10 +120,13 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         textField.text = ""
     }
     
-    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
-        
-        cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+    func doneRecording(isCapturing: Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
+        guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else {
+            if isCapturing {
+                self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+            }
+            return
+        }
         
         Database.uploadProfileImage(imageData, completion: {(URL, error) in
             if error == nil {

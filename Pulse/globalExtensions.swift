@@ -68,6 +68,10 @@ extension UICollectionViewCell {
     override func addBottomBorder() {
         contentView.layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
     }
+    
+    func addBorder(color: UIColor, thickness: CGFloat) {
+        contentView.layer.addBorder(color: color, thickness: thickness)
+    }
 }
 
 extension UIView {
@@ -309,6 +313,18 @@ extension CALayer {
         
         self.addSublayer(border)
     }
+    
+    func addBorder(color: UIColor, thickness: CGFloat) {
+        
+        let border = CALayer()
+        
+        border.frame = CGRect.init(x: 0, y: 0, width: frame.width - (thickness / 2), height: frame.height - (thickness / 2))
+        border.backgroundColor = color.cgColor
+        
+        self.addSublayer(border)
+    }
+    
+    
 }
 
 extension UIImage

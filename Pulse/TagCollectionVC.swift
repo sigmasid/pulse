@@ -418,7 +418,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         switch item.type {
         case .post:
             
-            showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: self.selectedItem, watchedPreview: false)
+            showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
 
         case .question:
             Database.getItemCollection(item.itemID, completion: {(success, items) in

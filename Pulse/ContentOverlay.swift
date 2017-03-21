@@ -21,13 +21,13 @@ class ContentOverlay: UIView {
     fileprivate lazy var downVoteButton : PulseButton = PulseButton(size: .xSmall, type: .downvote, isRound: true, hasBackground: false)
     fileprivate lazy var saveButton : PulseButton = PulseButton(size: .xSmall, type: .favorite, isRound: true, hasBackground: false)
     
-    fileprivate let itemTagLabel = PaddingLabel()
     fileprivate let itemTitleLabel = PaddingLabel()
     
     fileprivate let userTitleLabel = UILabel()
     fileprivate let userSubtitleLabel = UILabel()
     fileprivate var userImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
-    
+    fileprivate let headerMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .white)
+
     fileprivate var browseButton = PulseButton()
     fileprivate var messageButton = PulseButton()
 
@@ -100,6 +100,12 @@ class ContentOverlay: UIView {
     func handleBrowseTap() {
         if delegate != nil {
             delegate.userClickedBrowseItems()
+        }
+    }
+    
+    func handleHeaderMenuTap() {
+        if delegate != nil {
+            delegate.userClickedHeaderMenu()
         }
     }
     
@@ -176,12 +182,6 @@ class ContentOverlay: UIView {
         saveButton.imageView?.tintColor = .white
     }
     
-    func setTagName(_ tagName : String?) {
-        if let tagName = tagName {
-            itemTagLabel.text = "#" + tagName.lowercased()
-        }
-    }
-    
     /// Add clip countdown
     func addClipTimerCountdown() {
         let iconSize : CGFloat = IconSizes.small.rawValue
@@ -243,37 +243,37 @@ class ContentOverlay: UIView {
     
     /* ADD VOTE ANIMATION */
     func addVote(_ _vote : VoteType) {
-        var _voteImage : UIImageView!
+        var voteImage : UIImageView!
         
         switch _vote {
         case .favorite:
-            _voteImage = UIImageView(image: UIImage(named: "save"))
-            addSubview(_voteImage)
-            _voteImage.translatesAutoresizingMaskIntoConstraints = false
-            _voteImage.centerYAnchor.constraint(equalTo: saveButton.centerYAnchor).isActive = true
-            _voteImage.centerXAnchor.constraint(equalTo: saveButton.centerXAnchor).isActive = true
+            voteImage = UIImageView(image: UIImage(named: "save"))
+            addSubview(voteImage)
+            voteImage.translatesAutoresizingMaskIntoConstraints = false
+            voteImage.centerYAnchor.constraint(equalTo: saveButton.centerYAnchor).isActive = true
+            voteImage.centerXAnchor.constraint(equalTo: saveButton.centerXAnchor).isActive = true
         case .upvote:
-            _voteImage = UIImageView(image: UIImage(named: "upvote"))
-            addSubview(_voteImage)
-            _voteImage.translatesAutoresizingMaskIntoConstraints = false
-            _voteImage.centerYAnchor.constraint(equalTo: upVoteButton.centerYAnchor).isActive = true
-            _voteImage.centerXAnchor.constraint(equalTo: upVoteButton.centerXAnchor).isActive = true
+            voteImage = UIImageView(image: UIImage(named: "upvote"))
+            addSubview(voteImage)
+            voteImage.translatesAutoresizingMaskIntoConstraints = false
+            voteImage.centerYAnchor.constraint(equalTo: upVoteButton.centerYAnchor).isActive = true
+            voteImage.centerXAnchor.constraint(equalTo: upVoteButton.centerXAnchor).isActive = true
         case .downvote:
-            _voteImage = UIImageView(image: UIImage(named: "downvote"))
-            addSubview(_voteImage)
-            _voteImage.translatesAutoresizingMaskIntoConstraints = false
+            voteImage = UIImageView(image: UIImage(named: "downvote"))
+            addSubview(voteImage)
+            voteImage.translatesAutoresizingMaskIntoConstraints = false
             
-            _voteImage.centerYAnchor.constraint(equalTo: downVoteButton.centerYAnchor).isActive = true
-            _voteImage.centerXAnchor.constraint(equalTo: downVoteButton.centerXAnchor).isActive = true
+            voteImage.centerYAnchor.constraint(equalTo: downVoteButton.centerYAnchor).isActive = true
+            voteImage.centerXAnchor.constraint(equalTo: downVoteButton.centerXAnchor).isActive = true
         }
         
-        _voteImage.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        _voteImage.heightAnchor.constraint(equalTo: _voteImage.widthAnchor).isActive = true
+        voteImage.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        voteImage.heightAnchor.constraint(equalTo: voteImage.widthAnchor).isActive = true
         
         let xForm = CGAffineTransform.identity.scaledBy(x: 3.0, y: 3.0)
-        UIView.animate(withDuration: 0.5, animations: { _voteImage.transform = xForm; _voteImage.alpha = 0 } , completion: {(value: Bool) in
-            _voteImage.transform = CGAffineTransform.identity.scaledBy(x: 1.0, y: 1.0)
-            _voteImage.removeFromSuperview()
+        UIView.animate(withDuration: 0.5, animations: { voteImage.transform = xForm; voteImage.alpha = 0 } , completion: {(value: Bool) in
+            voteImage.transform = CGAffineTransform.identity.scaledBy(x: 1.0, y: 1.0)
+            voteImage.removeFromSuperview()
         })
     }
 }
@@ -297,7 +297,7 @@ extension ContentOverlay {
     fileprivate func addHeaderBackground() {
         addSubview(userImage)
         addSubview(userTitles)
-        addSubview(itemTagLabel)
+        addSubview(headerMenu)
         
         userImage.center = CGPoint(x: userImage.frame.width / 2 + Spacing.xs.rawValue,
                                    y: userImage.frame.width / 2 + Spacing.xs.rawValue)
@@ -327,13 +327,15 @@ extension ContentOverlay {
         userSubtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
         userSubtitleLabel.setBlurredBackground()
         
-        itemTagLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .left)
-        itemTagLabel.setBlurredBackground()
+        headerMenu.translatesAutoresizingMaskIntoConstraints = false
+        headerMenu.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        headerMenu.centerYAnchor.constraint(equalTo: userImage.centerYAnchor).isActive = true
+        headerMenu.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        headerMenu.heightAnchor.constraint(equalTo: headerMenu.widthAnchor).isActive = true
+        headerMenu.layoutIfNeeded()
         
-        itemTagLabel.translatesAutoresizingMaskIntoConstraints = false
-        itemTagLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        itemTagLabel.centerYAnchor.constraint(equalTo: userImage.centerYAnchor).isActive = true
-        itemTagLabel.layoutIfNeeded()
+        headerMenu.addTarget(self, action: #selector(handleHeaderMenuTap), for: .touchUpInside)
+        headerMenu.removeShadow()
         
         addSeeMoreButton()
     }

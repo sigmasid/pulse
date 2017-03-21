@@ -32,7 +32,7 @@ protocol ItemCellDelegate : class {
 }
 
 protocol CameraDelegate : class {
-    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
+    func doneRecording(isCapturing : Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
     func userDismissedCamera()
     func showAlbumPicker()
 }

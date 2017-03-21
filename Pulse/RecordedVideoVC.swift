@@ -216,6 +216,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     ///post video to firebase
     func _post() {
         if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
+            //add a title if there is none and is first post
             mode = .add
             controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
         } else {

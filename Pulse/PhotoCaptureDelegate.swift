@@ -22,12 +22,15 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     
     private var livePhotoCompanionMovieURL: URL? = nil
     
-    init(with requestedPhotoSettings: AVCapturePhotoSettings, willCapturePhotoAnimation: @escaping () -> (), capturingLivePhoto: @escaping (Bool) -> (),
+    private var shouldSaveToLibrary: Bool = false
+    
+    init(with requestedPhotoSettings: AVCapturePhotoSettings, shouldSaveToLibrary: Bool, willCapturePhotoAnimation: @escaping () -> (), capturingLivePhoto: @escaping (Bool) -> (),
          completed: @escaping (PhotoCaptureDelegate, Data?) -> ()) {
         self.requestedPhotoSettings = requestedPhotoSettings
         self.willCapturePhotoAnimation = willCapturePhotoAnimation
         self.capturingLivePhoto = capturingLivePhoto
         self.completed = completed
+        self.shouldSaveToLibrary = shouldSaveToLibrary
     }
     
     private func didFinish() {
@@ -91,9 +94,17 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
             return
         }
         
+        guard shouldSaveToLibrary else {
+            print("user doesn't want to save to library")
+            didFinish()
+            return
+        }
+        
         PHPhotoLibrary.requestAuthorization { [unowned self] status in
             if status == .authorized {
                 PHPhotoLibrary.shared().performChanges({ [unowned self] in
+                    print("writing files to library in photo capture delegate")
+
                     let creationRequest = PHAssetCreationRequest.forAsset()
                     creationRequest.addResource(with: .photo, data: photoData, options: nil)
                     

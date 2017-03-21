@@ -55,11 +55,6 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
             userEmail.tag = 100
             userPassword.tag = 200
             
-            userEmail.layer.addSublayer(GlobalFunctions.addBorders(userEmail))
-            userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
-            userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-            userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-            
             userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
             userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
             userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)

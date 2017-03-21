@@ -163,11 +163,11 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     func showFeedbackMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "Add \(selectedItem.childType())", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "add \(selectedItem.childType())", style: .default, handler: { (action: UIAlertAction!) in
             self.clickedAddItem()
         }))
         
-        menu.addAction(UIAlertAction(title: "Share Tag", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Tag", style: .default, handler: { (action: UIAlertAction!) in
             self.clickedShare()
         }))
         

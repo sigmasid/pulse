@@ -189,7 +189,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
-    func doneRecording(_ assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
+    func doneRecording(isCapturing: Bool, url assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
         if isAddingCover {
             recordedItems.first?.content = image
         } else {
@@ -344,7 +344,11 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             case .question, .answer:
                 introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].itemTitle
             case .post:
-                introVC?.itemTitle = selectedItem != nil ? selectedItem.tag?.itemTitle : allItems[itemIndex].tag?.itemTitle
+                // parent item is individual post
+                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].tag?.itemTitle
+            case .feedback, .posts: //case of tag
+                //selected item is the parent tag
+                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].itemTitle
             default: break
             }
             
@@ -431,13 +435,13 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         if mediaType.isEqual(to: kUTTypeImage as String) {
             
             let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage            
-            doneRecording(nil, image: pickedImage, location: nil, assetType: .albumImage)
+            doneRecording(isCapturing: false, url: nil, image: pickedImage, location: nil, assetType: .albumImage)
             // Media is an image
 
         } else if mediaType.isEqual(to: kUTTypeMovie as String) {
             
             let videoURL = info[UIImagePickerControllerMediaURL] as? URL
-            doneRecording(videoURL, image: nil, location: nil, assetType: .albumVideo)
+            doneRecording(isCapturing: false, url: videoURL, image: nil, location: nil, assetType: .albumVideo)
             // Media is a video
         }
         picker.dismiss(animated: true, completion: nil)

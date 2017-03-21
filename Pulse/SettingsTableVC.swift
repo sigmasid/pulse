@@ -198,7 +198,7 @@ extension SettingsTableVC: CameraDelegate {
         present(cameraVC, animated: true, completion: nil)
     }
     
-    func doneRecording(_: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
+    func doneRecording(isCapturing : Bool, url _: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
         guard let imageData = image?.mediumQualityJPEGNSData else { return }
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
