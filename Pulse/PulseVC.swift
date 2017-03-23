@@ -135,22 +135,25 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     internal func toggleLoading(show: Bool, message: String?, showIcon: Bool = false) {
         if show {
-            if loadingView == nil {
-                loadingView = LoadingView(frame: view.bounds, backgroundColor: .white)
+            loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white.withAlphaComponent(0.9))
+            DispatchQueue.main.async {
+                self.view.addSubview(self.loadingView)
+                
+                if showIcon {
+                    self.loadingView.addIcon(.medium, _iconColor: .gray, _iconBackgroundColor: UIColor.white)
+                }
+                
+                self.loadingView.addMessage(message, _color: .gray)
             }
-            view.addSubview(loadingView)
             
-            if showIcon {
-                loadingView.addIcon(.medium, _iconColor: .gray, _iconBackgroundColor: .white)
-            }
-            
-            loadingView.addMessage(message, _color: .gray)
         } else {
             if loadingView != nil {
-                UIView.animate(withDuration: 0.2, animations: { self.loadingView!.alpha = 0.0 } ,
-                               completion: {(value: Bool) in
-                                self.loadingView.removeFromSuperview()
-                })
+                DispatchQueue.main.async {
+                    UIView.animate(withDuration: 0.2, animations: { self.loadingView!.alpha = 0.0 } ,
+                                   completion: {(value: Bool) in
+                                    self.loadingView.removeFromSuperview()
+                    })
+                }
             }
         }
     }
@@ -163,7 +166,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         
         // exclude some activity types from the list (optional)
         activityController.excludedActivityTypes = [ UIActivityType.airDrop ]
-        
+        toggleLoading(show: false, message: nil)
         // present the view controller
         present(activityController, animated: true, completion: nil)
     }

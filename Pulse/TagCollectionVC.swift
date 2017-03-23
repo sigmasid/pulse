@@ -386,9 +386,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
     }
     
     internal func userClosedBrowse(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in
-            print("should dismiss browse collection vc")
-        })
+        dismiss(animated: true, completion: { _ in })
     }
 }
 
@@ -421,10 +419,7 @@ extension TagCollectionVC {
         }
         
         menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
-            self.selectedItem.createShareLink(completion: { link in
-                guard let link = link else { return }
-                self.shareContent(shareType: "series", shareText: self.selectedItem.itemTitle ?? "", shareLink: link)
-            })
+            self.showShare()
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -442,10 +437,7 @@ extension TagCollectionVC {
         }))
         
         menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
-            self.selectedItem.createShareLink(completion: { link in
-                guard let link = link else { return }
-                self.shareContent(shareType: "series", shareText: self.selectedItem.itemTitle ?? "", shareLink: link)
-            })
+            self.showShare()
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -463,10 +455,7 @@ extension TagCollectionVC {
         }))
         
         menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
-            self.selectedItem.createShareLink(completion: { link in
-                guard let link = link else { return }
-                self.shareContent(shareType: "series", shareText: self.selectedItem.itemTitle ?? "", shareLink: link)
-            })
+            self.showShare()
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -474,6 +463,14 @@ extension TagCollectionVC {
         }))
         
         present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showShare() {
+        toggleLoading(show: true, message: "loading share options...", showIcon: true)
+        selectedItem.createShareLink(completion: { link in
+            guard let link = link else { return }
+            self.shareContent(shareType: "series", shareText: self.selectedItem.itemTitle ?? "", shareLink: link)
+        })
     }
     
     internal func showNoItemsMenu(selectedItem : Item) {

@@ -88,6 +88,7 @@ class StartThread: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
                     loading.removeFromSuperview()
                 })
             } else {
+                loading.removeFromSuperview()
                 self.showErrorMenu(error: error!)
                 self.submitButton.setEnabled()
             }
@@ -202,7 +203,7 @@ extension StartThread {
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
         
         submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        submitButton.setTitle("Start Perespectives Thread", for: UIControlState())
+        submitButton.setTitle("Start Thread", for: UIControlState())
         submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         submitButton.setDisabled()
         

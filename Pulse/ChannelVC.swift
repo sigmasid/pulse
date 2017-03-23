@@ -229,6 +229,7 @@ extension ChannelVC {
         }))
         
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
+            self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: { link in
                 guard let link = link else { return }
                 self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle ?? "", shareLink: link)
@@ -254,6 +255,7 @@ extension ChannelVC {
         }))
         
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
+            self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: { link in
                 guard let link = link else { return }
                 self.activityController = GlobalFunctions.shareContent(shareType: "channel",

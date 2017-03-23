@@ -168,11 +168,10 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     }
     
     internal func clickedShare() {
+        toggleLoading(show: true, message: "loading share options...", showIcon: true)
         selectedItem.createShareLink(completion: { link in
             guard let link = link else { return }
-            self.activityController = GlobalFunctions.shareContent(shareType: "channel",
-                                                                   shareText: self.selectedItem.itemTitle ?? "",
-                                                                   shareLink: link, presenter: self)
+            self.shareContent(shareType: "channel", shareText: self.selectedItem.itemTitle ?? "", shareLink: link)
         })
     }
     

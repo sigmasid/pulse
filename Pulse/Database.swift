@@ -1455,12 +1455,9 @@ class Database {
                                                  "createdAt" : FIRServerValue.timestamp(),
                                                  "type" : item.type.rawValue]
         
-        let itemCollectionPost : [String : Any] = [item.itemID : item.type.rawValue]
-
-        
         let collectionPost = ["channelItems/\(channelID)/\(item.itemID)": channelItemsPost,
                               "items/\(item.itemID)" : itemPost,
-                              "itemCollection/\(parentItem.itemID)":itemCollectionPost]
+                              "itemCollection/\(parentItem.itemID)/\(item.itemID)": item.type.rawValue] as [String : Any]
         
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
             error != nil ? completion(false, error) : completion(true, nil)
