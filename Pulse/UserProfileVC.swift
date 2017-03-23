@@ -26,6 +26,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
                 updateDataSource()
             } else if User.currentUser?.uID != nil, selectedUser.uID == User.currentUser?.uID! {
                 NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+                self.headerNav?.setNav(title: User.currentUser?.name ?? "Your Profile")
 
                 Database.getUserItems(uID: User.currentUser!.uID!, completion: { items in
                     self.allItems = items
@@ -149,7 +150,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         
         headerNav?.updateBackgroundImage(image: nil)
         
-        if isCurrentUser {
+        if isCurrentUser && isRootController() {
             tabBarHidden = false
         } else {
             tabBarHidden = true
@@ -237,15 +238,21 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     internal func showCurrentUserMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "edit Profile", style: .default, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-            self.navigationController?.pushViewController(SettingsTableVC(), animated: true)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "logout", style: .destructive, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-            self.clickedLogout()
-        }))
+        if isRootController() {
+            menu.addAction(UIAlertAction(title: "edit Profile", style: .default, handler: { (action: UIAlertAction!) in
+                menu.dismiss(animated: true, completion: nil)
+                self.navigationController?.pushViewController(SettingsTableVC(), animated: true)
+            }))
+            
+            menu.addAction(UIAlertAction(title: "logout", style: .destructive, handler: { (action: UIAlertAction!) in
+                menu.dismiss(animated: true, completion: nil)
+                self.clickedLogout()
+            }))
+        } else {
+            menu.addAction(UIAlertAction(title: "share Profile", style: .default, handler: { (action: UIAlertAction!) in
+                self.shareProfile()
+            }))
+        }
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
@@ -291,9 +298,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     internal func shareProfile() {
         selectedUser.createShareLink(completion: { link in
             guard let link = link else { return }
-            self.activityController = GlobalFunctions.shareContent(shareType: "person",
-                                                                   shareText: self.selectedUser.name ?? "",
-                                                                   shareLink: link, presenter: self)
+            self.shareContent(shareType: "user", shareText: self.selectedUser.name ?? "", shareLink: link)
         })
     }
     

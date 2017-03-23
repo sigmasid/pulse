@@ -114,24 +114,20 @@ class Database {
     }
     
     /** MARK : SEARCH **/
-    static func buildQuery(searchTerm : String, type: ItemTypes) -> [String:Any] {
+    static func buildQuery(searchTerm : String, type: SearchTypes) -> [String:Any] {
         var query = [String:Any]()
         
         switch type {
-        case .post:
-            query["index"] = "post"
-            query["type"] = "post"
-        case .user:
+        case .items:
+            query["index"] = "items"
+            query["type"] = "item"
+        case .users:
             query["index"] = "firebase"
             query["type"] = "users"
             query["fields"] = ["name","shortBio","thumbPic"]
-        case .question:
+        case .channels:
             query["index"] = "questions"
             query["type"] = "questions"
-        case .answer:
-            query["index"] = "answer"
-            query["type"] = "answer"
-        default: break
         }
         
         let qTerm = ["_all":searchTerm]
@@ -143,7 +139,7 @@ class Database {
     
     static func searchItem(searchText : String, completion: @escaping (_ results : [Item]) -> Void) {
         
-        let query = buildQuery(searchTerm: searchText, type: .post)
+        let query = buildQuery(searchTerm: searchText, type: .items)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
@@ -172,7 +168,7 @@ class Database {
     }
     
     static func searchChannels(searchText : String, completion: @escaping (_ result : [Channel]) -> Void) {
-        let query = buildQuery(searchTerm: searchText, type: .question)
+        let query = buildQuery(searchTerm: searchText, type: .channels)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
@@ -203,7 +199,7 @@ class Database {
     }
     
     static func searchUsers(searchText : String, completion: @escaping (_ peopleResult : [User]) -> Void) {
-        let query = buildQuery(searchTerm: searchText, type: .user)
+        let query = buildQuery(searchTerm: searchText, type: .users)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
@@ -458,7 +454,7 @@ class Database {
     }
     
     static func getChannelItems(channel : Channel, completion: @escaping (_ channel : Channel?) -> Void) {
-        channelItemsRef.child(channel.cID).observeSingleEvent(of: .value, with: { snap in
+        channelItemsRef.child(channel.cID!).observeSingleEvent(of: .value, with: { snap in
             channel.updateChannel(detailedSnapshot: snap)
             completion(channel)
         }, withCancel: { error in
@@ -644,22 +640,6 @@ class Database {
         })
     }
     
-    ///Get all tags that user is a verified expert in
-    static func getUserExpertTags(uID: String, completion: @escaping (_ tags : [Channel]) -> Void) {
-        var allChannels = [Channel]()
-        
-        usersPublicDetailedRef.child(uID).child("expertiseChannels").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
-            if snap.exists() {
-                for child in snap.children {
-                    let channel = Channel(cID: (child as AnyObject).key)
-                    allChannels.append(channel)
-                }
-                completion(allChannels)
-            } else {
-                completion(allChannels)
-            }
-        })
-    }
     /*** MARK END : GET USER ITEMS ***/
     
     //Create Feed for current user from followed tags
@@ -912,7 +892,8 @@ class Database {
         currentUser.name = nil
         currentUser.items = []
         currentUser.savedItems = []
-
+        currentUser.savedVotes = [:]
+        
         currentUser.subscriptions = []
         currentUser.subscriptionIDs = []
 
@@ -920,12 +901,11 @@ class Database {
         
         currentUser.profilePic = nil
         currentUser.thumbPic = nil
-        currentUser._totalItems = nil
+        currentUser.thumbPicImage = nil
         currentUser.birthday = nil
         currentUser.bio = nil
         currentUser.shortBio = nil
         currentUser.gender = nil
-        currentUser.socialSources = [ : ]
         
         setCurrentUserPaths()
         NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
@@ -978,7 +958,6 @@ class Database {
             }
             if snap.hasChild("items") {
                 User.currentUser!.items = []
-                User.currentUser?._totalItems = Int(snap.childSnapshot(forPath: "items").childrenCount)
                 for item in snap.childSnapshot(forPath: "items").children {
                     if let item = item as? FIRDataSnapshot {
                         let currentItem = Item(itemID: item.key, snapshot: item)
@@ -1212,22 +1191,10 @@ class Database {
         if let url = item.contentURL?.absoluteString {
             channelPost["url"] = url as AnyObject?
         }
-        switch item.type {
-        case .answer:
-            collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.itemID,
-                              "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
-                              "channelItems/\(channelID)/\(item.itemID)":channelPost,
-                              "itemCollection/\(parentItemID)/\(item.itemID)" : "answer"]
-        case .post:
-            collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.itemID,
-                              "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
-                              "channelItems/\(channelID)/\(item.itemID)":channelPost,
-                              "itemCollection/\(parentItemID)/\(item.itemID)" : "post"]
-        default:
-            collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": true,
-                              "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
-                              "channelItems/\(channelID)/\(item.itemID)":channelPost]
-        }
+        collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.type.rawValue,
+                          "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
+                          "channelItems/\(channelID)/\(item.itemID)":channelPost,
+                          "itemCollection/\(parentItemID)/\(item.itemID)" : item.type.rawValue]
 
         if _user != nil {
             databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
@@ -1433,7 +1400,8 @@ class Database {
     }
     
     /** ADD NEW SERIES TO CHANNEL **/
-    static func addNewSeries(channelID: String, item : Item, completion: @escaping (_ success : Bool) -> Void) {
+    static func addNewSeries(channelID: String, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        
         let itemPost : [String : Any] = ["title" : item.itemTitle,
                                         "description" : item.itemDescription,
                                         "type" : item.type.rawValue,
@@ -1449,7 +1417,53 @@ class Database {
                               "items/\(item.itemID)" : itemPost]
         
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
-            error != nil ? completion(false) : completion(true)
+            error != nil ? completion(false, error) : completion(true, nil)
+        })
+    }
+    
+    /** ADD NEW SERIES TO CHANNEL **/
+    static func addThread(channelID: String, parentItem: Item, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = User.currentUser, user.uID != nil else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard item.type != .unknown else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "sorry this type of item is not valid" ]
+            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard user.hasExpertiseIn(channel: Channel(cID: channelID)) else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "only channel experts can start a thread" ]
+            completion(false, NSError.init(domain: "NotExpert", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let itemPost : [String : Any] = ["title" : item.itemTitle,
+                                         "description" : item.itemDescription,
+                                         "type" : item.type.rawValue,
+                                         "uID" : user.uID!,
+                                         "createdAt" : FIRServerValue.timestamp(),
+                                         "cID":channelID]
+        
+        let channelItemsPost : [String : Any] = ["title" : item.itemTitle,
+                                                 "tagID" : parentItem.itemID,
+                                                 "tagTitle" : parentItem.itemTitle,
+                                                 "uID" : user.uID!,
+                                                 "createdAt" : FIRServerValue.timestamp(),
+                                                 "type" : item.type.rawValue]
+        
+        let itemCollectionPost : [String : Any] = [item.itemID : item.type.rawValue]
+
+        
+        let collectionPost = ["channelItems/\(channelID)/\(item.itemID)": channelItemsPost,
+                              "items/\(item.itemID)" : itemPost,
+                              "itemCollection/\(parentItem.itemID)":itemCollectionPost]
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
+            error != nil ? completion(false, error) : completion(true, nil)
         })
     }
     
@@ -1519,7 +1533,7 @@ class Database {
     }
     
     static func subscribeChannel(_ channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
-        if let user = User.currentUser {
+        if User.isLoggedIn(), let user = User.currentUser {
             if let savedIndex = user.subscriptionIDs.index(of: channel.cID), let channelID = channel.cID  { //unsubscribe
                 let _path = currentUserRef.child("subscriptions/\(channelID)")
                 

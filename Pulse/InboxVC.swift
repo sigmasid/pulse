@@ -33,7 +33,8 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     internal func setupLayout() {
         tableView = UITableView(frame: view.bounds)
         tableView.register(InboxTableCell.self, forCellReuseIdentifier: reuseIdentifier)
-        
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: emptyReuseIdentifier)
+
         tableView.backgroundView = nil
         tableView.backgroundColor = .white
         tableView.separatorStyle = .singleLine
@@ -81,7 +82,7 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     
     // MARK: - Table view data source
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return conversations.count
+        return conversations.count == 0 ? 1 : conversations.count
     }
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
@@ -94,6 +95,16 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard conversations.count > 0 else {
+            let cell = tableView.dequeueReusableCell(withIdentifier: emptyReuseIdentifier)
+            cell?.textLabel?.numberOfLines = 0
+            cell?.textLabel?.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
+            cell?.textLabel?.lineBreakMode = .byWordWrapping
+            
+            cell?.textLabel?.text = "No conversations yet! Your coversation history will show up here"
+            return cell!
+        }
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! InboxTableCell
         let user = conversations[indexPath.row].cUser!
         

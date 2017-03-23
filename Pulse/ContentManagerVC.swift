@@ -108,6 +108,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         contentDetailVC.watchedFullPreview = watchedFullPreview
         contentDetailVC.itemDetailCollection = itemCollection
         contentDetailVC.selectedChannel = selectedChannel
+        contentDetailVC.selectedItem = selectedItem
         contentDetailVC.itemIndex = itemIndex
         
         if shouldShowIntro {
@@ -196,8 +197,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             let itemKey = databaseRef.child("items").childByAutoId().key
             let item = Item(itemID: itemKey,
                         itemUserID: User.currentUser!.uID!,
-                        itemTitle: selectedItem.type == .question ? selectedItem.itemTitle : "",
-                        type: selectedItem.type == .question ? .answer : .post,
+                        itemTitle: getRecordedItemTitle(),
+                        type: selectedItem.childItemType(),
                         contentURL: assetURL,
                         content: image,
                         contentType: assetType,
@@ -223,6 +224,15 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         }
         
         pushViewController(recordedVideoVC, animated: true)
+    }
+    
+    fileprivate func getRecordedItemTitle() -> String {
+        switch selectedItem.type {
+        case .question, .thread:
+            return selectedItem.itemTitle
+        default:
+            return ""
+        }
     }
     
     fileprivate func returnToRecordings() {
@@ -341,12 +351,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         introVC = ContentIntroVC()
         if selectedItem != nil {
             switch selectedItem.type {
-            case .question, .answer:
-                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].itemTitle
-            case .post:
-                // parent item is individual post
-                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].tag?.itemTitle
-            case .feedback, .posts: //case of tag
+            case .question, .answer, .perspective, .post, .thread:
+                //selected item is a tag
+                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].tag?.itemTitle
+            case .feedback, .posts, .perspectives: //case of tag - this is currently never the case?
                 //selected item is the parent tag
                 introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].itemTitle
             default: break

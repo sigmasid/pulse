@@ -29,13 +29,11 @@ class User: NSObject {
     var expertiseChannels = [Channel]()
     
     var shownCameraForQuestion = [ String : String ]()
-    var _totalItems : Int?
     var subscriptions = [Channel]()
     var subscriptionIDs = [String]()
     
     var savedItems = [Item]()
     var savedVotes = [String : Bool]()
-    var socialSources = [ Social : Bool ]()
     
     dynamic var uCreated = false
     dynamic var uDetailedCreated = false

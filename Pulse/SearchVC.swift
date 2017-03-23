@@ -13,6 +13,12 @@ protocol searchVCDelegate: class {
     func userSelectedSearchResult(type : ItemTypes?, id : String)
 }
 
+enum SearchTypes {
+    case channels
+    case users
+    case items
+}
+
 
 class SearchVC: PulseVC, XMSegmentedControlDelegate {
     public var modalDelegate : ModalDelegate!
@@ -23,7 +29,7 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
     fileprivate var tableView = UITableView()
     fileprivate var headerText = ""
     fileprivate var isSetupComplete = false
-    fileprivate var searchScope : ItemTypes! = .channel
+    fileprivate var searchScope : SearchTypes! = .channels
 
     var results = [Any]() {
         didSet {
@@ -95,7 +101,7 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
     
     fileprivate func setupScope() {
         let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: scopeBarHeight)
-        scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Channels", "Tags", "People"] , selectedItemHighlightStyle: .bottomEdge)
+        scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Channels", "Items", "People"] , selectedItemHighlightStyle: .bottomEdge)
         scopeBar.delegate = self
         scopeBar.addBottomBorder()
         
@@ -132,9 +138,9 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
     
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
         switch selectedSegment {
-        case 0: searchScope = .post
-        case 1: searchScope = .question
-        case 2: searchScope = .user
+        case 0: searchScope = .channels
+        case 1: searchScope = .items
+        case 2: searchScope = .users
         default: searchScope = nil
         }
     }
@@ -154,22 +160,22 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! SearchTableCell
         
         switch searchScope! {
-        case .channel:
+        case .channels:
             if let channel = results[indexPath.row] as? Channel {
                 cell.titleLabel.text = channel.cTitle
                 cell.subtitleLabel.text = channel.cDescription
                 cell.iconButton.setImage(UIImage(named: "tag"), for: UIControlState())
             }
-        case .user:
+        case .items:
+            if let item = results[indexPath.row] as? Item {
+                cell.titleLabel.text = item.itemTitle
+                cell.iconButton.setImage(UIImage(named: "question"), for: UIControlState())
+            }
+        case .users:
             if let user = results[indexPath.row] as? User {
                 cell.titleLabel.text = user.name
                 cell.subtitleLabel.text = user.shortBio
                 cell.iconButton.setImage(UIImage(named: "default-profile"), for: UIControlState())
-            }
-        default:
-            if let item = results[indexPath.row] as? Item {
-                cell.titleLabel.text = item.itemTitle
-                cell.iconButton.setImage(UIImage(named: "question"), for: UIControlState())
             }
         }
         
@@ -222,7 +228,7 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
 
         if _searchText != "" && _searchText.characters.count > 1 {
             switch searchScope! {
-            case .channel:
+            case .channels:
                 Database.searchChannels(searchText: _searchText.lowercased(), completion: { searchResults in
                     if searchResults.count > 0 {
                         self.results = searchResults
@@ -231,7 +237,7 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
                         self.toggleLoading(show: true, message: "No results found!", showIcon: true)
                     }
                 })
-            case .user:
+            case .users:
                 Database.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
                     if searchResults.count > 0 {
                         self.results = searchResults
@@ -240,7 +246,7 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
                         self.toggleLoading(show: true, message: "No results found!", showIcon: true)
                     }
                 })
-            default:
+            case .items:
                 Database.searchItem(searchText: _searchText.lowercased(), completion:  { searchResults in
                     if searchResults.count > 0 {
                         self.results = searchResults

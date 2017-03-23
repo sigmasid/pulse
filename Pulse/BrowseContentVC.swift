@@ -150,20 +150,9 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     }
     
     internal func userClickedMenu() {
-        switch selectedItem.type {
-        case .posts:
-            break
-        case .question:
-            showFeedbackMenu()
-        default: return
-        }
-    }
-    
-    //is showing answers
-    func showFeedbackMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "add \(selectedItem.childType())", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "add\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
             self.clickedAddItem()
         }))
         

@@ -28,12 +28,13 @@ protocol ItemDetailDelegate : class {
     func userClickedHeaderMenu()
 }
 
-class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate {
+class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate {
     internal var itemIndex = 0
     internal var currentItem : Item?
     internal var nextItem : Item?
 
     public var selectedChannel : Channel!
+    public var selectedItem : Item! //parentItem
     internal var allItems = [Item]() {
         didSet {
             if self.isViewLoaded {
@@ -89,6 +90,9 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
         super.viewDidLoad()
         
         if !_isLoaded {
+            tabBarHidden = true
+            statusBarHidden = true
+            
             view.backgroundColor = UIColor.black.withAlphaComponent(0.7)
             
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
@@ -574,22 +578,20 @@ class ContentDetailVC: UIViewController, ItemDetailDelegate, UIGestureRecognizer
     
     func userClickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        var activityController: UIActivityViewController?
         
         if ContentDetailVC.qPlayer.currentItem != nil {
             ContentDetailVC.qPlayer.pause()
         }
         
-        menu.addAction(UIAlertAction(title: "new Post", style: .default, handler: { (action: UIAlertAction!) in
+        let entryType = selectedItem != nil ? selectedItem.childType().capitalized : " Entry"
+        menu.addAction(UIAlertAction(title: "add\(entryType)", style: .default, handler: { (action: UIAlertAction!) in
             //self.addItem(for: self.selectedItem)
         }))
         
         menu.addAction(UIAlertAction(title: "share This", style: .default, handler: { (action: UIAlertAction!) in
             self.currentItem?.createShareLink(completion: { link in
                 guard let link = link else { return }
-                activityController = GlobalFunctions.shareContent(shareType: "item",
-                                                                       shareText: self.currentItem?.itemTitle ?? "",
-                                                                       shareLink: link, presenter: self)
+                self.shareContent(shareType: "item", shareText: self.currentItem?.itemTitle ?? "", shareLink: link)
             })
         }))
         

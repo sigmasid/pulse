@@ -11,14 +11,20 @@ import FirebaseDatabase
 import UIKit
 
 enum ItemTypes: String {
-    case question
+    //Questions > has Question > has Answer
     case questions
+    case question
     case answer
+    //Posts > has Post
     case post
     case posts
+    //Feedback > ??
     case feedback
-    case user
-    case channel
+    //Perspectives > has Threads > Thread has Perspective
+    case perspectives
+    case perspective
+    case thread
+    //All the rest
     case unknown
 }
 
@@ -142,6 +148,12 @@ class Item: NSObject {
             self.type = .posts
         case "feedback":
             self.type = .feedback
+        case "perspectives":
+            self.type = .perspectives
+        case "perspective":
+            self.type = .perspective
+        case "thread":
+            self.type = .thread
         default:
             self.type = .unknown
         }
@@ -151,8 +163,18 @@ class Item: NSObject {
         switch type {
         case .feedback: return " question"
         case .posts: return " post"
+        case .thread: return " perspective"
         case .question: return " answer"
-        default: return ""
+        default: return " entry"
+        }
+    }
+    
+    func childItemType() -> ItemTypes {
+        switch type {
+        case .posts: return .post
+        case .thread: return .perspective
+        case .question: return .answer
+        default: return .unknown
         }
     }
     

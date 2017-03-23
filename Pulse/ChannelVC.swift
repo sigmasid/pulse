@@ -231,9 +231,7 @@ extension ChannelVC {
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedChannel.createShareLink(completion: { link in
                 guard let link = link else { return }
-                self.activityController = GlobalFunctions.shareContent(shareType: "channel",
-                                                                       shareText: self.selectedChannel.cTitle ?? "",
-                                                                       shareLink: link, presenter: self)
+                self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle ?? "", shareLink: link)
             })
         }))
         
@@ -291,15 +289,15 @@ extension ChannelVC {
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
-            case .post:
+            case .post, .perspective:
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
-            case .question:
+            case .question, .thread:
                 
                 showBrowse(selectedItem: item)
                 
-            case .posts, .feedback:
+            case .posts, .feedback, .perspectives:
                 
                 showTag(selectedItem: item)
                 
@@ -451,8 +449,10 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 }
             }
             
+            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective
+            
             //Get the image if content type is a post
-            if currentItem.content == nil, currentItem.type == .post, !currentItem.fetchedContent {
+            if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
                 Database.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)

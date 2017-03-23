@@ -19,6 +19,7 @@ class Channel : NSObject {
     var experts = [User]()
     var items = [Item]()
     
+    var cThumbImage : UIImage?
     var cPreviewImage : UIImage?
     var cImageURL : String?
     

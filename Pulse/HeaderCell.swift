@@ -10,11 +10,12 @@ import UIKit
 
 class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     fileprivate lazy var titleLabel = UILabel()
-    fileprivate lazy var previewContainer = UIView()
-    fileprivate lazy var previewImage = UIImageView()
+    fileprivate lazy var previewButton = PulseButton(size: .medium, type: .blank, isRound: true, background: .white, tint: .clear)
     
     fileprivate lazy var previewVC : Preview = Preview()
     fileprivate var reuseCell = false
+    
+    public var delegate : SelectionDelegate!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -28,37 +29,46 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     
     func updateCell(_ _title : String?, _image : UIImage?) {
         titleLabel.text = _title
-        previewImage.image = _image
+        previewButton.setImage(_image, for: .normal)
     }
     
     func updateImage( image : UIImage?) {
-        if let image = image {
-            previewImage.image = image
-        }
+        previewButton.setImage(image, for: .normal)
     }
     
     override func prepareForReuse() {
         titleLabel.text = ""
-        previewImage.image = nil
+        previewButton.setImage(nil, for: .normal)
         
         super.prepareForReuse()
     }
     
+    internal func clickedSelect() {
+        if delegate != nil {
+            delegate.userSelected(item: self.tag)
+        }
+    }
+    
     fileprivate func setupCell() {
-        addSubview(previewContainer)
+        addSubview(previewButton)
         addSubview(titleLabel)
         
-        previewContainer.translatesAutoresizingMaskIntoConstraints = false
-        previewContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        previewContainer.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
-        previewContainer.widthAnchor.constraint(equalTo: previewContainer.heightAnchor).isActive = true
-        previewContainer.centerXAnchor.constraint(equalTo: contentView.centerXAnchor).isActive = true
-        previewContainer.layoutIfNeeded()
+        previewButton.translatesAutoresizingMaskIntoConstraints = false
+        previewButton.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
+        previewButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor).isActive = true
+        previewButton.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        previewButton.widthAnchor.constraint(equalTo: previewButton.heightAnchor).isActive = true
+        previewButton.layoutIfNeeded()
+        
+        previewButton.addTarget(self, action: #selector(clickedSelect), for: .touchUpInside)
 
+        previewButton.contentMode = .scaleAspectFill
+        previewButton.clipsToBounds = true
+        
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.centerXAnchor.constraint(equalTo: previewContainer.centerXAnchor).isActive = true
-        titleLabel.widthAnchor.constraint(equalTo: previewContainer.widthAnchor).isActive = true
-        titleLabel.topAnchor.constraint(equalTo: previewContainer.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        titleLabel.centerXAnchor.constraint(equalTo: previewButton.centerXAnchor).isActive = true
+        titleLabel.widthAnchor.constraint(equalTo: previewButton.widthAnchor).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: previewButton.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
         titleLabel.layoutIfNeeded()
         titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .black, alignment: .center)
 
@@ -68,14 +78,5 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
         
         titleLabel.numberOfLines = 0
         titleLabel.lineBreakMode = .byTruncatingTail
-        
-        previewContainer.addShadow()
-        
-        previewImage.frame = previewContainer.bounds
-        previewImage.backgroundColor = .lightGray
-        previewImage.contentMode = .scaleAspectFill
-        previewContainer.addSubview(previewImage)
-        previewImage.makeRound()
-        
     }
 }

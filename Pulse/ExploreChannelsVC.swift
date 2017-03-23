@@ -16,10 +16,9 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
     
     // Set by MasterTabVC
     public var universalLink : URL!
-    
-    fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
+    public var forUser = false
 
-    fileprivate var allChannels = [Channel]() {
+    public var allChannels = [Channel]() {
         didSet {
             updateDataSource()
         }
@@ -27,7 +26,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
 
     fileprivate var channelCollection : UICollectionView!
     fileprivate var isLayoutSetup = false
-    
+    fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
+
     override func viewDidLayoutSubviews() {
         if !isLayoutSetup {
             toggleLoading(show: true, message: "Loading...", showIcon: true)
@@ -39,8 +39,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        updateHeader()
         updateOnscreenRows()
+        updateHeader()
     }
 
     override func didReceiveMemoryWarning() {
@@ -63,23 +63,33 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
     }
     
     fileprivate func updateHeader() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
-        
-        tabBarHidden = false
-        headerNav?.updateBackgroundImage(image: nil)
-        headerNav?.setNav(title: "Explore Channels")
+
+        if !forUser {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
+            tabBarHidden = false
+
+            headerNav?.setNav(title: "Explore Channels")
+            headerNav?.updateBackgroundImage(image: nil)
+        } else {
+            print("should add back button in update header")
+            addBackButton()
+            tabBarHidden = true
+            
+            headerNav?.setNav(title: "Your Subscriptions")
+            headerNav?.updateBackgroundImage(image: nil)
+        }
     }
     
     fileprivate func updateRootScopeSelection() {
-        Database.getExploreChannels({ channels, error in
-            if error == nil {
-                self.allChannels = channels
-                self.toggleLoading(show: false, message: nil)
-            }
-        })
+        if allChannels.isEmpty {
+            Database.getExploreChannels({ channels, error in
+                if error == nil {
+                    self.allChannels = channels
+                    self.toggleLoading(show: false, message: nil)
+                }
+            })
+        }
     }
-    
-    
     
     func updateDataSource() {
         if !isLayoutSetup {
@@ -143,6 +153,14 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
         
         if let user = User.currentUser {
             user.isSubscribedToChannel(cID: channel.cID) ? cell.updateSubscribe(type: .unfollow, tag: indexPath.row) : cell.updateSubscribe(type: .follow, tag: indexPath.row)
+        }
+        
+        if !channel.cCreated {
+            Database.getChannel(cID: channel.cID, completion: { (channel, error) in
+                channel.cPreviewImage = self.allChannels[indexPath.row].cPreviewImage
+                self.allChannels[indexPath.row] = channel
+                cell.updateCell(channel.cTitle, subtitle: channel.cDescription)
+            })
         }
 
         if channel.cPreviewImage != nil {

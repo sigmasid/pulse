@@ -14,7 +14,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     internal var loadingView : LoadingView!
     
     /** Share content **/
-    internal var activityController: UIActivityViewController?
+    internal var activityController: UIActivityViewController!
     
     /** Transition Vars **/
     internal var initialFrame = CGRect.zero
@@ -115,6 +115,13 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
+    internal func isRootController() -> Bool {
+        guard let headerNav = headerNav else {
+            return false
+        }
+        return headerNav.viewControllers.count == 1
+    }
+    
     internal func addScreenButton(button : PulseButton) {
         view.addSubview(button)
         
@@ -146,6 +153,19 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 })
             }
         }
+    }
+    
+    internal func shareContent(shareType: String, shareText: String, shareLink: String) {
+        // set up activity view controller
+        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + " " + shareLink
+        activityController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
+        activityController.popoverPresentationController?.sourceView = view // so that iPads won't crash
+        
+        // exclude some activity types from the list (optional)
+        activityController.excludedActivityTypes = [ UIActivityType.airDrop ]
+        
+        // present the view controller
+        present(activityController, animated: true, completion: nil)
     }
     
     /**

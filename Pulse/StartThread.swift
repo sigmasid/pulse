@@ -1,8 +1,8 @@
 //
-//  NewSeries.swift
+//  StartThread.swift
 //  Pulse
 //
-//  Created by Sidharth Tiwari on 3/20/17.
+//  Created by Sidharth Tiwari on 3/22/17.
 //  Copyright © 2017 Think Apart. All rights reserved.
 //
 
@@ -10,19 +10,13 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class StartThread: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     //Set by parent
-    public var selectedChannel : Channel! {
-        didSet {
-            Database.getSeriesTypes(completion: { seriesTypes in
-                self.allItems = seriesTypes
-                self.updateDataSource()
-            })
-        }
-    }
+    public var selectedChannel : Channel!
+    public var selectedItem : Item!
     
     //UI Vars
-    fileprivate var sAddCover = UIView()
+    fileprivate var sAddCover = UIImageView()
     fileprivate var sShowCamera = PulseButton(size: .large, type: .camera, isRound: true, background: .white, tint: .black)
     fileprivate var sShowCameraLabel = UILabel()
     
@@ -33,32 +27,11 @@ class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControlle
     fileprivate var sType = PaddingLabel()
     fileprivate var sTypeDescription = PaddingLabel()
     
-    //Collection View Vars
-    fileprivate var collectionView : UICollectionView!
-    fileprivate var allItems = [Item]()
-    fileprivate var centerIndex = 0 {
-        didSet {
-            updateDescription(index: centerIndex)
-        }
-    }
-    internal var collectionViewLayout: QuickBrowseLayout!
-
-    
     //Capture Image
     internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
     fileprivate lazy var cameraVC : CameraVC = CameraVC()
     fileprivate var capturedImage : UIImage?
     fileprivate var contentType : CreatedAssetType? = .recordedImage
-    
-    //Collection View Animation Vars
-    fileprivate var animationsCount = 0
-    internal var pageWidth: CGFloat {
-        return collectionViewLayout.itemSize.width + collectionViewLayout.minimumLineSpacing
-    }
-    
-    internal var contentOffset: CGFloat {
-        return collectionView.contentOffset.x + collectionView.contentInset.left
-    }
     
     fileprivate var isLoaded = false
     
@@ -76,73 +49,26 @@ class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControlle
     }
     
     deinit {
-        allItems = []
         capturedImage = nil
-    }
-    
-    internal func scrollToPage(index: Int, animated: Bool) {
-        collectionView.isUserInteractionEnabled = false
-        animationsCount += 1
-        
-        let pageOffset = CGFloat(index) * self.pageWidth - self.collectionView.contentInset.left
-        collectionView.setContentOffset(CGPoint(x: pageOffset, y: 0), animated: true)
-        
-        centerIndex = index
     }
     
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
         
-        headerNav?.setNav(title: "Start a New Series", subtitle: selectedChannel.cTitle)
+        headerNav?.setNav(title: "Start a New Thread", subtitle: selectedItem.itemTitle ?? selectedChannel.cTitle)
         headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
         headerNav?.showNavbar(animated: true)
     }
     
-    internal func updateDescription(index: Int) {
-        sTypeDescription.text = allItems[index].itemDescription
-    }
-    
-    internal func updateDataSource() {
-        if collectionView != nil {
-            collectionView?.dataSource = self
-            collectionView?.delegate = self
-            
-            collectionView?.layoutIfNeeded()
-            collectionView?.reloadData()
-            
-            updateDescription(index: centerIndex)
-        }
-    }
-    
-    //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    internal func updateCell(_ cell: BrowseContentCell, atIndexPath indexPath: IndexPath) {
-        if let image = allItems[indexPath.row].content as? UIImage  {
-            cell.updateImage(image: image)
-        }
-        
-        if indexPath.row == centerIndex {
-            cell.updateLabel("\u{2714}   \(allItems[indexPath.row].itemTitle!)", _subtitle: nil)
-        } else {
-            cell.updateLabel(allItems[indexPath.row].itemTitle, _subtitle: nil)
-        }
-    }
-    
-    internal func updateOnscreenRows() {
-        if let visiblePaths = collectionView?.indexPathsForVisibleItems {
-            for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseContentCell
-                updateCell(cell, atIndexPath: indexPath)
-            }
-        }
-    }
-    
     internal func handleSubmit() {
+        guard let user = User.currentUser, user.uID != nil else { return }
+        
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
         let itemKey = databaseRef.child("items").childByAutoId().key
-        let item = Item(itemID: itemKey, type: getSelectedType())
+        let item = Item(itemID: itemKey, type: "thread")
         
         item.itemTitle = sTitle.text
         item.itemUserID = User.currentUser!.uID
@@ -151,7 +77,7 @@ class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControlle
         item.contentType = contentType
         item.cID = selectedChannel.cID
         
-        Database.addNewSeries(channelID: selectedChannel.cID, item: item, completion: { success, error in
+        Database.addThread(channelID: selectedChannel.cID, parentItem: selectedItem, item: item, completion: { success, error in
             if success, let capturedImage = self.capturedImage {
                 Database.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {(success, error) in
                     success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
@@ -163,17 +89,14 @@ class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControlle
                 })
             } else {
                 self.showErrorMenu(error: error!)
+                self.submitButton.setEnabled()
             }
         })
     }
     
-    internal func getSelectedType() -> String {
-        return allItems[centerIndex].itemID
-    }
-    
     internal func showSuccessMenu() {
-        let menu = UIAlertController(title: "Successfully Added Series",
-                                     message: "Tap okay to return to the channel page and start creating!",
+        let menu = UIAlertController(title: "Successfully Added Thread",
+                                     message: "Tap okay to return and start contributing to this thread!",
                                      preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
@@ -195,95 +118,26 @@ class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControlle
     }
 }
 
-extension NewSeries: UICollectionViewDataSource, UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return allItems.count
-    }
-    
-    func numberOfSections(in collectionView: UICollectionView) -> Int{
-        return 1
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 10.0, left: 0.0, bottom: 10.0, right: 0.0)
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell{
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseContentCell
-        
-        let currentItem = allItems[indexPath.row]
-        
-        
-        if indexPath.row == centerIndex {
-            cell.updateLabel("\u{2714}   \(currentItem.itemTitle!)", _subtitle: nil)
-        } else {
-            cell.updateLabel(currentItem.itemTitle, _subtitle: nil)
-        }
-        cell.updateImage(image: allItems[indexPath.row].content as? UIImage)
-        
-        if !currentItem.fetchedContent {
-            Database.getSeriesImage(seriesName: self.allItems[indexPath.row].itemID,
-                                    fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
-                if let data = data {
-                    self.allItems[indexPath.row].content = UIImage(data: data)
-                    
-                    DispatchQueue.main.async {
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
-                        }
-                    }
-                }
-                
-                self.allItems[indexPath.row].fetchedContent = true
-            })
-        }
-        
-        return cell
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
-        if collectionView.isDragging || collectionView.isDecelerating || collectionView.isTracking {
-            return
-        }
-        
-        if indexPath.row != centerIndex {
-            scrollToPage(index: indexPath.row, animated: true)
-        }
-    }
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        centerIndex = Int(self.contentOffset / self.pageWidth)
-        updateOnscreenRows()
-    }
-    
-    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        if animationsCount - 1 == 0 {
-            collectionView.isUserInteractionEnabled = true
-        }
-    }
-}
-
 //UI Elements
-extension NewSeries {
+extension StartThread {
     func setupLayout() {
         view.addSubview(sAddCover)
         view.addSubview(sShowCamera)
         view.addSubview(sShowCameraLabel)
-
+        
         view.addSubview(sTitle)
         view.addSubview(sDescription)
-        view.addSubview(sType)
-
+        
+        view.addSubview(sTypeDescription)
         view.addSubview(submitButton)
         
         sAddCover.translatesAutoresizingMaskIntoConstraints = false
         sAddCover.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         sAddCover.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         sAddCover.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        sAddCover.heightAnchor.constraint(equalToConstant: 125).isActive = true
+        sAddCover.heightAnchor.constraint(equalToConstant: 175).isActive = true
         sAddCover.layoutIfNeeded()
-        sAddCover.backgroundColor = UIColor.white.withAlphaComponent(0.7)
+        sAddCover.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
         
         sShowCamera.translatesAutoresizingMaskIntoConstraints = false
         sShowCamera.centerXAnchor.constraint(equalTo: sAddCover.centerXAnchor).isActive = true
@@ -293,7 +147,7 @@ extension NewSeries {
         sShowCamera.layoutIfNeeded()
         
         sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
-
+        
         sShowCameraLabel.translatesAutoresizingMaskIntoConstraints = false
         sShowCameraLabel.centerXAnchor.constraint(equalTo: sShowCamera.centerXAnchor).isActive = true
         sShowCameraLabel.topAnchor.constraint(equalTo: sShowCamera.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
@@ -314,59 +168,30 @@ extension NewSeries {
         
         sTitle.delegate = self
         sDescription.delegate = self
-
+        
         sTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         sDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         
         sTitle.layer.addSublayer(GlobalFunctions.addBorders(self.sTitle, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         sDescription.layer.addSublayer(GlobalFunctions.addBorders(self.sDescription, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         
-        sTitle.attributedPlaceholder = NSAttributedString(string: "short title for series",
-                                                             attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        sDescription.attributedPlaceholder = NSAttributedString(string: "short series description",
+        sTitle.attributedPlaceholder = NSAttributedString(string: "short title for thread",
+                                                          attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        sDescription.attributedPlaceholder = NSAttributedString(string: "short thread description",
                                                                 attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
-        sType.translatesAutoresizingMaskIntoConstraints = false
-        sType.topAnchor.constraint(equalTo: sDescription.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
-        sType.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sType.layoutIfNeeded()
-        
-        sType.text = "type of series"
-        sType.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
-
-        addCollectionView()
-        addSubmitButton()
-        
-    }
-    
-    internal func addCollectionView() {
-        collectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: UICollectionViewFlowLayout())
-        view.addSubview(collectionView)
-        view.addSubview(sTypeDescription)
-
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.topAnchor.constraint(equalTo: sType.bottomAnchor).isActive = true
-        collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        collectionView.heightAnchor.constraint(equalToConstant: 125).isActive = true
-        collectionView.layoutIfNeeded()
-        
-        collectionViewLayout = QuickBrowseLayout.configureLayout(collectionView: collectionView,
-                                                                 itemSize:   CGSize(width: collectionView.bounds.width * 0.3,
-                                                                                    height: collectionView.bounds.height - 10),
-                                                                 minimumLineSpacing: collectionView.bounds.width * 0.05)
-        collectionView?.register(BrowseContentCell.self, forCellWithReuseIdentifier: reuseIdentifier)
-        collectionView?.backgroundColor = UIColor.clear
         
         sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
-        sTypeDescription.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        sTypeDescription.topAnchor.constraint(equalTo: sDescription.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
-
+        
         sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "description for the type of series"
+        sTypeDescription.text = "Threads are open to all channel experts and any one invited by an expert to add their perspectives on the topic."
+        
+        addSubmitButton()
     }
     
     internal func addSubmitButton() {
@@ -377,7 +202,7 @@ extension NewSeries {
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
         
         submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        submitButton.setTitle("Add Series", for: UIControlState())
+        submitButton.setTitle("Start Perespectives Thread", for: UIControlState())
         submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         submitButton.setDisabled()
         
@@ -385,7 +210,7 @@ extension NewSeries {
     }
 }
 
-extension NewSeries: UITextFieldDelegate {
+extension StartThread: UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == sTitle, textField.text != "", sDescription.text != "" {
             submitButton.setEnabled()
@@ -409,16 +234,16 @@ extension NewSeries: UITextFieldDelegate {
         }
         
         if textField == sTitle, let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 33
+            return text.characters.count + (text.characters.count - range.length) <= 100
         } else if textField == sDescription, let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 70
+            return text.characters.count + (text.characters.count - range.length) <= 150
         }
         
         return true
     }
 }
 
-extension NewSeries: CameraDelegate {
+extension StartThread: CameraDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
     func showCamera() {
         guard let nav = navigationController else { return }
@@ -448,26 +273,25 @@ extension NewSeries: CameraDelegate {
         UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
                        completion: {(value: Bool) in
                         
-            DispatchQueue.main.async {
-                self.cameraVC.toggleLoading(show: false, message: nil)
-                
-                if let capturedImage = self.capturedImage {
-                    self.sShowCamera.setImage(capturedImage, for: .normal)
-                    self.sShowCamera.imageView?.contentMode = .scaleAspectFill
-                    self.sShowCamera.imageView?.clipsToBounds = true
-                    self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-                    self.sShowCamera.clipsToBounds = true
-                    
-                    self.sShowCameraLabel.text = "tap image to change"
-                    self.sShowCameraLabel.textColor = .gray
-                }
-                
-                //update the header
-                self.cameraVC.dismiss(animated: true, completion: nil)
-            }
-
+                        DispatchQueue.main.async {
+                            self.cameraVC.toggleLoading(show: false, message: nil)
+                            
+                            if let capturedImage = self.capturedImage {
+                                self.sAddCover.image = capturedImage
+                                self.sAddCover.contentMode = .scaleAspectFill
+                                self.sAddCover.clipsToBounds = true
+                                
+                                self.sShowCamera.imageView?.alpha = 0.5
+                                self.sShowCameraLabel.text = "tap icon to change"
+                                self.sShowCameraLabel.textColor = .white
+                            }
+                            
+                            //update the header
+                            self.cameraVC.dismiss(animated: true, completion: nil)
+                        }
+                        
         })
-
+        
     }
     
     func userDismissedCamera() {
@@ -494,16 +318,15 @@ extension NewSeries: CameraDelegate {
         
         picker.dismiss(animated: true, completion: nil)
         capturedImage = info[UIImagePickerControllerOriginalImage] as? UIImage
-        
+
         if let capturedImage = capturedImage {
-            self.sShowCamera.setImage(capturedImage, for: .normal)
-            self.sShowCamera.imageView?.contentMode = .scaleAspectFill
-            self.sShowCamera.imageView?.clipsToBounds = true
-            self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-            self.sShowCamera.clipsToBounds = true
+            self.sAddCover.image = capturedImage
+            self.sAddCover.contentMode = .scaleAspectFill
+            self.sAddCover.clipsToBounds = true
             
-            self.sShowCameraLabel.text = "tap image to change"
-            self.sShowCameraLabel.textColor = .gray
+            self.sShowCamera.imageView?.alpha = 0.5
+            self.sShowCameraLabel.text = "tap icon to change"
+            self.sShowCameraLabel.textColor = .white
             
             cameraVC.dismiss(animated: true, completion: nil)
         }

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HeaderChannelsCell: UICollectionViewCell {
+class HeaderChannelsCell: UICollectionViewCell, SelectionDelegate {
     public var channels = [Channel]() {
         didSet {
             if channels != oldValue {
@@ -54,6 +54,12 @@ class HeaderChannelsCell: UICollectionViewCell {
         collectionView.backgroundColor = .white
         collectionView.showsHorizontalScrollIndicator = false
     }
+    
+    internal func userSelected(item : Any) {
+        if delegate != nil, let itemIndex = item as? Int {
+            delegate.userSelected(item: channels[itemIndex])
+        }
+    }
 }
 
 extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
@@ -63,20 +69,25 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
+        cell.delegate = self
+        cell.tag = indexPath.row
         
         let channel = channels[indexPath.row]
-        cell.updateCell(channel.cTitle?.capitalized, _image : nil)
-        Database.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
-            if let data = data {
-                self.channels[indexPath.row].cPreviewImage = UIImage(data: data)
-                
-                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                    DispatchQueue.main.async {
-                        cell.updateCell(channel.cTitle?.capitalized, _image : UIImage(data: data))
+        cell.updateCell(channel.cTitle?.capitalized, _image : channel.cThumbImage)
+        
+        if channel.cThumbImage == nil {
+            Database.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
+                if let data = data {
+                    self.channels[indexPath.row].cThumbImage = UIImage(data: data)
+                    
+                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                        DispatchQueue.main.async {
+                            cell.updateCell(channel.cTitle?.capitalized, _image : UIImage(data: data))
+                        }
                     }
                 }
-            }
-        })
+            })
+        }
         
         return cell
     }
@@ -93,8 +104,6 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if delegate != nil {
-            delegate.userSelected(item: channels[indexPath.row])
-        }
+        userSelected(item: indexPath.row)
     }
 }

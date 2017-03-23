@@ -33,7 +33,7 @@ class ItemCell: UICollectionViewCell {
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
                 titleLabel.numberOfLines = 3
 
-            case .post:
+            case .post, .thread, .perspective:
                 itemHeightAnchor.constant = defaultPostHeight
                 titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
                 titleLabel.numberOfLines = 2
@@ -87,6 +87,14 @@ class ItemCell: UICollectionViewCell {
                     let restAttributedString = NSAttributedString(string: " answered", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
 
+                case .thread:
+                    let restAttributedString = NSAttributedString(string: " started thread", attributes: subRestAttributes)
+                    attributedString.append(restAttributedString)
+                    
+                case .perspective:
+                    let restAttributedString = NSAttributedString(string: " added a perspective", attributes: subRestAttributes)
+                    attributedString.append(restAttributedString)
+                    
                 default:
                     break
                 }

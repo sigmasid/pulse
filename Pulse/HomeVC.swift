@@ -81,15 +81,20 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
     
     func updateFeed() {
         if User.isLoggedIn() {
-            
             Database.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
                 var indexPaths = [IndexPath]()
-                for (index, item) in items.enumerated() {
-                    self.allItems.append(item)
+                for (index, _) in items.enumerated() {
                     let newIndexPath = IndexPath(row: index , section: 1)
                     indexPaths.append(newIndexPath)
                 }
-                self.collectionView?.insertItems(at: indexPaths)
+                if self.allItems.isEmpty {
+                    self.collectionView?.reloadData()
+                }
+                
+                self.collectionView.performBatchUpdates({
+                    self.collectionView?.insertItems(at: indexPaths)
+                    self.allItems.append(contentsOf: items)
+                })
             })
             
             startUpdateAt = endUpdateAt
@@ -107,9 +112,9 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
         
         Database.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
             var indexPaths = [IndexPath]()
-            for (index, item) in items.enumerated() {
+            for (_, item) in items.enumerated() {
                 self.allItems.append(item)
-                let newIndexPath = IndexPath(row: self.allItems.count + index - 1, section: 1)
+                let newIndexPath = IndexPath(row: self.allItems.count - 1, section: 1)
                 indexPaths.append(newIndexPath)
             }
             self.collectionView?.insertItems(at: indexPaths)
@@ -153,6 +158,15 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
             isLayoutSetup = true
         }
     }
+    
+    internal func showSubscriptions() {
+        let subscriptionVC = ExploreChannelsVC()
+        subscriptionVC.forUser = true
+
+        navigationController?.pushViewController(subscriptionVC, animated: true)
+        
+        subscriptionVC.allChannels = self.allChannels
+    }
 }
 
 
@@ -193,15 +207,15 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
             let currentItem = allItems[indexPath.row]
-            cell.tag = indexPath.row
             cell.itemType = currentItem.type
 
             //clear the cells and set the item type first
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
 
+            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective
             //Get the image if content type is a post
-            if currentItem.content == nil, currentItem.type == .post, !currentItem.fetchedContent {
+            if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
                 Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
@@ -300,7 +314,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     internal func updateOnscreenRows() {
         let visiblePaths = collectionView.indexPathsForVisibleItems
         for indexPath in visiblePaths {
-            if indexPath.section == 0 {
+            if indexPath.section == 0, allChannels.count > 0 {
                 let cell = collectionView.cellForItem(at: indexPath) as! HeaderChannelsCell
                 cell.channels = allChannels
             } else if indexPath.section == 1 {
@@ -327,16 +341,13 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     /** Delegate Functions **/
-    internal func userSelected(user: User) {
-
-    }
-    
     fileprivate func updateHeader() {
         let logoButton = PulseButton(size: .small, type: .logo, isRound : true, background: .white, tint: .black)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: logoButton)
         
         headerNav?.showNavbar(animated: true)
         headerNav?.setNav(title: "PULSE")
+        headerNav?.updateBackgroundImage(image: nil)
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
     
@@ -345,12 +356,14 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         if let item = item as? Item {
             switch item.type {
             case .answer:
+                
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-            case .post:
+                
+            case .post, .perspective:
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
 
-            case .question:
+            case .question, .thread:
                 
                 showBrowse(selectedItem: item)
                 
@@ -359,7 +372,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 showTag(selectedItem: item)
                 
             default: break
-        }
+            }
         } else if let user = item as? User {
             
             let userProfileVC = UserProfileVC()
@@ -415,15 +428,23 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     internal func showTag(selectedItem : Item) {
         let tagDetailVC = TagCollectionVC()
-        //tagDetailVC.selectedChannel = selectedChannel
         
         navigationController?.pushViewController(tagDetailVC, animated: true)
         tagDetailVC.selectedItem = selectedItem
-        
     }
     
     internal func userClickedMenu() {
-        //implement user selected menu
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "browse Subscriptions", style: .default, handler: { (action: UIAlertAction!) in
+            self.showSubscriptions()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
     }
     
     func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HeaderTagsCell: UICollectionViewCell {
+class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     public var items = [Item]() {
         didSet {
             if items != oldValue {
@@ -84,6 +84,8 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         
         let item = items[indexPath.row]
         cell.updateCell(item.itemTitle.capitalized, _image : item.content as? UIImage)
+        cell.tag = indexPath.row
+        cell.delegate = self
         
         if item.content == nil, !item.fetchedContent {
             Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
@@ -117,12 +119,7 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if delegate != nil {
-            let selectedItem = items[indexPath.row]
-            selectedItem.cID = selectedChannel.cID
-            selectedItem.cTitle = selectedChannel.cTitle
-            delegate.userSelected(item: selectedItem)
-        }
+        userSelected(item: indexPath.row)
     }
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
@@ -131,5 +128,14 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
+    }
+    
+    internal func userSelected(item : Any) {
+        if delegate != nil, let itemIndex = item as? Int {
+            let selectedItem = items[itemIndex]
+            selectedItem.cID = selectedChannel.cID
+            selectedItem.cTitle = selectedChannel.cTitle
+            delegate.userSelected(item: selectedItem)
+        }
     }
 }
