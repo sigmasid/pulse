@@ -15,7 +15,9 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     public var selectedChannel : Channel!
     public var selectedItem : Item!
     
-    fileprivate var selectedUser : User!
+    fileprivate var selectedUser : User?
+    fileprivate var addEmail : AddText!
+    fileprivate var interviewID: String!
     
     fileprivate var iImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
     fileprivate var iName = UITextField()
@@ -75,40 +77,36 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         }
     }
     
-    internal func handleSubmit() {
+    internal func createInterviewRequest() {
+        guard let user = User.currentUser, user.uID != nil else {
+            GlobalFunctions.showErrorBlock("Please Login", erMessage: "You need to be logged in to send interview requests")
+            return
+        }
+        
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
         let itemKey = databaseRef.child("items").childByAutoId().key
         let item = Item(itemID: itemKey, type: "interview")
         
-        item.itemTitle = iName.text
+        item.itemTitle = iTopic.text
         item.itemUserID = User.currentUser!.uID
-        //item.itemDescription = sMessage.text
         item.cID = selectedChannel.cID
-    }
+        item.cTitle = selectedChannel.cTitle
+        item.tag = selectedItem
 
-    internal func showSuccessMenu() {
-        let menu = UIAlertController(title: "Successfully Added Interview",
-                                     message: "Tap okay to return to the series page!",
-                                     preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-            self.goBack()
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
-    internal func showErrorMenu(error : Error) {
-        let menu = UIAlertController(title: "Error Starting Interview", message: error.localizedDescription, preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
+        Database.createInterviewRequest(item: item, toUser: selectedUser, toName: iName.text!, questions: allQuestions, completion: { success, error in
+            if success, self.selectedUser != nil {
+                self.interviewID = itemKey
+                self.showSuccessMenu()
+            } else if success {
+                self.interviewID = itemKey
+                self.showNewUserInterviewMenu()
+            } else if let error = error {
+                self.showErrorMenu(error: error)
+            }
+            loading.removeFromSuperview()
+        })
     }
     
     func userClickedSearchUsers() {
@@ -130,48 +128,114 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     }
     
     /** Delegate Functions **/
-    func userClosedModal(_ viewController : UIViewController) {
+    internal func userClosedModal(_ viewController : UIViewController) {
         dismiss(animated: true, completion: { _ in })
     }
     
-    func dismiss(_ view : UIView) {
+    internal func dismiss(_ view : UIView) {
         view.removeFromSuperview()
     }
     
-    func buttonClicked(_ text: String) {
-        if let selectedIndex = selectedIndex {
-            let newIndexPath = IndexPath(row: selectedIndex, section: 0)
+    internal func buttonClicked(_ text: String, sender: UIView) {
+        if addQuestion != nil, sender == addQuestion {
+            if let selectedIndex = selectedIndex {
+                let newIndexPath = IndexPath(row: selectedIndex, section: 0)
 
-            allQuestions[selectedIndex] = text
-            tableView.reloadRows(at: [newIndexPath], with: .fade)
-            self.selectedIndex = nil
-            
-        } else {
-            let newIndexPath = IndexPath(row: 0, section: 0)
+                allQuestions[selectedIndex] = text
+                tableView.reloadRows(at: [newIndexPath], with: .fade)
+                self.selectedIndex = nil
+                
+            } else {
+                let newIndexPath = IndexPath(row: 0, section: 0)
 
-            allQuestions.insert(text, at: 0)
-            tableView.insertRows(at: [newIndexPath], with: .left)
+                allQuestions.insert(text, at: 0)
+                tableView.insertRows(at: [newIndexPath], with: .left)
+            }
+        } else if addEmail != nil, sender == addEmail {
+            GlobalFunctions.validateEmail(text, completion: {(success, error) in
+                if !success {
+                    self.showAddEmail(bodyText: "invalid email - try again")
+                } else {
+                    Database.addInterviewEmail(interviewID: interviewID, email: text, completion: {(success, error) in
+                        success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
+                    })
+                }
+            })
         }
     }
     
-    func userClickedMenu() {
+    internal func userClickedMenu() {
         userClickedMenu(bodyText: "")
     }
     
-    func userClickedMenu(bodyText: String, defaultBodyText: String = "type question") {
+    internal func userClickedMenu(bodyText: String, defaultBodyText: String = "type question") {
         addQuestion = AddText(frame: view.bounds, buttonText: "Add", bodyText: bodyText, defaultBodyText: defaultBodyText)
         addQuestion.delegate = self
         view.addSubview(addQuestion)
     }
     
-    func userSelected(item : Any) {
+    internal func userSelected(item : Any) {
         if let user = item as? User {
             selectedUser = user
-            iName.text = user.name
-            iImage.setImage(selectedUser.thumbPicImage, for: .normal)
+            iName.text = user.name?.capitalized
+            iImage.setImage(selectedUser?.thumbPicImage, for: .normal)
             iImage.clipsToBounds = true
             submitButton.setEnabled()
         }
+    }
+    
+    internal func showAddEmail(bodyText: String) {
+        addEmail = AddText(frame: view.bounds, buttonText: "Submit",
+                           bodyText: bodyText)
+        
+        addEmail.delegate = self
+        view.addSubview(addEmail)
+    }
+    
+    internal func showNewUserInterviewMenu() {
+        let menu = UIAlertController(title: "Interview Request Created!",
+                                     message: "How would you like to send it to the recipient",
+                                     preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "copy Interview Link", style: .default, handler: { (action: UIAlertAction!) in
+            //self.addInterview()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "send Interview Email", style: .default, handler: { (action: UIAlertAction!) in
+            self.showAddEmail(bodyText: "enter interviewee email")
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    
+    internal func showSuccessMenu() {
+        let menu = UIAlertController(title: "Successfully Added Interview",
+                                     message: "Tap okay to return to the series page!",
+                                     preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            self.submitButton.setEnabled()
+            self.goBack()
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showErrorMenu(error : Error) {
+        let menu = UIAlertController(title: "Error Starting Interview", message: error.localizedDescription, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            self.submitButton.setEnabled()
+        }))
+        
+        present(menu, animated: true, completion: nil)
     }
 }
 
@@ -332,7 +396,7 @@ extension NewInterviewVC {
         submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         submitButton.setDisabled()
         
-        submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
+        submitButton.addTarget(self, action: #selector(createInterviewRequest), for: .touchUpInside)
     }
 }
 

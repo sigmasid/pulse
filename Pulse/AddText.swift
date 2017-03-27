@@ -31,7 +31,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         super.init(frame: frame)
     }
     
-    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String) {
+    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String = "type here") {
         self.init(frame: frame)
         addObservers()
         
@@ -71,7 +71,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     func clickedDone() {
         if delegate != nil, let text = txtBody.text {
-            delegate.buttonClicked(text)
+            delegate.buttonClicked(text, sender: self)
             delegate.dismiss(self)
         }
     }

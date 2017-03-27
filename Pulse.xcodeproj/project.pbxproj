@@ -485,7 +485,6 @@
 			children = (
 				BA434FB31E5943A1004686CB /* ExploreChannelsVC.swift */,
 				BA434FB51E594697004686CB /* ExploreChannelsCell.swift */,
-				BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */,
 				BA53EAB81D70E08100357E5A /* ExploreVC.swift */,
 				BA0B68FF1D89F7370037A7C4 /* HomeVC.swift */,
 				BAE51E1F1D87353600677A50 /* MasterTabVC.swift */,
@@ -508,6 +507,7 @@
 		BAFE7E8B1D2CCC5300DEED6C /* Login */ = {
 			isa = PBXGroup;
 			children = (
+				BAF2940E1D46E6DA0046B073 /* AccountLoginManagerVC.swift */,
 				BA1DE1441D244D6B004F3ED2 /* LoginVC.swift */,
 				BA7D677C1D30D07400883B88 /* LoginCreateAccountVC.swift */,
 				BA7D677E1D30D0B100883B88 /* LoginAddNameVC.swift */,

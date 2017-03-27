@@ -1407,6 +1407,59 @@ class Database {
         })
     }
     
+    /** INTERVIEW REQUEST **/
+    static func createInterviewRequest(item: Item, toUser: User?, toName: String?, questions: [String], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        var itemPost : [String : Any] = ["title" : item.itemTitle,
+                                         "type" : "interview",
+                                         "fromUserID" : user.uid,
+                                         "fromUserName" : User.currentUser?.name ?? "",
+                                         "createdAt" : FIRServerValue.timestamp(),
+                                         "cID": item.cID,
+                                         "cTitle": item.cTitle,
+                                         "tagID": item.tag?.itemID ?? "",
+                                         "tagName": item.tag?.itemTitle ?? ""]
+        
+        //add in the questions
+        var questionDetail : [ String : String ] = [:]
+        for (index, question) in questions.enumerated() {
+            questionDetail["question\(index)"] = question
+        }
+        itemPost["questions"] = questionDetail
+        
+        //add in toUser
+        if let toUser = toUser {
+            itemPost["toUserID"] = toUser.uID
+            itemPost["toUserName"] = toUser.name ?? ""
+        } else {
+            itemPost["toUserName"] = toName ?? ""
+        }
+        
+        databaseRef.child("interviewRequests").child(item.itemID).updateChildValues(itemPost, withCompletionBlock: { (completionError, ref) in
+            if completionError == nil {
+                completion(true, nil)
+            } else {
+                completion(false, completionError)
+            }
+        })
+    }
+    
+    static func addInterviewEmail(interviewID: String, email: String,
+                                  completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        databaseRef.child("interviewRequests").child(interviewID).updateChildValues(["toUserEmail":email], withCompletionBlock: { (completionError, ref) in
+            if completionError == nil {
+                completion(true, nil)
+            } else {
+                completion(false, completionError)
+            }
+        })
+    }
+    
     /** ADD NEW SERIES TO CHANNEL **/
     static func addNewSeries(channelID: String, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         

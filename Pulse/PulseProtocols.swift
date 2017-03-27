@@ -24,7 +24,7 @@ protocol ParentDelegate: class {
 
 protocol ParentTextViewDelegate {
     func dismiss(_ view : UIView)
-    func buttonClicked(_ text: String)
+    func buttonClicked(_ text: String, sender: UIView)
 }
 
 protocol ItemCellDelegate : class {
