@@ -278,7 +278,7 @@ extension ChannelVC {
     }
     
     internal func startSeries() {
-        let newSeries = NewSeries()
+        let newSeries = NewSeriesVC()
         newSeries.selectedChannel = selectedChannel
         
         navigationController?.pushViewController(newSeries, animated: true)
@@ -299,7 +299,7 @@ extension ChannelVC {
                 
                 showBrowse(selectedItem: item)
                 
-            case .posts, .feedback, .perspectives:
+            case .posts, .feedback, .perspectives, .interviews:
                 
                 showTag(selectedItem: item)
                 

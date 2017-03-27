@@ -119,15 +119,17 @@ class Database {
         
         switch type {
         case .items:
-            query["index"] = "items"
-            query["type"] = "item"
+            query["index"] = "series"
+            query["type"] = "series"
+            query["fields"] = ["title","description","type","cID"]
         case .users:
-            query["index"] = "firebase"
+            query["index"] = "users"
             query["type"] = "users"
             query["fields"] = ["name","shortBio","thumbPic"]
         case .channels:
-            query["index"] = "questions"
-            query["type"] = "questions"
+            query["index"] = "channels"
+            query["type"] = "channels"
+            query["fields"] = ["title","description"]
         }
         
         let qTerm = ["_all":searchTerm]
@@ -152,8 +154,12 @@ class Database {
                     for result in snap.childSnapshot(forPath: "hits/hits").children {
 
                         if let result = result as? FIRDataSnapshot, let itemID = result.childSnapshot(forPath: "_id").value as? String {
-                            let currentItem = Item(itemID: itemID)
-                            currentItem.itemTitle = result.childSnapshot(forPath: "_source/title").value as? String
+                            let itemType = result.childSnapshot(forPath: "fields/type/0").value as? String
+                            let currentItem = Item(itemID: itemID, type: itemType ?? "")
+                            currentItem.itemTitle = result.childSnapshot(forPath: "fields/title/0").value as? String
+                            currentItem.itemDescription = result.childSnapshot(forPath: "fields/description/0").value as? String
+                            currentItem.cID = result.childSnapshot(forPath: "fields/cID/0").value as? String
+
                             _results.append(currentItem)
                         }
                     }
@@ -181,9 +187,11 @@ class Database {
                     for result in snap.childSnapshot(forPath: "hits/hits").children {
                         
                         if let result = result as? FIRDataSnapshot, let id = result.childSnapshot(forPath: "_id").value as? String {
-                            
-                            let channel = Channel(cID: id, title: result.childSnapshot(forPath: "_source/title").value as? String ?? "")
-                            channel.cDescription = result.childSnapshot(forPath: "_source/description").value as? String
+                            let cDescription = result.childSnapshot(forPath: "fields/description/0").value as? String
+                            let cTitle = result.childSnapshot(forPath: "fields/title/0").value as? String
+
+                            let channel = Channel(cID: id, title: cTitle ?? "")
+                            channel.cDescription = cDescription
 
                             _results.append(channel)
                         }

@@ -173,6 +173,14 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         closeButton.addTarget(self, action: #selector(closeModal), for: UIControlEvents.touchUpInside)
     }
     
+    //If we want to go to a right menu button - currently using button in header
+    internal func addMenuButton() {
+        let menuButton = PulseButton(size: .small, type: .ellipsis, isRound: true, hasBackground: false, tint: .black)
+        menuButton.removeShadow()
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: menuButton)
+        menuButton.addTarget(self, action: #selector(showMenu), for: .touchUpInside)
+    }
+    
     internal func closeModal() {
         if modalDelegate != nil {
             modalDelegate.userClosedModal(self)

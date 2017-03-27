@@ -19,7 +19,7 @@ protocol SelectionDelegate: class {
 }
 
 protocol ParentDelegate: class {
-    func dismiss(_ viewController : UIViewController)
+    func dismissVC(_ viewController : UIViewController)
 }
 
 protocol ParentTextViewDelegate {

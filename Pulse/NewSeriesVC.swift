@@ -1,5 +1,5 @@
 //
-//  NewSeries.swift
+//  NewSeriesVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 3/20/17.
@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     //Set by parent
     public var selectedChannel : Channel! {
         didSet {
@@ -195,7 +195,7 @@ class NewSeries: PulseVC, UIImagePickerControllerDelegate, UINavigationControlle
     }
 }
 
-extension NewSeries: UICollectionViewDataSource, UICollectionViewDelegate {
+extension NewSeriesVC: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return allItems.count
     }
@@ -265,7 +265,7 @@ extension NewSeries: UICollectionViewDataSource, UICollectionViewDelegate {
 }
 
 //UI Elements
-extension NewSeries {
+extension NewSeriesVC {
     func setupLayout() {
         view.addSubview(sAddCover)
         view.addSubview(sShowCamera)
@@ -385,7 +385,7 @@ extension NewSeries {
     }
 }
 
-extension NewSeries: UITextFieldDelegate {
+extension NewSeriesVC: UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == sTitle, textField.text != "", sDescription.text != "" {
             submitButton.setEnabled()
@@ -418,7 +418,7 @@ extension NewSeries: UITextFieldDelegate {
     }
 }
 
-extension NewSeries: CameraDelegate {
+extension NewSeriesVC: CameraDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
     func showCamera() {
         guard let nav = navigationController else { return }

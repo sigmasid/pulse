@@ -430,6 +430,7 @@ enum Spacing: CGFloat {
     case m = 30
     case l = 40
     case xl = 50
+    case xxl = 60
 }
 
 enum buttonCornerRadius : CGFloat {

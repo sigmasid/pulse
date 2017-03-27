@@ -72,7 +72,7 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
     func dismissMsg() {
         if delegate != nil {
             msgBody.resignFirstResponder()
-            delegate.dismiss(self)
+            delegate.dismissVC(self)
         }
     }
     

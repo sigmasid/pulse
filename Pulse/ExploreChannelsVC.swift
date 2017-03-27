@@ -12,7 +12,7 @@ protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
 }
 
-class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
+class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate {
     
     // Set by MasterTabVC
     public var universalLink : URL!
@@ -108,6 +108,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
         searchNavVC.modalTransitionStyle = .crossDissolve
 
         searchVC.modalDelegate = self
+        searchVC.selectionDelegate = self
         searchNavVC.viewControllers = [searchVC]
         
         navigationController?.present(searchNavVC, animated: true, completion: nil)
@@ -135,6 +136,41 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate {
                 }
             }
         })
+    }
+    
+    internal func userSelected(item : Any) {
+        if let item = item as? Item {
+            switch item.type {
+                
+            case .posts, .feedback, .perspectives, .interviews:
+                
+                let tagDetailVC = TagCollectionVC()
+                tagDetailVC.selectedChannel = Channel(cID: item.cID)
+                
+                navigationController?.pushViewController(tagDetailVC, animated: true)
+                tagDetailVC.selectedItem = item
+                
+            default: break
+            }
+        } else if let user = item as? User {
+            
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
+            
+        } else if let channel = item as? Channel {
+            
+            showChannel(channel: channel)
+            
+        }
+    }
+    
+    internal func showChannel(channel : Channel) {
+        
+        let channelVC = ChannelVC()
+        navigationController?.pushViewController(channelVC, animated: true)
+        channelVC.selectedChannel = channel
+        
     }
 }
 
@@ -182,13 +218,12 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let channelVC = ChannelVC()
-        let selectedChannel = allChannels[indexPath.row]
-        navigationController?.pushViewController(channelVC, animated: true)
-        channelVC.selectedChannel = selectedChannel
+        
+        showChannel(channel: allChannels[indexPath.row])
+        
     }
     
-    func updateOnscreenRows() {
+    internal func updateOnscreenRows() {
         if channelCollection != nil {
             let visiblePaths = channelCollection.indexPathsForVisibleItems
             for indexPath in visiblePaths {

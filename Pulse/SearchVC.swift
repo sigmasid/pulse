@@ -101,7 +101,7 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
     
     fileprivate func setupScope() {
         let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: scopeBarHeight)
-        scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Channels", "Items", "People"] , selectedItemHighlightStyle: .bottomEdge)
+        scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Channels", "Series", "People"] , selectedItemHighlightStyle: .bottomEdge)
         scopeBar.delegate = self
         scopeBar.addBottomBorder()
         
@@ -143,6 +143,9 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
         case 2: searchScope = .users
         default: searchScope = nil
         }
+        
+        results = []
+        tableView.reloadData()
     }
 }
 
@@ -162,20 +165,24 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
         switch searchScope! {
         case .channels:
             if let channel = results[indexPath.row] as? Channel {
-                cell.titleLabel.text = channel.cTitle
+                cell.titleLabel.text = channel.cTitle?.capitalized
                 cell.subtitleLabel.text = channel.cDescription
-                cell.iconButton.setImage(UIImage(named: "tag"), for: UIControlState())
+                cell.iconButton.setImage(UIImage(named: "channels"), for: UIControlState())
+                cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
             }
         case .items:
             if let item = results[indexPath.row] as? Item {
                 cell.titleLabel.text = item.itemTitle
-                cell.iconButton.setImage(UIImage(named: "question"), for: UIControlState())
+                cell.subtitleLabel.text = item.itemDescription
+                cell.iconButton.setImage(UIImage(named: "browse-circle"), for: UIControlState())
+                cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
             }
         case .users:
             if let user = results[indexPath.row] as? User {
                 cell.titleLabel.text = user.name
                 cell.subtitleLabel.text = user.shortBio
                 cell.iconButton.setImage(UIImage(named: "default-profile"), for: UIControlState())
+                cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
             }
         }
         
@@ -188,11 +195,10 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let item = results[indexPath.row]
-        selectionDelegate.userSelected(item: item)
-    }
-    
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return headerText
+        if selectionDelegate != nil {
+            selectionDelegate.userSelected(item: item)
+            closeSearch()
+        }
     }
     
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
@@ -212,7 +218,10 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
     // MARK: - Search controller delegate methods
     
     func updateSearchResults(for searchController: UISearchController) {
-        headerText = "Searching..."
+        if !results.isEmpty  {
+            results = []
+            tableView.reloadData()
+        }
     }
     
     func searchBarShouldEndEditing(_ searchBar: UISearchBar) -> Bool {

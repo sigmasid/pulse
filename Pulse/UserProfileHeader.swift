@@ -63,25 +63,27 @@ class UserProfileHeader: UICollectionReusableView {
         }
     }
     
-    fileprivate func setupProfileDetails() {
-        addSubview(profileImage)
-        addSubview(profileName)
-        addSubview(profileShortBio)
-        addSubview(profileLongBio)
+    internal func addMenu() {
         addSubview(menuButton)
-
-        profileImage.translatesAutoresizingMaskIntoConstraints = false
-        profileImage.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.m.rawValue).isActive = true
-        profileImage.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        profileImage.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        profileImage.widthAnchor.constraint(equalTo: profileImage.heightAnchor).isActive = true
-        
         menuButton.frame = CGRect(x: bounds.maxX - IconSizes.medium.rawValue - Spacing.xs.rawValue,
                                   y: Spacing.xs.rawValue,
                                   width: IconSizes.medium.rawValue,
                                   height: IconSizes.medium.rawValue)
         menuButton.removeShadow()
         menuButton.addTarget(self, action: #selector(showMenu), for: .touchUpInside)
+    }
+    
+    fileprivate func setupProfileDetails() {
+        addSubview(profileImage)
+        addSubview(profileName)
+        addSubview(profileShortBio)
+        addSubview(profileLongBio)
+
+        profileImage.translatesAutoresizingMaskIntoConstraints = false
+        profileImage.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.m.rawValue).isActive = true
+        profileImage.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        profileImage.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        profileImage.widthAnchor.constraint(equalTo: profileImage.heightAnchor).isActive = true
         
         profileName.translatesAutoresizingMaskIntoConstraints = false
         profileName.topAnchor.constraint(equalTo: profileImage.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
@@ -121,6 +123,8 @@ class UserProfileHeader: UICollectionReusableView {
         profileImage.layoutIfNeeded()
         profileImage.contentMode = .scaleAspectFill
         profileImage.makeRound()
+        
+        addMenu()
     }
     
 }

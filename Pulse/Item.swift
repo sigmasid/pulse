@@ -24,7 +24,10 @@ enum ItemTypes: String {
     case perspectives
     case perspective
     case thread
-    //All the rest
+    //Interviews
+    case interviews
+    case interview
+    //The rest to come
     case unknown
 }
 
@@ -152,6 +155,10 @@ class Item: NSObject {
             self.type = .perspectives
         case "perspective":
             self.type = .perspective
+        case "interviews":
+            self.type = .interviews
+        case "interview":
+            self.type = .interview
         case "thread":
             self.type = .thread
         default:
@@ -165,6 +172,9 @@ class Item: NSObject {
         case .posts: return " post"
         case .thread: return " perspective"
         case .question: return " answer"
+        case .interviews: return " interview"
+        case .interview: return " question"
+
         default: return " entry"
         }
     }
@@ -174,6 +184,8 @@ class Item: NSObject {
         case .posts: return .post
         case .thread: return .perspective
         case .question: return .answer
+        case .interviews: return .interview
+        case .interview: return .question
         default: return .unknown
         }
     }

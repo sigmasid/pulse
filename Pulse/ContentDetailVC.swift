@@ -691,7 +691,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         _isExploring = true
     }
     
-    func dismiss(_ viewController: UIViewController) {
+    func dismissVC(_ viewController: UIViewController) {
         GlobalFunctions.dismissVC(viewController)
     }
     

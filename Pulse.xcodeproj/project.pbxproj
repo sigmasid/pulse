@@ -36,7 +36,7 @@
 		BA1DE8741E6A6C5900AD5A46 /* PulseVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1DE8731E6A6C5900AD5A46 /* PulseVC.swift */; };
 		BA2246311E82ED95009BD5A3 /* StartThread.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2246301E82ED95009BD5A3 /* StartThread.swift */; };
 		BA250E651E4042B60049F237 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BA250E641E4042B60049F237 /* MapKit.framework */; };
-		BA2AED961E80468C004EBAA4 /* NewSeries.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2AED951E80468C004EBAA4 /* NewSeries.swift */; };
+		BA2AED961E80468C004EBAA4 /* NewSeriesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2AED951E80468C004EBAA4 /* NewSeriesVC.swift */; };
 		BA2C46331E1C30B400CA8655 /* ApplyExpertVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2C46321E1C30B400CA8655 /* ApplyExpertVC.swift */; };
 		BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */; };
 		BA2CCC141D4A9618003C94FC /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2CCC131D4A9618003C94FC /* Settings.swift */; };
@@ -54,6 +54,8 @@
 		BA5640111E70DE700001A534 /* HeaderTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5640101E70DE700001A534 /* HeaderTitle.swift */; };
 		BA5C62D01E5D1D5F000823AB /* TagCollectionVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5C62CF1E5D1D5F000823AB /* TagCollectionVC.swift */; };
 		BA5E7A241E5A7E0C00FEE34A /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */; };
+		BA659EFB1E8446FC004C46F9 /* NewInterviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA659EFA1E8446FC004C46F9 /* NewInterviewVC.swift */; };
+		BA659EFD1E844F32004C46F9 /* ItemTableHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA659EFC1E844F32004C46F9 /* ItemTableHeader.swift */; };
 		BA6B78B61D2E2620003EE992 /* RecordingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6B78B51D2E2620003EE992 /* RecordingOverlay.swift */; };
 		BA710BE01DA6F6860018D88D /* SearchTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA710BDF1DA6F6860018D88D /* SearchTableCell.swift */; };
 		BA722DEC1E5A4AE400E9699D /* ItemHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA722DEB1E5A4AE400E9699D /* ItemHeader.swift */; };
@@ -71,6 +73,7 @@
 		BA7D677D1D30D07400883B88 /* LoginCreateAccountVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D677C1D30D07400883B88 /* LoginCreateAccountVC.swift */; };
 		BA7D677F1D30D0B100883B88 /* LoginAddNameVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D677E1D30D0B100883B88 /* LoginAddNameVC.swift */; };
 		BA7D67811D30DEA100883B88 /* globalFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D67801D30DEA100883B88 /* globalFunctions.swift */; };
+		BA7EF9401E849DE100660FB2 /* MiniUserSearchVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7EF93F1E849DE100660FB2 /* MiniUserSearchVC.swift */; };
 		BA819D781D5E82EA002D69FA /* PulseMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA819D771D5E82EA002D69FA /* PulseMenu.swift */; };
 		BA92F7521DA2C5ED00B89D66 /* MessageVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7511DA2C5ED00B89D66 /* MessageVC.swift */; };
 		BA92F7541DA31B2F00B89D66 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7531DA31B2F00B89D66 /* Message.swift */; };
@@ -143,7 +146,7 @@
 		BA1DE8731E6A6C5900AD5A46 /* PulseVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseVC.swift; sourceTree = "<group>"; };
 		BA2246301E82ED95009BD5A3 /* StartThread.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StartThread.swift; sourceTree = "<group>"; };
 		BA250E641E4042B60049F237 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
-		BA2AED951E80468C004EBAA4 /* NewSeries.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewSeries.swift; sourceTree = "<group>"; };
+		BA2AED951E80468C004EBAA4 /* NewSeriesVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewSeriesVC.swift; sourceTree = "<group>"; };
 		BA2C46321E1C30B400CA8655 /* ApplyExpertVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ApplyExpertVC.swift; sourceTree = "<group>"; };
 		BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableVC.swift; sourceTree = "<group>"; };
 		BA2CCC131D4A9618003C94FC /* Settings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
@@ -161,6 +164,8 @@
 		BA5640101E70DE700001A534 /* HeaderTitle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HeaderTitle.swift; sourceTree = "<group>"; };
 		BA5C62CF1E5D1D5F000823AB /* TagCollectionVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagCollectionVC.swift; sourceTree = "<group>"; };
 		BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
+		BA659EFA1E8446FC004C46F9 /* NewInterviewVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewInterviewVC.swift; sourceTree = "<group>"; };
+		BA659EFC1E844F32004C46F9 /* ItemTableHeader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemTableHeader.swift; sourceTree = "<group>"; };
 		BA6B78B51D2E2620003EE992 /* RecordingOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecordingOverlay.swift; sourceTree = "<group>"; };
 		BA710BDF1DA6F6860018D88D /* SearchTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchTableCell.swift; sourceTree = "<group>"; };
 		BA722DEB1E5A4AE400E9699D /* ItemHeader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemHeader.swift; sourceTree = "<group>"; };
@@ -178,6 +183,7 @@
 		BA7D677C1D30D07400883B88 /* LoginCreateAccountVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginCreateAccountVC.swift; sourceTree = "<group>"; };
 		BA7D677E1D30D0B100883B88 /* LoginAddNameVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginAddNameVC.swift; sourceTree = "<group>"; };
 		BA7D67801D30DEA100883B88 /* globalFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = globalFunctions.swift; sourceTree = "<group>"; };
+		BA7EF93F1E849DE100660FB2 /* MiniUserSearchVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MiniUserSearchVC.swift; sourceTree = "<group>"; };
 		BA819D771D5E82EA002D69FA /* PulseMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseMenu.swift; sourceTree = "<group>"; };
 		BA92F7511DA2C5ED00B89D66 /* MessageVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageVC.swift; sourceTree = "<group>"; };
 		BA92F7531DA31B2F00B89D66 /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
@@ -257,6 +263,7 @@
 			children = (
 				BAFD76D91D9C8384005FBBD0 /* SearchVC.swift */,
 				BA710BDF1DA6F6860018D88D /* SearchTableCell.swift */,
+				BA7EF93F1E849DE100660FB2 /* MiniUserSearchVC.swift */,
 			);
 			name = "Standalone Search";
 			sourceTree = "<group>";
@@ -276,6 +283,7 @@
 		BA03C43C1DB5A53900277382 /* Pulse Shared */ = {
 			isa = PBXGroup;
 			children = (
+				BA10B8BF1E7AFF4C000F6622 /* AddText.swift */,
 				BA06EDEC1DA7081C00F880EE /* XMSegmentedControl.swift */,
 				BA17FC051D3E0AEC00DC952D /* LoadingView.swift */,
 				BAB03AC51D80AB0500090147 /* IconContainer.swift */,
@@ -341,7 +349,9 @@
 				BAB7B1EC1DDFC30D00EA9DD2 /* AskQuestionVC.swift */,
 				BAD37D611D2640E800BACB04 /* Database.swift */,
 				BA2C46321E1C30B400CA8655 /* ApplyExpertVC.swift */,
-				BA2AED951E80468C004EBAA4 /* NewSeries.swift */,
+				BA2246301E82ED95009BD5A3 /* StartThread.swift */,
+				BA2AED951E80468C004EBAA4 /* NewSeriesVC.swift */,
+				BA659EFA1E8446FC004C46F9 /* NewInterviewVC.swift */,
 			);
 			path = Pulse;
 			sourceTree = "<group>";
@@ -411,7 +421,6 @@
 				BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */,
 				BAFA8F321D42984F00C1BB14 /* FiltersOverlay.swift */,
 				BAFA8F341D42987000C1BB14 /* FiltersCell.swift */,
-				BA10B8BF1E7AFF4C000F6622 /* AddText.swift */,
 			);
 			name = "User Recorded Item";
 			sourceTree = "<group>";
@@ -428,7 +437,7 @@
 				BA722DEB1E5A4AE400E9699D /* ItemHeader.swift */,
 				BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */,
 				BAC918511E73241E005772EC /* EmptyCell.swift */,
-				BA2246301E82ED95009BD5A3 /* StartThread.swift */,
+				BA659EFC1E844F32004C46F9 /* ItemTableHeader.swift */,
 			);
 			name = Items;
 			sourceTree = "<group>";
@@ -670,6 +679,7 @@
 				BA434FAC1E592BE7004686CB /* HeaderTags.swift in Sources */,
 				BA1C48BE1D243704008F8A04 /* ViewController.swift in Sources */,
 				BAF2940F1D46E6DA0046B073 /* AccountLoginManagerVC.swift in Sources */,
+				BA659EFD1E844F32004C46F9 /* ItemTableHeader.swift in Sources */,
 				BA92F7521DA2C5ED00B89D66 /* MessageVC.swift in Sources */,
 				BAB03AC01D7F510C00090147 /* ExpandAnimationController.swift in Sources */,
 				BA1DE1451D244D6B004F3ED2 /* LoginVC.swift in Sources */,
@@ -694,7 +704,7 @@
 				BA79B69F1E5627FA0037CE3A /* UserProfileVC.swift in Sources */,
 				BA79FA571E469FF2004E50EE /* Reachability.swift in Sources */,
 				BA5E7A241E5A7E0C00FEE34A /* ItemCell.swift in Sources */,
-				BA2AED961E80468C004EBAA4 /* NewSeries.swift in Sources */,
+				BA2AED961E80468C004EBAA4 /* NewSeriesVC.swift in Sources */,
 				BA5C62D01E5D1D5F000823AB /* TagCollectionVC.swift in Sources */,
 				BA92F7541DA31B2F00B89D66 /* Message.swift in Sources */,
 				BAF0FC161E6746E30069BA9A /* QuickBrowseLayout.swift in Sources */,
@@ -710,6 +720,7 @@
 				BAE842E51E09095000FBC0B7 /* LoadingVC.swift in Sources */,
 				BA1DE86F1E69460100AD5A46 /* MiniMessageVC.swift in Sources */,
 				BA434FB41E5943A1004686CB /* ExploreChannelsVC.swift in Sources */,
+				BA659EFB1E8446FC004C46F9 /* NewInterviewVC.swift in Sources */,
 				BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */,
 				BA7D677D1D30D07400883B88 /* LoginCreateAccountVC.swift in Sources */,
 				BAC918521E73241F005772EC /* EmptyCell.swift in Sources */,
@@ -717,6 +728,7 @@
 				BA53EAB91D70E08100357E5A /* ExploreVC.swift in Sources */,
 				BAA794A01D7A50C700700AF7 /* BaseAnimator.swift in Sources */,
 				BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */,
+				BA7EF9401E849DE100660FB2 /* MiniUserSearchVC.swift in Sources */,
 				BA1DE1421D244C9F004F3ED2 /* globalExtensions.swift in Sources */,
 				BAE51E201D87353600677A50 /* MasterTabVC.swift in Sources */,
 				BA434FB01E59331A004686CB /* Channel.swift in Sources */,

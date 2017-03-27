@@ -24,13 +24,20 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     fileprivate var containerHeightConstraint: NSLayoutConstraint!
     fileprivate var tap: UITapGestureRecognizer!
     
-    
+    fileprivate var bodyText : String = ""
+    fileprivate var defaultBodyText : String = "type here"
+
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
     
-    convenience init(frame: CGRect, buttonText: String, bodyText: String) {
+    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String) {
         self.init(frame: frame)
+        addObservers()
+        
+        self.bodyText = bodyText
+        self.defaultBodyText = defaultBodyText
+        
         setupLayout(buttonText: buttonText, bodyText: bodyText)
         txtBody.becomeFirstResponder()
 
@@ -41,7 +48,9 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     }
     
     deinit {
-        removeGestureRecognizer(tap)
+        if tap != nil {
+            removeGestureRecognizer(tap)
+        }
     }
     
     func addObservers() {
@@ -53,6 +62,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
             tap = UITapGestureRecognizer(target: self, action: #selector(dismissView))
             tap.cancelsTouchesInView = false
             tap.isEnabled = true
+            tap.delegate = self
             addGestureRecognizer(tap)
             
             observersAdded = true
@@ -62,11 +72,16 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     func clickedDone() {
         if delegate != nil, let text = txtBody.text {
             delegate.buttonClicked(text)
+            delegate.dismiss(self)
         }
     }
     
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return false
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if touch.view == txtButton {
+            return false
+        }
+        
+        return true
     }
 
     func dismissView() {
@@ -102,6 +117,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         containerHeightConstraint.isActive = true
         txtContainer.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         txtContainer.backgroundColor = .white
+        txtContainer.layoutIfNeeded()
         
         txtButton.translatesAutoresizingMaskIntoConstraints = false
         txtButton.trailingAnchor.constraint(equalTo: txtContainer.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
@@ -124,14 +140,13 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         txtBody.delegate = self
         txtBody.textColor = UIColor.black
         txtBody.isScrollEnabled = false
-        txtBody.text = bodyText
+        txtBody.text = bodyText != "" ? bodyText : defaultBodyText
         
         txtButton.makeRound()
         txtButton.setTitle(buttonText, for: UIControlState())
         txtButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
         txtButton.setDisabled()
         txtButton.backgroundColor = .pulseRed
-        txtContainer.layoutIfNeeded()
         
         txtButton.addTarget(self, action: #selector(clickedDone), for: .touchUpInside)
     }
@@ -147,7 +162,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     }
     
     func textViewDidBeginEditing(_ textView: UITextView) {
-        if textView.text == "Type your message here" {
+        if textView.text == defaultBodyText {
             textView.text = ""
             textView.textColor = UIColor.black
         }
@@ -155,7 +170,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text == "" {
-            textView.text = "Type your message here"
+            textView.text = defaultBodyText
             textView.textColor = UIColor.lightGray
             txtButton.setDisabled()
         }
@@ -166,6 +181,14 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
             clickedDone()
             textView.resignFirstResponder()
             return false
+        }
+        
+        let  char = text.cString(using: String.Encoding.utf8)!
+        let isBackSpace = strcmp(char, "\\b")
+        
+        if isBackSpace == -92, textView.text == bodyText {
+            textView.text = ""
+            return true
         }
         
         return textView.text.characters.count + (text.characters.count - range.length) <= 140

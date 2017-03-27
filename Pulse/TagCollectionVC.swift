@@ -81,6 +81,8 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
             showFeedbackMenu()
         case .perspectives:
             showPerspectivesMenu()
+        case .interviews:
+            showInterviewMenu()
         default: return
         }
     }
@@ -91,6 +93,13 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate 
         questionVC.delegate = self
         
         GlobalFunctions.addNewVC(questionVC, parentVC: self)
+    }
+    
+    internal func addInterview() {
+        let interviewVC = NewInterviewVC()
+        interviewVC.selectedItem = selectedItem
+        interviewVC.selectedChannel = selectedChannel
+        navigationController?.pushViewController(interviewVC, animated: true)
     }
     
     internal func startThread() {
@@ -452,6 +461,24 @@ extension TagCollectionVC {
         
         menu.addAction(UIAlertAction(title: "new Post", style: .default, handler: { (action: UIAlertAction!) in
             self.addItem(for: self.selectedItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
+            self.showShare()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    func showInterviewMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "new Interview", style: .default, handler: { (action: UIAlertAction!) in
+            self.addInterview()
         }))
         
         menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in

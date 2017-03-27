@@ -27,7 +27,11 @@ public class PulseNavBar: UINavigationBar {
         super.layoutSubviews()
         for view in self.subviews {
             if view.isKind(of: UIButton.self) {
-                view.frame.origin.y = Spacing.xs.rawValue
+                if view.backgroundColor == nil {
+                    view.frame.origin.y = Spacing.xs.rawValue + Spacing.xxs.rawValue
+                } else {
+                    view.frame.origin.y = Spacing.xs.rawValue
+                }
             }
         }
     }
