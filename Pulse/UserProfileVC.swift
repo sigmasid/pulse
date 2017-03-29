@@ -322,17 +322,28 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     }
     /** End Delegate Functions **/
     
-    internal func showItemDetail(selectedItem : Item) {
-        //need to be set first
-        
+    internal func showItemDetail(selectedItem : Item?, allItems: [Item]) {
         contentVC = ContentManagerVC()
         contentVC.watchedFullPreview = false
-        contentVC.allItems = [selectedItem]
+        
+        if let selectedItem = selectedItem {
+            contentVC.selectedItem = selectedItem
+            contentVC.allItems = allItems
+            contentVC.selectedChannel = Channel(cID: selectedItem.cID)
+        } else {
+            contentVC.allItems = allItems
+            contentVC.selectedChannel = Channel(cID: allItems.first!.cID)
+        }
+        
         contentVC.openingScreen = .item
-        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
         
         contentVC.transitioningDelegate = self
         present(contentVC, animated: true, completion: nil)
+    }
+    
+    internal func showItemDetail(selectedItem : Item) {
+        //need to be set first
+        showItemDetail(selectedItem: nil, allItems: [selectedItem])
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
@@ -383,6 +394,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         } else if itemStack[indexPath.row].gettingImageForPreview {
             
             //ignore if already fetching the image, so don't refetch if already getting
+            
         } else if currentItem.itemCreated {
             itemStack[indexPath.row].gettingImageForPreview = true
             
@@ -447,22 +459,36 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
         
         if indexPath == selectedIndex && indexPath == deselectedIndex {
+            
             showItemDetail(selectedItem: currentItem)
+            
         } else if indexPath == selectedIndex {
             //if item has more than initial clip, show 'see more at the end'
             watchedFullPreview = false
             
-            Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
-                if hasDetail {
-                    cell.showTapForMore = true
-                    self.itemStack[indexPath.row].itemCollection = itemCollection
-                } else {
-                    cell.showTapForMore = false
-                }
-            })
-            
-            cell.delegate = self
-            cell.showItemPreview(item: currentItem)
+            //if interview just go directly to full screen
+            if currentItem.type != .interview {
+                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                    if hasDetail {
+                        cell.showTapForMore = true
+                        self.itemStack[indexPath.row].itemCollection = itemCollection
+                    } else {
+                        cell.showTapForMore = false
+                    }
+                })
+                
+                cell.delegate = self
+                cell.showItemPreview(item: currentItem)
+            } else {
+                toggleLoading(show: true, message: "loading interview...")
+                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                    self.toggleLoading(show: false, message: nil)
+                    self.showItemDetail(selectedItem : currentItem, allItems: itemCollection)
+                    self.selectedIndex = nil
+                    self.deselectedIndex = nil
+
+                })
+            }
             
         } else if indexPath == deselectedIndex {
             cell.removePreview()

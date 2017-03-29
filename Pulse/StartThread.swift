@@ -33,7 +33,6 @@ class StartThread: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     fileprivate var capturedImage : UIImage?
     fileprivate var contentType : CreatedAssetType? = .recordedImage
     
-    fileprivate var isLoaded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()

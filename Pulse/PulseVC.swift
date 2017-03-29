@@ -32,7 +32,10 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     /** Close Button - Only Needed If Presented Modally **/
     internal lazy var closeButton = PulseButton(size: .medium, type: .close, isRound : true, background: .white, tint: .black)
     internal lazy var backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
-
+    
+    /** General Setup Var **/
+    internal var isLoaded : Bool = false
+    
     public var headerNav : PulseNavVC?
     public var statusBarHidden : Bool = false {
         didSet {

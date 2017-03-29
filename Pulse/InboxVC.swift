@@ -11,13 +11,14 @@ import UIKit
 class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     
     var tableView : UITableView!
-    var isLoaded = false
     
     var conversations = [Conversation]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
+            NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+
             setupLayout()
             updateDataSource()
         }
@@ -45,6 +46,15 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
         view.addSubview(tableView)
         
         isLoaded = true
+    }
+    
+    internal func userUpdated() {
+        if let user = User.currentUser, user.uID != nil {
+            updateDataSource()
+        } else {
+            conversations = []
+            tableView.reloadData()
+        }
     }
     
     internal func updateDataSource() {
@@ -133,14 +143,21 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let conversation = conversations[indexPath.row]
         
-        let messageVC = MessageVC()
-        messageVC.toUser = conversation.cUser
-        
-        if let currentUserImage = conversation.cUser.thumbPicImage {
-            messageVC.toUserImage = currentUserImage
+        if conversation.cType == .message {
+            let messageVC = MessageVC()
+            messageVC.toUser = conversation.cUser
+            
+            if let currentUserImage = conversation.cUser.thumbPicImage {
+                messageVC.toUserImage = currentUserImage
+            }
+            
+            navigationController?.pushViewController(messageVC, animated: true)
+        } else if conversation.cType == .interviewInvite {
+            let interviewVC = InterviewRequestVC()
+            interviewVC.interviewItemID = conversation.cID
+            
+            navigationController?.pushViewController(interviewVC, animated: true)
         }
-        
-        navigationController?.pushViewController(messageVC, animated: true)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

@@ -68,7 +68,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate var _canAdvanceDetailReady = false
     fileprivate var _hasUserBeenAskedQuestion = false
     fileprivate var _isObserving = false
-    fileprivate var _isLoaded = false
     fileprivate var _isMenuShowing = false
     fileprivate var _isMiniProfileShown = false
     fileprivate var _isImageViewShown = false
@@ -89,7 +88,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if !_isLoaded {
+        if !isLoaded {
             tabBarHidden = true
             statusBarHidden = true
             
@@ -131,7 +130,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                                                                     NotificationCenter.default.post(name: Notification.Name(rawValue: "PlaybackStartedNotification"),
                                                                                                     object: self)}) as AnyObject!
             
-            _isLoaded = true
+            isLoaded = true
         }
     }
 

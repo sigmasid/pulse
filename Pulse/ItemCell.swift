@@ -95,6 +95,10 @@ class ItemCell: UICollectionViewCell {
                     let restAttributedString = NSAttributedString(string: " added a perspective", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
+                case .interview:
+                    let restAttributedString = NSAttributedString(string: " interview", attributes: subRestAttributes)
+                    attributedString.append(restAttributedString)
+                    
                 default:
                     break
                 }

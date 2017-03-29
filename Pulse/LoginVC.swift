@@ -28,7 +28,6 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     
-    fileprivate var _isLoaded = false
     var _currentLoadedView : currentLoadedView?
 
     enum currentLoadedView {
@@ -61,7 +60,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     }
     
     override func viewDidLayoutSubviews() {
-        if !_isLoaded {
+        if !isLoaded {
             hideKeyboardWhenTappedAround()
             setupView()
             emailButton.setDisabled()
@@ -69,7 +68,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
             
             NotificationCenter.default.addObserver(self, selector: #selector(onFBProfileUpdated), name:NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
             
-            _isLoaded = true
+            isLoaded = true
         }
     }
     

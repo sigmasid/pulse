@@ -17,9 +17,7 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     @IBOutlet weak var signupButton: UIButton!
-    
-    fileprivate var isLoaded = false
-    
+        
     fileprivate var emailValidated = false {
         didSet {
             if emailValidated && passwordValidated {

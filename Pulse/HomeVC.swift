@@ -15,7 +15,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
     var allChannels = [Channel]()
     var allUsers = [User]() //to keep user data cached
     
-    fileprivate var isLoaded = false
     fileprivate var isLayoutSetup = false
     
     //fileprivate var feed : Tag!

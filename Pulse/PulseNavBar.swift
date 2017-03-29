@@ -110,8 +110,10 @@ public class PulseNavBar: UINavigationBar {
         let navSubtitleHeight = GlobalFunctions.getLabelSize(title: "Channel Name", width: navTitle.frame.width, fontAttributes: navSubtitlefontAttributes)
         navSubtitle.frame = CGRect(x: IconSizes.large.rawValue, y: navBarSize.height - navSubtitleHeight - Spacing.xs.rawValue,
                                    width: UIScreen.main.bounds.width - ( 2 * IconSizes.large.rawValue ), height: navSubtitleHeight)
-        navSubtitle.lineBreakMode = .byTruncatingTail
         navSubtitle.numberOfLines = 1
+        navSubtitle.lineBreakMode = .byTruncatingTail
+        navSubtitle.adjustsFontSizeToFitWidth = true
+        navSubtitle.minimumScaleFactor = 0.2
         
         isDetailSetup = true
     }

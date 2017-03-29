@@ -37,6 +37,10 @@ protocol CameraDelegate : class {
     func showAlbumPicker()
 }
 
+protocol InterviewDelegate : class {
+    func doneInterviewQuestion(success: Bool)
+}
+
 //Used by Preview VC to indicate that user watched full preview -> so full screen goes to index + 1
 protocol PreviewDelegate: class {
     var  watchedFullPreview : Bool { get set }
@@ -47,7 +51,7 @@ protocol ContentDelegate: class {
     func removeIntro()
     func askUserToLogin(_: UIViewController)
     func loginSuccess(_ : UIViewController)
-    func doneUploadingAnswer(_: UIViewController)
+    func doneUploadingItem(_: UIViewController, success: Bool)
     
     func userDismissedRecording(_: UIViewController, recordedItems : [Item])
     func minItemsShown()

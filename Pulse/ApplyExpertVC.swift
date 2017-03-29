@@ -12,8 +12,6 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
 
     public var selectedChannel : Channel!
     
-    fileprivate var isLoaded = false
-    
     fileprivate var applyView = UIView()
     fileprivate var applyText = UITextView()
     fileprivate var applyButton = PulseButton()

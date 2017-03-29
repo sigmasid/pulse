@@ -16,7 +16,7 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
     fileprivate lazy var previewImage = UIImageView()
     fileprivate lazy var titleStack = PulseMenu(_axis: .vertical, _spacing: 0)
     
-    fileprivate lazy var previewVC : Preview = Preview()
+    fileprivate lazy var preview : Preview = Preview()
     fileprivate var previewAdded = false
     fileprivate var reuseCell = false
     
@@ -31,7 +31,7 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
     
     var showTapForMore = false {
         didSet {
-            previewVC.showTapForMore = showTapForMore ? true : false
+            preview.showTapForMore = showTapForMore ? true : false
         }
     }
     
@@ -95,9 +95,9 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
     }
     
     func showItemPreview(item : Item) {
-        previewVC = Preview(frame: contentView.bounds)
-        previewVC.delegate = self
-        previewVC.currentItem = item
+        preview = Preview(frame: contentView.bounds)
+        preview.delegate = self
+        preview.currentItem = item
         previewImage.isHidden = true
         titleStack.isHidden = true
         
@@ -105,14 +105,14 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
                            duration: 0.5,
                            options: .transitionFlipFromLeft,
                            animations: {
-                            _ in self.contentView.addSubview(self.previewVC)
+                            _ in self.contentView.addSubview(self.preview)
         }, completion: nil)
         previewAdded = true
     }
     
     func removePreview() {
-        previewVC.removeClip()
-        previewVC.removeFromSuperview()
+        preview.removeClip()
+        preview.removeFromSuperview()
         
         previewImage.isHidden = false
         titleStack.isHidden = false

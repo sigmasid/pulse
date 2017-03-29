@@ -17,7 +17,6 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
     fileprivate var settingsTable = UITableView()
     
     fileprivate var isLayoutSetup = false
-    fileprivate var isLoaded = false
 
     //Update Profile Image
     internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()

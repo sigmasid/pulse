@@ -18,13 +18,12 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     fileprivate var selectedUser : User?
     fileprivate var addEmail : AddText!
     fileprivate var interviewID: String!
-    
+
     fileprivate var iImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
     fileprivate var iName = UITextField()
     fileprivate var iTopic = UITextField()
     fileprivate var submitButton = UIButton()
     
-    fileprivate var sType = PaddingLabel()
     fileprivate var sTypeDescription = PaddingLabel()
     fileprivate var addQuestion : AddText!
     
@@ -32,7 +31,6 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     fileprivate var tableView : UITableView!
     fileprivate var allQuestions = [String]()
     
-    fileprivate var isLoaded = false
     fileprivate var headerSetup = false
     fileprivate let addButton = PulseButton(size: .small, type: .add, isRound: true, background: .white, tint: .black)
     fileprivate let searchButton = PulseButton(size: .small, type: .search, isRound: true, hasBackground: false, tint: .black)
@@ -98,7 +96,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         Database.createInterviewRequest(item: item, toUser: selectedUser, toName: iName.text!, questions: allQuestions, completion: { success, error in
             if success, self.selectedUser != nil {
                 self.interviewID = itemKey
-                self.showSuccessMenu()
+                self.showSuccessMenu(message: "Successfully Added Interview")
             } else if success {
                 self.interviewID = itemKey
                 self.showNewUserInterviewMenu()
@@ -157,7 +155,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
                     self.showAddEmail(bodyText: "invalid email - try again")
                 } else {
                     Database.addInterviewEmail(interviewID: interviewID, email: text, completion: {(success, error) in
-                        success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
+                        success ? self.showSuccessMenu(message: "Successfully Added Interview") : self.showErrorMenu(error: error!)
                     })
                 }
             })
@@ -198,7 +196,13 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
                                      preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "copy Interview Link", style: .default, handler: { (action: UIAlertAction!) in
-            //self.addInterview()
+            self.toggleLoading(show: true, message: "creating interview link...", showIcon: true)
+            let interviewItem = Item(itemID: self.interviewID, type: "interview")
+            interviewItem.createShareLink(completion: { link in
+                self.toggleLoading(show: false, message: nil)
+                UIPasteboard.general.string = link
+                self.showSuccessMenu(message: "Copied link to clipboard!")
+            })
         }))
         
         menu.addAction(UIAlertAction(title: "send Interview Email", style: .default, handler: { (action: UIAlertAction!) in
@@ -207,14 +211,20 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
+            DispatchQueue.main.async {
+                self.submitButton.setTitle("Send Interview Request", for: .normal)
+                self.submitButton.removeTarget(self, action: #selector(self.createInterviewRequest), for: .touchUpInside)
+                self.submitButton.addTarget(self, action: #selector(self.showNewUserInterviewMenu), for: .touchUpInside)
+                self.submitButton.setEnabled()
+            }
         }))
         
         present(menu, animated: true, completion: nil)
     }
     
     
-    internal func showSuccessMenu() {
-        let menu = UIAlertController(title: "Successfully Added Interview",
+    internal func showSuccessMenu(message: String) {
+        let menu = UIAlertController(title: message,
                                      message: "Tap okay to return to the series page!",
                                      preferredStyle: .actionSheet)
         

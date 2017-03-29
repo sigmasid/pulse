@@ -518,6 +518,47 @@ class Database {
         })
     }
     
+    static func getInterviewItem(_ itemID : String, completion: @escaping (_ item : Item?, _ questions: [Item], _ toUser : User?, _ error : NSError?) -> Void) {
+        var allQuestions = [Item]()
+        var toUser : User? = nil
+        
+        databaseRef.child("interviewRequests").child(itemID).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                let currentItem = Item(itemID: itemID, snapshot: snap)
+                if let userID = snap.childSnapshot(forPath: "fromUserID").value as? String {
+                    currentItem.user = User(uID: userID)
+                }
+                
+                if let userName = snap.childSnapshot(forPath: "fromUserName").value as? String {
+                    currentItem.user?.name = userName
+                }
+                
+                if snap.childSnapshot(forPath: "questions").exists() {
+                    for question in snap.childSnapshot(forPath: "questions").children {
+                        if let qSnap = question as? FIRDataSnapshot, let qTitle = qSnap.value as? String {
+                            let newItem = Item(itemID: qSnap.key)
+                            newItem.itemTitle = qTitle
+                            allQuestions.append(newItem)
+                        }
+                    }
+                }
+                
+                if let toUserID = snap.childSnapshot(forPath: "toUserID").value as? String, User.currentUser?.uID != nil, toUserID == User.currentUser?.uID! {
+                    toUser = User.currentUser
+                } else if let toUserID = snap.childSnapshot(forPath: "toUserID").value as? String {
+                    toUser = User(uID: toUserID)
+                    toUser?.name = snap.childSnapshot(forPath: "toUserName").value as? String
+                }
+                
+                completion(currentItem, allQuestions, toUser, nil)
+            }
+            else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
+                completion(nil, allQuestions, nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
+            }
+        })
+    }
+    
     static func getSeriesTypes(completion: @escaping (_ allItems : [Item]) -> Void) {
         var allItems = [Item]()
         
@@ -1179,10 +1220,15 @@ class Database {
     }
     
     ///Save collection into question / user
-    static func addItemCollectionToDatabase(_ item : Item, parentItemID : String, channelID : String, post : [String : String],
+    static func addItemCollectionToDatabase(_ item : Item, parentItem : Item, channelID : String, post : [String : String],
                                             completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         
-        let _user = FIRAuth.auth()?.currentUser
+        guard let _user = FIRAuth.auth()?.currentUser else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
+        }
+        
         var collectionPost : [AnyHashable: Any?]!
         
         var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
@@ -1199,19 +1245,45 @@ class Database {
         if let url = item.contentURL?.absoluteString {
             channelPost["url"] = url as AnyObject?
         }
-        collectionPost = ["userDetailedPublicSummary/\(_user!.uid)/items/\(item.itemID)": item.type.rawValue,
-                          "itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
-                          "channelItems/\(channelID)/\(item.itemID)":channelPost,
-                          "itemCollection/\(parentItemID)/\(item.itemID)" : item.type.rawValue]
+        
+        collectionPost = ["itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
+                          "itemCollection/\(parentItem.itemID)/\(item.itemID)" : item.type.rawValue as AnyObject]
+        
+        if parentItem.type != .interview {
+            collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
+            collectionPost["userDetailedPublicSummary/\(_user.uid)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+        }
 
-        if _user != nil {
-            databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
-                blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
-            })
-        } else {
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
+            blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
+        })
+    }
+    
+    static func addInterviewToDatabase(interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        guard let _user = FIRAuth.auth()?.currentUser else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
         }
+
+        let channelPost : [String : AnyObject] = ["type" : interviewParentItem.type.rawValue as AnyObject,
+                                                  "tagID" : interviewParentItem.tag?.itemID as AnyObject,
+                                                  "tagTitle" : interviewParentItem.tag?.itemTitle as AnyObject,
+                                                  "title" : interviewParentItem.itemTitle as AnyObject,
+                                                  "uID" : _user.uid as AnyObject,
+                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        var collectionPost = ["userDetailedPublicSummary/\(_user.uid)/items/\(interviewParentItem.itemID)": interviewParentItem.type.rawValue as AnyObject,
+                              "items/\(interviewParentItem.itemID)" : channelPost,
+                              "channelItems/\(interviewParentItem.cID!)/\(interviewParentItem.itemID)" : channelPost] as [String : Any]
+        
+        if let tagID = interviewParentItem.tag?.itemID {
+            collectionPost["itemCollection/\(tagID)/\(interviewParentItem.itemID)"] = interviewParentItem.type.rawValue as AnyObject
+        }
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
+            blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
+        })
     }
     
     static func updateItemViewCount(itemID : String) {
@@ -1423,24 +1495,38 @@ class Database {
                                          "cID": item.cID,
                                          "cTitle": item.cTitle,
                                          "tagID": item.tag?.itemID ?? "",
-                                         "tagName": item.tag?.itemTitle ?? ""]
+                                         "tagTitle": item.tag?.itemTitle ?? ""]
+        
+        var userPost : [String : Any] = ["title" : item.itemTitle,
+                                         "type" : "interview",
+                                         "createdAt" : FIRServerValue.timestamp()]
         
         //add in the questions
         var questionDetail : [ String : String ] = [:]
-        for (index, question) in questions.enumerated() {
-            questionDetail["question\(index)"] = question
+        for question in questions {
+            let questionID = databaseRef.child("interviewRequests").child(item.itemID).child("questions").childByAutoId().key
+            questionDetail[questionID] = question
         }
+        
         itemPost["questions"] = questionDetail
         
         //add in toUser
         if let toUser = toUser {
             itemPost["toUserID"] = toUser.uID
             itemPost["toUserName"] = toUser.name ?? ""
+            
+            userPost["toUserID"] = toUser.uID
+            userPost["toUserName"] = toUser.name ?? ""
+            
         } else {
             itemPost["toUserName"] = toName ?? ""
+            userPost["toUserName"] = toName ?? ""
         }
         
-        databaseRef.child("interviewRequests").child(item.itemID).updateChildValues(itemPost, withCompletionBlock: { (completionError, ref) in
+        let collectionPost = ["interviewRequests/\(item.itemID)": itemPost,
+                              "users/\(user.uid)/sentInterviewRequests" : userPost]
+        
+        databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
             if completionError == nil {
                 completion(true, nil)
             } else {

@@ -18,9 +18,11 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     var itemIndex = 0
     var watchedFullPreview = false
     var itemCollection = [Item]()
+    var createdItemKey : String?
     
     var openingScreen : OpeningScreenOptions = .item
     enum OpeningScreenOptions { case camera, item }
+    var interviewDelegate : InterviewDelegate!
 
     fileprivate var recordedItems = [Item]()
     
@@ -194,7 +196,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         if isAddingCover {
             recordedItems.first?.content = image
         } else {
-            let itemKey = databaseRef.child("items").childByAutoId().key
+            //in case parent provides key for first item use that (interview case) else create a new key. After creation marks the createdItemKey as nil
+            let itemKey = createdItemKey != nil ? createdItemKey! : databaseRef.child("items").childByAutoId().key
+            createdItemKey = nil
+            
             let item = Item(itemID: itemKey,
                         itemUserID: User.currentUser!.uID!,
                         itemTitle: getRecordedItemTitle(),
@@ -210,7 +215,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         recordedVideoVC.delegate = self
         
         recordedVideoVC.selectedChannelID = selectedChannel.cID
-        recordedVideoVC.parentItemID = selectedItem.itemID
+        recordedVideoVC.parentItem = selectedItem
         recordedVideoVC.isNewEntry = true
         recordedVideoVC.recordedItems = recordedItems
         
@@ -228,7 +233,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     fileprivate func getRecordedItemTitle() -> String {
         switch selectedItem.type {
-        case .question, .thread:
+        case .question, .thread, .interview:
             return selectedItem.itemTitle
         default:
             return ""
@@ -262,7 +267,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
 
     
-    func doneUploadingAnswer(_ currentVC: UIViewController) {
+    func doneUploadingItem(_ currentVC: UIViewController, success: Bool) {
         recordedItems.removeAll() // empty current answers array
         
         if hasMoreItems {
@@ -270,6 +275,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             popToViewController(contentDetailVC, animated: true)
         } else {
             self.dismiss(animated: true, completion: nil)
+            
+            if interviewDelegate != nil {
+                interviewDelegate.doneInterviewQuestion(success: success)
+            }
         }
     }
     
@@ -351,7 +360,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         introVC = ContentIntroVC()
         if selectedItem != nil {
             switch selectedItem.type {
-            case .question, .answer, .perspective, .post, .thread:
+            case .question, .answer, .perspective, .post, .thread, .interview:
                 //selected item is a tag
                 introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].tag?.itemTitle
             case .feedback, .posts, .perspectives: //case of tag - this is currently never the case?

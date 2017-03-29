@@ -43,7 +43,6 @@ class MessageVC: PulseVC, UITextViewDelegate{
     fileprivate var hasConversationObserver = false
     fileprivate var isUserLoaded = false
     
-    fileprivate var isLoaded = false
     fileprivate var observersAdded = false
     
     override func viewDidLoad() {

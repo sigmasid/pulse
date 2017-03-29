@@ -116,6 +116,10 @@ class Item: NSObject {
             self.cID = cID
         }
         
+        if let cTitle = snapshot.childSnapshot(forPath: "cTitle").value as? String {
+            self.cTitle = cTitle
+        }
+        
         if let url = snapshot.childSnapshot(forPath: "url").value as? String {
             self.contentURL = URL(string: url)
         }
@@ -173,7 +177,7 @@ class Item: NSObject {
         case .thread: return " perspective"
         case .question: return " answer"
         case .interviews: return " interview"
-        case .interview: return " question"
+        case .interview: return " answer"
 
         default: return " entry"
         }
@@ -185,7 +189,7 @@ class Item: NSObject {
         case .thread: return .perspective
         case .question: return .answer
         case .interviews: return .interview
-        case .interview: return .question
+        case .interview: return .answer
         default: return .unknown
         }
     }
@@ -214,6 +218,10 @@ class Item: NSObject {
             })
         case .answer:
             Database.createShareLink(linkString: "a/"+itemID, completion: { link in
+                completion(link)
+            })
+        case .interview:
+            Database.createShareLink(linkString: "interviewRequest/"+itemID, completion: { link in
                 completion(link)
             })
         default: completion(nil)

@@ -14,7 +14,6 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     public var selectedUser : User!
     public var delegate : ModalDelegate!
     
-    fileprivate var isLoaded = false
     fileprivate var observersAdded = false
     
     fileprivate var questionContainer = UIView()

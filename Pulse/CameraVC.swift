@@ -13,13 +13,12 @@ protocol CameraManagerProtocol: class {
     func didReachMaxRecording(_ fileURL : URL?, image: UIImage?, error : NSError?)
 }
 
-class CameraVC: UIViewController, UIGestureRecognizerDelegate, CameraManagerProtocol {
+class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     public var cameraMode : CameraOutputMode = .videoWithMic
     
     fileprivate let camera = CameraManager()
     fileprivate var cameraOverlay : CameraOverlayView!
     fileprivate var loadingOverlay : LoadingView!
-    fileprivate var isLoaded = false
     
     /* duration set in milliseconds */
     fileprivate let videoDuration : Double = 60

@@ -34,7 +34,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     public var selectedChannelID : String! //used to upload to right folders
-    public var parentItemID : String! //to add to right collection
+    public var parentItem : Item! //to add to right collection
     public var coverAdded : Bool = false {
         didSet {
             if coverAdded {
@@ -237,13 +237,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         let confirmLogout = UIAlertController(title: "Post", message: "Would you like to add a cover image? Cover images help content stand out.",
                                               preferredStyle: .actionSheet)
         
-        confirmLogout.addAction(UIAlertAction(title: "Choose Cover", style: .default, handler: { (action: UIAlertAction!) in
+        confirmLogout.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: { (action: UIAlertAction!) in
             if let delegate = self.delegate {
                 delegate.addMoreItems(self, recordedItems: self.recordedItems, isCover : true)
             }
         }))
         
-        confirmLogout.addAction(UIAlertAction(title: "Continue Posting", style: .destructive, handler: { (action: UIAlertAction!) in
+        confirmLogout.addAction(UIAlertAction(title: "continue Posting", style: .destructive, handler: { (action: UIAlertAction!) in
             self.controlsOverlay.addProgressLabel("Posting...")
             self.controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
             self.uploadItems(allItems: self.recordedItems)
@@ -361,7 +361,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     ///Called after user has uploaded full answer
     fileprivate func doneCreatingAnswer() {
         Database.addItemCollectionToDatabase(recordedItems.first!,
-                                             parentItemID: parentItemID,
+                                             parentItem: parentItem,
                                              channelID: selectedChannelID,
                                              post: itemCollectionPost,
                                              completion: {(success, error) in
@@ -371,7 +371,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                 self.currentVideo = nil
                 self.looper.disableLooping()
                 
-                delegate.doneUploadingAnswer(self)
+                delegate.doneUploadingItem(self, success: success)
             }
         })
     }

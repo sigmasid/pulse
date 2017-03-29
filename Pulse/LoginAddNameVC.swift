@@ -22,8 +22,6 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
     
     fileprivate var cameraVC : CameraVC!
     internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
-
-    fileprivate var isLoaded = false
     
     override func viewDidLoad() {
         super.viewDidLoad()

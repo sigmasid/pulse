@@ -183,6 +183,16 @@ extension UIViewController {
     }
 }
 
+class VerticallyCenteredTextView: UITextView {
+    override var contentSize: CGSize {
+        didSet {
+            var topCorrection = (bounds.size.height - contentSize.height * zoomScale) / 2.0
+            topCorrection = max(0, topCorrection)
+            contentInset = UIEdgeInsets(top: topCorrection, left: 0, bottom: 0, right: 0)
+        }
+    }
+}
+
 extension UILabel {
     func setFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
@@ -374,6 +384,8 @@ extension TimeInterval {
     }
 }
 
+/** START ENUMS **/
+
 enum AuthStates {
     case loggedIn
     case loggedOut
@@ -384,11 +396,6 @@ enum AnimationStyle {
     case verticalDown
     case horizontal
     case horizontalFlip
-}
-
-enum ContentManagerDismissalType {
-    case seeAll
-    case reachedEnd
 }
 
 enum FollowToggle {
@@ -496,12 +503,6 @@ enum SectionTypes : String {
     }
 }
 
-enum PageType {
-    case home
-    case detail
-    case explore
-}
-
 enum Element : String {
     case Channels = "channels"
     case ChannelItems = "channelItems"
@@ -604,6 +605,12 @@ enum MediaAssetType {
         default: return .unknown
         }
     }
+}
+
+enum ConversationType {
+    case message
+    case interviewInvite
+    case channelInvite
 }
 
 struct ItemMetaData {

@@ -367,7 +367,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
             
             showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
 
-        case .question, .thread:
+        case .question, .thread, .interview:
             
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 success ?

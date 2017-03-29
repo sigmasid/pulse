@@ -26,6 +26,7 @@ class RecordingOverlay: UIView {
     
     fileprivate lazy var addTitleField = UITextView()
     fileprivate var titleBottomConstraint : NSLayoutConstraint!
+    fileprivate var titleHeightConstraint : NSLayoutConstraint!
     public var title : String = ""
     
     fileprivate var pagers = [UIView]()
@@ -132,8 +133,19 @@ class RecordingOverlay: UIView {
             setupTitleField(placeholderText: placeholderText)
         }
         
-        addTitleField.text = placeholderText
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)]
+        let labelHeight = GlobalFunctions.getLabelSize(title: placeholderText, width: frame.width, fontAttributes: fontAttributes)
+        
         titleBottomConstraint.constant = -Spacing.xl.rawValue - IconSizes.medium.rawValue
+        titleHeightConstraint.constant = labelHeight * 1.35
+
+        addTitleField.text = placeholderText
+        addTitleField.textContainer.size = CGSize(width: frame.width, height: labelHeight * 1.35)
+
+        addTitleField.isScrollEnabled = true
+        addTitleField.sizeToFit()
+        
+        print("label height is \(labelHeight)")
         
         if makeFirstResponder {
             addTitleField.becomeFirstResponder()
@@ -162,19 +174,17 @@ class RecordingOverlay: UIView {
         addTitleField.translatesAutoresizingMaskIntoConstraints = false
         addTitleField.returnKeyType = .done
         
-        addTitleField.textContainer.maximumNumberOfLines = 2
-        addTitleField.textContainer.lineBreakMode = .byTruncatingTail
-        
         titleBottomConstraint = addTitleField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.xl.rawValue - IconSizes.medium.rawValue)
         titleBottomConstraint.isActive = true
         
         let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)]
         let labelHeight = GlobalFunctions.getLabelSize(title: placeholderText, width: frame.width, fontAttributes: fontAttributes)
-        
+        addTitleField.textContainer.size = CGSize(width: frame.width, height: labelHeight * 1.35)
         addTitleField.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         addTitleField.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        addTitleField.heightAnchor.constraint(equalToConstant: max(IconSizes.small.rawValue,labelHeight * 1.2)).isActive = true
-
+        
+        titleHeightConstraint = addTitleField.heightAnchor.constraint(equalToConstant: max(IconSizes.small.rawValue,labelHeight * 1.35))
+        titleHeightConstraint.isActive = true
         addTitleField.layoutIfNeeded()
         
         isTitleSetup = true

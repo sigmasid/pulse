@@ -283,17 +283,29 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             //if item has more than initial clip, show 'see more at the end'
             watchedFullPreview = false
             
-            Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
-                if hasDetail {
-                    cell.showTapForMore = true
-                    self.itemStack[indexPath.row].itemCollection = itemCollection
-                } else {
-                    cell.showTapForMore = false
-                }
-            })
-            
-            cell.delegate = self
-            cell.showItemPreview(item: currentItem)
+            //if interview just go directly to full screen
+            if currentItem.type != .interview {
+                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                    if hasDetail {
+                        cell.showTapForMore = true
+                        self.itemStack[indexPath.row].itemCollection = itemCollection
+                    } else {
+                        cell.showTapForMore = false
+                    }
+                })
+                
+                cell.delegate = self
+                cell.showItemPreview(item: currentItem)
+            } else {
+                toggleLoading(show: true, message: "loading interview...")
+                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                    self.toggleLoading(show: false, message: nil)
+                    self.showItemDetail(item: self.selectedItem, index: 0, itemCollection: itemCollection)
+                    self.selectedIndex = nil
+                    self.deselectedIndex = nil
+                    
+                })
+            }
             
         } else if indexPath == deselectedIndex {
             cell.removePreview()

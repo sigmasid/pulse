@@ -48,7 +48,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     fileprivate var allItems = [Item]()
     fileprivate var hasReachedEnd = false
     
-    fileprivate var isLoaded = false
     fileprivate var isLayoutSetup = false
     
     /** Collection View Vars **/

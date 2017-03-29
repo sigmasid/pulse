@@ -59,9 +59,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     internal var contentOffset: CGFloat {
         return collectionView.contentOffset.x + collectionView.contentInset.left
     }
-    
-    fileprivate var isLoaded = false
-    
+        
     override func viewDidLoad() {
         super.viewDidLoad()
         

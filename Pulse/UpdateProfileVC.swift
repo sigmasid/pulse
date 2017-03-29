@@ -12,7 +12,6 @@ import CoreLocation
 class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     
     var _currentSetting : Setting! //set by delegate
-    fileprivate var isLoaded = false
     
     fileprivate var settingDescription = UILabel()
     fileprivate var settingSection = UIView()
