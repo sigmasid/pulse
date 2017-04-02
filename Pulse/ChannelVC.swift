@@ -301,6 +301,14 @@ extension ChannelVC {
             case .posts, .feedback, .perspectives, .interviews:
                 
                 showTag(selectedItem: item)
+            
+            case .interview:
+                
+                toggleLoading(show: true, message: "loading interview...", showIcon: true)
+                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                    self.toggleLoading(show: false, message: nil)
+                    self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                })
                 
             default: break
             }

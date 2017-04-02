@@ -23,7 +23,9 @@ class ItemCell: UICollectionViewCell {
     fileprivate var itemHeightAnchor : NSLayoutConstraint!
     
     fileprivate var itemButton = PulseButton(size: .small, type: .logoCircle, isRound: true, hasBackground: false)
+    fileprivate var itemMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
     
+    public var showRightMenuButton = false
     public var itemType : ItemTypes? {
         didSet {
             switch itemType! {

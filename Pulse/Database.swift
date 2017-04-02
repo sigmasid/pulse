@@ -522,7 +522,7 @@ class Database {
         var allQuestions = [Item]()
         var toUser : User? = nil
         
-        databaseRef.child("interviewRequests").child(itemID).observeSingleEvent(of: .value, with: { snap in
+        databaseRef.child("invites").child(itemID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 let currentItem = Item(itemID: itemID, snapshot: snap)
                 if let userID = snap.childSnapshot(forPath: "fromUserID").value as? String {
@@ -1480,7 +1480,7 @@ class Database {
     }
     
     /** INTERVIEW REQUEST **/
-    static func createInterviewRequest(item: Item, toUser: User?, toName: String?, questions: [String], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func createInviteRequest(item: Item, type: String, toUser: User?, toName: String?, childItems: [String], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
@@ -1488,7 +1488,7 @@ class Database {
         }
         
         var itemPost : [String : Any] = ["title" : item.itemTitle,
-                                         "type" : "interview",
+                                         "type" : type,
                                          "fromUserID" : user.uid,
                                          "fromUserName" : User.currentUser?.name ?? "",
                                          "createdAt" : FIRServerValue.timestamp(),
@@ -1502,13 +1502,15 @@ class Database {
                                          "createdAt" : FIRServerValue.timestamp()]
         
         //add in the questions
-        var questionDetail : [ String : String ] = [:]
-        for question in questions {
-            let questionID = databaseRef.child("interviewRequests").child(item.itemID).child("questions").childByAutoId().key
-            questionDetail[questionID] = question
+        if !childItems.isEmpty {
+            var childItemDetail : [ String : String ] = [:]
+            for child in childItems {
+                let itemID = databaseRef.child("invites").child(item.itemID).child("questions").childByAutoId().key
+                childItemDetail[itemID] = child
+            }
+            
+            itemPost["questions"] = childItemDetail
         }
-        
-        itemPost["questions"] = questionDetail
         
         //add in toUser
         if let toUser = toUser {
@@ -1523,8 +1525,8 @@ class Database {
             userPost["toUserName"] = toName ?? ""
         }
         
-        let collectionPost = ["interviewRequests/\(item.itemID)": itemPost,
-                              "users/\(user.uid)/sentInterviewRequests" : userPost]
+        let collectionPost = ["invites/\(item.itemID)": itemPost,
+                              "users/\(user.uid)/sentInvites" : userPost]
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
             if completionError == nil {
@@ -1537,7 +1539,7 @@ class Database {
     
     static func addInterviewEmail(interviewID: String, email: String,
                                   completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        databaseRef.child("interviewRequests").child(interviewID).updateChildValues(["toUserEmail":email], withCompletionBlock: { (completionError, ref) in
+        databaseRef.child("invites").child(interviewID).updateChildValues(["toUserEmail":email], withCompletionBlock: { (completionError, ref) in
             if completionError == nil {
                 completion(true, nil)
             } else {

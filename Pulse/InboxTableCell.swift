@@ -44,7 +44,7 @@ class InboxTableCell: UITableViewCell {
     }
     
     func updateName(name : String?) {
-        userName.text = name
+        userName.text = name?.capitalized
     }
     
     func updateLastMessage(message : String?) {

@@ -93,7 +93,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         item.cTitle = selectedChannel.cTitle
         item.tag = selectedItem
 
-        Database.createInterviewRequest(item: item, toUser: selectedUser, toName: iName.text!, questions: allQuestions, completion: { success, error in
+        Database.createInviteRequest(item: item, type: "interview", toUser: selectedUser, toName: iName.text!, childItems: allQuestions, completion: { success, error in
             if success, self.selectedUser != nil {
                 self.interviewID = itemKey
                 self.showSuccessMenu(message: "Successfully Added Interview")
@@ -155,7 +155,14 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
                     self.showAddEmail(bodyText: "invalid email - try again")
                 } else {
                     Database.addInterviewEmail(interviewID: interviewID, email: text, completion: {(success, error) in
-                        success ? self.showSuccessMenu(message: "Successfully Added Interview") : self.showErrorMenu(error: error!)
+                        if success {
+                            self.showSuccessMenu(message: "Successfully Added Interview")
+                        } else {
+                            self.showErrorMenu(error: error!)
+                            self.submitButton.setTitle("Send Interview Request", for: .normal)
+                            self.submitButton.removeTarget(self, action: #selector(self.createInterviewRequest), for: .touchUpInside)
+                            self.submitButton.addTarget(self, action: #selector(self.showNewUserInterviewMenu), for: .touchUpInside)
+                        }
                     })
                 }
             })
