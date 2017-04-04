@@ -157,19 +157,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         })
     }
     
-    /** Delegate Function **/
-    func clickedUserButton(itemRow : Int) {
-        if let user = allItems[itemRow].user {
-            let userProfileVC = UserProfileVC()
-            navigationController?.pushViewController(userProfileVC, animated: true)
-            userProfileVC.selectedUser = user
-        }
-    }
-    
-    func clickedMenuButton(itemRow : Int) {
-        //implement menu for each item
-    }
-    
     /** HEADER FUNCTIONS **/
     fileprivate func updateHeader() {
         addBackButton()
@@ -199,25 +186,96 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             isLayoutSetup = true
         }
     }
-    
-
 }
 
 /** Protocols **/
 extension ChannelVC {
-    internal func userClickedMenu() {
+    
+    /** Delegate Function **/
+    func clickedUserButton(itemRow : Int) {
+        if let user = allItems[itemRow].user {
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
+        }
+    }
+    
+    //menu for each individual item
+    internal func clickedMenuButton(itemRow: Int) {
+        let currentItem = allItems[itemRow]
+        
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        if currentItem.acceptsInput() {
+            menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+            }))
+            
+            menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
+                //implement invite experts - should show user search box
+            }))
+        }
+        
+        if currentItem.childItemType() != .unknown {
+            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                self.showBrowse(selectedItem: currentItem)
+            }))
+        }
+        
+        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+            self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func clickedHeaderMenu() {
         guard let user = User.currentUser else {
             return
         }
         
-        if user.hasExpertiseIn(channel: selectedChannel) {
-            showExpertMenu()
-        } else {
-            showRegularMenu()
-        }
+        user.isVerified(for: selectedChannel) ? showExpertMenu() : showRegularMenu()
+    }
+    /** End Delegate Functions **/
+    
+    internal func inviteExperts() {
+        
     }
     
-    //is showing answers
+    internal func showShare(selectedItem: Item, type: String) {
+        toggleLoading(show: true, message: "loading share options...", showIcon: true)
+        selectedItem.createShareLink(completion: { link in
+            guard let link = link else { return }
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle ?? "", shareLink: link)
+        })
+    }
+    
+    internal func showNonExpertMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Become a Contributor?", message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
+            self.addNewItem(selectedItem: selectedItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
+            let applyExpertVC = ApplyExpertVC()
+            applyExpertVC.selectedChannel = self.selectedChannel
+            
+            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    //for header
     func showExpertMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
@@ -245,6 +303,7 @@ extension ChannelVC {
         present(menu, animated: true, completion: nil)
     }
     
+    //for header
     func showRegularMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
@@ -569,6 +628,7 @@ extension ChannelVC: UIScrollViewDelegate {
     func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
+            cell.itemType = currentItem.type
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
         }

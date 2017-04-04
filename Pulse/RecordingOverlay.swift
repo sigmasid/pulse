@@ -144,9 +144,7 @@ class RecordingOverlay: UIView {
 
         addTitleField.isScrollEnabled = true
         addTitleField.sizeToFit()
-        
-        print("label height is \(labelHeight)")
-        
+                
         if makeFirstResponder {
             addTitleField.becomeFirstResponder()
         }

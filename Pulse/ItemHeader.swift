@@ -41,7 +41,7 @@ class ItemHeader: UICollectionReusableView {
     
     func clickedMenu() {
         if delegate != nil {
-            delegate.userClickedMenu()
+            delegate.clickedHeaderMenu()
         }
     }
     

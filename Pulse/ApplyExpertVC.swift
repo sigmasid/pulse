@@ -60,7 +60,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
         addBackButton()
         tabBarHidden = true
 
-        headerNav?.setNav(title: "Become Expert")
+        headerNav?.setNav(title: "Become Contributor", subtitle: selectedChannel.cTitle)
     }
     
     fileprivate func setupScope() {
@@ -92,8 +92,8 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             reasonVerified = false
             
             if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Become Expert", subtitle: title)
-                applySubtitle.text = "Experts are thought leaders who create & shape content, start conversations & answer questions!"
+                headerNav?.setNav(title: "Become Contributor", subtitle: title)
+                applySubtitle.text = "Contributors are thought leaders who create & shape content, start conversations & answer questions!"
                 applyText.text = subText1
             }
             view.layoutIfNeeded()
@@ -127,7 +127,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
         dismissKeyboard()
         
         if selectedChannel != nil {
-            Database.joinChannel(channel: selectedChannel, applyText: applyText.text, completion: {(success, error) in
+            Database.contributorRequest(channel: selectedChannel, applyText: applyText.text, completion: {(success, error) in
                 if success {
                     let applyConfirmation = UIAlertController(title: "Thanks for applying!",
                                                             message: "We individually review & hand select the best experts for each channel and will get back to you soon!",
@@ -164,7 +164,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
         dismissKeyboard()
         
         if selectedChannel != nil {
-            Database.recommendJoinChannel(channel: selectedChannel,
+            Database.recommendContributorRequest(channel: selectedChannel,
                                           applyName: recommendName.text!,
                                           applyEmail: recommendEmail.text!,
                                           applyText: recommendText.text, completion: { (success, error) in

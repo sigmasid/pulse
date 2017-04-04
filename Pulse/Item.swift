@@ -170,16 +170,16 @@ class Item: NSObject {
         }
     }
     
-    func childType() -> String {
+    func childType(plural: Bool = false) -> String {
         switch type {
-        case .feedback: return " question"
-        case .posts: return " post"
-        case .thread: return " perspective"
-        case .question: return " answer"
-        case .questions: return " question"
+        case .feedback: return plural ? " questions" : " question"
+        case .posts: return plural ? " posts" : " post"
+        case .thread: return plural ? " perspectives" : " perspective"
+        case .question: return plural ? " answers" : " answer"
+        case .questions: return plural ? " questions" : " question"
 
-        case .interviews: return " interview"
-        case .interview: return " answer"
+        case .interviews: return plural ? " interviews" : " interview"
+        case .interview: return plural ? " interview" : " interview"
 
         default: return " entry"
         }
@@ -194,6 +194,33 @@ class Item: NSObject {
         case .interview: return .answer
         default: return .unknown
         }
+    }
+    
+    func acceptsInput() -> Bool {
+        switch type {
+        case .posts: return true
+        case .post: return false
+        
+        case .perspectives: return false
+        case .thread: return true
+        case .perspective: return false
+
+        case .questions: return true
+        case .question: return true
+        case .answer: return false
+
+        case .interviews: return true
+        case .interview: return false
+        
+        default: return false
+        }
+    }
+    
+    func checkVerifiedInput() -> Bool {
+        if let user = User.currentUser, user.uID != nil, user.isVerified(for: Channel(cID: self.cID)) {
+            return true
+        }
+        return false
     }
     
     func getCreatedAt() -> String? {

@@ -41,7 +41,7 @@ class ItemTableHeader: UITableViewHeaderFooterView {
     
     func clickedMenu() {
         if delegate != nil {
-            delegate.userClickedMenu()
+            delegate.clickedHeaderMenu()
         }
     }
     

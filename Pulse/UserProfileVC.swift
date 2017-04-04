@@ -272,7 +272,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     internal func clickedLogout() {
         let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
         
-        confirmLogout.addAction(UIAlertAction(title: "Logout", style: .default, handler: { (action: UIAlertAction!) in
+        confirmLogout.addAction(UIAlertAction(title: "logout", style: .default, handler: { (action: UIAlertAction!) in
             Database.signOut({ success in
                 if !success {
                     GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")

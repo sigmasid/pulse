@@ -42,7 +42,6 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         }
     }
     internal var collectionViewLayout: QuickBrowseLayout!
-
     
     //Capture Image
     internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()

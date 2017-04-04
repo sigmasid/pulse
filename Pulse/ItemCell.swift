@@ -23,7 +23,8 @@ class ItemCell: UICollectionViewCell {
 
     fileprivate lazy var itemTag = UILabel()
     fileprivate var itemHeightAnchor : NSLayoutConstraint!
-    
+    fileprivate var footerHeightAnchor : NSLayoutConstraint!
+
     fileprivate var itemButton = PulseButton(size: .xSmall, type: .logoCircle, isRound: true, hasBackground: false)
     fileprivate var itemMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
     
@@ -35,7 +36,7 @@ class ItemCell: UICollectionViewCell {
                 itemImage.isHidden = true
                 itemHeightAnchor.constant = 0
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
-                titleLabel.numberOfLines = 3
+                titleLabel.numberOfLines = 2
 
             case .post, .thread, .perspective:
                 itemHeightAnchor.constant = defaultPostHeight
@@ -67,7 +68,19 @@ class ItemCell: UICollectionViewCell {
     
     func updateLabel(_ _title : String?, _subtitle : String?, _createdAt: Date?, _tag : String?) {
 
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
+        let labelHeight = GlobalFunctions.getLabelSize(title: _title ?? "test string", width: frame.width, fontAttributes: fontAttributes)
+        let singleLineHeight = GlobalFunctions.getLabelSize(title: "test string", width: frame.width, fontAttributes: fontAttributes)
+
+        let font2Attributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: createdAtLabel.font.pointSize, weight: UIFontWeightThin)]
+        let label2Height = GlobalFunctions.getLabelSize(title: _tag ?? "test string", width: frame.width, fontAttributes: font2Attributes)
+        
+        footerHeightAnchor.constant = Spacing.xxs.rawValue + min(labelHeight, singleLineHeight * 2) + Spacing.xs.rawValue + label2Height + Spacing.xs.rawValue
         titleLabel.text = _title
+        
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.lineBreakMode = .byTruncatingTail
+        titleLabel.minimumScaleFactor = 0.9
         
         if let _subtitle = _subtitle {
             let subAttributes = [NSFontAttributeName: UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightBold)]
@@ -100,7 +113,7 @@ class ItemCell: UICollectionViewCell {
                     attributedString.append(restAttributedString)
                     
                 case .interview:
-                    let restAttributedString = NSAttributedString(string: " interview", attributes: subRestAttributes)
+                    let restAttributedString = NSAttributedString(string: " interview on", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
                 default:
@@ -182,12 +195,14 @@ class ItemCell: UICollectionViewCell {
         cellCard.addArrangedSubview(itemFooter)
         
         itemImage.translatesAutoresizingMaskIntoConstraints = false
-        itemHeightAnchor = itemImage.heightAnchor.constraint(lessThanOrEqualToConstant: defaultPostHeight)
+        itemHeightAnchor = itemImage.heightAnchor.constraint(equalToConstant: defaultPostHeight)
         itemHeightAnchor.priority = 100
         itemHeightAnchor.isActive = true
         
-        //itemFooter.translatesAutoresizingMaskIntoConstraints = false
-        //itemFooter.heightAnchor.constraint(lessThanOrEqualToConstant: 75).isActive = true
+        itemFooter.translatesAutoresizingMaskIntoConstraints = false
+        footerHeightAnchor = itemFooter.heightAnchor.constraint(greaterThanOrEqualToConstant: 54)
+        footerHeightAnchor.isActive = true
+        itemFooter.backgroundColor = .white
         
         itemHeader.translatesAutoresizingMaskIntoConstraints = false
         itemHeader.heightAnchor.constraint(equalToConstant: 40).isActive = true
@@ -232,14 +247,15 @@ class ItemCell: UICollectionViewCell {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.leadingAnchor.constraint(equalTo: itemFooter.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
         titleLabel.trailingAnchor.constraint(equalTo: itemFooter.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        titleLabel.topAnchor.constraint(equalTo: itemFooter.topAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: itemFooter.topAnchor).isActive = true
         titleLabel.bottomAnchor.constraint(equalTo: createdAtLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
         createdAtLabel.translatesAutoresizingMaskIntoConstraints = false
         createdAtLabel.leadingAnchor.constraint(equalTo: itemFooter.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
         createdAtLabel.bottomAnchor.constraint(equalTo: itemFooter.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        createdAtLabel.heightAnchor.constraint(equalToConstant: 12).isActive = true
         
-        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
+        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
         createdAtLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .left)
         itemTag.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .right)
         
@@ -250,11 +266,9 @@ class ItemCell: UICollectionViewCell {
         itemImage.contentMode = UIViewContentMode.scaleAspectFill
         itemImage.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.7)
         itemImage.clipsToBounds = true
-                
         titleLabel.numberOfLines = 2
         subtitleLabel.numberOfLines = 1
         
-        titleLabel.lineBreakMode = .byWordWrapping
         subtitleLabel.lineBreakMode = .byTruncatingTail
     }
 }

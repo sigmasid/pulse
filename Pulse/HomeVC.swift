@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate {
+class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate, ItemCellDelegate {
     
     //Main data source vars
     var allItems = [Item]()
@@ -64,7 +64,17 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
         fatalError("init(coder:) has not been implemented")
     }
     
-    func createFeed() {
+    fileprivate func updateHeader() {
+        let logoButton = PulseButton(size: .small, type: .logo, isRound : true, background: .white, tint: .black)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: logoButton)
+        
+        headerNav?.showNavbar(animated: true)
+        headerNav?.setNav(title: "PULSE")
+        headerNav?.updateBackgroundImage(image: nil)
+        headerNav?.followScrollView(collectionView, delay: 25.0)
+    }
+    
+    internal func createFeed() {
         
         if !initialLoadComplete  {
             
@@ -78,7 +88,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
         }
     }
     
-    func updateFeed() {
+    internal func updateFeed() {
         if User.isLoggedIn() {
             Database.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
                 var indexPaths = [IndexPath]()
@@ -123,7 +133,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
         endUpdateAt = Calendar.current.date(byAdding: .day, value: -7, to: startUpdateAt)!
     }
     
-    func updateDataSource() {
+    fileprivate func updateDataSource() {
         if !isLayoutSetup {
             setupScreenLayout()
         }
@@ -132,7 +142,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate 
         collectionView.delegate = self
     }
     
-    func setupNotifications() {
+    fileprivate func setupNotifications() {
         if !notificationsSetup {
 
             NotificationCenter.default.addObserver(self, selector: #selector(createFeed), name: NSNotification.Name(rawValue: "SubscriptionsUpdated"), object: nil)
@@ -207,7 +217,9 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
             let currentItem = allItems[indexPath.row]
             cell.itemType = currentItem.type
-
+            cell.tag = indexPath.row
+            cell.delegate = self
+            
             //clear the cells and set the item type first
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
@@ -339,17 +351,35 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
     }
     
-    /** Delegate Functions **/
-    fileprivate func updateHeader() {
-        let logoButton = PulseButton(size: .small, type: .logo, isRound : true, background: .white, tint: .black)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: logoButton)
-        
-        headerNav?.showNavbar(animated: true)
-        headerNav?.setNav(title: "PULSE")
-        headerNav?.updateBackgroundImage(image: nil)
-        headerNav?.followScrollView(collectionView, delay: 25.0)
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        switch kind {
+        case UICollectionElementKindSectionHeader:
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
+            
+            headerView.backgroundColor = .white
+            
+            switch indexPath.section {
+            case 0:
+                headerView.delegate = self
+                headerView.updateLabel("subscriptions")
+            case 1:
+                break
+            default:
+                break
+            }
+            
+            //headerView.delegate = self
+            return headerView
+            
+        default: assert(false, "Unexpected element kind")
+        }
     }
-    
+}
+
+extension HomeVC {
+
+    /** Delegate Functions **/
     func userSelected(item : Any) {
         
         if let item = item as? Item {
@@ -432,7 +462,8 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         tagDetailVC.selectedItem = selectedItem
     }
     
-    internal func userClickedMenu() {
+    //for the header
+    internal func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "browse Subscriptions", style: .default, handler: { (action: UIAlertAction!) in
@@ -446,29 +477,74 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         present(menu, animated: true, completion: nil)
     }
     
-    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        switch kind {
-        case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
-                                                                             withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
-            
-            headerView.backgroundColor = .white
-
-            switch indexPath.section {
-            case 0:
-                headerView.delegate = self
-                headerView.updateLabel("subscriptions")
-            case 1:
-                break
-            default:
-                break
-            }
-            
-            //headerView.delegate = self
-            return headerView
-            
-        default: assert(false, "Unexpected element kind")
+    //shows the user profile
+    internal func clickedUserButton(itemRow : Int) {
+        if let user = allItems[itemRow].user {
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
         }
+    }
+    
+    //menu for each individual item
+    internal func clickedMenuButton(itemRow: Int) {
+        let currentItem = allItems[itemRow]
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        if currentItem.acceptsInput() {
+            menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+            }))
+            
+            menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
+                //implement invite experts - should show user search box
+            }))
+        }
+        
+        if currentItem.childItemType() != .unknown {
+            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                self.showBrowse(selectedItem: currentItem)
+            }))
+        }
+        
+        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+            self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showNonExpertMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Become a Contributor?", message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
+            self.addNewItem(selectedItem: selectedItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
+            let applyExpertVC = ApplyExpertVC()
+            applyExpertVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+            
+            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showShare(selectedItem: Item, type: String) {
+        toggleLoading(show: true, message: "loading share options...", showIcon: true)
+        selectedItem.createShareLink(completion: { link in
+            guard let link = link else { return }
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle ?? "", shareLink: link)
+        })
     }
 }
 

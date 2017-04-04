@@ -26,7 +26,7 @@ class User: NSObject {
     var thumbPic : String?
     var thumbPicImage : UIImage?
     
-    var expertiseChannels = [Channel]()
+    var verifiedChannels = [Channel]()
     
     var shownCameraForQuestion = [ String : String ]()
     var subscriptions = [Channel]()
@@ -107,11 +107,11 @@ class User: NSObject {
             }
         }
         
-        if detailedSnapshot.hasChild("expertiseChannels") {
-            for child in detailedSnapshot.childSnapshot(forPath: "expertiseChannels").children {
+        if detailedSnapshot.hasChild("verifiedChannels") {
+            for child in detailedSnapshot.childSnapshot(forPath: "verifiedChannels").children {
                 let channel = Channel(cID: (child as AnyObject).key)
                 channel.cTitle = (child as! FIRDataSnapshot).value as? String
-                self.expertiseChannels.append(channel)
+                self.verifiedChannels.append(channel)
             }
         }
         
@@ -152,8 +152,8 @@ class User: NSObject {
         return FIRAuth.auth()?.currentUser?.email
     }
     
-    func hasExpertiseIn(channel : Channel) -> Bool {
-        return expertiseChannels.contains(channel) ? true : false
+    func isVerified(for channel : Channel) -> Bool {
+        return verifiedChannels.contains(channel) ? true : false
     }
 
     

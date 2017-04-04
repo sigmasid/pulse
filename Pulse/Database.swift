@@ -949,7 +949,7 @@ class Database {
         currentUser.subscriptions = []
         currentUser.subscriptionIDs = []
 
-        currentUser.expertiseChannels = []
+        currentUser.verifiedChannels = []
         
         currentUser.profilePic = nil
         currentUser.thumbPic = nil
@@ -1018,12 +1018,12 @@ class Database {
                 }
             }
             
-            if snap.hasChild("expertiseChannels") {
-                User.currentUser!.expertiseChannels = []
-                for channel in snap.childSnapshot(forPath: "expertiseChannels").children {
+            if snap.hasChild("verifiedChannels") {
+                User.currentUser!.verifiedChannels = []
+                for channel in snap.childSnapshot(forPath: "verifiedChannels").children {
                     if let channelSnap = channel as? FIRDataSnapshot {
                         let channel = Channel(cID: channelSnap.key, title: channelSnap.value as? String ?? "")
-                        User.currentUser!.expertiseChannels.append(channel)
+                        User.currentUser!.verifiedChannels.append(channel)
                     }
                 }
             }
@@ -1387,7 +1387,7 @@ class Database {
     }
     
     /* RECOMMEND EXPERT */
-    static func recommendJoinChannel(channel: Channel, applyName: String, applyEmail: String, applyText: String,
+    static func recommendContributorRequest(channel: Channel, applyName: String, applyEmail: String, applyText: String,
                                 completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
     
         guard let user = FIRAuth.auth()?.currentUser else {
@@ -1408,7 +1408,7 @@ class Database {
                     "reason":applyText,
                     "recommenderID": user.uid]
     
-        databaseRef.child("channelRequests").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+        databaseRef.child("contributorRequests").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
                 let errorInfo = [ NSLocalizedDescriptionKey : "error sending, please try again!" ]
                 completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
@@ -1419,7 +1419,7 @@ class Database {
     }
     
     /* BECOME EXPERT */
-    static func joinChannel(channel : Channel, applyText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func contributorRequest(channel : Channel, applyText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
@@ -1432,12 +1432,12 @@ class Database {
             return
         }
         
-        let verificationPath = databaseRef.child("channelRequests")
+        let verificationPath = databaseRef.child("contributorRequests")
         let post = ["uID":user.uid,
                     "reason":applyText,
                     "channelID":channelID]
         
-        currentUserRef.child("appliedChannels").child(channelID).observeSingleEvent(of: .value, with: { snap in
+        currentUserRef.child("contributorRequests").child(channelID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 let errorInfo = [ NSLocalizedDescriptionKey : "you have already applied! we will get back to you soon." ]
                 completion(false, NSError.init(domain: "AlreadyApplied", code: 404, userInfo: errorInfo))
@@ -1645,7 +1645,7 @@ class Database {
             return
         }
         
-        guard user.hasExpertiseIn(channel: Channel(cID: channelID)) else {
+        guard user.isVerified(for: Channel(cID: channelID)) else {
             let errorInfo = [ NSLocalizedDescriptionKey : "only channel experts can start a thread" ]
             completion(false, NSError.init(domain: "NotExpert", code: 404, userInfo: errorInfo))
             return

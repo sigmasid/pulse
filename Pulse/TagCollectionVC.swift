@@ -138,29 +138,6 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
             })
         }
     }
-    
-    /** ItemCellDelegate Methods **/
-    internal func clickedUserButton(itemRow : Int) {
-        if let user = allItems[itemRow].user {
-            let userProfileVC = UserProfileVC()
-            navigationController?.pushViewController(userProfileVC, animated: true)
-            userProfileVC.selectedUser = user
-        }
-    }
-    
-    //menu for each individual item
-    internal func clickedMenuButton(itemRow: Int) {
-        let currentItem = allItems[itemRow]
-        currentItem.tag = selectedItem
-        
-        switch currentItem.type {
-        case .thread, .question, .interview:
-            showChildItemsMenu(selectedItem : currentItem)
-        case .post:
-            showNoChildItemsMenu(selectedItem: currentItem)
-        default: break
-        }
-    }
 }
 
 extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource {
@@ -197,7 +174,8 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         let currentItem = allItems[indexPath.row]
 
         //clear the cells and set the item type first
-        cell.updateLabel(currentItem.itemTitle, _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: nil)
+        cell.updateLabel(currentItem.itemTitle != nil ? currentItem.itemTitle : "",
+                         _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: nil)
         cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
 
         //Already fetched this item
@@ -433,12 +411,56 @@ extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
 
 //menus
 extension TagCollectionVC {
+    
+    /** ItemCellDelegate Methods **/
+    internal func clickedUserButton(itemRow : Int) {
+        if let user = allItems[itemRow].user {
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = user
+        }
+    }
+    
+    //menu for each individual item
+    internal func clickedMenuButton(itemRow: Int) {
+        let currentItem = allItems[itemRow]
+        currentItem.tag = selectedItem
+        
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        if currentItem.acceptsInput() {
+            menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+            }))
+            
+            menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
+                //implement invite experts - should show user search box
+            }))
+        }
+        
+        if currentItem.childItemType() != .unknown {
+            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                self.showBrowse(selectedItem: currentItem)
+            }))
+        }
+        
+        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+            self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+
     //user clicked header menu - for series
-    func userClickedMenu() {
+    func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         let newItemTitle = "new \(selectedItem.childType().capitalized)"
         
-        if let user = User.currentUser, user.hasExpertiseIn(channel: selectedChannel) {
+        if let user = User.currentUser, user.isVerified(for: selectedChannel) {
             menu.addAction(UIAlertAction(title: newItemTitle, style: .default, handler: { (action: UIAlertAction!) in
                 switch self.selectedItem.type {
                 case .interviews:
@@ -465,59 +487,11 @@ extension TagCollectionVC {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showNoChildItemsMenu(selectedItem : Item) {
-        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
-        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-            self.showShare(type: selectedItem.type.rawValue)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
-    internal func showChildItemsMenu(selectedItem : Item) {
-        var isExpert = false
-        
-        if let user = User.currentUser, user.uID != nil, user.hasExpertiseIn(channel: selectedChannel) {
-            isExpert = true
-        }
-        
-        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        
-        if selectedItem.type != .interview {
-            menu.addAction(UIAlertAction(title: "add\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                if isExpert {
-                    self.addNewItem(selectedItem: selectedItem)
-                } else {
-                    self.showNonExpertMenu(selectedItem: selectedItem)
-                }
-            }))
-        }
-        
-        let browseText = selectedItem.type != .interview ? " browse \(selectedItem.childType().capitalized)s" : "browse Interview"
-        menu.addAction(UIAlertAction(title: browseText, style: .default, handler: { (action: UIAlertAction!) in
-            self.showBrowse(selectedItem: selectedItem)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-            self.showShare(type: selectedItem.type.rawValue)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
+    //
     internal func showNoItemsMenu(selectedItem : Item) {
         var isExpert = false
         
-        if let user = User.currentUser, user.hasExpertiseIn(channel: selectedChannel) {
+        if User.isLoggedIn(), User.currentUser!.isVerified(for: selectedChannel) {
             isExpert = true
         }
         let message = isExpert ? "No\(selectedItem.childType())s yet - want to add one?" : "We are still waiting for the first\(selectedItem.childType())!"
@@ -544,7 +518,7 @@ extension TagCollectionVC {
             self.addNewItem(selectedItem: selectedItem)
         }))
         
-        menu.addAction(UIAlertAction(title: "become Contributor", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
             let applyExpertVC = ApplyExpertVC()
             applyExpertVC.selectedChannel = self.selectedChannel
             
@@ -558,12 +532,16 @@ extension TagCollectionVC {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showShare(type: String) {
+    internal func showShare(selectedItem: Item, type: String) {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
         selectedItem.createShareLink(completion: { link in
             guard let link = link else { return }
-            self.shareContent(shareType: type, shareText: self.selectedItem.itemTitle ?? "", shareLink: link)
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle ?? "", shareLink: link)
         })
+    }
+    
+    internal func showShare(type: String) {
+        showShare(selectedItem: self.selectedItem, type: type)
     }
 }
 

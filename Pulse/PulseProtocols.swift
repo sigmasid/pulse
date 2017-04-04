@@ -11,7 +11,7 @@ import CoreLocation
 import UIKit
 
 protocol HeaderDelegate: class {
-    func userClickedMenu()
+    func clickedHeaderMenu()
 }
 
 protocol SelectionDelegate: class {

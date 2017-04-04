@@ -31,7 +31,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         super.init(frame: frame)
     }
     
-    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String = "type here") {
+    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String = "type here", keyboardType: UIKeyboardType = .alphabet) {
         self.init(frame: frame)
         addObservers()
         
@@ -40,7 +40,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         
         setupLayout(buttonText: buttonText, bodyText: bodyText)
         txtBody.becomeFirstResponder()
-
+        txtBody.keyboardType = keyboardType
     }
     
     required init?(coder aDecoder: NSCoder) {

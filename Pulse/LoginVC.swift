@@ -183,6 +183,8 @@ class LoginVC: PulseVC, UITextFieldDelegate {
                 self.nav?.setNav(title: "Welcome")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
+                self.userEmail.text = ""
+                self.userPassword.text = ""
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
         }

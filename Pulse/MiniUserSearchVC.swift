@@ -42,6 +42,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
             }
         }
     }
+    fileprivate var defaultUsers = [User]() //store the initial expert list
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -85,7 +86,6 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
             modalDelegate.userClosedModal(self)
         }
     }
-    
     
     internal func activateSearch() {
         DispatchQueue.main.async { [] in
@@ -284,10 +284,21 @@ extension MiniUserSearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISear
         return true
     }
     
+    func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        if searchBar.text == "", !defaultUsers.isEmpty {
+            users = defaultUsers
+        }
+    }
+    
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         searchController.isActive = true
         searchBar.endEditing(false)
         
+        if defaultUsers.isEmpty {
+            defaultUsers = users
+        }
+        
+        users = [] //empty the collection
         let _searchText = searchController.searchBar.text!
         
         if _searchText != "" && _searchText.characters.count > 1 {
@@ -307,6 +318,6 @@ extension MiniUserSearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISear
             searchController.searchBar.tintColor = .black
             searchController.searchBar.becomeFirstResponder()
         }
-        searchController.searchBar.placeholder = "enter name"
+        searchController.searchBar.placeholder = "search pulse - enter name"
     }
 }

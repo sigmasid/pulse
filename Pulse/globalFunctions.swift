@@ -181,12 +181,12 @@ class GlobalFunctions {
     
     static func getCellHeight(type : ItemTypes) -> CGFloat {
         switch type {
-        case .question: return 130
-        case .answer: return 130
+        case .question: return 145
+        case .answer: return 145
         case .post: return 420
         case .thread: return 420
         case .perspective: return 420
-        default: return 130
+        default: return 145
         }
     }
     

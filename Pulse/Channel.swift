@@ -62,6 +62,8 @@ class Channel : NSObject {
     func updateChannel(detailedSnapshot : FIRDataSnapshot) {
         for child in detailedSnapshot.children {
             let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+            currentItem.cID = self.cID
+            currentItem.cTitle = self.cTitle
             items.append(currentItem)
         }
         items.reverse()

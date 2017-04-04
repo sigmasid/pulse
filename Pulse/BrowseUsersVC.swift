@@ -83,11 +83,11 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
 
-    internal func userClickedMenu() {
+    internal func clickedHeaderMenu() {
 
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "become an Expert", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "become Contributor", style: .default, handler: { (action: UIAlertAction!) in
             let applyExpertVC = ApplyExpertVC()
             applyExpertVC.selectedChannel = self.selectedChannel
             

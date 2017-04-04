@@ -150,7 +150,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
         }
     }
     
-    internal func userClickedMenu() {
+    internal func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         if selectedItem.type != .interview {
