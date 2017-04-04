@@ -10,7 +10,7 @@ import UIKit
 import QuartzCore
 
 enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical}
-enum ButtonSizes { case xSmall, small, medium, large }
+enum ButtonSizes { case xxSmall, xSmall, small, medium, large }
 
 @IBDesignable
 open class PulseButton: UIButton {
@@ -140,6 +140,7 @@ open class PulseButton: UIButton {
         var frame = CGRect()
         
         switch size {
+        case .xxSmall: frame = CGRect(x: 0, y: 0, width: IconSizes.xxSmall.rawValue, height: IconSizes.xxSmall.rawValue)
         case .xSmall: frame = CGRect(x: 0, y: 0, width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
         case .small: frame = CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue)
         case .medium: frame = CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)
@@ -175,6 +176,7 @@ open class PulseButton: UIButton {
         var frame = CGRect()
         
         switch size {
+        case .xxSmall: frame = CGRect(x: 0, y: 0, width: IconSizes.xxSmall.rawValue, height: IconSizes.xxSmall.rawValue)
         case .xSmall: frame = CGRect(x: 0, y: 0, width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
         case .small: frame = CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue)
         case .medium: frame = CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)
@@ -214,7 +216,7 @@ open class PulseButton: UIButton {
         setTitleColor(.pulseBlue, for: UIControlState.highlighted)
         setTitleColor(.pulseBlue, for: UIControlState.selected)
         switch size! {
-        case .xSmall, .small:
+        case .xxSmall, .xSmall, .small:
             let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
             imageEdgeInsets = imageInset
             

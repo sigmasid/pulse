@@ -313,6 +313,7 @@ class Database {
                     let _conversation = Conversation(snapshot: conversation as! FIRDataSnapshot)
                     conversations.append(_conversation)
                 }
+                conversations.reverse()
                 completion(conversations)
             })
         }
@@ -340,6 +341,8 @@ class Database {
             //append to existing conversation if it already exists - message.mID has conversationID saved
             let conversationPost : [AnyHashable: Any] =
                 ["conversations/\(message.mID!)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : "message",
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : "message",
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
@@ -1249,38 +1252,11 @@ class Database {
         collectionPost = ["itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
                           "itemCollection/\(parentItem.itemID)/\(item.itemID)" : item.type.rawValue as AnyObject]
         
+        //only add one entry for full interview
         if parentItem.type != .interview {
             collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
             collectionPost["userDetailedPublicSummary/\(_user.uid)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
-
-        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
-            blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
-        })
-    }
-    
-    static func addInterviewToDatabase(interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        guard let _user = FIRAuth.auth()?.currentUser else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
-            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
-            return
-        }
-
-        let channelPost : [String : AnyObject] = ["type" : interviewParentItem.type.rawValue as AnyObject,
-                                                  "tagID" : interviewParentItem.tag?.itemID as AnyObject,
-                                                  "tagTitle" : interviewParentItem.tag?.itemTitle as AnyObject,
-                                                  "title" : interviewParentItem.itemTitle as AnyObject,
-                                                  "uID" : _user.uid as AnyObject,
-                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
-        
-        var collectionPost = ["userDetailedPublicSummary/\(_user.uid)/items/\(interviewParentItem.itemID)": interviewParentItem.type.rawValue as AnyObject,
-                              "items/\(interviewParentItem.itemID)" : channelPost,
-                              "channelItems/\(interviewParentItem.cID!)/\(interviewParentItem.itemID)" : channelPost] as [String : Any]
-        
-        if let tagID = interviewParentItem.tag?.itemID {
-            collectionPost["itemCollection/\(tagID)/\(interviewParentItem.itemID)"] = interviewParentItem.type.rawValue as AnyObject
-        }
-        
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
             blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
         })
@@ -1479,7 +1455,62 @@ class Database {
         })
     }
     
-    /** INTERVIEW REQUEST **/
+    /** INTERVIEW ITEMS **/
+    static func declineInterview(interviewParentItem :Item, conversationID: String?, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        guard let _ = FIRAuth.auth()?.currentUser else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        guard let fromUser = interviewParentItem.user else {
+            let userInfo = [ NSLocalizedDescriptionKey : "couldn't find sender" ]
+            completion(false, NSError.init(domain: "IncorrectSender", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        let message = Message(from: User.currentUser!, to: fromUser, body: "Sorry! Interview request declined")
+        message.mID = conversationID != nil ? conversationID! : interviewParentItem.itemID
+        
+        Database.sendMessage(existing: true, message: message, completion: {(success, conversationID) in
+            if success {
+                //remove interview type from conversations
+                messagesRef.child(conversationID!).child("type").setValue(nil)
+                completion(true, nil)
+            } else {
+                let errorInfo = [ NSLocalizedDescriptionKey : "error declining interview" ]
+                completion(false, NSError.init(domain: "Unknown", code: 404, userInfo: errorInfo))
+            }
+        })
+    }
+    
+    static func addInterviewToDatabase(interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        guard let _user = FIRAuth.auth()?.currentUser else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        let channelPost : [String : AnyObject] = ["type" : interviewParentItem.type.rawValue as AnyObject,
+                                                  "tagID" : interviewParentItem.tag?.itemID as AnyObject,
+                                                  "tagTitle" : interviewParentItem.tag?.itemTitle as AnyObject,
+                                                  "title" : interviewParentItem.itemTitle as AnyObject,
+                                                  "uID" : _user.uid as AnyObject,
+                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        var collectionPost = ["userDetailedPublicSummary/\(_user.uid)/items/\(interviewParentItem.itemID)": interviewParentItem.type.rawValue as AnyObject,
+                              "items/\(interviewParentItem.itemID)" : channelPost,
+                              "channelItems/\(interviewParentItem.cID!)/\(interviewParentItem.itemID)" : channelPost] as [String : Any]
+        
+        if let tagID = interviewParentItem.tag?.itemID {
+            collectionPost["itemCollection/\(tagID)/\(interviewParentItem.itemID)"] = interviewParentItem.type.rawValue as AnyObject
+        }
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
+            blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
+        })
+    }
+    
     static func createInviteRequest(item: Item, type: String, toUser: User?, toName: String?, childItems: [String], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
@@ -1547,6 +1578,36 @@ class Database {
             }
         })
     }
+    /** END INTERVIEW ITEMS **/
+
+    
+    /** ADD NEW SERIES TO CHANNEL **/
+    static func startNewChannel(cTitle: String, cDescription : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let userPost = ["cTitle": cTitle,
+                        "cDescription":cDescription]
+        
+        let post = ["cTitle": cTitle,
+                    "cDescription":cDescription,
+                    "fromUserName":User.currentUser!.name ?? "",
+                    "fromUserID":user.uid]
+        
+        let newChannelRequestID = databaseRef.child("newChannelRequests").childByAutoId().key
+        
+        let combinedPost : [AnyHashable: Any] =
+            ["newChannelRequests/\(newChannelRequestID)": post as AnyObject,
+             "users/\(user.uid)/newChannelRequests/\(newChannelRequestID)" : userPost]
+
+        
+        databaseRef.updateChildValues(combinedPost, withCompletionBlock: { (error, ref) in
+            error != nil ? completion(false, error) : completion(true, nil)
+        })
+    }
     
     /** ADD NEW SERIES TO CHANNEL **/
     static func addNewSeries(channelID: String, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
@@ -1570,7 +1631,7 @@ class Database {
         })
     }
     
-    /** ADD NEW SERIES TO CHANNEL **/
+    /** ADD NEW THREAD TO SERIES **/
     static func addThread(channelID: String, parentItem: Item, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = User.currentUser, user.uID != nil else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]

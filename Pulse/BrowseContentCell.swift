@@ -65,6 +65,7 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
             titleLabel.text = _title
         } else {
             titleLabel.isHidden = true
+            subtitleLabel.numberOfLines = 2
         }
         
         if let _subtitle = _subtitle {
@@ -72,6 +73,7 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
             subtitleLabel.text = _subtitle
         } else {
             subtitleLabel.isHidden = true
+            titleLabel.numberOfLines = 2
         }
         
         titleStack.layoutIfNeeded()

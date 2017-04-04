@@ -27,7 +27,7 @@ class CameraOverlayView: UIView {
     fileprivate var timeLeftShapeLayer : CAShapeLayer!
     fileprivate var questionBackgroundHeight : CGFloat = 40
     fileprivate var shutterButtonRadius : CGFloat!
-    fileprivate var iconSize : CGFloat = IconSizes.xSmall.rawValue
+    fileprivate var iconSize : CGFloat = IconSizes.xxSmall.rawValue
     fileprivate var elementSpacing : CGFloat = Spacing.s.rawValue
     fileprivate var elementOpacity : Float = 0.7
     fileprivate var countdownTimerRadius : CGFloat = 10

@@ -12,7 +12,7 @@ class ExploreChannelsCell: UICollectionViewCell {
     fileprivate var titleStack = PulseMenu(_axis: .vertical, _spacing: 0)
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()
-    fileprivate var subscribeButton = PulseButton(size: .xSmall, type: .addCircle, isRound: true, hasBackground: false, tint: .black)
+    fileprivate var subscribeButton = PulseButton(size: .xxSmall, type: .addCircle, isRound: true, hasBackground: false, tint: .black)
     fileprivate lazy var previewImage = UIImageView()
     
     public var delegate : ExploreChannelsDelegate!

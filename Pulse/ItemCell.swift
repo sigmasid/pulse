@@ -17,12 +17,14 @@ class ItemCell: UICollectionViewCell {
     fileprivate var createdAtLabel = UILabel()
     fileprivate var itemImage = UIImageView()
     
-    fileprivate var cellCard = PulseMenu(_axis: .vertical, _spacing: 0)
+    fileprivate var cellCard = PulseMenu(_axis: .vertical, _spacing: 10)
     fileprivate var itemFooter = UIView()
+    fileprivate var itemHeader = UIView()
+
     fileprivate lazy var itemTag = UILabel()
     fileprivate var itemHeightAnchor : NSLayoutConstraint!
     
-    fileprivate var itemButton = PulseButton(size: .small, type: .logoCircle, isRound: true, hasBackground: false)
+    fileprivate var itemButton = PulseButton(size: .xSmall, type: .logoCircle, isRound: true, hasBackground: false)
     fileprivate var itemMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
     
     public var showRightMenuButton = false
@@ -78,7 +80,7 @@ class ItemCell: UICollectionViewCell {
             if let itemType = itemType {
                 switch itemType {
                 case .post:
-                    let restAttributedString = NSAttributedString(string: " added", attributes: subRestAttributes)
+                    let restAttributedString = NSAttributedString(string: " posted", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
                 case .question:
@@ -153,9 +155,15 @@ class ItemCell: UICollectionViewCell {
         super.prepareForReuse()
     }
     
-    func clickedItemButton() {
+    internal func clickedItemButton() {
         if delegate != nil {
-            delegate.clickedItemButton(itemRow: tag)
+            delegate.clickedUserButton(itemRow: tag)
+        }
+    }
+    
+    internal func clickedMenuButton() {
+        if delegate != nil {
+            delegate.clickedMenuButton(itemRow: tag)
         }
     }
     
@@ -169,6 +177,7 @@ class ItemCell: UICollectionViewCell {
         cellCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
         cellCard.layoutIfNeeded()
         
+        cellCard.addArrangedSubview(itemHeader)
         cellCard.addArrangedSubview(itemImage)
         cellCard.addArrangedSubview(itemFooter)
         
@@ -177,19 +186,25 @@ class ItemCell: UICollectionViewCell {
         itemHeightAnchor.priority = 100
         itemHeightAnchor.isActive = true
         
-        itemFooter.translatesAutoresizingMaskIntoConstraints = false
-        itemFooter.heightAnchor.constraint(greaterThanOrEqualToConstant: 75).isActive = true
+        //itemFooter.translatesAutoresizingMaskIntoConstraints = false
+        //itemFooter.heightAnchor.constraint(lessThanOrEqualToConstant: 75).isActive = true
+        
+        itemHeader.translatesAutoresizingMaskIntoConstraints = false
+        itemHeader.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        
+        itemHeader.addSubview(itemButton)
+        itemHeader.addSubview(subtitleLabel)
+        itemHeader.addSubview(itemMenu)
 
-        itemFooter.addSubview(itemButton)
-        itemFooter.addSubview(titleLabel)
         itemFooter.addSubview(itemTag)
-        itemFooter.addSubview(subtitleLabel)
+        itemFooter.addSubview(titleLabel)
         itemFooter.addSubview(createdAtLabel)
         
+        /** HEADER - USER IMAGE, USER NAME AND MENU BUTTON **/
         itemButton.translatesAutoresizingMaskIntoConstraints = false
-        itemButton.leadingAnchor.constraint(equalTo: itemFooter.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
-        itemButton.centerYAnchor.constraint(equalTo: itemFooter.centerYAnchor).isActive = true
-        itemButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        itemButton.leadingAnchor.constraint(equalTo: itemHeader.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        itemButton.centerYAnchor.constraint(equalTo: itemHeader.centerYAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        itemButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         itemButton.heightAnchor.constraint(equalTo: itemButton.widthAnchor).isActive = true
         itemButton.addTarget(self, action: #selector(clickedItemButton), for: .touchUpInside)
         
@@ -199,41 +214,38 @@ class ItemCell: UICollectionViewCell {
         itemButton.contentMode = .scaleAspectFill
         itemButton.clipsToBounds = true
         
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.leadingAnchor.constraint(equalTo: itemButton.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        let titleCenterConstraint = titleLabel.centerYAnchor.constraint(equalTo: itemFooter.centerYAnchor)
-        titleCenterConstraint.priority = 40
-        titleCenterConstraint.isActive = true
-        titleLabel.trailingAnchor.constraint(equalTo: itemFooter.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor).isActive = true
-        subtitleLabel.trailingAnchor.constraint(equalTo: itemTag.leadingAnchor).isActive = true
-        let subtitleTopConstraint = subtitleLabel.topAnchor.constraint(equalTo: itemFooter.topAnchor, constant: Spacing.xs.rawValue)
-        subtitleTopConstraint.priority = 50
-        subtitleTopConstraint.isActive = true
+        subtitleLabel.leadingAnchor.constraint(equalTo: itemButton.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        subtitleLabel.centerYAnchor.constraint(equalTo: itemButton.centerYAnchor).isActive = true
+        subtitleLabel.heightAnchor.constraint(equalTo: itemHeader.heightAnchor).isActive = true
         
-        subtitleLabel.bottomAnchor.constraint(lessThanOrEqualTo: titleLabel.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
-
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: subtitleLabel.font.pointSize, weight: UIFontWeightBold)]
-        let subtitleLabelHeight = GlobalFunctions.getLabelSize(title: "label", width: contentView.frame.width, fontAttributes: fontAttributes)
-        subtitleLabel.heightAnchor.constraint(equalToConstant: subtitleLabelHeight).isActive = true
+        itemMenu.translatesAutoresizingMaskIntoConstraints = false
+        itemMenu.trailingAnchor.constraint(equalTo: itemHeader.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        itemMenu.centerYAnchor.constraint(equalTo: itemButton.centerYAnchor).isActive = true
+        itemMenu.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        itemMenu.heightAnchor.constraint(equalTo: itemMenu.widthAnchor).isActive = true
+        itemMenu.removeShadow()
         
+        itemMenu.addTarget(self, action: #selector(clickedMenuButton), for: .touchUpInside)
+        
+        /** FOOTER - SUBTITLE (MAIN CONTENT), TAG & CREATED AT**/
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.leadingAnchor.constraint(equalTo: itemFooter.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        titleLabel.trailingAnchor.constraint(equalTo: itemFooter.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: itemFooter.topAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        titleLabel.bottomAnchor.constraint(equalTo: createdAtLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        
+        createdAtLabel.translatesAutoresizingMaskIntoConstraints = false
+        createdAtLabel.leadingAnchor.constraint(equalTo: itemFooter.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        createdAtLabel.bottomAnchor.constraint(equalTo: itemFooter.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        
+        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
         createdAtLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .left)
         itemTag.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .right)
         
-        createdAtLabel.translatesAutoresizingMaskIntoConstraints = false
-        createdAtLabel.leadingAnchor.constraint(equalTo: itemButton.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        createdAtLabel.bottomAnchor.constraint(equalTo: itemFooter.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        let createdAtfontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: createdAtLabel.font.pointSize, weight: UIFontWeightRegular)]
-        let createdAtHeight = GlobalFunctions.getLabelSize(title: "Jan 1, 2017", width: contentView.frame.width, fontAttributes: createdAtfontAttributes)
-        createdAtLabel.heightAnchor.constraint(equalToConstant: createdAtHeight).isActive = true
-        
         itemTag.translatesAutoresizingMaskIntoConstraints = false
-        itemTag.trailingAnchor.constraint(equalTo: itemFooter.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        itemTag.bottomAnchor.constraint(equalTo: createdAtLabel.bottomAnchor).isActive = true
-        itemTag.heightAnchor.constraint(equalToConstant: createdAtHeight).isActive = true
+        itemTag.trailingAnchor.constraint(equalTo: itemFooter.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        itemTag.centerYAnchor.constraint(equalTo: createdAtLabel.centerYAnchor).isActive = true
         
         itemImage.contentMode = UIViewContentMode.scaleAspectFill
         itemImage.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.7)

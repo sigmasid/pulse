@@ -22,8 +22,8 @@ enum ItemTypes: String {
     case feedback
     //Perspectives > has Threads > Thread has Perspective
     case perspectives
-    case perspective
     case thread
+    case perspective
     //Interviews
     case interviews
     case interview
@@ -176,6 +176,8 @@ class Item: NSObject {
         case .posts: return " post"
         case .thread: return " perspective"
         case .question: return " answer"
+        case .questions: return " question"
+
         case .interviews: return " interview"
         case .interview: return " answer"
 

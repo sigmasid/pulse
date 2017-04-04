@@ -79,7 +79,7 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     fileprivate func updateHeader() {
         //is in nav controller
         addBackButton()
-        headerNav?.setNav(title: "Featured Experts", subtitle: selectedChannel.cTitle)
+        headerNav?.setNav(title: "Featured Contributors", subtitle: selectedChannel.cTitle)
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
 

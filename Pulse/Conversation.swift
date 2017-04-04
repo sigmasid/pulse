@@ -34,12 +34,14 @@ class Conversation : NSObject {
             self.cLastMessage = snapshot.childSnapshot(forPath: "lastMessage").value as? String
         }
         
-        if snapshot.hasChild("type"), let type = snapshot.childSnapshot(forPath: "type").value as? String {
+        if snapshot.hasChild("lastMessageType"), let type = snapshot.childSnapshot(forPath: "lastMessageType").value as? String {
             switch type {
-            case "interviewInvite":
+            case "interview":
                 self.cType = .interviewInvite
-            case "channelInvite":
+            case "channel":
                 self.cType = .channelInvite
+            case "perspective":
+                self.cType = .perspectiveInvite
             default:
                 self.cType = .message
             }

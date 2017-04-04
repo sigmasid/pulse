@@ -341,7 +341,7 @@ class RecordingOverlay: UIView {
 
         progressBar.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         progressBar.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        progressBar.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        progressBar.heightAnchor.constraint(equalToConstant: statusBarHeight).isActive = true
         progressBar.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
     }
     

@@ -12,6 +12,7 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
     
     public var selectedUser : User!
     public var interviewItem : Item!
+    public var conversationID : String?
     
     public var interviewItemID : String! {
         didSet {
@@ -83,14 +84,12 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
     }
     
     internal func updateScreen() {
-        if let name = selectedUser.name {
-            let firstName = name.components(separatedBy: " ")[0]
-            let interviewRequest = interviewItem.itemTitle != nil ? ": \(interviewItem.itemTitle!)1" : ""
-            headerNav?.setNav(title: "Welcome \(firstName)!", subtitle: "Interview Request\(interviewRequest)")
-        }
+        let interviewRequest = interviewItem.itemTitle != nil ? ": \(interviewItem.itemTitle!)" : ""
         let interviewerName = interviewItem.user?.name != nil ? " from \(interviewItem.user!.name!)" : ""
         let channelName = interviewItem.cTitle != nil ? " on Channel \(interviewItem.cTitle!.capitalized)" : ""
         let seriesName = interviewItem.tag?.itemTitle != nil ? " \(interviewItem.tag!.itemTitle!)" : " interview"
+
+        headerNav?.setNav(title: "Interview Request", subtitle: "Topic\(interviewRequest)")
 
         iDescription.text = "You receieved an interview request\(interviewerName.capitalized). Your interview will be featured in the\(seriesName) series\(channelName)!"
         iDescription.numberOfLines = 0
@@ -110,11 +109,33 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
         })
     }
     
+    internal func confirmDecline() {
+        let menu = UIAlertController(title: "Are you sure you want to decline the interview?", message: "Interviews are a great way to share your perspectives, build your brand and help improve community's understanding of key issues & topics.", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "decline Interview", style: .destructive, handler: { (action: UIAlertAction!) in
+            self.markInterviewDeclined()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showShare() {
+        toggleLoading(show: true, message: "loading share options...", showIcon: true)
+        interviewItem.createShareLink(completion: { link in
+            guard let link = link else { return }
+            self.shareContent(shareType: "interview", shareText: self.interviewItem.itemTitle ?? "", shareLink: link)
+        })
+    }
+    
     internal func showMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "decline Interview", style: .destructive, handler: { (action: UIAlertAction!) in
-            //implement decline interview
+            self.confirmDecline()
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
@@ -153,9 +174,13 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
     }
     
     internal func showSuccessMenu() {
-        let menu = UIAlertController(title: "Successfully Saved Interview",
-                                     message: "Tap okay to the go back!",
+        let menu = UIAlertController(title: "All Set! Interview Posted",
+                                     message: "Share your interview or tap done to the go back!",
                                      preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "share Interview", style: .default, handler: { (action: UIAlertAction!) in
+            self.showShare()
+        }))
         
         menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
@@ -166,8 +191,8 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showErrorMenu(error : Error) {
-        let menu = UIAlertController(title: "Error Saving Interview", message: error.localizedDescription, preferredStyle: .actionSheet)
+    internal func showErrorMenu(errorTitle : String, error : Error) {
+        let menu = UIAlertController(title: errorTitle, message: error.localizedDescription, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
@@ -252,7 +277,7 @@ extension InterviewRequestVC {
         guard let userID = User.currentUser?.uID else {
             let errorInfo = [ NSLocalizedDescriptionKey : "please login" ]
             let error = NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo)
-            showErrorMenu(error: error)
+            showErrorMenu(errorTitle: "Please Login", error: error)
             return
         }
         let contentVC = ContentManagerVC()
@@ -285,7 +310,19 @@ extension InterviewRequestVC {
             if success {
                 self.showSuccessMenu()
             } else {
-                self.showErrorMenu(error: error!)
+                self.showErrorMenu(errorTitle: "Error Saving Interview", error: error!)
+            }
+        })
+    }
+    
+    internal func markInterviewDeclined() {
+        toggleLoading(show: true, message: "Declining Interview Request...", showIcon: true)
+        Database.declineInterview(interviewParentItem: interviewItem, conversationID: conversationID, completion: {(success, error) in
+            self.toggleLoading(show: false, message: nil)
+            if success {
+                self.goBack()
+            } else {
+                self.showErrorMenu(errorTitle: "Error Declining Interview", error: error!)
             }
         })
     }

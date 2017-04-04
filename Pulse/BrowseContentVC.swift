@@ -46,6 +46,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
             }
         }
     }
+    public var forSingleUser = false //if true then shows titles in caption vs. user info
     //end set by delegate
     
     /** Collection View Vars **/
@@ -152,11 +153,13 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     internal func userClickedMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "add\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-            self.clickedAddItem()
-        }))
+        if selectedItem.type != .interview {
+            menu.addAction(UIAlertAction(title: "add\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                self.clickedAddItem()
+            }))
+        }
         
-        menu.addAction(UIAlertAction(title: "share Tag", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
             self.clickedShare()
         }))
         
@@ -260,19 +263,23 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                     item.tag = self.allItems[indexPath.row].tag
                     self.allItems[indexPath.row] = item
                     
+                    if self.forSingleUser {
+                        cell.updateLabel(nil, _subtitle: item.itemTitle)
+                    } else {
                     // Get the user details
-                    Database.getUser(item.itemUserID, completion: {(user, error) in
-                        if let user = user {
-                            self.allItems[indexPath.row].user = user
-                            DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    
-                                    cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
+                        Database.getUser(item.itemUserID, completion: {(user, error) in
+                            if let user = user {
+                                self.allItems[indexPath.row].user = user
+                                DispatchQueue.main.async {
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        
+                                        cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
 
+                                    }
                                 }
                             }
-                        }
-                    })
+                        })
+                    }
                 }
             })
         }
@@ -322,7 +329,13 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
             headerView.delegate = self
-            headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "")
+            
+            if forSingleUser, let name = selectedItem.user?.name {
+                let headerTitle = name + " - " + selectedItem.itemTitle
+                headerView.updateLabel(headerTitle)
+            } else {
+                headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "")
+            }
             
             return headerView
             

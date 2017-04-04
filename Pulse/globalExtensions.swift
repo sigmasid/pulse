@@ -404,8 +404,8 @@ enum FollowToggle {
 }
 
 enum IconSizes: CGFloat {
-    case xxSmall = 10
-    case xSmall = 20
+    case xxSmall = 20
+    case xSmall = 30
     case small = 35
     case medium = 50
     case large = 75
@@ -611,6 +611,7 @@ enum ConversationType {
     case message
     case interviewInvite
     case channelInvite
+    case perspectiveInvite
 }
 
 struct ItemMetaData {

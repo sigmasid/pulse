@@ -437,8 +437,8 @@ extension ContentOverlay {
         menu.translatesAutoresizingMaskIntoConstraints = false
         menu.centerYAnchor.constraint(equalTo: footerBackground.centerYAnchor).isActive = true
         menu.centerXAnchor.constraint(equalTo: footerBackground.centerXAnchor).isActive = true
-        menu.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue * 3 + Spacing.s.rawValue * 2).isActive = true
-        menu.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        menu.widthAnchor.constraint(equalToConstant: IconSizes.xxSmall.rawValue * 3 + Spacing.s.rawValue * 2).isActive = true
+        menu.heightAnchor.constraint(equalToConstant: IconSizes.xxSmall.rawValue).isActive = true
         
         menu.layoutIfNeeded()
         

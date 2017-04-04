@@ -27,6 +27,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     fileprivate var channelCollection : UICollectionView!
     fileprivate var isLayoutSetup = false
     fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
+    fileprivate lazy var menuButton : PulseButton = PulseButton(size: .small, type: .ellipsis, isRound : true, hasBackground: false, tint: .black)
 
     override func viewDidLayoutSubviews() {
         if !isLayoutSetup {
@@ -67,11 +68,14 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         if !forUser {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
             tabBarHidden = false
-
+            
+            menuButton.removeShadow()
+            menuButton.addTarget(self, action: #selector(menuButtonClicked), for: .touchUpInside)
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: menuButton)
+            
             headerNav?.setNav(title: "Explore Channels")
             headerNav?.updateBackgroundImage(image: nil)
         } else {
-            print("should add back button in update header")
             addBackButton()
             tabBarHidden = true
             
@@ -91,7 +95,21 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         }
     }
     
-    func updateDataSource() {
+    internal func menuButtonClicked() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "start a Channel", style: .default, handler: { (action: UIAlertAction!) in
+            self.startChannel()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func updateDataSource() {
         if !isLayoutSetup {
             setupScreenLayout()
         }
@@ -102,7 +120,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         channelCollection.layoutIfNeeded()
     }
     
-    func userClickedSearch() {
+    internal func userClickedSearch() {
         let searchNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         let searchVC = SearchVC()
         searchNavVC.modalTransitionStyle = .crossDissolve
@@ -114,11 +132,11 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         navigationController?.present(searchNavVC, animated: true, completion: nil)
     }
     
-    func userClosedModal(_ viewController : UIViewController) {
+    internal func userClosedModal(_ viewController : UIViewController) {
         dismiss(animated: true, completion: { _ in })
     }
     
-    func userClickedSubscribe(senderTag: Int) {
+    internal func userClickedSubscribe(senderTag: Int) {
         let selectedChannel = allChannels[senderTag]
         
         Database.subscribeChannel(selectedChannel, completion: {(success, error) in
@@ -166,11 +184,14 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     }
     
     internal func showChannel(channel : Channel) {
-        
         let channelVC = ChannelVC()
         navigationController?.pushViewController(channelVC, animated: true)
         channelVC.selectedChannel = channel
-        
+    }
+    
+    internal func startChannel() {
+        let newChannelVC = StartChannelVC()
+        navigationController?.pushViewController(newChannelVC, animated: true)
     }
 }
 

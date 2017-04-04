@@ -154,7 +154,8 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
             navigationController?.pushViewController(messageVC, animated: true)
         } else if conversation.cType == .interviewInvite {
             let interviewVC = InterviewRequestVC()
-            interviewVC.interviewItemID = conversation.cID
+            interviewVC.conversationID = conversation.cID
+            interviewVC.interviewItemID = conversation.cLastMessageID
             
             navigationController?.pushViewController(interviewVC, animated: true)
         }

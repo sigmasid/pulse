@@ -190,7 +190,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     }
     
     internal func showAddEmail(bodyText: String) {
-        addEmail = AddText(frame: view.bounds, buttonText: "Submit",
+        addEmail = AddText(frame: view.bounds, buttonText: "Send",
                            bodyText: bodyText)
         
         addEmail.delegate = self

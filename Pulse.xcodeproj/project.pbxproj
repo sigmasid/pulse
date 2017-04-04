@@ -335,6 +335,7 @@
 				BA1C48C21D243704008F8A04 /* Assets.xcassets */,
 				BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */,
 				BA1C48C71D243704008F8A04 /* Info.plist */,
+				BAFD76DD1D9CDFA9005FBBD0 /* Archive */,
 				BA03C43A1DB5A51D00277382 /* Standalone Search */,
 				BA1DE12A1D244486004F3ED2 /* Models */,
 				BA1DE1431D244CBD004F3ED2 /* Global Refs */,
@@ -345,8 +346,7 @@
 				BA6B78B41D2D7D56003EE992 /* User Recorded Item */,
 				BA7745CA1E5775040023976F /* Channel */,
 				BA7745CB1E5775120023976F /* User Profile */,
-				BA722DEF1E5A5F6E00E9699D /* Items */,
-				BAFD76DD1D9CDFA9005FBBD0 /* Feed */,
+				BA722DEF1E5A5F6E00E9699D /* Collections */,
 				BAFD76D71D9C5000005FBBD0 /* Main Tabs */,
 				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
 				BA03C43B1DB5A52900277382 /* Messaging */,
@@ -432,7 +432,7 @@
 			name = "User Recorded Item";
 			sourceTree = "<group>";
 		};
-		BA722DEF1E5A5F6E00E9699D /* Items */ = {
+		BA722DEF1E5A5F6E00E9699D /* Collections */ = {
 			isa = PBXGroup;
 			children = (
 				BA5C62CF1E5D1D5F000823AB /* TagCollectionVC.swift */,
@@ -446,7 +446,7 @@
 				BAC918511E73241E005772EC /* EmptyCell.swift */,
 				BA659EFC1E844F32004C46F9 /* ItemTableHeader.swift */,
 			);
-			name = Items;
+			name = Collections;
 			sourceTree = "<group>";
 		};
 		BA7745CA1E5775040023976F /* Channel */ = {
@@ -492,22 +492,22 @@
 			children = (
 				BA434FB31E5943A1004686CB /* ExploreChannelsVC.swift */,
 				BA434FB51E594697004686CB /* ExploreChannelsCell.swift */,
-				BA53EAB81D70E08100357E5A /* ExploreVC.swift */,
 				BA0B68FF1D89F7370037A7C4 /* HomeVC.swift */,
 				BAE51E1F1D87353600677A50 /* MasterTabVC.swift */,
 			);
 			name = "Main Tabs";
 			sourceTree = "<group>";
 		};
-		BAFD76DD1D9CDFA9005FBBD0 /* Feed */ = {
+		BAFD76DD1D9CDFA9005FBBD0 /* Archive */ = {
 			isa = PBXGroup;
 			children = (
+				BA53EAB81D70E08100357E5A /* ExploreVC.swift */,
 				BA7D55271D74C58D005EF7F3 /* FeedVC.swift */,
 				BA2F394D1E5530B800F1F2A7 /* FeedPeopleCell.swift */,
 				BA7D55291D74C5A9005EF7F3 /* FeedTagCell.swift */,
 				BA4669C11DFF1D3C00C14DA6 /* FeedQuestionCell.swift */,
 			);
-			name = Feed;
+			name = Archive;
 			sourceTree = "<group>";
 		};
 		BAFE7E8B1D2CCC5300DEED6C /* Login */ = {

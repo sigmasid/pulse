@@ -59,9 +59,9 @@ class InboxTableCell: UITableViewCell {
         contentView.addSubview(userImage)
         userImage.translatesAutoresizingMaskIntoConstraints = false
         userImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        userImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.s.rawValue).isActive = true
-        userImage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-        userImage.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        userImage.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+        userImage.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        userImage.heightAnchor.constraint(equalTo: userImage.widthAnchor).isActive = true
         userImage.layoutIfNeeded()
         
         contentView.addSubview(lastMessageTime)

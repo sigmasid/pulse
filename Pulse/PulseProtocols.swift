@@ -28,7 +28,8 @@ protocol ParentTextViewDelegate {
 }
 
 protocol ItemCellDelegate : class {
-    func clickedItemButton(itemRow : Int)
+    func clickedUserButton(itemRow : Int)
+    func clickedMenuButton(itemRow : Int)
 }
 
 protocol CameraDelegate : class {

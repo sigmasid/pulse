@@ -12,10 +12,10 @@ class ItemHeader: UICollectionReusableView {
     public var delegate : HeaderDelegate!
     
     fileprivate var titleLabel = UILabel()
-    lazy var headerMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
+    lazy var headerMenu = PulseButton(size: .small, type: .ellipsis, isRound: true, background: .white, tint: .black)
     
     fileprivate var reuseCell = false
-    
+        
     override init(frame: CGRect) {
         super.init(frame: frame)
         

@@ -158,12 +158,16 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     }
     
     /** Delegate Function **/
-    func clickedItemButton(itemRow : Int) {
+    func clickedUserButton(itemRow : Int) {
         if let user = allItems[itemRow].user {
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
             userProfileVC.selectedUser = user
         }
+    }
+    
+    func clickedMenuButton(itemRow : Int) {
+        //implement menu for each item
     }
     
     /** HEADER FUNCTIONS **/
@@ -189,9 +193,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(HeaderTagsCell.self, forCellWithReuseIdentifier: sectionReuseIdentifier)
             collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
-            
-            //channel?.register(ChannelHeaderExperts.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
-            
+                        
             view.addSubview(collectionView!)
             
             isLayoutSetup = true
@@ -223,7 +225,7 @@ extension ChannelVC {
             self.startSeries()
         }))
         
-        menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
             //self.askQuestion()
         }))
         
@@ -237,6 +239,7 @@ extension ChannelVC {
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
+            self.toggleLoading(show: false, message: nil)
         }))
         
         present(menu, animated: true, completion: nil)
@@ -245,7 +248,7 @@ extension ChannelVC {
     func showRegularMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "meet the Experts", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "featured Contributors", style: .default, handler: { (action: UIAlertAction!) in
             let browseExpertsVC = BrowseUsersVC()
             browseExpertsVC.selectedChannel = self.selectedChannel
             browseExpertsVC.delegate = self
