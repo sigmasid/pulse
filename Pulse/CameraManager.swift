@@ -52,13 +52,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     
     /// A block creating UI to present error message to the user. This can be customised to be presented on the Window root view controller, or to pass in the viewController which will present the UIAlertController, for example.
     open var showErrorBlock:(_ erTitle: String, _ erMessage: String) -> Void = { (erTitle: String, erMessage: String) -> Void in
-        
-        //        var alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .Alert)
-        //        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Default, handler: { (alertAction) -> Void in  }))
-        //
-        //        if let topController = UIApplication.sharedApplication().keyWindow?.rootViewController {
-        //            topController.presentViewController(alertController, animated: true, completion:nil)
-        //        }
+        GlobalFunctions.showAlertBlock(erTitle, erMessage: erMessage)
     }
     
     /// Property to determine if manager should write the resources to the phone library. Default value is false.
@@ -1124,7 +1118,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     fileprivate func _show(_ title: String, message: String) {
         if showErrorsToUsers {
             DispatchQueue.main.async(execute: { () -> Void in
-                self.showErrorBlock(title, message)
+                GlobalFunctions.showAlertBlock(title, erMessage: message)
             })
         }
     }

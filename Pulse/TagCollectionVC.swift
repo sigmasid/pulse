@@ -8,7 +8,7 @@
 
 import UIKit
 
-class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate {
+class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate {
     
     public var selectedChannel: Channel!
     
@@ -36,6 +36,9 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     
     fileprivate var isLayoutSetup = false
     
+    fileprivate var selectedShareItem : Item?
+    fileprivate var addEmail : AddText!
+
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLayoutSetup {
@@ -70,7 +73,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     }
     
     func userClosedModal(_ viewController: UIViewController) {
-        GlobalFunctions.dismissVC(viewController)
+        dismiss(animated: true, completion: { _ in })
     }
     
     internal func askQuestion() {
@@ -89,10 +92,10 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     }
     
     internal func startThread() {
-        let startThread = StartThread()
-        startThread.selectedChannel = selectedChannel
-        startThread.selectedItem = selectedItem
-        navigationController?.pushViewController(startThread, animated: true)
+        let newThread = NewThreadVC()
+        newThread.selectedChannel = selectedChannel
+        newThread.selectedItem = selectedItem
+        navigationController?.pushViewController(newThread, animated: true)
     }
     
     internal func addNewItem(selectedItem: Item) {
@@ -138,10 +141,17 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
             })
         }
     }
+    
+    internal func showAddEmail(bodyText: String) {
+        addEmail = AddText(frame: view.bounds, buttonText: "Send",
+                           bodyText: bodyText, keyboardType: .emailAddress)
+        
+        addEmail.delegate = self
+        view.addSubview(addEmail)
+    }
 }
 
 extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource {
-    
     // MARK: UICollectionViewDataSource
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
@@ -174,13 +184,12 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
         let currentItem = allItems[indexPath.row]
 
         //clear the cells and set the item type first
-        cell.updateLabel(currentItem.itemTitle != nil ? currentItem.itemTitle : "",
+        cell.updateLabel(currentItem.itemTitle != "" ? currentItem.itemTitle : "",
                          _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: nil)
         cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
 
         //Already fetched this item
         if allItems[indexPath.row].itemCreated {
-            
             cell.itemType = currentItem.type
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
@@ -279,10 +288,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
             headerView.delegate = self
-            
-            if let title = selectedItem.itemTitle {
-                headerView.updateLabel("# \(title.lowercased())")
-            }
+            headerView.updateLabel("# \(selectedItem.itemTitle.lowercased())")
             
             return headerView
             
@@ -334,63 +340,6 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         if !decelerate { updateOnscreenRows() }
     }
-    
-    internal func userSelected(item : Item, index : Int) {
-        
-        item.tag = selectedItem //since we are in tagVC
-        
-        //can only be a question or a post that user selects since it's in a tag already
-        switch item.type {
-            
-        case .post:
-            
-            showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
-
-        case .question, .thread, .interview:
-            
-            Database.getItemCollection(item.itemID, completion: {(success, items) in
-                success ?
-                    self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) :
-                    self.showNoItemsMenu(selectedItem : item)
-            })
-            
-        default: break
-        }
-    }
-    
-    
-    internal func showBrowse(selectedItem: Item) {
-        
-        let _selectedItem = selectedItem
-        _selectedItem.cID = selectedChannel.cID
-        
-        let itemCollection = BrowseContentVC()
-        itemCollection.selectedChannel = selectedChannel
-        itemCollection.selectedItem = _selectedItem
-        itemCollection.contentDelegate = self
-        itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
-        navigationController?.pushViewController(itemCollection, animated: true)
-        
-    }
-    
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
-        contentVC = ContentManagerVC()
-        
-        contentVC.watchedFullPreview = watchedPreview
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.itemCollection = itemCollection
-        contentVC.itemIndex = index
-        contentVC.allItems = allItems
-        contentVC.openingScreen = .item
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    internal func userClosedBrowse(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in })
-    }
 }
 
 extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
@@ -411,6 +360,114 @@ extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
 
 //menus
 extension TagCollectionVC {
+    
+    //parent text view delegate
+    internal func dismiss(_ view : UIView) {
+        view.removeFromSuperview()
+    }
+    
+    internal func buttonClicked(_ text: String, sender: UIView) {
+        GlobalFunctions.validateEmail(text, completion: {(success, error) in
+            if !success {
+                self.showAddEmail(bodyText: "invalid email - try again")
+            } else {
+                if let selectedShareItem = selectedShareItem {
+                    let itemKey = databaseRef.child("items").childByAutoId().key
+                    let parentItemID = selectedShareItem.itemID
+                    
+                    selectedShareItem.itemID = itemKey
+                    selectedShareItem.cID = selectedChannel.cID
+                    selectedShareItem.cTitle = selectedChannel.cTitle
+                    selectedShareItem.tag = selectedItem
+                    
+                    toggleLoading(show: true, message: "sending invite...", showIcon: true)
+                    let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
+                    Database.createInviteRequest(item: selectedShareItem, type: type, toUser: nil, toName: nil, toEmail: text,
+                                                 childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+                            success ?
+                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
+                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                        self.toggleLoading(show: false, message: nil)
+                    })
+                }
+            }
+        })
+    }
+    
+    //delegate for mini user search - send the invite
+    internal func userSelected(item: Any) {
+        guard let toUser = item as? User else {
+            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invalid User Selected", erMessage: "Sorry! The user you selected is not valid")
+            return
+        }
+        
+        if let selectedShareItem = selectedShareItem {
+            let itemKey = databaseRef.child("items").childByAutoId().key
+            let parentItemID = selectedShareItem.itemID
+            
+            selectedShareItem.itemID = itemKey
+            selectedShareItem.cID = selectedChannel.cID
+            selectedShareItem.cTitle = selectedChannel.cTitle
+            selectedShareItem.tag = selectedItem
+            
+            toggleLoading(show: true, message: "sending invite...", showIcon: true)
+            let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
+            Database.createInviteRequest(item: selectedShareItem, type: type, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+                success ?
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                self.toggleLoading(show: false, message: nil)
+            })
+        }
+    }
+    
+    //for collection view items
+    internal func userSelected(item : Item, index : Int) {
+        
+        item.tag = selectedItem //since we are in tagVC
+        
+        //can only be a question or a post that user selects since it's in a tag already
+        switch item.type {
+        case .post:
+            showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
+        case .question, .thread, .interview:
+            Database.getItemCollection(item.itemID, completion: {(success, items) in
+                success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
+            })
+        default: break
+        }
+    }
+    
+    
+    internal func showBrowse(selectedItem: Item) {
+        selectedItem.cID = selectedChannel.cID
+        
+        let itemCollection = BrowseContentVC()
+        itemCollection.selectedChannel = selectedChannel
+        itemCollection.selectedItem = selectedItem
+        itemCollection.contentDelegate = self
+        itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
+        navigationController?.pushViewController(itemCollection, animated: true)
+    }
+    
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+        contentVC = ContentManagerVC()
+        
+        contentVC.watchedFullPreview = watchedPreview
+        contentVC.selectedChannel = selectedChannel
+        contentVC.selectedItem = selectedItem
+        contentVC.itemCollection = itemCollection
+        contentVC.itemIndex = index
+        contentVC.allItems = allItems
+        contentVC.openingScreen = .item
+        
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    internal func userClosedBrowse(_ viewController : UIViewController) {
+        dismiss(animated: true, completion: { _ in })
+    }
     
     /** ItemCellDelegate Methods **/
     internal func clickedUserButton(itemRow : Int) {
@@ -434,7 +491,7 @@ extension TagCollectionVC {
             }))
             
             menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
-                //implement invite experts - should show user search box
+                self.showInviteMenu(currentItem: currentItem)
             }))
         }
         
@@ -458,7 +515,7 @@ extension TagCollectionVC {
     //user clicked header menu - for series
     func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        let newItemTitle = "new \(selectedItem.childType().capitalized)"
+        let newItemTitle = "new\(selectedItem.childType().capitalized)"
         
         if let user = User.currentUser, user.isVerified(for: selectedChannel) {
             menu.addAction(UIAlertAction(title: newItemTitle, style: .default, handler: { (action: UIAlertAction!) in
@@ -532,16 +589,50 @@ extension TagCollectionVC {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showShare(selectedItem: Item, type: String) {
+    internal func showInviteMenu(currentItem : Item) {
+        let menu = UIAlertController(title: "Invite Experts", message: "know someone who can add to the discussion?", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedShareItem = currentItem
+            
+            let browseUsers = MiniUserSearchVC()
+            browseUsers.modalPresentationStyle = .overCurrentContext
+            browseUsers.modalTransitionStyle = .crossDissolve
+            
+            browseUsers.modalDelegate = self
+            browseUsers.selectionDelegate = self
+            browseUsers.selectedChannel = self.selectedChannel
+            self.navigationController?.present(browseUsers, animated: true, completion: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedShareItem = currentItem
+            self.showAddEmail(bodyText: "enter email")
+        }))
+        
+        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
+            let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+            self.showShare(selectedItem: currentItem, type: "", fullShareText: shareText)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
+        
         selectedItem.createShareLink(completion: { link in
             guard let link = link else { return }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle ?? "", shareLink: link)
+            self.shareContent(shareType: type, shareText: self.selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
         })
     }
     
     internal func showShare(type: String) {
-        showShare(selectedItem: self.selectedItem, type: type)
+        showShare(selectedItem: self.selectedItem, type: type, fullShareText: self.selectedItem.itemTitle)
     }
 }
 

@@ -288,13 +288,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             
             uploadTask = path.put(data, metadata: _metadata) { metadata, error in
                 if (error != nil) {
-                    GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                    GlobalFunctions.showAlertBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                 } else {
                     item.contentURL = metadata?.downloadURL()
                     
                     Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                         if !success {
-                            GlobalFunctions.showErrorBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                            GlobalFunctions.showAlertBlock("Error Posting Answer", erMessage: error!.localizedDescription)
                         } else {
                             self.itemCollectionPost[item.itemID] = item.type.rawValue
                             allItems.removeLast()
@@ -329,13 +329,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                 
                 uploadTask = path.put(assetData, metadata: metadata) { metadata, error in
                     if (error != nil) {
-                        GlobalFunctions.showErrorBlock(viewController: self, erTitle: "Error Posting Answer", erMessage: error!.localizedDescription)
+                        GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Posting Answer", erMessage: error!.localizedDescription)
                     } else {
                         // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
                         item.contentURL = metadata?.downloadURL()
                         Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                             if !success {
-                                GlobalFunctions.showErrorBlock("Error Posting Item", erMessage: error!.localizedDescription)
+                                GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                                 completion(false, nil)
                             } else {
                                 self.uploadTask.removeAllObservers()
@@ -438,6 +438,20 @@ extension RecordedVideoVC: UITextViewDelegate {
             _post()
         } else if mode == .add {
             _addMore()
+        }
+    }
+    
+    func textViewDidChange(_ textView: UITextView) {
+        if textView.text != "" {
+            let currentHeight = textView.frame.height
+            let sizeThatFitsTextView = textView.sizeThatFits(CGSize(width: textView.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+            
+            if currentHeight != sizeThatFitsTextView.height {
+                //if new height is bigger, move the text view up and increase height
+                textView.frame = CGRect(x: textView.frame.origin.x, y: textView.frame.origin.y - (sizeThatFitsTextView.height - currentHeight),
+                                        width: textView.frame.width, height: sizeThatFitsTextView.height)
+                textView.textContainer.size = CGSize(width: textView.frame.width, height: textView.frame.height)
+            }
         }
     }
     

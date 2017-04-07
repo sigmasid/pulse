@@ -67,7 +67,7 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         removeClip()
         
         guard let answerType = item.contentType, let itemURL = item.contentURL else {
-            GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
+            GlobalFunctions.showAlertBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
             return
         }
         

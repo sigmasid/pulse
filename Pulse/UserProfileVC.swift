@@ -134,6 +134,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: false)
         
+        if !tabBarHidden {
+            collectionView.contentInset = UIEdgeInsetsMake(0, 0, tabBarController!.tabBar.frame.height + Spacing.m.rawValue, 0)
+        }
+        
         collectionView?.register(EmptyCell.self,
                                  forCellWithReuseIdentifier: emptyReuseIdentifier)
         collectionView?.register(BrowseContentCell.self,
@@ -275,7 +279,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
         confirmLogout.addAction(UIAlertAction(title: "logout", style: .default, handler: { (action: UIAlertAction!) in
             Database.signOut({ success in
                 if !success {
-                    GlobalFunctions.showErrorBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
+                    GlobalFunctions.showAlertBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
                 }
             })
         }))

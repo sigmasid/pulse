@@ -204,7 +204,7 @@ extension SettingsTableVC: CameraDelegate {
         
         Database.uploadProfileImage(imageData, completion: {(URL, error) in
             if error != nil {
-                GlobalFunctions.showErrorBlock("Sorry!", erMessage: "There was an error saving the photo. Please try again")
+                GlobalFunctions.showAlertBlock("Sorry!", erMessage: "There was an error saving the photo. Please try again")
             } else {
                 UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
                                completion: {(value: Bool) in

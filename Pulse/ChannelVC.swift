@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDelegate, HeaderDelegate {
+class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDelegate, HeaderDelegate, ParentTextViewDelegate, ModalDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
@@ -52,7 +52,10 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
-        
+    
+    fileprivate var selectedShareItem : Item?
+    fileprivate var addEmail : AddText!
+    
     override init() {
         super.init()
     }
@@ -135,7 +138,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         
         subscribeChannel(channel: selectedChannel, completion: {( success, error ) in
             if !success {
-                GlobalFunctions.showErrorBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
+                GlobalFunctions.showAlertBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
             } else {
                 if let user = User.currentUser, user.isSubscribedToChannel(cID: self.selectedChannel.cID) {
                     indicator.removeFromSuperview()
@@ -192,7 +195,12 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
 extension ChannelVC {
     
     /** Delegate Function **/
-    func clickedUserButton(itemRow : Int) {
+    internal func dismiss(_ view : UIView) {
+        view.removeFromSuperview()
+    }
+    
+    //clicked the image button to go to a user profile
+    internal func clickedUserButton(itemRow : Int) {
         if let user = allItems[itemRow].user {
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
@@ -212,7 +220,7 @@ extension ChannelVC {
             }))
             
             menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
-                //implement invite experts - should show user search box
+                self.showInviteMenu(currentItem: currentItem)
             }))
         }
         
@@ -240,18 +248,90 @@ extension ChannelVC {
         
         user.isVerified(for: selectedChannel) ? showExpertMenu() : showRegularMenu()
     }
-    /** End Delegate Functions **/
     
-    internal func inviteExperts() {
-        
+    //close modal - e.g. mini search
+    internal func userClosedModal(_ viewController: UIViewController) {
+        dismiss(animated: true, completion: { _ in })
     }
     
-    internal func showShare(selectedItem: Item, type: String) {
+    //after email - user submitted the text
+    internal func buttonClicked(_ text: String, sender: UIView) {
+        GlobalFunctions.validateEmail(text, completion: {(success, error) in
+            if !success {
+                self.showAddEmail(bodyText: "invalid email - try again")
+            } else {
+                if let selectedShareItem = selectedShareItem {
+                    let itemKey = databaseRef.child("items").childByAutoId().key
+                    let parentItemID = selectedShareItem.itemID
+                    
+                    selectedShareItem.itemID = itemKey
+                    selectedShareItem.cID = selectedChannel.cID
+                    selectedShareItem.cTitle = selectedChannel.cTitle
+                    
+                    toggleLoading(show: true, message: "sending invite...", showIcon: true)
+                    let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
+                    Database.createInviteRequest(item: selectedShareItem, type: type, toUser: nil, toName: nil, toEmail: text,
+                                                 childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+                        success ?
+                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
+                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                        self.toggleLoading(show: false, message: nil)
+                        self.selectedShareItem = nil
+                    })
+                }
+            }
+        })
+    }
+    /** End Delegate Functions **/
+    
+    /** Menu Options **/
+    internal func showInviteMenu(currentItem : Item) {
+        let menu = UIAlertController(title: "Invite Experts", message: "know someone who can add to the discussion? invite them below!", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedShareItem = currentItem
+            
+            let browseUsers = MiniUserSearchVC()
+            browseUsers.modalPresentationStyle = .overCurrentContext
+            browseUsers.modalTransitionStyle = .crossDissolve
+            
+            browseUsers.modalDelegate = self
+            browseUsers.selectionDelegate = self
+            browseUsers.selectedChannel = self.selectedChannel
+            self.navigationController?.present(browseUsers, animated: true, completion: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedShareItem = currentItem
+            self.showAddEmail(bodyText: "enter email")
+        }))
+        
+        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
+            let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+            self.showShare(selectedItem: currentItem, type: "", fullShareText: shareText)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
         selectedItem.createShareLink(completion: { link in
             guard let link = link else { return }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle ?? "", shareLink: link)
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
         })
+    }
+    
+    internal func showAddEmail(bodyText: String) {
+        addEmail = AddText(frame: view.bounds, buttonText: "Send",
+                           bodyText: bodyText, keyboardType: .emailAddress)
+        
+        addEmail.delegate = self
+        view.addSubview(addEmail)
     }
     
     internal func showNonExpertMenu(selectedItem : Item) {
@@ -337,7 +417,9 @@ extension ChannelVC {
         
         present(menu, animated: true, completion: nil)
     }
+    /** End Menu Options **/
     
+    /** Menu Actions **/
     internal func startSeries() {
         let newSeries = NewSeriesVC()
         newSeries.selectedChannel = selectedChannel
@@ -374,14 +456,49 @@ extension ChannelVC {
                 
             default: break
             }
-        } else if let user = item as? User {
             
-            let userProfileVC = UserProfileVC()
-            navigationController?.pushViewController(userProfileVC, animated: true)
-            userProfileVC.selectedUser = user
+        //user selected from mini user search for invite or clicked the user profile button
+        } else if let user = item as? User {
+    
+            userSelectedUser(toUser: user)
+        
+        //user invalid selection
+        } else {
+            
+            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invalid Selection", erMessage: "Sorry! That selection is not valid")
             
         }
     }
+    
+    //delegate for mini user search - send the invite
+    internal func userSelectedUser(toUser: User) {
+        
+        if let selectedShareItem = selectedShareItem {
+            let itemKey = databaseRef.child("items").childByAutoId().key
+            let parentItemID = selectedShareItem.itemID
+            
+            selectedShareItem.itemID = itemKey
+            selectedShareItem.cID = selectedChannel.cID
+            selectedShareItem.cTitle = selectedChannel.cTitle
+            
+            toggleLoading(show: true, message: "sending invite...", showIcon: true)
+            let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
+            Database.createInviteRequest(item: selectedShareItem, type: type, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+                success ?
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                self.toggleLoading(show: false, message: nil)
+            })
+            
+        } else {
+            
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = toUser
+            
+        }
+    }
+    
     
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()

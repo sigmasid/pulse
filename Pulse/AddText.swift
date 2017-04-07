@@ -41,6 +41,11 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         setupLayout(buttonText: buttonText, bodyText: bodyText)
         txtBody.becomeFirstResponder()
         txtBody.keyboardType = keyboardType
+        
+        if keyboardType != .alphabet {
+            txtBody.autocapitalizationType = .none
+            txtBody.autocorrectionType = .no
+        }
     }
     
     required init?(coder aDecoder: NSCoder) {

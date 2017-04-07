@@ -1,10 +1,9 @@
-//
 //  InterviewRequestReceivedVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 3/27/17.
 //  Copyright © 2017 Think Apart. All rights reserved.
-//
+
 
 import UIKit
 
@@ -16,7 +15,7 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
     
     public var interviewItemID : String! {
         didSet {
-            Database.getInterviewItem(interviewItemID, completion: { interviewItem, questions, toUser, error in
+            Database.getInviteItem(interviewItemID, completion: { interviewItem, questions, toUser, error in
                 self.selectedUser = toUser
                 self.interviewItem = interviewItem
                 self.allQuestions = questions
@@ -84,10 +83,10 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
     }
     
     internal func updateScreen() {
-        let interviewRequest = interviewItem.itemTitle != nil ? ": \(interviewItem.itemTitle!)" : ""
+        let interviewRequest = interviewItem.itemTitle != "" ? ": \(interviewItem.itemTitle)" : ""
         let interviewerName = interviewItem.user?.name != nil ? " from \(interviewItem.user!.name!)" : ""
         let channelName = interviewItem.cTitle != nil ? " on Channel \(interviewItem.cTitle!.capitalized)" : ""
-        let seriesName = interviewItem.tag?.itemTitle != nil ? " \(interviewItem.tag!.itemTitle!)" : " interview"
+        let seriesName = interviewItem.tag?.itemTitle != nil ? " \(interviewItem.tag!.itemTitle)" : " interview"
 
         headerNav?.setNav(title: "Interview Request", subtitle: "Topic\(interviewRequest)")
 
@@ -127,7 +126,7 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
         interviewItem.createShareLink(completion: { link in
             guard let link = link else { return }
-            self.shareContent(shareType: "interview", shareText: self.interviewItem.itemTitle ?? "", shareLink: link)
+            self.shareContent(shareType: "interview", shareText: self.interviewItem.itemTitle, shareLink: link)
         })
     }
     

@@ -250,18 +250,16 @@ class GlobalFunctions {
         }
     }
     
-    static func showErrorBlock(_ erTitle: String, erMessage: String) {
-        
+    static func showAlertBlock(_ erTitle: String, erMessage: String) {
         if let topController = UIApplication.shared.keyWindow?.rootViewController {
-            showErrorBlock(viewController: topController, erTitle: erTitle, erMessage: erMessage)
+            showAlertBlock(viewController: topController, erTitle: erTitle, erMessage: erMessage)
         }
     }
     
-    static func showErrorBlock(viewController : UIViewController, erTitle: String, erMessage: String) {
+    static func showAlertBlock(viewController : UIViewController, erTitle: String, erMessage: String, buttonTitle: String = "cancel") {
+        let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .actionSheet)
         
-        let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
-
+        alertController.addAction(UIAlertAction(title: buttonTitle, style: buttonTitle == "cancel" ? .destructive : .default, handler: { (alertAction) -> Void in  }))
         viewController.present(alertController, animated: true, completion:nil)
     }
     

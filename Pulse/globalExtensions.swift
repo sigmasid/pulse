@@ -607,11 +607,12 @@ enum MediaAssetType {
     }
 }
 
-enum ConversationType {
+enum MessageType: String {
     case message
     case interviewInvite
     case channelInvite
     case perspectiveInvite
+    case questionInvite
 }
 
 struct ItemMetaData {

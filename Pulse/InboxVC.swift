@@ -67,10 +67,21 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
             self.tableView.dataSource = self
             self.tableView.delegate = self
             self.tableView.reloadData()
+            
+            self.keepConversationUpdated()
         })
-        
 
         tableView.layoutIfNeeded()
+    }
+    
+    internal func keepConversationUpdated() {
+        Database.keepConversationsUpdated(completion: { conversation in
+            if let index = self.conversations.index(of: conversation) {
+                self.conversations[index] = conversation
+                let indexPath = IndexPath(row: index, section: 0)
+                self.tableView.reloadRows(at: [indexPath], with: UITableViewRowAnimation.automatic)
+            }
+        })
     }
     
     fileprivate func addImage(cell : InboxTableCell, url : String, user : User) {
@@ -142,23 +153,38 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let conversation = conversations[indexPath.row]
+        let messageVC = MessageVC()
+        messageVC.toUser = conversation.cUser
         
-        if conversation.cType == .message {
-            let messageVC = MessageVC()
-            messageVC.toUser = conversation.cUser
-            
-            if let currentUserImage = conversation.cUser.thumbPicImage {
-                messageVC.toUserImage = currentUserImage
-            }
-            
-            navigationController?.pushViewController(messageVC, animated: true)
-        } else if conversation.cType == .interviewInvite {
+        if let currentUserImage = conversation.cUser.thumbPicImage {
+            messageVC.toUserImage = currentUserImage
+        }
+        
+        navigationController?.pushViewController(messageVC, animated: true)
+        
+        /** Use if want to go directly from inbox to the invite
+        } else if conversation.cLastMessageType == .interviewInvite {
             let interviewVC = InterviewRequestVC()
             interviewVC.conversationID = conversation.cID
             interviewVC.interviewItemID = conversation.cLastMessageID
             
             navigationController?.pushViewController(interviewVC, animated: true)
-        }
+        } else if conversation.cLastMessageType == .questionInvite || conversation.cLastMessageType == .perspectiveInvite {
+            let contentVC = ContentManagerVC()
+            toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+            Database.getInviteItem(conversation.cLastMessageID, completion: { selectedItem, childItems, toUser, error in
+                if let selectedItem = selectedItem {
+                    DispatchQueue.main.async {
+                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                        contentVC.selectedChannel = selectedChannel
+                        contentVC.selectedItem = selectedItem
+                        contentVC.openingScreen = .camera
+                        self.present(contentVC, animated: true, completion: nil)
+                    }
+                }
+                self.toggleLoading(show: false, message: nil)
+            })
+        } **/
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

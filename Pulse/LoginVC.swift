@@ -249,7 +249,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         loginButton.logIn(withReadPermissions: facebookReadPermissions, from: self, handler: { (result, blockError) -> Void in
             if blockError != nil {
                 self.toggleLoading(show: false, message: nil)
-                GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
+                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
             } else if result!.isCancelled {
                 self.toggleLoading(show: false, message: nil)
             } else {
@@ -275,7 +275,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
             if error != nil {
                 self.toggleLoading(show: false, message: nil)
-                GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
+                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
             }
             else {
                 self.toggleLoading(show: false, message: nil)

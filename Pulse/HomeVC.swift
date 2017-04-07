@@ -543,7 +543,7 @@ extension HomeVC {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
         selectedItem.createShareLink(completion: { link in
             guard let link = link else { return }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle ?? "", shareLink: link)
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link)
         })
     }
 }

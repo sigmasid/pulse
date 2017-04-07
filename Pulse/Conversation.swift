@@ -16,7 +16,7 @@ class Conversation : NSObject {
     var cLastMessageID : String!
     var cLastMessage : String?
     var cLastMessageTime : Date!
-    var cType : ConversationType!
+    var cLastMessageType : MessageType!
 
     dynamic var cCreated = false
 
@@ -36,17 +36,19 @@ class Conversation : NSObject {
         
         if snapshot.hasChild("lastMessageType"), let type = snapshot.childSnapshot(forPath: "lastMessageType").value as? String {
             switch type {
-            case "interview":
-                self.cType = .interviewInvite
-            case "channel":
-                self.cType = .channelInvite
-            case "perspective":
-                self.cType = .perspectiveInvite
+            case "interviewInvite":
+                self.cLastMessageType = .interviewInvite
+            case "channelInvite":
+                self.cLastMessageType = .channelInvite
+            case "perspectiveInvite":
+                self.cLastMessageType = .perspectiveInvite
+            case "questioneInvite":
+                self.cLastMessageType = .perspectiveInvite
             default:
-                self.cType = .message
+                self.cLastMessageType = .message
             }
         } else {
-            self.cType = .message
+            self.cLastMessageType = .message
         }
         
         if snapshot.hasChild("lastMessageTime") {
@@ -68,6 +70,14 @@ class Conversation : NSObject {
             return stringDate
         } else {
             return nil
+        }
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let object = object as? Conversation {
+            return self.cID == object.cID
+        } else {
+            return false
         }
     }
 }

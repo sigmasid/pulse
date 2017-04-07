@@ -109,7 +109,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         //need to be set first - to determine if first clip should be answer detail or the answer itself
         contentDetailVC.watchedFullPreview = watchedFullPreview
         contentDetailVC.itemDetailCollection = itemCollection
-        contentDetailVC.selectedChannel = selectedChannel
+        contentDetailVC.selectedChannel = selectedChannel != nil ? selectedChannel : Channel(cID: selectedItem.cID, title: selectedItem.cTitle ?? "")
         contentDetailVC.selectedItem = selectedItem
         contentDetailVC.itemIndex = itemIndex
         
@@ -201,14 +201,14 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             createdItemKey = nil
             
             let item = Item(itemID: itemKey,
-                        itemUserID: User.currentUser!.uID!,
-                        itemTitle: getRecordedItemTitle(),
-                        type: selectedItem.childItemType(),
-                        contentURL: assetURL,
-                        content: image,
-                        contentType: assetType,
-                        tag: selectedItem.tag,
-                        cID: selectedChannel.cID ?? selectedItem.cID)
+                            itemUserID: User.currentUser!.uID!,
+                            itemTitle: getRecordedItemTitle(),
+                            type: selectedItem.childItemType(),
+                            contentURL: assetURL,
+                            content: image,
+                            contentType: assetType,
+                            tag: selectedItem.tag,
+                            cID: selectedChannel.cID ?? selectedItem.cID)
             recordedItems.append(item)
         }
         
@@ -362,10 +362,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             switch selectedItem.type {
             case .question, .answer, .perspective, .post, .thread, .interview:
                 //selected item is a tag
-                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].tag?.itemTitle
+                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].tag?.itemTitle
             case .feedback, .posts, .perspectives: //case of tag - this is currently never the case?
                 //selected item is the parent tag
-                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle ?? allItems[itemIndex].itemTitle : allItems[itemIndex].itemTitle
+                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].itemTitle
             default: break
             }
             

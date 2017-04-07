@@ -165,7 +165,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     
     func handleLink(link: URL) {
         if isLoaded {
-            //exploreChannelsVC = link
+            exploreChannelsVC.universalLink = link
             selectedIndex = 1
         } else {
             universalLink = link

@@ -283,7 +283,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     completion(success)
                 })
             } else {
-                GlobalFunctions.showErrorBlock("Error", erMessage: "Sorry there was an error getting this item")
+                GlobalFunctions.showAlertBlock("Error", erMessage: "Sorry there was an error getting this item")
                 completion(false)
             }
         })
@@ -356,7 +356,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     fileprivate func updateOverlayData(_ item : Item) {
-        contentOverlay.setTitle(item.itemTitle ?? "")
+        contentOverlay.setTitle(item.itemTitle)
         contentOverlay.clearButtons()
         
         if let user = item.user {

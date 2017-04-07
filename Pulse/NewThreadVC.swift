@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class StartThread: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
@@ -55,7 +55,7 @@ class StartThread: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     internal func updateHeader() {
         addBackButton()
         
-        headerNav?.setNav(title: "Start a New Thread", subtitle: selectedItem.itemTitle ?? selectedChannel.cTitle)
+        headerNav?.setNav(title: "Start a New Thread", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
         headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
         headerNav?.showNavbar(animated: true)
     }
@@ -69,9 +69,9 @@ class StartThread: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         let itemKey = databaseRef.child("items").childByAutoId().key
         let item = Item(itemID: itemKey, type: "thread")
         
-        item.itemTitle = sTitle.text
+        item.itemTitle = sTitle.text ?? ""
         item.itemUserID = User.currentUser!.uID
-        item.itemDescription = sDescription.text
+        item.itemDescription = sDescription.text ?? ""
         item.content = capturedImage
         item.contentType = contentType
         item.cID = selectedChannel.cID
@@ -119,7 +119,7 @@ class StartThread: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
 }
 
 //UI Elements
-extension StartThread {
+extension NewThreadVC {
     func setupLayout() {
         view.addSubview(sAddCover)
         view.addSubview(sShowCamera)
@@ -210,7 +210,7 @@ extension StartThread {
     }
 }
 
-extension StartThread: UITextFieldDelegate {
+extension NewThreadVC: UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == sTitle, textField.text != "", sDescription.text != "" {
             submitButton.setEnabled()
@@ -243,7 +243,7 @@ extension StartThread: UITextFieldDelegate {
     }
 }
 
-extension StartThread: CameraDelegate {
+extension NewThreadVC: CameraDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
     func showCamera() {
         guard let nav = navigationController else { return }

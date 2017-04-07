@@ -86,11 +86,11 @@ class InboxTableCell: UITableViewCell {
         lastMessage.translatesAutoresizingMaskIntoConstraints = false
         lastMessage.trailingAnchor.constraint(equalTo: userName.trailingAnchor).isActive = true
         lastMessage.leadingAnchor.constraint(equalTo: userName.leadingAnchor).isActive = true
-        lastMessage.bottomAnchor.constraint(equalTo: userImage.bottomAnchor).isActive = true
         lastMessage.topAnchor.constraint(equalTo: userName.bottomAnchor).isActive = true
         lastMessage.layoutIfNeeded()
         
-        lastMessage.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .darkGray, alignment: .left)
+        lastMessage.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .left)
         lastMessage.lineBreakMode = .byTruncatingTail
+        lastMessage.numberOfLines = 2
     }
 }

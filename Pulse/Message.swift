@@ -15,6 +15,7 @@ class Message : NSObject {
     var to : User!
     var body : String!
     var time : Date!
+    var mType : MessageType = .message
     
     init(from : User, to: User, body: String) {
         self.from = from
@@ -42,6 +43,23 @@ class Message : NSObject {
         
         if snapshot.hasChild("toID") {
             self.to = User(uID: snapshot.childSnapshot(forPath: "toID").value as? String)
+        }
+        
+        if snapshot.hasChild("type"), let type = snapshot.childSnapshot(forPath: "type").value as? String {
+            switch type {
+            case "interviewInvite":
+                self.mType = .interviewInvite
+            case "channelInvite":
+                self.mType = .channelInvite
+            case "perspectiveInvite":
+                self.mType = .perspectiveInvite
+            case "questionInvite":
+                self.mType = .perspectiveInvite
+            default:
+                self.mType = .message
+            }
+        } else {
+            self.mType = .message
         }
     }
 }

@@ -94,7 +94,6 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         }
     }
     
-    
     func addObservers() {
         if !observersAdded {
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
@@ -264,9 +263,7 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if selectionDelegate != nil {
-            selectionDelegate.userSelected(item: users[indexPath.row])
-        }
+        userSelected(item: users[indexPath.row])
     }
 }
 

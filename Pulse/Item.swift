@@ -40,8 +40,8 @@ class Item: NSObject {
     //Item Meta
     var itemID = String()
     var itemUserID : String!
-    var itemTitle : String!
-    var itemDescription : String!
+    var itemTitle : String = ""
+    var itemDescription : String = ""
     var type : ItemTypes = .unknown
     
     //Channel items
@@ -84,24 +84,16 @@ class Item: NSObject {
         self.tag = tag
         self.cID = cID
     }
-
-    override func isEqual(_ object: Any?) -> Bool {
-        if let object = object as? Item {
-            return itemID == object.itemID
-        } else {
-            return false
-        }
-    }
     
     init(itemID: String, snapshot: FIRDataSnapshot) {
         self.itemID = itemID
         super.init()
         if snapshot.hasChild("title") {
-            self.itemTitle = snapshot.childSnapshot(forPath: "title").value as? String
+            self.itemTitle = snapshot.childSnapshot(forPath: "title").value as? String ?? ""
         }
         
         if snapshot.hasChild("description") {
-            self.itemDescription = snapshot.childSnapshot(forPath: "description").value as? String
+            self.itemDescription = snapshot.childSnapshot(forPath: "description").value as? String ?? ""
         }
         
         if let type = snapshot.childSnapshot(forPath: "type").value as? String {
@@ -165,6 +157,12 @@ class Item: NSObject {
             self.type = .interview
         case "thread":
             self.type = .thread
+        case "perspectiveInvite":
+            self.type = .thread
+        case "questionInvite":
+            self.type = .question
+        case "interviewInvite":
+            self.type = .interview
         default:
             self.type = .unknown
         }
@@ -174,6 +172,7 @@ class Item: NSObject {
         switch type {
         case .feedback: return plural ? " questions" : " question"
         case .posts: return plural ? " posts" : " post"
+            
         case .thread: return plural ? " perspectives" : " perspective"
         case .question: return plural ? " answers" : " answer"
         case .questions: return plural ? " questions" : " question"
@@ -227,33 +226,23 @@ class Item: NSObject {
         return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt!) : nil
     }
     
-    func createShareLink(completion: @escaping (String?) -> Void) {
-        switch type {
-        case .posts:
-            Database.createShareLink(linkString: "tag/"+itemID, completion: { link in
+    func createShareLink(invite: Bool = false, completion: @escaping (String?) -> Void) {
+        if !invite {
+            Database.createShareLink(linkString: "i/"+itemID, completion: { link in
                 completion(link)
             })
-        case .post:
-            Database.createShareLink(linkString: "p/"+itemID, completion: { link in
+        } else {
+            Database.createShareLink(linkString: "invite/"+itemID, completion: { link in
                 completion(link)
             })
-        case .feedback:
-            Database.createShareLink(linkString: "tag/"+itemID, completion: { link in
-                completion(link)
-            })
-        case .question:
-            Database.createShareLink(linkString: "q/"+itemID, completion: { link in
-                completion(link)
-            })
-        case .answer:
-            Database.createShareLink(linkString: "a/"+itemID, completion: { link in
-                completion(link)
-            })
-        case .interview:
-            Database.createShareLink(linkString: "interviewRequest/"+itemID, completion: { link in
-                completion(link)
-            })
-        default: completion(nil)
+        }
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let object = object as? Item {
+            return itemID == object.itemID
+        } else {
+            return false
         }
     }
 }

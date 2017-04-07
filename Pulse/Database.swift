@@ -156,8 +156,8 @@ class Database {
                         if let result = result as? FIRDataSnapshot, let itemID = result.childSnapshot(forPath: "_id").value as? String {
                             let itemType = result.childSnapshot(forPath: "fields/type/0").value as? String
                             let currentItem = Item(itemID: itemID, type: itemType ?? "")
-                            currentItem.itemTitle = result.childSnapshot(forPath: "fields/title/0").value as? String
-                            currentItem.itemDescription = result.childSnapshot(forPath: "fields/description/0").value as? String
+                            currentItem.itemTitle = result.childSnapshot(forPath: "fields/title/0").value as? String ?? ""
+                            currentItem.itemDescription = result.childSnapshot(forPath: "fields/description/0").value as? String ?? ""
                             currentItem.cID = result.childSnapshot(forPath: "fields/cID/0").value as? String
 
                             _results.append(currentItem)
@@ -320,8 +320,15 @@ class Database {
     }
     
     //Keep conversation updated
-    static func keepConversationUpdated(to : String?) {
-        
+    static func keepConversationsUpdated(completion: @escaping (Conversation) -> Void) {
+        if let _user = FIRAuth.auth()?.currentUser {
+            activeListeners.append(usersRef.child(_user.uid).child("conversations"))
+
+            usersRef.child(_user.uid).child("conversations").observe(.childChanged, with: { snap in
+                let _conversation = Conversation(snapshot: snap)
+                completion(_conversation)
+            })
+        }
     }
     
     ///Send message
@@ -341,8 +348,8 @@ class Database {
             //append to existing conversation if it already exists - message.mID has conversationID saved
             let conversationPost : [AnyHashable: Any] =
                 ["conversations/\(message.mID!)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : "message",
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : "message",
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : message.mType.rawValue,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
@@ -361,10 +368,12 @@ class Database {
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/conversationID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/conversationID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : message.mType.rawValue,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
@@ -521,13 +530,22 @@ class Database {
         })
     }
     
-    static func getInterviewItem(_ itemID : String, completion: @escaping (_ item : Item?, _ questions: [Item], _ toUser : User?, _ error : NSError?) -> Void) {
+    static func getInviteItem(_ itemID : String,
+                              completion: @escaping (_ item : Item?, _ questions: [Item], _ toUser : User?, _ error : NSError?) -> Void) {
         var allQuestions = [Item]()
         var toUser : User? = nil
         
         databaseRef.child("invites").child(itemID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
-                let currentItem = Item(itemID: itemID, snapshot: snap)
+                var currentItem : Item!
+                
+                //if interview or anything with child items - the itemID is the in
+                if let parentItemID = snap.childSnapshot(forPath: "parentItemID").value as? String {
+                    currentItem = Item(itemID: parentItemID, snapshot: snap)
+                } else {
+                    currentItem = Item(itemID: itemID, snapshot: snap)
+                }
+
                 if let userID = snap.childSnapshot(forPath: "fromUserID").value as? String {
                     currentItem.user = User(uID: userID)
                 }
@@ -535,9 +553,9 @@ class Database {
                 if let userName = snap.childSnapshot(forPath: "fromUserName").value as? String {
                     currentItem.user?.name = userName
                 }
-                
-                if snap.childSnapshot(forPath: "questions").exists() {
-                    for question in snap.childSnapshot(forPath: "questions").children {
+                                
+                if snap.childSnapshot(forPath: "items").exists() {
+                    for question in snap.childSnapshot(forPath: "items").children {
                         if let qSnap = question as? FIRDataSnapshot, let qTitle = qSnap.value as? String {
                             let newItem = Item(itemID: qSnap.key)
                             newItem.itemTitle = qTitle
@@ -557,7 +575,7 @@ class Database {
             }
             else {
                 let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
-                completion(nil, allQuestions, nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
+                completion(nil, [], nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
             }
         })
     }
@@ -890,7 +908,7 @@ class Database {
             let credential = FIRFacebookAuthProvider.credential(withAccessToken: token!)
             FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
                 if error != nil {
-                    GlobalFunctions.showErrorBlock("Error logging in", erMessage: error!.localizedDescription)
+                    GlobalFunctions.showAlertBlock("Error logging in", erMessage: error!.localizedDescription)
                 } else {
                     completion(true)
                 }
@@ -1511,7 +1529,8 @@ class Database {
         })
     }
     
-    static func createInviteRequest(item: Item, type: String, toUser: User?, toName: String?, childItems: [String], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func createInviteRequest(item: Item, type: MessageType, toUser: User?, toName: String?, toEmail: String? = nil, childItems: [String],
+                                    parentItemID: String?, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
@@ -1519,7 +1538,7 @@ class Database {
         }
         
         var itemPost : [String : Any] = ["title" : item.itemTitle,
-                                         "type" : type,
+                                         "type" : type.rawValue,
                                          "fromUserID" : user.uid,
                                          "fromUserName" : User.currentUser?.name ?? "",
                                          "createdAt" : FIRServerValue.timestamp(),
@@ -1529,18 +1548,22 @@ class Database {
                                          "tagTitle": item.tag?.itemTitle ?? ""]
         
         var userPost : [String : Any] = ["title" : item.itemTitle,
-                                         "type" : "interview",
+                                         "type" : type.rawValue,
                                          "createdAt" : FIRServerValue.timestamp()]
+        
+        if let parentItemID = parentItemID {
+            itemPost["parentItemID"] = parentItemID
+        }
         
         //add in the questions
         if !childItems.isEmpty {
             var childItemDetail : [ String : String ] = [:]
             for child in childItems {
-                let itemID = databaseRef.child("invites").child(item.itemID).child("questions").childByAutoId().key
+                let itemID = databaseRef.child("invites").child(item.itemID).child("items").childByAutoId().key
                 childItemDetail[itemID] = child
             }
             
-            itemPost["questions"] = childItemDetail
+            itemPost["items"] = childItemDetail
         }
         
         //add in toUser
@@ -1556,15 +1579,16 @@ class Database {
             userPost["toUserName"] = toName ?? ""
         }
         
+        
+        if let toEmail = toEmail {
+            itemPost["toUserEmail"] = toEmail
+        }
+        
         let collectionPost = ["invites/\(item.itemID)": itemPost,
-                              "users/\(user.uid)/sentInvites" : userPost]
+                              "users/\(user.uid)/sentInvites/\(item.itemID)" : userPost]
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
-            if completionError == nil {
-                completion(true, nil)
-            } else {
-                completion(false, completionError)
-            }
+            completionError == nil ? completion(true, nil) : completion(false, completionError)
         })
     }
     

@@ -150,7 +150,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
                 self.conversationID = _conversationID!
                 self.keepConversationUpdated()
             } else {
-                GlobalFunctions.showErrorBlock("Error Sending Message", erMessage: "Sorry we had a problem sending your message. Please try again!")
+                GlobalFunctions.showAlertBlock("Error Sending Message", erMessage: "Sorry we had a problem sending your message. Please try again!")
             }
         })
     }
@@ -299,5 +299,42 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
 
         cell.message = messages[indexPath.row]
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        let message = messages[indexPath.row]
+        if message.mType != .message, message.from.uID != User.currentUser?.uID {
+            return true
+        }
+        return false
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let message = messages[indexPath.row]
+        switch message.mType {
+        case .perspectiveInvite, .questionInvite:
+            let contentVC = ContentManagerVC()
+            toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+            Database.getInviteItem(message.mID, completion: { selectedItem, childItem, toUser, error in
+                if let selectedItem = selectedItem {
+                    DispatchQueue.main.async {
+                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                        contentVC.selectedChannel = selectedChannel
+                        contentVC.selectedItem = selectedItem
+                        contentVC.openingScreen = .camera
+                        self.present(contentVC, animated: true, completion: nil)
+                    }
+                }
+                self.toggleLoading(show: false, message: nil)
+            })
+            
+        case .interviewInvite:
+            let interviewVC = InterviewRequestVC()
+            interviewVC.conversationID = conversationID
+            interviewVC.interviewItemID = message.mID
+            
+            navigationController?.pushViewController(interviewVC, animated: true)
+        default: break
+        }
     }
 }

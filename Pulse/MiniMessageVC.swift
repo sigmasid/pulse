@@ -101,12 +101,10 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
                     self.sendButton.setDisabled()
                     self.dismissMsg()
                 } else {
-                    GlobalFunctions.showErrorBlock("Error Sending Message", erMessage: "Sorry we had a problem sending your message. Please try again!")
+                    GlobalFunctions.showAlertBlock("Error Sending Message", erMessage: "Sorry we had a problem sending your message. Please try again!")
                 }
             })
         })
-        
-
     }
     
     fileprivate func setupQuestionBox() {

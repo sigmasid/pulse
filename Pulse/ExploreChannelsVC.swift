@@ -15,8 +15,14 @@ protocol ExploreChannelsDelegate: class {
 class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate {
     
     // Set by MasterTabVC
-    public var universalLink : URL!
-    public var forUser = false
+    public var universalLink : URL? {
+        didSet {
+            if isLayoutSetup, let _ = universalLink {
+                handleLink()
+            }
+        }
+    }
+    public var forUser = false //in case we are browsing channels for a specific user
 
     public var allChannels = [Channel]() {
         didSet {
@@ -58,6 +64,10 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
             view.addSubview(channelCollection)
 
             searchButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
+            
+            if universalLink != nil {
+                handleLink()
+            }
             
             isLayoutSetup = true
         }
@@ -141,7 +151,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         
         Database.subscribeChannel(selectedChannel, completion: {(success, error) in
             if !success {
-                GlobalFunctions.showErrorBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
+                GlobalFunctions.showAlertBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
             } else {
                 if let cell = self.channelCollection.cellForItem(at: IndexPath(item: senderTag, section: 0)) as? ExploreChannelsCell {
                     DispatchQueue.main.async {
@@ -167,7 +177,17 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                 
                 navigationController?.pushViewController(tagDetailVC, animated: true)
                 tagDetailVC.selectedItem = item
+            
+            case .perspective, .answer, .post:
                 
+                showItemDetail(item: item, allItems: [item])
+            
+            case .question, .thread, .interview:
+                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                    success ?
+                        self.showItemDetail(item: item, allItems: items) :
+                        GlobalFunctions.showAlertBlock("Sorry no \(item.childType(plural: true))s found", erMessage: "Please check back later or join the discussion!")
+                })
             default: break
             }
         } else if let user = item as? User {
@@ -189,8 +209,19 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         channelVC.selectedChannel = channel
     }
     
+    //used for handling links
+    internal func showItemDetail(item : Item, allItems: [Item]) {
+        let contentVC = ContentManagerVC()
+        
+        contentVC.allItems = allItems
+        contentVC.selectedItem = item
+        contentVC.openingScreen = .item
+        
+        present(contentVC, animated: true, completion: nil)
+    }
+    
     internal func startChannel() {
-        let newChannelVC = StartChannelVC()
+        let newChannelVC = NewChannelVC()
         navigationController?.pushViewController(newChannelVC, animated: true)
     }
 }
@@ -266,44 +297,44 @@ extension ExploreChannelsVC: UICollectionViewDelegateFlowLayout {
     }
 }
 
-/** HANDLE DYNAMIC LINKS
-extension ExploreVC {
+/** HANDLE DYNAMIC LINKS **/
+extension ExploreChannelsVC {
      func handleLink() {
      
-     selectedUser = nil
-     selectedTag = nil
-     selectedQuestion = nil
-     exploreContainer.clearSelected()
+        if let universalLink = universalLink, let link = URLComponents(url: universalLink, resolvingAgainstBaseURL: true) {
      
-     if let universalLink = universalLink, let link = URLComponents(url: universalLink, resolvingAgainstBaseURL: true) {
-     
-     let urlComponents = link.path.components(separatedBy: "/").dropFirst()
-     
-     guard let linkType = urlComponents.first else { return }
-     
-     switch linkType {
-     case "u":
-     let uID = urlComponents[2]
-     userSelected(type: .people, item: User(uID: uID))
-     
-     case "c":
-     let tagID = urlComponents[2]
-     userSelected(type: .tag, item: Tag(tagID: tagID))
-     
-     case "q":
-     let qID = urlComponents[2]
-     userSelected(type: .question, item: Question(qID: qID))
-     
-     default:
-     loadRoot()
+            let urlComponents = link.path.components(separatedBy: "/").dropFirst()
+         
+            guard let linkType = urlComponents.first else { return }
+         
+            switch linkType {
+            case "u":
+                let uID = urlComponents[2]
+                userSelected(item: User(uID: uID))
+         
+            case "c":
+                let selectedChannel = Channel(cID: urlComponents[2])
+                showChannel(channel: selectedChannel)
+                
+            case "i":
+                let itemID = urlComponents[2]
+                toggleLoading(show: true, message: "Loading item...", showIcon: true)
+                Database.getItem(itemID, completion: {(item, error) in
+                    self.toggleLoading(show: false, message: nil, showIcon: true)
+
+                    if let item = item {
+                        self.userSelected(item: item)
+                    } else {
+                        GlobalFunctions.showAlertBlock("Error Locating Item", erMessage: "Sorry we couldn't find this item. But there's plenty more interesting content behind this message!")
+                    }
+                })
+            default: break
+            }
+        
+            if !isLayoutSetup {
+                isLayoutSetup = true
+                self.universalLink = nil
+            }
+        }
      }
-     
-     if !isLoaded {
-     if tabDelegate != nil { tabDelegate.removeLoading() }
-     isLoaded = true
-     self.universalLink = nil
-     
-     }
-     }
-     }
-} **/
+}

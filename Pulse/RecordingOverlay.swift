@@ -25,8 +25,6 @@ class RecordingOverlay: UIView {
     fileprivate var progressBar = UIProgressView()
     
     fileprivate lazy var addTitleField = UITextView()
-    fileprivate var titleBottomConstraint : NSLayoutConstraint!
-    fileprivate var titleHeightConstraint : NSLayoutConstraint!
     public var title : String = ""
     
     fileprivate var pagers = [UIView]()
@@ -130,20 +128,9 @@ class RecordingOverlay: UIView {
     
     func showAddTitleField(makeFirstResponder: Bool, placeholderText: String) {
         if !isTitleSetup {
+            addTitleField.text = placeholderText
             setupTitleField(placeholderText: placeholderText)
         }
-        
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)]
-        let labelHeight = GlobalFunctions.getLabelSize(title: placeholderText, width: frame.width, fontAttributes: fontAttributes)
-        
-        titleBottomConstraint.constant = -Spacing.xl.rawValue - IconSizes.medium.rawValue
-        titleHeightConstraint.constant = labelHeight * 1.35
-
-        addTitleField.text = placeholderText
-        addTitleField.textContainer.size = CGSize(width: frame.width, height: labelHeight * 1.35)
-
-        addTitleField.isScrollEnabled = true
-        addTitleField.sizeToFit()
                 
         if makeFirstResponder {
             addTitleField.becomeFirstResponder()
@@ -156,10 +143,7 @@ class RecordingOverlay: UIView {
     
     func clearAddTitleField() {
         addTitleField.text = ""
-        
-        if titleBottomConstraint  != nil {
-            titleBottomConstraint.constant = addTitleField.frame.height
-        }
+        addTitleField.frame = CGRect(x: addTitleField.frame.origin.x, y: frame.maxY, width: addTitleField.frame.width, height: addTitleField.frame.height)
     }
     
     fileprivate func setupTitleField(placeholderText : String) {
@@ -168,22 +152,12 @@ class RecordingOverlay: UIView {
         addTitleField.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         addTitleField.textColor = .white
         addTitleField.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-    
-        addTitleField.translatesAutoresizingMaskIntoConstraints = false
         addTitleField.returnKeyType = .done
         
-        titleBottomConstraint = addTitleField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.xl.rawValue - IconSizes.medium.rawValue)
-        titleBottomConstraint.isActive = true
-        
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)]
-        let labelHeight = GlobalFunctions.getLabelSize(title: placeholderText, width: frame.width, fontAttributes: fontAttributes)
-        addTitleField.textContainer.size = CGSize(width: frame.width, height: labelHeight * 1.35)
-        addTitleField.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        addTitleField.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        
-        titleHeightConstraint = addTitleField.heightAnchor.constraint(equalToConstant: max(IconSizes.small.rawValue,labelHeight * 1.35))
-        titleHeightConstraint.isActive = true
-        addTitleField.layoutIfNeeded()
+        let sizeThatFitsTextView = addTitleField.sizeThatFits(CGSize(width: addTitleField.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+        let labelHeight = max(sizeThatFitsTextView.height, 33)
+        addTitleField.frame = CGRect(x: 0, y: addTitleField.frame.maxY - sizeThatFitsTextView.height, width: frame.width, height: labelHeight)
+        addTitleField.textContainer.size = CGSize(width: addTitleField.frame.width, height: addTitleField.frame.height)
         
         isTitleSetup = true
     }
@@ -191,19 +165,18 @@ class RecordingOverlay: UIView {
     func keyboardWillHide(notification: NSNotification) {
         
         if addTitleField.text == "" {
-            titleBottomConstraint.constant = addTitleField.frame.height
+            addTitleField.frame = CGRect(x: addTitleField.frame.origin.x, y: frame.maxY, width: addTitleField.frame.width, height: addTitleField.frame.height)
         } else {
-            titleBottomConstraint.constant = -Spacing.xl.rawValue - IconSizes.medium.rawValue
+            addTitleField.frame = CGRect(x: addTitleField.frame.origin.x, y: frame.maxY - addTitleField.frame.height - IconSizes.medium.rawValue - Spacing.l.rawValue,
+                                         width: addTitleField.frame.width, height: addTitleField.frame.height)
         }
-        
-        addTitleField.layoutIfNeeded()
     }
     
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
-            titleBottomConstraint.constant = -keyboardHeight
-            addTitleField.layoutIfNeeded()
+            addTitleField.frame = CGRect(x: addTitleField.frame.origin.x, y: frame.maxY - keyboardHeight - addTitleField.frame.height,
+                                         width: frame.width, height: addTitleField.frame.height)
         }
     }
     

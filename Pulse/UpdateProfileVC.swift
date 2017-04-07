@@ -293,7 +293,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     open func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        GlobalFunctions.showErrorBlock("Location Error", erMessage: "Error while updating location " + error.localizedDescription)
+        GlobalFunctions.showAlertBlock("Location Error", erMessage: "Error while updating location " + error.localizedDescription)
     }
     
     open func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -313,7 +313,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
                 }
             } else {
                 self.shortTextField.text = nil
-                GlobalFunctions.showErrorBlock("Location Error", erMessage: "Sorry - there was an error getting your location!")
+                GlobalFunctions.showAlertBlock("Location Error", erMessage: "Sorry - there was an error getting your location!")
             }
         })
     }

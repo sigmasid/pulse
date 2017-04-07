@@ -119,7 +119,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         }
         
         if indexPath.row == centerIndex {
-            cell.updateLabel("\u{2714}   \(allItems[indexPath.row].itemTitle!)", _subtitle: nil)
+            cell.updateLabel("\u{2714}   \(allItems[indexPath.row].itemTitle)", _subtitle: nil)
         } else {
             cell.updateLabel(allItems[indexPath.row].itemTitle, _subtitle: nil)
         }
@@ -141,9 +141,9 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         let itemKey = databaseRef.child("items").childByAutoId().key
         let item = Item(itemID: itemKey, type: getSelectedType())
         
-        item.itemTitle = sTitle.text
+        item.itemTitle = sTitle.text ?? ""
         item.itemUserID = User.currentUser!.uID
-        item.itemDescription = sDescription.text
+        item.itemDescription = sDescription.text ?? ""
         item.content = capturedImage
         item.contentType = contentType
         item.cID = selectedChannel.cID
@@ -212,7 +212,7 @@ extension NewSeriesVC: UICollectionViewDataSource, UICollectionViewDelegate {
         
         
         if indexPath.row == centerIndex {
-            cell.updateLabel("\u{2714}   \(currentItem.itemTitle!)", _subtitle: nil)
+            cell.updateLabel("\u{2714}   \(currentItem.itemTitle)", _subtitle: nil)
         } else {
             cell.updateLabel(currentItem.itemTitle, _subtitle: nil)
         }

@@ -46,7 +46,7 @@ class Channel : NSObject {
         for tag in snapshot.childSnapshot(forPath: "tags").children {
             if let tag = tag as? FIRDataSnapshot, let type = tag.childSnapshot(forPath: "type").value as? String {
                 let _tag = Item(itemID: (tag as AnyObject).key, type: type)
-                _tag.itemTitle = tag.childSnapshot(forPath: "title").value as? String
+                _tag.itemTitle = tag.childSnapshot(forPath: "title").value as? String ?? ""
                 self.tags.append(_tag)
             }
         }

@@ -59,7 +59,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 extendedLayoutIncludesOpaqueBars = true
             } else {
                 tabBarController?.tabBar.isHidden = false
-                edgesForExtendedLayout = []
+                edgesForExtendedLayout = .all
                 extendedLayoutIncludesOpaqueBars = false
                 automaticallyAdjustsScrollViewInsets = true
             }
@@ -161,14 +161,14 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
-    internal func shareContent(shareType: String, shareText: String, shareLink: String) {
+    internal func shareContent(shareType: String, shareText: String, shareLink: String, fullShareText: String = "") {
         // set up activity view controller
-        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + " " + shareLink
+        let textToShare = fullShareText == "" ? "Check out this \(shareType) on Pulse - " + shareText + " " + shareLink : fullShareText + " " + shareLink
         activityController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
         activityController.popoverPresentationController?.sourceView = view // so that iPads won't crash
         
         // exclude some activity types from the list (optional)
-        activityController.excludedActivityTypes = [ UIActivityType.airDrop ]
+        activityController.excludedActivityTypes = [ UIActivityType.airDrop, UIActivityType.postToFlickr, UIActivityType.saveToCameraRoll, UIActivityType.print, UIActivityType.addToReadingList ]
         toggleLoading(show: false, message: nil)
         // present the view controller
         present(activityController, animated: true, completion: nil)

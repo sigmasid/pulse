@@ -8,7 +8,7 @@
 
 import UIKit
 
-class StartChannelVC: PulseVC {
+class NewChannelVC: PulseVC {
     
     fileprivate var startChannelInfo = PaddingLabel()
     fileprivate var cTitle = UITextField()
@@ -117,7 +117,7 @@ class StartChannelVC: PulseVC {
         startChannelInfo.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         startChannelInfo.numberOfLines = 0
         startChannelInfo.lineBreakMode = .byWordWrapping
-        startChannelInfo.text = "got an idea to create the next ESPN, CNBC or HGTV? We are looking for creative innovators who want to push the boundaries of content creation! Interested?"
+        startChannelInfo.text = "got an idea to create the next ESPN, CNBC or HGTV? Or maybe the next Vogue? We are looking for creative innovators who want to push the boundaries of content creation! Interested?"
         addSubmitButton()
     }
 
@@ -137,17 +137,14 @@ class StartChannelVC: PulseVC {
     }
 }
 
-extension StartChannelVC: UITextFieldDelegate {
+extension NewChannelVC: UITextFieldDelegate, UITextViewDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField.text != "", cDescription.text != "", cDescription.text != descriptionPlaceholder {
             self.submitButton.setEnabled()
         }
     }
-}
 
-extension StartChannelVC: UITextViewDelegate {
-    func textViewDidBeginEditing(_ textView: UITextView)
-    {
+    func textViewDidBeginEditing(_ textView: UITextView) {
         if (textView.text == descriptionPlaceholder) {
             textView.text = ""
             textView.textColor = .black
@@ -155,8 +152,7 @@ extension StartChannelVC: UITextViewDelegate {
         textView.becomeFirstResponder()
     }
     
-    func textViewDidEndEditing(_ textView: UITextView)
-    {
+    func textViewDidEndEditing(_ textView: UITextView) {
         if (textView.text == "") {
             textView.text = descriptionPlaceholder
             textView.textColor = .lightGray

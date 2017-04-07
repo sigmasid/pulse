@@ -77,7 +77,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     
     internal func createInterviewRequest() {
         guard let user = User.currentUser, user.uID != nil else {
-            GlobalFunctions.showErrorBlock("Please Login", erMessage: "You need to be logged in to send interview requests")
+            GlobalFunctions.showAlertBlock("Please Login", erMessage: "You need to be logged in to send interview requests")
             return
         }
         
@@ -85,15 +85,15 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         submitButton.setDisabled()
         
         let itemKey = databaseRef.child("items").childByAutoId().key
-        let item = Item(itemID: itemKey, type: "interview")
+        let item = Item(itemID: itemKey)
         
-        item.itemTitle = iTopic.text
+        item.itemTitle = iTopic.text ?? ""
         item.itemUserID = User.currentUser!.uID
         item.cID = selectedChannel.cID
         item.cTitle = selectedChannel.cTitle
         item.tag = selectedItem
 
-        Database.createInviteRequest(item: item, type: "interview", toUser: selectedUser, toName: iName.text!, childItems: allQuestions, completion: { success, error in
+        Database.createInviteRequest(item: item, type: .interviewInvite, toUser: selectedUser, toName: iName.text!, childItems: allQuestions, parentItemID: nil, completion: { success, error in
             if success, self.selectedUser != nil {
                 self.interviewID = itemKey
                 self.showSuccessMenu(message: "Successfully Added Interview")
@@ -191,7 +191,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     
     internal func showAddEmail(bodyText: String) {
         addEmail = AddText(frame: view.bounds, buttonText: "Send",
-                           bodyText: bodyText)
+                           bodyText: bodyText, keyboardType: .emailAddress)
         
         addEmail.delegate = self
         view.addSubview(addEmail)
