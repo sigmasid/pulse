@@ -138,15 +138,25 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     internal func toggleLoading(show: Bool, message: String?, showIcon: Bool = false) {
         if show {
-            loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white.withAlphaComponent(0.9))
-            DispatchQueue.main.async {
-                self.view.addSubview(self.loadingView)
-                
+            if loadingView != nil, loadingView.superview == view {
                 if showIcon {
                     self.loadingView.addIcon(.medium, _iconColor: .gray, _iconBackgroundColor: UIColor.white)
                 }
                 
                 self.loadingView.addMessage(message, _color: .gray)
+                
+            } else {
+                loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white.withAlphaComponent(0.9))
+                
+                DispatchQueue.main.async {
+                    self.view.addSubview(self.loadingView)
+                    
+                    if showIcon {
+                        self.loadingView.addIcon(.medium, _iconColor: .gray, _iconBackgroundColor: UIColor.white)
+                    }
+                    
+                    self.loadingView.addMessage(message, _color: .gray)
+                }
             }
             
         } else {

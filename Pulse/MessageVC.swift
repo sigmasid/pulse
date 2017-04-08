@@ -315,7 +315,7 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         case .perspectiveInvite, .questionInvite:
             let contentVC = ContentManagerVC()
             toggleLoading(show: true, message: "loading Invite...", showIcon: true)
-            Database.getInviteItem(message.mID, completion: { selectedItem, childItem, toUser, error in
+            Database.getInviteItem(message.mID, completion: { selectedItem, childItem, toUser, conversationID, error in
                 if let selectedItem = selectedItem {
                     DispatchQueue.main.async {
                         let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)

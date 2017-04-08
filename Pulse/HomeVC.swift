@@ -539,11 +539,13 @@ extension HomeVC {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showShare(selectedItem: Item, type: String) {
+    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
-        selectedItem.createShareLink(completion: { link in
+        let isInvite = type == "invite" ? true : false
+        
+        selectedItem.createShareLink(invite: isInvite, completion: { link in
             guard let link = link else { return }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link)
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
         })
     }
 }

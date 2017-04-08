@@ -611,8 +611,13 @@ extension TagCollectionVC {
         }))
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
-            let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
-            self.showShare(selectedItem: currentItem, type: "", fullShareText: shareText)
+            self.createShareRequest(selectedShareItem: currentItem, showAlert: false, completion: { selectedShareItem , error in
+                if error == nil, let selectedShareItem = selectedShareItem {
+                    let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
+                }
+            })
+            
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -622,10 +627,34 @@ extension TagCollectionVC {
         present(menu, animated: true, completion: nil)
     }
     
+    internal func createShareRequest(selectedShareItem : Item, toEmail : String? = nil, showAlert : Bool = true, completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
+        let itemKey = databaseRef.child("items").childByAutoId().key
+        let parentItemID = selectedShareItem.itemID
+        
+        selectedShareItem.itemID = itemKey
+        selectedShareItem.cID = selectedChannel.cID
+        selectedShareItem.cTitle = selectedChannel.cTitle
+        
+        toggleLoading(show: true, message: "creating invite...", showIcon: true)
+        let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
+        Database.createInviteRequest(item: selectedShareItem, type: type, toUser: nil, toName: nil, toEmail: toEmail,
+                                     childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+            if success, showAlert {
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
+            } else if showAlert {
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+            }
+            
+            completion(selectedShareItem, error)
+            self.selectedShareItem = nil
+        })
+    }
+    
     internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
-        
-        selectedItem.createShareLink(completion: { link in
+        let isInvite = type == "invite" ? true : false
+
+        selectedItem.createShareLink(invite: isInvite, completion: { link in
             guard let link = link else { return }
             self.shareContent(shareType: type, shareText: self.selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
         })

@@ -15,15 +15,25 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
     
     public var interviewItemID : String! {
         didSet {
-            Database.getInviteItem(interviewItemID, completion: { interviewItem, questions, toUser, error in
-                self.selectedUser = toUser
-                self.interviewItem = interviewItem
-                self.allQuestions = questions
-                
+            if interviewItem == nil || allQuestions.isEmpty || selectedUser == nil {
+                Database.getInviteItem(interviewItemID, completion: { interviewItem, questions, toUser, conversationID, error in
+                    self.selectedUser = toUser
+                    self.interviewItem = interviewItem
+                    self.allQuestions = questions
+                    
+                    if self.conversationID == nil, let cID = conversationID {
+                        self.conversationID = cID
+                    }
+                    
+                    self.checkPartialInterview()
+                    self.updateDataSource()
+                    self.updateScreen()
+                })
+            } else {
                 self.checkPartialInterview()
                 self.updateDataSource()
                 self.updateScreen()
-            })
+            }
         }
     }
     

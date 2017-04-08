@@ -64,14 +64,17 @@ class Database {
 
         request.httpBody = jsonData
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else {
+            guard let data = data, let responseJSON = try? JSONSerialization.jsonObject(with: data, options: []) else {
                 completion("https://checkpulse.co/"+linkString)
                 return
             }
             
-            let responseJSON = try? JSONSerialization.jsonObject(with: data, options: [])
             if let responseJSON = responseJSON as? [String: Any] {
-                completion(responseJSON["shortLink"] as! String?)
+                if responseJSON["error"] == nil {
+                    completion(responseJSON["shortLink"] as! String?)
+                } else {
+                    completion(longLink)
+                }
             }
         }
 
@@ -531,7 +534,7 @@ class Database {
     }
     
     static func getInviteItem(_ itemID : String,
-                              completion: @escaping (_ item : Item?, _ questions: [Item], _ toUser : User?, _ error : NSError?) -> Void) {
+                              completion: @escaping (_ item : Item?, _ questions: [Item], _ toUser : User?, _ conversationID: String?, _ error : NSError?) -> Void) {
         var allQuestions = [Item]()
         var toUser : User? = nil
         
@@ -539,6 +542,8 @@ class Database {
             if snap.exists() {
                 var currentItem : Item!
                 
+                let conversationID = snap.childSnapshot(forPath: "conversationID").value as? String
+
                 //if interview or anything with child items - the itemID is the in
                 if let parentItemID = snap.childSnapshot(forPath: "parentItemID").value as? String {
                     currentItem = Item(itemID: parentItemID, snapshot: snap)
@@ -553,7 +558,8 @@ class Database {
                 if let userName = snap.childSnapshot(forPath: "fromUserName").value as? String {
                     currentItem.user?.name = userName
                 }
-                                
+                
+                
                 if snap.childSnapshot(forPath: "items").exists() {
                     for question in snap.childSnapshot(forPath: "items").children {
                         if let qSnap = question as? FIRDataSnapshot, let qTitle = qSnap.value as? String {
@@ -571,11 +577,11 @@ class Database {
                     toUser?.name = snap.childSnapshot(forPath: "toUserName").value as? String
                 }
                 
-                completion(currentItem, allQuestions, toUser, nil)
+                completion(currentItem, allQuestions, toUser, conversationID, nil)
             }
             else {
                 let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
-                completion(nil, [], nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
+                completion(nil, [], nil, nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
             }
         })
     }

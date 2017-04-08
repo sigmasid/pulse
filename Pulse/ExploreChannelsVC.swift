@@ -211,8 +211,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     //used for handling links
     internal func showItemDetail(item : Item, allItems: [Item]) {
-        let contentVC = ContentManagerVC()
-        
+        contentVC = ContentManagerVC()
         contentVC.allItems = allItems
         contentVC.selectedItem = item
         contentVC.openingScreen = .item
@@ -328,6 +327,39 @@ extension ExploreChannelsVC {
                         GlobalFunctions.showAlertBlock("Error Locating Item", erMessage: "Sorry we couldn't find this item. But there's plenty more interesting content behind this message!")
                     }
                 })
+            case "invite":
+                let inviteID = urlComponents[2]
+                toggleLoading(show: true, message: "Loading item...", showIcon: true)
+                Database.getInviteItem(inviteID, completion: { item, items, toUser, conversationID, error in
+                    if error == nil, let item = item {
+                        switch item.type {
+                        case .interview:
+                            DispatchQueue.main.async {
+                                let interviewVC = InterviewRequestVC()
+                                //need to do in this order so all items are set before itemID
+                                interviewVC.conversationID = conversationID
+                                interviewVC.allQuestions = items
+                                interviewVC.selectedUser = toUser
+                                interviewVC.interviewItem = item
+                                interviewVC.interviewItemID = item.itemID
+                                
+                                self.navigationController?.pushViewController(interviewVC, animated: true)
+                            }
+                        case .perspective, .question:
+                            DispatchQueue.main.async {
+                                let selectedChannel = Channel(cID: item.cID, title: item.cTitle)
+                                self.contentVC = ContentManagerVC()
+                                self.contentVC.selectedChannel = selectedChannel
+                                self.contentVC.selectedItem = item
+                                self.contentVC.openingScreen = .camera
+                                self.present(self.contentVC, animated: true, completion: nil)
+                            }
+                        default: break
+                        }
+                    }
+                    self.toggleLoading(show: false, message: nil)
+                })
+                
             default: break
             }
         
