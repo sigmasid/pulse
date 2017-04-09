@@ -221,7 +221,6 @@ class MessageVC: PulseVC, UITextViewDelegate{
         msgSend.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
 
         sendContainer.layoutIfNeeded()
-        tabBarController?.tabBar.isHidden = true
     }
     
     fileprivate func setupToUserLayout() {

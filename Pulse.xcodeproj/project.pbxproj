@@ -557,6 +557,9 @@
 							com.apple.ApplePay = {
 								enabled = 0;
 							};
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
 							com.apple.InAppPurchase = {
 								enabled = 0;
 							};
@@ -565,6 +568,9 @@
 							};
 							com.apple.Maps.iOS = {
 								enabled = 0;
+							};
+							com.apple.Push = {
+								enabled = 1;
 							};
 							com.apple.SafariKeychain = {
 								enabled = 1;
@@ -891,8 +897,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "4e85ea27-f2c6-466a-94e7-6cf15fc3979e";
-				PROVISIONING_PROFILE_SPECIFIER = PulseDevelopment;
+				PROVISIONING_PROFILE = "f3b5a567-f7f8-44bb-9d36-c17d818608bb";
+				PROVISIONING_PROFILE_SPECIFIER = "Pulse Development";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
@@ -911,8 +917,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "6a02c05f-e838-441a-bf37-444d3ac9a9ea";
-				PROVISIONING_PROFILE_SPECIFIER = PulseDistribution;
+				PROVISIONING_PROFILE = "f0e202ab-728a-4e76-be52-15cb373025c3";
+				PROVISIONING_PROFILE_SPECIFIER = "Pulse Distribution";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Release;

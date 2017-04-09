@@ -8,11 +8,14 @@
 
 import UIKit
 
-class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
+class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     
-    var tableView : UITableView!
-    
+    internal var tableView : UITableView!
+    internal var addButton = PulseButton(size: .small, type: .add, isRound : true, background: .white, tint: .black)
+
     var conversations = [Conversation]()
+    fileprivate var isShowingUserSearch = false
+    fileprivate var selectedUser : User? //user selected by mini search
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -84,23 +87,73 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
         })
     }
     
-    fileprivate func addImage(cell : InboxTableCell, url : String, user : User) {
+    fileprivate func addImage(cell : InboxTableCell, url : String, index: Int) {
         DispatchQueue.global(qos: .background).async {
             if let _userImageData = try? Data(contentsOf: URL(string: url)!) {
                 DispatchQueue.main.async {
                     let image = UIImage(data: _userImageData)
                     cell.updateImage(image : image)
-                    user.thumbPicImage = image
+                    self.conversations[index].cUser.thumbPicImage = image
                 }
             }
         }
     }
     
+    internal func newConversation() {
+        tabBarHidden = true
+
+        let browseUsers = MiniUserSearchVC()
+        browseUsers.modalPresentationStyle = .overCurrentContext
+        browseUsers.modalTransitionStyle = .crossDissolve
+        
+        browseUsers.modalDelegate = self
+        browseUsers.selectionDelegate = self
+        browseUsers.users = conversations.map({ $0.cUser })
+        
+        isShowingUserSearch = true
+        self.navigationController?.present(browseUsers, animated: true, completion: nil)
+    }
+    
     //Update Nav Header
     fileprivate func updateHeader() {
         headerNav?.setNav(title: "Conversations")
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: addButton)
+        addButton.addTarget(self, action: #selector(newConversation), for: UIControlEvents.touchUpInside)
     }
     
+    //close modal - e.g. mini search
+    internal func userClosedModal(_ viewController: UIViewController) {
+        tabBarHidden = false
+
+        dismiss(animated: true, completion: { _ in
+            if self.isShowingUserSearch, let selectedUser = self.selectedUser {
+                self.isShowingUserSearch = false
+                self.userSelected(item: selectedUser)
+            }
+        })
+    }
+    
+    //delegate for mini user search - start new conversation with user
+    internal func userSelected(item: Any) {
+        //check if the modal is still showing - needed because need to fully dismiss first before pushing on nav stack
+        //start new conversation with user
+        if !isShowingUserSearch, let user = item as? User {
+            let messageVC = MessageVC()
+            messageVC.toUser = user
+            messageVC.toUserImage = user.thumbPicImage
+            
+            navigationController?.pushViewController(messageVC, animated: true)
+        } else if isShowingUserSearch {
+            //just set the user - once modal is dismissed it will recall this method
+            selectedUser = item as? User
+        }
+        else {
+            GlobalFunctions.showAlertBlock("Error Starting Conversation", erMessage: "Sorry the user you selected is not valid")
+        }
+    }
+}
+extension InboxVC: UITableViewDelegate, UITableViewDataSource {
+
     // MARK: - Table view data source
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return conversations.count == 0 ? 1 : conversations.count
@@ -135,14 +188,14 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
                     self.conversations[indexPath.row].cUser = user
                     cell.updateName(name: user.name)
                     if let _uPic = user.thumbPic {
-                        self.addImage(cell: cell, url: _uPic, user: user)
+                        self.addImage(cell: cell, url: _uPic, index: indexPath.row)
                     }
                 }
             })
         } else {
             cell.updateName(name: user.name)
             if let _uPic = user.thumbPic {
-                addImage(cell: cell, url: _uPic, user: user)
+                addImage(cell: cell, url: _uPic, index: indexPath.row)
             }
         }
         
@@ -155,10 +208,7 @@ class InboxVC: PulseVC, UITableViewDataSource, UITableViewDelegate {
         let conversation = conversations[indexPath.row]
         let messageVC = MessageVC()
         messageVC.toUser = conversation.cUser
-        
-        if let currentUserImage = conversation.cUser.thumbPicImage {
-            messageVC.toUserImage = currentUserImage
-        }
+        messageVC.toUserImage = conversation.cUser.thumbPicImage
         
         navigationController?.pushViewController(messageVC, animated: true)
         

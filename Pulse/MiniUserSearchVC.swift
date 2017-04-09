@@ -12,7 +12,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     
     public var selectedChannel : Channel! {
         didSet {
-            if selectedChannel.experts.isEmpty {
+            if selectedChannel != nil, selectedChannel.experts.isEmpty {
                 Database.getChannelExperts(channelID: selectedChannel.cID, completion: {success, users in
                     self.users = users
                 })
@@ -174,6 +174,8 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
+        
+        
         
         let collectionViewFrame = CGRect(x: 0, y: view.bounds.maxY - collectionViewHeight,
                                          width: view.frame.width, height: collectionViewHeight)
