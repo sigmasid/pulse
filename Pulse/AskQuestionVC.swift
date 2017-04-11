@@ -12,7 +12,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedTag : Item!
     public var selectedUser : User!
-    public var delegate : ModalDelegate!
+    public var modalDelegate : ModalDelegate!
     
     fileprivate var observersAdded = false
     
@@ -77,16 +77,16 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     }
     
     func dismissAsk() {
-        if delegate != nil {
+        if modalDelegate != nil {
             questionBody.resignFirstResponder()
-            delegate.userClosedModal(self)
+            modalDelegate.userClosedModal(self)
         }
     }
     
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
-            questionBottomConstraint.constant = -keyboardHeight - (tabBarController?.tabBar.frame.height ?? 0) - Spacing.m.rawValue
+            questionBottomConstraint.constant = -keyboardHeight - (tabBarController?.tabBar.frame.height ?? 0)
             questionContainer.layoutIfNeeded()
         }
     }

@@ -143,14 +143,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                      fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
         // If you are receiving a notification message while your app is in the background,
         // this callback will not be fired till the user taps on the notification launching the application.
-        // TODO: Handle data of notification
-        // Print message ID.
-        if let messageID = userInfo[gcmMessageIDKey] {
-            print("Message ID: \(messageID)")
-        }
         
-        // Print full message.
-        print(userInfo)
+        if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
+            masterTabVC.handleLink(link: linkURL)
+        }
         
         completionHandler(UIBackgroundFetchResult.newData)
     }
@@ -158,7 +154,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // [START refresh_token]
     func tokenRefreshNotification(_ notification: Notification) {
         if let refreshedToken = FIRInstanceID.instanceID().token() {
-            print("InstanceID token: \(refreshedToken)")
+            Database.updateNotificationToken(tokenID: refreshedToken)
         }
         
         // Connect to FCM since connection may have failed when attempted before having a token.
@@ -187,14 +183,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // [END connect_to_fcm]
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("Unable to register for remote notifications: \(error.localizedDescription)")
+        Database.updateNotificationToken(tokenID: nil)
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        print("APNs token retrieved: \(deviceToken)")
-        
+        if let tokenID = FIRInstanceID.instanceID().token() {
+            Database.updateNotificationToken(tokenID: tokenID)
+        }
         // With swizzling disabled you must set the APNs token here.
-        // FIRInstanceID.instanceID().setAPNSToken(deviceToken, type: FIRInstanceIDAPNSTokenType.sandbox)
+        FIRInstanceID.instanceID().setAPNSToken(deviceToken, type: FIRInstanceIDAPNSTokenType.sandbox)
     }
 }
 
@@ -207,13 +204,10 @@ extension AppDelegate : UNUserNotificationCenterDelegate {
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let userInfo = notification.request.content.userInfo
-        // Print message ID.
-        if let messageID = userInfo[gcmMessageIDKey] {
-            print("Message ID: \(messageID)")
-        }
         
-        // Print full message.
-        print(userInfo)
+        if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
+            masterTabVC.handleLink(link: linkURL)
+        }
         
         // Change this to your preferred presentation option
         completionHandler([])
@@ -223,23 +217,25 @@ extension AppDelegate : UNUserNotificationCenterDelegate {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let userInfo = response.notification.request.content.userInfo
-        // Print message ID.
-        if let messageID = userInfo[gcmMessageIDKey] {
-            print("Message ID: \(messageID)")
+
+        if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
+            masterTabVC.handleLink(link: linkURL)
         }
-        
-        // Print full message.
-        print(userInfo)
         
         completionHandler()
     }
 }
 // [END ios_10_message_handling]
+
 // [START ios_10_data_message_handling]
 extension AppDelegate : FIRMessagingDelegate {
     // Receive data message on iOS 10 devices while app is in the foreground.
     func applicationReceivedRemoteMessage(_ remoteMessage: FIRMessagingRemoteMessage) {
-        print(remoteMessage.appData)
+        let userInfo = remoteMessage.appData
+        
+        if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
+            masterTabVC.handleLink(link: linkURL)
+        }
     }
 }
 // [END ios_10_data_message_handling]

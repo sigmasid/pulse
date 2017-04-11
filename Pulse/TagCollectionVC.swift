@@ -37,7 +37,6 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     fileprivate var isLayoutSetup = false
     
     fileprivate var selectedShareItem : Item?
-    fileprivate var addEmail : AddText!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -79,9 +78,12 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     internal func askQuestion() {
         let questionVC = AskQuestionVC()
         questionVC.selectedTag = selectedItem
-        questionVC.delegate = self
+        questionVC.modalDelegate = self
         
-        GlobalFunctions.addNewVC(questionVC, parentVC: self)
+        questionVC.modalPresentationStyle = .overCurrentContext
+        questionVC.modalTransitionStyle = .crossDissolve
+        
+        self.navigationController?.present(questionVC, animated: true, completion: nil)
     }
     
     internal func addInterview() {
@@ -143,11 +145,11 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     }
     
     internal func showAddEmail(bodyText: String) {
-        addEmail = AddText(frame: view.bounds, buttonText: "Send",
+        addText = AddText(frame: view.bounds, buttonText: "Send",
                            bodyText: bodyText, keyboardType: .emailAddress)
         
-        addEmail.delegate = self
-        view.addSubview(addEmail)
+        addText.delegate = self
+        view.addSubview(addText)
     }
 }
 
@@ -517,24 +519,24 @@ extension TagCollectionVC {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         let newItemTitle = "new\(selectedItem.childType().capitalized)"
         
-        if let user = User.currentUser, user.isVerified(for: selectedChannel) {
+        if selectedItem.acceptsInput() {
             menu.addAction(UIAlertAction(title: newItemTitle, style: .default, handler: { (action: UIAlertAction!) in
                 switch self.selectedItem.type {
                 case .interviews:
-                    self.addInterview()
+                    if self.selectedItem.checkVerifiedInput() { self.addInterview() }
                 case .perspectives:
-                    self.startThread()
+                    if self.selectedItem.checkVerifiedInput() { self.startThread() }
                 case .questions, .feedback:
                     self.askQuestion()
                 case .posts:
-                    self.addNewItem(selectedItem: self.selectedItem)
+                    if self.selectedItem.checkVerifiedInput() { self.addNewItem(selectedItem: self.selectedItem) }
                 default: break
                 }
             }))
         }
         
         menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
-            self.showShare(type: "series")
+            self.showShare(selectedItem: self.selectedItem, type: "series", fullShareText: self.selectedItem.itemTitle)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -611,13 +613,13 @@ extension TagCollectionVC {
         }))
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
-            self.createShareRequest(selectedShareItem: currentItem, showAlert: false, completion: { selectedShareItem , error in
+            self.createShareRequest(selectedShareItem: currentItem, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
+                                    completion: { selectedShareItem , error in
                 if error == nil, let selectedShareItem = selectedShareItem {
                     let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
                     self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
                 }
             })
-            
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -625,43 +627,6 @@ extension TagCollectionVC {
         }))
         
         present(menu, animated: true, completion: nil)
-    }
-    
-    internal func createShareRequest(selectedShareItem : Item, toEmail : String? = nil, showAlert : Bool = true, completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
-        let itemKey = databaseRef.child("items").childByAutoId().key
-        let parentItemID = selectedShareItem.itemID
-        
-        selectedShareItem.itemID = itemKey
-        selectedShareItem.cID = selectedChannel.cID
-        selectedShareItem.cTitle = selectedChannel.cTitle
-        
-        toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
-        Database.createInviteRequest(item: selectedShareItem, type: type, toUser: nil, toName: nil, toEmail: toEmail,
-                                     childItems: [], parentItemID: parentItemID, completion: {(success, error) in
-            if success, showAlert {
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
-            } else if showAlert {
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
-            }
-            
-            completion(selectedShareItem, error)
-            self.selectedShareItem = nil
-        })
-    }
-    
-    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
-        toggleLoading(show: true, message: "loading share options...", showIcon: true)
-        let isInvite = type == "invite" ? true : false
-
-        selectedItem.createShareLink(invite: isInvite, completion: { link in
-            guard let link = link else { return }
-            self.shareContent(shareType: type, shareText: self.selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
-        })
-    }
-    
-    internal func showShare(type: String) {
-        showShare(selectedItem: self.selectedItem, type: type, fullShareText: self.selectedItem.itemTitle)
     }
 }
 

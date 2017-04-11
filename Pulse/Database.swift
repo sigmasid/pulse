@@ -52,6 +52,14 @@ class Database {
     static var activeListeners = [FIRDatabaseReference]()
     static var profileListenersAdded = false
     
+    static func updateNotificationToken(tokenID: String?) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            return
+        }
+        
+        databaseRef.child("notificationIDs").child(user.uid).setValue(tokenID)
+    }
+    
     static func createShareLink(linkString : String, completion: @escaping (String?) -> Void) {
         var request = URLRequest(url: URL(string: "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAJa2_jjaxFCWE0mLbRNfZ9lKZWK0mUyNU")!)
         request.httpMethod = "POST"
@@ -1581,10 +1589,9 @@ class Database {
             userPost["toUserName"] = toUser.name ?? ""
             
         } else {
-            itemPost["toUserName"] = toName ?? ""
-            userPost["toUserName"] = toName ?? ""
+            itemPost["toUserName"] = toName ?? toUser?.name
+            userPost["toUserName"] = toName ?? toUser?.name
         }
-        
         
         if let toEmail = toEmail {
             itemPost["toUserEmail"] = toEmail

@@ -24,7 +24,7 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     
     private var collectionView : UICollectionView!
     internal var tagCount = 10
-    let collectionReuseIdentifier = "expertThumbCell"
+    let collectionReuseIdentifier = "thumbCell"
     
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {

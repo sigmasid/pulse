@@ -160,7 +160,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
         }
         
         menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-            self.clickedShare()
+            self.showShare(selectedItem: self.selectedItem, type: self.selectedItem.type.rawValue)
+
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -168,14 +169,6 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
         }))
         
         present(menu, animated: true, completion: nil)
-    }
-    
-    internal func clickedShare() {
-        toggleLoading(show: true, message: "loading share options...", showIcon: true)
-        selectedItem.createShareLink(completion: { link in
-            guard let link = link else { return }
-            self.shareContent(shareType: "channel", shareText: self.selectedItem.itemTitle, shareLink: link)
-        })
     }
     
     internal func clickedAddItem() {

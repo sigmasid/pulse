@@ -54,7 +54,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     fileprivate var collectionView : UICollectionView!
     
     fileprivate var selectedShareItem : Item?
-    fileprivate var addEmail : AddText!
     
     override init() {
         super.init()
@@ -262,7 +261,9 @@ extension ChannelVC {
             } else {
                 if let selectedShareItem = selectedShareItem {
                     
-                    createShareRequest(selectedShareItem: selectedShareItem, toEmail: text, completion: { _ , _ in })
+                    createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
+                        self.selectedShareItem = nil
+                    })
                     
                 }
             }
@@ -272,7 +273,7 @@ extension ChannelVC {
     
     /** Menu Options **/
     internal func showInviteMenu(currentItem : Item) {
-        let menu = UIAlertController(title: "Invite Experts", message: "know someone who can add to the discussion? invite them below!", preferredStyle: .actionSheet)
+        let menu = UIAlertController(title: "invite Experts", message: "know someone who can add to the conversation? invite them below!", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedShareItem = currentItem
@@ -293,7 +294,8 @@ extension ChannelVC {
         }))
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
-            self.createShareRequest(selectedShareItem: currentItem, showAlert: false, completion: { selectedShareItem , error in
+            self.createShareRequest(selectedShareItem: currentItem, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
+                                    completion: { selectedShareItem , error in
                 if error == nil, let selectedShareItem = selectedShareItem {
                     let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
                     self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
@@ -308,25 +310,12 @@ extension ChannelVC {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
-        toggleLoading(show: true, message: "loading share options...", showIcon: true)
-        let isInvite = type == "invite" ? true : false
-        selectedItem.createShareLink(invite: isInvite, completion: { link in
-            guard let link = link else {
-                self.toggleLoading(show: false, message: nil)
-                return
-            }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
-            self.toggleLoading(show: false, message: nil)
-        })
-    }
-    
     internal func showAddEmail(bodyText: String) {
-        addEmail = AddText(frame: view.bounds, buttonText: "Send",
+        addText = AddText(frame: view.bounds, buttonText: "Send",
                            bodyText: bodyText, keyboardType: .emailAddress)
         
-        addEmail.delegate = self
-        view.addSubview(addEmail)
+        addText.delegate = self
+        view.addSubview(addText)
     }
     
     internal func showNonExpertMenu(selectedItem : Item) {
@@ -437,7 +426,7 @@ extension ChannelVC {
                 
                 showBrowse(selectedItem: item)
                 
-            case .posts, .feedback, .perspectives, .interviews:
+            case .posts, .feedback, .perspectives, .interviews, .questions:
                 
                 showTag(selectedItem: item)
             
@@ -470,7 +459,9 @@ extension ChannelVC {
         
         if let selectedShareItem = selectedShareItem {
             
-            createShareRequest(selectedShareItem: selectedShareItem, completion: { _ , _ in })
+            self.createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: toUser, completion: { _ , _ in
+                self.selectedShareItem = nil
+            })
             
         } else {
             
@@ -480,31 +471,6 @@ extension ChannelVC {
             
         }
     }
-    
-    internal func createShareRequest(selectedShareItem : Item, toEmail : String? = nil, showAlert : Bool = true, completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
-        let itemKey = databaseRef.child("items").childByAutoId().key
-        let parentItemID = selectedShareItem.itemID
-        
-        selectedShareItem.itemID = itemKey
-        selectedShareItem.cID = selectedChannel.cID
-        selectedShareItem.cTitle = selectedChannel.cTitle
-        
-        toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
-        Database.createInviteRequest(item: selectedShareItem, type: type, toUser: nil, toName: nil, toEmail: toEmail,
-                                     childItems: [], parentItemID: parentItemID, completion: {(success, error) in
-            
-            if success, showAlert {
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
-            } else if showAlert {
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
-            }
-                                        
-            completion(selectedShareItem, error)
-            self.selectedShareItem = nil
-        })
-    }
-    
     
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()

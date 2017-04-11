@@ -8,7 +8,7 @@
 
 import UIKit
 
-class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate, ItemCellDelegate {
+class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate, ItemCellDelegate, ModalDelegate, ParentTextViewDelegate {
     
     //Main data source vars
     var allItems = [Item]()
@@ -29,6 +29,9 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     /** Sync Vars **/
     fileprivate var startUpdateAt : Date = Date()
     fileprivate var endUpdateAt : Date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+
+    /** Set which var user has selected to share **/
+    fileprivate var selectedShareItem : Item?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -442,6 +445,34 @@ extension HomeVC {
     
     /** End Browse Content Delegate **/
     
+    /** Delegate Function **/
+    internal func dismiss(_ view : UIView) {
+        view.removeFromSuperview()
+    }
+    
+    //close modal - e.g. mini search
+    internal func userClosedModal(_ viewController: UIViewController) {
+        dismiss(animated: true, completion: { _ in })
+    }
+    
+    //after email - user submitted the text
+    internal func buttonClicked(_ text: String, sender: UIView) {
+        GlobalFunctions.validateEmail(text, completion: {(success, error) in
+            if !success {
+                self.showAddEmail(bodyText: "invalid email - try again")
+            } else {
+                if let selectedShareItem = selectedShareItem {
+                    let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
+                    createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
+                        self.selectedShareItem = nil
+                    })
+                    
+                }
+            }
+        })
+    }
+    /** End Delegate Functions **/
+    
     internal func showBrowse(selectedItem: Item) {
         let itemCollection = BrowseContentVC()
         itemCollection.selectedChannel = Channel(cID: selectedItem.cID)
@@ -497,7 +528,7 @@ extension HomeVC {
             }))
             
             menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
-                //implement invite experts - should show user search box
+                self.showInviteMenu(currentItem: currentItem)
             }))
         }
         
@@ -539,14 +570,51 @@ extension HomeVC {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
-        toggleLoading(show: true, message: "loading share options...", showIcon: true)
-        let isInvite = type == "invite" ? true : false
+    /** Menu Options **/
+    internal func showInviteMenu(currentItem : Item) {
+        let menu = UIAlertController(title: "invite Experts", message: "know someone who can add to the conversation? invite them below!", preferredStyle: .actionSheet)
         
-        selectedItem.createShareLink(invite: isInvite, completion: { link in
-            guard let link = link else { return }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
-        })
+        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedShareItem = currentItem
+            
+            let browseUsers = MiniUserSearchVC()
+            browseUsers.modalPresentationStyle = .overCurrentContext
+            browseUsers.modalTransitionStyle = .crossDissolve
+            
+            browseUsers.modalDelegate = self
+            browseUsers.selectionDelegate = self
+            browseUsers.selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
+            self.navigationController?.present(browseUsers, animated: true, completion: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: { (action: UIAlertAction!) in
+            self.selectedShareItem = currentItem
+            self.showAddEmail(bodyText: "enter email")
+        }))
+        
+        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
+            let selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
+            self.createShareRequest(selectedShareItem: currentItem, selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: { selectedShareItem , error in
+                if error == nil, let selectedShareItem = selectedShareItem {
+                    let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
+                }
+            })
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showAddEmail(bodyText: String) {
+        addText = AddText(frame: view.bounds, buttonText: "Send",
+                           bodyText: bodyText, keyboardType: .emailAddress)
+        
+        addText.delegate = self
+        view.addSubview(addText)
     }
 }
 

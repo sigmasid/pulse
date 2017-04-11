@@ -30,7 +30,7 @@ class Channel : NSObject {
         self.cID = cID
     }
     
-    init(cID: String, title: String) {
+    init(cID: String, title: String?) {
         self.cID = cID
         self.cTitle = title
     }

@@ -50,21 +50,30 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         if !isLoaded {
-            tabBarHidden = true
-            
-            updateHeader()
-            setupLayout()
-            hideKeyboardWhenTappedAround()
-            
+            performInitialLoad()
             isLoaded = true
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
+    
+    internal func performInitialLoad() {
+        tabBarHidden = true
+        
+        updateHeader()
+        setupLayout()
+        hideKeyboardWhenTappedAround()
+    }
+    
+    
     
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
@@ -273,13 +282,16 @@ extension InterviewRequestVC {
     }
     
     internal func updateDataSource() {
-        if tableView != nil {
-            tableView?.dataSource = self
-            tableView?.delegate = self
-            
-            tableView?.layoutIfNeeded()
-            tableView?.reloadData()
+        if !isLoaded {
+            performInitialLoad()
+            isLoaded = true
         }
+        
+        tableView?.dataSource = self
+        tableView?.delegate = self
+        
+        tableView?.layoutIfNeeded()
+        tableView?.reloadData()
     }
     
     internal func askQuestion(qItem : Item) {

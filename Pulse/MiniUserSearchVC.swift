@@ -239,7 +239,9 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
                 
                 DispatchQueue.global(qos: .background).async {
                     if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                        self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+                        if self.users.count > indexPath.row {
+                            self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+                        }
                         
                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
                             DispatchQueue.main.async {

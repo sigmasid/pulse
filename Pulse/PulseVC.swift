@@ -33,6 +33,9 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     internal lazy var closeButton = PulseButton(size: .medium, type: .close, isRound : true, background: .white, tint: .black)
     internal lazy var backButton = PulseButton(size: .small, type: .back, isRound : true, background: .white, tint: .black)
     
+    /** Adds a popup text view **/
+    internal var addText : AddText!
+    
     /** General Setup Var **/
     internal var isLoaded : Bool = false
     
@@ -169,6 +172,43 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 }
             }
         }
+    }
+    
+    internal func createShareRequest(selectedShareItem : Item, selectedChannel: Channel, toUser: User?, toEmail : String? = nil, showAlert : Bool = true, completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
+        let itemKey = databaseRef.child("items").childByAutoId().key
+        let parentItemID = selectedShareItem.itemID
+        
+        selectedShareItem.itemID = itemKey
+        selectedShareItem.cID = selectedChannel.cID
+        selectedShareItem.cTitle = selectedChannel.cTitle
+        
+        toggleLoading(show: true, message: "creating invite...", showIcon: true)
+        let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
+        Database.createInviteRequest(item: selectedShareItem, type: type, toUser: toUser, toName: nil, toEmail: toEmail,
+                                     childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+                                        
+            if success, showAlert {
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
+            } else if showAlert {
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+            }
+            
+            self.toggleLoading(show: false, message: nil)
+            completion(selectedShareItem, error)
+        })
+    }
+    
+    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
+        toggleLoading(show: true, message: "loading share options...", showIcon: true)
+        let isInvite = type == "invite" ? true : false
+        selectedItem.createShareLink(invite: isInvite, completion: { link in
+            guard let link = link else {
+                self.toggleLoading(show: false, message: nil)
+                return
+            }
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
+            self.toggleLoading(show: false, message: nil)
+        })
     }
     
     internal func shareContent(shareType: String, shareText: String, shareLink: String, fullShareText: String = "") {

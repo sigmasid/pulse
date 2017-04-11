@@ -12,7 +12,7 @@ protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
 }
 
-class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate {
+class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate, BrowseContentDelegate {
     
     // Set by MasterTabVC
     public var universalLink : URL? {
@@ -174,7 +174,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                 
                 let tagDetailVC = TagCollectionVC()
                 tagDetailVC.selectedChannel = Channel(cID: item.cID)
-                
                 navigationController?.pushViewController(tagDetailVC, animated: true)
                 tagDetailVC.selectedItem = item
             
@@ -183,10 +182,12 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                 showItemDetail(item: item, allItems: [item])
             
             case .question, .thread, .interview:
+                toggleLoading(show: true, message: "Loading Items...", showIcon: true)
                 Database.getItemCollection(item.itemID, completion: {(success, items) in
                     success ?
                         self.showItemDetail(item: item, allItems: items) :
-                        GlobalFunctions.showAlertBlock("Sorry no \(item.childType(plural: true))s found", erMessage: "Please check back later or join the discussion!")
+                        self.showBrowse(selectedItem: item)
+                    self.toggleLoading(show: false, message: nil)
                 })
             default: break
             }
@@ -203,17 +204,47 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         }
     }
     
+    internal func addNewItem(selectedItem: Item) {
+        contentVC = ContentManagerVC()
+        contentVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+        contentVC.selectedItem = selectedItem
+        contentVC.openingScreen = .camera
+        
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    //
+    internal func showBrowse(selectedItem: Item) {
+        let _selectedItem = selectedItem
+        
+        let itemCollection = BrowseContentVC()
+        itemCollection.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+        itemCollection.selectedItem = _selectedItem
+        itemCollection.contentDelegate = self
+        
+        navigationController?.pushViewController(itemCollection, animated: true)
+    }
+    
+    
     internal func showChannel(channel : Channel) {
         let channelVC = ChannelVC()
         navigationController?.pushViewController(channelVC, animated: true)
         channelVC.selectedChannel = channel
     }
-    
+
     //used for handling links
     internal func showItemDetail(item : Item, allItems: [Item]) {
+        showItemDetail(allItems: allItems, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+    }
+    
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
+        contentVC.watchedFullPreview = watchedPreview
+        contentVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+        contentVC.selectedItem = selectedItem
+        contentVC.itemCollection = itemCollection
+        contentVC.itemIndex = index
         contentVC.allItems = allItems
-        contentVC.selectedItem = item
         contentVC.openingScreen = .item
         
         present(contentVC, animated: true, completion: nil)
@@ -299,7 +330,7 @@ extension ExploreChannelsVC: UICollectionViewDelegateFlowLayout {
 /** HANDLE DYNAMIC LINKS **/
 extension ExploreChannelsVC {
      func handleLink() {
-     
+        toggleLoading(show: true, message: "Loading Link...", showIcon: true)
         if let universalLink = universalLink, let link = URLComponents(url: universalLink, resolvingAgainstBaseURL: true) {
      
             let urlComponents = link.path.components(separatedBy: "/").dropFirst()
@@ -310,16 +341,17 @@ extension ExploreChannelsVC {
             case "u":
                 let uID = urlComponents[2]
                 userSelected(item: User(uID: uID))
-         
+                toggleLoading(show: false, message: nil)
+
             case "c":
                 let selectedChannel = Channel(cID: urlComponents[2])
                 showChannel(channel: selectedChannel)
-                
+                toggleLoading(show: false, message: nil)
+
             case "i":
                 let itemID = urlComponents[2]
-                toggleLoading(show: true, message: "Loading item...", showIcon: true)
                 Database.getItem(itemID, completion: {(item, error) in
-                    self.toggleLoading(show: false, message: nil, showIcon: true)
+                    self.toggleLoading(show: false, message: nil)
 
                     if let item = item {
                         self.userSelected(item: item)
@@ -329,7 +361,6 @@ extension ExploreChannelsVC {
                 })
             case "invite":
                 let inviteID = urlComponents[2]
-                toggleLoading(show: true, message: "Loading item...", showIcon: true)
                 Database.getInviteItem(inviteID, completion: { item, items, toUser, conversationID, error in
                     if error == nil, let item = item {
                         switch item.type {
@@ -341,9 +372,10 @@ extension ExploreChannelsVC {
                                 interviewVC.allQuestions = items
                                 interviewVC.selectedUser = toUser
                                 interviewVC.interviewItem = item
+                                self.navigationController?.pushViewController(interviewVC, animated: true)
+
                                 interviewVC.interviewItemID = item.itemID
                                 
-                                self.navigationController?.pushViewController(interviewVC, animated: true)
                             }
                         case .perspective, .question:
                             DispatchQueue.main.async {

@@ -12,7 +12,7 @@ protocol UserProfileDelegate: class {
     func showMenu()
 }
 
-class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
+class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegate {
     
     var modalDelegate : ModalDelegate!
     var isCurrentUser = false
@@ -304,6 +304,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
     internal func askQuestion() {
         let questionVC = AskQuestionVC()
         questionVC.selectedUser = selectedUser
+        questionVC.modalDelegate = self
         navigationController?.pushViewController(questionVC, animated: true)
     }
     
@@ -368,6 +369,11 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate {
                 updateCurrentCell(cell, atIndexPath: indexPath)
             }
         }
+    }
+    
+    //Delegate Function - Used for Mini Search, Ask Question
+    internal func userClosedModal(_ viewController: UIViewController) {
+        dismiss(animated: true, completion: { _ in })
     }
 }
 

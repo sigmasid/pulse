@@ -208,6 +208,8 @@ class Item: NSObject {
         case .question: return true
         case .answer: return false
 
+        case .feedback: return true
+
         case .interviews: return true
         case .interview: return false
         
