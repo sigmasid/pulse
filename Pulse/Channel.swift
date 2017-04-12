@@ -16,7 +16,7 @@ class Channel : NSObject {
     var cDescription : String?
     
     var tags = [Item]()
-    var experts = [User]()
+    var contributors = [User]()
     var items = [Item]()
     
     var cThumbImage : UIImage?
@@ -49,11 +49,6 @@ class Channel : NSObject {
                 _tag.itemTitle = tag.childSnapshot(forPath: "title").value as? String ?? ""
                 self.tags.append(_tag)
             }
-        }
-        
-        for user in snapshot.childSnapshot(forPath: "experts").children {
-            let _user = User(uID: (user as AnyObject).key)
-            self.experts.append(_user)
         }
         
         self.cCreated = true

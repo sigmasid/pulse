@@ -361,10 +361,10 @@ extension ExploreChannelsVC {
                 })
             case "invite":
                 let inviteID = urlComponents[2]
-                Database.getInviteItem(inviteID, completion: { item, items, toUser, conversationID, error in
-                    if error == nil, let item = item {
-                        switch item.type {
-                        case .interview:
+                Database.getInviteItem(inviteID, completion: { item, type, items, toUser, conversationID, error in
+                    if error == nil, let item = item, let type = type {
+                        switch type {
+                        case .interviewInvite:
                             DispatchQueue.main.async {
                                 let interviewVC = InterviewRequestVC()
                                 //need to do in this order so all items are set before itemID
@@ -377,7 +377,7 @@ extension ExploreChannelsVC {
                                 interviewVC.interviewItemID = item.itemID
                                 
                             }
-                        case .perspective, .question:
+                        case .perspectiveInvite, .questionInvite:
                             DispatchQueue.main.async {
                                 let selectedChannel = Channel(cID: item.cID, title: item.cTitle)
                                 self.contentVC = ContentManagerVC()
@@ -386,6 +386,8 @@ extension ExploreChannelsVC {
                                 self.contentVC.openingScreen = .camera
                                 self.present(self.contentVC, animated: true, completion: nil)
                             }
+                        case .contributorInvite:
+                            self.showContributorMenu(inviteItem: item)
                         default: break
                         }
                     }
@@ -401,4 +403,32 @@ extension ExploreChannelsVC {
             }
         }
      }
+    
+    internal func showContributorMenu(inviteItem: Item) {
+        let menu = UIAlertController(title: "Congratulations!",
+                                     message: "You were recommended as a contributor for \(inviteItem.cTitle ?? " a channel"). Contributors are featured thought leaders who shape the content & experience for this channel. It's a great way to showcase your expertise and build your personal brand", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
+            self.showConfirmationMenu(status: true, inviteID: inviteItem.itemID)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "decline Invite", style: .destructive, handler: { (action: UIAlertAction!) in
+            self.showConfirmationMenu(status: false, inviteID: inviteItem.itemID)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    
+    internal func showConfirmationMenu(status: Bool, inviteID: String) {
+        Database.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
+            success ?
+                GlobalFunctions.showAlertBlock("All Set!", erMessage: "You have been confirmed as a contributor for the channel. Check out the channel and ") :
+                GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite", erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
+        })
+    }
 }

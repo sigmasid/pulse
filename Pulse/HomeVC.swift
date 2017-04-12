@@ -527,7 +527,7 @@ extension HomeVC {
                 currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
             }))
             
-            menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
                 self.showInviteMenu(currentItem: currentItem)
             }))
         }
@@ -572,7 +572,8 @@ extension HomeVC {
     
     /** Menu Options **/
     internal func showInviteMenu(currentItem : Item) {
-        let menu = UIAlertController(title: "invite Experts", message: "know someone who can add to the conversation? invite them below!", preferredStyle: .actionSheet)
+        let menu = UIAlertController(title: "invite Contributors",
+                                     message: "know someone who can add to the conversation? invite them below!", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedShareItem = currentItem

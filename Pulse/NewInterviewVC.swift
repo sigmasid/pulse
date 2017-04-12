@@ -45,7 +45,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
             
             updateHeader()
             setupLayout()
-            addChannelExperts()
+            addChannelContributors()
             hideKeyboardWhenTappedAround()
             
             isLoaded = true
@@ -117,10 +117,10 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         navigationController?.present(browseUsers, animated: true, completion: nil)
     }
     
-    func addChannelExperts() {
-        if selectedChannel.experts.isEmpty {
-            Database.getChannelExperts(channelID: selectedChannel.cID, completion: {success, experts in
-                self.selectedChannel.experts = experts
+    func addChannelContributors() {
+        if selectedChannel.contributors.isEmpty {
+            Database.getChannelContributors(channelID: selectedChannel.cID, completion: {success, contributors in
+                self.selectedChannel.contributors = contributors
             })
         }
     }

@@ -17,7 +17,7 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     public var selectedChannel : Channel! {
         didSet {
             if allUsers.isEmpty {
-                Database.getChannelExperts(channelID: selectedChannel.cID, completion: {(success, users) in
+                Database.getChannelContributors(channelID: selectedChannel.cID, completion: {(success, users) in
                     self.allUsers = users
                     self.updateDataSource()
                 })
@@ -127,7 +127,7 @@ extension BrowseUsersVC : UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard allUsers.count > 0 else {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: emptyReuseIdentifier, for: indexPath) as! EmptyCell
-            cell.setMessage(message: "no experts here yet!", color: .black)
+            cell.setMessage(message: "no contributors yet!", color: .black)
             return cell
         }
         
@@ -197,7 +197,7 @@ extension BrowseUsersVC : UICollectionViewDelegate, UICollectionViewDataSource {
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
             headerView.delegate = self
-            headerView.updateLabel(selectedChannel.cTitle == "" ? "browse experts"  : "meet the experts in \(selectedChannel.cTitle!)")
+            headerView.updateLabel(selectedChannel.cTitle == "" ? "browse contributors"  : "meet contributors in \(selectedChannel.cTitle!)")
             
             return headerView
             

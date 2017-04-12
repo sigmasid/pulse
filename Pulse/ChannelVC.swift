@@ -53,7 +53,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
     
-    fileprivate var selectedShareItem : Item?
+    fileprivate var selectedShareItem : Any?
     
     override init() {
         super.init()
@@ -207,7 +207,7 @@ extension ChannelVC {
         }
     }
     
-    //menu for each individual item
+    //main menu for each individual item
     internal func clickedMenuButton(itemRow: Int) {
         let currentItem = allItems[itemRow]
         
@@ -218,8 +218,9 @@ extension ChannelVC {
                 currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
             }))
             
-            menu.addAction(UIAlertAction(title: "invite Experts", style: .default, handler: { (action: UIAlertAction!) in
-                self.showInviteMenu(currentItem: currentItem)
+            menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
+                self.showInviteMenu(currentItem: currentItem, inviteTitle: "Invite Contributors",
+                                    inviteMessage: "know someone who can add to the conversation? invite them below!")
             }))
         }
         
@@ -259,11 +260,15 @@ extension ChannelVC {
             if !success {
                 self.showAddEmail(bodyText: "invalid email - try again")
             } else {
-                if let selectedShareItem = selectedShareItem {
+                if let selectedShareItem = selectedShareItem as? Item {
                     
                     createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
                         self.selectedShareItem = nil
                     })
+                    
+                } else if let selectedShareItem = selectedShareItem as? Channel {
+                    
+                    createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: { _ , _ in })
                     
                 }
             }
@@ -272,8 +277,8 @@ extension ChannelVC {
     /** End Delegate Functions **/
     
     /** Menu Options **/
-    internal func showInviteMenu(currentItem : Item) {
-        let menu = UIAlertController(title: "invite Experts", message: "know someone who can add to the conversation? invite them below!", preferredStyle: .actionSheet)
+    internal func showInviteMenu(currentItem : Any?, inviteTitle: String, inviteMessage: String) {
+        let menu = UIAlertController(title: inviteTitle, message: inviteMessage, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedShareItem = currentItem
@@ -294,13 +299,38 @@ extension ChannelVC {
         }))
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
-            self.createShareRequest(selectedShareItem: currentItem, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
-                                    completion: { selectedShareItem , error in
-                if error == nil, let selectedShareItem = selectedShareItem {
-                    let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
-                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
-                }
-            })
+            if let currentItem = currentItem as? Item {
+                self.createShareRequest(selectedShareItem: currentItem, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
+                                        completion: { selectedShareItem , error in
+                    //using the share item returned from the request
+                    if error == nil, let selectedShareItem = selectedShareItem {
+                        let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+                        self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
+                    }
+                })
+                
+            } else if let shareChannel = currentItem as? Channel {
+                self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
+
+                self.createContributorInvite(selectedChannel: shareChannel, toUser: nil, toEmail: nil, showAlert: true, completion: { inviteID , error in
+                    
+                    if error == nil, let inviteID = inviteID {
+                        let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
+                        let shareText = "You are invited to be a contributor on \(channelTitle)"
+                        
+                        Database.createShareLink(linkString: "invite/"+inviteID, completion: { link in
+                            guard let link = link else {
+                                self.toggleLoading(show: false, message: nil)
+                                return
+                            }
+                            
+                            self.toggleLoading(show: false, message: nil)
+                            self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
+                        })
+                    }
+                    
+                })
+            }
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -348,7 +378,8 @@ extension ChannelVC {
         }))
         
         menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
-            //self.askQuestion()
+            self.showInviteMenu(currentItem: self.selectedChannel, inviteTitle: "invite Contributors",
+                                inviteMessage: "contributors can add posts, answer questions and share their perspecives on discussions. To ensure quality, please only invite qualified contributors. All new contributor requests are reviewed.")
         }))
         
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
@@ -372,11 +403,11 @@ extension ChannelVC {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "featured Contributors", style: .default, handler: { (action: UIAlertAction!) in
-            let browseExpertsVC = BrowseUsersVC()
-            browseExpertsVC.selectedChannel = self.selectedChannel
-            browseExpertsVC.delegate = self
+            let browseContributorsVC = BrowseUsersVC()
+            browseContributorsVC.selectedChannel = self.selectedChannel
+            browseContributorsVC.delegate = self
             
-            self.navigationController?.pushViewController(browseExpertsVC, animated: true)
+            self.navigationController?.pushViewController(browseContributorsVC, animated: true)
         }))
         
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
@@ -457,11 +488,15 @@ extension ChannelVC {
     //delegate for mini user search - send the invite
     internal func userSelectedUser(toUser: User) {
         
-        if let selectedShareItem = selectedShareItem {
-            
+        if let selectedShareItem = selectedShareItem as? Item {
+            //
             self.createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: toUser, completion: { _ , _ in
                 self.selectedShareItem = nil
             })
+        } else if let selectedShareItem = selectedShareItem as? Channel {
+            
+            //channel contributor invite
+            createContributorInvite(selectedChannel: selectedShareItem, toUser: toUser, toEmail: nil, showAlert: true, completion: { _, _ in })
             
         } else {
             
@@ -515,6 +550,25 @@ extension ChannelVC {
         navigationController?.pushViewController(tagDetailVC, animated: true)
         tagDetailVC.selectedItem = selectedItem
         
+    }
+    
+    internal func createContributorInvite(selectedChannel: Channel, toUser: User?, toEmail: String?  = nil, showAlert: Bool = true,
+                                          completion: @escaping (String?, Error?) -> Void) {
+        
+        toggleLoading(show: true, message: "creating invite...", showIcon: true)
+        Database.createContributorInvite(channel: selectedChannel, type: .contributorInvite, toUser: toUser, toName: nil,
+                                         toEmail: toEmail, completion: {(inviteID, error) in
+                                        
+            self.toggleLoading(show: false, message: nil)
+
+            if error == nil, showAlert {
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
+                completion(inviteID, nil)
+            } else if showAlert {
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                completion(nil, error)
+            }
+        })
     }
 }
 

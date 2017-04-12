@@ -23,7 +23,7 @@ var currentAuthState : AuthStates = .loggedOut
 class Database {
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
     static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
-    static let channelExpertsRef = databaseRef.child(Element.ChannelExperts.rawValue)
+    static let channelContributorsRef = databaseRef.child(Element.ChannelContributors.rawValue)
 
     static let itemsRef = databaseRef.child(Element.Items.rawValue)
     static let itemStatsRef = databaseRef.child(Element.ItemStats.rawValue)
@@ -512,10 +512,10 @@ class Database {
         })
     }
     
-    static func getChannelExperts(channelID : String, completion: @escaping (_ success : Bool, _ users : [User]) -> Void) {
+    static func getChannelContributors(channelID : String, completion: @escaping (_ success : Bool, _ users : [User]) -> Void) {
         var users = [User]()
         
-        channelExpertsRef.child(channelID).observeSingleEvent(of: .value, with: { snap in
+        channelContributorsRef.child(channelID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
                     let user = User(uID: (child as AnyObject).key)
@@ -542,9 +542,10 @@ class Database {
     }
     
     static func getInviteItem(_ itemID : String,
-                              completion: @escaping (_ item : Item?, _ questions: [Item], _ toUser : User?, _ conversationID: String?, _ error : NSError?) -> Void) {
+                              completion: @escaping (_ item : Item?, _ type: MessageType?, _ questions: [Item], _ toUser : User?, _ conversationID: String?, _ error : NSError?) -> Void) {
         var allQuestions = [Item]()
         var toUser : User? = nil
+        var type : MessageType?
         
         databaseRef.child("invites").child(itemID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
@@ -567,6 +568,10 @@ class Database {
                     currentItem.user?.name = userName
                 }
                 
+                if let typeString = snap.childSnapshot(forPath: "fromUserName").value as? String {
+                    type = MessageType.getMessageType(type: typeString)
+                }
+                
                 
                 if snap.childSnapshot(forPath: "items").exists() {
                     for question in snap.childSnapshot(forPath: "items").children {
@@ -585,11 +590,11 @@ class Database {
                     toUser?.name = snap.childSnapshot(forPath: "toUserName").value as? String
                 }
                 
-                completion(currentItem, allQuestions, toUser, conversationID, nil)
+                completion(currentItem, type, allQuestions, toUser, conversationID, nil)
             }
             else {
                 let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
-                completion(nil, [], nil, nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
+                completion(nil, nil, [], nil, nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
             }
         })
     }
@@ -1256,7 +1261,7 @@ class Database {
     
     ///Save collection into question / user
     static func addItemCollectionToDatabase(_ item : Item, parentItem : Item, channelID : String, post : [String : String],
-                                            completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+                                            completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
         guard let _user = FIRAuth.auth()?.currentUser else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
@@ -1290,7 +1295,7 @@ class Database {
             collectionPost["userDetailedPublicSummary/\(_user.uid)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
-            blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
+            blockError != nil ? completion(false, blockError) : completion(true, nil)
         })
     }
     
@@ -1423,7 +1428,7 @@ class Database {
                                 completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
     
         guard let user = FIRAuth.auth()?.currentUser else {
-            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to recommend experts" ]
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to recommend contributors" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
@@ -1460,7 +1465,7 @@ class Database {
         
         guard let channelID = channel.cID else {
             let errorInfo = [ NSLocalizedDescriptionKey : "please select a channel first" ]
-            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            completion(false, NSError.init(domain: "InvalidChannel", code: 404, userInfo: errorInfo))
             return
         }
         
@@ -1516,7 +1521,7 @@ class Database {
         })
     }
     
-    static func addInterviewToDatabase(interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+    static func addInterviewToDatabase(interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let _user = FIRAuth.auth()?.currentUser else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
@@ -1539,7 +1544,67 @@ class Database {
         }
         
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
-            blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
+            blockError != nil ? completion(false, blockError) : completion(true, nil)
+        })
+    }
+    
+    static func createContributorInvite(channel: Channel, type: MessageType, toUser: User?, toName: String?, toEmail: String? = nil,
+                                    completion: @escaping (_ inviteID : String?, _ error : Error?) -> Void) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to send invites" ]
+            completion(nil, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let inviteKey = databaseRef.child("invites").childByAutoId().key
+
+        var channelPost : [String : Any] = ["title" : channel.cTitle ?? "Contributor Invite",
+                                            "type" : type.rawValue,
+                                            "fromUserID" : user.uid,
+                                            "fromUserName" : User.currentUser?.name ?? "",
+                                            "createdAt" : FIRServerValue.timestamp(),
+                                            "cID": channel.cID,
+                                            "cTitle": channel.cDescription ?? ""]
+        
+        var userPost : [String : Any] = ["title" : channel.cTitle ?? "Contributor Invite",
+                                         "type" : type.rawValue,
+                                         "createdAt" : FIRServerValue.timestamp()]
+        
+        //add in toUser
+        if let toUser = toUser {
+            channelPost["toUserID"] = toUser.uID
+            channelPost["toUserName"] = toUser.name ?? ""
+            
+            userPost["toUserID"] = toUser.uID
+            userPost["toUserName"] = toUser.name ?? ""
+            
+        } else {
+            channelPost["toUserName"] = toName ?? toUser?.name
+            channelPost["toUserName"] = toName ?? toUser?.name
+        }
+        
+        if let toEmail = toEmail {
+            channelPost["toUserEmail"] = toEmail
+        }
+
+        let collectionPost = ["invites/\(inviteKey)": channelPost,
+                              "users/\(user.uid)/sentInvites/\(inviteKey)" : userPost]
+        
+        databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
+            completionError == nil ? completion(inviteKey, nil) : completion(nil, completionError)
+        })
+        
+    }
+    
+    static func updateContributorInvite(status: Bool, inviteID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let _ = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to send invites" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        databaseRef.child("invites/\(inviteID)/accepted").setValue(status, withCompletionBlock: {(error, ref) in
+            error == nil ? completion(true, nil) : completion(false, error)
         })
     }
     
@@ -1683,7 +1748,7 @@ class Database {
         }
         
         guard user.isVerified(for: Channel(cID: channelID)) else {
-            let errorInfo = [ NSLocalizedDescriptionKey : "only channel experts can start a thread" ]
+            let errorInfo = [ NSLocalizedDescriptionKey : "only verified contributors can start a thread" ]
             completion(false, NSError.init(domain: "NotExpert", code: 404, userInfo: errorInfo))
             return
         }

@@ -12,12 +12,12 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     
     public var selectedChannel : Channel! {
         didSet {
-            if selectedChannel != nil, selectedChannel.experts.isEmpty {
-                Database.getChannelExperts(channelID: selectedChannel.cID, completion: {success, users in
+            if selectedChannel != nil, selectedChannel.contributors.isEmpty {
+                Database.getChannelContributors(channelID: selectedChannel.cID, completion: {success, users in
                     self.users = users
                 })
             } else {
-                users = selectedChannel.experts
+                users = selectedChannel.contributors
             }
         }
     }

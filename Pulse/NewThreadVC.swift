@@ -189,7 +189,7 @@ extension NewThreadVC {
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "Threads are open to all channel experts and any one invited by an expert to add their perspectives on the topic."
+        sTypeDescription.text = "Threads are open to all channel contributors and any one invited by an expert to add their perspectives on the topic."
         
         addSubmitButton()
     }

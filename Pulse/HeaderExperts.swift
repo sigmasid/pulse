@@ -8,18 +8,18 @@
 
 import UIKit
 
-class HeaderExperts: UICollectionReusableView {
-    public var experts = [User]() {
+class HeaderContributors: UICollectionReusableView {
+    public var contributors = [User]() {
         didSet {
-            expertsPreview?.delegate = self
-            expertsPreview?.dataSource = self
-            expertsPreview?.reloadData()
+            contributorsPreview?.delegate = self
+            contributorsPreview?.dataSource = self
+            contributorsPreview?.reloadData()
         }
     }
     public var delegate: SelectionDelegate!
     
-    private var expertsPreview : UICollectionView!
-    private var expertsLabel = UILabel()
+    private var contributorsPreview : UICollectionView!
+    private var contributorsLabel = UILabel()
     internal var expertPreviewCount = 5
     let collectionReuseIdentifier = "expertThumbCell"
 
@@ -36,54 +36,54 @@ class HeaderExperts: UICollectionReusableView {
     }
     
     fileprivate func setupChannelHeader() {
-        addSubview(expertsLabel)
-        expertsLabel.text = "featuring"
-        expertsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .pulseRed, alignment: .center)
+        addSubview(contributorsLabel)
+        contributorsLabel.text = "featuring"
+        contributorsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .pulseRed, alignment: .center)
 
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: expertsLabel.font.pointSize, weight: UIFontWeightMedium)]
-        let titleLabelHeight = GlobalFunctions.getLabelSize(title: expertsLabel.text!, width: frame.width, fontAttributes: fontAttributes)
-        expertsLabel.frame = CGRect(x: 0, y: 10, width: frame.width, height: titleLabelHeight)
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: contributorsLabel.font.pointSize, weight: UIFontWeightMedium)]
+        let titleLabelHeight = GlobalFunctions.getLabelSize(title: contributorsLabel.text!, width: frame.width, fontAttributes: fontAttributes)
+        contributorsLabel.frame = CGRect(x: 0, y: 10, width: frame.width, height: titleLabelHeight)
         
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
-        expertsPreview = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
-        expertsPreview.register(HeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
+        contributorsPreview = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
+        contributorsPreview.register(HeaderCell.self, forCellWithReuseIdentifier: collectionReuseIdentifier)
 
-        addSubview(expertsPreview)
-        expertsPreview.translatesAutoresizingMaskIntoConstraints = false
-        expertsPreview.topAnchor.constraint(equalTo: expertsLabel.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
-        expertsPreview.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        expertsPreview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        expertsPreview.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
-        expertsPreview.layoutIfNeeded()
+        addSubview(contributorsPreview)
+        contributorsPreview.translatesAutoresizingMaskIntoConstraints = false
+        contributorsPreview.topAnchor.constraint(equalTo: contributorsLabel.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        contributorsPreview.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
+        contributorsPreview.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
+        contributorsPreview.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue + Spacing.m.rawValue).isActive = true
+        contributorsPreview.layoutIfNeeded()
         
-        expertsPreview.backgroundColor = .white
-        expertsPreview.showsHorizontalScrollIndicator = false
+        contributorsPreview.backgroundColor = .white
+        contributorsPreview.showsHorizontalScrollIndicator = false
     }
 }
 
-extension HeaderExperts: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
+extension HeaderContributors: UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return experts.count
+        return contributors.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
         
-        let _user = experts[indexPath.row]
+        let _user = contributors[indexPath.row]
         
         if !_user.uCreated { //search case - get question from database
             Database.getUser(_user.uID!, completion: { (user, error) in
                 if let user = user {
                     cell.updateCell(user.name?.capitalized, _image: nil)
                     
-                    self.experts[indexPath.row] = user
+                    self.contributors[indexPath.row] = user
                     
                     if let _uPic = user.profilePic {
                         DispatchQueue.global(qos: .background).async {
                             if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                                self.experts[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+                                self.contributors[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
                                 
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
@@ -103,7 +103,7 @@ extension HeaderExperts: UICollectionViewDataSource, UICollectionViewDelegate, U
 
                 DispatchQueue.global(qos: .background).async {
                     if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                        self.experts[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
+                        self.contributors[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
                         
                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
                             DispatchQueue.main.async {
@@ -132,7 +132,7 @@ extension HeaderExperts: UICollectionViewDataSource, UICollectionViewDelegate, U
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        delegate.userSelected(item: experts[indexPath.row])
+        delegate.userSelected(item: contributors[indexPath.row])
     }
 }
 

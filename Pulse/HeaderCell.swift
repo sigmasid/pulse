@@ -1,5 +1,5 @@
 //
-//  ChannelExpertsPreviewCell.swift
+//  HeaderCell.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 2/16/17.

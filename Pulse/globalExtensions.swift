@@ -506,7 +506,7 @@ enum SectionTypes : String {
 enum Element : String {
     case Channels = "channels"
     case ChannelItems = "channelItems"
-    case ChannelExperts = "channelExperts"
+    case ChannelContributors = "channelContributors"
 
     case Items = "items"
     case ItemThumbs = "itemThumbnails"
@@ -611,8 +611,26 @@ enum MessageType: String {
     case message
     case interviewInvite
     case channelInvite
+    case contributorInvite
     case perspectiveInvite
     case questionInvite
+    
+    static func getMessageType(type : String) -> MessageType {
+        switch type {
+        case "interviewInvite":
+            return .interviewInvite
+        case "channelInvite":
+            return .channelInvite
+        case "perspectiveInvite":
+            return .perspectiveInvite
+        case "questionInvite":
+            return .perspectiveInvite
+        case "contributorInvite":
+            return .contributorInvite
+        default:
+            return .message
+        }
+    }
 }
 
 struct ItemMetaData {

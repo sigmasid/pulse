@@ -136,7 +136,7 @@ class User: NSObject {
         } else if hasAnsweredQuestion(itemID) {
             completion(false, "Already Answered!", "Sorry you can only answer a question once")
         } else if !expertiseTags.contains(tag) {
-            completion(false, "Experts Only!", "Are you an expert? Apply to get approved!")
+            completion(false, "Verified Contributors Only!", "Are you an expert? Apply to get approved!")
         } **/
     }
     

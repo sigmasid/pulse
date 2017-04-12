@@ -135,7 +135,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
         }
     }
     
-    func sendMessage() {
+    internal func sendMessage() {
         guard User.currentUser!.uID != toUser.uID else { return }
         
         let message = Message(from: User.currentUser!, to: toUser, body: msgBody.text)
@@ -150,9 +150,42 @@ class MessageVC: PulseVC, UITextViewDelegate{
                 self.conversationID = _conversationID!
                 self.keepConversationUpdated()
             } else {
-                GlobalFunctions.showAlertBlock("Error Sending Message", erMessage: "Sorry we had a problem sending your message. Please try again!")
+                GlobalFunctions.showAlertBlock("Error Sending Message",
+                                               erMessage: "Sorry we had a problem sending your message. Please try again!")
             }
         })
+    }
+    
+    internal func showConfirmationMenu(status: Bool, inviteID: String) {
+        Database.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
+            success ?
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "You are in!", erMessage: "You have been confirmed as a contributor. Now you can start creating, sharing and showcasing your expertise!", buttonTitle: "okay") :
+                GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite",
+                                               erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
+        })
+    }
+    
+    internal func showContributorMenu(messageID: String, messageText: String) {
+        toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+        let menu = UIAlertController(title: "Congratulations!",
+                                     message: "\(messageText). Contributors are thought leaders who shape content & experience. It's a great way to showcase your expertise on this topic!", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
+            self.showConfirmationMenu(status: true, inviteID: messageID)
+            self.toggleLoading(show: false, message: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "decline Invite", style: .destructive, handler: { (action: UIAlertAction!) in
+            self.showConfirmationMenu(status: false, inviteID: messageID)
+            self.toggleLoading(show: false, message: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            self.toggleLoading(show: false, message: nil)
+        }))
+        
+        self.present(menu, animated: true, completion: nil)
     }
     
     fileprivate func setupLayout() {
@@ -314,7 +347,7 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         case .perspectiveInvite, .questionInvite:
             let contentVC = ContentManagerVC()
             toggleLoading(show: true, message: "loading Invite...", showIcon: true)
-            Database.getInviteItem(message.mID, completion: { selectedItem, childItem, toUser, conversationID, error in
+            Database.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
                 if let selectedItem = selectedItem {
                     DispatchQueue.main.async {
                         let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
@@ -333,6 +366,13 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
             interviewVC.interviewItemID = message.mID
             
             navigationController?.pushViewController(interviewVC, animated: true)
+        
+        case .contributorInvite:
+            
+            showContributorMenu(messageID: message.mID, messageText: message.body)
+        
+        case .channelInvite:
+            break
         default: break
         }
     }

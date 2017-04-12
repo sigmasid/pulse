@@ -174,7 +174,8 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
-    internal func createShareRequest(selectedShareItem : Item, selectedChannel: Channel, toUser: User?, toEmail : String? = nil, showAlert : Bool = true, completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
+    internal func createShareRequest(selectedShareItem : Item, selectedChannel: Channel, toUser: User?, toEmail : String? = nil, showAlert : Bool = true,
+                                     completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
         let itemKey = databaseRef.child("items").childByAutoId().key
         let parentItemID = selectedShareItem.itemID
         
@@ -213,7 +214,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     internal func shareContent(shareType: String, shareText: String, shareLink: String, fullShareText: String = "") {
         // set up activity view controller
-        let textToShare = fullShareText == "" ? "Check out this \(shareType) on Pulse - " + shareText + " " + shareLink : fullShareText + " " + shareLink
+        let textToShare = fullShareText == "" ? "Check out this \(shareType) on Pulse: " + shareText + " - " + shareLink : fullShareText + " - " + shareLink
         activityController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
         activityController.popoverPresentationController?.sourceView = view // so that iPads won't crash
         

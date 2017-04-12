@@ -16,7 +16,7 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
     public var interviewItemID : String! {
         didSet {
             if interviewItem == nil || allQuestions.isEmpty || selectedUser == nil {
-                Database.getInviteItem(interviewItemID, completion: { interviewItem, questions, toUser, conversationID, error in
+                Database.getInviteItem(interviewItemID, completion: { interviewItem, _, questions, toUser, conversationID, error in
                     self.selectedUser = toUser
                     self.interviewItem = interviewItem
                     self.allQuestions = questions

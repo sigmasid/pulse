@@ -111,7 +111,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             reasonVerified = false
             
             if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Recommend Experts", subtitle: title)
+                headerNav?.setNav(title: "Recommend Contributors", subtitle: title)
                 applySubtitle.text = "Know someone with standout ideas who should be featured on this topic? Tell us below!"
                 applyText.text = subText2
             }
@@ -130,7 +130,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             Database.contributorRequest(channel: selectedChannel, applyText: applyText.text, completion: {(success, error) in
                 if success {
                     let applyConfirmation = UIAlertController(title: "Thanks for applying!",
-                                                            message: "We individually review & hand select the best experts for each channel and will get back to you soon!",
+                                                            message: "We individually review & hand select the best contributors for each channel and will get back to you soon!",
                                                             preferredStyle: .actionSheet)
                     
                     applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
@@ -170,7 +170,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
                                           applyText: recommendText.text, completion: { (success, error) in
                 if success {
                     let applyConfirmation = UIAlertController(title: "Recommendation Sent!",
-                                                              message: "We review & hand select the best experts for each channel and will carefully review your recommendation!",
+                                                              message: "We review & hand select the best contributors for each channel and will carefully review your recommendation!",
                                                               preferredStyle: .actionSheet)
                     
                     applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
@@ -370,7 +370,7 @@ extension ApplyExpertVC {
         applySubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: UIColor.gray, alignment: .center)
 
         applyStack.addArrangedSubview(applySubtitle)
-        applySubtitle.text = "Experts are thought leaders who create & shape content, start conversations & answer questions!"
+        applySubtitle.text = "Contributors are thought leaders who create & shape content, start conversations & connect with subscribers!"
 
         setupApplyView()
     }

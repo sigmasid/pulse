@@ -46,18 +46,7 @@ class Message : NSObject {
         }
         
         if snapshot.hasChild("type"), let type = snapshot.childSnapshot(forPath: "type").value as? String {
-            switch type {
-            case "interviewInvite":
-                self.mType = .interviewInvite
-            case "channelInvite":
-                self.mType = .channelInvite
-            case "perspectiveInvite":
-                self.mType = .perspectiveInvite
-            case "questionInvite":
-                self.mType = .perspectiveInvite
-            default:
-                self.mType = .message
-            }
+            self.mType = MessageType.getMessageType(type: type)
         } else {
             self.mType = .message
         }
