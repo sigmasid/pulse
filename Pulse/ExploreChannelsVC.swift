@@ -182,7 +182,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                 showItemDetail(item: item, allItems: [item])
             
             case .question, .thread, .interview:
-                toggleLoading(show: true, message: "Loading Items...", showIcon: true)
+                toggleLoading(show: true, message: "Loading Item...", showIcon: true)
                 Database.getItemCollection(item.itemID, completion: {(success, items) in
                     success ?
                         self.showItemDetail(item: item, allItems: items) :
@@ -356,7 +356,8 @@ extension ExploreChannelsVC {
                     if let item = item {
                         self.userSelected(item: item)
                     } else {
-                        GlobalFunctions.showAlertBlock("Error Locating Item", erMessage: "Sorry we couldn't find this item. But there's plenty more interesting content behind this message!")
+                        GlobalFunctions.showAlertBlock("Error Locating Item",
+                                                       erMessage: "Sorry we couldn't find this item. But there's plenty more interesting content behind this message!")
                     }
                 })
             case "invite":

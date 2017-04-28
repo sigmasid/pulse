@@ -92,10 +92,11 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             reasonVerified = false
             
             if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Become Contributor", subtitle: title)
+                headerNav?.setNav(title: "Apply", subtitle: title)
                 applySubtitle.text = "Contributors are thought leaders who create & shape content, start conversations & answer questions!"
                 applyText.text = subText1
             }
+            checkButton()
             view.layoutIfNeeded()
             
         case 1:
@@ -111,10 +112,11 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             reasonVerified = false
             
             if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Recommend Contributors", subtitle: title)
+                headerNav?.setNav(title: "Recommend", subtitle: title)
                 applySubtitle.text = "Know someone with standout ideas who should be featured on this topic? Tell us below!"
                 applyText.text = subText2
             }
+            checkButton()
             view.layoutIfNeeded()
             
         default: return
@@ -122,16 +124,23 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
     }
     
     internal func clickedApply() {
+        guard let user = User.currentUser, user.uID != nil else {
+            GlobalFunctions.showAlertBlock("Please Login", erMessage: "You need to be logged in to send interview requests")
+            return
+        }
+        
         applyButton.setDisabled()
         let _loadingIndicator = applyButton.addLoadingIndicator()
         dismissKeyboard()
         
         if selectedChannel != nil {
-            Database.contributorRequest(channel: selectedChannel, applyText: applyText.text, completion: {(success, error) in
-                if success {
+            Database.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: applyText.text,
+                                             toUser: user, toName: user.name, completion: {(inviteID, error) in
+                
+                if error == nil {
                     let applyConfirmation = UIAlertController(title: "Thanks for applying!",
-                                                            message: "We individually review & hand select the best contributors for each channel and will get back to you soon!",
-                                                            preferredStyle: .actionSheet)
+                                                              message: "We individually review & hand select the best contributors and will get back to you soon!",
+                                                              preferredStyle: .actionSheet)
                     
                     applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
                         self.goBack()
@@ -152,25 +161,23 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
                     self.present(applyConfirmation, animated: true, completion: nil)
                     self.applyButton.setEnabled()
                     self.applyButton.removeLoadingIndicator(_loadingIndicator)
-                    
                 }
             })
         }
     }
     
-    internal func recommendExpert() {
+    internal func clickedRecommend() {
         recommendButton.setDisabled()
         let _loadingIndicator = applyButton.addLoadingIndicator()
         dismissKeyboard()
         
         if selectedChannel != nil {
-            Database.recommendContributorRequest(channel: selectedChannel,
-                                          applyName: recommendName.text!,
-                                          applyEmail: recommendEmail.text!,
-                                          applyText: recommendText.text, completion: { (success, error) in
-                if success {
-                    let applyConfirmation = UIAlertController(title: "Recommendation Sent!",
-                                                              message: "We review & hand select the best contributors for each channel and will carefully review your recommendation!",
+            Database.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: recommendText.text,
+                                             toUser: nil, toName: recommendName.text ?? "", toEmail: recommendEmail.text!, completion: {(inviteID, error) in
+            
+                if error == nil {
+                    let applyConfirmation = UIAlertController(title: "Thanks for the recommendation!",
+                                                              message: "We review & hand select best contributors and will carefully review your recommendation!",
                                                               preferredStyle: .actionSheet)
                     
                     applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
@@ -283,8 +290,8 @@ extension ApplyExpertVC {
         recommendButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         recommendButton.setDisabled()
         
-        recommendButton.addTarget(self, action: #selector(recommendExpert), for: .touchUpInside)
-        
+        recommendButton.addTarget(self, action: #selector(clickedRecommend), for: .touchUpInside)
+        recommendEmail.keyboardType = .emailAddress
         recommendEmail.borderStyle = .none
         recommendName.borderStyle = .none
         
@@ -380,12 +387,10 @@ extension ApplyExpertVC {
 extension ApplyExpertVC: UITextFieldDelegate, UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         if !isMovedUp, textView == recommendText {
-            print("apply stack original frame is \(self.applyStack.frame)")
 
             UIView.animate(withDuration: 0.5, animations: {
                 self.applyStack.frame.origin.y -= 100
                 self.recommendView.frame.origin.y -= 100
-                print("apply stack frame is \(self.applyStack.frame)")
             })
             
             view.bringSubview(toFront: scopeBar)

@@ -168,7 +168,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
     internal func showContributorMenu(messageID: String, messageText: String) {
         toggleLoading(show: true, message: "loading Invite...", showIcon: true)
         let menu = UIAlertController(title: "Congratulations!",
-                                     message: "\(messageText). Contributors are thought leaders who shape content & experience. It's a great way to showcase your expertise on this topic!", preferredStyle: .actionSheet)
+                                     message: "\(messageText) As a verified expert, you will help shape the conversation & showcase!", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
             self.showConfirmationMenu(status: true, inviteID: messageID)

@@ -141,7 +141,10 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         } else if selectedUser != nil {
             Database.askUserQuestion(askUserID: selectedUser.uID!, qText: questionBody.text, completion: {(success, error) in
                 if success {
-                    let questionConfirmation = UIAlertController(title: "Question Posted!", message: "Thanks for your question. You will get a notification as soon as \(self.selectedUser.name) responds", preferredStyle: .actionSheet)
+                    let personName = self.selectedUser.name ?? " the user"
+                    let questionConfirmation = UIAlertController(title: "Question Posted!",
+                                                                 message: "Thanks for your question. You will get a notification as soon as \(personName) responds",
+                                                                preferredStyle: .actionSheet)
                     
                     questionConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
                         self.dismissAsk()

@@ -15,7 +15,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     var modalDelegate : ModalDelegate!
     /** End Delegate Vars **/
     
-    //Main data source var -
+    //Main data source var
     public var allItems = [Item]() {
         didSet {
             itemStack.removeAll()
@@ -40,9 +40,11 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
                         self.allItems = items
                         self.updateDataSource()
                     }
+                    self.toggleLoading(show: false, message: nil)
                 })
             } else {
                 updateDataSource()
+                toggleLoading(show: false, message: nil)
             }
         }
     }
@@ -95,8 +97,9 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLayoutSetup {
+            toggleLoading(show: true, message: "Loading...", showIcon: true)
             setupLayout()
-            
+
             tabBarHidden = true
             isLayoutSetup = true
         }

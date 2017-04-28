@@ -488,6 +488,11 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         navBar = self.navigationBar as? PulseNavBar
     }
     
+    public func setLogo() {
+        guard navBar != nil else { return }
+        navBar.setLogo()
+    }
+    
     public func setNav(title: String?) {
         guard navBar != nil else { return }
         navBar.setTitles(title: title)

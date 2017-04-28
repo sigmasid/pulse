@@ -22,6 +22,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     fileprivate var initialLoadComplete = false
     fileprivate var minItemsInFeed = 4
     fileprivate var hasReachedEnd = false
+    fileprivate var updateIncrement = -7 //get one week's worth of data on first load
     
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
@@ -72,7 +73,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: logoButton)
         
         headerNav?.showNavbar(animated: true)
-        headerNav?.setNav(title: "PULSE")
+        headerNav?.setLogo()
         headerNav?.updateBackgroundImage(image: nil)
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
@@ -84,8 +85,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             allChannels = User.currentUser!.subscriptions
             updateFeed()
             updateDataSource()
-
-            toggleLoading(show: false, message: nil)
             
             initialLoadComplete = true
         }
@@ -107,15 +106,22 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                     self.collectionView?.insertItems(at: indexPaths)
                     self.allItems.append(contentsOf: items)
                 })
+                
+                if self.collectionView.contentSize.height < self.view.frame.height { //content fits the screen so fetch more
+                    self.getMoreItems()
+                }
+                self.toggleLoading(show: false, message: nil)
             })
             
             startUpdateAt = endUpdateAt
-            endUpdateAt = Calendar.current.date(byAdding: .day, value: -7, to: startUpdateAt)!
+            endUpdateAt = Calendar.current.date(byAdding: .day, value: updateIncrement, to: startUpdateAt)!
 
         } else {
             allChannels = []
             allItems = []
             collectionView.reloadData()
+            
+            self.toggleLoading(show: true, message: "Please login to see your feed", showIcon: true)
         }
     }
     
@@ -130,10 +136,18 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 indexPaths.append(newIndexPath)
             }
             self.collectionView?.insertItems(at: indexPaths)
+            
+            if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
+                self.updateIncrement = self.updateIncrement * 2
+                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+                self.getMoreItems()
+            } else {
+                self.updateIncrement = -7
+            }
         })
         
         startUpdateAt = endUpdateAt
-        endUpdateAt = Calendar.current.date(byAdding: .day, value: -7, to: startUpdateAt)!
+        endUpdateAt = Calendar.current.date(byAdding: .day, value: updateIncrement, to: startUpdateAt)!
     }
     
     fileprivate func updateDataSource() {

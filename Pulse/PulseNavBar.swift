@@ -12,7 +12,8 @@ enum NavMode { case browseImage, browse, detail, none }
 public class PulseNavBar: UINavigationBar {
     public var navTitle = UILabel()
     public var navSubtitle = UILabel()
-
+    
+    fileprivate var navLogo = UIImageView()
     fileprivate var searchContainer : UIView!
     fileprivate var isDetailSetup = false
     
@@ -52,7 +53,14 @@ public class PulseNavBar: UINavigationBar {
         super.init(coder: aDecoder)!
     }
     
+    public func setLogo() {
+        navTitle.text = nil
+        navSubtitle.text = nil
+        navLogo.image = UIImage(named: "pulse-logo-text")
+    }
+    
     public func setTitles(title : String?) {
+        navLogo.image = nil
         navTitle.frame.origin.y = 0
         navTitle.text = title?.capitalized
         navTitle.textAlignment = .center
@@ -61,6 +69,7 @@ public class PulseNavBar: UINavigationBar {
     }
     
     public func setTitles(title : String?, subtitle : String?) {
+        navLogo.image = nil
         navTitle.frame.origin.y = -Spacing.xs.rawValue
         navTitle.text = title?.capitalized
         navTitle.textAlignment = .center
@@ -97,8 +106,14 @@ public class PulseNavBar: UINavigationBar {
     
     /** LAYOUT SCREEN **/
     fileprivate func setupDetailLayout() {
+        addSubview(navLogo)
         addSubview(navTitle)
         addSubview(navSubtitle)
+        
+        navLogo.frame = CGRect(x: UIScreen.main.bounds.midX - IconSizes.large.rawValue, y: navBarSize.height / 4,
+                               width: ( 2 * IconSizes.large.rawValue), height: navBarSize.height / 2)
+        navLogo.contentMode = .scaleAspectFit
+        navLogo.backgroundColor = UIColor.clear
 
         navTitle.frame = CGRect(x: IconSizes.large.rawValue, y: 0, width: UIScreen.main.bounds.width - ( 2 * IconSizes.large.rawValue ), height: navBarSize.height)
         navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .center)

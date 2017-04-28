@@ -107,7 +107,8 @@ class CameraOverlayView: UIView {
     /* PRIVATE FUNCTIONS */
     ///Draws the camera shutter button
     fileprivate func drawShutterButton() {
-        let circlePath = UIBezierPath(arcCenter: CGPoint(x: shutterButtonRadius, y: shutterButtonRadius), radius: shutterButtonRadius, startAngle: 0.0, endAngle: CGFloat(M_PI * 2.0), clockwise: true)
+        let circlePath = UIBezierPath(arcCenter: CGPoint(x: shutterButtonRadius, y: shutterButtonRadius),
+                                      radius: shutterButtonRadius, startAngle: 0.0, endAngle: CGFloat(Double.pi * 2.0), clockwise: true)
         
         // Setup the CAShapeLayer with the path, colors, and line width
         let circleLayer = CAShapeLayer()

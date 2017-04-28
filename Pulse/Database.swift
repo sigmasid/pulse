@@ -1053,6 +1053,8 @@ class Database {
                         User.currentUser!.items.append(currentItem)
                     }
                 }
+            } else {
+                User.currentUser!.items = []
             }
             
             if snap.hasChild("verifiedChannels") {
@@ -1063,6 +1065,8 @@ class Database {
                         User.currentUser!.verifiedChannels.append(channel)
                     }
                 }
+            } else {
+                User.currentUser!.verifiedChannels = []
             }
             
             setCurrentUserPaths()
@@ -1269,7 +1273,7 @@ class Database {
             return
         }
         
-        var collectionPost : [AnyHashable: Any?]!
+        var collectionPost : [AnyHashable: Any]!
         
         var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
                                                 "tagID" : item.tag?.itemID as AnyObject,
@@ -1286,15 +1290,18 @@ class Database {
             channelPost["url"] = url as AnyObject?
         }
         
-        collectionPost = ["itemCollection/\(item.itemID)" : post.count > 1 ? post : nil,
-                          "itemCollection/\(parentItem.itemID)/\(item.itemID)" : item.type.rawValue as AnyObject]
+        collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
+        
+        if post.count > 1 {
+            collectionPost["itemCollection/\(item.itemID)"] = post
+        }
         
         //only add one entry for full interview
         if parentItem.type != .interview {
             collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
             collectionPost["userDetailedPublicSummary/\(_user.uid)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
-        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
+        databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (blockError, ref) in
             blockError != nil ? completion(false, blockError) : completion(true, nil)
         })
     }
@@ -1548,8 +1555,8 @@ class Database {
         })
     }
     
-    static func createContributorInvite(channel: Channel, type: MessageType, toUser: User?, toName: String?, toEmail: String? = nil,
-                                    completion: @escaping (_ inviteID : String?, _ error : Error?) -> Void) {
+    static func createContributorInvite(channel: Channel, type: MessageType, description: String = "", toUser: User?, toName: String?, toEmail: String? = nil,                                          								approved: Bool = false, completion: @escaping (_ inviteID : String?, _ error : Error?) -> Void) {
+        
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to send invites" ]
             completion(nil, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
@@ -1586,9 +1593,24 @@ class Database {
         if let toEmail = toEmail {
             channelPost["toUserEmail"] = toEmail
         }
+        
+        if approved {
+            channelPost["approved"] = true
+        }
+        
+        if description != "" {
+            channelPost["description"] = description
+        }
 
-        let collectionPost = ["invites/\(inviteKey)": channelPost,
-                              "users/\(user.uid)/sentInvites/\(inviteKey)" : userPost]
+        var collectionPost : [String : Any] = ["invites/\(inviteKey)": channelPost]
+        
+        if let toUser = toUser, toUser.uID != user.uid {
+            //user is inviting / recommending someone
+            collectionPost["users/\(user.uid)/sentInvites/\(inviteKey)"] = userPost
+        } else {
+            //user is applying for himself
+            collectionPost["users/\(user.uid)/verificationRequests/\(channel.cID!)"] = inviteKey
+        }
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
             completionError == nil ? completion(inviteKey, nil) : completion(nil, completionError)

@@ -13,7 +13,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     public var selectedChannel : Channel! {
         didSet {
             isSubscribed = User.currentUser!.subscriptionIDs.contains(selectedChannel.cID) ? true : false
-
             if !selectedChannel.cCreated {
                 Database.getChannel(cID: selectedChannel.cID!, completion: { channel, error in
                     channel.cPreviewImage = self.selectedChannel.cPreviewImage
@@ -67,6 +66,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         super.viewDidLoad()
         
         if !isLoaded {
+            toggleLoading(show: true, message: "Loading Channel...", showIcon: true)
             statusBarStyle = .lightContent
             tabBarHidden = true
             setupScreenLayout()
@@ -92,6 +92,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             if let updatedChannel = updatedChannel {
                 updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
+                self.toggleLoading(show: false, message: nil)
             }
         })
     }
@@ -243,6 +244,7 @@ extension ChannelVC {
     
     internal func clickedHeaderMenu() {
         guard let user = User.currentUser else {
+            showRegularMenu()
             return
         }
         
@@ -557,7 +559,7 @@ extension ChannelVC {
         
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
         Database.createContributorInvite(channel: selectedChannel, type: .contributorInvite, toUser: toUser, toName: nil,
-                                         toEmail: toEmail, completion: {(inviteID, error) in
+                                         toEmail: toEmail, approved: true, completion: {(inviteID, error) in
                                         
             self.toggleLoading(show: false, message: nil)
 

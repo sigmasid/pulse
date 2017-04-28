@@ -165,14 +165,14 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         FIRAuth.auth()?.signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) { (aUser, blockError) in
-            if let blockError = blockError as? NSError {
+            if let blockError = blockError {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                switch blockError.code {
-                case FIRAuthErrorCode.errorCodeWrongPassword.rawValue: self._passwordErrorLabel.text = "incorrect password"
-                case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
-                case FIRAuthErrorCode.errorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
+                switch FIRAuthErrorCode(rawValue: blockError._code)! {
+                case .errorCodeWrongPassword: self._passwordErrorLabel.text = "incorrect password"
+                case .errorCodeInvalidEmail: self._emailErrorLabel.text = "invalid email"
+                case .errorCodeUserNotFound: self._emailErrorLabel.text = "email not found"
 
                 default: self.nav?.setNav(title: "error signing in")
                 }
@@ -294,9 +294,9 @@ class LoginVC: PulseVC, UITextFieldDelegate {
                 self.currentTWTRSession = session
                 let credential = FIRTwitterAuthProvider.credential(withToken: session!.authToken, secret: session!.authTokenSecret)
                 FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
-                    if let blockError = blockError as? NSError {
+                    if let blockError = blockError {
                         self.toggleLoading(show: false, message: nil)
-                        self.nav?.setNav(title: blockError.description)
+                        self.nav?.setNav(title: blockError.localizedDescription)
                     } else {
                         self.toggleLoading(show: false, message: nil)
                         self._loggedInSuccess()

@@ -69,6 +69,9 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         }
     }
     
+    open var photoSettings = AVCapturePhotoSettings()
+
+    
     open var shouldKeepViewAtOrientationChanges = false
 
     
@@ -107,11 +110,11 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     open var animateCameraDeviceChange: Bool = true
     
     /// Property to change camera device between front and back.
-    open var cameraDevice = CameraDevice.back {
+    open var cameraDevice = AVCaptureDevicePosition.back {
         didSet {
             if cameraIsSetup {
                 if cameraDevice != oldValue {
-                    _updateCameraDevice(cameraDevice)
+                    _updateCameraDevice()
                     _setupMaxZoomScale()
                     _zoom(0)
                 }
@@ -120,11 +123,11 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     }
     
     /// Property to change camera flash mode.
-    open var flashMode = CameraFlashMode.off {
+    open var flashMode = AVCaptureFlashMode.off {
         didSet {
             if cameraIsSetup {
                 if flashMode != oldValue {
-                    _updateFlasMode(flashMode)
+                    _updateFlashMode(flashMode)
                 }
             }
         }
@@ -500,15 +503,15 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             }
             
             // Capture a JPEG photo with flash set to auto and high resolution photo enabled.
-            let photoSettings = AVCapturePhotoSettings()
-            photoSettings.flashMode = self.cameraDevice == .front ? .off : .auto
+            self.photoSettings = AVCapturePhotoSettings()
+            self.photoSettings.flashMode = self.cameraDevice == .front ? .off : .auto
             
-            if photoSettings.availablePreviewPhotoPixelFormatTypes.count > 0 {
-                photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
+            if self.photoSettings.availablePreviewPhotoPixelFormatTypes.count > 0 {
+                self.photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : self.photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
             }
             
             // Use a separate object for the photo capture delegate to isolate each capture life cycle.
-            let photoCaptureDelegate = PhotoCaptureDelegate(with: photoSettings, shouldSaveToLibrary: false, willCapturePhotoAnimation: {
+            let photoCaptureDelegate = PhotoCaptureDelegate(with: self.photoSettings, shouldSaveToLibrary: false, willCapturePhotoAnimation: {
                 
                 imageCompletion(nil, true, nil)
                 
@@ -536,7 +539,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
              until the capture is completed.
              */
             self.inProgressPhotoCaptureDelegates[photoCaptureDelegate.requestedPhotoSettings.uniqueID] = photoCaptureDelegate
-            self._getStillImageOutput().capturePhoto(with: photoSettings, delegate: photoCaptureDelegate)
+            self._getStillImageOutput().capturePhoto(with: self.photoSettings, delegate: photoCaptureDelegate)
         }
     }
     
@@ -581,8 +584,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      
      :returns: Current flash mode: Off / On / Auto
      */
-    open func changeFlashMode() -> CameraFlashMode {
-        flashMode = CameraFlashMode(rawValue: (flashMode.rawValue+1)%3)!
+    open func changeFlashMode() -> AVCaptureFlashMode {
+        flashMode = AVCaptureFlashMode(rawValue: (flashMode.rawValue+1)%3)!
         return flashMode
     }
     
@@ -713,7 +716,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     
     // MARK: - CameraManager()
     
-    fileprivate func _updateTorch(_ flashMode: CameraFlashMode) {
+    fileprivate func _updateTorch(_ flashMode: AVCaptureFlashMode) {
         captureSession?.beginConfiguration()
         
         if let deviceDescoverySession = AVCaptureDeviceDiscoverySession.init(deviceTypes: [AVCaptureDeviceType.builtInWideAngleCamera],
@@ -879,12 +882,12 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             if let validCaptureSession = self.captureSession {
                 validCaptureSession.beginConfiguration()
                 validCaptureSession.sessionPreset = AVCaptureSessionPresetHigh
-                self._updateCameraDevice(self.cameraDevice)
+                self._updateCameraDevice()
                 self._setupOutputs()
                 self._setupOutputMode(self.cameraOutputMode, oldCameraOutputMode: nil)
                 self._setupPreviewLayer()
                 validCaptureSession.commitConfiguration()
-                self._updateFlasMode(self.flashMode)
+                self._updateFlashMode(self.flashMode)
                 self._updateMaxDuration(self.cameraVideoDuration)
                 self._updateCameraQualityMode(self.cameraOutputQuality)
                 validCaptureSession.startRunning()
@@ -1019,7 +1022,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         }
     }
     
-    fileprivate func _updateCameraDevice(_ deviceType: CameraDevice) {
+    fileprivate func _updateCameraDevice() {
         if let validCaptureSession = captureSession {
             validCaptureSession.beginConfiguration()
             let inputs = validCaptureSession.inputs as! [AVCaptureInput]
@@ -1050,24 +1053,26 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                         validCaptureSession.addInput(validBackDevice)
                     }
                 }
+            case .unspecified:
+                break
             }
             validCaptureSession.commitConfiguration()
         }
     }
     
-    fileprivate func _updateFlasMode(_ flashMode: CameraFlashMode) {
+    fileprivate func _updateFlashMode(_ flashMode: AVCaptureFlashMode) {
         captureSession?.beginConfiguration()
         
-        if let device = AVCaptureDevice.defaultDevice(withDeviceType: .builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: .back) {
+        if let device = AVCaptureDevice.defaultDevice(withDeviceType: .builtInWideAngleCamera, mediaType: AVMediaTypeVideo, position: cameraDevice) {
             
-            let avFlashMode = AVCaptureFlashMode(rawValue: flashMode.rawValue)
-            if (device.isFlashModeSupported(avFlashMode!)) {
+            if let avFlashMode = AVCaptureFlashMode(rawValue: flashMode.rawValue), let stillImageOutput = stillImageOutput,
+                stillImageOutput.supportedFlashModes.contains(NSNumber(value: flashMode.rawValue)) {
                 do {
                     try device.lockForConfiguration()
                 } catch {
                     return
                 }
-                device.flashMode = avFlashMode!
+                photoSettings.flashMode = avFlashMode
                 device.unlockForConfiguration()
             }
         }

@@ -111,7 +111,6 @@ class PanAnimationController: BaseAnimator  {
                 })
                 
                 if transitionContext.transitionWasCancelled {
-                    //
                 }
                 
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled)

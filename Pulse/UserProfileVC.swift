@@ -8,10 +8,6 @@
 
 import UIKit
 
-protocol UserProfileDelegate: class {
-    func showMenu()
-}
-
 class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegate {
     
     var modalDelegate : ModalDelegate!
@@ -25,6 +21,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                 allItems = []
                 updateDataSource()
             } else if User.currentUser?.uID != nil, selectedUser.uID == User.currentUser?.uID! {
+                //For current user
                 NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
                 self.headerNav?.setNav(title: User.currentUser?.name ?? "Your Profile")
 
@@ -106,6 +103,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         super.viewDidLoad()
         
         if !isLayoutSetup {
+            toggleLoading(show: true, message: "Loading Profile...", showIcon: true)
+
             updateHeader()
             setupLayout()
             isLayoutSetup = true
@@ -222,6 +221,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         collectionView?.reloadData()
         
         collectionView?.collectionViewLayout.invalidateLayout()
+        toggleLoading(show: false, message: nil)
     }
     
     /** Show Menu **/
@@ -490,7 +490,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.delegate = self
                 cell.showItemPreview(item: currentItem)
             } else {
-                toggleLoading(show: true, message: "loading interview...")
+                toggleLoading(show: true, message: "Loading Interview...")
                 Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                     self.toggleLoading(show: false, message: nil)
                     self.showItemDetail(selectedItem : currentItem, allItems: itemCollection)

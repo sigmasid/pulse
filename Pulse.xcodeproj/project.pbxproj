@@ -891,6 +891,7 @@
 				CODE_SIGN_ENTITLEMENTS = Pulse/Pulse.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution: Sidharth Tiwari (DF5FA37S35)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: Sidharth Tiwari (2PHB7P544N)";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = DF5FA37S35;
 				INFOPLIST_FILE = Pulse/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
@@ -911,6 +912,7 @@
 				CODE_SIGN_ENTITLEMENTS = Pulse/Pulse.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution: Sidharth Tiwari (DF5FA37S35)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Sidharth Tiwari (DF5FA37S35)";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = DF5FA37S35;
 				INFOPLIST_FILE = Pulse/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
