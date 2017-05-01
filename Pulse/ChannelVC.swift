@@ -731,6 +731,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
         default: assert(false, "Unexpected element kind")
         }
+        return UICollectionReusableView()
     }
 }
 

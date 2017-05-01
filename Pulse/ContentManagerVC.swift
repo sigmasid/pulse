@@ -282,9 +282,9 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         }
     }
     
-    func askUserQuestion() {
+    func askUser() {
         if User.isLoggedIn(), let selectedTag = selectedItem.tag {
-            User.currentUser!.canAnswer(itemID: selectedItem.itemID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+            User.currentUser!.canAnswer(item: selectedItem, parentItem: selectedTag, completion: { success in
                 if success {
                     contentDetailVC.view.isHidden = true
                     hasMoreItems = true
@@ -302,7 +302,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     func noItemsToShow(_ currentVC : UIViewController) {
         if User.isLoggedIn(), selectedItem != nil, let selectedTag = selectedItem.tag {
-            User.currentUser!.canAnswer(itemID: selectedItem.itemID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+            User.currentUser!.canAnswer(item: selectedItem, parentItem: selectedTag, completion: { success in
             if success {
                 showCamera()
             } else {
@@ -313,17 +313,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         } else {
             hasMoreItems = false
             dismiss(animated: false, completion: nil)
-        }
-    }
-    
-    func minItemsShown() {
-        //NEEDS UPDATE
-        if User.isLoggedIn() {
-            hasMoreItems = true
-            showCamera()
-        } else {
-            hasMoreItems = true
-            showCamera()
         }
     }
     

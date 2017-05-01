@@ -11,8 +11,6 @@ import FirebaseDatabase
 import FirebaseStorage
 import AVFoundation
 
-private let minItemsToShow = 4
-
 protocol ItemDetailDelegate : class {
     func userClickedProfile()
     func userClickedProfileDetail()
@@ -39,7 +37,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         didSet {
             if self.isViewLoaded {
                 removeObserverIfNeeded()
-                _hasUserBeenAskedQuestion = false
                 watchedFullPreview ? loadWatchedPreviewItem() : loadItem(index: itemIndex)
             }
         }
@@ -66,7 +63,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate var _nextItemReady = false
     fileprivate var _canAdvanceReady = false
     fileprivate var _canAdvanceDetailReady = false
-    fileprivate var _hasUserBeenAskedQuestion = false
     fileprivate var _isObserving = false
     fileprivate var _isMenuShowing = false
     fileprivate var _isMiniProfileShown = false
@@ -582,15 +578,12 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             ContentDetailVC.qPlayer.pause()
         }
         
-        let entryType = selectedItem != nil ? selectedItem.childType().capitalized : " Entry"
-        menu.addAction(UIAlertAction(title: "add\(entryType)", style: .default, handler: { (action: UIAlertAction!) in
-            //self.addItem(for: self.selectedItem)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "share This", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+            self.toggleLoading(show: true, message: "loading share options", showIcon: true)
             self.currentItem?.createShareLink(completion: { link in
                 guard let link = link else { return }
                 self.shareContent(shareType: "item", shareText: self.currentItem?.itemTitle ?? "", shareLink: link)
+                self.toggleLoading(show: false, message: nil)
             })
         }))
         
@@ -640,12 +633,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         blurBackground.removeFromSuperview()
         _isMiniProfileShown = false
     }
-    
-    func userClickedAddItem() {
-        tap.isEnabled = true
-        delegate.askUserQuestion()
-    }
-    
+
     //User selected an item
     func userSelected(_ index : IndexPath) {
         userClosedQuickBrowse()
@@ -701,15 +689,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             return
         }
         
-        if (itemIndex == minItemsToShow && !_hasUserBeenAskedQuestion && _canAdvanceReady) { //ask user to Item the question
-            if (delegate != nil) {
-                ContentDetailVC.qPlayer.pause()
-                _hasUserBeenAskedQuestion = true
-                delegate.minItemsShown()
-            }
-        }
-            
-        else if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
+        if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
             //ignore tap
         }
         

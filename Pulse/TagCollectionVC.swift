@@ -296,6 +296,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
             
         default: assert(false, "Unexpected element kind")
         }
+        return UICollectionReusableView()
     }
     
     //Find the index of downloaded user and return that user

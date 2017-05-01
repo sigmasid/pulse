@@ -127,17 +127,12 @@ class User: NSObject {
     }
     
     /// Returns if user can answer question in given tag
-    func canAnswer(itemID: String, tag : Item, completion: (Bool, String?, String?) -> Void) {
-        completion(true, nil, nil)
-        
-        /** if user has not answered the question and is an expert in the tag then allowed to answer question
-        if !hasAnsweredQuestion(itemID), expertiseTags.contains(tag) {
-            completion(true, nil, nil)
-        } else if hasAnsweredQuestion(itemID) {
-            completion(false, "Already Answered!", "Sorry you can only answer a question once")
-        } else if !expertiseTags.contains(tag) {
-            completion(false, "Verified Contributors Only!", "Are you an expert? Apply to get approved!")
-        } **/
+    func canAnswer(item: Item, parentItem : Item, completion: (Bool) -> Void) {        
+        if parentItem.acceptsInput() && item.checkVerifiedInput() {
+            completion(true)
+        } else {
+            completion(false)
+        }
     }
     
     func isSubscribedToChannel(cID: String) -> Bool {

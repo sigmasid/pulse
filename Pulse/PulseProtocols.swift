@@ -59,8 +59,6 @@ protocol ContentDelegate: class {
     func doneUploadingItem(_: UIViewController, success: Bool)
     
     func userDismissedRecording(_: UIViewController, recordedItems : [Item])
-    func minItemsShown()
-    func askUserQuestion()
     func loadMoreFromTag()
     func addMoreItems(_ : UIViewController, recordedItems : [Item], isCover : Bool)
     func userClickedSeeAll(items : [Item])

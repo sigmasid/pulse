@@ -69,12 +69,13 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     fileprivate func updateHeader() {
-        let logoButton = PulseButton(size: .small, type: .logo, isRound : true, background: .white, tint: .black)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: logoButton)
+        //let logoButton = PulseButton(size: .small, type: .logo, isRound : true, background: .white, tint: .black)
+        //navigationItem.leftBarButtonItem = UIBarButtonItem(customView: logoButton)
         
         headerNav?.showNavbar(animated: true)
         headerNav?.setLogo()
         headerNav?.updateBackgroundImage(image: nil)
+        headerNav?.setBackgroundColor(color: UIColor.pulseGrey.withAlphaComponent(0.4))
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
     
@@ -391,6 +392,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
         default: assert(false, "Unexpected element kind")
         }
+        return UICollectionReusableView()
     }
 }
 
@@ -444,7 +446,8 @@ extension HomeVC {
         contentVC.allItems = allItems
         contentVC.openingScreen = .item
         
-        //contentVC.transitioningDelegate = self
+        contentVC.transitioningDelegate = self
+        
         present(contentVC, animated: true, completion: nil)
     }
     
@@ -454,6 +457,8 @@ extension HomeVC {
         contentVC.selectedItem = selectedItem
         contentVC.openingScreen = .camera
         
+        contentVC.transitioningDelegate = self
+
         present(contentVC, animated: true, completion: nil)
     }
     
@@ -673,6 +678,46 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
     
     func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
         return true
+    }
+}
+
+extension HomeVC: UIViewControllerTransitioningDelegate {
+    func animationController(forPresented presented: UIViewController,
+                             presenting: UIViewController,
+                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        
+        if presented is ContentManagerVC {
+            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            
+            let animator = ExpandAnimationController()
+            animator.initialFrame = initialFrame
+            animator.exitFrame = getRectToLeft()
+            
+            return animator
+        } else {
+            return nil
+        }
+    }
+    
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        if dismissed is ContentManagerVC {
+            let animator = PanAnimationController()
+            
+            animator.initialFrame = getRectToLeft()
+            animator.exitFrame = getRectToRight()
+            animator.transitionType = .dismiss
+            return animator
+        } else {
+            return nil
+        }
+    }
+    
+    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return panPresentInteractionController.interactionInProgress ? panPresentInteractionController : nil
+    }
+    
+    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
 

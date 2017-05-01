@@ -337,6 +337,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             
         default: assert(false, "Unexpected element kind")
         }
+        return UICollectionReusableView()
     }
 }
 

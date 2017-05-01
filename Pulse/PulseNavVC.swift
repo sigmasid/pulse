@@ -521,6 +521,13 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         }
     }
     
+    public func setBackgroundColor(color: UIColor) {
+        guard navBar != nil else { return }
+        let image = GlobalFunctions.imageWithColor(color)
+        
+        navBar.setBackgroundImage(image, for: .default)
+    }
+    
     public func getSearchContainer() -> UIView? {
         guard navBar != nil else { return nil }
         return navBar.getSearchContainer()
