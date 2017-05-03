@@ -39,24 +39,20 @@ class AccountLoginManagerVC: PulseNavVC {
         if User.isLoggedIn(), _currentLoadedView != .account, loginVC?._currentLoadedView != .createAccount {
             accountVC.selectedUser = User.currentUser!
 
-            if !viewControllers.contains(accountVC) {
-                pushViewController(accountVC, animated: false)
-            } else {
-                popToViewController(accountVC, animated: false)
-            }
+            pushViewController(accountVC, animated: false)
             
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
             NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
             _currentLoadedView = .account
+            
         } else if !User.isLoggedIn() {
-            if !viewControllers.contains(loginVC!) {
-                pushViewController(loginVC!, animated: false)
-            } else {
-                popToViewController(loginVC!, animated: false)
-            }
+            
+            pushViewController(loginVC!, animated: false)
+
             NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
             _currentLoadedView = .login
         }
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
     }
     
     func loginSuccess() {
@@ -68,11 +64,12 @@ class AccountLoginManagerVC: PulseNavVC {
             accountVC.selectedUser = User.currentUser!
             
             if !self.viewControllers.contains(accountVC) {
-                popToRootViewController(animated: false)
-                pushViewController(accountVC, animated: true)
+                setViewControllers([accountVC], animated: false)
             } else {
                 popToViewController(accountVC, animated: false)
             }
+            
+            _currentLoadedView = .account
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
 
         }  else if User.isLoggedIn(), _currentLoadedView == .account {
@@ -83,7 +80,6 @@ class AccountLoginManagerVC: PulseNavVC {
     func logoutSuccess() {
         if _currentLoadedView == .account {
             if !self.viewControllers.contains(loginVC!) {
-                popToRootViewController(animated: false)
                 pushViewController(loginVC!, animated: true)
             } else {
                 popToViewController(loginVC!, animated: false)

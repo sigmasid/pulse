@@ -30,10 +30,10 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     /** Sync Vars **/
     fileprivate var startUpdateAt : Date = Date()
     fileprivate var endUpdateAt : Date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-
+    
     /** Set which var user has selected to share **/
     fileprivate var selectedShareItem : Item?
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -41,7 +41,12 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             statusBarHidden = true
             tabBarHidden = false
             
-            toggleLoading(show: true, message: "Loading feed...", showIcon: true)
+            if User.isLoggedIn(), !initialLoadComplete || (initialLoadComplete && !allItems.isEmpty) {
+                toggleLoading(show: true, message: "Loading feed...", showIcon: true)
+            } else if !User.isLoggedIn() {
+                toggleLoading(show: true, message: "Please login to see your feed", showIcon: true)
+            }
+            
             setupScreenLayout()
             
             isLoaded = true
@@ -54,7 +59,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
         tabBarHidden = false
         updateHeader()
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
@@ -80,18 +85,31 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     internal func createFeed() {
-        
-        if !initialLoadComplete  {
+        if !initialLoadComplete, User.isLoggedIn(), User.currentUser!.subscriptions.count > 0 {
             
             allChannels = User.currentUser!.subscriptions
             updateFeed()
             updateDataSource()
+            collectionView?.reloadSections(IndexSet(integer: 0))
             
             initialLoadComplete = true
+            
+        } else if User.currentUser!.subscriptions.count == 0 {
+            
+            toggleLoading(show: false, message: nil)
+            updateDataSource()
+            initialLoadComplete = false
+            
+        } else if !User.isLoggedIn() {
+            
+            updateFeed()
+            updateDataSource()
+            
         }
     }
     
     internal func updateFeed() {
+
         if User.isLoggedIn() {
             Database.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
                 var indexPaths = [IndexPath]()
@@ -99,8 +117,63 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                     let newIndexPath = IndexPath(row: index , section: 1)
                     indexPaths.append(newIndexPath)
                 }
-                if self.allItems.isEmpty {
-                    self.collectionView?.reloadData()
+                
+                if !items.isEmpty {
+                    self.collectionView.performBatchUpdates({
+                        self.collectionView?.insertItems(at: indexPaths)
+                        self.allItems.append(contentsOf: items)
+                        self.collectionView?.reloadData()
+                        self.collectionView?.collectionViewLayout.invalidateLayout()
+                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+
+                    })
+                }
+                
+                if self.collectionView == nil {
+                    self.setupScreenLayout()
+                }
+                
+                if self.collectionView.contentSize.height < self.view.frame.height { //content fits the screen so fetch more
+                    self.getMoreItems(completion: { _ in
+                        self.collectionView?.reloadData()
+                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+                    })
+                }
+                
+                self.toggleLoading(show: false, message: nil)
+            })
+            
+            startUpdateAt = endUpdateAt
+            endUpdateAt = Calendar.current.date(byAdding: .day, value: updateIncrement, to: startUpdateAt)!
+            
+        } else {
+            allChannels = []
+            allItems = []
+            
+            collectionView.reloadData()
+            collectionView?.collectionViewLayout.invalidateLayout()
+            initialLoadComplete = false
+            
+            startUpdateAt = Date()
+            endUpdateAt = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+            
+            toggleLoading(show: true, message: "Please login to see your feed", showIcon: true)
+        }
+    }
+    
+    //get more items if scrolled to end
+    internal func getMoreItems(completion: @escaping (Bool) -> Void) {
+        
+        Database.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
+            if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
+                self.updateIncrement = self.updateIncrement * 2
+                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+                self.getMoreItems(completion: { _ in })
+            } else {
+                var indexPaths = [IndexPath]()
+                for (index, _) in items.enumerated() {
+                    let newIndexPath = IndexPath(row: self.allItems.count + index, section: 1)
+                    indexPaths.append(newIndexPath)
                 }
                 
                 self.collectionView.performBatchUpdates({
@@ -108,42 +181,8 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                     self.allItems.append(contentsOf: items)
                 })
                 
-                if self.collectionView.contentSize.height < self.view.frame.height { //content fits the screen so fetch more
-                    self.getMoreItems()
-                }
-                self.toggleLoading(show: false, message: nil)
-            })
-            
-            startUpdateAt = endUpdateAt
-            endUpdateAt = Calendar.current.date(byAdding: .day, value: updateIncrement, to: startUpdateAt)!
-
-        } else {
-            allChannels = []
-            allItems = []
-            collectionView.reloadData()
-            
-            self.toggleLoading(show: true, message: "Please login to see your feed", showIcon: true)
-        }
-    }
-    
-    //get more items if scrolled to end
-    internal func getMoreItems() {
-        
-        Database.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
-            var indexPaths = [IndexPath]()
-            for (_, item) in items.enumerated() {
-                self.allItems.append(item)
-                let newIndexPath = IndexPath(row: self.allItems.count - 1, section: 1)
-                indexPaths.append(newIndexPath)
-            }
-            self.collectionView?.insertItems(at: indexPaths)
-            
-            if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
-                self.updateIncrement = self.updateIncrement * 2
-                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
-                self.getMoreItems()
-            } else {
                 self.updateIncrement = -7
+                completion(true)
             }
         })
         
@@ -162,7 +201,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     
     fileprivate func setupNotifications() {
         if !notificationsSetup {
-
+            
             NotificationCenter.default.addObserver(self, selector: #selector(createFeed), name: NSNotification.Name(rawValue: "SubscriptionsUpdated"), object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(updateFeed), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
             
@@ -189,7 +228,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     internal func showSubscriptions() {
         let subscriptionVC = ExploreChannelsVC()
         subscriptionVC.forUser = true
-
+        
         navigationController?.pushViewController(subscriptionVC, animated: true)
         
         subscriptionVC.allChannels = self.allChannels
@@ -225,11 +264,11 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.channels = allChannels
             cell.delegate = self
             return cell
-
+            
         case 1:
             //if near the end then get more items
             if indexPath.row == allItems.count - 3 {
-                getMoreItems()
+                self.getMoreItems(completion: { _ in })
             }
             
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
@@ -241,7 +280,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             //clear the cells and set the item type first
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
-
+            
             let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective
             //Get the image if content type is a post
             if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
@@ -342,11 +381,18 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     internal func updateOnscreenRows() {
         let visiblePaths = collectionView.indexPathsForVisibleItems
+        
         for indexPath in visiblePaths {
-            if indexPath.section == 0, allChannels.count > 0 {
-                let cell = collectionView.cellForItem(at: indexPath) as! HeaderChannelsCell
+            if indexPath.section == 0, allChannels.count > 0, let cell = collectionView.cellForItem(at: indexPath) as? HeaderChannelsCell {
                 cell.channels = allChannels
-            } else if indexPath.section == 1 {
+                
+            } else if indexPath.section == 0, allChannels.count > 0 {
+
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: sectionReuseIdentifier, for: indexPath) as! HeaderChannelsCell
+                cell.channels = allChannels
+                
+            } else if indexPath.section == 1, allItems.count > 0 {
+                
                 let cell = collectionView.cellForItem(at: indexPath) as! ItemCell
                 updateCell(cell, inCollectionView: collectionView, atIndexPath: indexPath)
             }
@@ -397,7 +443,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
 }
 
 extension HomeVC {
-
+    
     /** Delegate Functions **/
     func userSelected(item : Any) {
         
@@ -410,7 +456,7 @@ extension HomeVC {
             case .post, .perspective:
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-
+                
             case .question, .thread:
                 
                 showBrowse(selectedItem: item)
@@ -430,7 +476,7 @@ extension HomeVC {
         } else if let channel = item as? Channel {
             let channelVC = ChannelVC()
             channelVC.selectedChannel = channel
-
+            
             navigationController?.pushViewController(channelVC, animated: true)
         }
     }
@@ -458,7 +504,7 @@ extension HomeVC {
         contentVC.openingScreen = .camera
         
         contentVC.transitioningDelegate = self
-
+        
         present(contentVC, animated: true, completion: nil)
     }
     
@@ -631,7 +677,7 @@ extension HomeVC {
     
     internal func showAddEmail(bodyText: String) {
         addText = AddText(frame: view.bounds, buttonText: "Send",
-                           bodyText: bodyText, keyboardType: .emailAddress)
+                          bodyText: bodyText, keyboardType: .emailAddress)
         
         addText.delegate = self
         view.addSubview(addText)
@@ -670,7 +716,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
             return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: headerSectionHeight) : CGSize(width: collectionView.frame.width, height: 0)
         case 1:
             return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)) :
-                                        CGSize(width: collectionView.frame.width, height: 0)
+                CGSize(width: collectionView.frame.width, height: 0)
         default:
             return CGSize(width: collectionView.frame.width, height: cellHeight)
         }
@@ -720,4 +766,3 @@ extension HomeVC: UIViewControllerTransitioningDelegate {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }
-

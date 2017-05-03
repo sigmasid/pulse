@@ -148,8 +148,9 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     internal func userClickedSubscribe(senderTag: Int) {
         let selectedChannel = allChannels[senderTag]
-        
+        toggleLoading(show: true, message: "Updating Subscriptions...", showIcon: true)
         Database.subscribeChannel(selectedChannel, completion: {(success, error) in
+            self.toggleLoading(show: false, message: nil)
             if !success {
                 GlobalFunctions.showAlertBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
             } else {
@@ -182,6 +183,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                 showItemDetail(item: item, allItems: [item])
             
             case .question, .thread, .interview:
+                
                 toggleLoading(show: true, message: "Loading Item...", showIcon: true)
                 Database.getItemCollection(item.itemID, completion: {(success, items) in
                     success ?
@@ -360,7 +362,7 @@ extension ExploreChannelsVC {
                                                        erMessage: "Sorry we couldn't find this item. But there's plenty more interesting content behind this message!")
                     }
                 })
-            case "invite":
+            case "invites", "invite":
                 let inviteID = urlComponents[2]
                 Database.getInviteItem(inviteID, completion: { item, type, items, toUser, conversationID, error in
                     if error == nil, let item = item, let type = type {
@@ -379,14 +381,8 @@ extension ExploreChannelsVC {
                                 
                             }
                         case .perspectiveInvite, .questionInvite:
-                            DispatchQueue.main.async {
-                                let selectedChannel = Channel(cID: item.cID, title: item.cTitle)
-                                self.contentVC = ContentManagerVC()
-                                self.contentVC.selectedChannel = selectedChannel
-                                self.contentVC.selectedItem = item
-                                self.contentVC.openingScreen = .camera
-                                self.present(self.contentVC, animated: true, completion: nil)
-                            }
+                            self.showCameraMenu(inviteItem: item)
+
                         case .contributorInvite:
                             self.showContributorMenu(inviteItem: item)
                         default: break
@@ -422,6 +418,27 @@ extension ExploreChannelsVC {
         }))
         
         present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showCameraMenu(inviteItem: Item) {
+        let menu = UIAlertController(title: "Welcome!",
+                                     message: "Thanks for taking the time to share your perspectives! It's a great way to showcase your expertise and build your brand",
+                                     preferredStyle: .actionSheet)
+    
+        menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: { (action: UIAlertAction!) in
+            DispatchQueue.main.async {
+                let selectedChannel = Channel(cID: inviteItem.cID, title: inviteItem.cTitle)
+                self.contentVC = ContentManagerVC()
+                self.contentVC.selectedChannel = selectedChannel
+                self.contentVC.selectedItem = inviteItem
+                self.contentVC.openingScreen = .camera
+                self.present(self.contentVC, animated: true, completion: nil)
+            }
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
     }
     
     

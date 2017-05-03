@@ -30,7 +30,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                     self.updateDataSource()
                 })
                 isCurrentUser = true
-            } else if !selectedUser.uCreated {
+            } else if selectedUser != nil, !selectedUser.uCreated {
                 Database.getUser(selectedUser.uID!, completion: {(user, error) in
                     if error == nil {
                         self.selectedUser = user
@@ -38,14 +38,14 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                         self.headerNav?.setNav(title: user?.name ?? "User Profile")
                     }
                 })
-            } else if !selectedUser.uDetailedCreated {
+            } else if selectedUser != nil, !selectedUser.uDetailedCreated {
                 getDetailUserProfile()
-            } else {
+            } else if selectedUser != nil {
                 allItems = selectedUser.items
                 updateDataSource()
             }
             
-            if selectedUser.thumbPicImage == nil {
+            if selectedUser != nil, selectedUser.thumbPicImage == nil {
                 getUserProfilePic()
             }
         }

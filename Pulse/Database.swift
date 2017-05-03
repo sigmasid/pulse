@@ -568,7 +568,7 @@ class Database {
                     currentItem.user?.name = userName
                 }
                 
-                if let typeString = snap.childSnapshot(forPath: "fromUserName").value as? String {
+                if let typeString = snap.childSnapshot(forPath: "type").value as? String {
                     type = MessageType.getMessageType(type: typeString)
                 }
                 
@@ -738,6 +738,7 @@ class Database {
         var itemStack = [Bool](repeating: false, count: user.subscriptions.count)
         
         if user.subscriptions.count == 0 && !initialFeedUpdateComplete {
+            completion(allNewsItems)
             
             keepChannelsUpdated(completion: { newItems in
                 completion(newItems)
@@ -1900,7 +1901,7 @@ class Database {
                             user.subscriptions.append(channel)
                         }
                         
-                        if user.subscriptions.isEmpty {
+                        if user.subscriptions.count == 1 { //was empty before
                             NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
                         }
                         
