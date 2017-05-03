@@ -118,7 +118,6 @@ open class XMSegmentedControl: UIView {
     open var segmentContent: (text: [String], icon: [UIImage]) = ([], []) {
         didSet {
             guard segmentContent.text.count == segmentContent.icon.count else {
-                print("Text and Icon arrays out of sync.")
                 return
             }
             
@@ -368,7 +367,6 @@ open class XMSegmentedControl: UIView {
         
         if contentType == .text {
             guard segmentTitle.count > 0 else {
-                print("segment titles (segmentTitle) are not set")
                 return
             }
             

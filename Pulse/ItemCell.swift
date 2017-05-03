@@ -265,8 +265,11 @@ class ItemCell: UICollectionViewCell {
         
         itemImage.contentMode = UIViewContentMode.scaleAspectFill
         itemImage.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.7)
+        titleLabel.backgroundColor = .white
+        subtitleLabel.backgroundColor = .white
         itemImage.clipsToBounds = true
         titleLabel.numberOfLines = 2
+
         subtitleLabel.numberOfLines = 1
         
         subtitleLabel.lineBreakMode = .byTruncatingTail

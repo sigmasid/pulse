@@ -171,7 +171,6 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     }
     
     fileprivate func setupQuestionBox() {
-        print("view size is \(view.frame)")
         view.addSubview(questionContainer)
         
         questionContainer.addSubview(questionBody)

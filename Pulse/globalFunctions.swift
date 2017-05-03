@@ -132,7 +132,7 @@ class GlobalFunctions {
             UIView.animate(withDuration: 0.25, animations: {
                 newView.frame.origin.y = parentView.frame.origin.y
             }) 
-        default: print("unhandled move")
+        default: return
         }
     }
     
@@ -265,7 +265,6 @@ class GlobalFunctions {
     
     /** IMAGE FUNCTIONS **/
     static func fixOrientation(_ img:UIImage) -> UIImage {
-        print("image orientation is \(img.imageOrientation)")
         if (img.imageOrientation == UIImageOrientation.up) {
             return img;
         }

@@ -27,6 +27,24 @@ protocol ParentTextViewDelegate {
     func buttonClicked(_ text: String, sender: UIView)
 }
 
+protocol ItemPreviewDelegate: class {
+    func userClosedPreview(_ : UIView)
+    func userClickedButton()
+}
+
+protocol ItemDetailDelegate : class {
+    func userClickedProfile()
+    func userClickedBrowseItems()
+    func userSelected(_ index : IndexPath)
+    func userClickedExpandItem()
+    func votedItem(_ _vote : VoteType)
+    func userClickedSendMessage()
+    func userClosedQuickBrowse()
+    func userClickedNextItem()
+    func userClickedSeeAll(items : [Item])
+    func userClickedHeaderMenu()
+}
+
 protocol ItemCellDelegate : class {
     func clickedUserButton(itemRow : Int)
     func clickedMenuButton(itemRow : Int)

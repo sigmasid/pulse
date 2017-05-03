@@ -55,13 +55,9 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
             interactionInProgress = true
             if isModal {
                 if let toViewController = toViewController {
-                    parentViewController.present(toViewController, animated: true, completion: { _ in
-                        print("should present vc")
-                    })
+                    parentViewController.present(toViewController, animated: true, completion: { _ in })
                 } else {
-                    parentViewController.dismiss(animated: true, completion: { _ in
-                        print("should dismiss camera")
-                    })
+                    parentViewController.dismiss(animated: true, completion: { _ in })
                 }
             } else {
                 if let toViewController = toViewController {
@@ -90,8 +86,7 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
                 delegate.userDismissedCamera()
             }
             
-        default:
-            print("Unsupported")
+        default: return
         }
     }
 }

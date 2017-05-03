@@ -120,7 +120,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidEnterBackground(_ application: UIApplication) {
         FIRMessaging.messaging().disconnect()
-        print("Disconnected from FCM.")
         
         // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
@@ -173,11 +172,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FIRMessaging.messaging().disconnect()
         
         FIRMessaging.messaging().connect { (error) in
-            if error != nil {
-                print("Unable to connect with FCM. \(error?.localizedDescription ?? "")")
-            } else {
-                print("Connected to FCM.")
-            }
         }
     }
     // [END connect_to_fcm]

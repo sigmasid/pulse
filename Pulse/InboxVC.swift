@@ -178,7 +178,6 @@ extension InboxVC: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        print("went into cell for row at")
         guard conversations.count > 0 else {
             let cell = tableView.dequeueReusableCell(withIdentifier: emptyReuseIdentifier)
             cell?.textLabel?.numberOfLines = 0

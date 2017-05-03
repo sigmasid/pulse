@@ -8,7 +8,7 @@
 
 import UIKit
 
-class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate {
+class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, ItemPreviewDelegate {
     
     public var selectedChannel: Channel!
     
@@ -31,11 +31,13 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     fileprivate var allUsers = [User]() //caches user image / user for reuse
     fileprivate var hasReachedEnd = false
     
+    /** Card to show the mini info of item **/
+    fileprivate var miniPreview : MiniPreview?
+    
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
     
     fileprivate var isLayoutSetup = false
-    
     fileprivate var selectedShareItem : Item?
 
     override func viewDidLoad() {
@@ -153,7 +155,7 @@ class TagCollectionVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate,
     }
 }
 
-extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource {
+extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
     // MARK: UICollectionViewDataSource
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
@@ -345,7 +347,7 @@ extension TagCollectionVC : UICollectionViewDelegate, UICollectionViewDataSource
     }
 }
 
-extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
+extension SeriesVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
     }
@@ -362,7 +364,7 @@ extension TagCollectionVC: UICollectionViewDelegateFlowLayout {
 }
 
 //menus
-extension TagCollectionVC {
+extension SeriesVC {
     
     //parent text view delegate
     internal func dismiss(_ view : UIView) {
@@ -472,6 +474,47 @@ extension TagCollectionVC {
         dismiss(animated: true, completion: { _ in })
     }
     
+    internal func aboutSeries() {
+        let _profileFrame = CGRect(x: view.bounds.width * (1/5), y: view.bounds.height * (1/4), width: view.bounds.width * (3/5), height: view.bounds.height * (1/2))
+        
+        /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
+        blurViewBackground()
+    
+        miniPreview = MiniPreview(frame: _profileFrame, buttonTitle: "Become Contributor")
+        miniPreview!.delegate = self
+
+        Database.getItem(selectedItem.itemID, completion: { (item, error) in
+            if let item = item {
+                self.miniPreview!.setTitleLabel(item.itemTitle)
+                self.miniPreview!.setMiniDescriptionLabel(item.itemDescription)
+                self.miniPreview!.setBackgroundImage(self.selectedItem.content as? UIImage ?? GlobalFunctions.imageWithColor(UIColor.black))
+                
+                self.selectedItem.itemDescription = item.itemDescription
+            
+                DispatchQueue.main.async {
+                    self.view.addSubview(self.miniPreview!)
+                }
+            }
+        })
+    }
+    
+    /** Item Preview Delegate **/
+    internal func userClosedPreview(_ preview : UIView) {
+        preview.removeFromSuperview()
+        removeBlurBackground()
+    }
+    
+    internal func userClickedButton() {
+        miniPreview!.removeFromSuperview()
+        removeBlurBackground()
+        
+        let applyExpertVC = ApplyExpertVC()
+        applyExpertVC.selectedChannel = self.selectedChannel
+        
+        self.navigationController?.pushViewController(applyExpertVC, animated: true)
+    }
+
+    
     /** ItemCellDelegate Methods **/
     internal func clickedUserButton(itemRow : Int) {
         if let user = allItems[itemRow].user {
@@ -521,6 +564,10 @@ extension TagCollectionVC {
     func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         let newItemTitle = "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)"
+        
+        menu.addAction(UIAlertAction(title: "about Series", style: .default, handler: { (action: UIAlertAction!) in
+            self.aboutSeries()
+        }))
         
         if selectedItem.acceptsInput() {
             menu.addAction(UIAlertAction(title: newItemTitle, style: .default, handler: { (action: UIAlertAction!) in
@@ -648,7 +695,7 @@ extension TagCollectionVC {
     }
 }
 
-extension TagCollectionVC: UIViewControllerTransitioningDelegate {
+extension SeriesVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {

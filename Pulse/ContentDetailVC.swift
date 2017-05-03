@@ -11,22 +11,7 @@ import FirebaseDatabase
 import FirebaseStorage
 import AVFoundation
 
-protocol ItemDetailDelegate : class {
-    func userClickedProfile()
-    func userClickedProfileDetail()
-    func userClosedProfile(_ : UIView)
-    func userClickedBrowseItems()
-    func userSelected(_ index : IndexPath)
-    func userClickedExpandItem()
-    func votedItem(_ _vote : VoteType)
-    func userClickedSendMessage()
-    func userClosedQuickBrowse()
-    func userClickedNextItem()
-    func userClickedSeeAll(items : [Item])
-    func userClickedHeaderMenu()
-}
-
-class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate {
+class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate, ItemPreviewDelegate {
     internal var itemIndex = 0
     internal var currentItem : Item?
     internal var nextItem : Item?
@@ -74,8 +59,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate var startObserver : AnyObject!
     fileprivate var playedTillEndObserver : Any!
     
-    fileprivate var miniProfile : MiniProfile?
-    lazy var blurBackground = UIVisualEffectView()
+    fileprivate var miniProfile : MiniPreview?
     
     weak var delegate : ContentDelegate!
     fileprivate var tap : UITapGestureRecognizer!
@@ -567,7 +551,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
-    func userClickedProfileDetail() {
+    func userClickedButton() {
         delegate.userClickedProfileDetail()
     }
     
@@ -605,22 +589,20 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         let _profileFrame = CGRect(x: view.bounds.width * (1/5), y: view.bounds.height * (1/4), width: view.bounds.width * (3/5), height: view.bounds.height * (1/2))
         
         /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
-        blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
-        blurBackground.frame = view.bounds
-        view.addSubview(blurBackground)
+        blurViewBackground()
         
         if let user = currentItem?.user {
-            miniProfile = MiniProfile(frame: _profileFrame)
+            miniProfile = MiniPreview(frame: _profileFrame)
             miniProfile!.delegate = self
-            miniProfile!.setNameLabel(user.name)
-            miniProfile!.setTagLabel(user.shortBio)
+            miniProfile!.setTitleLabel(user.name)
+            miniProfile!.setMiniDescriptionLabel(user.shortBio)
             
             if let image = currentItem?.user?.thumbPicImage {
-                miniProfile!.setProfileImage(image)
+                miniProfile!.setBackgroundImage(image)
             }
             
             if !User.isLoggedIn() || User.currentUser?.uID == user.uID {
-                miniProfile?.setProfileButton(disabled: true)
+                miniProfile?.setActionButton(disabled: true)
             }
             
             view.addSubview(miniProfile!)
@@ -628,9 +610,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
-    func userClosedProfile(_ _profileView : UIView) {
+    func userClosedPreview(_ _profileView : UIView) {
         _profileView.removeFromSuperview()
-        blurBackground.removeFromSuperview()
+        removeBlurBackground()
         _isMiniProfileShown = false
     }
 

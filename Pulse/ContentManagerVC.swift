@@ -129,7 +129,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
             
             dismiss(animated: true, completion: { _ in
-                print("should dismiss browse collection vc")
             })
         }
     }

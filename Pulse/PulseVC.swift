@@ -39,6 +39,9 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     /** General Setup Var **/
     internal var isLoaded : Bool = false
     
+    /** Blurs the background if there is a popup **/
+    lazy var blurBackground = UIVisualEffectView()
+    
     public var headerNav : PulseNavVC?
     public var statusBarHidden : Bool = false {
         didSet {
@@ -119,6 +122,17 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
         }
+    }
+    
+    internal func blurViewBackground() {
+        /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
+        blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
+        blurBackground.frame = view.bounds
+        view.addSubview(blurBackground)
+    }
+    
+    internal func removeBlurBackground() {
+        blurBackground.removeFromSuperview()
     }
     
     internal func isRootController() -> Bool {
@@ -207,17 +221,18 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 self.toggleLoading(show: false, message: nil)
                 return
             }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText, img: selectedItem.content as? UIImage ?? nil)
             self.toggleLoading(show: false, message: nil)
         })
     }
     
-    internal func shareContent(shareType: String, shareText: String, shareLink: String, fullShareText: String = "") {
+    internal func shareContent(shareType: String, shareText: String, shareLink: String, fullShareText: String = "", img: UIImage? = nil) {
         // set up activity view controller
         let textToShare = fullShareText == "" ? "Check out this \(shareType) on Pulse: " + shareText + " - " + shareLink : fullShareText + " - " + shareLink
-        activityController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
+        let shareItems = img != nil ? [textToShare, img!] : [textToShare]
+        activityController = UIActivityViewController(activityItems: shareItems, applicationActivities: nil)
         activityController.popoverPresentationController?.sourceView = view // so that iPads won't crash
-        
+
         // exclude some activity types from the list (optional)
         activityController.excludedActivityTypes = [ UIActivityType.airDrop, UIActivityType.postToFlickr, UIActivityType.saveToCameraRoll, UIActivityType.print, UIActivityType.addToReadingList ]
         toggleLoading(show: false, message: nil)

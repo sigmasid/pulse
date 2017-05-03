@@ -94,7 +94,7 @@ class Database {
             if snap.exists() {
                 itemsRef.child(itemID).setValue(nil, withCompletionBlock: { (error, snap) in
                     if error != nil {
-                        //print("error removing item \(error)")
+                        //still need to implement
                     }
                 })
                 
@@ -841,8 +841,6 @@ class Database {
                     addNewItemsToFeed(channel: channel, startingAt: Date(), endingAt: endUpdateAt, completion: { items in
                         completion(items)
                     })
-                } else {
-                    print("ignoring child added)")
                 }
             })
             
@@ -1091,9 +1089,6 @@ class Database {
             }
             NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
         }, withCancel: { error in
-            
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
-            print("error getting user public summary \(error)")
             
         })
     }

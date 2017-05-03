@@ -80,20 +80,17 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     }
     
     func capture(_ captureOutput: AVCapturePhotoOutput, didFinishCaptureForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings, error: Error?) {
-        if let error = error {
-            print("Error capturing photo: \(error)")
+        if error != nil {
             didFinish()
             return
         }
         
         guard let photoData = photoData else {
-            print("No photo data resource")
             didFinish()
             return
         }
         
         guard shouldSaveToLibrary else {
-            print("user doesn't want to save to library")
             didFinish()
             return
         }
@@ -101,7 +98,6 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         PHPhotoLibrary.requestAuthorization { [unowned self] status in
             if status == .authorized {
                 PHPhotoLibrary.shared().performChanges({ [unowned self] in
-                    print("writing files to library in photo capture delegate")
 
                     let creationRequest = PHAssetCreationRequest.forAsset()
                     creationRequest.addResource(with: .photo, data: photoData, options: nil)
@@ -113,9 +109,6 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
                     }
                     
                     }, completionHandler: { [unowned self] success, error in
-                        if let error = error {
-                            print("Error occurered while saving photo to photo library: \(error)")
-                        }
                         
                         self.didFinish()
                     }

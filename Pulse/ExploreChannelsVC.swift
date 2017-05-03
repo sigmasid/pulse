@@ -173,10 +173,10 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                 
             case .posts, .feedback, .perspectives, .interviews:
                 
-                let tagDetailVC = TagCollectionVC()
-                tagDetailVC.selectedChannel = Channel(cID: item.cID)
-                navigationController?.pushViewController(tagDetailVC, animated: true)
-                tagDetailVC.selectedItem = item
+                let seriesVC = SeriesVC()
+                seriesVC.selectedChannel = Channel(cID: item.cID)
+                navigationController?.pushViewController(seriesVC, animated: true)
+                seriesVC.selectedItem = item
             
             case .perspective, .answer, .post:
                 
@@ -439,6 +439,8 @@ extension ExploreChannelsVC {
         menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
         }))
+        
+        present(menu, animated: true, completion: nil)
     }
     
     

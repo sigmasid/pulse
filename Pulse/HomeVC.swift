@@ -92,7 +92,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     internal func createFeed() {
-        print("create feed fired")
         if User.isLoggedIn(), User.currentUser!.subscriptions.count > 0 {
             
             allChannels = User.currentUser!.subscriptions
@@ -217,7 +216,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     fileprivate func updateDataSource() {
-        print("update data source fired")
         if !isLayoutSetup {
             setupScreenLayout()
         }
@@ -587,10 +585,10 @@ extension HomeVC {
     }
     
     internal func showTag(selectedItem : Item) {
-        let tagDetailVC = TagCollectionVC()
+        let seriesVC = SeriesVC()
         
-        navigationController?.pushViewController(tagDetailVC, animated: true)
-        tagDetailVC.selectedItem = selectedItem
+        navigationController?.pushViewController(seriesVC, animated: true)
+        seriesVC.selectedItem = selectedItem
     }
     
     //for the header

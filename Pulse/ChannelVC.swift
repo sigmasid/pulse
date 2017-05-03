@@ -421,9 +421,7 @@ extension ChannelVC {
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: { link in
                 guard let link = link else { return }
-                self.activityController = GlobalFunctions.shareContent(shareType: "channel",
-                                                                       shareText: self.selectedChannel.cTitle ?? "",
-                                                                       shareLink: link, presenter: self)
+                self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle ?? "", shareLink: link)
             })
         }))
         
@@ -551,11 +549,11 @@ extension ChannelVC {
     }
     
     internal func showTag(selectedItem : Item) {
-        let tagDetailVC = TagCollectionVC()
-        tagDetailVC.selectedChannel = selectedChannel
+        let seriesVC = SeriesVC()
+        seriesVC.selectedChannel = selectedChannel
         
-        navigationController?.pushViewController(tagDetailVC, animated: true)
-        tagDetailVC.selectedItem = selectedItem
+        navigationController?.pushViewController(seriesVC, animated: true)
+        seriesVC.selectedItem = selectedItem
         
     }
     

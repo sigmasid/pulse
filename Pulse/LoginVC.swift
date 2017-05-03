@@ -263,11 +263,10 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         guard let _accessToken = FBSDKAccessToken.current() else {
             return
         }
-        var dict : NSDictionary!
+        //var dict : NSDictionary!
         FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, first_name, last_name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
             if (error == nil){
-                dict = result as! NSDictionary
-                print(dict)
+                //dict = result as! NSDictionary
             }
         })
         
@@ -281,7 +280,6 @@ class LoginVC: PulseVC, UITextFieldDelegate {
                 self.toggleLoading(show: false, message: nil)
                 self.nav?.setNav(title: aUser!.displayName)
                 self._loggedInSuccess()
-                print("posted facebook login success update")
             }
         }
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.FBSDKProfileDidChange, object: nil)
