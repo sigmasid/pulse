@@ -1091,7 +1091,10 @@ class Database {
             }
             NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
         }, withCancel: { error in
+            
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
             print("error getting user public summary \(error)")
+            
         })
     }
     

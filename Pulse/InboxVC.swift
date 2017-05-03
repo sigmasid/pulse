@@ -65,6 +65,13 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
             setupLayout()
         }
         
+        guard User.isLoggedIn() else {
+            self.tableView.dataSource = self
+            self.tableView.delegate = self
+            self.tableView.reloadData()
+            return
+        }
+        
         Database.getConversations(completion: { conversations in
             self.conversations = conversations
             self.tableView.dataSource = self
@@ -78,6 +85,8 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     }
     
     internal func keepConversationUpdated() {
+        guard User.isLoggedIn() else { return }
+        
         Database.keepConversationsUpdated(completion: { conversation in
             if let index = self.conversations.index(of: conversation) {
                 self.conversations[index] = conversation
@@ -169,6 +178,7 @@ extension InboxVC: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        print("went into cell for row at")
         guard conversations.count > 0 else {
             let cell = tableView.dequeueReusableCell(withIdentifier: emptyReuseIdentifier)
             cell?.textLabel?.numberOfLines = 0

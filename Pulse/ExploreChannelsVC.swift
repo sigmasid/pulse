@@ -152,7 +152,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         Database.subscribeChannel(selectedChannel, completion: {(success, error) in
             self.toggleLoading(show: false, message: nil)
             if !success {
-                GlobalFunctions.showAlertBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
+                GlobalFunctions.showAlertBlock("Error Subscribing", erMessage: error!.localizedDescription)
             } else {
                 if let cell = self.channelCollection.cellForItem(at: IndexPath(item: senderTag, section: 0)) as? ExploreChannelsCell {
                     DispatchQueue.main.async {

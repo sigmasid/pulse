@@ -86,7 +86,7 @@ class ExploreChannelsCell: UICollectionViewCell {
         subtitleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .darkText, alignment: .left)
         subtitleLabel.numberOfLines = 2
 
-        previewImage.backgroundColor = .white
+        previewImage.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.5)
         previewImage.contentMode = .scaleAspectFill
         previewImage.clipsToBounds = true
     }

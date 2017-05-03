@@ -127,11 +127,13 @@ class User: NSObject {
     }
     
     /// Returns if user can answer question in given tag
-    func canAnswer(item: Item, parentItem : Item, completion: (Bool) -> Void) {        
-        if parentItem.acceptsInput() && item.checkVerifiedInput() {
-            completion(true)
-        } else {
+    func canAnswer(item: Item, parentItem : Item, completion: @escaping (Bool) -> Void) {        
+        if !parentItem.acceptsInput() {
             completion(false)
+        } else {
+            item.checkVerifiedInput(completion: { success, error in
+                success ? completion(true) : completion(false)
+            })
         }
     }
     

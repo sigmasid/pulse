@@ -23,6 +23,8 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     fileprivate var minItemsInFeed = 4
     fileprivate var hasReachedEnd = false
     fileprivate var updateIncrement = -7 //get one week's worth of data on first load
+    fileprivate var emptyMessage = "Discover & add new channels to your feed"
+    fileprivate var shouldShowHeader = true //used for the "subscriptions" header - hide it if logged out or no subscriptions
     
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
@@ -41,14 +43,19 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             statusBarHidden = true
             tabBarHidden = false
             
-            if User.isLoggedIn(), !initialLoadComplete || (initialLoadComplete && !allItems.isEmpty) {
+            if User.isLoggedIn(), !initialLoadComplete {
+                
                 toggleLoading(show: true, message: "Loading feed...", showIcon: true)
-            } else if !User.isLoggedIn() {
-                toggleLoading(show: true, message: "Please login to see your feed", showIcon: true)
+                
+            } else if !User.isLoggedIn(), !initialLoadComplete {
+                
+                emptyMessage = "Please login to see your feed"
+                createFeed()
+                toggleLoading(show: false, message: nil)
+                
             }
             
             setupScreenLayout()
-            
             isLoaded = true
         }
     }
@@ -85,26 +92,37 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     internal func createFeed() {
-        if !initialLoadComplete, User.isLoggedIn(), User.currentUser!.subscriptions.count > 0 {
+        print("create feed fired")
+        if User.isLoggedIn(), User.currentUser!.subscriptions.count > 0 {
             
             allChannels = User.currentUser!.subscriptions
             updateFeed()
             updateDataSource()
-            collectionView?.reloadSections(IndexSet(integer: 0))
             
+            shouldShowHeader = true
+            collectionView?.reloadSections(IndexSet(integer: 0))
             initialLoadComplete = true
             
         } else if User.currentUser!.subscriptions.count == 0 {
             
             toggleLoading(show: false, message: nil)
             updateDataSource()
-            initialLoadComplete = false
+            
+            emptyMessage = "Discover & add new channels to your feed"
+            shouldShowHeader = false
+            collectionView?.reloadSections(IndexSet(integer: 0))
+            initialLoadComplete = true
             
         } else if !User.isLoggedIn() {
+            
+            emptyMessage = "Please login to see your feed"
+            shouldShowHeader = false
             
             updateFeed()
             updateDataSource()
             
+            collectionView?.reloadSections(IndexSet(integer: 0))
+        
         }
     }
     
@@ -119,6 +137,8 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 }
                 
                 if !items.isEmpty {
+                    self.shouldShowHeader = true
+
                     self.collectionView.performBatchUpdates({
                         self.collectionView?.insertItems(at: indexPaths)
                         self.allItems.append(contentsOf: items)
@@ -149,15 +169,18 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
         } else {
             allChannels = []
             allItems = []
-            
+            emptyMessage = "Please login to see your feed"
+
             collectionView.reloadData()
+            
+            shouldShowHeader = false
             collectionView?.collectionViewLayout.invalidateLayout()
             initialLoadComplete = false
             
             startUpdateAt = Date()
             endUpdateAt = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
             
-            toggleLoading(show: true, message: "Please login to see your feed", showIcon: true)
+            toggleLoading(show: false, message: nil)
         }
     }
     
@@ -169,6 +192,9 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
                 self.getMoreItems(completion: { _ in })
+            } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
+                self.shouldShowHeader = false
+                self.emptyMessage = "discover & add new channels to your feed"
             } else {
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {
@@ -191,6 +217,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     fileprivate func updateDataSource() {
+        print("update data source fired")
         if !isLayoutSetup {
             setupScreenLayout()
         }
@@ -251,12 +278,11 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
         switch indexPath.section {
         case 0:
             guard allChannels.count > 0 else {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: emptyReuseIdentifier, for: indexPath) as! EmptyCell
-                cell.setMessage(message: "discover & add new channels to your feed", color: .black)
+                cell.setMessage(message: emptyMessage, color: .black)
                 return cell
             }
             
@@ -465,6 +491,15 @@ extension HomeVC {
                 
                 showTag(selectedItem: item)
                 
+            case .interview:
+                
+                toggleLoading(show: true, message: "loading interview...", showIcon: true)
+                
+                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                    self.toggleLoading(show: false, message: nil)
+                    self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                })
+                
             default: break
             }
         } else if let user = item as? User {
@@ -589,7 +624,9 @@ extension HomeVC {
         
         if currentItem.acceptsInput() {
             menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+                currentItem.checkVerifiedInput(completion: {success, error in
+                    success ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+                })
             }))
             
             menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
@@ -690,7 +727,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         switch section {
         case 0:
-            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
+            return CGSize(width: collectionView.frame.width, height: shouldShowHeader ? skinnyHeaderHeight : 0)
         case 1:
             return CGSize(width: collectionView.frame.width, height: 0)
         default:
@@ -713,7 +750,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         let cellHeight : CGFloat = 125
         switch indexPath.section {
         case 0:
-            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: headerSectionHeight) : CGSize(width: collectionView.frame.width, height: 0)
+            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: headerSectionHeight) : CGSize(width: collectionView.frame.width, height: headerSectionHeight)
         case 1:
             return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)) :
                 CGSize(width: collectionView.frame.width, height: 0)

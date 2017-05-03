@@ -138,7 +138,9 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         
         subscribeChannel(channel: selectedChannel, completion: {( success, error ) in
             if !success {
-                GlobalFunctions.showAlertBlock("Error Subscribing Tag", erMessage: error!.localizedDescription)
+                GlobalFunctions.showAlertBlock("Error Subscribing", erMessage: error!.localizedDescription)
+                self.subscribeButton.setImage(UIImage(named: "add")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
+                indicator.removeFromSuperview()
             } else {
                 if let user = User.currentUser, user.isSubscribedToChannel(cID: self.selectedChannel.cID) {
                     indicator.removeFromSuperview()
@@ -216,11 +218,14 @@ extension ChannelVC {
         
         if currentItem.acceptsInput() {
             menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+                currentItem.checkVerifiedInput(completion: {success, error in
+                    success ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+                })
             }))
             
             menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
-                self.showInviteMenu(currentItem: currentItem, inviteTitle: "Invite Contributors",
+                self.showInviteMenu(currentItem: currentItem,
+                                    inviteTitle: "Invite Contributors",
                                     inviteMessage: "know someone who can add to the conversation? invite them below!")
             }))
         }

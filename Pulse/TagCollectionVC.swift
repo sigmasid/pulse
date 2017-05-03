@@ -490,7 +490,9 @@ extension TagCollectionVC {
         
         if currentItem.acceptsInput() {
             menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                currentItem.checkVerifiedInput() ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+                currentItem.checkVerifiedInput(completion: {success, error in
+                    success ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
+                })
             }))
             
             menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
@@ -518,19 +520,34 @@ extension TagCollectionVC {
     //user clicked header menu - for series
     func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        let newItemTitle = "new\(selectedItem.childType().capitalized)"
+        let newItemTitle = "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)"
         
         if selectedItem.acceptsInput() {
             menu.addAction(UIAlertAction(title: newItemTitle, style: .default, handler: { (action: UIAlertAction!) in
                 switch self.selectedItem.type {
                 case .interviews:
-                    if self.selectedItem.checkVerifiedInput() { self.addInterview() }
+                    self.selectedItem.checkVerifiedInput(completion: {success, error in
+                        success ?
+                            self.addInterview() :
+                            GlobalFunctions.showAlertBlock("Sorry there was an error!", erMessage: error!)
+
+                    })
                 case .perspectives:
-                    if self.selectedItem.checkVerifiedInput() { self.startThread() }
+                    self.selectedItem.checkVerifiedInput(completion: {success, error in
+                        success ?
+                            self.startThread() :
+                            GlobalFunctions.showAlertBlock("Sorry there was an error!", erMessage: error!)
+                        
+                    })
                 case .questions, .feedback:
                     self.askQuestion()
                 case .posts:
-                    if self.selectedItem.checkVerifiedInput() { self.addNewItem(selectedItem: self.selectedItem) }
+                    self.selectedItem.checkVerifiedInput(completion: {success, error in
+                        success ?
+                            self.addNewItem(selectedItem: self.selectedItem) :
+                            GlobalFunctions.showAlertBlock("Sorry there was an error!", erMessage: error!)
+                        
+                    })
                 default: break
                 }
             }))

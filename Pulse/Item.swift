@@ -168,9 +168,24 @@ class Item: NSObject {
         }
     }
     
+    func childActionType() -> String {
+        switch type {
+        case .feedback: return "get"
+        case .posts: return "new"
+            
+        case .thread: return "add a"
+        case .question: return "add an"
+        case .questions: return "ask"
+            
+        case .interviews: return " start an"
+            
+        default: return "new"
+        }
+    }
+    
     func childType(plural: Bool = false) -> String {
         switch type {
-        case .feedback: return plural ? " questions" : " question"
+        case .feedback: return plural ? " feedback" : " feedback"
         case .posts: return plural ? " posts" : " post"
             
         case .thread: return plural ? " perspectives" : " perspective"
@@ -217,11 +232,16 @@ class Item: NSObject {
         }
     }
     
-    func checkVerifiedInput() -> Bool {
-        if let user = User.currentUser, user.uID != nil, user.isVerified(for: Channel(cID: self.cID)) {
-            return true
+    func checkVerifiedInput(completion: @escaping (Bool, String?) -> Void) {
+        if !User.isLoggedIn() {
+            completion(false, "Please login to continue")
+        } else if let user = User.currentUser, user.uID != nil {
+            if user.isVerified(for: Channel(cID: self.cID)) {
+                completion(true, nil)
+            } else {
+                completion(false, "Sorry you have to be a verified before you can contribute. You can apply on the channel screen")
+            }
         }
-        return false
     }
     
     func getCreatedAt() -> String? {

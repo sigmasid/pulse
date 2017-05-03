@@ -22,6 +22,7 @@ class ItemHeader: UICollectionReusableView {
         addBottomBorder()
         setupPreview()
         headerMenu.removeShadow()
+        backgroundColor = .white
     }
     
     required init?(coder aDecoder: NSCoder) {

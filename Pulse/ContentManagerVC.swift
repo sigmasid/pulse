@@ -286,11 +286,11 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         if User.isLoggedIn(), let selectedTag = selectedItem.tag {
             User.currentUser!.canAnswer(item: selectedItem, parentItem: selectedTag, completion: { success in
                 if success {
-                    contentDetailVC.view.isHidden = true
-                    hasMoreItems = true
-                    showCamera()
+                    self.contentDetailVC.view.isHidden = true
+                    self.hasMoreItems = true
+                    self.showCamera()
                 } else {
-                    returnToAnswers()
+                    self.returnToAnswers()
                 }
             })
         } else {
@@ -304,10 +304,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         if User.isLoggedIn(), selectedItem != nil, let selectedTag = selectedItem.tag {
             User.currentUser!.canAnswer(item: selectedItem, parentItem: selectedTag, completion: { success in
             if success {
-                showCamera()
+                self.showCamera()
             } else {
-                hasMoreItems = false
-                dismiss(animated: false, completion: nil)
+                self.hasMoreItems = false
+                self.dismiss(animated: false, completion: nil)
             }
             })
         } else {
