@@ -29,6 +29,7 @@ class Database {
     static let itemStatsRef = databaseRef.child(Element.ItemStats.rawValue)
     static let itemCollectionRef = databaseRef.child(Element.ItemCollection.rawValue)
     
+    static let invitesRef = databaseRef.child(Element.Invites.rawValue)
     static let messagesRef = databaseRef.child(Element.Messages.rawValue)
     static let conversationsRef = databaseRef.child(Element.Conversations.rawValue)
 
@@ -484,8 +485,21 @@ class Database {
         })
     }
     
+    static func getChannelItems(channel : Channel, startingAt : Date, endingAt: Date, completion: @escaping (_ channel : Channel?) -> Void) {
+        channelItemsRef.child(channel.cID!).queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
+            if snap.childrenCount > 0 {
+                channel.updateChannel(detailedSnapshot: snap)
+                completion(channel)
+            } else {
+                completion(nil)
+            }
+        }, withCancel: { error in
+            completion(nil)
+        })
+    }
+    
     static func getChannelItems(channel : Channel, completion: @escaping (_ channel : Channel?) -> Void) {
-        channelItemsRef.child(channel.cID!).observeSingleEvent(of: .value, with: { snap in
+        channelItemsRef.child(channel.cID!).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
             channel.updateChannel(detailedSnapshot: snap)
             completion(channel)
         }, withCancel: { error in
@@ -493,19 +507,19 @@ class Database {
         })
     }
     
-    static func getChannelItems(channelID : String, lastItem : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
+    static func getChannelItems(channelID : String, startingAt : Date, endingAt: Date, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
         var items = [Item]()
         
-        channelItemsRef.child(channelID).queryOrderedByKey().queryEnding(atValue: lastItem).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        channelItemsRef.child(channelID).queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
+
             if snap.exists() {
                 for child in snap.children {
-                    if (child as AnyObject).key != lastItem {
-                        let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
-                        items.append(item)
-                    }
+                    let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+                    currentItem.cID = channelID
+                    items.append(currentItem)
                 }
                 items.reverse()
-                completion(false, items)
+                completion(true, items)
             } else {
                 completion(false, items)
             }
@@ -1272,7 +1286,7 @@ class Database {
             return
         }
         
-        var collectionPost : [AnyHashable: Any]!
+        var collectionPost : [AnyHashable: Any]! = [:]
         
         var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
                                                 "tagID" : item.tag?.itemID as AnyObject,
@@ -1289,17 +1303,46 @@ class Database {
             channelPost["url"] = url as AnyObject?
         }
         
-        collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
-        
         if post.count > 1 {
             collectionPost["itemCollection/\(item.itemID)"] = post
         }
         
-        //only add one entry for full interview
-        if parentItem.type != .interview {
+        //don't add entry to chanel items for session // for feedback - will be a new itemID generated below // interview has only one combined entry
+        if parentItem.type != .interview, parentItem.type != .session, parentItem.type != .feedback {
             collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
+        }
+        
+        //only add one entry for user for an interview
+        if parentItem.type != .interview {
             collectionPost["userDetailedPublicSummary/\(_user.uid)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
+        
+        //if it's an item in response to a feedback request - add the new item and update the created at for channelItems - keeps only one post for each feedback request
+        if parentItem.type == .session, item.type == .session {
+            collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = FIRServerValue.timestamp() as AnyObject
+        }
+            
+        //if it's new feedback session then add it to channel items & series but with the new key
+        else if parentItem.type == .feedback, item.type == .session {
+            print("went into add new feedback session")
+            let feedbackItemKey = databaseRef.child("items").childByAutoId().key
+
+            //duplicate the thumbnail for the item
+            if let _image = item.content as? UIImage  {
+                Database.uploadThumbImage(channelID: item.cID, itemID: feedbackItemKey, image: _image, completion: { (success, error) in } )
+            }
+            
+            collectionPost["channelItems/\(channelID)/\(feedbackItemKey)"] = channelPost
+            collectionPost["itemCollection/\(feedbackItemKey)/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["itemCollection/\(parentItem.itemID)/\(feedbackItemKey)"] = item.type.rawValue as AnyObject
+            collectionPost["items/\(feedbackItemKey)"] = channelPost
+
+        } else {
+        //if any other item - add the actual item to the series collection
+            collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
+        }
+        
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (blockError, ref) in
             blockError != nil ? completion(false, blockError) : completion(true, nil)
         })
@@ -1498,8 +1541,15 @@ class Database {
         })
     }
     
+    /** MARK INVITE COMPLETED **/
+    static func markInviteCompleted(inviteID: String) {
+        let invitePost = ["completed" : true]
+        messagesRef.child(inviteID).child("type").setValue(nil)
+        invitesRef.child(inviteID).updateChildValues(invitePost)
+    }
+    
     /** INTERVIEW ITEMS **/
-    static func declineInterview(interviewParentItem :Item, conversationID: String?, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+    static func declineInterview(interviewItemID: String, interviewParentItem :Item, conversationID: String?, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         guard let _ = FIRAuth.auth()?.currentUser else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
@@ -1518,7 +1568,9 @@ class Database {
         Database.sendMessage(existing: true, message: message, completion: {(success, conversationID) in
             if success {
                 //remove interview type from conversations
+                markInviteCompleted(inviteID: interviewItemID)
                 messagesRef.child(conversationID!).child("type").setValue(nil)
+                
                 completion(true, nil)
             } else {
                 let errorInfo = [ NSLocalizedDescriptionKey : "error declining interview" ]
@@ -1527,7 +1579,7 @@ class Database {
         })
     }
     
-    static func addInterviewToDatabase(interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func addInterviewToDatabase(interviewItemID: String, interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let _user = FIRAuth.auth()?.currentUser else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
@@ -1543,7 +1595,9 @@ class Database {
         
         var collectionPost = ["userDetailedPublicSummary/\(_user.uid)/items/\(interviewParentItem.itemID)": interviewParentItem.type.rawValue as AnyObject,
                               "items/\(interviewParentItem.itemID)" : channelPost,
-                              "channelItems/\(interviewParentItem.cID!)/\(interviewParentItem.itemID)" : channelPost] as [String : Any]
+                              "channelItems/\(interviewParentItem.cID!)/\(interviewParentItem.itemID)" : channelPost,
+                              "invites/\(interviewItemID)/completed": true,
+                              "messages/\(interviewItemID)/type" : "message"] as [String : Any]
         
         if let tagID = interviewParentItem.tag?.itemID {
             collectionPost["itemCollection/\(tagID)/\(interviewParentItem.itemID)"] = interviewParentItem.type.rawValue as AnyObject
@@ -1757,13 +1811,13 @@ class Database {
     /** ADD NEW THREAD TO SERIES **/
     static func addThread(channelID: String, parentItem: Item, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = User.currentUser, user.uID != nil else {
-            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to start a thread" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
         guard item.type != .unknown else {
-            let errorInfo = [ NSLocalizedDescriptionKey : "sorry this type of item is not valid" ]
+            let errorInfo = [ NSLocalizedDescriptionKey : "sorry this thread is not valid" ]
             completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
             return
         }

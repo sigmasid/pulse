@@ -156,11 +156,13 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     internal func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        if selectedItem.type != .interview {
-            menu.addAction(UIAlertAction(title: "add\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                self.clickedAddItem()
-            }))
-        }
+        selectedItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.clickedAddItem()
+                }))
+            }
+        })
         
         menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
             self.showShare(selectedItem: self.selectedItem, type: self.selectedItem.type.rawValue)
@@ -291,7 +293,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                 Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                     if hasDetail {
                         cell.showTapForMore = true
-                        self.itemStack[indexPath.row].itemCollection = itemCollection
+                        self.itemStack[indexPath.row].itemCollection = itemCollection.reversed()
                     } else {
                         cell.showTapForMore = false
                     }

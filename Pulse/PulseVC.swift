@@ -153,7 +153,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         button.layoutIfNeeded()
     }
     
-    internal func toggleLoading(show: Bool, message: String?, showIcon: Bool = false) {
+    internal func toggleLoading(show: Bool, message: String?, showIcon: Bool = false, backgroundOpacity : CGFloat = 0.9) {
         if show {
             if loadingView != nil, loadingView.superview == view {
                 if showIcon {
@@ -163,7 +163,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 self.loadingView.addMessage(message, _color: .gray)
                 
             } else {
-                loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white.withAlphaComponent(0.9))
+                loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white.withAlphaComponent(backgroundOpacity))
                 
                 DispatchQueue.main.async {
                     self.view.addSubview(self.loadingView)
@@ -188,8 +188,14 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
-    internal func createShareRequest(selectedShareItem : Item, selectedChannel: Channel, toUser: User?, toEmail : String? = nil, showAlert : Bool = true,
+    internal func createShareRequest(selectedShareItem : Item, shareType: MessageType?, selectedChannel: Channel, toUser: User?, toEmail : String? = nil, showAlert : Bool = true,
                                      completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
+        guard let shareType = shareType else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to save questions" ]
+            completion(nil, NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
+            return
+        }
+        
         let itemKey = databaseRef.child("items").childByAutoId().key
         let parentItemID = selectedShareItem.itemID
         
@@ -198,8 +204,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         selectedShareItem.cTitle = selectedChannel.cTitle
         
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
-        Database.createInviteRequest(item: selectedShareItem, type: type, toUser: toUser, toName: nil, toEmail: toEmail,
+        Database.createInviteRequest(item: selectedShareItem, type: shareType, toUser: toUser, toName: nil, toEmail: toEmail,
                                      childItems: [], parentItemID: parentItemID, completion: {(success, error) in
                                         
             if success, showAlert {

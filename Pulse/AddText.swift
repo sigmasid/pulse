@@ -26,17 +26,19 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     fileprivate var bodyText : String = ""
     fileprivate var defaultBodyText : String = "type here"
-
+    fileprivate var tabBarHeightAdjustment : CGFloat = 0
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
     
-    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String = "type here", keyboardType: UIKeyboardType = .alphabet) {
+    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String = "type here", keyboardType: UIKeyboardType = .alphabet, tabBarHeightAdjustment: CGFloat = 0) {
         self.init(frame: frame)
         addObservers()
         
         self.bodyText = bodyText
         self.defaultBodyText = defaultBodyText
+        self.tabBarHeightAdjustment = tabBarHeightAdjustment
         
         setupLayout(buttonText: buttonText, bodyText: bodyText)
         txtBody.becomeFirstResponder()
@@ -99,7 +101,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
-            txtBottomConstraint.constant = -keyboardHeight
+            txtBottomConstraint.constant = -keyboardHeight + tabBarHeightAdjustment
         }
     }
     

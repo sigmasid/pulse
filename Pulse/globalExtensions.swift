@@ -527,6 +527,7 @@ enum Element : String {
     
     case Messages = "messages"
     case Conversations = "conversations"
+    case Invites = "invites"
 }
 
 enum SettingTypes : String{
@@ -631,6 +632,13 @@ enum MessageType: String {
             return .message
         }
     }
+}
+
+enum UserTypes: String {
+    case user
+    case subscriber
+    case contributor
+    case editor
 }
 
 struct ItemMetaData {

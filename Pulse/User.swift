@@ -126,17 +126,6 @@ class User: NSObject {
         return (FIRAuth.auth()?.currentUser != nil ? true : false)
     }
     
-    /// Returns if user can answer question in given tag
-    func canAnswer(item: Item, parentItem : Item, completion: @escaping (Bool) -> Void) {        
-        if !parentItem.acceptsInput() {
-            completion(false)
-        } else {
-            item.checkVerifiedInput(completion: { success, error in
-                success ? completion(true) : completion(false)
-            })
-        }
-    }
-    
     func isSubscribedToChannel(cID: String) -> Bool {
         return self.subscriptionIDs.contains(cID)
     }

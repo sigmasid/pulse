@@ -321,10 +321,10 @@ extension ContentOverlay {
         userTitles.addArrangedSubview(userTitleLabel)
         userTitles.addArrangedSubview(userSubtitleLabel)
         
-        userTitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
+        userTitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
         userTitleLabel.setBlurredBackground()
         
-        userSubtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
+        userSubtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
         userSubtitleLabel.setBlurredBackground()
         
         headerMenu.translatesAutoresizingMaskIntoConstraints = false

@@ -7,7 +7,7 @@
 
 import UIKit
 
-class InterviewRequestVC: PulseVC, InterviewDelegate {
+class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     
     public var selectedUser : User!
     public var interviewItem : Item!
@@ -93,7 +93,7 @@ class InterviewRequestVC: PulseVC, InterviewDelegate {
         menuButton.addTarget(self, action: #selector(showMenu), for: .touchUpInside)
     }
     
-    internal func doneInterviewQuestion(success: Bool) {
+    internal func doneRecording(success: Bool) {
         if success, let selectedIndex = selectedIndex {
             allQuestions[selectedIndex].itemCreated = true
             tableView.reloadRows(at: [IndexPath(item: selectedIndex, section: 0)], with: .middle)
@@ -304,14 +304,15 @@ extension InterviewRequestVC {
         let contentVC = ContentManagerVC()
         
         contentVC.selectedChannel = Channel(cID: interviewItem.cID)
-        //NEED TO CHANGE TO COPY BY VALUE VS REFERENCE
+        
+        //NEEDED TO TO COPY BY VALUE VS REFERENCE
         let newItem = Item(itemID: interviewItem.itemID, itemUserID: userID, itemTitle: qItem.itemTitle, type: interviewItem.type,
                            contentURL: nil, content: nil, contentType: nil, tag: interviewItem.tag, cID: interviewItem.cID)
         newItem.cTitle = interviewItem.cTitle
         
         contentVC.selectedItem = newItem
         contentVC.openingScreen = .camera
-        contentVC.interviewDelegate = self
+        contentVC.completedRecordingDelegate = self
         contentVC.createdItemKey = qItem.itemID
         present(contentVC, animated: true, completion: nil)
     }
@@ -327,7 +328,7 @@ extension InterviewRequestVC {
     }
     
     internal func markInterviewCompleted() {
-        Database.addInterviewToDatabase(interviewParentItem: interviewItem, completion: {(success, error) in
+        Database.addInterviewToDatabase(interviewItemID: interviewItemID, interviewParentItem: interviewItem, completion: {(success, error) in
             if success {
                 self.showSuccessMenu()
             } else {
@@ -338,7 +339,7 @@ extension InterviewRequestVC {
     
     internal func markInterviewDeclined() {
         toggleLoading(show: true, message: "Declining Interview Request...", showIcon: true)
-        Database.declineInterview(interviewParentItem: interviewItem, conversationID: conversationID, completion: {(success, error) in
+        Database.declineInterview(interviewItemID: interviewItemID, interviewParentItem: interviewItem, conversationID: conversationID, completion: {(success, error) in
             self.toggleLoading(show: false, message: nil)
             if success {
                 self.goBack()

@@ -93,7 +93,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
             
             if let title = selectedChannel.cTitle {
                 headerNav?.setNav(title: "Apply", subtitle: title)
-                applySubtitle.text = "Contributors are thought leaders who create & shape content, start conversations & answer questions!"
+                applySubtitle.text = "Contributors are thought leaders who create content, shape conversations, give feedback & answer questions!"
                 applyText.text = subText1
             }
             checkButton()
@@ -125,7 +125,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
     
     internal func clickedApply() {
         guard let user = User.currentUser, user.uID != nil else {
-            GlobalFunctions.showAlertBlock("Please Login", erMessage: "You need to be logged in to send interview requests")
+            GlobalFunctions.showAlertBlock("Please Login", erMessage: "You need to be logged in to apply!")
             return
         }
         

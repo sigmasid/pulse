@@ -186,6 +186,7 @@ class GlobalFunctions {
         case .post: return 420
         case .thread: return 420
         case .perspective: return 420
+        case .session: return 420
         default: return 145
         }
     }

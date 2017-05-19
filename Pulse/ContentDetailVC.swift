@@ -98,11 +98,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                                                    name: NSNotification.Name(rawValue: "PlaybackStartedNotification"),
                                                    object: currentPlayerItem)
             
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(didPlayTillEnd),
-                                                   name: .AVPlayerItemDidPlayToEndTime,
-                                                   object: currentPlayerItem)
-            
             //align the timer to actually when the video starts
             let _ = ContentDetailVC.qPlayer.addBoundaryTimeObserver(forTimes: [NSValue(time: CMTimeMake(1, 20))],
                                                                  queue: nil,
@@ -141,14 +136,21 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             contentOverlay.showExploreDetail()
             _shouldShowExplore = false
         }
+        
+        if let currentItem = currentItem {
+            Database.updateItemViewCount(itemID: currentItem.itemID)
+        }
+        
+        if playedTillEndObserver != nil {
+            NotificationCenter.default.removeObserver(playedTillEndObserver)
+        }
     }
     
     fileprivate func loadWatchedPreviewItem() {
         Database.updateItemViewCount(itemID: allItems[itemIndex].itemID)
         currentItem = allItems[itemIndex]
         updateOverlayData(allItems[itemIndex])
-        addExploreItemDetail(allItems[itemIndex].itemID)
-                
+        
         userClickedExpandItem()
     }
     
@@ -207,26 +209,28 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     fileprivate func loadItemCollections(_ index : Int) {
-        tap.isEnabled = false
-
-        detailTap = UITapGestureRecognizer(target: self, action: #selector(handleDetailTap))
-        detailTap.cancelsTouchesInView = false
-        detailTap.delegate = self
-        view.addGestureRecognizer(detailTap)
-        
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
+        
+        tap.isEnabled = false
+        addDetailTap()
+        
+        //wait till async call finishes to allow taps again - defaults to canAdvanceDetail = false
         _canAdvanceDetailReady = false
+        _tapReady = false
         itemCollectionIndex = index
 
         addClip(itemDetailCollection[itemCollectionIndex], completion: { success in
-            if self._canAdvanceItemDetail(self.itemCollectionIndex + 1) {
+            if success, self._canAdvanceItemDetail(self.itemCollectionIndex + 1) {
                 
                 self.addNextClipToQueue(self.itemDetailCollection[self.itemCollectionIndex + 1].itemID)
                 self.itemCollectionIndex += 1
                 self._canAdvanceDetailReady = true
+                self._tapReady = true
+                
             } else {
                 self._canAdvanceDetailReady = false
-                
+                self._tapReady = true
+
                 // done w/ Item detail - queue up next Item (outside of collection) if it exists
                 if self._canAdvance(self.itemIndex + 1) {
                     self.addNextClipToQueue(self.allItems[self.itemIndex + 1])
@@ -240,12 +244,23 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
     
+    fileprivate func addDetailTap() {
+        if detailTap == nil {
+            detailTap = UITapGestureRecognizer(target: self, action: #selector(handleDetailTap))
+            detailTap.cancelsTouchesInView = false
+            detailTap.delegate = self
+            view.addGestureRecognizer(detailTap)
+        } else {
+            detailTap.isEnabled = true
+        }
+    }
+    
     fileprivate func addExploreItemDetail(_ _itemID : String) {
-        if itemDetailCollection.count > 1 {
-            _shouldShowExplore = true
+        if itemDetailCollection.count != 0, !_isExploring {
+            _shouldShowExplore = itemDetailCollection.count > 1
         } else {
             Database.getItemCollection(_itemID, completion: {(hasDetail, itemCollection) in
-                if hasDetail {
+                if hasDetail, itemCollection.count > 1 {
                     self._shouldShowExplore = true
                     self.itemDetailCollection = itemCollection.reversed() //otherwise items are in chron order - need to get oldest first
                 } else {
@@ -275,12 +290,13 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         if !item.itemCreated || item.contentURL == nil {
             
             addClip(item.itemID, completion: { success in
-                if success {
-                    completion(true)
-                }
+                success ? completion(true) : completion(false)
             })
         } else {
-            guard let itemType = item.contentType else { return }
+            guard let itemType = item.contentType else {
+                completion(false)
+                return
+            }
             
             currentItem = item //needed so we vote for the correct Item and update views for correct Item
             let itemURL = currentItem?.contentURL
@@ -316,12 +332,14 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                             self.delegate.removeIntro()
                             self._isShowingIntro = false
                         }
+                        completion(true)
                     } else {
                         if self._isShowingIntro {
                             self.delegate.removeIntro()
                             self._isShowingIntro = false
                         }
                         self.handleTap()
+                        completion(false)
                     }
                 }
             }
@@ -358,7 +376,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             }
         } else {
             contentOverlay.setUserImage(UIImage(named: "default-profile"))
-            
             
             Database.getUser(item.itemUserID ?? "", completion: { (user, error) in
                 if let user = user, self.currentItem?.itemUserID == user.uID {
@@ -463,13 +480,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                                                           options: NSKeyValueObservingOptions.new,
                                                           context: nil)
             
-            playedTillEndObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime,
-                                                   object: ContentDetailVC.qPlayer.currentItem,
-                                                   queue: nil, using: { (_) in
-                if let currentItem = self.currentItem {
-                    Database.updateItemViewCount(itemID: currentItem.itemID)
-                }
-            })
+            playedTillEndObserver = NotificationCenter.default.addObserver(self,
+                                                                           selector: #selector(didPlayTillEnd),
+                                                                           name: .AVPlayerItemDidPlayToEndTime,
+                                                                           object: currentPlayerItem)
             
             _isObserving = true
         }
@@ -682,6 +696,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             
             itemDetailCollection.removeAll()
             contentOverlay.resetTimer()
+            contentOverlay.hideExploreDetail()
+            
             updateOverlayData(_nextItem)
             addExploreItemDetail(_nextItem.itemID)
             
@@ -757,10 +773,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 _canAdvanceDetailReady = true
             } else {
                 _canAdvanceDetailReady = false
-                
                 // done w/ Item detail - queue up next Item if it exists
-                if _canAdvance(itemIndex) {
-                    addNextClipToQueue(allItems[itemIndex])
+                if _canAdvance(itemIndex + 1) {
+                    addNextClipToQueue(allItems[itemIndex + 1])
                     _canAdvanceReady = true
                 } else {
                     _canAdvanceReady = false
@@ -769,6 +784,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         } else {
             // reset Item detail count and go to next Item
             itemCollectionIndex = 0
+            
+            detailTap.isEnabled = false
+            tap.isEnabled = true
+            
             handleTap()
         }
     }

@@ -189,7 +189,7 @@ extension NewThreadVC {
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "Threads are open to all channel contributors and any one invited by an expert to add their perspectives on the topic."
+        sTypeDescription.text = "Threads are open to all channel contributors and anyone invited by a verified contributor."
         
         addSubmitButton()
     }
@@ -252,7 +252,7 @@ extension NewThreadVC: CameraDelegate {
         cameraVC.cameraMode = .stillImage
         
         cameraVC.delegate = self
-        cameraVC.screenTitle = "snap a pic to use as series cover!"
+        cameraVC.screenTitle = "snap a pic to use as cover!"
         
         panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
         panDismissCameraInteractionController.delegate = self

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, ItemPreviewDelegate {
+class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, ItemPreviewDelegate, CompletedRecordingDelegate {
     
     public var selectedChannel: Channel!
     
@@ -77,6 +77,14 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         dismiss(animated: true, completion: { _ in })
     }
     
+    internal func doneRecording(success: Bool) {
+        success ?
+            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Feedback Request Submitted", erMessage: "Stay tuned for updates & responses from experts!", buttonTitle: "done") :
+            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Feedback Request", erMessage: "Sorry there was an error adding the feedback request. Please try again")
+    }
+    
+
+    
     internal func askQuestion() {
         let questionVC = AskQuestionVC()
         questionVC.selectedTag = selectedItem
@@ -100,6 +108,17 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         newThread.selectedChannel = selectedChannel
         newThread.selectedItem = selectedItem
         navigationController?.pushViewController(newThread, animated: true)
+    }
+    
+    internal func getFeedback() {
+        let contentVC = ContentManagerVC()
+        
+        //NEEDED TO TO COPY BY VALUE VS REFERENCE
+        contentVC.selectedChannel = selectedChannel
+        contentVC.selectedItem = selectedItem
+        contentVC.openingScreen = .camera
+        contentVC.completedRecordingDelegate = self
+        present(contentVC, animated: true, completion: nil)
     }
     
     internal func addNewItem(selectedItem: Item) {
@@ -215,7 +234,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     self.allItems[indexPath.row] = item
                     
                     //Get the image if content type is a post or perspectives thread
-                    if item.content == nil, item.type == .post || item.type == .thread, !item.fetchedContent {
+                    if item.content == nil, item.type == .post || item.type == .thread || item.type == .session, !item.fetchedContent {
                         Database.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
@@ -386,8 +405,7 @@ extension SeriesVC {
                     selectedShareItem.tag = selectedItem
                     
                     toggleLoading(show: true, message: "sending invite...", showIcon: true)
-                    let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
-                    Database.createInviteRequest(item: selectedShareItem, type: type, toUser: nil, toName: nil, toEmail: text,
+                    Database.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: nil, toName: nil, toEmail: text,
                                                  childItems: [], parentItemID: parentItemID, completion: {(success, error) in
                             success ?
                             GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
@@ -416,8 +434,7 @@ extension SeriesVC {
             selectedShareItem.tag = selectedItem
             
             toggleLoading(show: true, message: "sending invite...", showIcon: true)
-            let type : MessageType = selectedShareItem.type == .thread ? .perspectiveInvite : .questionInvite
-            Database.createInviteRequest(item: selectedShareItem, type: type, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+            Database.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {(success, error) in
                 success ?
                     GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
                     GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
@@ -438,6 +455,23 @@ extension SeriesVC {
         case .question, .thread, .interview:
             Database.getItemCollection(item.itemID, completion: {(success, items) in
                 success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
+            })
+        case .session:
+            Database.getItemCollection(item.itemID, completion: {(success, items) in
+                if success, items.count > 1 {
+                    //since ordering is cron based - move the first 'question' item to front
+                    if let lastItem = items.last {
+                        let sessionSlice = items.dropLast()
+                        var sessionItems = Array(sessionSlice)
+                        sessionItems.insert(lastItem, at: 0)
+                        self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                    }
+                } else if success {
+                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                } else {
+                    //show no items menu
+                    self.showNoItemsMenu(selectedItem : item)
+                }
             })
         default: break
         }
@@ -531,17 +565,21 @@ extension SeriesVC {
         
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        if currentItem.acceptsInput() {
-            menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                currentItem.checkVerifiedInput(completion: {success, error in
-                    success ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
-                })
-            }))
+        currentItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.addNewItem(selectedItem: currentItem)
+                }))
             
-            menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
-                self.showInviteMenu(currentItem: currentItem)
-            }))
-        }
+                menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
+                    self.showInviteMenu(currentItem: currentItem)
+                }))
+            } else if User.isLoggedIn() {
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.showNonExpertMenu(selectedItem: currentItem)
+                }))
+            }
+        })
         
         if currentItem.childItemType() != .unknown {
             menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
@@ -563,42 +601,30 @@ extension SeriesVC {
     //user clicked header menu - for series
     func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        let newItemTitle = "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)"
         
         menu.addAction(UIAlertAction(title: "about Series", style: .default, handler: { (action: UIAlertAction!) in
             self.aboutSeries()
         }))
         
-        if selectedItem.acceptsInput() {
-            menu.addAction(UIAlertAction(title: newItemTitle, style: .default, handler: { (action: UIAlertAction!) in
-                switch self.selectedItem.type {
-                case .interviews:
-                    self.selectedItem.checkVerifiedInput(completion: {success, error in
-                        success ?
-                            self.addInterview() :
-                            GlobalFunctions.showAlertBlock("Sorry there was an error!", erMessage: error!)
-
-                    })
-                case .perspectives:
-                    self.selectedItem.checkVerifiedInput(completion: {success, error in
-                        success ?
-                            self.startThread() :
-                            GlobalFunctions.showAlertBlock("Sorry there was an error!", erMessage: error!)
-                        
-                    })
-                case .questions, .feedback:
-                    self.askQuestion()
-                case .posts:
-                    self.selectedItem.checkVerifiedInput(completion: {success, error in
-                        success ?
-                            self.addNewItem(selectedItem: self.selectedItem) :
-                            GlobalFunctions.showAlertBlock("Sorry there was an error!", erMessage: error!)
-                        
-                    })
-                default: break
-                }
-            }))
-        }
+        selectedItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    switch self.selectedItem.type {
+                    case .interviews:
+                        self.addInterview()
+                    case .perspectives:
+                        self.startThread()
+                    case .questions:
+                        self.askQuestion()
+                    case .feedback:
+                        self.getFeedback()
+                    case .posts:
+                        self.addNewItem(selectedItem: self.selectedItem)
+                    default: break
+                    }
+                }))
+            }
+        })
         
         menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
             self.showShare(selectedItem: self.selectedItem, type: "series", fullShareText: self.selectedItem.itemTitle)
@@ -611,28 +637,41 @@ extension SeriesVC {
         present(menu, animated: true, completion: nil)
     }
     
-    //
+    //no items yet - so prompt user if accepts input and requires verifiecation
     internal func showNoItemsMenu(selectedItem : Item) {
-        var isExpert = false
-        
-        if User.isLoggedIn(), User.currentUser!.isVerified(for: selectedChannel) {
-            isExpert = true
-        }
-        let message = isExpert ? "No\(selectedItem.childType())s yet - want to add one?" : "We are still waiting for the first\(selectedItem.childType())!"
-        
-        let menu = UIAlertController(title: "Sorry! No\(selectedItem.childType())s yet", message: message, preferredStyle: .actionSheet)
-        
-        if isExpert {
-            menu.addAction(UIAlertAction(title: "add\(selectedItem.childType())", style: .default, handler: { (action: UIAlertAction!) in
-                self.addNewItem(selectedItem: selectedItem)
+        let menu = UIAlertController(title: "Sorry! No\(selectedItem.childType(plural: true)) yet", message: nil, preferredStyle: .actionSheet)
+
+        selectedItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
+                
+                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    switch self.selectedItem.type {
+                    case .interviews:
+                        self.addInterview()
+                    case .perspectives:
+                        self.startThread()
+                    case .questions:
+                        self.askQuestion()
+                    case .feedback:
+                        self.getFeedback()
+                    case .posts:
+                        self.addNewItem(selectedItem: self.selectedItem)
+                    default: break
+                    }
+                }))
+            } else {
+                menu.message = "We are still waiting for \(selectedItem.childType())!"
+            }
+            
+            menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+                menu.dismiss(animated: true, completion: nil)
             }))
-        }
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
+            
+            DispatchQueue.main.async {
+                self.present(menu, animated: true, completion: nil)
+            }
+        })
     }
     
     internal func showNonExpertMenu(selectedItem : Item) {
@@ -678,10 +717,10 @@ extension SeriesVC {
         }))
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
-            self.createShareRequest(selectedShareItem: currentItem, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
+            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
                                     completion: { selectedShareItem , error in
                 if error == nil, let selectedShareItem = selectedShareItem {
-                    let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+                    let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) - \(currentItem.itemTitle)"
                     self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
                 }
             })

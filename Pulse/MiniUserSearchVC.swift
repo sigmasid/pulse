@@ -81,9 +81,22 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     
     internal func closeSearch() {
         if modalDelegate != nil {
-            searchController.isActive = false
-            searchController.searchBar.resignFirstResponder()
-            modalDelegate.userClosedModal(self)
+            UIView.animate(withDuration: 0.2, animations: {
+                self.collectionView.frame.origin.y = self.view.bounds.maxY + searchBarHeight
+                self.searchContainer.frame.origin.y = self.view.bounds.maxY
+                
+                self.collectionView.alpha = 0
+                self.searchContainer.alpha = 0
+
+            }, completion: {(value: Bool) in
+                self.collectionView.layoutIfNeeded()
+                self.searchContainer.layoutIfNeeded()
+                
+                self.collectionView.alpha = 1
+                self.searchContainer.alpha = 1
+                
+                self.modalDelegate.userClosedModal(self)
+            })
         }
     }
     
@@ -209,7 +222,9 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
         
         let _user = users[indexPath.row]
         
-        if !_user.uCreated { //search case - get question from database
+        if !_user.uCreated {
+            cell.updateImage(image : UIImage(named: "default-profile"))
+
             Database.getUser(_user.uID!, completion: { (user, error) in
                 if let user = user {
                     cell.updateCell(user.name?.capitalized, _image: nil)
@@ -235,7 +250,7 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
             if _user.thumbPicImage != nil {
                 cell.updateCell(_user.name?.capitalized, _image : _user.thumbPicImage)
             } else if let _uPic = _user.thumbPic {
-                cell.updateCell(_user.name?.capitalized, _image: nil)
+                cell.updateCell(_user.name?.capitalized, _image: UIImage(named: "default-profile"))
                 
                 DispatchQueue.global(qos: .background).async {
                     if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
@@ -251,7 +266,7 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
                     }
                 }
             } else {
-                cell.updateCell(_user.name?.capitalized, _image: nil)
+                cell.updateCell(_user.name?.capitalized, _image: UIImage(named: "default-profile"))
             }
         }
         

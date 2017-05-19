@@ -156,10 +156,28 @@ class MessageVC: PulseVC, UITextViewDelegate{
         })
     }
     
+    internal func showSubscribeMenu(selectedChannel: Channel, inviteID: String) {
+        
+        Database.subscribeChannel(selectedChannel, completion: { success, error in
+            if success {
+                Database.markInviteCompleted(inviteID: inviteID)
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Subsribed!",
+                                               erMessage: "You will now see all the updates in your feed. Enjoy!",
+                                               buttonTitle: "done")
+                
+            } else {
+                GlobalFunctions.showAlertBlock("Uh Oh! Error Subscribing",
+                                               erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this fixed!")
+            }
+
+
+        })
+    }
+    
     internal func showConfirmationMenu(status: Bool, inviteID: String) {
         Database.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
             success ?
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "You are in!", erMessage: "You have been confirmed as a contributor. Now you can start creating, sharing and showcasing your expertise!", buttonTitle: "okay") :
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "You are in!", erMessage: "You have been confirmed as a contributor. Now you can start creating, sharing and showcasing!", buttonTitle: "okay") :
                 GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite",
                                                erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
         })
@@ -168,7 +186,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
     internal func showContributorMenu(messageID: String, messageText: String) {
         toggleLoading(show: true, message: "loading Invite...", showIcon: true)
         let menu = UIAlertController(title: "Congratulations!",
-                                     message: "\(messageText) As a verified expert, you will help shape the conversation & showcase!", preferredStyle: .actionSheet)
+                                     message: "\(messageText) As a verified contributor, you can showcase your content, expertise & brand!", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
             self.showConfirmationMenu(status: true, inviteID: messageID)
@@ -372,7 +390,18 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
             showContributorMenu(messageID: message.mID, messageText: message.body)
         
         case .channelInvite:
-            break
+            
+            toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+            Database.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
+                if let selectedItem = selectedItem {
+                    DispatchQueue.main.async {
+                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                        self.showSubscribeMenu(selectedChannel: selectedChannel, inviteID: message.mID)
+                    }
+                }
+                self.toggleLoading(show: false, message: nil)
+            })
+            
         default: break
         }
     }

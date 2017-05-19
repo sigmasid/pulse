@@ -193,7 +193,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 self.getMoreItems(completion: { _ in })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
                 self.shouldShowHeader = false
-                self.emptyMessage = "discover & add new channels to your feed"
+                self.emptyMessage = "Discover & add new channels to your feed"
             } else {
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {
@@ -204,10 +204,14 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 self.collectionView.performBatchUpdates({
                     self.collectionView?.insertItems(at: indexPaths)
                     self.allItems.append(contentsOf: items)
+                    
+                    if items.count < 4 {
+                        self.getMoreItems(completion: { _ in })
+                    } else {
+                        self.updateIncrement = -7
+                        completion(true)
+                    }
                 })
-                
-                self.updateIncrement = -7
-                completion(true)
             }
         })
         
@@ -305,7 +309,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
-            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective
+            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective || currentItem.type == .session
             //Get the image if content type is a post
             if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
                 Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
@@ -470,7 +474,8 @@ extension HomeVC {
     
     /** Delegate Functions **/
     func userSelected(item : Any) {
-        
+        tabBarHidden = false
+
         if let item = item as? Item {
             switch item.type {
             case .answer:
@@ -481,30 +486,43 @@ extension HomeVC {
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
-            case .question, .thread:
-                
-                showBrowse(selectedItem: item)
-                
             case .posts, .feedback:
                 
                 showTag(selectedItem: item)
                 
-            case .interview:
+            case .interview, .question, .thread:
                 
-                toggleLoading(show: true, message: "loading interview...", showIcon: true)
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
                 
                 Database.getItemCollection(item.itemID, completion: {(success, items) in
                     self.toggleLoading(show: false, message: nil)
-                    self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                    success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
+                })
+            
+            case .session:
+                
+                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                    if success, items.count > 1 {
+                        //since ordering is cron based - move the first 'question' item to front
+                        if let lastItem = items.last {
+                            let sessionSlice = items.dropLast()
+                            var sessionItems = Array(sessionSlice)
+                            sessionItems.insert(lastItem, at: 0)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                        }
+                    } else if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                    } else {
+                        //show no items menu
+                        self.showNoItemsMenu(selectedItem : item)
+                    }
                 })
                 
             default: break
             }
         } else if let user = item as? User {
             
-            let userProfileVC = UserProfileVC()
-            navigationController?.pushViewController(userProfileVC, animated: true)
-            userProfileVC.selectedUser = user
+            userSelectedUser(toUser: user)
             
         } else if let channel = item as? Channel {
             let channelVC = ChannelVC()
@@ -512,6 +530,51 @@ extension HomeVC {
             
             navigationController?.pushViewController(channelVC, animated: true)
         }
+    }
+    
+    //checks to make sure we are not in mini search case
+    internal func userSelectedUser(toUser: User) {
+        
+        if let selectedShareItem = selectedShareItem {
+            
+            let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
+            self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: { _ , _ in
+                self.selectedShareItem = nil
+            })
+            
+        } else {
+            
+            //if not mini search then just go to the user profile
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = toUser
+            
+        }
+    }
+    
+    //no items yet - so prompt user if accepts input and requires verifiecation
+    internal func showNoItemsMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Sorry! No\(selectedItem.childType(plural: true)) yet", message: nil, preferredStyle: .actionSheet)
+        
+        selectedItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
+                
+                menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.addNewItem(selectedItem: selectedItem)
+                }))
+            } else {
+                menu.message = "We are still waiting for \(selectedItem.childType())!"
+            }
+            
+            menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+                menu.dismiss(animated: true, completion: nil)
+            }))
+            
+            DispatchQueue.main.async {
+                self.present(menu, animated: true, completion: nil)
+            }
+        })
     }
     
     /** Browse Content Delegate **/
@@ -543,25 +606,28 @@ extension HomeVC {
     
     /** End Browse Content Delegate **/
     
-    /** Delegate Function **/
+    /** ParentTextItem - Delegate Function **/
     internal func dismiss(_ view : UIView) {
+        tabBarHidden = false
         view.removeFromSuperview()
     }
     
     //close modal - e.g. mini search
     internal func userClosedModal(_ viewController: UIViewController) {
+        tabBarHidden = false
         dismiss(animated: true, completion: { _ in })
     }
     
     //after email - user submitted the text
     internal func buttonClicked(_ text: String, sender: UIView) {
+        tabBarHidden = false
         GlobalFunctions.validateEmail(text, completion: {(success, error) in
             if !success {
                 self.showAddEmail(bodyText: "invalid email - try again")
             } else {
                 if let selectedShareItem = selectedShareItem {
                     let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
-                    createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
+                    createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
                         self.selectedShareItem = nil
                     })
                     
@@ -620,17 +686,21 @@ extension HomeVC {
         let currentItem = allItems[itemRow]
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        if currentItem.acceptsInput() {
-            menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                currentItem.checkVerifiedInput(completion: {success, error in
-                    success ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
-                })
-            }))
-            
-            menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
-                self.showInviteMenu(currentItem: currentItem)
-            }))
-        }
+        currentItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.addNewItem(selectedItem: currentItem)
+                }))
+                
+                menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
+                    self.showInviteMenu(currentItem: currentItem)
+                }))
+            } else if User.isLoggedIn() {
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.showNonExpertMenu(selectedItem: currentItem)
+                }))
+            }
+        })
         
         if currentItem.childItemType() != .unknown {
             menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
@@ -672,6 +742,8 @@ extension HomeVC {
     
     /** Menu Options **/
     internal func showInviteMenu(currentItem : Item) {
+        tabBarHidden = true
+        
         let menu = UIAlertController(title: "invite Contributors",
                                      message: "know someone who can add to the conversation? invite them below!", preferredStyle: .actionSheet)
         
@@ -694,16 +766,18 @@ extension HomeVC {
         }))
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
+            self.toggleLoading(show: true, message: "loading invite options", showIcon: true)
             let selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
-            self.createShareRequest(selectedShareItem: currentItem, selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: { selectedShareItem , error in
+            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: { selectedShareItem , error in
                 if error == nil, let selectedShareItem = selectedShareItem {
-                    let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+                    let shareText = "Can you add \(currentItem.childActionType())\(currentItem.childType()) on '\(currentItem.itemTitle)'"
                     self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
                 }
             })
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            self.tabBarHidden = false
             menu.dismiss(animated: true, completion: nil)
         }))
         
@@ -712,7 +786,7 @@ extension HomeVC {
     
     internal func showAddEmail(bodyText: String) {
         addText = AddText(frame: view.bounds, buttonText: "Send",
-                          bodyText: bodyText, keyboardType: .emailAddress)
+                          bodyText: bodyText, keyboardType: .emailAddress, tabBarHeightAdjustment: tabBarController?.tabBar.frame.height ?? 0)
         
         addText.delegate = self
         view.addSubview(addText)

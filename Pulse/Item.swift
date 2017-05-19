@@ -18,8 +18,9 @@ enum ItemTypes: String {
     //Posts > has Post
     case post
     case posts
-    //Feedback > ??
+    //Feedback > session
     case feedback
+    case session
     //Perspectives > has Threads > Thread has Perspective
     case perspectives
     case thread
@@ -157,6 +158,8 @@ class Item: NSObject {
             self.type = .interview
         case "thread":
             self.type = .thread
+        case "session":
+            self.type = .session
         case "perspectiveInvite":
             self.type = .thread
         case "questionInvite":
@@ -171,6 +174,8 @@ class Item: NSObject {
     func childActionType() -> String {
         switch type {
         case .feedback: return "get"
+        case .session: return "give"
+            
         case .posts: return "new"
             
         case .thread: return "add a"
@@ -187,7 +192,8 @@ class Item: NSObject {
         switch type {
         case .feedback: return plural ? " feedback" : " feedback"
         case .posts: return plural ? " posts" : " post"
-            
+        case .session: return plural ? " session" : " feedback"
+
         case .thread: return plural ? " perspectives" : " perspective"
         case .question: return plural ? " answers" : " answer"
         case .questions: return plural ? " questions" : " question"
@@ -206,41 +212,70 @@ class Item: NSObject {
         case .question: return .answer
         case .interviews: return .interview
         case .interview: return .answer
+        case .feedback: return .session
+        case .session: return .session
+
         default: return .unknown
         }
     }
     
-    func acceptsInput() -> Bool {
+    func inviteType() -> MessageType? {
         switch type {
-        case .posts: return true
-        case .post: return false
-        
-        case .perspectives: return false
-        case .thread: return true
-        case .perspective: return false
-
-        case .questions: return true
-        case .question: return true
-        case .answer: return false
-
-        case .feedback: return true
-
-        case .interviews: return true
-        case .interview: return false
-        
-        default: return false
+        case .thread: return .perspectiveInvite
+        case .question: return .questionInvite
+        case .interviews: return .interviewInvite
+        default: return nil
+        }
+    }
+    
+    fileprivate func acceptsInput() -> UserTypes? {
+        switch type {
+        case .posts: return .contributor //only contributors can add a post
+        case .post: return nil
+            
+        case .perspectives: return .contributor //only contributors can start a thread
+        case .thread: return .contributor //only contributors can add a perspetive
+        case .perspective: return nil
+            
+        case .questions: return .subscriber //any subscriber can ask a question
+        case .question: return .contributor //answers can only be provided by a contributor
+        case .answer: return nil
+            
+        case .feedback: return .subscriber //any subscriber can request feedback
+        case .session: return .contributor //feedback can only be provided by a contributor
+            
+        case .interviews: return .contributor
+        case .interview: return nil
+            
+        default: return nil
         }
     }
     
     func checkVerifiedInput(completion: @escaping (Bool, String?) -> Void) {
         if !User.isLoggedIn() {
             completion(false, "Please login to continue")
-        } else if let user = User.currentUser, user.uID != nil {
-            if user.isVerified(for: Channel(cID: self.cID)) {
+        } else if let inputOpenToUser = acceptsInput() {
+            //user is logged in and
+            let user = User.currentUser!
+            switch inputOpenToUser {
+            case .contributor:
+                //check if user is verified
+                user.isVerified(for: Channel(cID: self.cID)) ? completion(true, nil) : completion(false, "Sorry you have to be a verified contributor. You can apply on the prior screen")
+
+            case .subscriber:
+                //check if user is subscribed
+                user.isSubscribedToChannel(cID: self.cID) ? completion(true, nil) : completion(false, "Please subscribe to channel first")
+                
+            case .user:
                 completion(true, nil)
-            } else {
-                completion(false, "Sorry you have to be a verified before you can contribute. You can apply on the channel screen")
+                
+            case .editor:
+                //check if user is an editor
+                completion(false, "You have to be an editor complete this action")
             }
+        } else {
+            //user is logged in but item doesn't accept input
+            completion(false, "Sorry this item doesn't accept input")
         }
     }
     
@@ -254,7 +289,7 @@ class Item: NSObject {
                 completion(link)
             })
         } else {
-            Database.createShareLink(linkString: "invite/"+itemID, completion: { link in
+            Database.createShareLink(linkString: "invites/"+itemID, completion: { link in
                 completion(link)
             })
         }

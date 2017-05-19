@@ -22,7 +22,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     var openingScreen : OpeningScreenOptions = .item
     enum OpeningScreenOptions { case camera, item }
-    var interviewDelegate : InterviewDelegate!
+    var completedRecordingDelegate : CompletedRecordingDelegate!
 
     fileprivate var recordedItems = [Item]()
     
@@ -99,7 +99,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         super.didReceiveMemoryWarning()
     }
     
-    /* QA Specific Methods */
+    /* Item Specific Methods */
     func showItemDetail(shouldShowIntro: Bool) {
         isNavigationBarHidden = true
         contentDetailVC.delegate = self
@@ -206,7 +206,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
                             contentURL: assetURL,
                             content: image,
                             contentType: assetType,
-                            tag: selectedItem.tag,
+                            tag: selectedItem.tag ?? selectedItem, //if its a post / feedback thread, the series item is the selected item, don't need one level up look back
                             cID: selectedChannel.cID ?? selectedItem.cID)
             recordedItems.append(item)
         }
@@ -232,7 +232,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     fileprivate func getRecordedItemTitle() -> String {
         switch selectedItem.type {
-        case .question, .thread, .interview:
+        case .question, .thread, .interview, .session:
             return selectedItem.itemTitle
         default:
             return ""
@@ -269,50 +269,27 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     func doneUploadingItem(_ currentVC: UIViewController, success: Bool) {
         recordedItems.removeAll() // empty current answers array
         
-        if hasMoreItems {
+        if hasMoreItems { //currently always false - if we add ability to add new answer from actual video item can use this var
             returnToAnswers()
             popToViewController(contentDetailVC, animated: true)
         } else {
             self.dismiss(animated: true, completion: nil)
             
-            if interviewDelegate != nil {
-                interviewDelegate.doneInterviewQuestion(success: success)
+            if completedRecordingDelegate != nil {
+                completedRecordingDelegate.doneRecording(success: success)
             }
-        }
-    }
-    
-    func askUser() {
-        if User.isLoggedIn(), let selectedTag = selectedItem.tag {
-            User.currentUser!.canAnswer(item: selectedItem, parentItem: selectedTag, completion: { success in
-                if success {
-                    self.contentDetailVC.view.isHidden = true
-                    self.hasMoreItems = true
-                    self.showCamera()
-                } else {
-                    self.returnToAnswers()
-                }
-            })
-        } else {
-            contentDetailVC.view.isHidden = true
-            hasMoreItems = true
-            showCamera()
         }
     }
     
     func noItemsToShow(_ currentVC : UIViewController) {
-        if User.isLoggedIn(), selectedItem != nil, let selectedTag = selectedItem.tag {
-            User.currentUser!.canAnswer(item: selectedItem, parentItem: selectedTag, completion: { success in
+        selectedItem.checkVerifiedInput(completion: { success, error in
             if success {
                 self.showCamera()
             } else {
                 self.hasMoreItems = false
-                self.dismiss(animated: false, completion: nil)
+                self.dismiss(animated: true, completion: nil)
             }
-            })
-        } else {
-            hasMoreItems = false
-            dismiss(animated: false, completion: nil)
-        }
+        })
     }
     
     func showCamera() {
@@ -348,10 +325,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         introVC = ContentIntroVC()
         if selectedItem != nil {
             switch selectedItem.type {
-            case .question, .answer, .perspective, .post, .thread, .interview:
+            case .question, .answer, .perspective, .post, .thread, .interview, .session:
                 //selected item is a tag
                 introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].tag?.itemTitle
-            case .feedback, .posts, .perspectives: //case of tag - this is currently never the case?
+            case .feedback, .posts, .perspectives: //case of tag - this is currently never the case
                 //selected item is the parent tag
                 introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].itemTitle
             default: break
@@ -371,8 +348,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     func removeIntro() {
         if isShowingIntro {
-            popViewController(animated: true)
-            isShowingIntro = false
+            DispatchQueue.main.async {
+                self.popViewController(animated: true)
+                self.isShowingIntro = false
+            }
         }
     }
     
@@ -395,6 +374,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         
         if isCover {
             isAddingCover = true
+            cameraVC.screenTitle = "choose a cover image for your post"
         } else {
             isAddingMoreItems = true
         }

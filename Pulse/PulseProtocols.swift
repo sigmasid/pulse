@@ -56,8 +56,8 @@ protocol CameraDelegate : class {
     func showAlbumPicker()
 }
 
-protocol InterviewDelegate : class {
-    func doneInterviewQuestion(success: Bool)
+protocol CompletedRecordingDelegate : class {
+    func doneRecording(success: Bool)
 }
 
 protocol UserProfileDelegate: class {

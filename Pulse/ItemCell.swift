@@ -38,7 +38,7 @@ class ItemCell: UICollectionViewCell {
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
                 titleLabel.numberOfLines = 2
 
-            case .post, .thread, .perspective:
+            case .post, .thread, .perspective, .session:
                 itemHeightAnchor.constant = defaultPostHeight
                 titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
                 titleLabel.numberOfLines = 2
@@ -114,6 +114,10 @@ class ItemCell: UICollectionViewCell {
                     
                 case .interview:
                     let restAttributedString = NSAttributedString(string: " interview on", attributes: subRestAttributes)
+                    attributedString.append(restAttributedString)
+                    
+                case .session:
+                    let restAttributedString = NSAttributedString(string: " requested feedback", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
                 default:

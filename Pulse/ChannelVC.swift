@@ -49,6 +49,11 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     
     fileprivate var isLayoutSetup = false
     
+    /** Sync Vars **/
+    fileprivate var startUpdateAt : Date = Date()
+    fileprivate var endUpdateAt : Date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+    fileprivate var updateIncrement = -7 //get one week's worth of data on first load
+
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
     
@@ -65,7 +70,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if !isLoaded {
+        if !isLoaded, allItems.isEmpty {
             toggleLoading(show: true, message: "Loading Channel...", showIcon: true)
             statusBarStyle = .lightContent
             tabBarHidden = true
@@ -88,11 +93,19 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     }
     
     internal func getChannelItems() {
-        Database.getChannelItems(channel: selectedChannel, completion: { updatedChannel in
+        Database.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { updatedChannel in
+            self.startUpdateAt = self.endUpdateAt
+
             if let updatedChannel = updatedChannel {
                 updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
                 self.toggleLoading(show: false, message: nil)
+                self.updateIncrement = -7
+                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+            } else {
+                self.updateIncrement = self.updateIncrement * 2
+                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+                self.getMoreChannelItems()
             }
         })
     }
@@ -100,24 +113,32 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     //get more items if scrolled to end
     func getMoreChannelItems() {
         
-        if let lastItemID = allItems.last?.itemID, !hasReachedEnd {
-            
-            Database.getChannelItems(channelID: selectedChannel.cID, lastItem: lastItemID, completion: { success, items in
-                if items.count > 0 {
-                    
-                    var indexPaths = [IndexPath]()
-                    for (index, _) in items.enumerated() {
-                        let newIndexPath = IndexPath(row: self.allItems.count + index - 1, section: 0)
-                        indexPaths.append(newIndexPath)
-                    }
+        Database.getChannelItems(channelID: selectedChannel.cID, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { success, items in
+            if items.count < 4, self.updateIncrement > -365 { //max lookback is one year
+                self.updateIncrement = self.updateIncrement * 2
+                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+                self.getMoreChannelItems()
+            } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
+                self.hasReachedEnd = true
+            } else {
+                var indexPaths = [IndexPath]()
+                for (index, _) in items.enumerated() {
+                    let newIndexPath = IndexPath(row: self.allItems.count + index, section: 1)
+                    indexPaths.append(newIndexPath)
+                }
+                
+                self.collectionView.performBatchUpdates({
+                    self.collectionView?.insertItems(at: indexPaths)
                     self.selectedChannel.items.append(contentsOf: items)
                     self.allItems.append(contentsOf: items)
-                    self.collectionView?.insertItems(at: indexPaths)
-                } else {
-                    self.hasReachedEnd = true
-                }
-            })
-        }
+                    
+                    self.updateIncrement = -7
+                })
+                
+                self.startUpdateAt = self.endUpdateAt
+                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+            }
+        })
     }
     
     //Once the channel is set and pulled from database -> reload the datasource for collection view
@@ -213,22 +234,26 @@ extension ChannelVC {
     //main menu for each individual item
     internal func clickedMenuButton(itemRow: Int) {
         let currentItem = allItems[itemRow]
-        
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        if currentItem.acceptsInput() {
-            menu.addAction(UIAlertAction(title: "add\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                currentItem.checkVerifiedInput(completion: {success, error in
-                    success ? self.addNewItem(selectedItem: currentItem): self.showNonExpertMenu(selectedItem: currentItem)
-                })
-            }))
-            
-            menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
-                self.showInviteMenu(currentItem: currentItem,
-                                    inviteTitle: "Invite Contributors",
-                                    inviteMessage: "know someone who can add to the conversation? invite them below!")
-            }))
-        }
+        currentItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.addNewItem(selectedItem: currentItem)
+                }))
+                
+                menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
+                    self.showInviteMenu(currentItem: currentItem,
+                                        inviteTitle: "Invite Contributors",
+                                        inviteMessage: "know someone who can add to the conversation? invite them below!",
+                                        inviteType: .contributorInvite)
+                }))
+            } else if User.isLoggedIn() {
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.showNonExpertMenu(selectedItem: currentItem)
+                }))
+            }
+        })
         
         if currentItem.childItemType() != .unknown {
             menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
@@ -245,6 +270,31 @@ extension ChannelVC {
         }))
         
         present(menu, animated: true, completion: nil)
+    }
+    
+    //no items yet - so prompt user if accepts input and requires verifiecation
+    internal func showNoItemsMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Sorry! No\(selectedItem.childType(plural: true)) yet", message: nil, preferredStyle: .actionSheet)
+        
+        selectedItem.checkVerifiedInput(completion: { success, error in
+            if success {
+                menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
+                
+                menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                    self.addNewItem(selectedItem: selectedItem)
+                }))
+            } else {
+                menu.message = "We are still waiting for \(selectedItem.childType())!"
+            }
+            
+            menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+                menu.dismiss(animated: true, completion: nil)
+            }))
+            
+            DispatchQueue.main.async {
+                self.present(menu, animated: true, completion: nil)
+            }
+        })
     }
     
     internal func clickedHeaderMenu() {
@@ -269,13 +319,15 @@ extension ChannelVC {
             } else {
                 if let selectedShareItem = selectedShareItem as? Item {
                     
-                    createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
+                    createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
                         self.selectedShareItem = nil
                     })
                     
                 } else if let selectedShareItem = selectedShareItem as? Channel {
                     
-                    createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: { _ , _ in })
+                    createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: { _ , _ in
+                        self.selectedShareItem = nil
+                    })
                     
                 }
             }
@@ -284,7 +336,7 @@ extension ChannelVC {
     /** End Delegate Functions **/
     
     /** Menu Options **/
-    internal func showInviteMenu(currentItem : Any?, inviteTitle: String, inviteMessage: String) {
+    internal func showInviteMenu(currentItem : Any?, inviteTitle: String, inviteMessage: String, inviteType: MessageType) {
         let menu = UIAlertController(title: inviteTitle, message: inviteMessage, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
@@ -306,37 +358,67 @@ extension ChannelVC {
         }))
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
-            if let currentItem = currentItem as? Item {
-                self.createShareRequest(selectedShareItem: currentItem, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
-                                        completion: { selectedShareItem , error in
-                    //using the share item returned from the request
-                    if error == nil, let selectedShareItem = selectedShareItem {
-                        let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
-                        self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
-                    }
-                })
-                
-            } else if let shareChannel = currentItem as? Channel {
-                self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
-
-                self.createContributorInvite(selectedChannel: shareChannel, toUser: nil, toEmail: nil, showAlert: true, completion: { inviteID , error in
+            switch inviteType {
+            case .perspectiveInvite, .questionInvite:
+                if let currentItem = currentItem as? Item {
+                    self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
+                                            completion: { selectedShareItem , error in
+                                                //using the share item returned from the request
+                                                if error == nil, let selectedShareItem = selectedShareItem {
+                                                    let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
+                                                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
+                                                }
+                    })
                     
-                    if error == nil, let inviteID = inviteID {
-                        let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
-                        let shareText = "You are invited to be a contributor on \(channelTitle)"
+                }
+            case .contributorInvite:
+                if let shareChannel = currentItem as? Channel {
+                    self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
+                    
+                    self.createContributorInvite(selectedChannel: shareChannel, toUser: nil, toEmail: nil, showAlert: true, completion: { inviteID , error in
                         
-                        Database.createShareLink(linkString: "invite/"+inviteID, completion: { link in
-                            guard let link = link else {
-                                self.toggleLoading(show: false, message: nil)
-                                return
-                            }
+                        if error == nil, let inviteID = inviteID {
+                            let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
+                            let shareText = "You are invited to be a contributor on \(channelTitle)"
                             
-                            self.toggleLoading(show: false, message: nil)
-                            self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
-                        })
-                    }
+                            Database.createShareLink(linkString: "invites/"+inviteID, completion: { link in
+                                guard let link = link else {
+                                    self.toggleLoading(show: false, message: nil)
+                                    return
+                                }
+                                
+                                self.toggleLoading(show: false, message: nil)
+                                self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
+                            })
+                        }
+                        
+                    })
+                }
+            case .channelInvite:
+                if let shareChannel = currentItem as? Channel {
+                    self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
                     
-                })
+                    let shareItem = Item(itemID: "")
+                    shareItem.itemTitle = "Check out \(shareChannel.cTitle ?? " this channel")" //send blank item since we are inviting users to come to channel
+                    
+                    self.createShareRequest(selectedShareItem: shareItem, shareType: .channelInvite, selectedChannel: shareChannel, toUser: nil, completion: { item, error in
+                        if error == nil, let inviteID = item?.itemID {
+                            let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
+                            let shareText = "\(User.currentUser?.name ?? "Your friend") invited you to \(channelTitle)"
+                            
+                            Database.createShareLink(linkString: "invites/"+inviteID, completion: { link in
+                                guard let link = link else {
+                                    self.toggleLoading(show: false, message: nil)
+                                    return
+                                }
+                                
+                                self.toggleLoading(show: false, message: nil)
+                                self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
+                            })
+                        }
+                    })
+                }
+            default: break
             }
         }))
         
@@ -386,7 +468,7 @@ extension ChannelVC {
         
         menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
             self.showInviteMenu(currentItem: self.selectedChannel, inviteTitle: "invite Contributors",
-                                inviteMessage: "contributors can add posts, answer questions and share their perspecives on discussions. To ensure quality, please only invite qualified contributors. All new contributor requests are reviewed.")
+                                inviteMessage: "contributors can add posts, answer questions and share their perspecives. To ensure quality, please only invite qualified contributors. All new contributor requests are reviewed.", inviteType: .contributorInvite)
         }))
         
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
@@ -450,28 +532,43 @@ extension ChannelVC {
     internal func userSelected(item : Any) {
         if let item = item as? Item {
             switch item.type {
-            case .answer:
+                
+            case .post, .perspective, .answer:
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-                
-            case .post, .perspective:
-                
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
-                
-            case .question, .thread:
-                
-                showBrowse(selectedItem: item)
                 
             case .posts, .feedback, .perspectives, .interviews, .questions:
                 
                 showTag(selectedItem: item)
             
-            case .interview:
+            case .session:
+                toggleLoading(show: true, message: "loading session...", showIcon: true)
                 
-                toggleLoading(show: true, message: "loading interview...", showIcon: true)
                 Database.getItemCollection(item.itemID, completion: {(success, items) in
                     self.toggleLoading(show: false, message: nil)
-                    self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+
+                    if success, items.count > 1 {
+                        //since ordering is cron based - move the first 'question' item to front
+                        if let lastItem = items.last {
+                            let sessionSlice = items.dropLast()
+                            var sessionItems = Array(sessionSlice)
+                            sessionItems.insert(lastItem, at: 0)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                        }
+                    } else if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                    } else {
+                        //show no items menu
+                        GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Loading session", erMessage: "Sorry! There was an error getting the session!")
+                    }
+                })
+            
+            case .interview, .question, .thread:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                    self.toggleLoading(show: false, message: nil)
+                    success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
                 })
                 
             default: break
@@ -490,12 +587,12 @@ extension ChannelVC {
         }
     }
     
-    //delegate for mini user search - send the invite
+    //checks to make sure we are not in mini search case
     internal func userSelectedUser(toUser: User) {
         
         if let selectedShareItem = selectedShareItem as? Item {
             //
-            self.createShareRequest(selectedShareItem: selectedShareItem, selectedChannel: selectedChannel, toUser: toUser, completion: { _ , _ in
+            self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: { _ , _ in
                 self.selectedShareItem = nil
             })
         } else if let selectedShareItem = selectedShareItem as? Channel {
@@ -505,6 +602,7 @@ extension ChannelVC {
             
         } else {
             
+            //if not mini search then just go to the user profile
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
             userProfileVC.selectedUser = toUser
@@ -602,7 +700,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             return cell
         case 1:
             //if near the end then get more items
-            if indexPath.row == allItems.count - 1 {
+            if indexPath.row == allItems.count - 3, !hasReachedEnd {
                 getMoreChannelItems()
             }
             
@@ -668,7 +766,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 }
             }
             
-            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective
+            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective || currentItem.type == .session
             
             //Get the image if content type is a post
             if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {

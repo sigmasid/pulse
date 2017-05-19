@@ -1,5 +1,5 @@
 //
-//  UserRecordedAnswerVC.swift
+//  RecordedVideoVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
@@ -25,9 +25,9 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                 setupOverlayButtons()
                 
                 if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo {
-                    setupVideoForAnswer()
+                    setupVideo()
                 } else if currentItem.contentType == .recordedImage || currentItem.contentType == .albumImage {
-                    setupImageForAnswer()
+                    setupImageView()
                 }
             }
         }
@@ -97,7 +97,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         aPlayer.pause()
     }
     
-    fileprivate func setupImageForAnswer() {
+    fileprivate func setupImageView() {
         if !isImageViewLoaded {
             imageView = UIImageView(frame: view.bounds)
             imageView.contentMode = .scaleAspectFill
@@ -112,7 +112,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         imageView.image = currentItem.content as? UIImage
     }
     
-    fileprivate func setupVideoForAnswer() {
+    fileprivate func setupVideo() {
         //don't create new AVPlayer if it already exists
         guard let contentURL = currentItem.contentURL else { return }
         
@@ -207,7 +207,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///close window and go back to camera
     func _close() {
-        // need to check if it was first answer -> if yes, go to camera else stay in UserRecordedAnswer and go back to last question, remove the current answer value from recordedItems
+        // need to check if it was first item -> if yes, go to camera else stay in RecordedVideoVC and go back to last question, remove the current item value from recordedItems
         controlsOverlay.removePager()
         recordedItems.remove(at: currentItemIndex - 1)
         currentItemIndex = currentItemIndex - 1
@@ -234,7 +234,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     fileprivate func confirmPost() {
-        let confirmLogout = UIAlertController(title: "Post", message: "Would you like to add a cover image? Cover images help content stand out.",
+        let confirmLogout = UIAlertController(title: "Post",
+                                              message: "Would you like to add a cover image? Cover images help content stand out.",
                                               preferredStyle: .actionSheet)
         
         confirmLogout.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: { (action: UIAlertAction!) in
@@ -256,13 +257,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         present(confirmLogout, animated: true, completion: nil)
     }
     
-    ///upload video to firebase and update current answer with URL upon success
+    ///upload video to firebase and update current item with URL upon success
     fileprivate func uploadItems( allItems : [Item]) {
         
         var allItems = allItems //needed because parameters are lets so can't mutate
         
         guard let item = allItems.last else {
-            self.doneCreatingAnswer()
+            self.doneCreatingItem()
             return
         }
         guard let contentType = item.contentType else { return }
@@ -288,13 +289,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             
             uploadTask = path.put(data, metadata: _metadata) { metadata, error in
                 if (error != nil) {
-                    GlobalFunctions.showAlertBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                    GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                 } else {
                     item.contentURL = metadata?.downloadURL()
                     
                     Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                         if !success {
-                            GlobalFunctions.showAlertBlock("Error Posting Answer", erMessage: error!.localizedDescription)
+                            GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                         } else {
                             self.itemCollectionPost[item.itemID] = item.type.rawValue
                             allItems.removeLast()
@@ -329,7 +330,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                 
                 uploadTask = path.put(assetData, metadata: metadata) { metadata, error in
                     if (error != nil) {
-                        GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Posting Answer", erMessage: error!.localizedDescription)
+                        GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Posting Item", erMessage: error!.localizedDescription)
                     } else {
                         // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
                         item.contentURL = metadata?.downloadURL()
@@ -358,8 +359,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
-    ///Called after user has uploaded full answer
-    fileprivate func doneCreatingAnswer() {
+    ///Called after user has uploaded full item
+    fileprivate func doneCreatingItem() {
         Database.addItemCollectionToDatabase(recordedItems.first!,
                                              parentItem: parentItem,
                                              channelID: selectedChannelID,
