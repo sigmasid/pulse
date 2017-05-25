@@ -81,10 +81,12 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     fileprivate var itemCollectionPost = [ String : String ]()
     
-    fileprivate var mode : AddOrPostMode?
+    fileprivate var mode : AddOrPostMode = .base
+    
     enum AddOrPostMode {
-        case post
-        case add
+        case base //case where user is just on the screen
+        case post //user clicked post
+        case add //user clicked add more
     }
     fileprivate var placeholderText = "add a title"
     
@@ -94,13 +96,16 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        aPlayer.pause()
+        if aPlayer != nil {
+            aPlayer.pause()
+        }
     }
     
     fileprivate func setupImageView() {
         if !isImageViewLoaded {
             imageView = UIImageView(frame: view.bounds)
             imageView.contentMode = .scaleAspectFill
+            imageView.backgroundColor = .black
             view.addSubview(imageView)
             
             isImageViewLoaded = true
@@ -187,6 +192,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         controlsOverlay.getTitleField().delegate = self
     }
     
+    //takes the title from the text box and adds it to the last time
     fileprivate func updateItemTitle(text : String) {
         recordedItems[self.currentItemIndex - 1].itemTitle = text
     }
@@ -217,7 +223,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     func _post() {
         if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
             //add a title if there is none and is first post
-            mode = .add
+            mode = .post
             controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
         } else {
             controlsOverlay.getButton(.post).isEnabled = false
@@ -282,7 +288,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         else if contentType == .recordedImage || contentType == .albumImage, let _image = item.content as? UIImage {
             let path = storageRef.child("channels").child(selectedChannelID).child(item.itemID).child("content")
             
-            let data = _image.mediumQualityJPEGNSData
+            let data = Database.resizeImageHeight(_image, newHeight: min(UIScreen.main.bounds.height, _image.size.height)) ?? _image.mediumQualityJPEGNSData
                 
             let _metadata = FIRStorageMetadata()
             _metadata.contentType = "image/jpeg"
@@ -437,8 +443,10 @@ extension RecordedVideoVC: UITextViewDelegate {
         
         if mode == .post {
             _post()
+            mode = .base
         } else if mode == .add {
             _addMore()
+            mode = .base
         }
     }
     
@@ -462,8 +470,10 @@ extension RecordedVideoVC: UITextViewDelegate {
         
         if mode == .post {
             _post()
+            mode = .base
         } else if mode == .add {
             _addMore()
+            mode = .base
         }
         
         return true

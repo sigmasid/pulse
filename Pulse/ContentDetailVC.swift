@@ -149,7 +149,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate func loadWatchedPreviewItem() {
         Database.updateItemViewCount(itemID: allItems[itemIndex].itemID)
         currentItem = allItems[itemIndex]
-        updateOverlayData(allItems[itemIndex])
         
         userClickedExpandItem()
     }
@@ -177,7 +176,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                                 self._canAdvanceReady = false
                             }
                         })
-                        self.updateOverlayData(item)
                     }
                     UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 })
@@ -198,7 +196,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     }
                 })
                 
-                updateOverlayData(allItems[index])
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
         } else {
@@ -299,6 +296,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             }
             
             currentItem = item //needed so we vote for the correct Item and update views for correct Item
+            updateOverlayData(currentItem!)
             let itemURL = currentItem?.contentURL
             
             if itemType == .recordedVideo || itemType == .albumVideo {
@@ -353,7 +351,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
-    fileprivate func updateOverlayData(_ item : Item) {
+    fileprivate func updateOverlayData(_ item : Item, updateUser: Bool = true) {
         contentOverlay.setTitle(item.itemTitle)
         contentOverlay.clearButtons()
         
@@ -374,7 +372,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     })
                 }
             }
-        } else {
+        } else if updateUser {
             contentOverlay.setUserImage(UIImage(named: "default-profile"))
             
             Database.getUser(item.itemUserID ?? "", completion: { (user, error) in
@@ -746,16 +744,18 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         if (!_tapReady || (!_nextItemReady && _canAdvanceDetailReady)) {
             //ignore tap
         }
-        else if _canAdvanceDetailReady {
+        else if _canAdvanceDetailReady, let nextItem = nextItem {
             
+            updateOverlayData(nextItem, updateUser: false)
+            nextItem.user = currentItem?.user
             currentItem = nextItem
             itemCollectionIndex += 1
 
-            if nextItem?.contentType == .recordedImage || nextItem?.contentType == .albumImage {
-                if let _image = nextItem!.content as? UIImage {
+            if nextItem.contentType == .recordedImage || nextItem.contentType == .albumImage {
+                if let _image = nextItem.content as? UIImage {
                     showImageView(_image)
                 }
-            } else if nextItem?.contentType == .recordedVideo || nextItem?.contentType == .albumVideo  {
+            } else if nextItem.contentType == .recordedVideo || nextItem.contentType == .albumVideo  {
                 removeImageView()
                 _tapReady = false
                 contentOverlay.resetTimer()

@@ -99,7 +99,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             if let updatedChannel = updatedChannel {
                 updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
-                self.toggleLoading(show: false, message: nil)
                 self.updateIncrement = -7
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
             } else {
@@ -151,6 +150,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         collectionView.dataSource = self
         collectionView.reloadData()
         collectionView.layoutIfNeeded()
+        
+        toggleLoading(show: false, message: nil)
     }
     
     internal func subscribe() {

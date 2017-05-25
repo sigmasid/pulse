@@ -128,10 +128,10 @@ class RecordingOverlay: UIView {
     
     func showAddTitleField(makeFirstResponder: Bool, placeholderText: String) {
         if !isTitleSetup {
-            addTitleField.text = placeholderText
             setupTitleField(placeholderText: placeholderText)
         }
-                
+        addTitleField.text = placeholderText
+    
         if makeFirstResponder {
             addTitleField.becomeFirstResponder()
         }

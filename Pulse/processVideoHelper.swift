@@ -113,7 +113,6 @@ func thumbnailForVideoAtURL(_ asset: AVAsset, orientation: UIImageOrientation) -
     do {
         let imageRef = try assetImageGenerator.copyCGImage(at: time, actualTime: nil)
         let image = UIImage(cgImage: imageRef, scale: 1.0, orientation: orientation)
-//        let image = GlobalFunctions.fixOrientation(UIImage(CGImage: imageRef, scale: 1.0, orientation: .Left))
         return image
     } catch {
         return nil

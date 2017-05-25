@@ -1325,7 +1325,6 @@ class Database {
             
         //if it's new feedback session then add it to channel items & series but with the new key
         else if parentItem.type == .feedback, item.type == .session {
-            print("went into add new feedback session")
             let feedbackItemKey = databaseRef.child("items").childByAutoId().key
 
             //duplicate the thumbnail for the item

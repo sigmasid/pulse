@@ -419,7 +419,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         
         if mediaType.isEqual(to: kUTTypeImage as String) {
             
-            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage            
+            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
             doneRecording(isCapturing: false, url: nil, image: pickedImage, location: nil, assetType: .albumImage)
             // Media is an image
 
@@ -433,7 +433,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-//        showCamera()
         picker.dismiss(animated: true, completion: nil)
     }
     

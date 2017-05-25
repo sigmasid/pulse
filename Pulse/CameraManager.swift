@@ -445,11 +445,11 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         let urlAsset = AVURLAsset(url: videoURL, options: nil)
         
         if cameraDevice == .front {
-            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .leftMirrored)
+            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .upMirrored)
             imageCompletion(imageData, nil)
 
         } else {
-            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .right)
+            let imageData = thumbnailForVideoAtURL(urlAsset, orientation: .up)
             imageCompletion(imageData, nil)
         }
         
