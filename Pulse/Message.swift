@@ -15,6 +15,7 @@ class Message : NSObject {
     var to : User!
     var body : String!
     var time : Date!
+    var mType : MessageType = .message
     
     init(from : User, to: User, body: String) {
         self.from = from
@@ -42,6 +43,12 @@ class Message : NSObject {
         
         if snapshot.hasChild("toID") {
             self.to = User(uID: snapshot.childSnapshot(forPath: "toID").value as? String)
+        }
+        
+        if snapshot.hasChild("type"), let type = snapshot.childSnapshot(forPath: "type").value as? String {
+            self.mType = MessageType.getMessageType(type: type)
+        } else {
+            self.mType = .message
         }
     }
 }

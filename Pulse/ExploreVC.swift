@@ -8,8 +8,8 @@
 
 import UIKit
 
-class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate {
-    
+class ExploreVC: UIViewController {
+    /**
     ///To update view set the currentExploreMode which updates scope, menus and nav
     
     // Set by MasterTabVC
@@ -40,7 +40,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var exploreStack = [Explore]()
     var currentExploreMode : Explore! {
         didSet {
-            updateScopeBar()
             updateModes()
             updateMenu()
         }
@@ -85,15 +84,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(false)
 
-        navigationController?.isNavigationBarHidden = false //neeed in case coming back from messageVC
-        
-        guard let headerNav = headerNav else { return }
-        guard let scrollView = exploreContainer.getScrollView() else { return }
-        
-        headerNav.followScrollView(scrollView, delay: 20.0)
-        headerNav.scrollingNavbarDelegate = self
-        headerNav.getScopeBar()?.delegate = self
-        
         if exploreStack.last != nil {
             currentExploreMode = exploreStack.last
         }
@@ -120,10 +110,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(false)
-        
-        guard let headerNav = headerNav else { return }
-        headerNav.stopFollowingScrollView()
-        exploreContainer.getScrollView()?.contentInset = UIEdgeInsets.zero
     }
     
     override var prefersStatusBarHidden: Bool {
@@ -141,17 +127,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate func loadRoot() {
         currentExploreMode = Explore(currentMode: .root, currentSelection: 0, currentSelectedItem: nil)
         exploreStack.append(currentExploreMode)
-    }
-    
-    fileprivate func updateScopeBar() {
-        if let scopeBar = currentExploreMode.currentScopeBar {
-            headerNav?.shouldShowScope = true
-            headerNav?.updateScopeBar(titles: scopeBar.titles,
-                                      icons: scopeBar.icons,
-                                      selected: currentExploreMode.currentSelection )
-        } else {
-            headerNav?.shouldShowScope = false
-        }
     }
     
     func scrollingNavDidSet(_ controller: PulseNavVC, state: NavBarState) {
@@ -210,11 +185,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             
         case .people:
             updatePeopleScopeSelection(completion: { success in
-                self.updateHeader(navTitle: self.selectedUser.thumbPicImage != nil ? nil : self.selectedUser.name,
+                self.updateHeader(navTitle: nil,
                                   screentitle : self.selectedUser.name,
                                   leftButton: self.backButton,
                                   rightButton: nil,
-                                  navImage: self.selectedUser.thumbPicImage)
+                                  navImage: nil)
             })
         }
     }
@@ -274,9 +249,9 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 Database.getTag(selectedTag.tagID!, completion: { tag, error in
                     self.selectedTag = tag
                     
-                    if error == nil && tag.totalQuestionsForTag() > 0 {
+                    if error == nil && tag.totalItemsForTag() > 0 {
                         self.exploreContainer.setSelectedIndex(index: nil)
-                        self.exploreContainer.allQuestions = tag.questions
+                        //self.exploreContainer.allQuestions = tag.questions
                         self.exploreContainer.feedItemType = .question
                         self.toggleLoading(show: false, message : nil)
                     }  else {
@@ -286,7 +261,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 })
             } else {
                 exploreContainer.setSelectedIndex(index: nil)
-                exploreContainer.allQuestions = selectedTag.questions
+                //exploreContainer.allQuestions = selectedTag.questions
                 exploreContainer.feedItemType = .question
                 toggleLoading(show: false, message : nil)
                 completion(true)
@@ -336,7 +311,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                     self.selectedQuestion = question
                     if let question = question, question.hasAnswers() {
                         self.exploreContainer.selectedQuestion = question
-                        self.exploreContainer.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
+                        //self.exploreContainer.allAnswers = question.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : question.qID) }
                         self.exploreContainer.feedItemType = .answer
                         
                         self.toggleLoading(show: false, message : nil)
@@ -351,7 +326,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
                 })
             } else {
                 if selectedQuestion.hasAnswers() {
-                    exploreContainer.allAnswers = selectedQuestion.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
+                    //exploreContainer.allAnswers = selectedQuestion.qAnswers.map{ (_aID) -> Answer in Answer(aID: _aID, qID : selectedQuestion.qID) }
 
                     exploreContainer.feedItemType = .answer
                     exploreContainer.setSelectedIndex(index: IndexPath(row: 0, section: 0))
@@ -404,7 +379,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         self.toggleLoading(show: true, message : "Loading...")
         if !selectedUser.uCreated {
             Database.getUser(selectedUser.uID!, completion: {(user, error) in
-                if error == nil {
+                if let user = user {
                     self.selectedUser = user
                     
                     if user.thumbPic != nil {
@@ -457,17 +432,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         
         switch type {
         case .tag:
-            selectedTag = item as! Tag
-            currentExploreMode = Explore(currentMode: .tag, currentSelection: 0, currentSelectedItem: selectedTag)
-            exploreStack.append(currentExploreMode)
+            let channelVC = ChannelVC()
+            navigationController?.pushViewController(channelVC, animated: true)
+            //channelVC.selectedTag = item as! Tag
         case .question:
             selectedQuestion = item as! Question
             currentExploreMode = Explore(currentMode: .question, currentSelection: 0, currentSelectedItem: selectedQuestion)
             exploreStack.append(currentExploreMode)
         case .people:
-            selectedUser = item as! User
-            currentExploreMode = Explore(currentMode: .people, currentSelection: 0, currentSelectedItem: selectedUser)
-            exploreStack.append(currentExploreMode)
+            let userProfileVC = UserProfileVC()
+            navigationController?.pushViewController(userProfileVC, animated: true)
+            userProfileVC.selectedUser = item as! User
         default: break
         }
     }
@@ -483,7 +458,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
         navigationItem.rightBarButtonItem = rightButton != nil ? UIBarButtonItem(customView: rightButton!) : nil
         
         if let nav = headerNav {
-            nav.setNav(navTitle: navTitle, screenTitle: screentitle, screenImage: navImage)
+            nav.setNav(title: screentitle)
         } else {
             title = navTitle
         }
@@ -584,7 +559,7 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     }
     
     //UPDATE TAGS / QUESTIONS IN FEED
-    internal func goBack() {
+    override func goBack() {
         guard exploreStack.last != nil else { return }
         hideMenu()
         
@@ -677,15 +652,17 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
             return
         }
         
-        currentUser.canAnswer(qID: selectedQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
+        currentUser.canAnswer(itemID: selectedQuestion.qID, tag: selectedTag, completion: { (success, errorTitle, errorDescription) in
             if success {
-                let addAnswerVC = QAManagerVC()
+                /**
+                let addAnswerVC = ContentManagerVC()
                 addAnswerVC.allQuestions = [selectedQuestion]
                 addAnswerVC.currentQuestion = selectedQuestion
                 addAnswerVC.selectedTag = selectedTag
                 addAnswerVC.openingScreen = .camera
                 
                 present(addAnswerVC, animated: true, completion: nil)
+                 **/
             } else {
                 guard errorTitle != nil, errorDescription != nil else {
                     GlobalFunctions.showErrorBlock("Error Adding Answer", erMessage: "Sorry there was an error!")
@@ -766,8 +743,6 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate func setupExplore() {
         view.backgroundColor = UIColor.white
         
-        headerNav?.getScopeBar()?.delegate = self
-
         exploreContainer = FeedVC()
         GlobalFunctions.addNewVC(exploreContainer, parentVC: self)
 
@@ -902,9 +877,11 @@ class ExploreVC: UIViewController, feedVCDelegate, XMSegmentedControlDelegate, U
     fileprivate var blankButton : PulseButton!
     fileprivate var backButton : PulseButton!
     /* END UI ELEMENTS */
+ 
 }
 
-extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchControllerDelegate {
+extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchControllerDelegate, feedVCDelegate, XMSegmentedControlDelegate, UIScrollViewDelegate, PulseNavControllerDelegate  {
+    /**
     // MARK: - Search controller delegate methods
     func updateSearchResults(for searchController: UISearchController) {
         toggleLoading(show: true, message: "Searching...")
@@ -973,9 +950,11 @@ extension ExploreVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContr
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
         return true
     }
+     **/
 }
 
 extension ExploreVC {
+    /**
     /* STACK TO KEEP WINDOW SYNC'D / REFRESH AS NEEDED */
     struct Explore {
         
@@ -987,10 +966,10 @@ extension ExploreVC {
             var icons : [UIImage]!
         }
         
-        private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        private let rootIcons = [UIImage(named: "tag")!, UIImage(named: "question-circle")!, UIImage(named: "profile")!]
         private let questionIcons = [UIImage(named: "count-label")!, UIImage(named: "related")!]
-        private let tagIcons = [UIImage(named: "question")!, UIImage(named: "profile")!, UIImage(named: "related")!]
-        private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question")!, UIImage(named: "profile")!]
+        private let tagIcons = [UIImage(named: "question-circle")!, UIImage(named: "profile")!, UIImage(named: "related")!]
+        private let searchIcons = [UIImage(named: "tag")!, UIImage(named: "question-circle")!, UIImage(named: "profile")!]
         private let peopleIcons = [UIImage(named: "answers")!, UIImage(named: "tag")!]
 
         /* PROPERTIES */
@@ -1013,7 +992,7 @@ extension ExploreVC {
             case .root: return scopeBar(titles: getOptionTitles(), icons: rootIcons)
             case .tag: return scopeBar(titles: getOptionTitles(), icons: tagIcons)
             case .question: return scopeBar(titles: getOptionTitles(), icons: questionIcons)
-            case .people: return scopeBar(titles: getOptionTitles(), icons: peopleIcons)
+            case .people: return nil
             case .search: return scopeBar(titles: getOptionTitles(), icons: searchIcons)
             }
         }
@@ -1053,10 +1032,12 @@ extension ExploreVC {
             }
         }
     }
+     **/
 }
 
 //HANDLE DYNAMIC LINKS
 extension ExploreVC {
+    /**
     func handleLink() {
         
         selectedUser = nil
@@ -1095,4 +1076,6 @@ extension ExploreVC {
             }
         }
     }
+     **/
+}*/
 }

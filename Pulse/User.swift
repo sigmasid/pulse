@@ -11,7 +11,7 @@ import FirebaseAuth
 import UIKit
 import CoreLocation
 
-class User {
+class User: NSObject {
     var uID : String?
     var name : String?
     var bio : String?
@@ -20,23 +20,24 @@ class User {
     var birthday : String?
     var location : CLLocation?
     var sLocation : String?
-    var answers = [String]()
-    var answeredQuestions = [String]()
+    var items = [Item]()
+    
     var profilePic : String?
     var thumbPic : String?
     var thumbPicImage : UIImage?
-    var expertiseTags = [String : String]()
+    
+    var verifiedChannels = [Channel]()
     
     var shownCameraForQuestion = [ String : String ]()
-    var _totalAnswers : Int?
-    var savedTags = [Tag : String?]()
-    var savedTagIDs = [String]()
-    var savedQuestions = [String : String?]()
+    var subscriptions = [Channel]()
+    var subscriptionIDs = [String]()
+    
+    var savedItems = [Item]()
     var savedVotes = [String : Bool]()
-    var socialSources = [ Social : Bool ]()
     
     dynamic var uCreated = false
-
+    dynamic var uDetailedCreated = false
+    
     enum Gender {
         case male
         case female
@@ -55,7 +56,7 @@ class User {
         return Static.instance
     }
     
-    init() {
+    override init() {
         self.uID = nil
         self.name = nil
     }
@@ -92,6 +93,31 @@ class User {
         uCreated = true
     }
     
+    func updateUser(detailedSnapshot : FIRDataSnapshot) {
+        if detailedSnapshot.hasChild("bio") {
+            self.bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String
+        }
+        
+        if detailedSnapshot.hasChild("items") {
+            for child in detailedSnapshot.childSnapshot(forPath: "items").children {
+                if let child = child as? FIRDataSnapshot, let type = child.value as? String {
+                    let item = Item(itemID: child.key, type: type)
+                    self.items.append(item)
+                }
+            }
+        }
+        
+        if detailedSnapshot.hasChild("verifiedChannels") {
+            for child in detailedSnapshot.childSnapshot(forPath: "verifiedChannels").children {
+                let channel = Channel(cID: (child as AnyObject).key)
+                channel.cTitle = (child as! FIRDataSnapshot).value as? String
+                self.verifiedChannels.append(channel)
+            }
+        }
+        
+        uDetailedCreated = true
+    }
+    
     init(user: FIRUser) {
         self.uID = user.uid
     }
@@ -100,37 +126,22 @@ class User {
         return (FIRAuth.auth()?.currentUser != nil ? true : false)
     }
     
-    /// Returns if user can answer question in given tag
-    func canAnswer(qID: String, tag : Tag, completion: (Bool, String?, String?) -> Void) {
-        // if user has not answered the question and is an expert in the tag then allowed to answer question
-        if !hasAnsweredQuestion(qID), expertiseTags[tag.tagID!] != nil {
-            completion(true, nil, nil)
-        } else if hasAnsweredQuestion(qID) {
-            completion(false, "Already Answered!", "Sorry you can only answer a question once")
-        } else if expertiseTags[tag.tagID!] == nil {
-            completion(false, "Experts Only", "Are you an expert? Apply to answer!")
-        }
+    func isSubscribedToChannel(cID: String) -> Bool {
+        return self.subscriptionIDs.contains(cID)
     }
     
-    func hasAnsweredQuestion(_ qID : String) -> Bool {
-        return answeredQuestions.contains(qID) ? true : false
-    }
-    
-    func hasSavedTags() -> Bool {
-        return self.savedTags.isEmpty ? false : true
-    }
-    
-    func totalAnswers() -> Int {
-        return answers.count
+    func totalItems() -> Int {
+        return items.count
     }
     
     func getEmail() -> String? {
         return FIRAuth.auth()?.currentUser?.email
     }
     
-    func hasExpertise() -> Bool {
-        return self.expertiseTags.isEmpty ? false : true
+    func isVerified(for channel : Channel) -> Bool {
+        return verifiedChannels.contains(channel) ? true : false
     }
+
     
     func getLocation(completion: @escaping (String?) -> Void) {
         if let sLocation = self.sLocation {
@@ -178,5 +189,13 @@ class User {
         Database.createShareLink(linkString: "u/"+uID, completion: { link in
             completion(link)
         })
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let object = object as? User {
+            return uID == object.uID
+        } else {
+            return false
+        }
     }
 }

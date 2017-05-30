@@ -13,7 +13,7 @@ class FiltersOverlay: UIView, UIGestureRecognizerDelegate {
     var reuseIdentifier = "FiltersCell"
     var FilterChoices = [Int : UIImage?]()
     
-    var currentQuestion : Question? {
+    var currentItem : Item? {
         didSet {
             setupFilters()
         }
@@ -51,7 +51,8 @@ class FiltersOverlay: UIView, UIGestureRecognizerDelegate {
 
 extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return currentQuestion!.qFilters.count 
+        return 0
+        //return currentQuestion!.qFilters.count
     }
     
     func numberOfSections(in collectionView: UICollectionView) -> Int{
@@ -64,6 +65,7 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
         if FilterChoices.count > (indexPath as NSIndexPath).row && cell.filterImageView != nil {
             cell.filterImageView!.image = FilterChoices[(indexPath as NSIndexPath).row]!
         } else {
+            /**
             let _filterID = currentQuestion!.qFilters[(indexPath as NSIndexPath).row]
 
             Database.getImage(.Filters, fileID: _filterID+".png", maxImgSize: maxImgSize, completion: {(_data, error) in
@@ -73,6 +75,7 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
                     cell.filterImageView!.image = _filterImage
                 }
             })
+             **/
         }
         return cell
     }

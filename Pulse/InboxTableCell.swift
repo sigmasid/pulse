@@ -35,14 +35,16 @@ class InboxTableCell: UITableViewCell {
     func updateImage( image : UIImage?) {
         if let image = image{
             userImage.image = image
+            
             userImage.layer.cornerRadius = userImage.bounds.height / 2
             userImage.layer.masksToBounds = true
             userImage.clipsToBounds = true
+            userImage.contentMode = .scaleAspectFill
         }
     }
     
     func updateName(name : String?) {
-        userName.text = name
+        userName.text = name?.capitalized
     }
     
     func updateLastMessage(message : String?) {
@@ -57,9 +59,9 @@ class InboxTableCell: UITableViewCell {
         contentView.addSubview(userImage)
         userImage.translatesAutoresizingMaskIntoConstraints = false
         userImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        userImage.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.s.rawValue).isActive = true
-        userImage.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
-        userImage.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        userImage.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+        userImage.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        userImage.heightAnchor.constraint(equalTo: userImage.widthAnchor).isActive = true
         userImage.layoutIfNeeded()
         
         contentView.addSubview(lastMessageTime)
@@ -84,11 +86,11 @@ class InboxTableCell: UITableViewCell {
         lastMessage.translatesAutoresizingMaskIntoConstraints = false
         lastMessage.trailingAnchor.constraint(equalTo: userName.trailingAnchor).isActive = true
         lastMessage.leadingAnchor.constraint(equalTo: userName.leadingAnchor).isActive = true
-        lastMessage.bottomAnchor.constraint(equalTo: userImage.bottomAnchor).isActive = true
         lastMessage.topAnchor.constraint(equalTo: userName.bottomAnchor).isActive = true
         lastMessage.layoutIfNeeded()
         
-        lastMessage.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
+        lastMessage.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .left)
         lastMessage.lineBreakMode = .byTruncatingTail
+        lastMessage.numberOfLines = 2
     }
 }

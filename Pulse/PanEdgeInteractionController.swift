@@ -68,8 +68,7 @@ class PanEdgeInteractionController: UIPercentDrivenInteractiveTransition {
                 finish()
             }
             
-        default:
-            print("Unsupported")
+        default: return
         }
     }
 }

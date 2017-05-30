@@ -12,13 +12,16 @@ import FirebaseDatabase
 class Conversation : NSObject {
     var cUser : User!
     var cID : String!
+    
     var cLastMessageID : String!
     var cLastMessage : String?
     var cLastMessageTime : Date!
-    
+    var cLastMessageType : MessageType!
+
     dynamic var cCreated = false
 
     init(snapshot : FIRDataSnapshot) {
+        super.init()
         if snapshot.hasChild("conversationID") {
             self.cID = snapshot.childSnapshot(forPath: "conversationID").value as? String
         }
@@ -31,6 +34,23 @@ class Conversation : NSObject {
             self.cLastMessage = snapshot.childSnapshot(forPath: "lastMessage").value as? String
         }
         
+        if snapshot.hasChild("lastMessageType"), let type = snapshot.childSnapshot(forPath: "lastMessageType").value as? String {
+            switch type {
+            case "interviewInvite":
+                self.cLastMessageType = .interviewInvite
+            case "channelInvite":
+                self.cLastMessageType = .channelInvite
+            case "perspectiveInvite":
+                self.cLastMessageType = .perspectiveInvite
+            case "questioneInvite":
+                self.cLastMessageType = .perspectiveInvite
+            default:
+                self.cLastMessageType = .message
+            }
+        } else {
+            self.cLastMessageType = .message
+        }
+        
         if snapshot.hasChild("lastMessageTime") {
             let timestamp = snapshot.childSnapshot(forPath: "lastMessageTime").value as! Double
             let convertedDate = Date(timeIntervalSince1970: timestamp / 1000)
@@ -39,20 +59,6 @@ class Conversation : NSObject {
         }
 
         self.cUser = User(uID: snapshot.key)
-    }
-    
-    func getLastMessage(completion: @escaping (Message?) -> Void) {
-        if cLastMessageID != nil {
-            Database.getMessage(mID: cLastMessageID, completion: { message in
-                completion(message)
-            })
-        }
-    }
-    
-    func getConversationUser(uID : String, completion: @escaping (User?) -> Void) {
-        Database.getUser(uID, completion: { (user, error) in
-            error != nil ? completion(user) : completion(nil)
-        })
     }
     
     func getLastMessageTime() -> String? {
@@ -64,6 +70,14 @@ class Conversation : NSObject {
             return stringDate
         } else {
             return nil
+        }
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let object = object as? Conversation {
+            return self.cID == object.cID
+        } else {
+            return false
         }
     }
 }

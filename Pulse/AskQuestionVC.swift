@@ -8,27 +8,22 @@
 
 import UIKit
 
-class AskQuestionVC: UIViewController, UITextViewDelegate {
+class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     
-    public var selectedTag : Tag! {
-        didSet {
-            setAskTag()
-        }
-    }
+    public var selectedTag : Item!
+    public var selectedUser : User!
+    public var modalDelegate : ModalDelegate!
     
-    public var selectedUser : User!  {
-        didSet {
-            setAskUser()
-        }
-    }
+    fileprivate var observersAdded = false
     
-    fileprivate var isLoaded = false
+    fileprivate var questionContainer = UIView()
     fileprivate var questionBody = UITextView()
-    fileprivate var postButton = PulseButton()
+    fileprivate var askButton = PulseButton()
     
-    fileprivate var questionTo = UIView()
-    fileprivate var questionToTitle = UILabel()
-    fileprivate var questionToSubtitle = UILabel()
+    fileprivate var questionBottomConstraint : NSLayoutConstraint!
+    fileprivate var textViewHeightConstraint : NSLayoutConstraint!
+    fileprivate var containerHeightConstraint: NSLayoutConstraint!
+    fileprivate var tap: UITapGestureRecognizer!
     
     fileprivate var hideStatusBar = false {
         didSet {
@@ -38,47 +33,77 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        if !isLoaded {
-            updateHeader()
-            setupQuestionTo()
-            setupQuestionBox()
+        if !observersAdded {
+            tabBarHidden = true
             
-            view.backgroundColor = UIColor.white
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+            view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+
+            tap = UITapGestureRecognizer(target: self, action: #selector(dismissAsk))
+            tap.cancelsTouchesInView = false
+            tap.isEnabled = true
+            tap.delegate = self
+            view.addGestureRecognizer(tap)
+            
+            observersAdded = true
         }
     }
-
+    
+    override func viewDidLayoutSubviews() {
+        if !isLoaded {
+            setupQuestionBox()
+            questionBody.becomeFirstResponder()
+            
+            isLoaded = true
+        }
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
-    override var prefersStatusBarHidden: Bool {
-        return hideStatusBar
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        view.removeGestureRecognizer(tap)
     }
     
-    fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if touch.view == askButton {
+            return false
+        }
         
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: "Ask Question", screenTitle: nil, screenImage: nil)
-            nav.shouldShowScope = false
-        } else {
-            title = "Ask Question"
+        return true
+    }
+    
+    func dismissAsk() {
+        if modalDelegate != nil {
+            questionBody.resignFirstResponder()
+            modalDelegate.userClosedModal(self)
         }
     }
     
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
+    func keyboardWillShow(notification: NSNotification) {
+        if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
+            let keyboardHeight = keyboardSize.height
+            questionBottomConstraint.constant = -keyboardHeight - (tabBarController?.tabBar.frame.height ?? 0)
+            questionContainer.layoutIfNeeded()
+        }
+    }
+    
+    func keyboardWillHide(notification: NSNotification) {
+        questionBottomConstraint.constant = 0
+        questionContainer.layoutIfNeeded()
     }
     
     func askQuestion() {
-        postButton.setDisabled()
-        let _loadingIndicator = postButton.addLoadingIndicator()
+        askButton.setDisabled()
+        askButton.setTitle(nil, for: .normal)
+        let _loadingIndicator = askButton.addLoadingIndicator()
         dismissKeyboard()
         
         if selectedTag != nil {
-            Database.askTagQuestion(tag: selectedTag, qText: questionBody.text, completion: {(success, error) in
+            Database.askQuestion(parentItem: selectedTag, qText: questionBody.text, completion: {(success, error) in
                 if success {
                     let questionConfirmation = UIAlertController(title: "Question Posted!",
                                                                  message: "Thanks for your question. You will get a notification as soon as someone posts an answer",
@@ -87,13 +112,13 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     questionConfirmation.addAction(UIAlertAction(title: "done",
                                                                  style: .default,
                                                                  handler: { (action: UIAlertAction!) in
-                        self.goBack()
+                            self.dismissAsk()
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
-
-                    self.postButton.setEnabled()
-                    self.postButton.removeLoadingIndicator(_loadingIndicator)
+                    self.askButton.setEnabled()
+                    self.askButton.removeLoadingIndicator(_loadingIndicator)
+                    self.askButton.setTitle("Ask", for: .normal)
 
                 } else {
                     let questionConfirmation = UIAlertController(title: "Error Posting Question",
@@ -103,27 +128,31 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     questionConfirmation.addAction(UIAlertAction(title: "okay",
                                                                  style: .default,
                                                                  handler: { (action: UIAlertAction!) in
-                        questionConfirmation.dismiss(animated: true, completion: nil)
+                           self.dismissAsk()
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
-                    self.postButton.setEnabled()
-                    self.postButton.removeLoadingIndicator(_loadingIndicator)
+                    self.askButton.setEnabled()
+                    self.askButton.removeLoadingIndicator(_loadingIndicator)
+                    self.askButton.setTitle("Ask", for: .normal)
 
                 }
             })
         } else if selectedUser != nil {
             Database.askUserQuestion(askUserID: selectedUser.uID!, qText: questionBody.text, completion: {(success, error) in
                 if success {
-                    let questionConfirmation = UIAlertController(title: "Question Posted!", message: "Thanks for your question. You will get a notification as soon as \(self.selectedUser.name) responds", preferredStyle: .actionSheet)
+                    let personName = self.selectedUser.name ?? " the user"
+                    let questionConfirmation = UIAlertController(title: "Question Posted!",
+                                                                 message: "Thanks for your question. You will get a notification as soon as \(personName) responds",
+                                                                preferredStyle: .actionSheet)
                     
                     questionConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
-                        self.goBack()
+                        self.dismissAsk()
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
-                    self.postButton.setEnabled()
-                    self.postButton.removeLoadingIndicator(_loadingIndicator)
+                    self.askButton.setEnabled()
+                    self.askButton.removeLoadingIndicator(_loadingIndicator)
                     
                 } else {
                     let questionConfirmation = UIAlertController(title: "Error Posting Question", message: error?.localizedDescription, preferredStyle: .actionSheet)
@@ -133,113 +162,76 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
                     }))
                     
                     self.present(questionConfirmation, animated: true, completion: nil)
-                    self.postButton.setEnabled()
-                    self.postButton.removeLoadingIndicator(_loadingIndicator)
+                    self.askButton.setEnabled()
+                    self.askButton.removeLoadingIndicator(_loadingIndicator)
 
                 }
             })
         }
     }
     
-    fileprivate func setAskUser() {
-        guard selectedUser != nil else { return }
-        
-        questionToTitle.text = selectedUser.name?.capitalized
-        questionToSubtitle.text = selectedUser.shortBio
-        questionBody.text = "ask \(selectedUser.name?.capitalized) your question"
-    }
-    
-    fileprivate func setAskTag() {
-        guard selectedTag != nil else { return }
-        
-        if let tagTitle = selectedTag.tagTitle {
-            questionToTitle.text = tagTitle.capitalized
-            questionToSubtitle.text = selectedTag.tagDescription
-            questionBody.text = "ask experts about \(tagTitle.capitalized)"
-        } else {
-            questionToTitle.text = "Ask Question"
-            questionToSubtitle.text = selectedTag.tagDescription
-            questionBody.text = "ask experts your question here"
-        }
-    }
-    
     fileprivate func setupQuestionBox() {
-        view.addSubview(questionBody)
-        view.addSubview(postButton)
+        view.addSubview(questionContainer)
+        
+        questionContainer.addSubview(questionBody)
+        questionContainer.addSubview(askButton)
+        
+        questionContainer.translatesAutoresizingMaskIntoConstraints = false
+        questionBottomConstraint = questionContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
+        questionBottomConstraint.isActive = true
+        questionContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        containerHeightConstraint = questionContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
+        containerHeightConstraint.isActive = true
+        questionContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        questionContainer.backgroundColor = .white
+        
+        askButton.translatesAutoresizingMaskIntoConstraints = false
+        askButton.trailingAnchor.constraint(equalTo: questionContainer.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        askButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        askButton.widthAnchor.constraint(equalTo: askButton.heightAnchor).isActive = true
+        askButton.centerYAnchor.constraint(equalTo: questionContainer.centerYAnchor).isActive = true
+        askButton.layoutIfNeeded()
         
         questionBody.translatesAutoresizingMaskIntoConstraints = false
-        questionBody.topAnchor.constraint(equalTo: questionTo.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        questionBody.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        questionBody.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        questionBody.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        questionBody.centerYAnchor.constraint(equalTo: questionContainer.centerYAnchor).isActive = true
+        questionBody.leadingAnchor.constraint(equalTo: questionContainer.leadingAnchor).isActive = true
+        questionBody.trailingAnchor.constraint(equalTo: askButton.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        
+        textViewHeightConstraint = questionBody.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
+        textViewHeightConstraint.isActive = true
         questionBody.layoutIfNeeded()
         
-        questionBody.backgroundColor = UIColor.white
-        questionBody.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        questionBody.textColor = UIColor.black
-        questionBody.layer.borderColor = UIColor.lightGray.cgColor
-        questionBody.layer.borderWidth = 1.0
-        
-        questionBody.text = "Type your question here"
-        questionBody.textColor = UIColor.lightGray
+        questionBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        questionBody.backgroundColor = .white
         questionBody.delegate = self
+        questionBody.textColor = UIColor.black
+        questionBody.isScrollEnabled = false
+        questionBody.text = "Type your question here"
+
+        askButton.makeRound()
+        askButton.setTitle("Ask", for: UIControlState())
+        askButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
+        askButton.setDisabled()
+        askButton.backgroundColor = .pulseRed
+        questionContainer.layoutIfNeeded()
         
-        postButton.translatesAutoresizingMaskIntoConstraints = false
-        postButton.topAnchor.constraint(equalTo: questionBody.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        postButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        postButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        postButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        postButton.layoutIfNeeded()
-        
-        postButton.makeRound()
-        postButton.setTitle("Ask Question", for: UIControlState())
-        postButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        postButton.setDisabled()
-        
-        postButton.addTarget(self, action: #selector(askQuestion), for: .touchUpInside)
-    }
-    
-    fileprivate func setupQuestionTo() {
-        view.addSubview(questionTo)
-        
-        questionTo.translatesAutoresizingMaskIntoConstraints = false
-        questionTo.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        questionTo.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        questionTo.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        questionTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        
-        questionTo.addSubview(questionToTitle)
-        questionTo.addSubview(questionToSubtitle)
-        
-        questionToTitle.translatesAutoresizingMaskIntoConstraints = false
-        questionToTitle.centerXAnchor.constraint(equalTo: questionTo.centerXAnchor).isActive = true
-        questionToTitle.topAnchor.constraint(equalTo: questionTo.topAnchor).isActive = true
-        
-        questionToTitle.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)
-        
-        questionToSubtitle.translatesAutoresizingMaskIntoConstraints = false
-        questionToSubtitle.centerXAnchor.constraint(equalTo: questionTo.centerXAnchor).isActive = true
-        questionToSubtitle.topAnchor.constraint(equalTo: questionToTitle.bottomAnchor).isActive = true
-        questionToSubtitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        
-        questionToSubtitle.numberOfLines = 0
-        questionToSubtitle.lineBreakMode = .byWordWrapping
-        questionToSubtitle.layoutIfNeeded()
-        
-        questionToSubtitle.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.gray, alignment: .center)
-    }
-    
-    func textViewDidBeginEditing(_ textView: UITextView) {
-        
-        if textView.text == "Type your question here" {
-            textView.text = ""
-            textView.textColor = UIColor.black
-        }
+        askButton.addTarget(self, action: #selector(askQuestion), for: .touchUpInside)
     }
     
     func textViewDidChange(_ textView: UITextView) {
         if textView.text != "" {
-            postButton.setEnabled()
+            askButton.setEnabled()
+            
+            let sizeThatFitsTextView = textView.sizeThatFits(CGSize(width: textView.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+            textViewHeightConstraint.constant = sizeThatFitsTextView.height
+            containerHeightConstraint.constant = max(IconSizes.medium.rawValue, sizeThatFitsTextView.height)
+        }
+    }
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if textView.text == "Type your question here" {
+            textView.text = ""
+            textView.textColor = UIColor.black
         }
     }
     
@@ -247,7 +239,17 @@ class AskQuestionVC: UIViewController, UITextViewDelegate {
         if textView.text == "" {
             textView.text = "Type your question here"
             textView.textColor = UIColor.lightGray
-            postButton.setDisabled()
+            askButton.setDisabled()
         }
+    }
+    
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            askQuestion()
+            textView.resignFirstResponder()
+            return false
+        }
+        
+        return textView.text.characters.count + (text.characters.count - range.length) <= 140
     }
 }

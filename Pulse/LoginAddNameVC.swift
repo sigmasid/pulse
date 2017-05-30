@@ -9,8 +9,9 @@
 import UIKit
 import FirebaseAuth
 import MobileCoreServices
+import CoreLocation
 
-class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
@@ -20,9 +21,7 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
     @IBOutlet weak var profilePicButton: UIButton!
     
     fileprivate var cameraVC : CameraVC!
-    fileprivate var panDismissInteractionController = PanContainerInteractionController()
-
-    fileprivate var isLoaded = false
+    internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,25 +54,21 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
     }
     
     fileprivate func updateHeader() {
-        let checkButton = PulseButton(size: .small, type: .check, isRound : true, hasBackground: true)
+        let checkButton = PulseButton(size: .small, type: .check, isRound : true, background: .white, tint: .black)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: "Add Name", screenTitle: nil, screenImage: nil)
-        } else {
-            title = "Add Name"
-        }
+        headerNav?.setNav(title: "Add Name")
     }
     
     @IBAction func addPic(_ sender: UIButton) {
         guard let nav = navigationController else { return }
         
         cameraVC = CameraVC()
+        cameraVC.cameraMode = .stillImage
         cameraVC.delegate = self
         cameraVC.screenTitle = "smile!"
         
-        panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav)
-        panDismissInteractionController.delegate = self
+        panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
+        panDismissCameraInteractionController.delegate = self
         
         present(cameraVC, animated: true, completion: nil)
 
@@ -123,10 +118,13 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
         textField.text = ""
     }
     
-    func doneRecording(_: URL?, image: UIImage?, currentVC : UIViewController, location: String?, assetType : CreatedAssetType?) {
-        guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else { return }
-        
-        cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+    func doneRecording(isCapturing: Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
+        guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else {
+            if isCapturing {
+                self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+            }
+            return
+        }
         
         Database.uploadProfileImage(imageData, completion: {(URL, error) in
             if error == nil {
@@ -149,7 +147,7 @@ class LoginAddNameVC: UIViewController, cameraDelegate, UIImagePickerControllerD
         cameraVC.dismiss(animated: true, completion: nil)
     }
     
-    func showAlbumPicker(_ currentVC : UIViewController) {
+    func showAlbumPicker() {
         let albumPicker = UIImagePickerController()
         
         albumPicker.delegate = self

@@ -10,27 +10,14 @@ import Foundation
 import UIKit
 import SystemConfiguration
 
-let iconColor = UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 )
-let iconBackgroundColor = UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 )
-let pulseBlue = UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0)
-let highlightedColor = UIColor(red: 0/255, green: 233/255, blue: 178/255, alpha: 1.0)
-
 let maxImgSize : Int64 = 1242 * 2208
-let color1 = UIColor(red: 0/255, green: 84/255, blue: 166/255, alpha: 1.0)
-let color2 = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0)
-let color3 = UIColor(red: 22/255, green: 69/255, blue: 99/255, alpha: 1.0)
-let color4 = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
-let color5 = UIColor(red: 55/255, green: 71/255, blue: 79/255, alpha: 1.0)
-let color6 = UIColor(red: 149/255, green: 149/255, blue: 149/255, alpha: 1.0)
-let color7 = UIColor(red: 38/255, green: 58/255, blue: 69/255, alpha: 1.0)
-let color8 = UIColor(red: 97/255, green: 101/255, blue: 111/255, alpha: 1.0)
-
-let minCellHeight : CGFloat = 225
 let searchBarHeight : CGFloat = 44
 let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
-let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
+let defaultCellHeight : CGFloat = 225
+let defaultPostHeight : CGFloat = 325
 
-let _backgroundColors = [color1, color2, color3, color4, color5, color6, color7, color8]
+let scopeBarHeight : CGFloat = 40
+let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
 
 class GlobalFunctions {
     
@@ -58,6 +45,16 @@ class GlobalFunctions {
         return isReachable && !needsConnection
     }
     
+    static func getPulseCollectionLayout() -> UICollectionViewFlowLayout {
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.scrollDirection = UICollectionViewScrollDirection.vertical
+        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 10
+        layout.sectionHeadersPinToVisibleBounds = true
+        
+        return layout
+    }
+    
     static func addBorders(_ _textField : UITextField) -> CAShapeLayer {
         let color = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 )
         return addBorders(_textField, _color: color, thickness : 1.0)
@@ -70,6 +67,17 @@ class GlobalFunctions {
         _bottomBorder.backgroundColor = _color.cgColor
         
         return _bottomBorder
+    }
+    
+    static func makeRound(_ view: UIView) {
+        view.layer.cornerRadius = view.frame.width > view.frame.height ?  view.frame.height / 2 : view.frame.width / 2
+    }
+    
+    static func addShadow(_ view: UIView) {
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOffset = CGSize(width: 2, height: 4)
+        view.layer.shadowRadius = 4.0
+        view.layer.shadowOpacity = 0.7
     }
 
     static func addNewVC(_ newVC: UIViewController, parentVC: UIViewController) {
@@ -124,7 +132,7 @@ class GlobalFunctions {
             UIView.animate(withDuration: 0.25, animations: {
                 newView.frame.origin.y = parentView.frame.origin.y
             }) 
-        default: print("unhandled move")
+        default: return
         }
     }
     
@@ -157,10 +165,36 @@ class GlobalFunctions {
         return labelWidth
     }
     
+    static func getFormattedTime(timeString : Date) -> String {
+        
+        return getFormattedTime(timeString: timeString, style : .medium)
+    }
+    
+    static func getFormattedTime(timeString : Date, style: DateFormatter.Style) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = style
+        formatter.timeStyle = .none
+        let stringDate: String = formatter.string(from: timeString)
+        
+        return stringDate
+    }
+    
+    static func getCellHeight(type : ItemTypes) -> CGFloat {
+        switch type {
+        case .question: return 145
+        case .answer: return 145
+        case .post: return 420
+        case .thread: return 420
+        case .perspective: return 420
+        case .session: return 420
+        default: return 145
+        }
+    }
+    
     ///Share content
     static func shareContent(shareType: String, shareText: String, shareLink: String, presenter: UIViewController) -> UIActivityViewController {
         // set up activity view controller
-        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + shareLink
+        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + " " + shareLink
         let activityViewController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
         activityViewController.popoverPresentationController?.sourceView = presenter.view // so that iPads won't crash
         
@@ -217,19 +251,21 @@ class GlobalFunctions {
         }
     }
     
-    static func showErrorBlock(_ erTitle: String, erMessage: String) {
-        
-        let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
-
+    static func showAlertBlock(_ erTitle: String, erMessage: String) {
         if let topController = UIApplication.shared.keyWindow?.rootViewController {
-            topController.present(alertController, animated: true, completion:nil)
+            showAlertBlock(viewController: topController, erTitle: erTitle, erMessage: erMessage)
         }
     }
     
-    //rotate images if they are not correctly aligned
-    static func fixOrientation(_ img:UIImage) -> UIImage {
+    static func showAlertBlock(viewController : UIViewController, erTitle: String, erMessage: String, buttonTitle: String = "cancel") {
+        let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .actionSheet)
         
+        alertController.addAction(UIAlertAction(title: buttonTitle, style: buttonTitle == "cancel" ? .destructive : .default, handler: { (alertAction) -> Void in  }))
+        viewController.present(alertController, animated: true, completion:nil)
+    }
+    
+    /** IMAGE FUNCTIONS **/
+    static func fixOrientation(_ img:UIImage) -> UIImage {
         if (img.imageOrientation == UIImageOrientation.up) {
             return img;
         }
@@ -263,23 +299,25 @@ class GlobalFunctions {
         return recoloredImageView
     }
     
-    /* NEED TO FIX */
-    static func addHeader(_ parent : UIView, appTitle : String?, screenTitle : String?) -> LoginHeaderView {
-        let _headerView = UIView()
-        parent.addSubview(_headerView)
+    static func processImage(_ image : UIImage?) -> UIImage? {
+        guard let cgimg = image?.cgImage else {
+            return nil
+        }
         
-        _headerView.translatesAutoresizingMaskIntoConstraints = false
-        parent.addConstraint(NSLayoutConstraint(item: _headerView, attribute: .top, relatedBy: .equal, toItem: parent, attribute: .topMargin , multiplier: 2, constant: 0))
-        _headerView.centerXAnchor.constraint(equalTo: parent.centerXAnchor).isActive = true
-        _headerView.heightAnchor.constraint(equalTo: parent.heightAnchor, multiplier: 1/13).isActive = true
-        _headerView.widthAnchor.constraint(equalTo: parent.widthAnchor, multiplier: 1 - (Spacing.m.rawValue/parent.frame.width)).isActive = true
-        _headerView.layoutIfNeeded()
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
         
-        let _LoginHeader = LoginHeaderView(frame: _headerView.frame)
-        appTitle != nil ? _LoginHeader.setAppTitleLabel(_message: appTitle!) :
-        screenTitle != nil ? _LoginHeader.setScreenTitleLabel(_message: screenTitle!) :
-        parent.addSubview(_LoginHeader)
-
-        return _LoginHeader
+        let coreImage = CIImage(cgImage: cgimg)
+        
+        let filter = CIFilter(name: "CIPhotoEffectNoir")
+        filter?.setValue(coreImage, forKey: kCIInputImageKey)
+        
+        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
+            let cgimgresult = context.createCGImage(output, from: output.extent)
+            let result = UIImage(cgImage: cgimgresult!)
+            return result
+        } else {
+            return image
+        }
     }
 }

@@ -17,8 +17,14 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
     fileprivate var parentViewController : UINavigationController!
     
     fileprivate var lastProgress: CGFloat?
+    fileprivate var isModal = false
     
-    var delegate : cameraDelegate!
+    var delegate : CameraDelegate!
+    
+    func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController, modal: Bool) {
+        isModal = modal ? true : false
+        wireToViewController(fromViewController, toViewController: toViewController, parentViewController: parentViewController)
+    }
     
     func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController) {
         self.fromViewController = fromViewController
@@ -47,10 +53,18 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
             
         case .began:
             interactionInProgress = true
-            if let toViewController = toViewController {
-                parentViewController.pushViewController(toViewController, animated: true)
+            if isModal {
+                if let toViewController = toViewController {
+                    parentViewController.present(toViewController, animated: true, completion: { _ in })
+                } else {
+                    parentViewController.dismiss(animated: true, completion: { _ in })
+                }
             } else {
-                parentViewController.popViewController(animated: true)
+                if let toViewController = toViewController {
+                    parentViewController.pushViewController(toViewController, animated: true)
+                } else {
+                    parentViewController.popViewController(animated: true)
+                }
             }
             
         case .changed:
@@ -72,8 +86,7 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
                 delegate.userDismissedCamera()
             }
             
-        default:
-            print("Unsupported")
+        default: return
         }
     }
 }

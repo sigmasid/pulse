@@ -29,7 +29,7 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
     fileprivate var tapGesture : UITapGestureRecognizer?
     fileprivate var isLoaded = false
     
-    var delegate : accountDelegate!
+    var delegate : AccountDelegate!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -120,12 +120,12 @@ class ProfileSummary: UIView, UITextFieldDelegate, UITextViewDelegate {
         
         clearExpertTags()
         
-        for tag in currentUser.expertiseTags {
-            let tagButton = PulseButton(title: tag.value, isRound: true)
+        for channel in currentUser.approvedChannels {
+            let tagButton = PulseButton(title: channel.cTitle ?? "Undefined", isRound: true)
             expertTagList.addArrangedSubview(tagButton)
 
             tagButton.contentEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
-            tagButton.backgroundColor = pulseBlue
+            tagButton.backgroundColor = .pulseBlue
             tagButton.setTitleColor(.white, for: UIControlState())
         }
     }

@@ -9,6 +9,14 @@
 import Foundation
 import UIKit
 
+extension UIColor {
+    static var iconColor: UIColor  { return UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 ) }
+    static var iconBackgroundColor: UIColor  { return UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 ) }
+    static var pulseBlue: UIColor  { return UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0) }
+    static var pulseRed: UIColor  { return UIColor(red: 238/255, green: 49/255, blue: 93/255, alpha: 1.0) }
+    static var pulseGrey: UIColor  { return UIColor(red: 233/255, green: 233/255, blue: 233/255, alpha: 1.0) }
+}
+
 class PaddingLabel: UILabel {
     
     @IBInspectable var topInset: CGFloat = 2.5
@@ -35,17 +43,74 @@ class PaddingLabel: UILabel {
         let heigth = superSizeThatFits.height  + topInset + bottomInset
         return CGSize(width: width, height: heigth)
     }
+}
+
+extension UIImageView {
+    func makeRound() {
+        GlobalFunctions.makeRound(self)
+        layer.masksToBounds = true
+        clipsToBounds = true
+    }
+}
+
+extension UICollectionViewCell {
+    override func addShadow() {
+        super.addShadow()
+        
+        contentView.layer.borderWidth = 1.0
+        contentView.layer.borderColor = UIColor.clear.cgColor
+        contentView.layer.masksToBounds = true
+        
+        layer.masksToBounds = false
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: contentView.layer.cornerRadius).cgPath
+    }
     
+    override func addBottomBorder() {
+        contentView.layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+    }
+    
+    func addBorder(color: UIColor, thickness: CGFloat) {
+        contentView.layer.addBorder(color: color, thickness: thickness)
+    }
+}
+
+extension UIView {
     func addShadow() {
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOffset = CGSize(width: 2, height: 4)
-        layer.shadowRadius = 4.0
-        layer.shadowOpacity = 0.7
+        layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+        
+        layer.shadowColor = UIColor.lightGray.cgColor
+        layer.shadowOffset = CGSize(width: 1, height: 2)
+        layer.shadowRadius = 2.0
+        layer.shadowOpacity = 0.5
+        
+        layer.masksToBounds = false
+    }
+    
+    func addBottomBorder() {
+        layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
     }
 }
 
 // To dismiss keyboard when needed
 extension UIViewController {
+    func getRectToLeft() -> CGRect {
+        var rectToLeft = view.frame
+        rectToLeft.origin.x = view.frame.minX - view.frame.size.width
+        return rectToLeft
+    }
+    
+    func getRectToRight() -> CGRect {
+        var rectToRight = view.frame
+        rectToRight.origin.x = view.frame.maxX
+        return rectToRight
+    }
+    
+    func goBack() {
+        if let nav = navigationController {
+            let _ = nav.popViewController(animated: true)
+        }
+    }
+    
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -118,6 +183,16 @@ extension UIViewController {
     }
 }
 
+class VerticallyCenteredTextView: UITextView {
+    override var contentSize: CGSize {
+        didSet {
+            var topCorrection = (bounds.size.height - contentSize.height * zoomScale) / 2.0
+            topCorrection = max(0, topCorrection)
+            contentInset = UIEdgeInsets(top: topCorrection, left: 0, bottom: 0, right: 0)
+        }
+    }
+}
+
 extension UILabel {
     func setFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
@@ -151,13 +226,37 @@ extension UILabel {
         layer.shadowOpacity = 1
         layer.shadowRadius = 3
     }
+    
+    func removeShadow() {
+        shadowColor = .clear
+        
+        layer.shadowOffset = CGSize(width: 0, height: 0)
+        layer.shadowOpacity = 0
+        layer.shadowRadius = 0
+    }
 }
 
+fileprivate let minimumHitArea = CGSize(width: 50, height: 50)
+
 extension UIButton {
+    open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        // if the button is hidden/disabled/transparent it can't be hit
+        if self.isHidden || !self.isUserInteractionEnabled || self.alpha < 0.01 { return nil }
+        
+        // increase the hit frame to be at least as big as `minimumHitArea`
+        let buttonSize = self.bounds.size
+        let widthToAdd = max(minimumHitArea.width - buttonSize.width, 0) * 1.25
+        let heightToAdd = max(minimumHitArea.height - buttonSize.height, 0) * 1.25
+        let largerFrame = self.bounds.insetBy(dx: -widthToAdd / 2, dy: -heightToAdd / 2)
+        
+        // perform hit test on larger frame
+        return (largerFrame.contains(point)) ? self : nil
+    }
+    
     func setEnabled() {
         self.isEnabled = true
         self.alpha = 1.0
-        self.backgroundColor = UIColor(red: 245/255, green: 44/255, blue: 90/255, alpha: 1.0 )
+        self.backgroundColor = .pulseRed
     }
     
     func setDisabled() {
@@ -178,7 +277,7 @@ extension UIButton {
     }
     
     func makeRound() {
-        self.layer.cornerRadius = self.frame.width > self.frame.height ?  self.frame.height / 2 : self.frame.width / 2
+        GlobalFunctions.makeRound(self)
     }
     
     func setButtonFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
@@ -195,6 +294,47 @@ extension UIButton {
             self.tintColor = color
         }
     }
+}
+
+extension CALayer {
+    
+    func addBorder(edge: UIRectEdge, color: UIColor, thickness: CGFloat) {
+        
+        let border = CALayer()
+        
+        switch edge {
+        case UIRectEdge.top:
+            border.frame = CGRect.init(x: 0, y: 0, width: frame.width, height: thickness)
+            break
+        case UIRectEdge.bottom:
+            border.frame = CGRect.init(x: 0, y: frame.height - thickness, width: frame.width, height: thickness)
+            break
+        case UIRectEdge.left:
+            border.frame = CGRect.init(x: 0, y: 0, width: thickness, height: frame.height)
+            break
+        case UIRectEdge.right:
+            border.frame = CGRect.init(x: frame.width - thickness, y: 0, width: thickness, height: frame.height)
+            break
+        default:
+            break
+        }
+        
+        border.backgroundColor = color.cgColor;
+        
+        self.addSublayer(border)
+    }
+    
+    func addBorder(color: UIColor, thickness: CGFloat) {
+        
+        let border = CALayer()
+        
+        border.frame = CGRect.init(x: 0, y: 0, width: frame.width - (thickness / 2), height: frame.height - (thickness / 2))
+        border.backgroundColor = color.cgColor
+        
+        self.addSublayer(border)
+    }
+    
+    
 }
 
 extension UIImage
@@ -234,7 +374,7 @@ extension UIImage
 
 extension Double {
     var degreesToRadians : CGFloat {
-        return CGFloat(self) * CGFloat(M_PI) / 180.0
+        return CGFloat(self) * CGFloat(Double.pi) / 180.0
     }
 }
 
@@ -242,6 +382,13 @@ extension TimeInterval {
     var time:String {
         return String(format:"%02d:%02d", Int(self/60.0),  Int(ceil(self.truncatingRemainder(dividingBy: 60))) )
     }
+}
+
+/** START ENUMS **/
+
+enum AuthStates {
+    case loggedIn
+    case loggedOut
 }
 
 enum AnimationStyle {
@@ -257,8 +404,8 @@ enum FollowToggle {
 }
 
 enum IconSizes: CGFloat {
-    case xxSmall = 10
-    case xSmall = 20
+    case xxSmall = 20
+    case xSmall = 30
     case small = 35
     case medium = 50
     case large = 75
@@ -277,14 +424,10 @@ enum UserProfileUpdateType {
     case photoURL
 }
 
-enum AnswerVoteType {
+enum VoteType {
+    case favorite
     case upvote
     case downvote
-}
-
-enum SaveType {
-    case save
-    case unsave
 }
 
 enum Spacing: CGFloat {
@@ -294,6 +437,7 @@ enum Spacing: CGFloat {
     case m = 30
     case l = 40
     case xl = 50
+    case xxl = 60
 }
 
 enum buttonCornerRadius : CGFloat {
@@ -317,7 +461,6 @@ enum buttonCornerRadius : CGFloat {
         }
     }
 }
-
 
 enum FontSizes: CGFloat {
     case caption2 = 8
@@ -360,35 +503,31 @@ enum SectionTypes : String {
     }
 }
 
-enum FeedItemType {
-    case tag
-    case question
-    case answer
-    case people
-}
+enum Element : String {
+    case Channels = "channels"
+    case ChannelItems = "channelItems"
+    case ChannelContributors = "channelContributors"
 
-enum PageType {
-    case home
-    case detail
-    case explore
-}
-
-enum Item : String {
-    case Tags = "tags"
-    case Questions = "questions"
-    case Answers = "answers"
+    case Items = "items"
+    case ItemThumbs = "itemThumbnails"
+    case ItemCollection = "itemCollection"
+    case ItemStats = "itemStats"
+    
     case Users = "users"
     case UserDetailedSummary = "userDetailedPublicSummary"
+    case UserSummary = "userPublicSummary"
+    
+    case Subscriptions = "subscriptions"
+    case SavedItems = "savedItems"
+
     case Filters = "filters"
     case Settings = "settings"
-    case Feed = "savedQuestions"
+    case Feed = "savedChannels"
     case SettingSections = "settingsSections"
-    case AnswerThumbs = "answerThumbnails"
-    case AnswerCollections = "answerCollections"
-    case AnswerStats = "answerStats"
-    case UserSummary = "userPublicSummary"
+    
     case Messages = "messages"
     case Conversations = "conversations"
+    case Invites = "invites"
 }
 
 enum SettingTypes : String{
@@ -467,6 +606,46 @@ enum MediaAssetType {
         default: return .unknown
         }
     }
+}
+
+enum MessageType: String {
+    case message
+    case interviewInvite
+    case channelInvite
+    case contributorInvite
+    case perspectiveInvite
+    case questionInvite
+    
+    static func getMessageType(type : String) -> MessageType {
+        switch type {
+        case "interviewInvite":
+            return .interviewInvite
+        case "channelInvite":
+            return .channelInvite
+        case "perspectiveInvite":
+            return .perspectiveInvite
+        case "questionInvite":
+            return .perspectiveInvite
+        case "contributorInvite":
+            return .contributorInvite
+        default:
+            return .message
+        }
+    }
+}
+
+enum UserTypes: String {
+    case user
+    case subscriber
+    case contributor
+    case editor
+}
+
+struct ItemMetaData {
+    var itemCollection = [Item]() //this is the collection within the answer - i.e. all the posts
+    
+    var gettingImageForPreview : Bool = false
+    var gettingInfoForPreview : Bool = false
 }
 
 /* EXTEND CUSTOM LOADING */

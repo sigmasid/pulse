@@ -12,8 +12,8 @@ import FirebaseDatabase
 import TwitterKit
 import FBSDKLoginKit
 
-class LoginVC: UIViewController, UITextFieldDelegate {
-    weak var loginVCDelegate : childVCDelegate?
+class LoginVC: PulseVC, UITextFieldDelegate {
+    weak var loginVCDelegate : ContentDelegate?
     var nav : PulseNavVC!
     
     @IBOutlet weak var emailLabelButton: UIButton!
@@ -28,7 +28,6 @@ class LoginVC: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
     
-    fileprivate var _isLoaded = false
     var _currentLoadedView : currentLoadedView?
 
     enum currentLoadedView {
@@ -38,7 +37,6 @@ class LoginVC: UIViewController, UITextFieldDelegate {
     
     var currentTWTRSession : TWTRSession?
     
-    fileprivate var loadingView : LoadingView?
     fileprivate var _hasMovedUp = false
     
     fileprivate var emailValidated = false {
@@ -62,7 +60,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
     }
     
     override func viewDidLayoutSubviews() {
-        if !_isLoaded {
+        if !isLoaded {
             hideKeyboardWhenTappedAround()
             setupView()
             emailButton.setDisabled()
@@ -70,7 +68,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
             
             NotificationCenter.default.addObserver(self, selector: #selector(onFBProfileUpdated), name:NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
             
-            _isLoaded = true
+            isLoaded = true
         }
     }
     
@@ -79,26 +77,10 @@ class LoginVC: UIViewController, UITextFieldDelegate {
         updateHeader()
     }
     
-    override func viewDidDisappear(_ animated : Bool) {
-        super.viewDidDisappear(true)
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
     fileprivate func updateHeader() {
-        if parent?.navigationController != nil {
-            let loginButton = PulseButton(size: .small, type: .login, isRound : true, hasBackground: true)
-            parent?.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
-        }
-        
-        if let nav = navigationController as? PulseNavVC {
-            self.nav = nav
-            self.nav.setNav(navTitle: "Login", screenTitle: nil, screenImage: nil)
-        } else {
-            parent?.title = "Login"
-        }
+        let loginButton = PulseButton(size: .small, type: .login, isRound : true, background: .white, tint: .black)
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: loginButton)
+        headerNav?.setNav(title: "Login")
     }
     
     fileprivate func setupView() {
@@ -183,24 +165,26 @@ class LoginVC: UIViewController, UITextFieldDelegate {
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         FIRAuth.auth()?.signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) { (aUser, blockError) in
-            if let blockError = blockError as? NSError {
+            if let blockError = blockError {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                switch blockError.code {
-                case FIRAuthErrorCode.errorCodeWrongPassword.rawValue: self._passwordErrorLabel.text = "incorrect password"
-                case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = "invalid email"
-                case FIRAuthErrorCode.errorCodeUserNotFound.rawValue: self._emailErrorLabel.text = "email not found"
+                switch FIRAuthErrorCode(rawValue: blockError._code)! {
+                case .errorCodeWrongPassword: self._passwordErrorLabel.text = "incorrect password"
+                case .errorCodeInvalidEmail: self._emailErrorLabel.text = "invalid email"
+                case .errorCodeUserNotFound: self._emailErrorLabel.text = "email not found"
 
-                default: self.nav?.setNav(navTitle: "error signing in", screenTitle: nil, screenImage: nil)
+                default: self.nav?.setNav(title: "error signing in")
                 }
             }
             else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                self.nav?.setNav(navTitle: "welcome", screenTitle: nil, screenImage: nil)
+                self.nav?.setNav(title: "Welcome")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
+                self.userEmail.text = ""
+                self.userPassword.text = ""
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
         }
@@ -209,7 +193,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
     @IBAction func createAccount(_ sender: UIButton) {
         if let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
             _currentLoadedView = .createAccount
-            self.parent?.navigationController?.pushViewController(createAccountVC, animated: true)
+            navigationController?.pushViewController(createAccountVC, animated: true)
         }
     }
     
@@ -259,15 +243,15 @@ class LoginVC: UIViewController, UITextFieldDelegate {
     }
     
     @IBAction func fbLogin(_ sender: UIButton) {
-        addLoading()
+        toggleLoading(show: true, message: "Signing in...", showIcon: true)
         let facebookReadPermissions = ["public_profile", "email", "user_friends"]
         let loginButton = FBSDKLoginManager()
         loginButton.logIn(withReadPermissions: facebookReadPermissions, from: self, handler: { (result, blockError) -> Void in
             if blockError != nil {
-                self.removeLoading()
-                GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
+                self.toggleLoading(show: false, message: nil)
+                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
             } else if result!.isCancelled {
-                self.removeLoading()
+                self.toggleLoading(show: false, message: nil)
             } else {
                 //login sucess - will get handled by FB profile updated notification
             }
@@ -279,48 +263,46 @@ class LoginVC: UIViewController, UITextFieldDelegate {
         guard let _accessToken = FBSDKAccessToken.current() else {
             return
         }
-        var dict : NSDictionary!
+        //var dict : NSDictionary!
         FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, first_name, last_name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
             if (error == nil){
-                dict = result as! NSDictionary
-                print(dict)
+                //dict = result as! NSDictionary
             }
         })
         
         let credential = FIRFacebookAuthProvider.credential(withAccessToken: _accessToken.tokenString)
         FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
             if error != nil {
-                self.removeLoading()
-                GlobalFunctions.showErrorBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
+                self.toggleLoading(show: false, message: nil)
+                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
             }
             else {
-                self.removeLoading()
-                self.nav?.setNav(navTitle: aUser!.displayName, screenTitle: nil, screenImage: nil)
+                self.toggleLoading(show: false, message: nil)
+                self.nav?.setNav(title: aUser!.displayName)
                 self._loggedInSuccess()
-                print("posted facebook login success update")
             }
         }
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.FBSDKProfileDidChange, object: nil)
     }
     
     @IBAction func twtrLogin(_ sender: UIButton) {
-        addLoading()
+        self.toggleLoading(show: true, message: "Signing in...", showIcon: true)
         Twitter.sharedInstance().logIn { session, error in
             if (session != nil) {
                 self.currentTWTRSession = session
                 let credential = FIRTwitterAuthProvider.credential(withToken: session!.authToken, secret: session!.authTokenSecret)
                 FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
-                    if let blockError = blockError as? NSError {
-                        self.removeLoading()
-                        self.nav?.setNav(navTitle: blockError.description, screenTitle: nil, screenImage: nil)
+                    if let blockError = blockError {
+                        self.toggleLoading(show: false, message: nil)
+                        self.nav?.setNav(title: blockError.localizedDescription)
                     } else {
-                        self.removeLoading()
+                        self.toggleLoading(show: false, message: nil)
                         self._loggedInSuccess()
                     }
                 }
             } else {
-                self.removeLoading()
-                self.nav?.setNav(navTitle: "Uh oh! That didn't work", screenTitle: nil, screenImage: nil)
+                self.toggleLoading(show: false, message: nil)
+                self.nav?.setNav(title: "Uh oh! That didn't work")
             }
         }
     }
@@ -329,23 +311,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
     }
     
-    func addLoading() {
-        loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white)
-        loadingView?.addIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
-        loadingView?.addMessage("Signing in...")
-        view.addSubview(loadingView!)
-    }
-    
     func returnToParent(_ currentVC : UIViewController) {
         GlobalFunctions.dismissVC(currentVC)
-    }
-    
-    func removeLoading() {
-        if loadingView != nil {
-            UIView.animate(withDuration: 0.2, animations: { self.loadingView!.alpha = 0.0 } ,
-                                       completion: {(value: Bool) in
-                                        self.loadingView!.removeFromSuperview()
-            })
-        }
     }
 }

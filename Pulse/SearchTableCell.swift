@@ -11,11 +11,11 @@ import UIKit
 class SearchTableCell: UITableViewCell {
     
     fileprivate var leftContainer = UIView()
-    fileprivate var bodyContainer = UIView()
+    fileprivate var bodyContainer = PulseMenu(_axis: .vertical, _spacing: 0)
     
     var titleLabel = UILabel()
     var subtitleLabel = UILabel()
-    var iconButton = UIButton()
+    var iconButton = PulseButton(size: .small, type: .blank, isRound: true, background: .white, tint: .clear)
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -38,7 +38,7 @@ class SearchTableCell: UITableViewCell {
     fileprivate func setupCellLayout() {
         contentView.addSubview(leftContainer)
         leftContainer.translatesAutoresizingMaskIntoConstraints = false
-        leftContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+        leftContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
         leftContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
         leftContainer.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
         leftContainer.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
@@ -46,10 +46,9 @@ class SearchTableCell: UITableViewCell {
         
         contentView.addSubview(bodyContainer)
         bodyContainer.translatesAutoresizingMaskIntoConstraints = false
+        bodyContainer.leadingAnchor.constraint(equalTo: leftContainer.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
         bodyContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor).isActive = true
-        bodyContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor).isActive = true
-        bodyContainer.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
-        bodyContainer.leadingAnchor.constraint(equalTo: leftContainer.trailingAnchor, constant: Spacing.s.rawValue).isActive = true
+        bodyContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
         bodyContainer.layoutIfNeeded()
         
         setupIcon()
@@ -65,37 +64,22 @@ class SearchTableCell: UITableViewCell {
         iconButton.widthAnchor.constraint(equalTo: iconButton.heightAnchor).isActive = true
         iconButton.layoutIfNeeded()
         
-        iconButton.makeRound()
-        iconButton.backgroundColor = .lightGray
-        iconButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+        iconButton.removeShadow()
     }
     
     fileprivate func setupBody() {
-        bodyContainer.addSubview(titleLabel)
-        bodyContainer.addSubview(subtitleLabel)
+        bodyContainer.distribution = .equalCentering
+        bodyContainer.alignment = .leading
         
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.trailingAnchor.constraint(equalTo: bodyContainer.trailingAnchor).isActive = true
-        titleLabel.leadingAnchor.constraint(equalTo: bodyContainer.leadingAnchor).isActive = true
-        titleLabel.centerYAnchor.constraint(equalTo: bodyContainer.centerYAnchor).isActive = true
-        titleLabel.layoutIfNeeded()
+        bodyContainer.addArrangedSubview(titleLabel)
+        bodyContainer.addArrangedSubview(subtitleLabel)
         
         titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
         titleLabel.numberOfLines = 0
         titleLabel.lineBreakMode = .byWordWrapping
         
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.trailingAnchor.constraint(equalTo: bodyContainer.trailingAnchor).isActive = true
-        subtitleLabel.leadingAnchor.constraint(equalTo: bodyContainer.leadingAnchor).isActive = true
-        subtitleLabel.bottomAnchor.constraint(equalTo: bodyContainer.bottomAnchor).isActive = true
-        subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor).isActive = true
-
-        subtitleLabel.layoutIfNeeded()
-        
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
+        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .left)
         subtitleLabel.numberOfLines = 0
         subtitleLabel.lineBreakMode = .byWordWrapping
-        
-
     }
 }

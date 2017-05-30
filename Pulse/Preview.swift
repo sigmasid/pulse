@@ -20,12 +20,11 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     fileprivate var tapForMore = UILabel()
     
     //delegate vars
-    var delegate : previewDelegate!
+    var delegate : PreviewDelegate!
     var showTapForMore = false
-    var currentQuestion : Question!
-    var currentAnswer : Answer! {
+    var currentItem : Item! {
         didSet {
-            addAnswer(answer: currentAnswer)
+            addItem(item: currentItem)
             addLoadingIndicator()
         }
     }
@@ -45,9 +44,12 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         super.init(coder: aDecoder)
     }
     
+    deinit {
+        removeClip()
+    }
+    
     func removeClip() {
         Preview.aPlayer.pause()
-        Preview.aPlayer.replaceCurrentItem(with: nil)
     }
     
     func itemStatusReady() {
@@ -61,44 +63,36 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     }
     
     //adds the first clip to the answers
-    fileprivate func addAnswer(answer : Answer) {
-        Database.getAnswer(answer.aID, completion: { (answer, error) in
+    fileprivate func addItem(item : Item) {
+        removeClip()
+        
+        guard let answerType = item.contentType, let itemURL = item.contentURL else {
+            GlobalFunctions.showAlertBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
+            return
+        }
+        
+        if answerType == .recordedVideo || answerType == .albumVideo {
             
-            guard let answerType = answer.aType else {
-                GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                return
-            }
-            
-            if answerType == .recordedVideo || answerType == .albumVideo {
-                Database.getAnswerURL(qID: answer.qID, fileID: answer.aID, completion: { (URL, error) in
-                    if (error != nil) {
-                        GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                    } else {
-                        let aPlayerItem = PreviewPlayerItem(url: URL!)
-                        self.removeImageView()
-                        aPlayerItem.delegate = self
-                        Preview.aPlayer.replaceCurrentItem(with: aPlayerItem)
-                        
-                        NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
-                                                               name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: Preview.aPlayer.currentItem)
+            removeImageView()
 
-                    }
-                })
-            } else if answerType == .recordedImage || answerType == .albumImage {
-                Database.getAnswerImage(qID: answer.qID, fileID: answer.aID, maxImgSize: maxImgSize, completion: {(data, error) in
-                    if error != nil {
-                        GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                    } else {
-                        if let _image = GlobalFunctions.createImageFromData(data!) {
-                            self.showImageView(_image)
-                            self.removeLoadingIndicator()
-                        } else {
-                            GlobalFunctions.showErrorBlock("error getting video", erMessage: "Sorry there was an error! Please try the next answer")
-                        }
+            let aPlayerItem = PreviewPlayerItem(url: itemURL)
+            Preview.aPlayer.replaceCurrentItem(with: aPlayerItem)
+            aPlayerItem.delegate = self
+            
+            NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
+                                                   name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: Preview.aPlayer.currentItem)
+
+        } else if answerType == .recordedImage || answerType == .albumImage {
+            DispatchQueue.main.async {
+                let _userImageData = try? Data(contentsOf: itemURL)
+                DispatchQueue.main.async(execute: {
+                    if let data = _userImageData, let image = UIImage(data: data) {
+                        self.showImageView(image)
+                        self.removeLoadingIndicator()
                     }
                 })
             }
-        })
+        }
     }
     
     fileprivate func showImageView(_ image : UIImage) {
@@ -161,27 +155,38 @@ protocol PreviewPlayerItemDelegate {
 class PreviewPlayerItem: AVPlayerItem {
     
     var delegate : PreviewPlayerItemDelegate?
+    var isObserving = false
     
     init(url URL: URL) {
         super.init(asset: AVAsset(url: URL) , automaticallyLoadedAssetKeys:[])
-        self.addMyObservers()
+        addMyObservers()
     }
     
     deinit {
-        self.removeMyObservers()
+        removeMyObservers()
     }
     
     func addMyObservers() {
-        self.addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
+        addObserver(self, forKeyPath: "status", options: NSKeyValueObservingOptions.new, context: nil)
+        isObserving = true
     }
     
     func removeMyObservers() {
-        self.removeObserver(self, forKeyPath: "status", context: nil)
+        if isObserving {
+            removeObserver(self, forKeyPath: "status", context: nil)
+            isObserving = false
+        }
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "status" {
-            self.delegate?.itemStatusReady()
+            switch Preview.aPlayer.status {
+            case AVPlayerStatus.readyToPlay:
+                delegate?.itemStatusReady()
+                removeMyObservers()
+                break
+            default: break
+            }
         }
     }
     

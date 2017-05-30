@@ -18,40 +18,48 @@ let storage = FIRStorage.storage()
 let storageRef = storage.reference(forURL: "gs://pulse-84022.appspot.com")
 let databaseRef = FIRDatabase.database().reference()
 var initialFeedUpdateComplete = false
+var currentAuthState : AuthStates = .loggedOut
 
 class Database {
+    static let channelsRef = databaseRef.child(Element.Channels.rawValue)
+    static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
+    static let channelContributorsRef = databaseRef.child(Element.ChannelContributors.rawValue)
 
-    static let tagsRef = databaseRef.child(Item.Tags.rawValue)
-    static let questionsRef = databaseRef.child(Item.Questions.rawValue)
-    static let answersRef = databaseRef.child(Item.Answers.rawValue)
-    static let answerStatsRef = databaseRef.child(Item.AnswerStats.rawValue)
-
-    static let answerCollectionsRef = databaseRef.child(Item.AnswerCollections.rawValue)
-
-    static let messagesRef = databaseRef.child(Item.Messages.rawValue)
-    static let conversationsRef = databaseRef.child(Item.Conversations.rawValue)
+    static let itemsRef = databaseRef.child(Element.Items.rawValue)
+    static let itemStatsRef = databaseRef.child(Element.ItemStats.rawValue)
+    static let itemCollectionRef = databaseRef.child(Element.ItemCollection.rawValue)
+    
+    static let invitesRef = databaseRef.child(Element.Invites.rawValue)
+    static let messagesRef = databaseRef.child(Element.Messages.rawValue)
+    static let conversationsRef = databaseRef.child(Element.Conversations.rawValue)
 
     static var currentUserRef : FIRDatabaseReference!
     static var currentUserFeedRef : FIRDatabaseReference!
 
-    static let usersRef = databaseRef.child(Item.Users.rawValue)
-    static let usersPublicDetailedRef = databaseRef.child(Item.UserDetailedSummary.rawValue)
-    static let usersPublicSummaryRef = databaseRef.child(Item.UserSummary.rawValue)
+    static let usersRef = databaseRef.child(Element.Users.rawValue)
+    static let usersPublicDetailedRef = databaseRef.child(Element.UserDetailedSummary.rawValue)
+    static let usersPublicSummaryRef = databaseRef.child(Element.UserSummary.rawValue)
 
-    static let filtersRef = databaseRef.child(Item.Filters.rawValue)
-    static let settingsRef = databaseRef.child(Item.Settings.rawValue)
-    static let settingSectionsRef = databaseRef.child(Item.SettingSections.rawValue)
+    static let filtersRef = databaseRef.child(Element.Filters.rawValue)
+    static let settingsRef = databaseRef.child(Element.Settings.rawValue)
+    static let settingSectionsRef = databaseRef.child(Element.SettingSections.rawValue)
 
-    static let answersStorageRef = storageRef.child(Item.Answers.rawValue)
-    static let tagsStorageRef = storageRef.child(Item.Tags.rawValue)
-    static let usersStorageRef = storageRef.child(Item.Users.rawValue)
+    static let usersStorageRef = storageRef.child(Element.Users.rawValue)
 
     static var masterQuestionIndex = [String : String]()
     static var masterTagIndex = [String : String]()
 
-    static let querySize : UInt = 50
+    static let querySize : UInt = 5
     static var activeListeners = [FIRDatabaseReference]()
     static var profileListenersAdded = false
+    
+    static func updateNotificationToken(tokenID: String?) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            return
+        }
+        
+        databaseRef.child("notificationIDs").child(user.uid).setValue(tokenID)
+    }
     
     static func createShareLink(linkString : String, completion: @escaping (String?) -> Void) {
         var request = URLRequest(url: URL(string: "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAJa2_jjaxFCWE0mLbRNfZ9lKZWK0mUyNU")!)
@@ -65,78 +73,75 @@ class Database {
 
         request.httpBody = jsonData
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else {
+            guard let data = data, let responseJSON = try? JSONSerialization.jsonObject(with: data, options: []) else {
                 completion("https://checkpulse.co/"+linkString)
                 return
             }
             
-            let responseJSON = try? JSONSerialization.jsonObject(with: data, options: [])
             if let responseJSON = responseJSON as? [String: Any] {
-                completion(responseJSON["shortLink"] as! String?)
+                if responseJSON["error"] == nil {
+                    completion(responseJSON["shortLink"] as! String?)
+                } else {
+                    completion(longLink)
+                }
             }
         }
 
         task.resume()
     }
     
-    static func removeAnswers(userID : String, answerID : String) {
-        databaseRef.child("userDetailedPublicSummary/\(userID)/answers/\(answerID)").observeSingleEvent(of: .value, with: { snap in
+    static func removeItem(userID : String, itemID : String) {
+        databaseRef.child("userDetailedPublicSummary/\(userID)/items/\(itemID)").observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
-                questionsRef.child(snap.value as! String).child("answers").child(snap.key).setValue(nil, withCompletionBlock: { (error, snap) in
+                itemsRef.child(itemID).setValue(nil, withCompletionBlock: { (error, snap) in
                     if error != nil {
-                        //print("error removing answer \(error)")
+                        //still need to implement
                     }
                 })
-                answersRef.child(snap.key).setValue(nil)
-                usersPublicDetailedRef.child(userID).child("answers").child(snap.key).setValue(nil)
-                usersPublicDetailedRef.child(userID).child("answeredQuestions").child(snap.value as! String).setValue(nil)
-                answerCollectionsRef.child(snap.key).setValue(nil)
                 
-                let desertRef = storageRef.child("answers").child(snap.key)
-                let thumbRef = storageRef.child("answerThumbnails").child(snap.key)
-
-                // Delete the file
-                thumbRef.delete { (error) -> Void in
-                    if (error != nil) {
-                        //print("error deleting thumbnail \(error)")
-                        // Uh-oh, an error occurred!
-                    } else {
-                        //print("deleted thumbnail")
+                usersPublicDetailedRef.child(userID).child("items").child(snap.key).setValue(nil)
+                
+                itemCollectionRef.child(itemID).setValue(nil)
+                
+                if let cID = snap.childSnapshot(forPath: "cID").value as? String {
+                    channelItemsRef.child(cID).child(itemID).setValue(nil)
+                    
+                    let itemStorageRef = storageRef.child("channels").child(cID).child(itemID)
+                    
+                    // Delete the file
+                    itemStorageRef.delete { (error) -> Void in
+                        if (error != nil) {
+                            //print("error deleting thumbnail \(error)")
+                            // Uh-oh, an error occurred!
+                        } else {
+                            //print("deleted thumbnail")
+                        }
                     }
                 }
-                
-                desertRef.delete { (error) -> Void in
-                    if (error != nil) {
-                        //print("error deleting video \(error)")
-                        // Uh-oh, an error occurred!
-                    } else {
-                        //print("deleted video")
-                    }
-                }
-
 
             } else {
-                //print("couldn't cast as answerSnap")
+                print("nothing to delete")
             }
         })
     }
     
     /** MARK : SEARCH **/
-    static func buildQuery(searchTerm : String, type: FeedItemType) -> [String:Any] {
+    static func buildQuery(searchTerm : String, type: SearchTypes) -> [String:Any] {
         var query = [String:Any]()
         
         switch type {
-        case .tag:
-            query["index"] = "tags"
-            query["type"] = "tags"
-        case .people:
-            query["index"] = "firebase"
+        case .items:
+            query["index"] = "series"
+            query["type"] = "series"
+            query["fields"] = ["title","description","type","cID"]
+        case .users:
+            query["index"] = "users"
             query["type"] = "users"
             query["fields"] = ["name","shortBio","thumbPic"]
-        case .question:
-            query["index"] = "questions"
-            query["type"] = "questions"
-        default: break
+        case .channels:
+            query["index"] = "channels"
+            query["type"] = "channels"
+            query["fields"] = ["title","description"]
         }
         
         let qTerm = ["_all":searchTerm]
@@ -146,25 +151,28 @@ class Database {
         return query
     }
     
-    static func searchTags(searchText : String, completion: @escaping (_ tagResult : [Tag]) -> Void) {
+    static func searchItem(searchText : String, completion: @escaping (_ results : [Item]) -> Void) {
         
-        let query = buildQuery(searchTerm: searchText, type: .tag)
+        let query = buildQuery(searchTerm: searchText, type: .items)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
         
         databaseRef.child("search/response").child(searchKey).observe( .value, with: { snap in
-            var _results = [Tag]()
+            var _results = [Item]()
             
             if snap.exists() {
                 if snap.childSnapshot(forPath: "hits").exists() {
                     for result in snap.childSnapshot(forPath: "hits/hits").children {
 
-                        if let result = result as? FIRDataSnapshot, let tagID = result.childSnapshot(forPath: "_id").value as? String {
-                            let tagTitle = result.childSnapshot(forPath: "_source/title").value as? String
-                            let currentTag = Tag(tagID: tagID, tagTitle: tagTitle)
-                            currentTag.tagDescription = result.childSnapshot(forPath: "_source/description").value as? String
-                            _results.append(currentTag)
+                        if let result = result as? FIRDataSnapshot, let itemID = result.childSnapshot(forPath: "_id").value as? String {
+                            let itemType = result.childSnapshot(forPath: "fields/type/0").value as? String
+                            let currentItem = Item(itemID: itemID, type: itemType ?? "")
+                            currentItem.itemTitle = result.childSnapshot(forPath: "fields/title/0").value as? String ?? ""
+                            currentItem.itemDescription = result.childSnapshot(forPath: "fields/description/0").value as? String ?? ""
+                            currentItem.cID = result.childSnapshot(forPath: "fields/cID/0").value as? String
+
+                            _results.append(currentItem)
                         }
                     }
                     completion(_results)
@@ -177,24 +185,27 @@ class Database {
         })
     }
     
-    static func searchQuestions(searchText : String, completion: @escaping (_ questionsResult : [Question]) -> Void) {
-        let query = buildQuery(searchTerm: searchText, type: .question)
+    static func searchChannels(searchText : String, completion: @escaping (_ result : [Channel]) -> Void) {
+        let query = buildQuery(searchTerm: searchText, type: .channels)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
         
         databaseRef.child("search/response").child(searchKey).observe( .value, with: { snap in
-            var _results = [Question]()
+            var _results = [Channel]()
             
             if snap.exists() {
                 if snap.childSnapshot(forPath: "hits").exists() {
                     for result in snap.childSnapshot(forPath: "hits/hits").children {
                         
-                        if let result = result as? FIRDataSnapshot, let qID = result.childSnapshot(forPath: "_id").value as? String {
-                            let qTitle = result.childSnapshot(forPath: "_source/title").value as? String
-                            let currentQuestion = Question(qID: qID)
-                            currentQuestion.qTitle = qTitle
-                            _results.append(currentQuestion)
+                        if let result = result as? FIRDataSnapshot, let id = result.childSnapshot(forPath: "_id").value as? String {
+                            let cDescription = result.childSnapshot(forPath: "fields/description/0").value as? String
+                            let cTitle = result.childSnapshot(forPath: "fields/title/0").value as? String
+
+                            let channel = Channel(cID: id, title: cTitle ?? "")
+                            channel.cDescription = cDescription
+
+                            _results.append(channel)
                         }
                     }
                     completion(_results)
@@ -208,7 +219,7 @@ class Database {
     }
     
     static func searchUsers(searchText : String, completion: @escaping (_ peopleResult : [User]) -> Void) {
-        let query = buildQuery(searchTerm: searchText, type: .people)
+        let query = buildQuery(searchTerm: searchText, type: .users)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
@@ -314,14 +325,22 @@ class Database {
                     let _conversation = Conversation(snapshot: conversation as! FIRDataSnapshot)
                     conversations.append(_conversation)
                 }
+                conversations.reverse()
                 completion(conversations)
             })
         }
     }
     
     //Keep conversation updated
-    static func keepConversationUpdated(to : String?) {
-        
+    static func keepConversationsUpdated(completion: @escaping (Conversation) -> Void) {
+        if let _user = FIRAuth.auth()?.currentUser {
+            activeListeners.append(usersRef.child(_user.uid).child("conversations"))
+
+            usersRef.child(_user.uid).child("conversations").observe(.childChanged, with: { snap in
+                let _conversation = Conversation(snapshot: snap)
+                completion(_conversation)
+            })
+        }
     }
     
     ///Send message
@@ -341,6 +360,8 @@ class Database {
             //append to existing conversation if it already exists - message.mID has conversationID saved
             let conversationPost : [AnyHashable: Any] =
                 ["conversations/\(message.mID!)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : message.mType.rawValue,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
@@ -359,10 +380,12 @@ class Database {
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/conversationID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
+                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
                  "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/conversationID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
+                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : message.mType.rawValue,
                  "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
             
@@ -377,76 +400,34 @@ class Database {
     static func setCurrentUserPaths() {
         if let user = FIRAuth.auth()?.currentUser {
             currentUserRef = usersRef.child(user.uid)
-            currentUserFeedRef = usersRef.child(user.uid).child(Item.Feed.rawValue)
+            currentUserFeedRef = usersRef.child(user.uid).child(Element.Feed.rawValue)
         } else {
             currentUserRef = nil
             currentUserFeedRef = nil
         }
     }
     
-    static func getDatabasePath(_ type : Item, itemID : String) -> FIRDatabaseReference {
+    static func getDatabasePath(_ type : Element, itemID : String) -> FIRDatabaseReference {
         return databaseRef.child(type.rawValue).child(itemID)
     }
     
-    static func getStoragePath(_ type : Item, itemID : String) -> FIRStorageReference {
+    static func getStoragePath(_ type : Element, itemID : String) -> FIRStorageReference {
         return storageRef.child(type.rawValue).child(itemID)
     }
     /*** MARK END : DATABASE PATHS ***/
 
     /*** MARK START : EXPLORE FEED ***/
-    static func getExploreTags(_ completion: @escaping (_ tags : [Tag], _ error : Error?) -> Void) {
-        var allTags = [Tag]()
+    static func getExploreChannels(_ completion: @escaping (_ channels : [Channel], _ error : Error?) -> Void) {
+        var allChannels = [Channel]()
         
-        tagsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
-            for item in snapshot.children {
-                let child = item as! FIRDataSnapshot
-                allTags.append(Tag(tagID: child.key, snapshot: child))
+        channelsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
+            for channel in snapshot.children {
+                let child = channel as! FIRDataSnapshot
+                allChannels.append(Channel(cID: child.key, snapshot: child))
             }
-            completion(allTags, nil)
+            completion(allChannels, nil)
         }, withCancel: { error in
-            completion(allTags, error)
-        })
-    }
-    
-    static func getExploreQuestions(_ completion: @escaping (_ questions : [Question?], _ error : Error?) -> Void) {
-        var allQuestions = [Question?]()
-        
-        questionsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
-            for item in snapshot.children {
-                let child = item as! FIRDataSnapshot
-                allQuestions.append(Question(qID: child.key, snapshot: child))
-            }
-            completion(allQuestions, nil)
-        }, withCancel: { error in
-            completion(allQuestions, error)
-        })
-    }
-    
-    static func getExploreAnswers(_ completion: @escaping (_ answers : [Answer], _ error : Error?) -> Void) {
-        var allAnswers = [Answer]()
-        
-        answersRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
-            for item in snapshot.children {
-                let child = item as! FIRDataSnapshot
-                allAnswers.append(Answer(aID: child.key, snapshot: child))
-            }
-            completion(allAnswers, nil)
-        }, withCancel: { error in
-            completion(allAnswers,error)
-        })
-    }
-    
-    static func getExploreUsers(_ completion: @escaping (_ users : [User], _ error : Error?) -> Void) {
-        var allUsers = [User]()
-        
-        usersPublicSummaryRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
-            for item in snapshot.children {
-                let child = item as! FIRDataSnapshot
-                allUsers.append(User(uID: child.key, snapshot: child))
-            }
-            completion(allUsers, nil)
-        }, withCancel: { error in
-            completion(allUsers, error)
+            completion(allChannels, error)
         })
     }
     /*** MARK END : EXPLORE FEED ***/
@@ -467,13 +448,20 @@ class Database {
         })
     }
     
-    static func getSectionsSection(sectionName : String, completion: @escaping (_ section : SettingSection?, _ error : Error?) -> Void) {
+    static func getSettingsSections(completion: @escaping (_ sections : [SettingSection], _ error : Error?) -> Void) {
+        var settings = [SettingSection]()
+        
+        settingSectionsRef.observeSingleEvent(of: .value, with: { snapshot in
+            for settingsSection in snapshot.children {
+                if let settingsSection = settingsSection as? FIRDataSnapshot {
+                    let section = SettingSection(sectionID: settingsSection.key, snapshot: settingsSection)
+                    settings.append(section)
+                }
+            }
+            completion(settings, nil)
 
-        settingSectionsRef.child(sectionName).queryOrderedByValue().observeSingleEvent(of: .value, with: { snapshot in
-            let section = SettingSection(sectionID: snapshot.key, snapshot: snapshot)
-            completion(section, nil)
         }, withCancel: { error in
-            completion(nil, error)
+            completion(settings, error)
         })
     }
     
@@ -487,116 +475,204 @@ class Database {
     }
     /*** MARK END : SETTINGS ***/
  
-    /*** MARK START : GET FEED ITEMS ***/
-    static func getTag(_ tagID : String, completion: @escaping (_ tag : Tag, _ error : NSError?) -> Void) {
-        tagsRef.child(tagID).observeSingleEvent(of: .value, with: { snap in
-            let _currentTag = Tag(tagID: tagID, snapshot: snap)
-            completion(_currentTag, nil)
+    /*** MARK START : GET ITEMS ***/
+    static func getChannel(cID : String, completion: @escaping (_ channel : Channel, _ error : NSError?) -> Void) {
+        channelsRef.child(cID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            let _currentChannel = Channel(cID: cID, snapshot: snap)
+            completion(_currentChannel, nil)
         }, withCancel: { error in
             //print("error gettings tag \(error)")
         })
     }
     
-    static func getRelatedTags(_ tagID : String, completion: @escaping (_ tags : [Tag], _ error: Error?) -> Void) {
-        var allTags = [Tag]()
+    static func getChannelItems(channel : Channel, startingAt : Date, endingAt: Date, completion: @escaping (_ channel : Channel?) -> Void) {
+        channelItemsRef.child(channel.cID!).queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
+            if snap.childrenCount > 0 {
+                channel.updateChannel(detailedSnapshot: snap)
+                completion(channel)
+            } else {
+                completion(nil)
+            }
+        }, withCancel: { error in
+            completion(nil)
+        })
+    }
+    
+    static func getChannelItems(channel : Channel, completion: @escaping (_ channel : Channel?) -> Void) {
+        channelItemsRef.child(channel.cID!).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            channel.updateChannel(detailedSnapshot: snap)
+            completion(channel)
+        }, withCancel: { error in
+            completion(nil)
+        })
+    }
+    
+    static func getChannelItems(channelID : String, startingAt : Date, endingAt: Date, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
+        var items = [Item]()
         
-        tagsRef.child(tagID).child("related").observeSingleEvent(of: .value, with: { snap in
+        channelItemsRef.child(channelID).queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
+
             if snap.exists() {
                 for child in snap.children {
-                    let _currentTag = Tag(tagID: (child as AnyObject).key)
-                    allTags.append(_currentTag)
+                    let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+                    currentItem.cID = channelID
+                    items.append(currentItem)
                 }
-                completion(allTags, nil)
+                items.reverse()
+                completion(true, items)
             } else {
-                completion(allTags, nil)
+                completion(false, items)
             }
-        }, withCancel: { error in
-            completion(allTags, error)
         })
     }
     
-    static func getExpertsForTag(tagID : String, completion: @escaping (_ experts : [User], _ error: Error?) -> Void) {
-        var allExperts = [User]()
+    static func getChannelContributors(channelID : String, completion: @escaping (_ success : Bool, _ users : [User]) -> Void) {
+        var users = [User]()
         
-        tagsRef.child(tagID).child("experts").observeSingleEvent(of: .value, with: { snap in
-            for child in snap.children {
-                let _currentUser = User(uID: (child as AnyObject).key)
-                allExperts.append(_currentUser)
-            }
-            completion(allExperts, nil)
-        }, withCancel: { error in
-            completion(allExperts, error)
-        })
-    }
-    
-    static func getExpertsForQuestion(qID : String, completion: @escaping (_ experts : [User]) -> Void) {
-        var allExperts = [User]()
-        
-        questionsRef.child(qID).child("experts").observeSingleEvent(of: .value, with: { snap in
-            for child in snap.children {
-                let _currentUser = User(uID: (child as AnyObject).key)
-                allExperts.append(_currentUser)
-            }
-            completion(allExperts)
-        })
-    }
-
-    static func getRelatedQuestions(_ qID : String, completion: @escaping (_ questions : [Question], _ error: Error?) -> Void) {
-        var allQuestions = [Question]()
-        
-        questionsRef.child(qID).child("related").observeSingleEvent(of: .value, with: { snap in
-            for child in snap.children {
-                let _currentQuestion = Question(qID: (child as AnyObject).key)
-                allQuestions.append(_currentQuestion)
-            }
-            completion(allQuestions, nil)
-        }, withCancel: { error in
-            completion(allQuestions, error)
-        })
-    }
-    
-    static func getQuestion(_ qID : String, completion: @escaping (_ question : Question?, _ error : NSError?) -> Void) {
-        questionsRef.child(qID).observeSingleEvent(of: .value, with: { snap in
+        channelContributorsRef.child(channelID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
-                let _currentQuestion = Question(qID: qID, snapshot: snap)
-                completion(_currentQuestion, nil)
+                for child in snap.children {
+                    let user = User(uID: (child as AnyObject).key)
+                    users.append(user)
+                }
+                completion(false, users)
+            } else {
+                completion(false, users)
+            }
+        })
+    }
+    
+    static func getItem(_ itemID : String, completion: @escaping (_ item : Item?, _ error : NSError?) -> Void) {
+        itemsRef.child(itemID).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                let _currentItem = Item(itemID: itemID, snapshot: snap)
+                completion(_currentItem, nil)
             }
             else {
-                let userInfo = [ NSLocalizedDescriptionKey : "no question found" ]
-                completion(nil, NSError.init(domain: "No Question Found", code: 404, userInfo: userInfo))
+                let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
+                completion(nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
             }
         })
     }
     
-    static func getAnswer(_ aID : String, completion: @escaping (_ answer : Answer, _ error : NSError?) -> Void) {
-        answersRef.child(aID).observeSingleEvent(of: .value, with: { snap in
-            let _currentAnswer = Answer(aID: aID, snapshot: snap)
-            completion(_currentAnswer, nil)
+    static func getInviteItem(_ itemID : String,
+                              completion: @escaping (_ item : Item?, _ type: MessageType?, _ questions: [Item], _ toUser : User?, _ conversationID: String?, _ error : NSError?) -> Void) {
+        var allQuestions = [Item]()
+        var toUser : User? = nil
+        var type : MessageType?
+        
+        databaseRef.child("invites").child(itemID).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                var currentItem : Item!
+                
+                let conversationID = snap.childSnapshot(forPath: "conversationID").value as? String
+
+                //if interview or anything with child items - the itemID is the in
+                if let parentItemID = snap.childSnapshot(forPath: "parentItemID").value as? String {
+                    currentItem = Item(itemID: parentItemID, snapshot: snap)
+                } else {
+                    currentItem = Item(itemID: itemID, snapshot: snap)
+                }
+
+                if let userID = snap.childSnapshot(forPath: "fromUserID").value as? String {
+                    currentItem.user = User(uID: userID)
+                }
+                
+                if let userName = snap.childSnapshot(forPath: "fromUserName").value as? String {
+                    currentItem.user?.name = userName
+                }
+                
+                if let typeString = snap.childSnapshot(forPath: "type").value as? String {
+                    type = MessageType.getMessageType(type: typeString)
+                }
+                
+                
+                if snap.childSnapshot(forPath: "items").exists() {
+                    for question in snap.childSnapshot(forPath: "items").children {
+                        if let qSnap = question as? FIRDataSnapshot, let qTitle = qSnap.value as? String {
+                            let newItem = Item(itemID: qSnap.key)
+                            newItem.itemTitle = qTitle
+                            allQuestions.append(newItem)
+                        }
+                    }
+                }
+                
+                if let toUserID = snap.childSnapshot(forPath: "toUserID").value as? String, User.currentUser?.uID != nil, toUserID == User.currentUser?.uID! {
+                    toUser = User.currentUser
+                } else if let toUserID = snap.childSnapshot(forPath: "toUserID").value as? String {
+                    toUser = User(uID: toUserID)
+                    toUser?.name = snap.childSnapshot(forPath: "toUserName").value as? String
+                }
+                
+                completion(currentItem, type, allQuestions, toUser, conversationID, nil)
+            }
+            else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
+                completion(nil, nil, [], nil, nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
+            }
         })
     }
     
-    static func getAnswerCollection(_ aCollectionID : String, completion: @escaping (_ hasDetail : Bool, _ answers : [String]?) -> Void) {
-        var answers = [String]()
-        answerCollectionsRef.child(aCollectionID).observeSingleEvent(of: .value, with: { snap in
-            if snap.childrenCount <= 1 {
-                completion(false, nil)
-            } else {
+    static func getSeriesTypes(completion: @escaping (_ allItems : [Item]) -> Void) {
+        var allItems = [Item]()
+        
+        databaseRef.child("seriesTypes").observeSingleEvent(of: .value, with: { snap in
+            for child in snap.children {
+                let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+                allItems.append(currentItem)
+            }
+            completion(allItems)
+        })
+    }
+    
+    static func getItemCollection(_ itemID : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
+        var items = [Item]()
+        
+        itemCollectionRef.child(itemID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
                 for child in snap.children {
-                    answers.append((child as AnyObject).key as String)
+                    let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
+                    items.append(item)
                 }
-                completion(true, answers)
+                items.reverse()
+                completion(true, items)
+            } else {
+                completion(false, items)
+            }
+        })
+    }
+    
+    static func getItemCollection(_ itemID : String, lastItem : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
+        var items = [Item]()
+        
+        itemCollectionRef.child(itemID).queryOrderedByKey().queryEnding(atValue: lastItem).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for child in snap.children {
+                    if (child as AnyObject).key != lastItem {
+                        let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
+                        items.append(item)
+                    }
+                }
+                items.reverse()
+                completion(false, items)
+            } else {
+                completion(false, items)
             }
         })
     }
     /*** MARK END : GET INDIVIDUAL ITEMS ***/
 
-    /*** MARK START : GET USER ITEMS ***/
-    
+    /*** MARK START : GET USER ***/
     ///Returns the shortest public profile
-    static func getUser(_ uID : String, completion: @escaping (_ user : User, _ error : NSError?) -> Void) {
+    static func getUser(_ uID : String, completion: @escaping (_ user : User?, _ error : NSError?) -> Void) {
         usersPublicSummaryRef.child(uID).observeSingleEvent(of: .value, with: { snap in
-            let _returnUser = User(uID: uID, snapshot: snap)
-            completion(_returnUser, nil)
+            if snap.exists() {
+                let _returnUser = User(uID: uID, snapshot: snap)
+                completion(_returnUser, nil)
+            } else {
+                let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
+                completion(nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
+            }
         })
     }
     
@@ -620,315 +696,182 @@ class Database {
         })
     }
     
-    static func getUserSummaryForAnswer(_ aID : String, completion: @escaping (_ answer : Answer?, _ user : User?, _ error : NSError?) -> Void) {
-        answersRef.child(aID).observeSingleEvent(of: .value, with: { snap in
-            let answer = Answer(aID: aID, snapshot: snap)
-            if snap.hasChild("uID") {
-                let _uID = snap.childSnapshot(forPath: "uID").value as! String
-                getUser(_uID, completion: {(_user, error) in
-                    error != nil ? completion(answer, nil, error) : completion(answer, _user, nil)
-                })
-            } else {
-                let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
-                completion(answer, nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
-            }
-        })
-    }
-    
-    static func getUserAnswerIDs(uID: String, completion: @escaping (_ answers : [Answer]) -> Void) {
-        var allAnswers = [Answer]()
-        usersPublicDetailedRef.child(uID).child("answers").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+    static func getDetailedUserProfile(user: User, completion: @escaping (_ user: User) -> Void) {
+        usersPublicDetailedRef.child(user.uID!).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
-                for child in snap.children {
-                    let currentAnswer = Answer(aID: (child as AnyObject).key, qID: (child as AnyObject).value)
-                    allAnswers.append(currentAnswer)
-                }
-                completion(allAnswers)
-            } else {
-                completion(allAnswers)
+                user.updateUser(detailedSnapshot: snap)
+                completion(user) 
             }
         })
     }
     
-    ///Get all tags that user is a verified expert in
-    static func getUserExpertTags(uID: String, completion: @escaping (_ tags : [Tag]) -> Void) {
-        var allTags = [Tag]()
+    //items a user has saved
+    static func getUserSavedItems(completion: @escaping (_ items : [Item]) -> Void) {
+        guard let user = User.currentUser else { return }
+        var allItems = [Item]()
         
-        usersPublicDetailedRef.child(uID).child("expertiseTags").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        usersRef.child(user.uID!).child("savedItems").observeSingleEvent(of: .value, with: { snap in
+            if snap.exists() {
+                for item in snap.children {
+                    if let item = item as? FIRDataSnapshot, let type = item.value as? String{
+                        let savedItem = Item(itemID: item.key, type: type)
+                        
+                        if !User.currentUser!.savedItems.contains(savedItem) {
+                            User.currentUser!.savedItems.append(savedItem)
+                            allItems.append(savedItem)
+                        }
+                    }
+                }
+            }
+            completion(allItems)
+        })
+    }
+    
+    //items a user has created
+    static func getUserItems(uID: String, completion: @escaping (_ items : [Item]) -> Void) {
+        var allItems = [Item]()
+        usersPublicDetailedRef.child(uID).child("items").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
-                    let currentTag = Tag(tagID: (child as AnyObject).key)
-                    allTags.append(currentTag)
+                    let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
+                    allItems.append(item)
                 }
-                completion(allTags)
+                completion(allItems)
             } else {
-                completion(allTags)
+                completion(allItems)
             }
         })
     }
+    
     /*** MARK END : GET USER ITEMS ***/
     
-    /* CREATE / UPDATE FEED */
-    static func createExploreFeed(_ feedItemType: FeedItemType, completedFeed: @escaping (_ feed : [AnyObject?]) -> Void) {
-        switch feedItemType {
-        case .tag:
-            getExploreTags({ tags, error in
-                if error == nil {
-                    let _feed = tags.map({$0 as AnyObject?})
-                    completedFeed(_feed)
-                }
-            })
-        case .question:
-            getExploreQuestions({ questions, error in
-                if error == nil {
-                    let _feed = questions.map({$0 as AnyObject?})
-                    completedFeed(_feed)
-                }
-            })
-        case .answer:
-            getExploreAnswers({ answers, error in
-                if error == nil {
-                    completedFeed(answers)
-                }
-            })
-        case .people: break
-        }
-    }
-    
     //Create Feed for current user from followed tags
-    static func createFeed(_ completedFeed: @escaping (_ feed : Tag) -> Void) {
+    static func createFeed(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
+        guard let user = User.currentUser else { return }
+        var allNewsItems = [Item]()
+        var itemStack = [Bool](repeating: false, count: user.subscriptions.count)
         
-        if User.currentUser!.savedTags.count == 0 && !initialFeedUpdateComplete {
+        if user.subscriptions.count == 0 && !initialFeedUpdateComplete {
+            completion(allNewsItems)
             
-            let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
-            keepUserTagsUpdated()
-            completedFeed(homeFeed)
+            keepChannelsUpdated(completion: { newItems in
+                completion(newItems)
+            })
+            
+            //add listener if user subscribes to new channel
             initialFeedUpdateComplete = true
 
-        } else if User.currentUser!.savedTags.count > 0 && !initialFeedUpdateComplete {
-            //check for questions added to tags
-            keepUserTagsUpdated()
-        
-            //monitor updates to existing questions
-            updateAnswersForExistingFeedQuestions()
-        
+        } else if user.subscriptions.count > 0 && !initialFeedUpdateComplete {
+            
+            keepChannelsUpdated(completion: { newItems in
+                completion(newItems)
+            })
+            
             //add in new posts before returning feed
-            for (offset : index, (key : tag, value : _)) in User.currentUser!.savedTags.enumerated() {
-                Database.addNewQuestionsFromTagToFeed(tag.tagID!, tagTitle: tag.tagTitle, completion: {(success) in
-                    if index + 1 == User.currentUser?.savedTags.count && success {
+            for (index, channel) in user.subscriptions.enumerated() {
+                Database.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
+                    
+                    allNewsItems.append(contentsOf: newItems)
+                    itemStack[index] = true
+                    
+                    if isUpdateComplete(stack: itemStack) {
                         initialFeedUpdateComplete = true
-                        
-                        //once feed is updated get the feed to return
-                        getFeed({ homeFeed in
-                            completedFeed(homeFeed)
-                        })
+                        completion(sortNewItems(items: allNewsItems))
                     }
                 })
             }
         }
     }
     
-    static func getFeed(_ completion: @escaping (_ feed : Tag) -> Void) {
-        let homeFeed = Tag(tagID: "feed")         //create new blank 'tag' that will be used for all the questions
-        let feedPath = currentUserFeedRef.queryOrdered(byChild: "lastAnswerID").queryLimited(toLast: querySize)
-        homeFeed.questions = [Question]()
+    static func fetchMoreItems(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
+        guard let user = User.currentUser else { return }
+        var allNewsItems = [Item]()
+        var itemStack = [Bool](repeating: false, count: user.subscriptions.count)
         
-        feedPath.observeSingleEvent(of: .value, with: {(snap) in
-            for question in snap.children {
-                let currentTag = Tag(tagID: (question as AnyObject).childSnapshot(forPath: "tagID").value as! String,
-                                     tagTitle: (question as AnyObject).childSnapshot(forPath: "tagTitle").value as? String)
-                let _question = Question(qID: (question as AnyObject).key, qTag: currentTag)
-                homeFeed.questions.insert(_question, at: 0)
-            }
-            completion(homeFeed)
-        })
-    }
-    
-    static func updateAnswersForExistingFeedQuestions() {
-        currentUserFeedRef.observeSingleEvent(of: .value, with: {(questionSnap) in
-            for question in questionSnap.children {
-                if let _answerID = questionSnap.childSnapshot(forPath: "\((question as AnyObject).key as String)/lastAnswerID").value as? String {
-                    User.currentUser!.savedQuestions[(question as AnyObject).key] = _answerID
-                    //  Database.keepQuestionsAnswersUpdated(question.key, lastAnswerID: _answerID)
-                } else {
-                    User.currentUser!.savedQuestions[(question as AnyObject).key] = "true"
+        //add in new posts before returning feed
+        for (index, channel) in user.subscriptions.enumerated() {
+            
+            Database.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
+                allNewsItems.append(contentsOf: newItems)
+                itemStack[index] = true
+                
+                if isUpdateComplete(stack: itemStack) {
+                    completion(sortNewItems(items: allNewsItems))
                 }
-            }
-            //updateFeedQuestions(nil, questions: User.currentUser!.savedQuestions, completion: { _ in })
-        })
+            })
+        }
     }
     
-    static func removeQuestionsFromTagInFeed(_ tagID : String, completion: @escaping (_ success: Bool) -> Void) {
-        let tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
+    static func sortNewItems(items : [Item]) -> [Item] {
+        return items.sorted(by: { $0.createdAt! > $1.createdAt! })
+    }
+    
+    static func isUpdateComplete(stack : [Bool]) -> Bool {
+        return !stack.contains(false)
+    }
+    
+    static func removeItemsFromFeed(_ channelID : String) {
         
-        tagQuestions.observeSingleEvent(of: .value, with: { snap in
+        channelItemsRef.child(channelID).removeAllObservers()
+
+    }
+    
+    static func addNewItemsToFeed(channel : Channel, startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
+        var channelNewItems = [Item]()
+        
+        let channelItems : FIRDatabaseQuery = channelItemsRef.child(channel.cID)
+        
+        if !activeListeners.contains(channelItemsRef.child(channel.cID)) {
+            activeListeners.append(channelItemsRef.child(channel.cID))
+        }
+        
+        channelItems.queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
-                for question in snap.children {
-                    currentUserRef.child("savedQuestions").child((question as! FIRDataSnapshot).key).setValue(nil)
+                for item in snap.children {
+                    if let item = item as? FIRDataSnapshot {
+                        let item = Item(itemID: item.key, snapshot: item)
+                        item.cID = channel.cID
+                        item.cTitle = channel.cTitle
+                        
+                        channelNewItems.append(item)
+                    }
                 }
-                completion(true)
             }
+            channelNewItems.reverse()
+            completion(channelNewItems)
         })
     }
     
-    static func addNewQuestionsFromTagToFeed(_ tagID : String, tagTitle: String?, completion: @escaping (_ success: Bool) -> Void) {
-        var tagQuestions : FIRDatabaseQuery = tagsRef.child(tagID).child("questions")
-        
-        currentUserRef.child("savedTags").child(tagID).observeSingleEvent(of: .value, with: { snap in
-            if snap.exists() && (snap.childSnapshot(forPath: "lastQuestionID").value! as AnyObject).isKind(of: NSString.self) {
-                //first get the last sync'd question for a tag
-                let lastQuestionID = snap.childSnapshot(forPath: "lastQuestionID").value as! String
-                    
-                if lastQuestionID != "true" {
-                    tagQuestions = tagQuestions.queryOrderedByKey().queryStarting(atValue: lastQuestionID)
-                }
-                
-                var newQuestions = [String : String?]()
-                
-                tagQuestions.observeSingleEvent(of: .value, with: { questionSnap in
-                    for (questionIndex, questionID) in questionSnap.children.enumerated() {
-                        
-                        let lastQuestionKey = (questionID as! FIRDataSnapshot).key
-                        
-                        if lastQuestionKey != lastQuestionID {
-                            newQuestions[(questionID as AnyObject).key] = "true"
-                        }
-                        
-                        if questionIndex + 1 == Int(questionSnap.childrenCount) && lastQuestionKey != lastQuestionID { //at the last question in tag query
-                            currentUserRef.child("savedTags/\(tagID)").updateChildValues(["lastQuestionID" : (questionID as! FIRDataSnapshot).key]) // update last sync'd question ID
-                            keepTagQuestionsUpdated(tagID, tagTitle: tagTitle, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
-                        } else if questionIndex + 1 == Int(questionSnap.childrenCount) && lastQuestionKey == lastQuestionID {
-                            keepTagQuestionsUpdated(tagID, tagTitle: tagTitle, lastQuestionID: (questionID as AnyObject).key) // add listener for new questions added to tag
-                        }
-                    }
-                    
-                    // adds the questions to the feed once we have iterated through all the questions
-                    updateFeedQuestions(tagID, tagTitle: tagTitle, questions: newQuestions, completion: { added in
-                        completion(true)
-                    })
-                })
-            }
-        })
-    }
-    
-    static func updateFeedQuestions(_ tagID : String?, tagTitle: String?, questions : [String : String?], completion: @escaping (_ added: Bool) -> Void) {
-        //add new questions to feed
-        let _updatePath = currentUserRef.child(Item.Feed.rawValue)
-        var post = [String : AnyObject]()
-        
-        if let _tagID = tagID {
-            post["tagID"] = _tagID as AnyObject?
-        }
-        
-        if let _tagID = tagID {
-            post["tagTitle"] = tagTitle as AnyObject?
-        }
-
-        if questions.count == 0 {
-            completion(true)
-        } else {
-            for (offset : index, (key : questionID, value : lastAnswerID)) in questions.enumerated() {
-                var newAnswersForQuestion : FIRDatabaseQuery = questionsRef.child(questionID).child("answers")
-
-                if lastAnswerID != "true" {
-                    newAnswersForQuestion = newAnswersForQuestion.queryOrderedByKey().queryStarting(atValue: lastAnswerID)
-                }
-                
-                //snap is a specific question's answers
-                newAnswersForQuestion.observeSingleEvent(of: .value, with: { snap in
-                    let totalNewAnswers = snap.childrenCount
-                    for (answerIndex, answerID) in snap.children.enumerated() {
-                        if answerIndex + 1 == Int(totalNewAnswers) && (answerID as AnyObject).key != lastAnswerID {
-                            
-                            //if last answer then update value for last sync'd answer in database and add listener
-                            post["lastAnswerID"] = (answerID as AnyObject).key
-                            post["newAnswerCount"] = totalNewAnswers as AnyObject?
-                            
-                            _updatePath.updateChildValues([questionID : post], withCompletionBlock: { (error, ref) in
-                                
-                                if index + 1 == questions.count {
-                                    completion(true)
-                                }
-                            })
-    //                        keepQuestionsAnswersUpdated(questionID, lastAnswerID: answerID.key)
-                        } else if answerIndex + 1 == Int(totalNewAnswers) && (answerID as AnyObject).key == lastAnswerID {
-                            if index + 1 == questions.count {
-                                completion(true)
-                            }
-                        }
-                        else if totalNewAnswers == 0 {
-                            post["lastAnswerID"] = (answerID as AnyObject).key
-                            post["newAnswerCount"] = totalNewAnswers as AnyObject?
-
-                            _updatePath.updateChildValues([questionID : post], withCompletionBlock: { (error, ref) in
-                                if index + 1 == questions.count {
-                                    completion(true)
-                                }
-                            })
-                        }
-                    }
-                    
-                })
-            }
-        }
-    }
-    
-    static func keepUserTagsUpdated() {
+    static func keepChannelsUpdated(completion: @escaping (_ items : [Item]) -> Void) {
         if User.isLoggedIn() {
             
-            let userTagsPath : FIRDatabaseQuery = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
-            activeListeners.append(getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags"))
-            
-            userTagsPath.observe(.childAdded, with: { tagSnap in
+            let subscriptions : FIRDatabaseQuery = currentUserRef.child("subscriptions")
+            activeListeners.append(currentUserRef.child("subscriptions"))
+            let endUpdateAt : Date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+
+            subscriptions.observe(.childAdded, with: { channelSnap in
                 if initialFeedUpdateComplete {
-                    addNewQuestionsFromTagToFeed(tagSnap.key, tagTitle: tagSnap.childSnapshot(forPath: "title").value as? String, completion: { success in
-                        NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdated"), object: self)
+                    let channel = Channel(cID: channelSnap.key, title: channelSnap.value as? String ?? "")
+                    addNewItemsToFeed(channel: channel, startingAt: Date(), endingAt: endUpdateAt, completion: { items in
+                        completion(items)
                     })
-                } else {
-                    //print("ignoring child added)")
                 }
             })
             
-            userTagsPath.observe(.childRemoved, with: { tagSnap in
+            subscriptions.observe(.childRemoved, with: { channelSnap in
                 if initialFeedUpdateComplete {
-                    removeQuestionsFromTagInFeed(tagSnap.key, completion: { success in
-                        NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdated"), object: self)
-                    })
-                } else {
-                    //print("ignoring child removed)")
+                    removeItemsFromFeed(channelSnap.key)
                 }
             })
         }
     }
     
-    static func keepTagQuestionsUpdated(_ tagID : String, tagTitle: String?, lastQuestionID : String) {
-        let tagsRef = getDatabasePath(Item.Tags, itemID: tagID).child("questions").queryOrderedByKey().queryStarting(atValue: lastQuestionID)
-        activeListeners.append(getDatabasePath(Item.Tags, itemID: tagID).child("questions"))
-        
-        tagsRef.observe(.childAdded, with: { (snap) in
-            if snap.key != lastQuestionID {
-                currentUserRef.child("savedTags/\(tagID)").updateChildValues(["lastQuestionID" : snap.key]) //update last sync'd question for user
-                updateFeedQuestions(tagID, tagTitle: tagTitle, questions: [snap.key : "true"], completion: { _ in })
-                    //add question to feed
-            }
-        })
-    }
+    
     
     static func cleanupListeners() {
         for listener in activeListeners {
             listener.removeAllObservers()
         }
-    }
-    
-    /** REMOVED THIS LISTENER TO MINIMIZE NUMBER OF CONNECTIONS - ONLY REFRESHING ANSWERS ON RELOAD **/
-    static func keepQuestionsAnswersUpdated(_ questionID : String, lastAnswerID : String) {
-        let _updatePath = currentUserRef.child("savedQuestions").child(questionID).child("lastAnswerID")
-        let _observePath = getDatabasePath(Item.Questions, itemID: questionID).child("answers").queryOrderedByKey().queryStarting(atValue: lastAnswerID)
-        
-        activeListeners.append(getDatabasePath(Item.Questions, itemID: questionID).child("answers"))
-        _observePath.observe(.childAdded, with: { snap in
-            _updatePath.setValue(snap.key)
-        })
     }
     
     /* AUTH METHODS */
@@ -981,6 +924,8 @@ class Database {
                 cleanupListeners()
                 removeCurrentUser()
                 initialFeedUpdateComplete = false
+                currentAuthState = .loggedOut
+                
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "LogoutSuccess"), object: self)
                 completion(true)
             } catch {
@@ -995,7 +940,7 @@ class Database {
             let credential = FIRFacebookAuthProvider.credential(withAccessToken: token!)
             FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
                 if error != nil {
-                    GlobalFunctions.showErrorBlock("Error logging in", erMessage: error!.localizedDescription)
+                    GlobalFunctions.showAlertBlock("Error logging in", erMessage: error!.localizedDescription)
                 } else {
                     completion(true)
                 }
@@ -1021,7 +966,9 @@ class Database {
         })
 
         FIRAuth.auth()?.addStateDidChangeListener { auth, user in
-            if let _user = user {
+            if let _user = user, currentAuthState != .loggedIn {
+                currentAuthState = .loggedIn
+                
                 setCurrentUserPaths()
                 
                 populateCurrentUser(_user, completion: { (success) in
@@ -1030,6 +977,8 @@ class Database {
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdateLogin"), object: self)
                     }
                 })
+            } else if currentAuthState == .loggedIn {
+                //ignore the call - state is logged in and auth fired again
             } else {
                 removeCurrentUser()
                 completion(false)
@@ -1043,20 +992,22 @@ class Database {
         
         currentUser.uID = nil
         currentUser.name = nil
-        currentUser.answers = []
-        currentUser.answeredQuestions = []
-        currentUser.expertiseTags = [:]
-        currentUser.savedTags = [ : ]
-        currentUser.savedTagIDs = []
+        currentUser.items = []
+        currentUser.savedItems = []
+        currentUser.savedVotes = [:]
+        
+        currentUser.subscriptions = []
+        currentUser.subscriptionIDs = []
+
+        currentUser.verifiedChannels = []
+        
         currentUser.profilePic = nil
         currentUser.thumbPic = nil
-        currentUser._totalAnswers = nil
+        currentUser.thumbPicImage = nil
         currentUser.birthday = nil
         currentUser.bio = nil
         currentUser.shortBio = nil
         currentUser.gender = nil
-        currentUser.savedQuestions = [ : ]
-        currentUser.socialSources = [ : ]
         
         setCurrentUserPaths()
         NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
@@ -1069,12 +1020,14 @@ class Database {
         if let userPicPath = userPicPath {
             if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
                 User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
             }
         }
     }
     
     ///Populate current user
     static func populateCurrentUser(_ user: FIRUser!, completion: @escaping (_ success: Bool) -> Void) {
+        
         User.currentUser!.uID = user.uid
         
         usersPublicSummaryRef.child(user.uid).observe(.value, with: { snap in
@@ -1088,6 +1041,9 @@ class Database {
             if snap.hasChild(SettingTypes.shortBio.rawValue) {
                 User.currentUser!.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
             }
+            
+            completion(true)
+
         }, withCancel: { error in
             //print("error getting user public summary \(error)")
         })
@@ -1102,24 +1058,28 @@ class Database {
             if snap.hasChild(SettingTypes.gender.rawValue) {
                 User.currentUser!.gender = snap.childSnapshot(forPath: SettingTypes.gender.rawValue).value as? String
             }
-            if snap.hasChild("answeredQuestions") {
-                User.currentUser!.answeredQuestions.removeAll()
-                for _answeredQuestion in snap.childSnapshot(forPath: "answeredQuestions").children {
-                    User.currentUser!.answeredQuestions.append((_answeredQuestion as AnyObject).key)
+            if snap.hasChild("items") {
+                User.currentUser!.items = []
+                for item in snap.childSnapshot(forPath: "items").children {
+                    if let item = item as? FIRDataSnapshot {
+                        let currentItem = Item(itemID: item.key, snapshot: item)
+                        User.currentUser!.items.append(currentItem)
+                    }
                 }
+            } else {
+                User.currentUser!.items = []
             }
-            if snap.hasChild("answers") {
-                User.currentUser!.answers = []
-                User.currentUser?._totalAnswers = Int(snap.childSnapshot(forPath: "answers").childrenCount)
-                for _answer in snap.childSnapshot(forPath: "answers").children {
-                    User.currentUser!.answers.append((_answer as AnyObject).key)
+            
+            if snap.hasChild("verifiedChannels") {
+                User.currentUser!.verifiedChannels = []
+                for channel in snap.childSnapshot(forPath: "verifiedChannels").children {
+                    if let channelSnap = channel as? FIRDataSnapshot {
+                        let channel = Channel(cID: channelSnap.key, title: channelSnap.value as? String ?? "")
+                        User.currentUser!.verifiedChannels.append(channel)
+                    }
                 }
-            }
-            if snap.hasChild("expertiseTags") {
-                User.currentUser!.expertiseTags = [:]
-                for expertise in snap.childSnapshot(forPath: "expertiseTags").children {
-                    User.currentUser!.expertiseTags[(expertise as AnyObject).key] = (expertise as AnyObject).value
-                }
+            } else {
+                User.currentUser!.verifiedChannels = []
             }
             
             setCurrentUserPaths()
@@ -1130,32 +1090,20 @@ class Database {
             print("error getting user public detailed summary \(error)")
         })
 
-        usersRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
-            if snap.hasChild("savedTags") {
-                for _tag in snap.childSnapshot(forPath: "savedTags").children {
-                    let tagTitle = (_tag as! FIRDataSnapshot).childSnapshot(forPath: "title").value as? String
-                    let lastAnswer = (_tag as! FIRDataSnapshot).childSnapshot(forPath: "lastAnswerID").value as? String
-
-                    let savedTag = Tag(tagID: (_tag as AnyObject).key,
-                                        tagTitle: tagTitle)
-                    User.currentUser!.savedTags[savedTag] = lastAnswer
-                    User.currentUser!.savedTagIDs.append((_tag as AnyObject).key as String)
+        usersRef.child(user.uid).child("subscriptions").observeSingleEvent(of: .value, with: { snap in
+            for channel in snap.children {
+                if let channel = channel as? FIRDataSnapshot {
+                    let savedChannel = Channel(cID: channel.key, title: channel.value as? String ?? "")
+                    
+                    if !User.currentUser!.subscriptionIDs.contains(channel.key) {
+                        User.currentUser!.subscriptions.append(savedChannel)
+                        User.currentUser!.subscriptionIDs.append(channel.key)
+                    }
                 }
             }
-            
-            for profile in user.providerData {
-                let providerID = profile.providerID
-                if providerID == "facebook.com" {
-                    User.currentUser!.socialSources[.facebook] = true
-                } else if providerID == "twitter.com" {
-                    User.currentUser!.socialSources[.twitter] = true
-                }
-            }
-            
-            completion(true)
-            
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
         }, withCancel: { error in
-            print("error getting user public summary \(error)")
+            
         })
     }
     
@@ -1176,21 +1124,15 @@ class Database {
             })
             activeListeners.append(usersPublicDetailedRef.child(uID).child("bio"))
 
-            usersPublicDetailedRef.child(uID).child("answeredQuestions").observe(.childAdded, with: { snap in
-                if !User.currentUser!.answeredQuestions.contains(snap.key) {
-                    User.currentUser!.answeredQuestions.append(snap.key)
-                    NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-                }
-            })
-            activeListeners.append(usersPublicDetailedRef.child(uID).child("answeredQuestions"))
+            usersPublicDetailedRef.child(uID).child("items").observe(.childAdded, with: { snap in
+                let currentItem = Item(itemID: snap.key, snapshot: snap)
 
-            usersPublicDetailedRef.child(uID).child("answers").observe(.childAdded, with: { snap in
-                if !User.currentUser!.answers.contains(snap.key) {
-                    User.currentUser!.answers.append(snap.key)
+                if !User.currentUser!.items.contains(currentItem) {
+                    User.currentUser!.items.append(currentItem)
                     NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
                 }
             })
-            activeListeners.append(usersPublicDetailedRef.child(uID).child("answers"))
+            activeListeners.append(usersPublicDetailedRef.child(uID).child("items"))
             profileListenersAdded = true
         }
     }
@@ -1299,26 +1241,35 @@ class Database {
         })
     }
     
-    ///Save individual answer to Pulse database after Auth
-    static func addUserAnswersToDatabase( _ answer : Answer, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        let _user = FIRAuth.auth()?.currentUser
+    ///Save individual item to Pulse database after Auth
+    static func addItemToDatabase( _ item : Item, channelID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
-        var answersPost : [ String : AnyObject ] = ["qID": answer.qID as AnyObject, "uID": _user!.uid as AnyObject, "createdAt" : FIRServerValue.timestamp() as AnyObject]
-        
-        if answer.aLocation != nil {
-            answersPost["location"] = answer.aLocation! as AnyObject
-        }
-        
-        if answer.aType != nil {
-            answersPost["type"] = answer.aType!.rawValue as AnyObject?
-        }
-        
-        let post : [String: Any] = ["answers/\(answer.aID)" : answersPost] //NEED TO CHECK THIS
+        if let _user = FIRAuth.auth()?.currentUser {
+            var itemPost : [ String : AnyObject] = ["title": item.itemTitle as AnyObject,
+                                                   "uID": _user.uid as AnyObject,
+                                                   "createdAt" : FIRServerValue.timestamp() as AnyObject,
+                                                   "type" : item.type.rawValue as AnyObject,
+                                                   "cID": channelID as AnyObject]
+            
+            let itemStatsPost : [ String : AnyObject] = ["downVoteCount": 0 as AnyObject,
+                                                         "upVoteCount": 0 as AnyObject,
+                                                         "views" : 0 as AnyObject]
+            
+            if let url = item.contentURL?.absoluteString {
+                itemPost["url"] = url as AnyObject?
+            }
+            
+            if let contentType = item.contentType {
+                itemPost["contentType"] = contentType.rawValue as AnyObject?
+            }
+            
+            let post : [String: Any] = ["items/\(item.itemID)": itemPost,
+                                        "itemStats/\(item.itemID)" : itemStatsPost]
 
-        if _user != nil {
             databaseRef.updateChildValues(post , withCompletionBlock: { (blockError, ref) in
                 blockError != nil ? completion(false, blockError as Error?) : completion(true, nil)
             })
+            
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
@@ -1326,26 +1277,78 @@ class Database {
     }
     
     ///Save collection into question / user
-    static func addAnswerCollectionToDatabase(_ firstAnswer : Answer, post : [String : Bool], completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        let _user = FIRAuth.auth()?.currentUser
+    static func addItemCollectionToDatabase(_ item : Item, parentItem : Item, channelID : String, post : [String : String],
+                                            completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
-        let collectionPost : [AnyHashable: Any] = ["userDetailedPublicSummary/\(_user!.uid)/answers/\(firstAnswer.aID)": firstAnswer.qID,
-                                                   "userDetailedPublicSummary/\(_user!.uid)/answeredQuestions/\(firstAnswer.qID)" : "true",
-                                                   "questions/\(firstAnswer.qID)/answers/\(firstAnswer.aID)" : true,
-                                                   "answerCollections/\(firstAnswer.aID)" : post]
-        
-        if _user != nil {
-            databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
-                blockError != nil ? completion(false, blockError as? NSError) : completion(true, nil)
-            })
-        } else {
+        guard let _user = FIRAuth.auth()?.currentUser else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
         }
+        
+        var collectionPost : [AnyHashable: Any]! = [:]
+        
+        var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
+                                                "tagID" : item.tag?.itemID as AnyObject,
+                                                "tagTitle" : item.tag?.itemTitle as AnyObject,
+                                                "title" : item.itemTitle as AnyObject,
+                                                "uID" : item.itemUserID as AnyObject,
+                                                "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        if let contentType = item.contentType {
+            channelPost["contentType"] = contentType.rawValue as AnyObject?
+        }
+        
+        if let url = item.contentURL?.absoluteString {
+            channelPost["url"] = url as AnyObject?
+        }
+        
+        if post.count > 1 {
+            collectionPost["itemCollection/\(item.itemID)"] = post
+        }
+        
+        //don't add entry to chanel items for session // for feedback - will be a new itemID generated below // interview has only one combined entry
+        if parentItem.type != .interview, parentItem.type != .session, parentItem.type != .feedback {
+            collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
+        }
+        
+        //only add one entry for user for an interview
+        if parentItem.type != .interview {
+            collectionPost["userDetailedPublicSummary/\(_user.uid)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+        }
+        
+        //if it's an item in response to a feedback request - add the new item and update the created at for channelItems - keeps only one post for each feedback request
+        if parentItem.type == .session, item.type == .session {
+            collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = FIRServerValue.timestamp() as AnyObject
+        }
+            
+        //if it's new feedback session then add it to channel items & series but with the new key
+        else if parentItem.type == .feedback, item.type == .session {
+            let feedbackItemKey = databaseRef.child("items").childByAutoId().key
+
+            //duplicate the thumbnail for the item
+            if let _image = item.content as? UIImage  {
+                Database.uploadThumbImage(channelID: item.cID, itemID: feedbackItemKey, image: _image, completion: { (success, error) in } )
+            }
+            
+            collectionPost["channelItems/\(channelID)/\(feedbackItemKey)"] = channelPost
+            collectionPost["itemCollection/\(feedbackItemKey)/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["itemCollection/\(parentItem.itemID)/\(feedbackItemKey)"] = item.type.rawValue as AnyObject
+            collectionPost["items/\(feedbackItemKey)"] = channelPost
+
+        } else {
+        //if any other item - add the actual item to the series collection
+            collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
+        }
+        
+        databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (blockError, ref) in
+            blockError != nil ? completion(false, blockError) : completion(true, nil)
+        })
     }
     
-    static func updateQuestionViewCount(qID : String) {
-        questionsRef.child(qID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+    static func updateItemViewCount(itemID : String) {
+        itemStatsRef.child(itemID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
             if let currentViews = currentData.value as? Float {
                 currentData.value = currentViews + 1
                 return FIRTransactionResult.success(withValue: currentData)
@@ -1354,35 +1357,25 @@ class Database {
         })
     }
     
-    static func updateAnswerViewCount(aID : String) {
-        answerStatsRef.child(aID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
-            if let currentViews = currentData.value as? Float {
-                currentData.value = currentViews + 1
-                return FIRTransactionResult.success(withValue: currentData)
-            }
-            return FIRTransactionResult.success(withValue: currentData)
-        })
-    }
-    
-    static func addAnswerVote(_ _vote : AnswerVoteType, aID : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func addVote(_ _vote : VoteType, itemID : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         var upVoteCount = 0
         var downVoteCount = 0
         
-        if User.currentUser?.savedVotes[aID] != true {
-            answerStatsRef.child(aID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
-                if var answer = currentData.value as? [String : AnyObject] {
-                    upVoteCount = answer["upVoteCount"] as? Int ?? 0
-                    downVoteCount = answer["downVoteCount"] as? Int ?? 0
+        if User.currentUser?.savedVotes[itemID] != true {
+            itemStatsRef.child(itemID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+                if var item = currentData.value as? [String : AnyObject] {
+                    upVoteCount = item["upVoteCount"] as? Int ?? 0
+                    downVoteCount = item["downVoteCount"] as? Int ?? 0
 
-                    if _vote == AnswerVoteType.downvote {
+                    if _vote == .downvote {
                         downVoteCount -= 1
                     } else {
                         upVoteCount += 1
                     }
-                    answer["upVoteCount"] = upVoteCount as AnyObject?
-                    answer["downVoteCount"] = downVoteCount as AnyObject?
+                    item["upVoteCount"] = upVoteCount as AnyObject?
+                    item["downVoteCount"] = downVoteCount as AnyObject?
                     
-                    currentData.value = answer
+                    currentData.value = item
                     return FIRTransactionResult.success(withValue: currentData)
                 }
                 return FIRTransactionResult.success(withValue: currentData)
@@ -1390,9 +1383,9 @@ class Database {
                 if let error = error {
                     completion(false, error as Error?)
                 } else if committed == true {
-                    let post = [aID:true]
+                    let post = [itemID:true]
                     currentUserRef.child("votes").updateChildValues(post , withCompletionBlock: { (error, ref) in
-                        User.currentUser?.savedVotes[aID] = true
+                        User.currentUser?.savedVotes[itemID] = true
                     })
                     completion(true, nil)
                 }
@@ -1401,26 +1394,44 @@ class Database {
     }
     
     /** ASK QUESTIONS **/
-    static func askTagQuestion(tag : Tag, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func askQuestion(parentItem : Item, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to ask a question" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
-        guard let tagID = tag.tagID else {
-            let errorInfo = [ NSLocalizedDescriptionKey : "you can only post a question in an active tag" ]
-            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+        guard let channelID = parentItem.cID else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "please select a channel first" ]
+            completion(false, NSError.init(domain: "WrongChannel", code: 404, userInfo: errorInfo))
             return
         }
         
-        let questionKey = questionsRef.childByAutoId().key
+        guard User.currentUser!.subscriptionIDs.contains(parentItem.cID) else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you need to be subscribed to the channel to ask a question" ]
+            completion(false, NSError.init(domain: "NotSubscribed", code: 404, userInfo: errorInfo))
+            return
+        }
         
-        let post = ["questions/\(questionKey)/title":qText,
-                    "questions/\(questionKey)/tags/\(tagID)":tag.tagTitle ?? "true",
-                    "questions/\(questionKey)/uID/":user.uid,
-                    "tags/\(tagID)/questions/\(questionKey)":true,
-                    "users/\(user.uid)/askedQuestions/\(questionKey)":true] as [String: Any]
+        let itemKey = itemsRef.childByAutoId().key
+        
+        let itemPost : [String : Any] = ["title": qText,
+                                         "type":"question",
+                                         "uID": user.uid,
+                                         "cID":parentItem.cID,
+                                         "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        let channelPost : [String : AnyObject] = ["type" : "question" as AnyObject,
+                                                  "tagID" : parentItem.itemID as AnyObject,
+                                                  "tagTitle" : parentItem.itemTitle as AnyObject,
+                                                  "title" : qText as AnyObject,
+                                                  "uID" : user.uid as AnyObject,
+                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        let post = ["channelItems/\(channelID)/\(itemKey)":channelPost,
+                    "items/\(itemKey)":itemPost,
+                    "itemCollection/\(parentItem.itemID)/\(itemKey)":"question",
+                    "users/\(user.uid)/askedQuestions/\(itemKey)":true] as [String: Any]
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
@@ -1439,12 +1450,16 @@ class Database {
             return
         }
 
-        let questionKey = questionsRef.childByAutoId().key
+        let itemKey = itemsRef.childByAutoId().key
+        
+        let itemPost : [String : Any] = ["title": qText,
+                                         "type":"question",
+                                         "uID": user.uid,
+                                         "createdAt" : FIRServerValue.timestamp() as AnyObject]
 
-        let post = ["questions/\(questionKey)/title":qText,
-                    "questions/\(questionKey)/uID/":user.uid,
-                    "users/\(user.uid)/askedQuestions/\(questionKey)":true,
-                    "users/\(askUserID)/unansweredQuestions/\(questionKey)":true] as [String: Any]
+        let post = ["items/\(itemKey)": itemPost,
+                    "users/\(user.uid)/askedQuestions/\(itemKey)":true,
+                    "users/\(askUserID)/unansweredQuestions/\(itemKey)":true] as [String: Any]
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
@@ -1457,28 +1472,28 @@ class Database {
     }
     
     /* RECOMMEND EXPERT */
-    static func recommendExpert(tag: Tag, applyName: String, applyEmail: String, applyText: String,
+    static func recommendContributorRequest(channel: Channel, applyName: String, applyEmail: String, applyText: String,
                                 completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
     
         guard let user = FIRAuth.auth()?.currentUser else {
-            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to recommend experts" ]
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to recommend contributors" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
-        guard let tagID = tag.tagID else {
+        guard let channelID = channel.cID else {
             let errorInfo = [ NSLocalizedDescriptionKey : "please choose a channel first" ]
             completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
             return
         }
         
         let post = ["email":applyEmail,
-                    "tagID":tagID,
+                    "tagID":channelID,
                     "name":applyName,
                     "reason":applyText,
                     "recommenderID": user.uid]
     
-        databaseRef.child("expertRequests").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
+        databaseRef.child("contributorRequests").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
                 let errorInfo = [ NSLocalizedDescriptionKey : "error sending, please try again!" ]
                 completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
@@ -1489,25 +1504,25 @@ class Database {
     }
     
     /* BECOME EXPERT */
-    static func becomeExpert(tag : Tag, applyText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func contributorRequest(channel : Channel, applyText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard let user = FIRAuth.auth()?.currentUser else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
-        guard let tagID = tag.tagID else {
+        guard let channelID = channel.cID else {
             let errorInfo = [ NSLocalizedDescriptionKey : "please select a channel first" ]
-            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            completion(false, NSError.init(domain: "InvalidChannel", code: 404, userInfo: errorInfo))
             return
         }
         
-        let verificationPath = databaseRef.child("expertRequests")
+        let verificationPath = databaseRef.child("contributorRequests")
         let post = ["uID":user.uid,
                     "reason":applyText,
-                    "tagID":tagID]
+                    "channelID":channelID]
         
-        currentUserRef.child("appliedTags").child(tagID).observeSingleEvent(of: .value, with: { snap in
+        currentUserRef.child("contributorRequests").child(channelID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 let errorInfo = [ NSLocalizedDescriptionKey : "you have already applied! we will get back to you soon." ]
                 completion(false, NSError.init(domain: "AlreadyApplied", code: 404, userInfo: errorInfo))
@@ -1517,42 +1532,351 @@ class Database {
                         let errorInfo = [ NSLocalizedDescriptionKey : "error applying, please try again!" ]
                         completion(false, NSError.init(domain: "Error", code: 404, userInfo: errorInfo))
                     } else {
-                        currentUserRef.child("appliedTags").child(tagID).setValue(true)
+                        currentUserRef.child("appliedChannels").child(channelID).setValue(true)
                         completion(true, nil)
                     }
                 })
             }
         })
     }
+    
+    /** MARK INVITE COMPLETED **/
+    static func markInviteCompleted(inviteID: String) {
+        let invitePost = ["completed" : true]
+        messagesRef.child(inviteID).child("type").setValue(nil)
+        invitesRef.child(inviteID).updateChildValues(invitePost)
+    }
+    
+    /** INTERVIEW ITEMS **/
+    static func declineInterview(interviewItemID: String, interviewParentItem :Item, conversationID: String?, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        guard let _ = FIRAuth.auth()?.currentUser else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        guard let fromUser = interviewParentItem.user else {
+            let userInfo = [ NSLocalizedDescriptionKey : "couldn't find sender" ]
+            completion(false, NSError.init(domain: "IncorrectSender", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        let message = Message(from: User.currentUser!, to: fromUser, body: "Sorry! Interview request declined")
+        message.mID = conversationID != nil ? conversationID! : interviewParentItem.itemID
+        
+        Database.sendMessage(existing: true, message: message, completion: {(success, conversationID) in
+            if success {
+                //remove interview type from conversations
+                markInviteCompleted(inviteID: interviewItemID)
+                messagesRef.child(conversationID!).child("type").setValue(nil)
+                
+                completion(true, nil)
+            } else {
+                let errorInfo = [ NSLocalizedDescriptionKey : "error declining interview" ]
+                completion(false, NSError.init(domain: "Unknown", code: 404, userInfo: errorInfo))
+            }
+        })
+    }
+    
+    static func addInterviewToDatabase(interviewItemID: String, interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let _user = FIRAuth.auth()?.currentUser else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        let channelPost : [String : AnyObject] = ["type" : interviewParentItem.type.rawValue as AnyObject,
+                                                  "tagID" : interviewParentItem.tag?.itemID as AnyObject,
+                                                  "tagTitle" : interviewParentItem.tag?.itemTitle as AnyObject,
+                                                  "title" : interviewParentItem.itemTitle as AnyObject,
+                                                  "uID" : _user.uid as AnyObject,
+                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
+        
+        var collectionPost = ["userDetailedPublicSummary/\(_user.uid)/items/\(interviewParentItem.itemID)": interviewParentItem.type.rawValue as AnyObject,
+                              "items/\(interviewParentItem.itemID)" : channelPost,
+                              "channelItems/\(interviewParentItem.cID!)/\(interviewParentItem.itemID)" : channelPost,
+                              "invites/\(interviewItemID)/completed": true,
+                              "messages/\(interviewItemID)/type" : "message"] as [String : Any]
+        
+        if let tagID = interviewParentItem.tag?.itemID {
+            collectionPost["itemCollection/\(tagID)/\(interviewParentItem.itemID)"] = interviewParentItem.type.rawValue as AnyObject
+        }
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
+            blockError != nil ? completion(false, blockError) : completion(true, nil)
+        })
+    }
+    
+    static func createContributorInvite(channel: Channel, type: MessageType, description: String = "", toUser: User?, toName: String?, toEmail: String? = nil,                                          								approved: Bool = false, completion: @escaping (_ inviteID : String?, _ error : Error?) -> Void) {
+        
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to send invites" ]
+            completion(nil, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let inviteKey = databaseRef.child("invites").childByAutoId().key
+
+        var channelPost : [String : Any] = ["title" : channel.cTitle ?? "Contributor Invite",
+                                            "type" : type.rawValue,
+                                            "fromUserID" : user.uid,
+                                            "fromUserName" : User.currentUser?.name ?? "",
+                                            "createdAt" : FIRServerValue.timestamp(),
+                                            "cID": channel.cID,
+                                            "cTitle": channel.cDescription ?? ""]
+        
+        var userPost : [String : Any] = ["title" : channel.cTitle ?? "Contributor Invite",
+                                         "type" : type.rawValue,
+                                         "createdAt" : FIRServerValue.timestamp()]
+        
+        //add in toUser
+        if let toUser = toUser {
+            channelPost["toUserID"] = toUser.uID
+            channelPost["toUserName"] = toUser.name ?? ""
+            
+            userPost["toUserID"] = toUser.uID
+            userPost["toUserName"] = toUser.name ?? ""
+            
+        } else {
+            channelPost["toUserName"] = toName ?? toUser?.name
+            channelPost["toUserName"] = toName ?? toUser?.name
+        }
+        
+        if let toEmail = toEmail {
+            channelPost["toUserEmail"] = toEmail
+        }
+        
+        if approved {
+            channelPost["approved"] = true
+        }
+        
+        if description != "" {
+            channelPost["description"] = description
+        }
+
+        var collectionPost : [String : Any] = ["invites/\(inviteKey)": channelPost]
+        
+        if let toUser = toUser, toUser.uID != user.uid {
+            //user is inviting / recommending someone
+            collectionPost["users/\(user.uid)/sentInvites/\(inviteKey)"] = userPost
+        } else {
+            //user is applying for himself
+            collectionPost["users/\(user.uid)/verificationRequests/\(channel.cID!)"] = inviteKey
+        }
+        
+        databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
+            completionError == nil ? completion(inviteKey, nil) : completion(nil, completionError)
+        })
+        
+    }
+    
+    static func updateContributorInvite(status: Bool, inviteID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let _ = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to send invites" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        databaseRef.child("invites/\(inviteID)/accepted").setValue(status, withCompletionBlock: {(error, ref) in
+            error == nil ? completion(true, nil) : completion(false, error)
+        })
+    }
+    
+    static func createInviteRequest(item: Item, type: MessageType, toUser: User?, toName: String?, toEmail: String? = nil, childItems: [String],
+                                    parentItemID: String?, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        var itemPost : [String : Any] = ["title" : item.itemTitle,
+                                         "type" : type.rawValue,
+                                         "fromUserID" : user.uid,
+                                         "fromUserName" : User.currentUser?.name ?? "",
+                                         "createdAt" : FIRServerValue.timestamp(),
+                                         "cID": item.cID,
+                                         "cTitle": item.cTitle,
+                                         "tagID": item.tag?.itemID ?? "",
+                                         "tagTitle": item.tag?.itemTitle ?? ""]
+        
+        var userPost : [String : Any] = ["title" : item.itemTitle,
+                                         "type" : type.rawValue,
+                                         "createdAt" : FIRServerValue.timestamp()]
+        
+        if let parentItemID = parentItemID {
+            itemPost["parentItemID"] = parentItemID
+        }
+        
+        //add in the questions
+        if !childItems.isEmpty {
+            var childItemDetail : [ String : String ] = [:]
+            for child in childItems {
+                let itemID = databaseRef.child("invites").child(item.itemID).child("items").childByAutoId().key
+                childItemDetail[itemID] = child
+            }
+            
+            itemPost["items"] = childItemDetail
+        }
+        
+        //add in toUser
+        if let toUser = toUser {
+            itemPost["toUserID"] = toUser.uID
+            itemPost["toUserName"] = toUser.name ?? ""
+            
+            userPost["toUserID"] = toUser.uID
+            userPost["toUserName"] = toUser.name ?? ""
+            
+        } else {
+            itemPost["toUserName"] = toName ?? toUser?.name
+            userPost["toUserName"] = toName ?? toUser?.name
+        }
+        
+        if let toEmail = toEmail {
+            itemPost["toUserEmail"] = toEmail
+        }
+        
+        let collectionPost = ["invites/\(item.itemID)": itemPost,
+                              "users/\(user.uid)/sentInvites/\(item.itemID)" : userPost]
+        
+        databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
+            completionError == nil ? completion(true, nil) : completion(false, completionError)
+        })
+    }
+    
+    static func addInterviewEmail(interviewID: String, email: String,
+                                  completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        databaseRef.child("invites").child(interviewID).updateChildValues(["toUserEmail":email], withCompletionBlock: { (completionError, ref) in
+            if completionError == nil {
+                completion(true, nil)
+            } else {
+                completion(false, completionError)
+            }
+        })
+    }
+    /** END INTERVIEW ITEMS **/
 
     
+    /** ADD NEW SERIES TO CHANNEL **/
+    static func startNewChannel(cTitle: String, cDescription : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = FIRAuth.auth()?.currentUser else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let userPost = ["cTitle": cTitle,
+                        "cDescription":cDescription]
+        
+        let post = ["cTitle": cTitle,
+                    "cDescription":cDescription,
+                    "fromUserName":User.currentUser!.name ?? "",
+                    "fromUserID":user.uid]
+        
+        let newChannelRequestID = databaseRef.child("newChannelRequests").childByAutoId().key
+        
+        let combinedPost : [AnyHashable: Any] =
+            ["newChannelRequests/\(newChannelRequestID)": post as AnyObject,
+             "users/\(user.uid)/newChannelRequests/\(newChannelRequestID)" : userPost]
+
+        
+        databaseRef.updateChildValues(combinedPost, withCompletionBlock: { (error, ref) in
+            error != nil ? completion(false, error) : completion(true, nil)
+        })
+    }
+    
+    /** ADD NEW SERIES TO CHANNEL **/
+    static func addNewSeries(channelID: String, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        
+        let itemPost : [String : Any] = ["title" : item.itemTitle,
+                                        "description" : item.itemDescription,
+                                        "type" : item.type.rawValue,
+                                        "uID" : item.itemUserID,
+                                        "createdAt" : FIRServerValue.timestamp(),
+                                        "cID":channelID]
+        
+        let channelPost : [String : Any] = ["title" : item.itemTitle,
+                                         "type" : item.type.rawValue]
+        
+        
+        let collectionPost = ["channels/\(channelID)/tags/\(item.itemID)": channelPost,
+                              "items/\(item.itemID)" : itemPost]
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
+            error != nil ? completion(false, error) : completion(true, nil)
+        })
+    }
+    
+    /** ADD NEW THREAD TO SERIES **/
+    static func addThread(channelID: String, parentItem: Item, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard let user = User.currentUser, user.uID != nil else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to start a thread" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard item.type != .unknown else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "sorry this thread is not valid" ]
+            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard user.isVerified(for: Channel(cID: channelID)) else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "only verified contributors can start a thread" ]
+            completion(false, NSError.init(domain: "NotExpert", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let itemPost : [String : Any] = ["title" : item.itemTitle,
+                                         "description" : item.itemDescription,
+                                         "type" : item.type.rawValue,
+                                         "uID" : user.uID!,
+                                         "createdAt" : FIRServerValue.timestamp(),
+                                         "cID":channelID]
+        
+        let channelItemsPost : [String : Any] = ["title" : item.itemTitle,
+                                                 "tagID" : parentItem.itemID,
+                                                 "tagTitle" : parentItem.itemTitle,
+                                                 "uID" : user.uID!,
+                                                 "createdAt" : FIRServerValue.timestamp(),
+                                                 "type" : item.type.rawValue]
+        
+        let collectionPost = ["channelItems/\(channelID)/\(item.itemID)": channelItemsPost,
+                              "items/\(item.itemID)" : itemPost,
+                              "itemCollection/\(parentItem.itemID)/\(item.itemID)": item.type.rawValue] as [String : Any]
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
+            error != nil ? completion(false, error) : completion(true, nil)
+        })
+    }
+    
     /* STORAGE METHODS */
-    static func getAnswerURL(qID: String, fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
-        let path = answersStorageRef.child(qID).child(fileID)
+    static func getItemURL(channelID: String, fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
+        let path = storageRef.child("channels/\(channelID)").child(fileID).child("content")
         
         let _ = path.downloadURL { (URL, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(URL!, nil)
         }
     }
     
-    static func getAnswerMeta(_ fileID : String, completion: @escaping (_ contentType : MediaAssetType?, _ error : NSError?) -> Void) {
-        let path = answersStorageRef.child(fileID)
+    static func getImage(channelID: String, itemID : String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
+        let path = storageRef.child("channels/\(channelID)").child(itemID).child(fileType.rawValue)
         
-        path.metadata { (metadata, error) -> Void in
-            if let _metadata = metadata?.contentType {
-                error != nil ? completion(nil, error! as NSError?) : completion(MediaAssetType.getAssetType(_metadata), nil)
-            }
-        }
-    }
-    
-    static func getTagImage(_ fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
-        let _ = tagsStorageRef.child(fileID).data(withMaxSize: maxImgSize) { (data, error) -> Void in
+        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
     }
     
-    static func getImage(_ type : Item, fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
-        let path = getStoragePath(type, itemID: fileID)
+    static func getSeriesImage(seriesName: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
+        let path = storageRef.child("seriesTypes/\(seriesName)").child(fileType.rawValue)
+        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
+            error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
+        }
+    }
+    
+    static func getChannelImage(channelID: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
+        let path = storageRef.child("channels/\(channelID)").child(fileType.rawValue)
+        
         path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
@@ -1570,25 +1894,18 @@ class Database {
         }
     }
     
-    static func getAnswerImage(qID : String, fileID : String, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
-        let path = storageRef.child("answers").child(qID).child(fileID)
-        
-        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
-            error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
-        }
-    }
-    
-    //Save a question for a user
-    static func saveQuestion(_ questionID : String, completion: @escaping (Bool, Error?) -> Void) {
+    //Save an item for a user
+    static func saveItem(item : Item, completion: @escaping (Bool, Error?) -> Void) {
         if User.isLoggedIn() {
-            if User.currentUser?.savedQuestions != nil && User.currentUser!.savedQuestions[questionID] != nil { //remove question
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions/\(questionID)")
+            if User.currentUser?.savedItems != nil, User.currentUser!.savedItems.contains(item) { //remove item
+                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems/\(item.itemID)")
                 _path.setValue("true", withCompletionBlock: { (completionError, ref) in
-                    completionError != nil ? completion(false, completionError!) : completion(true, nil)
+                    completionError != nil ? completion(false, completionError!) : completion(false, nil)
                 })
-            } else { //pin question
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedQuestions")
-                _path.updateChildValues([questionID: "true"], withCompletionBlock: { (completionError, ref) in
+            } else { //pin item
+                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems")
+                _path.updateChildValues([item.itemID: item.type.rawValue], withCompletionBlock: { (completionError, ref) in
+                    User.currentUser!.savedItems.append(item)
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             }
@@ -1598,53 +1915,83 @@ class Database {
         }
     }
     
-    static func pinTagForUser(_ tag : Tag, completion: @escaping (Bool, NSError?) -> Void) {
-        if User.isLoggedIn() {
-            if User.currentUser?.savedTags != nil && User.currentUser!.savedTagIDs.contains(tag.tagID!) { //remove tag
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags/\(tag.tagID!)")
+    static func subscribeChannel(_ channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
+        if User.isLoggedIn(), let user = User.currentUser {
+            if let savedIndex = user.subscriptionIDs.index(of: channel.cID), let channelID = channel.cID  { //unsubscribe
+                let _path = currentUserRef.child("subscriptions/\(channelID)")
+                
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     } else {
+                        if let savedChannelIndex = user.subscriptions.index(of: channel) {
+                            user.subscriptions.remove(at: savedChannelIndex)
+                        }
+                        
+                        user.subscriptionIDs.remove(at: savedIndex)
+
                         completion(true, nil)
-                        User.currentUser?.savedTags[tag] = nil
+
                         _path.removeAllObservers()
                     }
                 })
-            }
-            else { //save tag
-                let _path = getDatabasePath(Item.Users, itemID: User.currentUser!.uID!).child("savedTags")
                 
-                let post = ["lastQuestionID" : "true", "title" : tag.tagTitle ?? ""] as [String: Any]
+                databaseRef.child("channelSubscribers").child(channel.cID).child(user.uID!).setValue(nil)
                 
-                _path.updateChildValues([tag.tagID!: post], withCompletionBlock: { (completionError, ref) in
+            } else { //subscribe
+                let subscriberPost = ["users/\(user.uID!)/subscriptions/\(channel.cID!)":channel.cTitle ?? "",
+                            "channelSubscribers/\(channel.cID!)/\(user.uID!)":true] as [String: Any]
+                
+                databaseRef.updateChildValues(subscriberPost, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     }
                     else {
-                        User.currentUser?.savedTags[tag] = "true"
+                        if !User.currentUser!.subscriptionIDs.contains(channel.cID) {
+                            user.subscriptionIDs.append(channel.cID)
+                            user.subscriptions.append(channel)
+                        }
+                        
+                        if user.subscriptions.count == 1 { //was empty before
+                            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
+                        }
+                        
                         completion(true, nil)
                     }
                 })
             }
         } else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please login to save tags" ]
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to subscribe to channels" ]
             completion(false, NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
         }
     }
     
     /* UPLOAD IMAGE TO STORAGE */
-    static func uploadImage(_ type : Item, fileID : String, image : UIImage, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        let path = getStoragePath(type, itemID: fileID)
+    static func uploadThumbImage(channelID: String, itemID : String, image : UIImage, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        uploadImage(channelID: channelID, itemID: itemID, image: image, fileType: .thumb, completion: {(success, error) in
+            completion(success, error)
+        })
+    }
+    
+    static func uploadImage(channelID: String, itemID : String, image : UIImage, fileType : FileTypes,
+                                 completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
+        let path = storageRef.child("channels").child(channelID).child(itemID).child(fileType.rawValue)
+        
         let _metadata = FIRStorageMetadata()
         _metadata.contentType = "image/jpeg"
-        let imgData = image.mediumQualityJPEGNSData
         
-        path.put(imgData as Data, metadata: _metadata) { (metadata, error) in
-            if (error != nil) {
-                completion(false, error as NSError?)
-            } else {
-                completion(true, nil)
+        let data : Data? = fileType == .content ? resizeImageHeight(image, newHeight: min(UIScreen.main.bounds.height, image.size.height)) : resizeImageHeight(image, newHeight: defaultPostHeight)
+
+        if let data = data {
+            let _metadata = FIRStorageMetadata()
+            _metadata.contentType = "image/jpeg"
+            
+            path.put(data, metadata: _metadata) { (metadata, error) in
+                if (error != nil) {
+                    completion(false, error as NSError?)
+                } else {
+                    completion(true, nil)
+                }
             }
         }
     }
@@ -1674,13 +2021,11 @@ class Database {
                         usersPublicSummaryRef.child(_currentUserID).updateChildValues(userPost)
                     }
                 }
-
             }
         }
     }
     
     static func resizeImage(_ image: UIImage, newWidth: CGFloat) -> Data? {
-        
         let scale = newWidth / image.size.width
         let newHeight = image.size.height * scale
         UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
@@ -1688,6 +2033,18 @@ class Database {
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        return UIImageJPEGRepresentation(newImage!, 0.7)
+        return UIImageJPEGRepresentation(newImage!, 1.0)
+    }
+    
+    static func resizeImageHeight(_ image: UIImage, newHeight: CGFloat) -> Data? {
+        let scale = newHeight / image.size.height
+        let newWidth = image.size.width * scale
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
+        image.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+
+        UIGraphicsEndImageContext()
+        
+        return UIImageJPEGRepresentation(newImage!, 1.0)
     }
 }

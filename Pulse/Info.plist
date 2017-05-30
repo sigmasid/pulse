@@ -65,6 +65,8 @@
 	<string>591398344361572</string>
 	<key>FacebookDisplayName</key>
 	<string>Pulse</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>
@@ -90,15 +92,19 @@
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Join the discussion!</string>
+	<string>This lets you take photos and record video</string>
 	<key>NSLocationUsageDescription</key>
-	<string>Add your location to your answers</string>
+	<string>This lets you add tag location to posts &amp; allows us to better tailor content!</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Questions trending near your location</string>
+	<string>This lets you add tag location to posts &amp; allows us to better tailor content!</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Add your voice! </string>
+	<string>This lets you record videos &amp; audio</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Use images from your library for your posts!</string>
+	<string>This lets you use images from your phone's album library</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

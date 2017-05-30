@@ -113,7 +113,7 @@ class Icon : UIView {
         heartLineOpactiy.toValue = 1.0
         heartLineOpactiy.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
         heartLineOpactiy.autoreverses = true
-        heartLineOpactiy.repeatCount = FLT_MAX
+        heartLineOpactiy.repeatCount = Float.greatestFiniteMagnitude
         heartLineOpactiy.duration = Double(0.75)
         
         let heartLineStroke = CABasicAnimation(keyPath: "strokeEnd")
@@ -125,7 +125,7 @@ class Icon : UIView {
         dotOpacity.fromValue = 0.3
         dotOpacity.toValue = 1.0
         dotOpacity.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseInEaseOut)
-        dotOpacity.repeatCount = FLT_MAX
+        dotOpacity.repeatCount = Float.greatestFiniteMagnitude
         dotOpacity.isRemovedOnCompletion = false
         dotOpacity.duration = Double(0.5)
         
@@ -134,7 +134,7 @@ class Icon : UIView {
         dotMotion.duration = Double(2.05)
         dotMotion.fillMode = kCAFillModeForwards
         dotMotion.isRemovedOnCompletion = false
-        dotMotion.repeatCount = FLT_MAX
+        dotMotion.repeatCount = Float.greatestFiniteMagnitude
         
         heartLine.add(heartLineStroke, forKey: nil)
         heartLine.add(heartLineOpactiy, forKey: nil)
@@ -159,7 +159,7 @@ class Icon : UIView {
         
         layer.addSublayer(circleShape)
         
-        layer.shadowColor = pulseBlue.cgColor
+        layer.shadowColor = UIColor.pulseGrey.cgColor
         layer.shadowOpacity = 0.5
         layer.shadowRadius = 1.5
         layer.shadowPath = circleShape.path

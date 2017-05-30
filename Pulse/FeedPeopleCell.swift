@@ -2,79 +2,33 @@
 //  FeedPeopleCell.swift
 //  Pulse
 //
-//  Created by Sidharth Tiwari on 11/22/16.
+//  Created by Sidharth Tiwari on 12/8/16.
 //  Copyright © 2016 Think Apart. All rights reserved.
 //
 
 import UIKit
 
 class FeedPeopleCell: UICollectionViewCell {
+    fileprivate lazy var titleLabel = UILabel()
+    fileprivate lazy var subtitleLabel = UILabel()
+    fileprivate lazy var previewContainer = UIView()
+    fileprivate lazy var previewImage = UIImageView()
+    fileprivate lazy var titleStack = PulseMenu(_axis: .vertical, _spacing: 0)
     
-    lazy var titleLabel = UILabel()
-    lazy var subtitleLabel = UILabel()
-    lazy var answerCount = PulseButton()
-    fileprivate var previewImage = UIImageView()
-    
-    fileprivate var previewVC : PreviewVC?
-    fileprivate var previewAdded = false
+    fileprivate lazy var previewVC : Preview = Preview()
     fileprivate var reuseCell = false
-    
-    fileprivate var titleHeightConstraint : NSLayoutConstraint!
-    fileprivate var subtitleHeightConstraint : NSLayoutConstraint!
-
-    fileprivate var showPreviewImage = false
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
-        setupUserPreview()
+        addShadow()
+        setupPeoplePreview()
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
-    func showAnswer(answer : Answer) {
-        previewVC = PreviewVC(frame: contentView.bounds)
-        previewVC!.currentAnswer = answer
-        previewImage.isHidden = true
-        
-        titleLabel.isHidden = true
-        subtitleLabel.isHidden = true
-        
-        UIView.transition( with: contentView, duration: 0.5, options: .transitionFlipFromLeft, animations: { _ in self.contentView.addSubview(self.previewVC!) }, completion: nil)
-        previewAdded = true
-    }
-    
-    func removeAnswer() {
-        previewImage.isHidden = false
-        titleLabel.isHidden = false
-        subtitleLabel.isHidden = false
-        previewVC?.removeFromSuperview()
-    }
-    
     func updateLabel(_ _title : String?, _subtitle : String?) {
-        
-        if _title != nil {
-            let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightHeavy)]
-            let titleHeight = GlobalFunctions.getLabelSize(title: _title!, width: titleLabel.frame.width, fontAttributes: fontAttributes)
-            titleHeightConstraint.constant = titleHeight
-            titleLabel.layoutIfNeeded()
-        } else {
-            titleHeightConstraint.constant = 0
-        }
-        
-        if _subtitle != nil {
-            let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: subtitleLabel.font.pointSize, weight: UIFontWeightHeavy)]
-            let subtitleHeight = GlobalFunctions.getLabelSize(title: _subtitle!, width: subtitleLabel.frame.width, fontAttributes: fontAttributes)
-            
-            subtitleHeightConstraint.constant = subtitleHeight
-            subtitleLabel.layoutIfNeeded()
-        } else {
-            subtitleHeightConstraint.constant = 0
-        }
-        
-        
         titleLabel.text = _title
         subtitleLabel.text = _subtitle
     }
@@ -87,67 +41,46 @@ class FeedPeopleCell: UICollectionViewCell {
     func updateImage( image : UIImage?) {
         if let image = image {
             previewImage.image = image
-            
-            previewImage.layer.cornerRadius = 0
-            previewImage.layer.masksToBounds = true
-            previewImage.clipsToBounds = true
         }
-    }
-    
-    func hideAnswerCount() {
-        answerCount.isHidden = true
-    }
-    
-    func showAnswerCount() {
-        answerCount.isHidden = false
-        answerCount.setTitle(nil, for: UIControlState())
     }
     
     override func prepareForReuse() {
-        if previewAdded {
-            removeAnswer()
-        }
-        
+        titleLabel.text = ""
+        subtitleLabel.text = ""
         previewImage.image = nil
+        
         super.prepareForReuse()
     }
     
-    fileprivate func setupUserPreview() {
+    fileprivate func setupPeoplePreview() {
+        addSubview(previewContainer)
+        addSubview(titleStack)
         
-        previewImage.image = nil
-        
-        addSubview(previewImage)
-        addSubview(titleLabel)
-        addSubview(subtitleLabel)
-        
-        previewImage.frame = contentView.frame
-        
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleHeightConstraint = titleLabel.heightAnchor.constraint(equalToConstant: titleLabel.intrinsicContentSize.height)
-        titleHeightConstraint.isActive = true
-        
-        titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        titleLabel.setBlurredBackground()
-        
-        subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleHeightConstraint = subtitleLabel.heightAnchor.constraint(equalToConstant: subtitleLabel.intrinsicContentSize.height)
-        subtitleHeightConstraint.isActive = true
-        
-        subtitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor).isActive = true
-        subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor).isActive = true
-        subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor).isActive = true
-        subtitleLabel.setBlurredBackground()
+        previewContainer.translatesAutoresizingMaskIntoConstraints = false
+        previewContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue * 1.25).isActive = true
+        previewContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+        previewContainer.widthAnchor.constraint(equalTo: previewContainer.heightAnchor).isActive = true
+        previewContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.m.rawValue).isActive = true
 
-        titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBlack, color: .white, alignment: .left)
-        subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .left)
-        subtitleLabel.numberOfLines =  3
         
-        previewImage.contentMode = UIViewContentMode.scaleAspectFill
+        titleStack.translatesAutoresizingMaskIntoConstraints = false
+        titleStack.leadingAnchor.constraint(equalTo: previewContainer.trailingAnchor, constant: Spacing.m.rawValue).isActive = true
+        titleStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+        titleStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
-        previewImage.setNeedsLayout()
-        titleLabel.setNeedsLayout()
-        subtitleLabel.setNeedsLayout()
+        titleStack.spacing = 5
+        titleStack.addArrangedSubview(titleLabel)
+        titleStack.addArrangedSubview(subtitleLabel)
+        
+        previewContainer.layoutIfNeeded()
+        previewContainer.addShadow()
+
+        previewImage.frame = previewContainer.bounds
+        previewImage.contentMode = .scaleAspectFill
+        previewContainer.addSubview(previewImage)
+        previewImage.makeRound()
+
+        titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
+        subtitleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightRegular, color: .lightGray, alignment: .left)
     }
 }

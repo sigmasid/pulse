@@ -8,7 +8,7 @@
 
 import UIKit
 
-class MessageVC: UIViewController, UITextViewDelegate{
+class MessageVC: PulseVC, UITextViewDelegate{
     
     //model elements
     fileprivate var messages = [Message]()
@@ -37,32 +37,35 @@ class MessageVC: UIViewController, UITextViewDelegate{
     fileprivate var msgSend = UIButton()
     
     fileprivate var sendBottomConstraint : NSLayoutConstraint!
-
+    fileprivate var textViewHeightConstraint : NSLayoutConstraint!
     //Bools for logic checks
-    fileprivate var _hasMovedUp = false
     fileprivate var isExistingConversation = false
     fileprivate var hasConversationObserver = false
     fileprivate var isUserLoaded = false
     
-    fileprivate var reuseIdentifier = "messageCell"
-
+    fileprivate var observersAdded = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor.white
         
-        navigationController?.isNavigationBarHidden = false
-        
-        hideKeyboardWhenTappedAround()
-        setupLayout()
-        updateHeader()
+        if !observersAdded {
+            tabBarHidden = true
+            hideKeyboardWhenTappedAround()
 
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+            
+            observersAdded = true
+        }
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.isNavigationBarHidden = false
+    override func viewDidLayoutSubviews() {
+        if !isLoaded {
+            setupLayout()
+            updateHeader()
+            
+            isLoaded = true
+        }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -73,40 +76,16 @@ class MessageVC: UIViewController, UITextViewDelegate{
         }
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        navigationController?.isNavigationBarHidden = true
-    }
-    
     //Update Nav Header
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.shouldShowScope = false
-            toUserImage != nil ?
-                nav.setNav(navTitle: nil, screenTitle: nil, screenImage: toUserImage) :
-                nav.setNav(navTitle: msgToUserName.text, screenTitle: nil, screenImage: nil)
-        } else {
-            title = "Conversations"
-        }
-    }
-
-    
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
+        addBackButton()
+        headerNav?.setNav(title: msgToUserName.text != nil ? "Message \(msgToUserName.text!.components(separatedBy: " ")[0])" : "New Message")
     }
     
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
-            sendBottomConstraint.constant = -(keyboardHeight + Spacing.xs.rawValue)
-            sendContainer.layoutIfNeeded()
+            sendBottomConstraint.constant = -keyboardHeight
             conversationHistory.layoutIfNeeded()
             
             if messages.count > 0 {
@@ -117,7 +96,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
     }
     
     func keyboardWillHide(notification: NSNotification) {
-        sendBottomConstraint.constant = -Spacing.xs.rawValue
+        sendBottomConstraint.constant = 0
 
         sendContainer.layoutIfNeeded()
         conversationHistory.layoutIfNeeded()
@@ -140,7 +119,6 @@ class MessageVC: UIViewController, UITextViewDelegate{
     }
     
     fileprivate func keepConversationUpdated() {
-        
         if !hasConversationObserver {
             hasConversationObserver = true
 
@@ -157,7 +135,7 @@ class MessageVC: UIViewController, UITextViewDelegate{
         }
     }
     
-    func sendMessage() {
+    internal func sendMessage() {
         guard User.currentUser!.uID != toUser.uID else { return }
         
         let message = Message(from: User.currentUser!, to: toUser, body: msgBody.text)
@@ -172,9 +150,60 @@ class MessageVC: UIViewController, UITextViewDelegate{
                 self.conversationID = _conversationID!
                 self.keepConversationUpdated()
             } else {
-                GlobalFunctions.showErrorBlock("Error Sending Message", erMessage: "Sorry we had a problem sending your message. Please try again!")
+                GlobalFunctions.showAlertBlock("Error Sending Message",
+                                               erMessage: "Sorry we had a problem sending your message. Please try again!")
             }
         })
+    }
+    
+    internal func showSubscribeMenu(selectedChannel: Channel, inviteID: String) {
+        
+        Database.subscribeChannel(selectedChannel, completion: { success, error in
+            if success {
+                Database.markInviteCompleted(inviteID: inviteID)
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Subsribed!",
+                                               erMessage: "You will now see all the updates in your feed. Enjoy!",
+                                               buttonTitle: "done")
+                
+            } else {
+                GlobalFunctions.showAlertBlock("Uh Oh! Error Subscribing",
+                                               erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this fixed!")
+            }
+
+
+        })
+    }
+    
+    internal func showConfirmationMenu(status: Bool, inviteID: String) {
+        Database.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
+            success ?
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "You are in!", erMessage: "You have been confirmed as a contributor. Now you can start creating, sharing and showcasing!", buttonTitle: "okay") :
+                GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite",
+                                               erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
+        })
+    }
+    
+    internal func showContributorMenu(messageID: String, messageText: String) {
+        toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+        let menu = UIAlertController(title: "Congratulations!",
+                                     message: "\(messageText) As a verified contributor, you can showcase your content, expertise & brand!", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
+            self.showConfirmationMenu(status: true, inviteID: messageID)
+            self.toggleLoading(show: false, message: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "decline Invite", style: .destructive, handler: { (action: UIAlertAction!) in
+            self.showConfirmationMenu(status: false, inviteID: messageID)
+            self.toggleLoading(show: false, message: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+            self.toggleLoading(show: false, message: nil)
+        }))
+        
+        self.present(menu, animated: true, completion: nil)
     }
     
     fileprivate func setupLayout() {
@@ -189,17 +218,12 @@ class MessageVC: UIViewController, UITextViewDelegate{
         msgTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
         sendContainer.translatesAutoresizingMaskIntoConstraints = false
-        if let _ = navigationController as? PulseNavVC {
-            sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: bottomLayoutGuide.topAnchor,
-                                                                         constant: -IconSizes.large.rawValue - Spacing.xs.rawValue)
-        } else {
-            sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.xs.rawValue)
-        }
+        sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
         sendBottomConstraint.isActive = true
-        sendContainer.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.1).isActive = true
         sendContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        textViewHeightConstraint = sendContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
+        textViewHeightConstraint.isActive = true
         sendContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sendContainer.layoutIfNeeded()
 
         conversationHistory.translatesAutoresizingMaskIntoConstraints = false
         conversationHistory.topAnchor.constraint(equalTo: msgTo.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
@@ -218,34 +242,36 @@ class MessageVC: UIViewController, UITextViewDelegate{
         
         msgSend.translatesAutoresizingMaskIntoConstraints = false
         msgSend.trailingAnchor.constraint(equalTo: sendContainer.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        msgSend.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        msgSend.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         msgSend.widthAnchor.constraint(equalTo: msgSend.heightAnchor).isActive = true
         msgSend.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor).isActive = true
         msgSend.layoutIfNeeded()
 
         msgBody.translatesAutoresizingMaskIntoConstraints = false
-        msgBody.topAnchor.constraint(equalTo: sendContainer.topAnchor).isActive = true
-        msgBody.leadingAnchor.constraint(equalTo: sendContainer.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        msgBody.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor).isActive = true
+        msgBody.leadingAnchor.constraint(equalTo: sendContainer.leadingAnchor).isActive = true
         msgBody.trailingAnchor.constraint(equalTo: msgSend.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        msgBody.heightAnchor.constraint(equalTo: sendContainer.heightAnchor).isActive = true
+        
+        textViewHeightConstraint = msgBody.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
+        textViewHeightConstraint.isActive = true
         msgBody.layoutIfNeeded()
         
-        msgBody.backgroundColor = UIColor.white
-        msgBody.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        msgBody.textColor = UIColor.black
+        msgBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         msgBody.layer.borderColor = UIColor.lightGray.cgColor
         msgBody.layer.borderWidth = 1.0
         msgBody.delegate = self
         
         msgBody.text = "Type message here"
         msgBody.textColor = UIColor.lightGray
-
+        msgBody.isScrollEnabled = false
+        
         msgSend.makeRound()
         msgSend.setTitle("Send", for: UIControlState())
-        msgSend.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        msgSend.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
         msgSend.setDisabled()
-        
         msgSend.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
+
+        sendContainer.layoutIfNeeded()
     }
     
     fileprivate func setupToUserLayout() {
@@ -285,6 +311,9 @@ class MessageVC: UIViewController, UITextViewDelegate{
     func textViewDidChange(_ textView: UITextView) {
         if textView.text != "" {
             self.msgSend.setEnabled()
+            
+            let sizeThatFitsTextView = textView.sizeThatFits(CGSize(width: textView.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+            textViewHeightConstraint.constant = max(IconSizes.medium.rawValue, sizeThatFitsTextView.height)
         }
     }
     
@@ -306,10 +335,6 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         return messages.count
     }
     
-//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-//        return Spacing.l.rawValue
-//    }
-    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! MessageTableCell
         let _currentMessage = messages[indexPath.row]
@@ -324,5 +349,60 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
 
         cell.message = messages[indexPath.row]
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        let message = messages[indexPath.row]
+        if message.mType != .message, message.from.uID != User.currentUser?.uID {
+            return true
+        }
+        return false
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let message = messages[indexPath.row]
+        switch message.mType {
+        case .perspectiveInvite, .questionInvite:
+            let contentVC = ContentManagerVC()
+            toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+            Database.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
+                if let selectedItem = selectedItem {
+                    DispatchQueue.main.async {
+                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                        contentVC.selectedChannel = selectedChannel
+                        contentVC.selectedItem = selectedItem
+                        contentVC.openingScreen = .camera
+                        self.present(contentVC, animated: true, completion: nil)
+                    }
+                }
+                self.toggleLoading(show: false, message: nil)
+            })
+            
+        case .interviewInvite:
+            let interviewVC = InterviewRequestVC()
+            interviewVC.conversationID = conversationID
+            interviewVC.interviewItemID = message.mID
+            
+            navigationController?.pushViewController(interviewVC, animated: true)
+        
+        case .contributorInvite:
+            
+            showContributorMenu(messageID: message.mID, messageText: message.body)
+        
+        case .channelInvite:
+            
+            toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+            Database.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
+                if let selectedItem = selectedItem {
+                    DispatchQueue.main.async {
+                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                        self.showSubscribeMenu(selectedChannel: selectedChannel, inviteID: message.mID)
+                    }
+                }
+                self.toggleLoading(show: false, message: nil)
+            })
+            
+        default: break
+        }
     }
 }

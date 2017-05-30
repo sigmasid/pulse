@@ -22,8 +22,8 @@ class MessageTableCell: UITableViewCell {
         }
     }
     
-    enum MessageType { case sent, received }
-    var messageType : MessageType! {
+    enum MessageCellType { case sent, received }
+    var messageType : MessageCellType! {
         didSet {
             if messageType == .sent {
                 sentByUser()

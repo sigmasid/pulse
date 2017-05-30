@@ -9,11 +9,9 @@
 import UIKit
 import CoreLocation
 
-class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
+class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     
     var _currentSetting : Setting! //set by delegate
-    fileprivate var isLoaded = false
-    fileprivate var reuseIdentifier = "activityCell"
     
     fileprivate var settingDescription = UILabel()
     fileprivate var settingSection = UIView()
@@ -33,21 +31,16 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        settingsTable.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
-
         if !isLoaded {
+            settingsTable.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
+            
+            tabBarHidden = true
             hideKeyboardWhenTappedAround()
             addSettingDescription()
             addSettingSection()
-            view.backgroundColor = UIColor.white
 
             isLoaded = true
         }
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -56,16 +49,8 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
     }
     
     fileprivate func updateHeader() {
-        let backButton = PulseButton(size: .small, type: .back, isRound : true, hasBackground: true)
-        backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
-        navigationItem.rightBarButtonItem = nil
-        
-        if let nav = navigationController as? PulseNavVC {
-            nav.setNav(navTitle: "Update Profile", screenTitle: nil, screenImage: nil)
-        } else {
-            title = "Update Profile"
-        }
+        addBackButton()
+        headerNav?.setNav(title: "Update Profile")
     }
     
     fileprivate func addSettingDescription() {
@@ -308,7 +293,7 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
     }
     
     open func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        GlobalFunctions.showErrorBlock("Location Error", erMessage: "Error while updating location " + error.localizedDescription)
+        GlobalFunctions.showAlertBlock("Location Error", erMessage: "Error while updating location " + error.localizedDescription)
     }
     
     open func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -328,15 +313,11 @@ class UpdateProfileVC: UIViewController, CLLocationManagerDelegate {
                 }
             } else {
                 self.shortTextField.text = nil
-                GlobalFunctions.showErrorBlock("Location Error", erMessage: "Sorry - there was an error getting your location!")
+                GlobalFunctions.showAlertBlock("Location Error", erMessage: "Sorry - there was an error getting your location!")
             }
         })
     }
     
-    func goBack() {
-        let _ = navigationController?.popViewController(animated: true)
-    }
-
     func updateProfile() {
         updateButton.setDisabled()
         let _loading = updateButton.addLoadingIndicator()
@@ -516,12 +497,12 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch _currentSetting.settingID {
-        case "answers":
-            return User.currentUser!.answers.count
-        case "savedQuestions":
-            return User.currentUser!.savedQuestions.count
-        case "savedTags":
-            return User.currentUser!.savedTags.count
+        case "items":
+            return User.currentUser!.items.count
+        case "savedItems":
+            return User.currentUser!.savedItems.count
+        case "subscriptions":
+            return User.currentUser!.subscriptions.count
         default: return 0
         }
     }
