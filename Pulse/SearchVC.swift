@@ -178,7 +178,7 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
                 cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
             }
         case .users:
-            if let user = results[indexPath.row] as? User {
+            if let user = results[indexPath.row] as? PulseUser {
                 cell.titleLabel.text = user.name
                 cell.subtitleLabel.text = user.shortBio
                 cell.iconButton.setImage(UIImage(named: "default-profile"), for: UIControlState())
@@ -238,7 +238,7 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
         if _searchText != "" && _searchText.characters.count > 1 {
             switch searchScope! {
             case .channels:
-                Database.searchChannels(searchText: _searchText.lowercased(), completion: { searchResults in
+                PulseDatabase.searchChannels(searchText: _searchText.lowercased(), completion: { searchResults in
                     if searchResults.count > 0 {
                         self.results = searchResults
                         self.toggleLoading(show: false, message: nil)
@@ -247,7 +247,7 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
                     }
                 })
             case .users:
-                Database.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
+                PulseDatabase.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
                     if searchResults.count > 0 {
                         self.results = searchResults
                         self.toggleLoading(show: false, message: nil)
@@ -256,7 +256,7 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
                     }
                 })
             case .items:
-                Database.searchItem(searchText: _searchText.lowercased(), completion:  { searchResults in
+                PulseDatabase.searchItem(searchText: _searchText.lowercased(), completion:  { searchResults in
                     if searchResults.count > 0 {
                         self.results = searchResults
                         self.toggleLoading(show: false, message: nil)

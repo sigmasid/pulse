@@ -12,18 +12,18 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
-            isSubscribed = User.currentUser!.subscriptionIDs.contains(selectedChannel.cID) ? true : false
+            isSubscribed = PulseUser.currentUser.subscriptionIDs.contains(selectedChannel.cID) ? true : false
             if !selectedChannel.cCreated {
-                Database.getChannel(cID: selectedChannel.cID!, completion: { channel, error in
+                PulseDatabase.getChannel(cID: selectedChannel.cID!, completion: { channel, error in
                     channel.cPreviewImage = self.selectedChannel.cPreviewImage
                     self.selectedChannel = channel
                     self.updateHeader()
                 })
             } else if !selectedChannel.cDetailedCreated {
                 getChannelItems()
+                updateDataSource()
             } else {
                 allItems = selectedChannel.items
-                updateDataSource()
                 updateHeader()
             }
         }
@@ -31,7 +31,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     //end set by delegate
     
     //used to cache users downloaded
-    fileprivate var allUsers = [User]()
+    fileprivate var allUsers = [PulseUser]()
     
     fileprivate var subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, background: .white, tint: .black)
     fileprivate var isSubscribed : Bool = false {
@@ -93,7 +93,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     }
     
     internal func getChannelItems() {
-        Database.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { updatedChannel in
+        PulseDatabase.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { updatedChannel in
             self.startUpdateAt = self.endUpdateAt
 
             if let updatedChannel = updatedChannel {
@@ -101,6 +101,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 self.selectedChannel = updatedChannel
                 self.updateIncrement = -7
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+                self.toggleLoading(show: false, message: nil)
+
             } else {
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
@@ -112,7 +114,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     //get more items if scrolled to end
     func getMoreChannelItems() {
         
-        Database.getChannelItems(channelID: selectedChannel.cID, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { success, items in
+        PulseDatabase.getChannelItems(channelID: selectedChannel.cID, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { success, items in
             if items.count < 4, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
@@ -136,6 +138,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 
                 self.startUpdateAt = self.endUpdateAt
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+                self.toggleLoading(show: false, message: nil)
+
             }
         })
     }
@@ -150,8 +154,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         collectionView.dataSource = self
         collectionView.reloadData()
         collectionView.layoutIfNeeded()
-        
-        toggleLoading(show: false, message: nil)
     }
     
     internal func subscribe() {
@@ -164,7 +166,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 self.subscribeButton.setImage(UIImage(named: "add")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
                 indicator.removeFromSuperview()
             } else {
-                if let user = User.currentUser, user.isSubscribedToChannel(cID: self.selectedChannel.cID) {
+                if PulseUser.currentUser.isSubscribedToChannel(cID: self.selectedChannel.cID) {
                     indicator.removeFromSuperview()
                     self.subscribeButton.setImage(UIImage(named: "check")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
                     self.isSubscribed = true
@@ -179,7 +181,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     }
     
     internal func subscribeChannel(channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
-        Database.subscribeChannel(selectedChannel, completion: {(success, error) in
+        PulseDatabase.subscribeChannel(selectedChannel, completion: {(success, error) in
             completion(success, error)
         })
     }
@@ -249,10 +251,6 @@ extension ChannelVC {
                                         inviteMessage: "know someone who can add to the conversation? invite them below!",
                                         inviteType: .contributorInvite)
                 }))
-            } else if User.isLoggedIn() {
-                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                    self.showNonExpertMenu(selectedItem: currentItem)
-                }))
             }
         })
         
@@ -298,13 +296,14 @@ extension ChannelVC {
         })
     }
     
+    //user clicked menu in the header section
     internal func clickedHeaderMenu() {
-        guard let user = User.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             showRegularMenu()
             return
         }
         
-        user.isVerified(for: selectedChannel) ? showExpertMenu() : showRegularMenu()
+        PulseUser.currentUser.isVerified(for: selectedChannel) ? showContributorMenu() : showRegularMenu()
     }
     
     //close modal - e.g. mini search
@@ -325,7 +324,6 @@ extension ChannelVC {
                     })
                     
                 } else if let selectedShareItem = selectedShareItem as? Channel {
-                    
                     createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: { _ , _ in
                         self.selectedShareItem = nil
                     })
@@ -382,7 +380,7 @@ extension ChannelVC {
                             let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
                             let shareText = "You are invited to be a contributor on \(channelTitle)"
                             
-                            Database.createShareLink(linkString: "invites/"+inviteID, completion: { link in
+                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: { link in
                                 guard let link = link else {
                                     self.toggleLoading(show: false, message: nil)
                                     return
@@ -405,9 +403,9 @@ extension ChannelVC {
                     self.createShareRequest(selectedShareItem: shareItem, shareType: .channelInvite, selectedChannel: shareChannel, toUser: nil, completion: { item, error in
                         if error == nil, let inviteID = item?.itemID {
                             let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
-                            let shareText = "\(User.currentUser?.name ?? "Your friend") invited you to \(channelTitle)"
+                            let shareText = "\(PulseUser.currentUser.name ?? "Your friend") invited you to \(channelTitle)"
                             
-                            Database.createShareLink(linkString: "invites/"+inviteID, completion: { link in
+                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: { link in
                                 guard let link = link else {
                                     self.toggleLoading(show: false, message: nil)
                                     return
@@ -438,18 +436,21 @@ extension ChannelVC {
         view.addSubview(addText)
     }
     
-    internal func showNonExpertMenu(selectedItem : Item) {
-        let menu = UIAlertController(title: "Become a Contributor?", message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).", preferredStyle: .actionSheet)
+    //NOT BEING USED >> PROB WANT TO PUT IN SEPARATE BUCKET TO BE APPROVED PRIOR TO POSTING
+    internal func showNonContributorMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Want to be a Contributor?",
+                                     message: "looks like you are not yet a verified contributor. To ensure quality, we recommend applying to be verified. You can still continue with your submission (will be reviewed for quality).",
+                                     preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
             self.addNewItem(selectedItem: selectedItem)
         }))
         
         menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
-            let applyExpertVC = ApplyExpertVC()
-            applyExpertVC.selectedChannel = self.selectedChannel
+            let becomeContributorVC = BecomeContributorVC()
+            becomeContributorVC.selectedChannel = self.selectedChannel
             
-            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -459,19 +460,25 @@ extension ChannelVC {
         present(menu, animated: true, completion: nil)
     }
     
-    //for header
-    func showExpertMenu() {
+    //when user clicks menu in the header
+    func showContributorMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "start New Series", style: .default, handler: { (action: UIAlertAction!) in
-            self.startSeries()
-        }))
+        //only editors can start series
+        if PulseUser.isLoggedIn(), PulseUser.currentUser.isEditor(for: selectedChannel) {
+            menu.addAction(UIAlertAction(title: "start New Series", style: .default, handler: { (action: UIAlertAction!) in
+                self.startSeries()
+            }))
+        }
         
+        //contributors & editors can invite contributors
         menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
-            self.showInviteMenu(currentItem: self.selectedChannel, inviteTitle: "invite Contributors",
+            self.showInviteMenu(currentItem: self.selectedChannel,
+                                inviteTitle: "invite Contributors",
                                 inviteMessage: "contributors can add posts, answer questions and share their perspecives. To ensure quality, please only invite qualified contributors. All new contributor requests are reviewed.", inviteType: .contributorInvite)
         }))
         
+        //anyone can share
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: { link in
@@ -492,6 +499,7 @@ extension ChannelVC {
     func showRegularMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
+        //all users can browse the featured contributors
         menu.addAction(UIAlertAction(title: "featured Contributors", style: .default, handler: { (action: UIAlertAction!) in
             let browseContributorsVC = BrowseUsersVC()
             browseContributorsVC.selectedChannel = self.selectedChannel
@@ -538,14 +546,14 @@ extension ChannelVC {
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
-            case .posts, .feedback, .perspectives, .interviews, .questions:
+            case .posts, .feedback, .perspectives, .interviews, .questions, .showcases:
                 
                 showTag(selectedItem: item)
             
             case .session:
                 toggleLoading(show: true, message: "loading session...", showIcon: true)
                 
-                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                     self.toggleLoading(show: false, message: nil)
 
                     if success, items.count > 1 {
@@ -567,7 +575,7 @@ extension ChannelVC {
             case .interview, .question, .thread:
                 
                 toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                     self.toggleLoading(show: false, message: nil)
                     success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
                 })
@@ -576,7 +584,7 @@ extension ChannelVC {
             }
             
         //user selected from mini user search for invite or clicked the user profile button
-        } else if let user = item as? User {
+        } else if let user = item as? PulseUser {
     
             userSelectedUser(toUser: user)
         
@@ -589,7 +597,7 @@ extension ChannelVC {
     }
     
     //checks to make sure we are not in mini search case
-    internal func userSelectedUser(toUser: User) {
+    internal func userSelectedUser(toUser: PulseUser) {
         
         if let selectedShareItem = selectedShareItem as? Item {
             //
@@ -656,12 +664,12 @@ extension ChannelVC {
         
     }
     
-    internal func createContributorInvite(selectedChannel: Channel, toUser: User?, toEmail: String?  = nil, showAlert: Bool = true,
+    internal func createContributorInvite(selectedChannel: Channel, toUser: PulseUser?, toEmail: String?  = nil, showAlert: Bool = true,
                                           completion: @escaping (String?, Error?) -> Void) {
         
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        Database.createContributorInvite(channel: selectedChannel, type: .contributorInvite, toUser: toUser, toName: nil,
-                                         toEmail: toEmail, approved: true, completion: {(inviteID, error) in
+        PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, toUser: toUser, toName: toUser?.name,
+                                         toEmail: toEmail, completion: {(inviteID, error) in
                                         
             self.toggleLoading(show: false, message: nil)
 
@@ -719,7 +727,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
             //Add additional user details as needed
             if currentItem.user == nil || !currentItem.user!.uCreated {
-                if let user = checkUserDownloaded(user: User(uID: currentItem.itemUserID)) {
+                if let user = checkUserDownloaded(user: PulseUser(uID: currentItem.itemUserID)) {
                     allItems[indexPath.row].user = user
                     cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
                     
@@ -739,7 +747,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 } else {
                     // Get the user details
-                    Database.getUser(currentItem.itemUserID, completion: {(user, error) in
+                    PulseDatabase.getUser(currentItem.itemUserID, completion: {(user, error) in
                     if let user = user {
                         self.allItems[indexPath.row].user = user
                         self.allUsers.append(user)
@@ -771,7 +779,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Get the image if content type is a post
             if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
-                Database.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
                         
@@ -793,14 +801,14 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
     }
     
-    func checkUserDownloaded(user: User) -> User? {
+    func checkUserDownloaded(user: PulseUser) -> PulseUser? {
         if let index = allUsers.index(of: user) {
             return allUsers[index]
         }
         return nil
     }
 
-    func updateUserImageDownloaded(user: User, thumbPicImage : UIImage?) {
+    func updateUserImageDownloaded(user: PulseUser, thumbPicImage : UIImage?) {
         if let image = thumbPicImage , let index = allUsers.index(of: user) {
             allUsers[index].thumbPicImage = image
         }

@@ -13,7 +13,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     //Main data source vars
     var allItems = [Item]()
     var allChannels = [Channel]()
-    var allUsers = [User]() //to keep user data cached
+    var allUsers = [PulseUser]() //to keep user data cached
     
     fileprivate var isLayoutSetup = false
     
@@ -43,11 +43,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             statusBarHidden = true
             tabBarHidden = false
             
-            if User.isLoggedIn(), !initialLoadComplete {
+            if PulseUser.isLoggedIn(), !initialLoadComplete {
                 
                 toggleLoading(show: true, message: "Loading feed...", showIcon: true)
                 
-            } else if !User.isLoggedIn(), !initialLoadComplete {
+            } else if !PulseUser.isLoggedIn(), !initialLoadComplete {
                 
                 emptyMessage = "Please login to see your feed"
                 createFeed()
@@ -92,9 +92,9 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     internal func createFeed() {
-        if User.isLoggedIn(), User.currentUser!.subscriptions.count > 0 {
+        if PulseUser.isLoggedIn(), PulseUser.currentUser.subscriptions.count > 0 {
             
-            allChannels = User.currentUser!.subscriptions
+            allChannels = PulseUser.currentUser.subscriptions
             updateFeed()
             updateDataSource()
             
@@ -102,7 +102,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             collectionView?.reloadSections(IndexSet(integer: 0))
             initialLoadComplete = true
             
-        } else if User.currentUser!.subscriptions.count == 0 {
+        } else if PulseUser.currentUser.subscriptions.count == 0 {
             
             toggleLoading(show: false, message: nil)
             updateDataSource()
@@ -112,7 +112,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             collectionView?.reloadSections(IndexSet(integer: 0))
             initialLoadComplete = true
             
-        } else if !User.isLoggedIn() {
+        } else if !PulseUser.isLoggedIn() {
             
             emptyMessage = "Please login to see your feed"
             shouldShowHeader = false
@@ -127,8 +127,8 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     
     internal func updateFeed() {
 
-        if User.isLoggedIn() {
-            Database.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
+        if PulseUser.isLoggedIn() {
+            PulseDatabase.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {
                     let newIndexPath = IndexPath(row: index , section: 1)
@@ -186,7 +186,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     //get more items if scrolled to end
     internal func getMoreItems(completion: @escaping (Bool) -> Void) {
         
-        Database.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
+        PulseDatabase.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
             if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
@@ -312,7 +312,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective || currentItem.type == .session
             //Get the image if content type is a post
             if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
-                Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
                         
@@ -329,7 +329,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Add additional user details as needed
             if currentItem.user == nil || !currentItem.user!.uCreated {
-                if let user = self.checkUserDownloaded(user: User(uID: currentItem.itemUserID)) {
+                if let user = self.checkUserDownloaded(user: PulseUser(uID: currentItem.itemUserID)) {
                     self.allItems[indexPath.row].user = user
                     cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                     
@@ -349,7 +349,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 } else {
                     // Get the user details
-                    Database.getUser(currentItem.itemUserID, completion: {(user, error) in
+                    PulseDatabase.getUser(currentItem.itemUserID, completion: {(user, error) in
                         if let user = user {
                             self.allItems[indexPath.row].user = user
                             self.allUsers.append(user)
@@ -384,14 +384,14 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
     }
     
-    internal func checkUserDownloaded(user: User) -> User? {
+    internal func checkUserDownloaded(user: PulseUser) -> PulseUser? {
         if let index = allUsers.index(of: user) {
             return allUsers[index]
         }
         return nil
     }
     
-    internal func updateUserImageDownloaded(user: User, thumbPicImage : UIImage?) {
+    internal func updateUserImageDownloaded(user: PulseUser, thumbPicImage : UIImage?) {
         if let image = thumbPicImage , let index = allUsers.index(of: user) {
             allUsers[index].thumbPicImage = image
         }
@@ -494,14 +494,14 @@ extension HomeVC {
                 
                 toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
                 
-                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                     self.toggleLoading(show: false, message: nil)
                     success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
                 })
             
             case .session:
                 
-                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                     if success, items.count > 1 {
                         //since ordering is cron based - move the first 'question' item to front
                         if let lastItem = items.last {
@@ -520,7 +520,7 @@ extension HomeVC {
                 
             default: break
             }
-        } else if let user = item as? User {
+        } else if let user = item as? PulseUser {
             
             userSelectedUser(toUser: user)
             
@@ -533,7 +533,7 @@ extension HomeVC {
     }
     
     //checks to make sure we are not in mini search case
-    internal func userSelectedUser(toUser: User) {
+    internal func userSelectedUser(toUser: PulseUser) {
         
         if let selectedShareItem = selectedShareItem {
             
@@ -695,10 +695,6 @@ extension HomeVC {
                 menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
                     self.showInviteMenu(currentItem: currentItem)
                 }))
-            } else if User.isLoggedIn() {
-                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                    self.showNonExpertMenu(selectedItem: currentItem)
-                }))
             }
         })
         
@@ -719,18 +715,21 @@ extension HomeVC {
         present(menu, animated: true, completion: nil)
     }
     
-    internal func showNonExpertMenu(selectedItem : Item) {
-        let menu = UIAlertController(title: "Become a Contributor?", message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).", preferredStyle: .actionSheet)
+    //NOT BEING USED >> PROB WANT TO PUT IN SEPARATE BUCKET TO BE APPROVED PRIOR TO POSTING
+    internal func showNonContributorMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Become a Contributor?",
+                                     message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).",
+                                     preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
             self.addNewItem(selectedItem: selectedItem)
         }))
         
         menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
-            let applyExpertVC = ApplyExpertVC()
-            applyExpertVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+            let becomeContributorVC = BecomeContributorVC()
+            becomeContributorVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
             
-            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -745,7 +744,8 @@ extension HomeVC {
         tabBarHidden = true
         
         let menu = UIAlertController(title: "invite Contributors",
-                                     message: "know someone who can add to the conversation? invite them below!", preferredStyle: .actionSheet)
+                                     message: "know someone who can add to the conversation? invite them to be a contributor!",
+                                     preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedShareItem = currentItem

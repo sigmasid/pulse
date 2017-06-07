@@ -61,7 +61,7 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     }
     
     internal func handleSubmit() {
-        guard let user = User.currentUser, user.uID != nil else { return }
+        guard PulseUser.isLoggedIn() else { return }
         
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
@@ -70,20 +70,20 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         let item = Item(itemID: itemKey, type: "thread")
         
         item.itemTitle = sTitle.text ?? ""
-        item.itemUserID = User.currentUser!.uID
+        item.itemUserID = PulseUser.currentUser.uID
         item.itemDescription = sDescription.text ?? ""
         item.content = capturedImage
         item.contentType = contentType
         item.cID = selectedChannel.cID
         
-        Database.addThread(channelID: selectedChannel.cID, parentItem: selectedItem, item: item, completion: { success, error in
+        PulseDatabase.addThread(channelID: selectedChannel.cID, parentItem: selectedItem, item: item, completion: { success, error in
             if success, let capturedImage = self.capturedImage {
-                Database.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {(success, error) in
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {(success, error) in
                     success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
                     loading.removeFromSuperview()
                     self.submitButton.setEnabled()
                 })
-                Database.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .thumb, completion: {(success, error) in
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .thumb, completion: {(success, error) in
                     loading.removeFromSuperview()
                 })
             } else {

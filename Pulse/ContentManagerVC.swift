@@ -153,7 +153,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
 
     func loadMoreFromTag() {
         if let selectedTag = selectedItem.tag, !selectedTag.itemCreated {
-            Database.getItemCollection(selectedTag.itemID, completion: { (success, items) in
+            PulseDatabase.getItemCollection(selectedTag.itemID, completion: { (success, items) in
                 self.itemIndex = items.index(of: self.selectedItem) ?? 0
                 self.allItems = items
             })
@@ -200,7 +200,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             createdItemKey = nil
             
             let item = Item(itemID: itemKey,
-                            itemUserID: User.currentUser!.uID!,
+                            itemUserID: PulseUser.currentUser.uID!,
                             itemTitle: getRecordedItemTitle(),
                             type: selectedItem.childItemType(),
                             contentURL: assetURL,
@@ -249,7 +249,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     /* check if social token available - if yes, then login and post on return, else ask user to login */
     func askUserToLogin(_ currentVC : UIViewController) {
-        Database.checkSocialTokens({ result in
+        PulseDatabase.checkSocialTokens({ result in
             if !result {
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
                 if let showLoginVC = storyboard.instantiateViewController(withIdentifier: "LoginVC") as? LoginVC {

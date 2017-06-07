@@ -13,7 +13,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     public var selectedChannel : Channel! {
         didSet {
             if selectedChannel != nil, selectedChannel.contributors.isEmpty {
-                Database.getChannelContributors(channelID: selectedChannel.cID, completion: {success, users in
+                PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {success, users in
                     self.users = users
                 })
             } else {
@@ -35,14 +35,14 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     fileprivate var observersAdded = false
     fileprivate var tap: UITapGestureRecognizer!
 
-    var users = [User]() {
+    var users = [PulseUser]() {
         didSet {
             if collectionView != nil {
                 collectionView.reloadData()
             }
         }
     }
-    fileprivate var defaultUsers = [User]() //store the initial expert list
+    fileprivate var defaultUsers = [PulseUser]() //store the initial contributor list
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -225,7 +225,7 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
         if !_user.uCreated {
             cell.updateImage(image : UIImage(named: "default-profile"))
 
-            Database.getUser(_user.uID!, completion: { (user, error) in
+            PulseDatabase.getUser(_user.uID!, completion: { (user, error) in
                 if let user = user {
                     cell.updateCell(user.name?.capitalized, _image: nil)
                     
@@ -318,7 +318,7 @@ extension MiniUserSearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISear
         let _searchText = searchController.searchBar.text!
         
         if _searchText != "" && _searchText.characters.count > 1 {
-            Database.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
+            PulseDatabase.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
                 self.users = searchResults
             })
         }

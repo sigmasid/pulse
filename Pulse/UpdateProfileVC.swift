@@ -251,7 +251,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
 
     fileprivate func getValueOrPlaceholder() -> String {
-        if let _existingValue = User.currentUser?.getValueForStringProperty(_currentSetting.type!.rawValue) {
+        if let _existingValue = PulseUser.currentUser.getValueForStringProperty(_currentSetting.type!.rawValue) {
             if _currentSetting.type == .birthday {
                 let formatter = DateFormatter()
                 formatter.dateStyle = DateFormatter.Style.medium
@@ -268,7 +268,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     fileprivate func getLocationOrPlaceholder() {
-        User.currentUser?.getLocation(completion: {(city) in
+        PulseUser.currentUser.getLocation(completion: {(city) in
             if let city = city {
                 self.shortTextField.text = city
             } else if let _placeholder = self._currentSetting.placeholder {
@@ -326,7 +326,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         case .birthday:
             let _birthday = shortTextField.text
             addStatusLabel()
-            Database.updateUserProfile(_currentSetting, newValue: _birthday!, completion: {(success, error) in
+            PulseDatabase.updateUserProfile(_currentSetting, newValue: _birthday!, completion: {(success, error) in
                 if success {
                     self.statusLabel.text = "Profile Updated!"
                     self.goBack()
@@ -339,7 +339,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         case .bio, .shortBio:
             let _bio = longTextField.text
             addStatusLabel()
-            Database.updateUserProfile(_currentSetting, newValue: _bio!, completion: {(success, error) in
+            PulseDatabase.updateUserProfile(_currentSetting, newValue: _bio!, completion: {(success, error) in
                 if success {
                     self.statusLabel.text = "Profile Updated!"
                     self.goBack()
@@ -357,7 +357,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
                 if !verified {
                     self.statusLabel.text = error?.localizedDescription
                 } else {
-                    Database.updateUserData(UserProfileUpdateType.displayName, value: _name!, completion: { (success, error) in
+                    PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: _name!, completion: { (success, error) in
                         if success {
                             self.statusLabel.text = "Profile Updated!"
                             self.goBack()
@@ -377,7 +377,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
                 if !verified {
                     self.statusLabel.text = error?.localizedDescription
                 } else {
-                    Database.updateUserProfile(self._currentSetting, newValue: _email!, completion: {(success, error) in
+                    PulseDatabase.updateUserProfile(self._currentSetting, newValue: _email!, completion: {(success, error) in
                         if success {
                             self.statusLabel.text = "Profile Updated!"
                             self.goBack()
@@ -397,7 +397,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
                 if !verified {
                     self.statusLabel.text = error?.localizedDescription
                 } else {
-                    Database.updateUserProfile(self._currentSetting, newValue: _password!, completion: {(success, error) in
+                    PulseDatabase.updateUserProfile(self._currentSetting, newValue: _password!, completion: {(success, error) in
                         if success {
                             self.statusLabel.text = "Profile Updated!"
                             self.goBack()
@@ -414,7 +414,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             let _gender = shortTextField.text
             addStatusLabel()
             
-            Database.updateUserProfile(self._currentSetting, newValue: _gender!, completion: {(success, error) in
+            PulseDatabase.updateUserProfile(self._currentSetting, newValue: _gender!, completion: {(success, error) in
                 if success {
                     self.statusLabel.text = "Profile Updated!"
                     self.goBack()
@@ -428,7 +428,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             
         case .location:
             if let location = location {
-                Database.updateUserLocation(newValue: location, completion: {(success, error) in
+                PulseDatabase.updateUserLocation(newValue: location, completion: {(success, error) in
                     if success {
                         self.statusLabel.text = "Profile Updated!"
                         self.goBack()
@@ -443,7 +443,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             else if let _location = shortTextField.text {
                 addStatusLabel()
                 
-                Database.updateUserProfile(self._currentSetting, newValue: _location, completion: {(success, error) in
+                PulseDatabase.updateUserProfile(self._currentSetting, newValue: _location, completion: {(success, error) in
                     if success {
                         self.statusLabel.text = "Profile Updated!"
                         self.goBack()
@@ -498,11 +498,11 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch _currentSetting.settingID {
         case "items":
-            return User.currentUser!.items.count
+            return PulseUser.currentUser.items.count
         case "savedItems":
-            return User.currentUser!.savedItems.count
+            return PulseUser.currentUser.savedItems.count
         case "subscriptions":
-            return User.currentUser!.subscriptions.count
+            return PulseUser.currentUser.subscriptions.count
         default: return 0
         }
     }

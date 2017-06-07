@@ -96,7 +96,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     fileprivate func updateRootScopeSelection() {
         if allChannels.isEmpty {
-            Database.getExploreChannels({ channels, error in
+            PulseDatabase.getExploreChannels({ channels, error in
                 if error == nil {
                     self.allChannels = channels
                     self.toggleLoading(show: false, message: nil)
@@ -149,14 +149,14 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     internal func userClickedSubscribe(senderTag: Int) {
         let selectedChannel = allChannels[senderTag]
         toggleLoading(show: true, message: "Updating Subscriptions...", showIcon: true)
-        Database.subscribeChannel(selectedChannel, completion: {(success, error) in
+        PulseDatabase.subscribeChannel(selectedChannel, completion: {(success, error) in
             self.toggleLoading(show: false, message: nil)
             if !success {
                 GlobalFunctions.showAlertBlock("Error Subscribing", erMessage: error!.localizedDescription)
             } else {
                 if let cell = self.channelCollection.cellForItem(at: IndexPath(item: senderTag, section: 0)) as? ExploreChannelsCell {
                     DispatchQueue.main.async {
-                        if let user = User.currentUser, user.isSubscribedToChannel(cID: selectedChannel.cID) {
+                        if PulseUser.isLoggedIn(), PulseUser.currentUser.isSubscribedToChannel(cID: selectedChannel.cID) {
                             cell.updateSubscribe(type: .unfollow, tag: senderTag)
                         } else {
                             cell.updateSubscribe(type: .follow, tag: senderTag)
@@ -185,7 +185,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
             case .question, .thread, .interview:
                 
                 toggleLoading(show: true, message: "Loading Item...", showIcon: true)
-                Database.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                     success ?
                         self.showItemDetail(item: item, allItems: items) :
                         self.showBrowse(selectedItem: item)
@@ -193,7 +193,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                 })
             default: break
             }
-        } else if let user = item as? User {
+        } else if let user = item as? PulseUser {
             
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
@@ -271,12 +271,12 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
         let channel = allChannels[indexPath.row]
         cell.updateCell(channel.cTitle, subtitle: channel.cDescription)
         
-        if let user = User.currentUser {
-            user.isSubscribedToChannel(cID: channel.cID) ? cell.updateSubscribe(type: .unfollow, tag: indexPath.row) : cell.updateSubscribe(type: .follow, tag: indexPath.row)
+        if PulseUser.isLoggedIn() {
+            PulseUser.currentUser.isSubscribedToChannel(cID: channel.cID) ? cell.updateSubscribe(type: .unfollow, tag: indexPath.row) : cell.updateSubscribe(type: .follow, tag: indexPath.row)
         }
         
         if !channel.cCreated {
-            Database.getChannel(cID: channel.cID, completion: { (channel, error) in
+            PulseDatabase.getChannel(cID: channel.cID, completion: { (channel, error) in
                 channel.cPreviewImage = self.allChannels[indexPath.row].cPreviewImage
                 self.allChannels[indexPath.row] = channel
                 cell.updateCell(channel.cTitle, subtitle: channel.cDescription)
@@ -311,8 +311,8 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
         if channelCollection != nil {
             let visiblePaths = channelCollection.indexPathsForVisibleItems
             for indexPath in visiblePaths {
-                if let cell = channelCollection.cellForItem(at: indexPath) as? ExploreChannelsCell, let user = User.currentUser{
-                    user.isSubscribedToChannel(cID: allChannels[indexPath.row].cID) ? cell.updateSubscribe(type: .unfollow, tag: indexPath.row) : cell.updateSubscribe(type: .follow, tag: indexPath.row)
+                if let cell = channelCollection.cellForItem(at: indexPath) as? ExploreChannelsCell, PulseUser.isLoggedIn() {
+                    PulseUser.currentUser.isSubscribedToChannel(cID: allChannels[indexPath.row].cID) ? cell.updateSubscribe(type: .unfollow, tag: indexPath.row) : cell.updateSubscribe(type: .follow, tag: indexPath.row)
                 }
             }
         }
@@ -342,7 +342,7 @@ extension ExploreChannelsVC {
             switch linkType {
             case "u":
                 let uID = urlComponents[2]
-                userSelected(item: User(uID: uID))
+                userSelected(item: PulseUser(uID: uID))
                 toggleLoading(show: false, message: nil)
 
             case "c":
@@ -352,7 +352,7 @@ extension ExploreChannelsVC {
 
             case "i":
                 let itemID = urlComponents[2]
-                Database.getItem(itemID, completion: {(item, error) in
+                PulseDatabase.getItem(itemID, completion: {(item, error) in
                     self.toggleLoading(show: false, message: nil)
 
                     if let item = item {
@@ -363,9 +363,14 @@ extension ExploreChannelsVC {
                     }
                 })
             case "invites", "invite":
+                guard PulseUser.isLoggedIn() else {
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Please login", erMessage: "You need to be logged in to see the invite")
+                    return
+                }
+                
                 let inviteID = urlComponents[2]
-                Database.getInviteItem(inviteID, completion: { item, type, items, toUser, conversationID, error in
-                    if error == nil, let item = item, let type = type {
+                PulseDatabase.getInviteItem(inviteID, completion: { item, type, items, toUser, conversationID, error in
+                    if error == nil, let item = item, let type = type, toUser?.uID == PulseUser.currentUser.uID {
                         switch type {
                         case .interviewInvite:
                             DispatchQueue.main.async {
@@ -380,11 +385,12 @@ extension ExploreChannelsVC {
                                 interviewVC.interviewItemID = item.itemID
                                 
                             }
-                        case .perspectiveInvite, .questionInvite:
+                        case .perspectiveInvite, .questionInvite, .showcaseInvite:
                             self.showCameraMenu(inviteItem: item)
 
                         case .contributorInvite:
                             self.showContributorMenu(inviteItem: item)
+                            
                         default: break
                         }
                     }
@@ -403,7 +409,7 @@ extension ExploreChannelsVC {
     
     internal func showContributorMenu(inviteItem: Item) {
         let menu = UIAlertController(title: "Congratulations!",
-                                     message: "You were recommended as a contributor for \(inviteItem.cTitle ?? " a channel"). Contributors are featured thought leaders who shape the content & experience for this channel. It's a great way to showcase your expertise and build your personal brand", preferredStyle: .actionSheet)
+                                     message: "You were recommended as a contributor for \(inviteItem.cTitle ?? " a channel"). Contributors shape the content & experience for each channel and get an amazing platform to showcase their brand", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
             self.showConfirmationMenu(status: true, inviteID: inviteItem.itemID)
@@ -421,8 +427,8 @@ extension ExploreChannelsVC {
     }
     
     internal func showCameraMenu(inviteItem: Item) {
-        let menu = UIAlertController(title: "Welcome!",
-                                     message: "Thanks for taking the time to share your perspectives! It's a great way to showcase your expertise and build your brand",
+        let menu = UIAlertController(title: "Hi There!",
+                                     message: "Ready to add your \(inviteItem.childType(plural: true))? We spotlight expert voices, standout ideas & content and give you a platform to showcase your brand",
                                      preferredStyle: .actionSheet)
     
         menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: { (action: UIAlertAction!) in
@@ -445,9 +451,9 @@ extension ExploreChannelsVC {
     
     
     internal func showConfirmationMenu(status: Bool, inviteID: String) {
-        Database.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
+        PulseDatabase.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
             success ?
-                GlobalFunctions.showAlertBlock("All Set!", erMessage: "You have been confirmed as a contributor for the channel. Check out the channel and ") :
+                GlobalFunctions.showAlertBlock("All Set!", erMessage: "You have been confirmed as a contributor - get started & start creating!") :
                 GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite", erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
         })
     }

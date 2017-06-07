@@ -69,13 +69,17 @@ public class PulseNavBar: UINavigationBar {
     }
     
     public func setTitles(title : String?, subtitle : String?) {
-        navLogo.image = nil
-        navTitle.frame.origin.y = -Spacing.xs.rawValue
-        navTitle.text = title?.capitalized
-        navTitle.textAlignment = .center
-        
-        navSubtitle.text = subtitle?.capitalized
-        navSubtitle.textAlignment = .center
+        if let subtitle = subtitle {
+            navLogo.image = nil
+            navTitle.frame.origin.y = -Spacing.xs.rawValue
+            navTitle.text = title?.capitalized
+            navTitle.textAlignment = .center
+            
+            navSubtitle.text = subtitle.capitalized
+            navSubtitle.textAlignment = .center
+        } else {
+            setTitles(title: title)
+        }
     }
     
     public func toggleSearch(show: Bool) {

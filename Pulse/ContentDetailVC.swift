@@ -44,17 +44,16 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     /* bools to make sure can click next video and no errors from unhandled observers */
     public var _isShowingIntro = false
 
-    fileprivate var _tapReady = false
-    fileprivate var _nextItemReady = false
-    fileprivate var _canAdvanceReady = false
-    fileprivate var _canAdvanceDetailReady = false
-    fileprivate var _isObserving = false
-    fileprivate var _isMenuShowing = false
-    fileprivate var _isMiniProfileShown = false
-    fileprivate var _isImageViewShown = false
-    fileprivate var _isQuickBrowseShown = false
-    fileprivate var _isExploring = false
-    fileprivate var _shouldShowExplore = false
+    fileprivate var tapReady = false
+    fileprivate var nextItemReady = false
+    fileprivate var canAdvanceReady = false
+    fileprivate var canAdvanceDetailReady = false
+    fileprivate var isObserving = false
+    fileprivate var isMiniProfileShown = false
+    fileprivate var isImageViewShown = false
+    fileprivate var isQuickBrowseShown = false
+    fileprivate var isExploring = false
+    fileprivate var shouldShowExplore = false
     
     fileprivate var startObserver : AnyObject!
     fileprivate var playedTillEndObserver : Any!
@@ -132,13 +131,15 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     internal func didPlayTillEnd() {
-        if _shouldShowExplore {
-            contentOverlay.showExploreDetail()
-            _shouldShowExplore = false
+        if shouldShowExplore {
+            contentOverlay.highlightExploreDetail()
+            shouldShowExplore = false
+        } else if isExploring {
+            contentOverlay.highlightExploreDetail()
         }
         
         if let currentItem = currentItem {
-            Database.updateItemViewCount(itemID: currentItem.itemID)
+            PulseDatabase.updateItemViewCount(itemID: currentItem.itemID)
         }
         
         if playedTillEndObserver != nil {
@@ -147,7 +148,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     fileprivate func loadWatchedPreviewItem() {
-        Database.updateItemViewCount(itemID: allItems[itemIndex].itemID)
+        PulseDatabase.updateItemViewCount(itemID: allItems[itemIndex].itemID)
         currentItem = allItems[itemIndex]
         
         userClickedExpandItem()
@@ -155,7 +156,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     fileprivate func loadItem(index: Int) {
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
-        _canAdvanceReady = false
+        canAdvanceReady = false
         
         if index < allItems.count  {
             let _itemID = allItems[index].itemID
@@ -164,16 +165,21 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             if !allItems[index].itemCreated || allItems[index].contentURL == nil {
 
                 //fetch Item from DB first
-                Database.getItem(_itemID, completion: { (item, error) in
+                PulseDatabase.getItem(_itemID, completion: { (item, error) in
                     if let item = item {
                         self.currentItem = item
                         self.addClip(item, completion: { success in
                             self.itemIndex = index
-                            if self._canAdvance(self.itemIndex + 1) {
-                                self.addNextClipToQueue(self.allItems[self.itemIndex + 1])
-                                self._canAdvanceReady = true
+                            if self.canAdvance(self.itemIndex + 1) {
+                                self.addNextClipToQueue(self.allItems[self.itemIndex + 1], completion: { success in
+                                    if success {
+                                        self.canAdvanceReady = true
+                                    } else {
+                                        self.canAdvanceReady = false
+                                    }
+                                })
                             } else {
-                                self._canAdvanceReady = false
+                                self.canAdvanceReady = false
                             }
                         })
                     }
@@ -187,11 +193,16 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     if success {
                         self.itemIndex = index
                         
-                        if self._canAdvance(self.itemIndex + 1) {
-                            self.addNextClipToQueue(self.allItems[self.itemIndex + 1])
-                            self._canAdvanceReady = true
+                        if self.canAdvance(self.itemIndex + 1) {
+                            self.addNextClipToQueue(self.allItems[self.itemIndex + 1], completion: { success in
+                                if success {
+                                    self.canAdvanceReady = true
+                                } else {
+                                    self.canAdvanceReady = false
+                                }
+                            })
                         } else {
-                            self._canAdvanceReady = false
+                            self.canAdvanceReady = false
                         }
                     }
                 })
@@ -205,43 +216,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
-    fileprivate func loadItemCollections(_ index : Int) {
-        UIApplication.shared.isNetworkActivityIndicatorVisible = true
-        
-        tap.isEnabled = false
-        addDetailTap()
-        
-        //wait till async call finishes to allow taps again - defaults to canAdvanceDetail = false
-        _canAdvanceDetailReady = false
-        _tapReady = false
-        itemCollectionIndex = index
-
-        addClip(itemDetailCollection[itemCollectionIndex], completion: { success in
-            if success, self._canAdvanceItemDetail(self.itemCollectionIndex + 1) {
-                
-                self.addNextClipToQueue(self.itemDetailCollection[self.itemCollectionIndex + 1].itemID)
-                self.itemCollectionIndex += 1
-                self._canAdvanceDetailReady = true
-                self._tapReady = true
-                
-            } else {
-                self._canAdvanceDetailReady = false
-                self._tapReady = true
-
-                // done w/ Item detail - queue up next Item (outside of collection) if it exists
-                if self._canAdvance(self.itemIndex + 1) {
-                    self.addNextClipToQueue(self.allItems[self.itemIndex + 1])
-                    self._canAdvanceReady = true
-                } else {
-                    self._canAdvanceReady = false
-                }
-            }
-        })
-        
-        UIApplication.shared.isNetworkActivityIndicatorVisible = false
-    }
-    
     fileprivate func addDetailTap() {
+        tap.isEnabled = false
+
         if detailTap == nil {
             detailTap = UITapGestureRecognizer(target: self, action: #selector(handleDetailTap))
             detailTap.cancelsTouchesInView = false
@@ -252,24 +229,55 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
+    //check if item has more parts - if yes then add in explore detail
     fileprivate func addExploreItemDetail(_ _itemID : String) {
-        if itemDetailCollection.count != 0, !_isExploring {
-            _shouldShowExplore = itemDetailCollection.count > 1
+        if itemDetailCollection.count != 0, !isExploring {
+            shouldShowExplore = itemDetailCollection.count > 1
+            contentOverlay.addPagers(num: itemDetailCollection.count)
+            addDetailTap()
+            loadItemCollections(1)
         } else {
-            Database.getItemCollection(_itemID, completion: {(hasDetail, itemCollection) in
+            PulseDatabase.getItemCollection(_itemID, completion: {(hasDetail, itemCollection) in
                 if hasDetail, itemCollection.count > 1 {
-                    self._shouldShowExplore = true
+                    self.shouldShowExplore = true
+                    self.contentOverlay.addPagers(num: itemCollection.count)
                     self.itemDetailCollection = itemCollection.reversed() //otherwise items are in chron order - need to get oldest first
+                    self.addDetailTap()
+                    self.loadItemCollections(1)
                 } else {
-                    self._shouldShowExplore = false
+                    self.shouldShowExplore = false
                     self.contentOverlay.hideExploreDetail()
                 }
             })
         }
     }
     
+    //loads the next clip from the 'detail collection'
+    fileprivate func loadItemCollections(_ index : Int) {
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
+        
+        addDetailTap()
+        isExploring = true
+        
+        //wait till async call finishes to allow taps again - defaults to canAdvanceDetail = false
+        canAdvanceDetailReady = false
+        tapReady = false
+        itemCollectionIndex = index
+        
+        addNextClipToQueue(self.itemDetailCollection[self.itemCollectionIndex].itemID, completion: { success in
+            if success {
+                self.canAdvanceDetailReady = true
+                self.tapReady = true
+            } else {
+                self.canAdvanceReady = false
+            }
+        })
+        UIApplication.shared.isNetworkActivityIndicatorVisible = false
+    }
+    
+    //if need to get the clip from database first
     fileprivate func addClip(_ itemID : String, completion: @escaping (_ success : Bool) -> Void) {
-        Database.getItem(itemID, completion: { (item, error) in
+        PulseDatabase.getItem(itemID, completion: { (item, error) in
             if let item = item {
                 self.addClip(item, completion: { success in
                     completion(success)
@@ -285,7 +293,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate func addClip(_ item : Item, completion: @escaping (_ success : Bool) -> Void) {
         
         if !item.itemCreated || item.contentURL == nil {
-            
             addClip(item.itemID, completion: { success in
                 success ? completion(true) : completion(false)
             })
@@ -355,7 +362,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         contentOverlay.setTitle(item.itemTitle)
         contentOverlay.clearButtons()
         
-        if let user = item.user {
+        if updateUser, let user = item.user {
             contentOverlay.setUserName(user.name)
             contentOverlay.setUserSubtitle(user.shortBio)
             
@@ -375,7 +382,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         } else if updateUser {
             contentOverlay.setUserImage(UIImage(named: "default-profile"))
             
-            Database.getUser(item.itemUserID ?? "", completion: { (user, error) in
+            PulseDatabase.getUser(item.itemUserID ?? "", completion: { (user, error) in
                 if let user = user, self.currentItem?.itemUserID == user.uID {
                     self.currentItem?.user = user
                     self.contentOverlay.setUserName(user.name)
@@ -399,46 +406,63 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         
     }
     
-    fileprivate func addNextClipToQueue(_ _nextItem : Item) {
-        _nextItemReady = false
+    fileprivate func addNextClipToQueue(_ _nextItem : Item, completion: @escaping (_ success : Bool) -> Void) {
+        nextItemReady = false
         
         if !_nextItem.itemCreated || _nextItem.contentURL == nil {
-            addNextClipToQueue(_nextItem.itemID)
+            addNextClipToQueue(_nextItem.itemID, completion: { success in
+                success ? completion(true) : completion(false)
+            })
         } else {
             nextItem = _nextItem
             let itemURL = _nextItem.contentURL
             
             if nextItem!.contentType == .recordedVideo || self.nextItem!.contentType == .albumVideo {
+
                 if let itemURL = itemURL  {
                     let nextPlayerItem = AVPlayerItem(url: itemURL)
                     if ContentDetailVC.qPlayer.currentItem != nil, ContentDetailVC.qPlayer.canInsert(nextPlayerItem, after: ContentDetailVC.qPlayer.currentItem) {
                         self.currentPlayerItem = nextPlayerItem
                         ContentDetailVC.qPlayer.insert(nextPlayerItem, after: ContentDetailVC.qPlayer.currentItem)
-                        self._nextItemReady = true
+                        self.nextItemReady = true
+                        completion(true)
                     } else if ContentDetailVC.qPlayer.canInsert(nextPlayerItem, after: nil) {
                         self.currentPlayerItem = nextPlayerItem
                         ContentDetailVC.qPlayer.insert(nextPlayerItem, after: nil)
-                        self._nextItemReady = true
+                        self.nextItemReady = true
+
+                        completion(true)
+                    } else {
+                        completion(false)
                     }
+                } else {
+                    completion(false)
                 }
             } else if nextItem!.contentType == .recordedImage || nextItem!.contentType == .albumImage {
                 DispatchQueue.global(qos: .background).async {
                     if let imageURL = itemURL, let _imageData = try? Data(contentsOf: imageURL) {
-                        self._nextItemReady = true
+                        self.nextItemReady = true
                         self.nextItem?.content = UIImage(data: _imageData)
+                        completion(true)
+                    } else {
+                        completion(false)
                     }
                 }
+            } else {
+                completion(false)
             }
         }
     }
     
     //used if we need to get the next Item from database - otherwise just get the URL
-    fileprivate func addNextClipToQueue(_ nextItemID : String) {
-        Database.getItem(nextItemID, completion: { (item, error) in
+    fileprivate func addNextClipToQueue(_ nextItemID : String, completion: @escaping (_ success : Bool) -> Void) {
+        PulseDatabase.getItem(nextItemID, completion: { (item, error) in
             if let item = item {
-                self.addNextClipToQueue(item)
+                self.addNextClipToQueue(item, completion: { success in
+                    success ? completion(true) : completion(false)
+                })
             } else {
-                self.handleTap()
+                completion(false)
             }
         })
     }
@@ -459,8 +483,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             ContentDetailVC.qPlayer.play()
         })
         
-        if !_tapReady {
-            _tapReady = true
+        if !tapReady {
+            tapReady = true
         }
         
         if self._isShowingIntro {
@@ -483,37 +507,37 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                                                                            name: .AVPlayerItemDidPlayToEndTime,
                                                                            object: currentPlayerItem)
             
-            _isObserving = true
+            isObserving = true
         }
     }
     
     fileprivate func removeObserverIfNeeded() {
-        if _isObserving, ContentDetailVC.qPlayer.currentItem != nil {
+        if isObserving, ContentDetailVC.qPlayer.currentItem != nil {
             ContentDetailVC.qPlayer.currentItem?.removeObserver(self, forKeyPath: "loadedTimeRanges")
             
             if playedTillEndObserver != nil {
                 NotificationCenter.default.removeObserver(playedTillEndObserver)
             }
             
-            _isObserving = false
+            isObserving = false
         }
     }
     
-    fileprivate func _canAdvance(_ index: Int) -> Bool{
+    fileprivate func canAdvance(_ index: Int) -> Bool{
         return index < allItems.count ? true : false
     }
     
-    fileprivate func _canAdvanceItemDetail(_ index: Int) -> Bool{
+    fileprivate func canAdvanceItemDetail(_ index: Int) -> Bool{
         return index < itemDetailCollection.count ? true : false
     }
     
     //move the controls and filters to top layer
     fileprivate func showImageView(_ image : UIImage) {
         
-        if _isImageViewShown {
+        if isImageViewShown {
             DispatchQueue.main.async {
                 self.imageView.image = image
-                self._tapReady = true
+                self.tapReady = true
             }
         } else {
             DispatchQueue.main.async {
@@ -521,23 +545,24 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 self.imageView.image = image
                 self.imageView.contentMode = .scaleAspectFill
                 self.view.insertSubview(self.imageView, at: 1)
-                self._isImageViewShown = true
-                self._tapReady = true
+                self.isImageViewShown = true
+                self.tapReady = true
             }
         }
+        
     }
     
     fileprivate func removeImageView() {
-        if _isImageViewShown {
+        if isImageViewShown {
             imageView.image = nil
             imageView.removeFromSuperview()
-            _isImageViewShown = false
+            isImageViewShown = false
         }
     }
     
     /* DELEGATE METHODS */
     func userClickedSendMessage() {
-        guard let selectedUser = currentItem?.user, User.currentUser!.uID != selectedUser.uID else { return }
+        guard PulseUser.isLoggedIn(), let selectedUser = currentItem?.user, PulseUser.currentUser.uID != selectedUser.uID else { return }
 
         let messageVC = MiniMessageVC()
         messageVC.selectedUser = selectedUser
@@ -548,13 +573,13 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     func votedItem(_ vote : VoteType) {
         if let _currentItem = currentItem {
             if vote == .favorite {
-                Database.saveItem(item: _currentItem, completion: { success, error in
+                PulseDatabase.saveItem(item: _currentItem, completion: { success, error in
                     if success {
                         self.contentOverlay.itemSaved(type: vote)
                     }
                 })
             } else {
-                Database.addVote( vote, itemID: _currentItem.itemID, completion: { (success, error) in
+                PulseDatabase.addVote( vote, itemID: _currentItem.itemID, completion: { (success, error) in
                     if success {
                         self.contentOverlay.itemSaved(type: vote)
                     }
@@ -613,19 +638,19 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 miniProfile!.setBackgroundImage(image)
             }
             
-            if !User.isLoggedIn() || User.currentUser?.uID == user.uID {
+            if !PulseUser.isLoggedIn() || PulseUser.currentUser.uID == user.uID {
                 miniProfile?.setActionButton(disabled: true)
             }
             
             view.addSubview(miniProfile!)
-            _isMiniProfileShown = true
+            isMiniProfileShown = true
         }
     }
     
     func userClosedPreview(_ _profileView : UIView) {
         _profileView.removeFromSuperview()
         removeBlurBackground()
-        _isMiniProfileShown = false
+        isMiniProfileShown = false
     }
 
     //User selected an item
@@ -639,7 +664,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         delegate.userClickedSeeAll(items: items)
         removeObserverIfNeeded()
         
-        _isQuickBrowseShown = false
+        isQuickBrowseShown = false
     }
     
     func userClickedBrowseItems() {
@@ -658,18 +683,17 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         
         GlobalFunctions.addNewVC(quickBrowse, parentVC: self)
         
-        _isQuickBrowseShown = true        
+        isQuickBrowseShown = true        
     }
     
     func userClosedQuickBrowse() {
-        _isQuickBrowseShown = false
+        isQuickBrowseShown = false
         GlobalFunctions.dismissVC(quickBrowse)
     }
     
     func userClickedExpandItem() {
         removeObserverIfNeeded()
         loadItemCollections(1)
-        _isExploring = true
     }
     
     func dismissVC(_ viewController: UIViewController) {
@@ -679,15 +703,15 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     /* MARK : HANDLE GESTURES */
     func handleTap() {
         //ignore tap if mini profile is shown or if quick browse is shown
-        guard !_isMiniProfileShown, !_isQuickBrowseShown else {
+        guard !isMiniProfileShown, !isQuickBrowseShown else {
             return
         }
         
-        if (!_tapReady || (!_nextItemReady && _canAdvanceReady)) {
+        if (!tapReady || (!nextItemReady && canAdvanceReady)) {
             //ignore tap
         }
         
-        else if _canAdvanceReady {
+        else if canAdvanceReady {
             guard let _nextItem = nextItem else {
                 return
             }
@@ -695,7 +719,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             itemDetailCollection.removeAll()
             contentOverlay.resetTimer()
             contentOverlay.hideExploreDetail()
-            
+
             updateOverlayData(_nextItem)
             addExploreItemDetail(_nextItem.itemID)
             
@@ -710,7 +734,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 }
             } else if _nextItem.contentType == .recordedVideo || _nextItem.contentType == .albumVideo  {
                 removeImageView()
-                _tapReady = false
+                tapReady = false
                 ContentDetailVC.qPlayer.pause()
                 removeObserverIfNeeded()
                 
@@ -720,11 +744,12 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 }
             }
             
-            if _canAdvance(itemIndex + 1) {
-                addNextClipToQueue(allItems[itemIndex + 1])
-                _canAdvanceReady = true
+            if canAdvance(itemIndex + 1) {
+                addNextClipToQueue(allItems[itemIndex + 1], completion: { success in
+                    self.canAdvanceReady = true
+                })
             } else {
-                _canAdvanceReady = false
+                canAdvanceReady = false
             }
         }
         
@@ -737,16 +762,18 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
 
     func handleDetailTap() {
-        guard !_isMiniProfileShown, !_isQuickBrowseShown else {
+        guard !isMiniProfileShown, !isQuickBrowseShown else {
             return
         }
         
-        if (!_tapReady || (!_nextItemReady && _canAdvanceDetailReady)) {
+        if (!tapReady || (!nextItemReady && canAdvanceDetailReady)) {
             //ignore tap
         }
-        else if _canAdvanceDetailReady, let nextItem = nextItem {
+        else if canAdvanceDetailReady, let nextItem = nextItem {
             
             updateOverlayData(nextItem, updateUser: false)
+            contentOverlay.updateSelectedPager(num: itemCollectionIndex)
+            contentOverlay.dimExploreDetail()
             nextItem.user = currentItem?.user
             currentItem = nextItem
             itemCollectionIndex += 1
@@ -757,7 +784,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 }
             } else if nextItem.contentType == .recordedVideo || nextItem.contentType == .albumVideo  {
                 removeImageView()
-                _tapReady = false
+                tapReady = false
                 contentOverlay.resetTimer()
                 ContentDetailVC.qPlayer.pause()
                 removeObserverIfNeeded()
@@ -768,17 +795,21 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 }
             }
             
-            if _canAdvanceItemDetail(itemCollectionIndex) {
-                addNextClipToQueue(itemDetailCollection[itemCollectionIndex])
-                _canAdvanceDetailReady = true
+            if canAdvanceItemDetail(itemCollectionIndex) {
+                addNextClipToQueue(itemDetailCollection[itemCollectionIndex], completion: { success in
+                    if success {
+                        self.canAdvanceDetailReady = true
+                    }
+                })
             } else {
-                _canAdvanceDetailReady = false
+                canAdvanceDetailReady = false
                 // done w/ Item detail - queue up next Item if it exists
-                if _canAdvance(itemIndex + 1) {
-                    addNextClipToQueue(allItems[itemIndex + 1])
-                    _canAdvanceReady = true
+                if canAdvance(itemIndex + 1) {
+                    addNextClipToQueue(allItems[itemIndex + 1], completion: { success in
+                        self.canAdvanceReady = true
+                    })
                 } else {
-                    _canAdvanceReady = false
+                    canAdvanceReady = false
                 }
             }
         } else {

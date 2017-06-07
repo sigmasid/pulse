@@ -11,19 +11,19 @@ import FirebaseDatabase
 
 class Message : NSObject {
     var mID : String!
-    var from : User!
-    var to : User!
+    var from : PulseUser!
+    var to : PulseUser!
     var body : String!
     var time : Date!
     var mType : MessageType = .message
     
-    init(from : User, to: User, body: String) {
+    init(from : PulseUser, to: PulseUser, body: String) {
         self.from = from
         self.to = to
         self.body = body
     }
     
-    init(snapshot : FIRDataSnapshot) {
+    init(snapshot : DataSnapshot) {
         self.mID = snapshot.key
         
         if snapshot.hasChild("body") {
@@ -38,11 +38,11 @@ class Message : NSObject {
         }
         
         if snapshot.hasChild("fromID") {
-            self.from = User(uID: snapshot.childSnapshot(forPath: "fromID").value as? String)
+            self.from = PulseUser(uID: snapshot.childSnapshot(forPath: "fromID").value as? String)
         }
         
         if snapshot.hasChild("toID") {
-            self.to = User(uID: snapshot.childSnapshot(forPath: "toID").value as? String)
+            self.to = PulseUser(uID: snapshot.childSnapshot(forPath: "toID").value as? String)
         }
         
         if snapshot.hasChild("type"), let type = snapshot.childSnapshot(forPath: "type").value as? String {

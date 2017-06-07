@@ -83,16 +83,16 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
         sender.setDisabled()
         let _loading = sender.addLoadingIndicator()
         
-        Database.createEmailUser(self.userEmail.text!, password: self.userPassword.text!, completion: { (user, error) in
+        PulseDatabase.createEmailUser(self.userEmail.text!, password: self.userPassword.text!, completion: { (user, error) in
             if let _error = error {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loading)
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
 
                 switch _error.code {
-                case FIRAuthErrorCode.errorCodeInvalidEmail.rawValue: self._emailErrorLabel.text = error!.localizedDescription
-                case FIRAuthErrorCode.errorCodeEmailAlreadyInUse.rawValue: self._emailErrorLabel.text = "you already have an account! try signing in"
-                case FIRAuthErrorCode.errorCodeWeakPassword.rawValue: self._passwordErrorLabel.text = error!.localizedDescription
+                case AuthErrorCode.invalidEmail.rawValue: self._emailErrorLabel.text = error!.localizedDescription
+                case AuthErrorCode.emailAlreadyInUse.rawValue: self._emailErrorLabel.text = "you already have an account! try signing in"
+                case AuthErrorCode.weakPassword.rawValue: self._passwordErrorLabel.text = error!.localizedDescription
                 default: self._emailErrorLabel.text = "error creating your account. please try again!"
                 }
             } else {

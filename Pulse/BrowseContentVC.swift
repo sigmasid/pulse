@@ -29,7 +29,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     public var selectedItem : Item! {
         didSet {
             if allItems.isEmpty {
-                Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(selectedItem.itemID, completion: {(success, items) in
                     if success {
                         let type = self.selectedItem.type == .question ? "answer" : "post"
                         self.allItems = items.map{ item -> Item in
@@ -227,7 +227,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            PulseDatabase.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -254,7 +254,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
         } else {
             itemStack[indexPath.row].gettingInfoForPreview = true
 
-            Database.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
+            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
                 
                 if let item = item {
                     
@@ -265,7 +265,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                         cell.updateLabel(nil, _subtitle: item.itemTitle)
                     } else {
                     // Get the user details
-                        Database.getUser(item.itemUserID, completion: {(user, error) in
+                        PulseDatabase.getUser(item.itemUserID, completion: {(user, error) in
                             if let user = user {
                                 self.allItems[indexPath.row].user = user
                                 DispatchQueue.main.async {
@@ -290,7 +290,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
-                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                     if hasDetail {
                         cell.showTapForMore = true
                         self.itemStack[indexPath.row].itemCollection = itemCollection.reversed()
@@ -303,7 +303,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                 cell.showItemPreview(item: currentItem)
             } else {
                 toggleLoading(show: true, message: "loading interview...")
-                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                     self.toggleLoading(show: false, message: nil)
                     self.showItemDetail(item: self.selectedItem, index: 0, itemCollection: itemCollection)
                     self.selectedIndex = nil

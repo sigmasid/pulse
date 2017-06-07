@@ -9,14 +9,14 @@ import UIKit
 
 class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     
-    public var selectedUser : User!
+    public var selectedUser : PulseUser!
     public var interviewItem : Item!
     public var conversationID : String?
     
     public var interviewItemID : String! {
         didSet {
             if interviewItem == nil || allQuestions.isEmpty || selectedUser == nil {
-                Database.getInviteItem(interviewItemID, completion: { interviewItem, _, questions, toUser, conversationID, error in
+                PulseDatabase.getInviteItem(interviewItemID, completion: { interviewItem, _, questions, toUser, conversationID, error in
                     self.selectedUser = toUser
                     self.interviewItem = interviewItem
                     self.allQuestions = questions
@@ -115,7 +115,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     }
     
     internal func checkPartialInterview() {
-        Database.getItemCollection(interviewItemID, completion: { success, items in
+        PulseDatabase.getItemCollection(interviewItemID, completion: { success, items in
             if success {
                 for item in items {
                     if let itemIndex = self.allQuestions.index(of: item) {
@@ -295,7 +295,7 @@ extension InterviewRequestVC {
     }
     
     internal func askQuestion(qItem : Item) {
-        guard let userID = User.currentUser?.uID else {
+        guard let userID = PulseUser.currentUser.uID else {
             let errorInfo = [ NSLocalizedDescriptionKey : "please login" ]
             let error = NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo)
             showErrorMenu(errorTitle: "Please Login", error: error)
@@ -328,7 +328,7 @@ extension InterviewRequestVC {
     }
     
     internal func markInterviewCompleted() {
-        Database.addInterviewToDatabase(interviewItemID: interviewItemID, interviewParentItem: interviewItem, completion: {(success, error) in
+        PulseDatabase.addInterviewToDatabase(interviewItemID: interviewItemID, interviewParentItem: interviewItem, completion: {(success, error) in
             if success {
                 self.showSuccessMenu()
             } else {
@@ -339,7 +339,7 @@ extension InterviewRequestVC {
     
     internal func markInterviewDeclined() {
         toggleLoading(show: true, message: "Declining Interview Request...", showIcon: true)
-        Database.declineInterview(interviewItemID: interviewItemID, interviewParentItem: interviewItem, conversationID: conversationID, completion: {(success, error) in
+        PulseDatabase.declineInterview(interviewItemID: interviewItemID, interviewParentItem: interviewItem, conversationID: conversationID, completion: {(success, error) in
             self.toggleLoading(show: false, message: nil)
             if success {
                 self.goBack()

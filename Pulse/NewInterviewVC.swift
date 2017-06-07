@@ -15,15 +15,19 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     public var selectedChannel : Channel!
     public var selectedItem : Item!
     
-    fileprivate var selectedUser : User?
+    fileprivate var selectedUser : PulseUser?
     fileprivate var addEmail : AddText!
     fileprivate var interviewID: String!
 
     fileprivate var iImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
     fileprivate var iName = UITextField()
+    fileprivate var iNameDescription = UILabel()
     fileprivate var iTopic = UITextField()
     fileprivate var submitButton = UIButton()
     
+    fileprivate var placeholderName = "enter name or tap search"
+    fileprivate var placeholderDescription = "brief description for interview"
+
     fileprivate var sTypeDescription = PaddingLabel()
     fileprivate var addQuestion : AddText!
     
@@ -75,8 +79,30 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         }
     }
     
-    internal func createInterviewRequest() {
-        guard let user = User.currentUser, user.uID != nil else {
+    internal func handleSubmit() {
+        if selectedUser != nil {
+            createInterviewRequest(completion: { success, item in
+                if success {
+                    //clear interview stuff
+                    self.selectedUser = nil
+                    self.iName.text = self.placeholderName
+                    self.iTopic.text = self.placeholderDescription
+                    
+                    self.showSuccessMenu(message: "Invite Sent!")
+                    
+                } else {
+                    GlobalFunctions.showAlertBlock(viewController: self,
+                                                   erTitle: "Error Sending Invite",
+                                                   erMessage: "Sorry there was an error sending the invite")
+                }
+            })
+        } else {
+            showNewUserInterviewMenu()
+        }
+    }
+    
+    internal func createInterviewRequest(email: String? = nil, completion: @escaping (_ success : Bool, _ item : Item?) -> Void) {
+        guard PulseUser.isLoggedIn() else {
             GlobalFunctions.showAlertBlock("Please Login", erMessage: "You need to be logged in to send interview requests")
             return
         }
@@ -88,26 +114,19 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         let item = Item(itemID: itemKey)
         
         item.itemTitle = iTopic.text ?? ""
-        item.itemUserID = User.currentUser!.uID
+        item.itemUserID = PulseUser.currentUser.uID!
         item.cID = selectedChannel.cID
         item.cTitle = selectedChannel.cTitle
         item.tag = selectedItem
 
-        Database.createInviteRequest(item: item, type: .interviewInvite, toUser: selectedUser, toName: iName.text!, childItems: allQuestions, parentItemID: nil, completion: { success, error in
-            if success, self.selectedUser != nil {
-                self.interviewID = itemKey
-                self.showSuccessMenu(message: "Successfully Added Interview")
-            } else if success {
-                self.interviewID = itemKey
-                self.showNewUserInterviewMenu()
-            } else if let error = error {
-                self.showErrorMenu(error: error)
-            }
+        PulseDatabase.createInviteRequest(item: item, type: .interviewInvite, toUser: selectedUser, toName: iName.text!, toEmail: email, childItems: allQuestions, parentItemID: nil, completion: { success, error in
+            success ? completion(true, item) : completion(false, nil)
+            self.toggleLoading(show: false, message: nil)
             loading.removeFromSuperview()
         })
     }
     
-    func userClickedSearchUsers() {
+    internal func userClickedSearchUsers() {
         let browseUsers = MiniUserSearchVC()
         browseUsers.modalPresentationStyle = .overCurrentContext
         browseUsers.modalTransitionStyle = .crossDissolve
@@ -117,11 +136,19 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         navigationController?.present(browseUsers, animated: true, completion: nil)
     }
     
-    func addChannelContributors() {
+    internal func addChannelContributors() {
         if selectedChannel.contributors.isEmpty {
-            Database.getChannelContributors(channelID: selectedChannel.cID, completion: {success, contributors in
+            PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {success, contributors in
                 self.selectedChannel.contributors = contributors
             })
+        }
+    }
+    
+    internal func checkEnableButton() {
+        if iName.text != "", iTopic.text != "", allQuestions.count > 0 {
+            submitButton.setEnabled()
+        } else {
+            submitButton.setDisabled()
         }
     }
     
@@ -149,19 +176,21 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
                 allQuestions.insert(text, at: 0)
                 tableView.insertRows(at: [newIndexPath], with: .left)
             }
+            checkEnableButton()
         } else if addEmail != nil, sender == addEmail {
             GlobalFunctions.validateEmail(text, completion: {(success, error) in
                 if !success {
                     self.showAddEmail(bodyText: "invalid email - try again")
                 } else {
-                    Database.addInterviewEmail(interviewID: interviewID, email: text, completion: {(success, error) in
+                    self.createInterviewRequest(email: text, completion: { success, item in
                         if success {
-                            self.showSuccessMenu(message: "Successfully Added Interview")
+                            self.showSuccessMenu(message: "Invite Sent!")
+                            self.iTopic.text = self.placeholderDescription
+                            self.iName.text = self.placeholderName
                         } else {
-                            self.showErrorMenu(error: error!)
-                            self.submitButton.setTitle("Send Interview Request", for: .normal)
-                            self.submitButton.removeTarget(self, action: #selector(self.createInterviewRequest), for: .touchUpInside)
-                            self.submitButton.addTarget(self, action: #selector(self.showNewUserInterviewMenu), for: .touchUpInside)
+                            GlobalFunctions.showAlertBlock(viewController: self,
+                                                           erTitle: "Error Sending Invite",
+                                                           erMessage: "Sorry there was an error sending the invite")
                         }
                     })
                 }
@@ -180,12 +209,13 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     }
     
     internal func userSelected(item : Any) {
-        if let user = item as? User {
+        if let user = item as? PulseUser {
             selectedUser = user
+            iNameDescription.text = "Pulse user! Invite will be sent in-app"
             iName.text = user.name?.capitalized
             iImage.setImage(selectedUser?.thumbPicImage, for: .normal)
             iImage.clipsToBounds = true
-            submitButton.setEnabled()
+            checkEnableButton()
         }
     }
     
@@ -198,17 +228,22 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     }
     
     internal func showNewUserInterviewMenu() {
-        let menu = UIAlertController(title: "Interview Request Created!",
-                                     message: "How would you like to send it to the recipient",
+        let menu = UIAlertController(title: "Send Options",
+                                     message: "How would you like to send it to the recipient?",
                                      preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "copy Interview Link", style: .default, handler: { (action: UIAlertAction!) in
             self.toggleLoading(show: true, message: "creating interview link...", showIcon: true)
-            let interviewItem = Item(itemID: self.interviewID, type: "interview")
-            interviewItem.createShareLink(completion: { link in
-                self.toggleLoading(show: false, message: nil)
-                UIPasteboard.general.string = link
-                self.showSuccessMenu(message: "Copied link to clipboard!")
+            self.createInterviewRequest(completion: { success, item in
+                success ?
+                    item?.createShareLink(invite: true, completion: { link in
+                        UIPasteboard.general.string = link
+                        self.showSuccessMenu(message: "Copied link to clipboard!")
+                        self.toggleLoading(show: false, message: nil)
+                    }) :
+                    GlobalFunctions.showAlertBlock(viewController: self,
+                                                   erTitle: "Error Sending Invite",
+                                                   erMessage: "Sorry there was an error sending the invite")
             })
         }))
         
@@ -219,10 +254,8 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
             DispatchQueue.main.async {
-                self.submitButton.setTitle("Send Interview Request", for: .normal)
-                self.submitButton.removeTarget(self, action: #selector(self.createInterviewRequest), for: .touchUpInside)
-                self.submitButton.addTarget(self, action: #selector(self.showNewUserInterviewMenu), for: .touchUpInside)
-                self.submitButton.setEnabled()
+                self.submitButton.setTitle("Send Invite", for: .normal)
+                self.checkEnableButton()
             }
         }))
         
@@ -237,19 +270,8 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         
         menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
-            self.submitButton.setEnabled()
+            self.checkEnableButton()
             self.goBack()
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
-    internal func showErrorMenu(error : Error) {
-        let menu = UIAlertController(title: "Error Starting Interview", message: error.localizedDescription, preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-            self.submitButton.setEnabled()
         }))
         
         present(menu, animated: true, completion: nil)
@@ -313,15 +335,22 @@ extension NewInterviewVC {
     func setupLayout() {
         view.addSubview(iImage)
         view.addSubview(iName)
+        view.addSubview(iNameDescription)
         view.addSubview(iTopic)
         view.addSubview(searchButton)
         view.addSubview(submitButton)
         
         iName.translatesAutoresizingMaskIntoConstraints = false
-        iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xxl.rawValue).isActive = true
+        iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xl.rawValue).isActive = true
         iName.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: Spacing.s.rawValue).isActive = true
         iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.65).isActive = true
         iName.layoutIfNeeded()
+        
+        iNameDescription.translatesAutoresizingMaskIntoConstraints = false
+        iNameDescription.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        iNameDescription.leadingAnchor.constraint(equalTo: iName.leadingAnchor).isActive = true
+        iNameDescription.trailingAnchor.constraint(equalTo: iName.trailingAnchor).isActive = true
+        iNameDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
         
         iImage.translatesAutoresizingMaskIntoConstraints = false
         iImage.trailingAnchor.constraint(equalTo: iName.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
@@ -333,7 +362,7 @@ extension NewInterviewVC {
         iImage.removeShadow()
         
         iTopic.translatesAutoresizingMaskIntoConstraints = false
-        iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         iTopic.leadingAnchor.constraint(equalTo: iName.leadingAnchor).isActive = true
         iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.65).isActive = true
         iTopic.layoutIfNeeded()
@@ -351,12 +380,12 @@ extension NewInterviewVC {
         iName.delegate = self
         iName.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         iName.layer.addSublayer(GlobalFunctions.addBorders(self.iName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        iName.attributedPlaceholder = NSAttributedString(string: "enter name or tap search",
+        iName.attributedPlaceholder = NSAttributedString(string: placeholderName,
                                                           attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         iTopic.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         iTopic.layer.addSublayer(GlobalFunctions.addBorders(self.iName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        iTopic.attributedPlaceholder = NSAttributedString(string: "brief description for interview",
+        iTopic.attributedPlaceholder = NSAttributedString(string: placeholderDescription,
                                                          attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         addTableView()
@@ -396,7 +425,7 @@ extension NewInterviewVC {
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "the interviewee can answer any or all of your suggested questions. interview requests are sent directly to Pulse users or you can choose to send requests via email or text message next."
+        sTypeDescription.text = "the interviewee can answer any or all suggested questions. Requests are sent directly in-app to Pulse users or send via email or text message on the next screen."
         
         updateDataSource()
     }
@@ -413,14 +442,16 @@ extension NewInterviewVC {
         submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         submitButton.setDisabled()
         
-        submitButton.addTarget(self, action: #selector(createInterviewRequest), for: .touchUpInside)
+        submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
     }
 }
 
 extension NewInterviewVC: UITextFieldDelegate, UITextViewDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == iName, textField.text != "" {
-            submitButton.setEnabled()
+            iNameDescription.text = "New user! Pick how to send invite next"
+            checkEnableButton()
+            selectedUser = nil
         }
     }
     

@@ -10,7 +10,7 @@ import UIKit
 
 class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDelegate {
     
-    public var selectedUser : User!
+    public var selectedUser : PulseUser!
     public var delegate : ParentDelegate!
     
     fileprivate var isLoaded = false
@@ -89,12 +89,12 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
     }
     
     func sendMessage() {
-        guard User.currentUser!.uID != selectedUser.uID else { return }
+        guard PulseUser.isLoggedIn(), PulseUser.currentUser.uID! != selectedUser.uID else { return }
         
-        let message = Message(from: User.currentUser!, to: selectedUser, body: msgBody.text)
-        Database.checkExistingConversation(to: selectedUser, completion: { success, conversationID in
+        let message = Message(from: PulseUser.currentUser, to: selectedUser, body: msgBody.text)
+        PulseDatabase.checkExistingConversation(to: selectedUser, completion: { success, conversationID in
             message.mID = success ? conversationID! : nil
-            Database.sendMessage(existing: success, message: message, completion: {(success, _conversationID) in
+            PulseDatabase.sendMessage(existing: success, message: message, completion: {(success, _conversationID) in
                 if success {
                     self.msgBody.text = "Type message here"
                     self.msgBody.textColor = UIColor.lightGray

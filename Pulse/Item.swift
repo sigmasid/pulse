@@ -15,19 +15,28 @@ enum ItemTypes: String {
     case questions
     case question
     case answer
+    
     //Posts > has Post
     case post
     case posts
+    
     //Feedback > session
     case feedback
     case session
+    
     //Perspectives > has Threads > Thread has Perspective
     case perspectives
     case thread
     case perspective
+    
     //Interviews
     case interviews
     case interview
+    
+    //Showcases > showcase
+    case showcases
+    case showcase
+    
     //The rest to come
     case unknown
 }
@@ -55,7 +64,7 @@ class Item: NSObject {
     var contentType : CreatedAssetType?
     var createdAt : Date?
     
-    var user : User?
+    var user : PulseUser?
     var tag : Item?
     
     dynamic var itemCreated = false
@@ -86,7 +95,7 @@ class Item: NSObject {
         self.cID = cID
     }
     
-    init(itemID: String, snapshot: FIRDataSnapshot) {
+    init(itemID: String, snapshot: DataSnapshot) {
         self.itemID = itemID
         super.init()
         if snapshot.hasChild("title") {
@@ -160,12 +169,18 @@ class Item: NSObject {
             self.type = .thread
         case "session":
             self.type = .session
+        case "showcases":
+            self.type = .showcases
+        case "showcase":
+            self.type = .showcase
         case "perspectiveInvite":
             self.type = .thread
         case "questionInvite":
             self.type = .question
         case "interviewInvite":
             self.type = .interview
+        case "showcaseInvite":
+            self.type = .showcase
         default:
             self.type = .unknown
         }
@@ -182,7 +197,8 @@ class Item: NSObject {
         case .question: return "add an"
         case .questions: return "ask"
             
-        case .interviews: return " start an"
+        case .showcases: return "add a"
+        case .interviews: return "start an"
             
         default: return "new"
         }
@@ -200,6 +216,9 @@ class Item: NSObject {
 
         case .interviews: return plural ? " interviews" : " interview"
         case .interview: return plural ? " interview" : " interview"
+            
+        case .showcases: return plural ? " showcases" : " showcase"
+        case .showcase: return plural ? " showcase" : " showcase"
 
         default: return " entry"
         }
@@ -214,6 +233,7 @@ class Item: NSObject {
         case .interview: return .answer
         case .feedback: return .session
         case .session: return .session
+        case .showcases: return .showcase
 
         default: return .unknown
         }
@@ -224,6 +244,7 @@ class Item: NSObject {
         case .thread: return .perspectiveInvite
         case .question: return .questionInvite
         case .interviews: return .interviewInvite
+        case .showcases: return .showcaseInvite
         default: return nil
         }
     }
@@ -247,34 +268,59 @@ class Item: NSObject {
         case .interviews: return .contributor
         case .interview: return nil
             
+        case .showcases: return .contributor
+        case .showcase: return nil
+
         default: return nil
         }
     }
     
+    fileprivate func needsCover() -> Bool {
+        switch type {
+        case .post: return true
+        case .perspective: return false
+        case .answer: return false
+        case .session: return false
+        case .interview: return true
+        case .showcase: return true
+            
+        default: return false
+        }
+    }
+    
     func checkVerifiedInput(completion: @escaping (Bool, String?) -> Void) {
-        if !User.isLoggedIn() {
+        if !PulseUser.isLoggedIn() {
             completion(false, "Please login to continue")
         } else if let inputOpenToUser = acceptsInput() {
             //user is logged in and
-            let user = User.currentUser!
+            let user = PulseUser.currentUser
             switch inputOpenToUser {
             case .contributor:
                 //check if user is verified
-                user.isVerified(for: Channel(cID: self.cID)) ? completion(true, nil) : completion(false, "Sorry you have to be a verified contributor. You can apply on the prior screen")
+                user.isVerified(for: Channel(cID: self.cID)) ?
+                    completion(true, nil) :
+                    completion(false, "Sorry you have to be a verified contributor. You can apply on the prior screen")
 
             case .subscriber:
                 //check if user is subscribed
-                user.isSubscribedToChannel(cID: self.cID) ? completion(true, nil) : completion(false, "Please subscribe to channel first")
+                user.isSubscribedToChannel(cID: self.cID) ?
+                    completion(true, nil) :
+                    completion(false, "Please subscribe to channel first")
                 
             case .user:
                 completion(true, nil)
                 
             case .editor:
                 //check if user is an editor
-                completion(false, "You have to be an editor complete this action")
+                user.isEditor(for: Channel(cID: self.cID)) ?
+                    completion(true, nil) :
+                    completion(false, "Sorry you have to be an editor to continue")
+                
+            case .guest:
+                completion(false, "Invited guests only")
             }
         } else {
-            //user is logged in but item doesn't accept input
+            //user is logged in but item doesn't accept input - should never actually end up here
             completion(false, "Sorry this item doesn't accept input")
         }
     }
@@ -285,11 +331,11 @@ class Item: NSObject {
     
     func createShareLink(invite: Bool = false, completion: @escaping (String?) -> Void) {
         if !invite {
-            Database.createShareLink(linkString: "i/"+itemID, completion: { link in
+            PulseDatabase.createShareLink(linkString: "i/"+itemID, completion: { link in
                 completion(link)
             })
         } else {
-            Database.createShareLink(linkString: "invites/"+itemID, completion: { link in
+            PulseDatabase.createShareLink(linkString: "invites/"+itemID, completion: { link in
                 completion(link)
             })
         }

@@ -15,23 +15,25 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     var isModal = false
     
     /** Delegate Vars **/
-    public var selectedUser : User! {
+    public var selectedUser : PulseUser! {
         didSet {
             if selectedUser == nil || selectedUser.uID == nil {
                 allItems = []
+                headerNav?.setNav(title: "Profile")
                 updateDataSource()
-            } else if User.currentUser?.uID != nil, selectedUser.uID == User.currentUser?.uID! {
+            } else if PulseUser.isLoggedIn(), selectedUser.uID == PulseUser.currentUser.uID! {
                 //For current user
-                NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
-                self.headerNav?.setNav(title: User.currentUser?.name ?? "Your Profile")
+                NotificationCenter.default.addObserver(self, selector: #selector(userUpdated),
+                                                       name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+                headerNav?.setNav(title: PulseUser.currentUser.name ?? "Your Profile")
 
-                Database.getUserItems(uID: User.currentUser!.uID!, completion: { items in
+                PulseDatabase.getUserItems(uID: PulseUser.currentUser.uID!, completion: { items in
                     self.allItems = items
                     self.updateDataSource()
                 })
                 isCurrentUser = true
             } else if selectedUser != nil, !selectedUser.uCreated {
-                Database.getUser(selectedUser.uID!, completion: {(user, error) in
+                PulseDatabase.getUser(selectedUser.uID!, completion: {(user, error) in
                     if error == nil {
                         self.selectedUser = user
                         self.updateHeader()
@@ -124,8 +126,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     func userUpdated() {
-        if let user = User.currentUser {
-            selectedUser = user
+        if PulseUser.isLoggedIn() {
+            selectedUser = PulseUser.currentUser
         }
     }
     
@@ -191,7 +193,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func getDetailUserProfile() {
-        Database.getDetailedUserProfile(user: selectedUser, completion: { updatedUser in
+        PulseDatabase.getDetailedUserProfile(user: selectedUser, completion: { updatedUser in
             let userImage = self.selectedUser.thumbPicImage
             
             self.selectedUser = updatedUser
@@ -200,7 +202,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func getUserProfilePic() {
-        Database.getProfilePicForUser(user: selectedUser, completion: { profileImage in
+        PulseDatabase.getProfilePicForUser(user: selectedUser, completion: { profileImage in
             self.selectedUser.thumbPicImage = profileImage
             if let collectionView = self.collectionView {
                 for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
@@ -276,10 +278,12 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     internal func clickedLogout() {
         let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
         
-        confirmLogout.addAction(UIAlertAction(title: "logout", style: .default, handler: { (action: UIAlertAction!) in
-            Database.signOut({ success in
+        confirmLogout.addAction(UIAlertAction(title: "logout", style: .destructive, handler: { (action: UIAlertAction!) in
+            PulseDatabase.signOut({ success in
                 if !success {
                     GlobalFunctions.showAlertBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
+                } else {
+                    self.selectedUser = nil
                 }
             })
         }))
@@ -408,7 +412,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         } else if currentItem.itemCreated {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -437,7 +441,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             itemStack[indexPath.row].gettingInfoForPreview = true
             
             // Get the user details
-            Database.getItem(currentItem.itemID, completion: {(item, error) in
+            PulseDatabase.getItem(currentItem.itemID, completion: {(item, error) in
                 if let item = item {
                     let tempImage = self.allItems[indexPath.row].content
                     self.allItems[indexPath.row] = item
@@ -449,7 +453,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         }
                     }
 
-                    Database.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                         if error == nil {
                             let _previewImage = GlobalFunctions.createImageFromData(_data!)
                             self.allItems[indexPath.row].content = _previewImage
@@ -478,7 +482,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
-                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                     if hasDetail {
                         cell.showTapForMore = true
                         self.itemStack[indexPath.row].itemCollection = itemCollection
@@ -491,7 +495,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.showItemPreview(item: currentItem)
             } else {
                 toggleLoading(show: true, message: "Loading Interview...")
-                Database.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
                     self.toggleLoading(show: false, message: nil)
                     self.showItemDetail(selectedItem : currentItem, allItems: itemCollection)
                     self.selectedIndex = nil

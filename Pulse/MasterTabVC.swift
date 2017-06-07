@@ -64,7 +64,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         if r.isReachable, !isLoaded {
             self.setupControllers()
             
-            Database.checkCurrentUser { success in
+            PulseDatabase.checkCurrentUser { success in
                 if let link = self.universalLink {
                     self.selectedIndex = 1
                     self.exploreChannelsVC.universalLink = link

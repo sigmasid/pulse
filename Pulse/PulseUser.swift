@@ -11,7 +11,7 @@ import FirebaseAuth
 import UIKit
 import CoreLocation
 
-class User: NSObject {
+class PulseUser: User {
     var uID : String?
     var name : String?
     var bio : String?
@@ -26,8 +26,9 @@ class User: NSObject {
     var thumbPic : String?
     var thumbPicImage : UIImage?
     
-    var verifiedChannels = [Channel]()
-    
+    var contributorChannels = [Channel]()
+    var editorChannels = [Channel]()
+
     var shownCameraForQuestion = [ String : String ]()
     var subscriptions = [Channel]()
     var subscriptionIDs = [String]()
@@ -49,17 +50,18 @@ class User: NSObject {
         case linkedin
     }
     
-    class var currentUser: User? {
+    class var currentUser: PulseUser {
         struct Static {
-            static let instance: User = User()
+            static let instance: PulseUser = PulseUser(uID: Auth.auth().currentUser?.uid ?? nil)
         }
         return Static.instance
     }
     
-    override init() {
+    
+    /** override init() {
         self.uID = nil
         self.name = nil
-    }
+    } **/
     
     init(uID: String?) {
         self.uID = uID
@@ -70,7 +72,7 @@ class User: NSObject {
         self.name = name
     }
     
-    init(uID: String, snapshot: FIRDataSnapshot) {
+    init(uID: String, snapshot: DataSnapshot) {
         self.uID = uID
         if snapshot.hasChild("name") {
             self.name = snapshot.childSnapshot(forPath: "name").value as? String
@@ -93,37 +95,37 @@ class User: NSObject {
         uCreated = true
     }
     
-    func updateUser(detailedSnapshot : FIRDataSnapshot) {
+    func updateUser(detailedSnapshot : DataSnapshot) {
         if detailedSnapshot.hasChild("bio") {
             self.bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String
         }
         
         if detailedSnapshot.hasChild("items") {
             for child in detailedSnapshot.childSnapshot(forPath: "items").children {
-                if let child = child as? FIRDataSnapshot, let type = child.value as? String {
+                if let child = child as? DataSnapshot, let type = child.value as? String {
                     let item = Item(itemID: child.key, type: type)
                     self.items.append(item)
                 }
             }
         }
         
-        if detailedSnapshot.hasChild("verifiedChannels") {
-            for child in detailedSnapshot.childSnapshot(forPath: "verifiedChannels").children {
+        if detailedSnapshot.hasChild("contributorChannels") {
+            for child in detailedSnapshot.childSnapshot(forPath: "contributorChannels").children {
                 let channel = Channel(cID: (child as AnyObject).key)
-                channel.cTitle = (child as! FIRDataSnapshot).value as? String
-                self.verifiedChannels.append(channel)
+                channel.cTitle = (child as! DataSnapshot).value as? String
+                self.contributorChannels.append(channel)
             }
         }
         
         uDetailedCreated = true
     }
     
-    init(user: FIRUser) {
+    init(user: User) {
         self.uID = user.uid
     }
     
     static func isLoggedIn() -> Bool {
-        return (FIRAuth.auth()?.currentUser != nil ? true : false)
+        return Auth.auth().currentUser != nil
     }
     
     func isSubscribedToChannel(cID: String) -> Bool {
@@ -135,11 +137,15 @@ class User: NSObject {
     }
     
     func getEmail() -> String? {
-        return FIRAuth.auth()?.currentUser?.email
+        return Auth.auth().currentUser?.email
     }
     
     func isVerified(for channel : Channel) -> Bool {
-        return verifiedChannels.contains(channel) ? true : false
+        return contributorChannels.contains(channel) ? true : false
+    }
+    
+    func isEditor(for channel : Channel) -> Bool {
+        return editorChannels.contains(channel) ? true : false
     }
 
     
@@ -147,16 +153,16 @@ class User: NSObject {
         if let sLocation = self.sLocation {
             completion(sLocation)
         } else if let location = self.location {
-            Database.getCityFromLocation(location: location, completion: {(city) in
+            PulseDatabase.getCityFromLocation(location: location, completion: {(city) in
                 self.sLocation = city != nil ? city : nil
                 city != nil ? completion(city!) : completion(nil)
             })
         }
         else {
-            Database.getUserLocation(completion: {(location, error) in
+            PulseDatabase.getUserLocation(completion: {(location, error) in
                 if let _location = location {
                     self.location = _location
-                    Database.getCityFromLocation(location: _location, completion: {(city) in
+                    PulseDatabase.getCityFromLocation(location: _location, completion: {(city) in
                         self.sLocation = city != nil ? city : nil
                         city != nil ? completion(city!) : completion(nil)
                     })
@@ -169,11 +175,11 @@ class User: NSObject {
     
     func getValueForStringProperty(_ property : String) -> String? {
         switch property {
-        case "name": return User.currentUser!.name
-        case "shortBio": return User.currentUser!.shortBio
-        case "bio": return User.currentUser!.bio
-        case "birthday": return User.currentUser!.birthday
-        case "gender": return User.currentUser!.gender
+        case "name": return PulseUser.currentUser.name
+        case "shortBio": return PulseUser.currentUser.shortBio
+        case "bio": return PulseUser.currentUser.bio
+        case "birthday": return PulseUser.currentUser.birthday
+        case "gender": return PulseUser.currentUser.gender
         case "email": return getEmail()
         case "password": return nil
         default: return nil
@@ -186,13 +192,13 @@ class User: NSObject {
             return
         }
         
-        Database.createShareLink(linkString: "u/"+uID, completion: { link in
+        PulseDatabase.createShareLink(linkString: "u/"+uID, completion: { link in
             completion(link)
         })
     }
     
     override func isEqual(_ object: Any?) -> Bool {
-        if let object = object as? User {
+        if let object = object as? PulseUser {
             return uID == object.uID
         } else {
             return false

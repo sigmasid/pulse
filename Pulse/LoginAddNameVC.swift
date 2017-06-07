@@ -90,7 +90,7 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
                         sender.setEnabled()
                     } else {
                         let fullName = self.firstName.text! + " " + self.lastName.text!
-                        Database.updateUserData(UserProfileUpdateType.displayName, value: fullName, completion: { (success, error) in
+                        PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: fullName, completion: { (success, error) in
                             if !success {
                                 self._firstNameError.text = error!.localizedDescription
                                 sender.setEnabled()
@@ -126,7 +126,7 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
             return
         }
         
-        Database.uploadProfileImage(imageData, completion: {(URL, error) in
+        PulseDatabase.uploadProfileImage(imageData, completion: {(URL, error) in
             if error == nil {
                 UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
                                completion: {(value: Bool) in
@@ -167,7 +167,7 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         if mediaType.isEqual(to: kUTTypeImage as String) {
             let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
             
-            Database.uploadProfileImage(pickedImage.highQualityJPEGNSData, completion: {(URL, error) in
+            PulseDatabase.uploadProfileImage(pickedImage.highQualityJPEGNSData, completion: {(URL, error) in
                 if error != nil {
                     self.cameraVC.toggleLoading(show: false, message: nil)
                 } else {

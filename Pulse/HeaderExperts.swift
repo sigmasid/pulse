@@ -9,7 +9,7 @@
 import UIKit
 
 class HeaderContributors: UICollectionReusableView {
-    public var contributors = [User]() {
+    public var contributors = [PulseUser]() {
         didSet {
             contributorsPreview?.delegate = self
             contributorsPreview?.dataSource = self
@@ -20,8 +20,7 @@ class HeaderContributors: UICollectionReusableView {
     
     private var contributorsPreview : UICollectionView!
     private var contributorsLabel = UILabel()
-    internal var expertPreviewCount = 5
-    let collectionReuseIdentifier = "expertThumbCell"
+    let collectionReuseIdentifier = "contributorThumbCell"
 
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {
@@ -74,7 +73,7 @@ extension HeaderContributors: UICollectionViewDataSource, UICollectionViewDelega
         let _user = contributors[indexPath.row]
         
         if !_user.uCreated { //search case - get question from database
-            Database.getUser(_user.uID!, completion: { (user, error) in
+            PulseDatabase.getUser(_user.uID!, completion: { (user, error) in
                 if let user = user {
                     cell.updateCell(user.name?.capitalized, _image: nil)
                     

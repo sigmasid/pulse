@@ -34,27 +34,42 @@ class UserProfileHeader: UICollectionReusableView {
         super.init(coder: aDecoder)
     }
     
-    public func updateUserDetails(selectedUser: User, isModal : Bool) {
-        profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
-        
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileShortBio.font.pointSize, weight: UIFontWeightMedium)]
-        let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!, width: profileShortBio.frame.width, fontAttributes: fontAttributes) : 0
-        let nameHeight = selectedUser.name != nil ? GlobalFunctions.getLabelSize(title: selectedUser.name!, width: profileName.frame.width, fontAttributes: fontAttributes) : 0
-        
-        let bioFontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileLongBio.font.pointSize, weight: UIFontWeightMedium)]
-        let longBioHeight = selectedUser.bio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.bio!, width: profileLongBio.frame.width, fontAttributes: bioFontAttributes) : 0
-        
-        let maxHeight = GlobalFunctions.getLabelSize(title: "here is the bio", width: profileLongBio.frame.width, fontAttributes: bioFontAttributes) * 3
-        
-        shortBioHeightConstraint.constant = shortBioHeight
-        longBioHeightConstraint.constant = min(maxHeight, longBioHeight)
-        nameHeightAnchor.constant = isModal ? nameHeight : 0
-        
-        profileName.text = isModal ? selectedUser.name : ""
-        profileShortBio.text = selectedUser.shortBio
-        profileLongBio.text = selectedUser.bio
-        
-        layoutIfNeeded()
+    public func updateUserDetails(selectedUser: PulseUser?, isModal : Bool) {
+        if let selectedUser = selectedUser {
+            profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
+            
+            let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileShortBio.font.pointSize, weight: UIFontWeightMedium)]
+            let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!,
+                                                                                             width: profileShortBio.frame.width,
+                                                                                             fontAttributes: fontAttributes) : 0
+            let nameHeight = selectedUser.name != nil ? GlobalFunctions.getLabelSize(title: selectedUser.name!,
+                                                                                     width: profileName.frame.width,
+                                                                                     fontAttributes: fontAttributes) : 0
+            
+            let bioFontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileLongBio.font.pointSize,
+                                                                              weight: UIFontWeightMedium)]
+            let longBioHeight = selectedUser.bio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.bio!,
+                                                                                       width: profileLongBio.frame.width,
+                                                                                       fontAttributes: bioFontAttributes) : 0
+            
+            let maxHeight = GlobalFunctions.getLabelSize(title: "here is the bio", width: profileLongBio.frame.width,
+                                                         fontAttributes: bioFontAttributes) * 3
+            
+            shortBioHeightConstraint.constant = shortBioHeight
+            longBioHeightConstraint.constant = min(maxHeight, longBioHeight)
+            nameHeightAnchor.constant = isModal ? nameHeight : 0
+            
+            profileName.text = isModal ? selectedUser.name : ""
+            profileShortBio.text = selectedUser.shortBio
+            profileLongBio.text = selectedUser.bio
+            
+            layoutIfNeeded()
+        } else {
+            profileImage.image = UIImage(named: "default-profile")
+            profileName.text = ""
+            profileShortBio.text = ""
+            profileLongBio.text = ""
+        }
     }
     
     internal func showMenu() {

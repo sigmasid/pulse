@@ -88,7 +88,7 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         cell.delegate = self
         
         if item.content == nil, !item.fetchedContent {
-            Database.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
+            PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
                 if let data = data {
                     
                     self.items[indexPath.row].content = UIImage(data: data)

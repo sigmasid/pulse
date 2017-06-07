@@ -188,7 +188,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
-    internal func createShareRequest(selectedShareItem : Item, shareType: MessageType?, selectedChannel: Channel, toUser: User?, toEmail : String? = nil, showAlert : Bool = true,
+    internal func createShareRequest(selectedShareItem : Item, shareType: MessageType?, selectedChannel: Channel, toUser: PulseUser?, toEmail : String? = nil, showAlert : Bool = true,
                                      completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
         guard let shareType = shareType else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login to save questions" ]
@@ -204,7 +204,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         selectedShareItem.cTitle = selectedChannel.cTitle
         
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        Database.createInviteRequest(item: selectedShareItem, type: shareType, toUser: toUser, toName: nil, toEmail: toEmail,
+        PulseDatabase.createInviteRequest(item: selectedShareItem, type: shareType, toUser: toUser, toName: nil, toEmail: toEmail,
                                      childItems: [], parentItemID: parentItemID, completion: {(success, error) in
                                         
             if success, showAlert {

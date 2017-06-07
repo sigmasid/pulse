@@ -54,7 +54,7 @@ class ViewController: UIViewController {
         databaseRef.child("users").observeSingleEvent(of: .value, with: { snapshot in
 
             for user in snapshot.children {
-                let child = user as! FIRDataSnapshot
+                let child = user as! DataSnapshot
                 let _uID = child.key
                 
                 let _uName = child.childSnapshot(forPath: "name").value as! String

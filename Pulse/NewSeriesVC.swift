@@ -14,7 +14,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     //Set by parent
     public var selectedChannel : Channel! {
         didSet {
-            Database.getSeriesTypes(completion: { seriesTypes in
+            PulseDatabase.getSeriesTypes(completion: { seriesTypes in
                 self.allItems = seriesTypes
                 self.updateDataSource()
             })
@@ -142,29 +142,31 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         let item = Item(itemID: itemKey, type: getSelectedType())
         
         item.itemTitle = sTitle.text ?? ""
-        item.itemUserID = User.currentUser!.uID
+        item.itemUserID = PulseUser.currentUser.uID
         item.itemDescription = sDescription.text ?? ""
         item.content = capturedImage
         item.contentType = contentType
         item.cID = selectedChannel.cID
         
-        Database.addNewSeries(channelID: selectedChannel.cID, item: item, completion: { success, error in
+        PulseDatabase.addNewSeries(channelID: selectedChannel.cID, item: item, completion: { success, error in
             if success, let capturedImage = self.capturedImage {
-                Database.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {(success, error) in
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {(success, error) in
                     success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
                     loading.removeFromSuperview()
                     self.submitButton.setEnabled()
                 })
-                Database.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .thumb, completion: {(success, error) in
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .thumb, completion: {(success, error) in
                     loading.removeFromSuperview()
                 })
             } else {
+                loading.removeFromSuperview()
                 self.showErrorMenu(error: error!)
             }
         })
     }
     
     internal func getSelectedType() -> String {
+        print("selected type is \(allItems[centerIndex].itemID)")
         return allItems[centerIndex].itemID
     }
     
@@ -219,7 +221,7 @@ extension NewSeriesVC: UICollectionViewDataSource, UICollectionViewDelegate {
         cell.updateImage(image: allItems[indexPath.row].content as? UIImage)
         
         if !currentItem.fetchedContent {
-            Database.getSeriesImage(seriesName: self.allItems[indexPath.row].itemID,
+            PulseDatabase.getSeriesImage(seriesName: self.allItems[indexPath.row].itemID,
                                     fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                 if let data = data {
                     self.allItems[indexPath.row].content = UIImage(data: data)

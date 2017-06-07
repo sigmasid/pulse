@@ -164,15 +164,15 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         dismissKeyboard()
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
-        FIRAuth.auth()?.signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) { (aUser, blockError) in
+        Auth.auth().signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) { (aUser, blockError) in
             if let blockError = blockError {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                switch FIRAuthErrorCode(rawValue: blockError._code)! {
-                case .errorCodeWrongPassword: self._passwordErrorLabel.text = "incorrect password"
-                case .errorCodeInvalidEmail: self._emailErrorLabel.text = "invalid email"
-                case .errorCodeUserNotFound: self._emailErrorLabel.text = "email not found"
+                switch AuthErrorCode(rawValue: blockError._code)! {
+                case .wrongPassword: self._passwordErrorLabel.text = "incorrect password"
+                case .invalidEmail: self._emailErrorLabel.text = "invalid email"
+                case .userNotFound: self._emailErrorLabel.text = "email not found"
 
                 default: self.nav?.setNav(title: "error signing in")
                 }
@@ -204,7 +204,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         
         let resetAction = UIAlertAction(title: "reset", style: .default, handler: { (action: UIAlertAction!) in
             if let email = resetPasswordConfirmation.textFields?.first?.text {
-                FIRAuth.auth()?.sendPasswordReset(withEmail: email) { (error) in
+                Auth.auth().sendPasswordReset(withEmail: email) { (error) in
                     self.resetSent()
                 }
             } else {
@@ -270,8 +270,8 @@ class LoginVC: PulseVC, UITextFieldDelegate {
             }
         })
         
-        let credential = FIRFacebookAuthProvider.credential(withAccessToken: _accessToken.tokenString)
-        FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
+        let credential = FacebookAuthProvider.credential(withAccessToken: _accessToken.tokenString)
+        Auth.auth().signIn(with: credential) { (aUser, error) in
             if error != nil {
                 self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
@@ -290,8 +290,8 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         Twitter.sharedInstance().logIn { session, error in
             if (session != nil) {
                 self.currentTWTRSession = session
-                let credential = FIRTwitterAuthProvider.credential(withToken: session!.authToken, secret: session!.authTokenSecret)
-                FIRAuth.auth()?.signIn(with: credential) { (aUser, blockError) in
+                let credential = TwitterAuthProvider.credential(withToken: session!.authToken, secret: session!.authTokenSecret)
+                Auth.auth().signIn(with: credential) { (aUser, blockError) in
                     if let blockError = blockError {
                         self.toggleLoading(show: false, message: nil)
                         self.nav?.setNav(title: blockError.localizedDescription)

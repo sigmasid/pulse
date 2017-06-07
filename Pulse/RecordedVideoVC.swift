@@ -13,7 +13,7 @@ import Photos
 
 class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
-    fileprivate var uploadTask : FIRStorageUploadTask!
+    fileprivate var uploadTask : StorageUploadTask!
     
     // set by the delegate
     public var currentItem : Item! {
@@ -275,7 +275,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         guard let contentType = item.contentType else { return }
         
         if let _image = item.content as? UIImage  {
-            Database.uploadThumbImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, completion: { (success, error) in } )
+            PulseDatabase.uploadThumbImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, completion: { (success, error) in } )
         }
         
         if contentType == .recordedVideo || contentType == .albumVideo {
@@ -288,18 +288,18 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         else if contentType == .recordedImage || contentType == .albumImage, let _image = item.content as? UIImage {
             let path = storageRef.child("channels").child(selectedChannelID).child(item.itemID).child("content")
             
-            let data = Database.resizeImageHeight(_image, newHeight: min(UIScreen.main.bounds.height, _image.size.height)) ?? _image.mediumQualityJPEGNSData
+            let data = PulseDatabase.resizeImageHeight(_image, newHeight: min(UIScreen.main.bounds.height, _image.size.height)) ?? _image.mediumQualityJPEGNSData
                 
-            let _metadata = FIRStorageMetadata()
+            let _metadata = StorageMetadata()
             _metadata.contentType = "image/jpeg"
             
-            uploadTask = path.put(data, metadata: _metadata) { metadata, error in
+            uploadTask = path.putData(data, metadata: _metadata) { metadata, error in
                 if (error != nil) {
                     GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                 } else {
                     item.contentURL = metadata?.downloadURL()
                     
-                    Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
+                    PulseDatabase.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                         if !success {
                             GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                         } else {
@@ -319,7 +319,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         
         if let localFile: URL = item.contentURL as URL? {
 
-            let metadata = FIRStorageMetadata()
+            let metadata = StorageMetadata()
             metadata.contentType = "video/mp4"
             
             do {
@@ -334,13 +334,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             do {
                 let assetData = try Data(contentsOf: localFile)
                 
-                uploadTask = path.put(assetData, metadata: metadata) { metadata, error in
+                uploadTask = path.putData(assetData, metadata: metadata) { metadata, error in
                     if (error != nil) {
                         GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Posting Item", erMessage: error!.localizedDescription)
                     } else {
                         // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
                         item.contentURL = metadata?.downloadURL()
-                        Database.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
+                        PulseDatabase.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
                             if !success {
                                 GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                                 completion(false, nil)
@@ -367,7 +367,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///Called after user has uploaded full item
     fileprivate func doneCreatingItem() {
-        Database.addItemCollectionToDatabase(recordedItems.first!,
+        PulseDatabase.addItemCollectionToDatabase(recordedItems.first!,
                                              parentItem: parentItem,
                                              channelID: selectedChannelID,
                                              post: itemCollectionPost,

@@ -15,9 +15,9 @@ class MessageTableCell: UITableViewCell {
             let formatter = DateFormatter()
             formatter.dateStyle = .short
             formatter.timeStyle = .short
-            let stringDate: String = formatter.string(from: message.time)
+            let stringDate: String = message.time != nil ? formatter.string(from: message.time) : ""
             messageTimestamp.text = stringDate
-            messageSenderName.text = message.from.name
+            //messageSenderName.text = message.from.name - not showing the user name
             messageBody.text = message.body
         }
     }
@@ -43,7 +43,7 @@ class MessageTableCell: UITableViewCell {
 
     fileprivate var messageSenderName = UILabel()
     var messageSenderImage = UIImageView()
-
+    
     fileprivate var messageTimestamp = UILabel()
     fileprivate var messageBody = UILabel()
     

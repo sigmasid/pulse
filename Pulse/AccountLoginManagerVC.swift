@@ -14,6 +14,7 @@ class AccountLoginManagerVC: PulseNavVC {
     fileprivate lazy var accountVC = UserProfileVC()
     let _storyboard = UIStoryboard(name: "Main", bundle: nil)
     fileprivate var _currentLoadedView : currentLoadedView?
+    fileprivate var initialUserUpdateComplete = false
     
     enum currentLoadedView {
         case login
@@ -28,6 +29,9 @@ class AccountLoginManagerVC: PulseNavVC {
         super.init(navigationBarClass: navigationBarClass, toolbarClass: toolbarClass)
         isNavigationBarHidden = false
         NotificationCenter.default.addObserver(self, selector: #selector(updateLoginOrAccount), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+        if !initialUserUpdateComplete {
+            updateLoginOrAccount()
+        }
     }
     
     override init(nibName: String?, bundle: Bundle?) {
@@ -36,8 +40,8 @@ class AccountLoginManagerVC: PulseNavVC {
     
     //This is the first notification fired once the user is updated from auth
     func updateLoginOrAccount() {
-        if User.isLoggedIn(), _currentLoadedView != .account, loginVC?._currentLoadedView != .createAccount {
-            accountVC.selectedUser = User.currentUser!
+        if PulseUser.isLoggedIn(), _currentLoadedView != .account, loginVC?._currentLoadedView != .createAccount {
+            accountVC.selectedUser = PulseUser.currentUser
 
             pushViewController(accountVC, animated: false)
             
@@ -45,23 +49,24 @@ class AccountLoginManagerVC: PulseNavVC {
             NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
             _currentLoadedView = .account
             
-        } else if !User.isLoggedIn() {
-            
+        } else if !PulseUser.isLoggedIn() {
+            print("should push login VC")
             pushViewController(loginVC!, animated: false)
 
             NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)
             _currentLoadedView = .login
         }
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+        initialUserUpdateComplete = true
     }
     
     func loginSuccess() {
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "LoginSucess"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(logoutSuccess), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
         
-        if User.isLoggedIn(), _currentLoadedView == .login {
+        if PulseUser.isLoggedIn(), _currentLoadedView == .login {
             
-            accountVC.selectedUser = User.currentUser!
+            accountVC.selectedUser = PulseUser.currentUser
             
             if !self.viewControllers.contains(accountVC) {
                 setViewControllers([accountVC], animated: false)
@@ -72,7 +77,7 @@ class AccountLoginManagerVC: PulseNavVC {
             _currentLoadedView = .account
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
 
-        }  else if User.isLoggedIn(), _currentLoadedView == .account {
+        }  else if PulseUser.isLoggedIn(), _currentLoadedView == .account {
             NotificationCenter.default.post(name: Notification.Name(rawValue: "AccountPageLoaded"), object: self)
         }
     }

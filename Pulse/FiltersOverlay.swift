@@ -68,7 +68,7 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
             /**
             let _filterID = currentQuestion!.qFilters[(indexPath as NSIndexPath).row]
 
-            Database.getImage(.Filters, fileID: _filterID+".png", maxImgSize: maxImgSize, completion: {(_data, error) in
+            PulseDatabase.getImage(.Filters, fileID: _filterID+".png", maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     let _filterImage = UIImage(data: _data!)
                     self.FilterChoices[(indexPath as NSIndexPath).row] = _filterImage
@@ -84,11 +84,6 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
         return CGSize(width: collectionView.frame.width, height: collectionView.frame.height)
     }
 }
-
-
-//    func gestureRecognizer(gesture: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer : UIGestureRecognizer) -> Bool {
-//        return true
-//    }
 
 //    override func hitTest(point: CGPoint, withEvent event: UIEvent?) -> UIView? {
 //        if let _controlsOverlay = controlsOverlay {

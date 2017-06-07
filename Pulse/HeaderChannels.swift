@@ -22,7 +22,7 @@ class HeaderChannelsCell: UICollectionViewCell, SelectionDelegate {
     public var selectedChannel : Channel!
     
     private var collectionView : UICollectionView!
-    let collectionReuseIdentifier = "expertThumbCell"
+    let collectionReuseIdentifier = "contributorThumbCell"
     
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {
@@ -76,7 +76,7 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
         cell.updateCell(channel.cTitle?.capitalized, _image : channel.cThumbImage)
         
         if channel.cThumbImage == nil {
-            Database.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
+            PulseDatabase.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
                 if let data = data {
                     self.channels[indexPath.row].cThumbImage = UIImage(data: data)
                     

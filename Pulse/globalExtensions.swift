@@ -54,7 +54,7 @@ extension UIImageView {
 }
 
 extension UICollectionViewCell {
-    override func addShadow() {
+    override func addShadow(cornerRadius: CGFloat = 0) {
         super.addShadow()
         
         contentView.layer.borderWidth = 1.0
@@ -75,13 +75,29 @@ extension UICollectionViewCell {
 }
 
 extension UIView {
-    func addShadow() {
-        layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
-        
-        layer.shadowColor = UIColor.lightGray.cgColor
-        layer.shadowOffset = CGSize(width: 1, height: 2)
-        layer.shadowRadius = 2.0
-        layer.shadowOpacity = 0.5
+    func addShadow(cornerRadius: CGFloat = 0) {
+        if cornerRadius > 0 {
+            layer.shadowColor = UIColor.lightGray.cgColor
+            layer.shadowOpacity = 1
+
+            let loweredShadowOffset  = CGSize(width: 0.5, height: 0.5)
+            let downRect = CGRect(x: bounds.origin.x - loweredShadowOffset.width,
+                              y: bounds.origin.y + loweredShadowOffset.height,
+                              width: bounds.size.width + loweredShadowOffset.width,
+                              height: bounds.size.height + loweredShadowOffset.height)
+            
+            layer.shadowRadius = 0.5
+            layer.shadowPath = UIBezierPath.init(roundedRect: downRect , cornerRadius: cornerRadius).cgPath
+            layer.shadowOffset = loweredShadowOffset
+            
+        } else {
+            layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+            
+            layer.shadowColor = UIColor.lightGray.cgColor
+            layer.shadowOffset = CGSize(width: 1, height: 2)
+            layer.shadowRadius = 2.0
+            layer.shadowOpacity = 0.5
+        }
         
         layer.masksToBounds = false
     }
@@ -613,6 +629,7 @@ enum MessageType: String {
     case interviewInvite
     case channelInvite
     case contributorInvite
+    case showcaseInvite
     case perspectiveInvite
     case questionInvite
     
@@ -628,6 +645,8 @@ enum MessageType: String {
             return .perspectiveInvite
         case "contributorInvite":
             return .contributorInvite
+        case "showcaseInvite":
+            return .showcaseInvite
         default:
             return .message
         }
@@ -636,6 +655,7 @@ enum MessageType: String {
 
 enum UserTypes: String {
     case user
+    case guest
     case subscriber
     case contributor
     case editor

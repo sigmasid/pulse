@@ -15,7 +15,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
 
     var conversations = [Conversation]()
     fileprivate var isShowingUserSearch = false
-    fileprivate var selectedUser : User? //user selected by mini search
+    fileprivate var selectedUser : PulseUser? //user selected by mini search
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,7 +52,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     }
     
     internal func userUpdated() {
-        if let user = User.currentUser, user.uID != nil {
+        if PulseUser.isLoggedIn() {
             updateDataSource()
         } else {
             conversations = []
@@ -65,14 +65,14 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
             setupLayout()
         }
         
-        guard User.isLoggedIn() else {
+        guard PulseUser.isLoggedIn() else {
             self.tableView.dataSource = self
             self.tableView.delegate = self
             self.tableView.reloadData()
             return
         }
         
-        Database.getConversations(completion: { conversations in
+        PulseDatabase.getConversations(completion: { conversations in
             self.conversations = conversations
             self.tableView.dataSource = self
             self.tableView.delegate = self
@@ -85,9 +85,9 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     }
     
     internal func keepConversationUpdated() {
-        guard User.isLoggedIn() else { return }
+        guard PulseUser.isLoggedIn() else { return }
         
-        Database.keepConversationsUpdated(completion: { conversation in
+        PulseDatabase.keepConversationsUpdated(completion: { conversation in
             if let index = self.conversations.index(of: conversation) {
                 self.conversations[index] = conversation
                 let indexPath = IndexPath(row: index, section: 0)
@@ -146,7 +146,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     internal func userSelected(item: Any) {
         //check if the modal is still showing - needed because need to fully dismiss first before pushing on nav stack
         //start new conversation with user
-        if !isShowingUserSearch, let user = item as? User {
+        if !isShowingUserSearch, let user = item as? PulseUser {
             let messageVC = MessageVC()
             messageVC.toUser = user
             messageVC.toUserImage = user.thumbPicImage
@@ -154,7 +154,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
             navigationController?.pushViewController(messageVC, animated: true)
         } else if isShowingUserSearch {
             //just set the user - once modal is dismissed it will recall this method
-            selectedUser = item as? User
+            selectedUser = item as? PulseUser
         }
         else {
             GlobalFunctions.showAlertBlock("Error Starting Conversation", erMessage: "Sorry the user you selected is not valid")
@@ -192,7 +192,7 @@ extension InboxVC: UITableViewDelegate, UITableViewDataSource {
         let user = conversations[indexPath.row].cUser!
         
         if !user.uCreated {
-            Database.getUser(user.uID!, completion: { (user, error) in
+            PulseDatabase.getUser(user.uID!, completion: { (user, error) in
                 if let user = user {
                     self.conversations[indexPath.row].cUser = user
                     cell.updateName(name: user.name)

@@ -65,7 +65,7 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
     }
     
     fileprivate func loadSettingSections() {
-        Database.getSettingsSections(completion: { (sections , error) in
+        PulseDatabase.getSettingsSections(completion: { (sections , error) in
             self.sections = sections
             for _ in self.sections {
                 self.settings.append([])
@@ -84,21 +84,21 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
     
     internal func updateHeaderImage(img : Data) {
         //add profile pic or use default image
-        User.currentUser?.thumbPicImage = UIImage(data: img)
-        profilePic.setImage(User.currentUser?.thumbPicImage, for: .normal)
+        PulseUser.currentUser.thumbPicImage = UIImage(data: img)
+        profilePic.setImage(PulseUser.currentUser.thumbPicImage, for: .normal)
         profilePic.makeRound()
     }
     
     internal func addUserProfilePic() {
-        if let thumbPic = User.currentUser?.thumbPicImage {
+        if let thumbPic = PulseUser.currentUser.thumbPicImage {
             profilePic.setImage(thumbPic, for: .normal)
             profilePic.makeRound()
-        } else if let _userImageURL = User.currentUser?.thumbPic, let url = URL(string: _userImageURL) {
+        } else if let _userImageURL = PulseUser.currentUser.thumbPic, let url = URL(string: _userImageURL) {
             DispatchQueue.global().async {
                 if let _userImageData = try? Data(contentsOf: url) {
-                    User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
+                    PulseUser.currentUser.thumbPicImage = UIImage(data: _userImageData)
                     DispatchQueue.main.async(execute: {
-                        self.profilePic.setImage(User.currentUser?.thumbPicImage, for: .normal)
+                        self.profilePic.setImage(PulseUser.currentUser.thumbPicImage, for: .normal)
                         self.profilePic.makeRound()
                     })
                 }
@@ -138,26 +138,26 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
             let _setting = settings[(indexPath as NSIndexPath).section][(indexPath as NSIndexPath).row]
             cell.settingNameLabel.text = _setting.display!
             if _setting.type == .location {
-                User.currentUser?.getLocation(completion: {(city) in
+                PulseUser.currentUser.getLocation(completion: {(city) in
                     cell.detailLabel.text = city
                 })
             }
                 
             else if _setting.type != nil {
-                cell.detailLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                cell.detailLabel.text = PulseUser.currentUser.getValueForStringProperty(_setting.type!.rawValue)
             }
             
             if _setting.editable {
                 cell.accessoryType = .disclosureIndicator
             }
         } else {
-            Database.getSetting(settingID, completion: {(_setting, error) in
+            PulseDatabase.getSetting(settingID, completion: {(_setting, error) in
                 if error == nil, let _setting = _setting {
                     cell.settingNameLabel.text = _setting.display!
                     if _setting.type != nil && _setting.type != .location {
-                        cell.detailLabel.text = User.currentUser?.getValueForStringProperty(_setting.type!.rawValue)
+                        cell.detailLabel.text = PulseUser.currentUser.getValueForStringProperty(_setting.type!.rawValue)
                     } else if _setting.type == .location {
-                        User.currentUser?.getLocation(completion: { location in
+                        PulseUser.currentUser.getLocation(completion: { location in
                             cell.detailLabel.text = location
                         })
                     }
@@ -202,7 +202,7 @@ extension SettingsTableVC: CameraDelegate {
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
         
-        Database.uploadProfileImage(imageData, completion: {(URL, error) in
+        PulseDatabase.uploadProfileImage(imageData, completion: {(URL, error) in
             if error != nil {
                 GlobalFunctions.showAlertBlock("Sorry!", erMessage: "There was an error saving the photo. Please try again")
             } else {
@@ -243,7 +243,7 @@ extension SettingsTableVC: CameraDelegate {
             let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
             let pickedImageData = pickedImage.highQualityJPEGNSData
             
-            Database.uploadProfileImage(pickedImageData, completion: {(URL, error) in
+            PulseDatabase.uploadProfileImage(pickedImageData, completion: {(URL, error) in
                 if error != nil {
                     self.cameraVC.toggleLoading(show: false, message: nil)
                 } else {

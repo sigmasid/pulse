@@ -25,14 +25,14 @@ class SettingSection {
         self.sectionSettingsCount = _settings.count
     }
     
-    init(sectionID : String, snapshot: FIRDataSnapshot) {
+    init(sectionID : String, snapshot: DataSnapshot) {
         self.sectionID = sectionID
         self.sectionSettingsCount = Int(snapshot.childrenCount)
         
         if snapshot.childrenCount > 0 {
             var unsortedSettings = [String : Int]()
             for settingID in snapshot.children {
-                if let settingID = settingID as? FIRDataSnapshot, let settingValue = settingID.value as? Int {
+                if let settingID = settingID as? DataSnapshot, let settingValue = settingID.value as? Int {
                     unsortedSettings[settingID.key] = settingValue
                 }
             }
@@ -63,7 +63,7 @@ class Setting {
         self.options = nil
     }
     
-    init(snap : FIRDataSnapshot) {
+    init(snap : DataSnapshot) {
         self.settingID = snap.key
         
         if snap.hasChild("display") {

@@ -16,7 +16,7 @@ class Channel : NSObject {
     var cDescription : String?
     
     var tags = [Item]()
-    var contributors = [User]()
+    var contributors = [PulseUser]()
     var items = [Item]()
     
     var cThumbImage : UIImage?
@@ -35,7 +35,7 @@ class Channel : NSObject {
         self.cTitle = title
     }
 
-    init(cID: String, snapshot: FIRDataSnapshot) {
+    init(cID: String, snapshot: DataSnapshot) {
         self.cID = cID
         super.init()
         
@@ -44,7 +44,7 @@ class Channel : NSObject {
         self.cImageURL = snapshot.childSnapshot(forPath: "image").value as? String
         
         for tag in snapshot.childSnapshot(forPath: "tags").children {
-            if let tag = tag as? FIRDataSnapshot, let type = tag.childSnapshot(forPath: "type").value as? String {
+            if let tag = tag as? DataSnapshot, let type = tag.childSnapshot(forPath: "type").value as? String {
                 let _tag = Item(itemID: (tag as AnyObject).key, type: type)
                 _tag.itemTitle = tag.childSnapshot(forPath: "title").value as? String ?? ""
                 self.tags.append(_tag)
@@ -54,9 +54,9 @@ class Channel : NSObject {
         self.cCreated = true
     }
     
-    func updateChannel(detailedSnapshot : FIRDataSnapshot) {
+    func updateChannel(detailedSnapshot : DataSnapshot) {
         for child in detailedSnapshot.children {
-            let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+            let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! DataSnapshot)
             currentItem.cID = self.cID
             currentItem.cTitle = self.cTitle
             items.append(currentItem)
@@ -71,7 +71,7 @@ class Channel : NSObject {
             return
         }
         
-        Database.createShareLink(linkString: "c/"+cID, completion: { link in
+        PulseDatabase.createShareLink(linkString: "c/"+cID, completion: { link in
             completion(link)
         })
     }

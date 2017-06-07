@@ -13,12 +13,11 @@ class MessageVC: PulseVC, UITextViewDelegate{
     //model elements
     fileprivate var messages = [Message]()
 
-    var toUser : User! {
+    var toUser : PulseUser! {
         didSet {
             if !isUserLoaded {
                 isUserLoaded = true
-                setupToUserLayout()
-                updateToUserData()
+                updateHeader()
                 setupConversationHistory()
             }
         }
@@ -28,9 +27,6 @@ class MessageVC: PulseVC, UITextViewDelegate{
     var lastMessageID : String! { didSet { keepConversationUpdated() }} //to sync listener for last updated element
     
     //Layout elements
-    fileprivate var msgTo = UIView()
-    fileprivate var msgToUserName = UILabel()
-    fileprivate var msgToUserBio = UILabel()
     fileprivate var msgBody = UITextView()
     fileprivate var conversationHistory = UITableView()
     fileprivate var sendContainer = UIView()
@@ -72,25 +68,27 @@ class MessageVC: PulseVC, UITextViewDelegate{
         super.viewDidDisappear(animated)
         
         if let _conversationID = conversationID {
-            Database.removeConversationObserver(conversationID: _conversationID)
+            PulseDatabase.removeConversationObserver(conversationID: _conversationID)
         }
     }
 
     //Update Nav Header
     fileprivate func updateHeader() {
         addBackButton()
-        headerNav?.setNav(title: msgToUserName.text != nil ? "Message \(msgToUserName.text!.components(separatedBy: " ")[0])" : "New Message")
+        headerNav?.setNav(title: toUser.name != nil ? "Message \(toUser.name!.components(separatedBy: " ")[0])" : "New Message",
+                          subtitle: toUser.shortBio)
     }
     
     func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
             let keyboardHeight = keyboardSize.height
             sendBottomConstraint.constant = -keyboardHeight
-            conversationHistory.layoutIfNeeded()
+            //conversationHistory.layoutIfNeeded()
             
-            if messages.count > 0 {
+            if messages.count > 0, conversationHistory.contentSize.height > view.frame.height -  keyboardHeight {
                 let indexPath : IndexPath = IndexPath(row:(messages.count - 1), section:0)
-                conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: false)
+                conversationHistory.layoutIfNeeded()
+                conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: true)
             }
         }
     }
@@ -98,20 +96,20 @@ class MessageVC: PulseVC, UITextViewDelegate{
     func keyboardWillHide(notification: NSNotification) {
         sendBottomConstraint.constant = 0
 
-        sendContainer.layoutIfNeeded()
-        conversationHistory.layoutIfNeeded()
+        //sendContainer.layoutIfNeeded()
+        //conversationHistory.layoutIfNeeded()
     }
     
     fileprivate func setupConversationHistory() {
-        Database.checkExistingConversation(to: toUser, completion: {(success, _conversationID) in
-            if success {
-                self.conversationID = _conversationID!
-                Database.getConversationMessages(conversationID: _conversationID!, completion: { messages, lastMessageID, error in
+        PulseDatabase.checkExistingConversation(to: toUser, completion: {(success, _conversationID) in
+            if let conversationID = _conversationID {
+                self.conversationID = conversationID
+                PulseDatabase.getConversationMessages(user: self.toUser, conversationID: conversationID, completion: { messages, lastMessageID, error in
                     if error == nil {
                         self.messages = messages
                         self.lastMessageID = lastMessageID
                         let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
-                        self.conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: true)
+                        self.conversationHistory.scrollToRow(at: indexPath, at: UITableViewScrollPosition.bottom, animated: false)
                     }
                 })
             }
@@ -126,7 +124,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
             conversationHistory.delegate = self
             conversationHistory.reloadData()
 
-            Database.keepConversationUpdated(conversationID: conversationID!, lastMessage: lastMessageID ?? nil, completion: { message in
+            PulseDatabase.keepConversationUpdated(conversationID: conversationID!, lastMessage: lastMessageID ?? nil, completion: { message in
                 self.messages.append(message)
                 let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
                 self.conversationHistory.insertRows(at:[indexPath], with: .fade)
@@ -136,20 +134,29 @@ class MessageVC: PulseVC, UITextViewDelegate{
     }
     
     internal func sendMessage() {
-        guard User.currentUser!.uID != toUser.uID else { return }
+        guard PulseUser.currentUser.uID != toUser.uID else {
+            GlobalFunctions.showAlertBlock("Error Sending Message",
+                                           erMessage: "You are trying to message yourself!")
+            return
+        }
         
-        let message = Message(from: User.currentUser!, to: toUser, body: msgBody.text)
+        let message = Message(from: PulseUser.currentUser, to: toUser, body: msgBody.text)
         message.mID = isExistingConversation ? conversationID! : nil
         
-        Database.sendMessage(existing: isExistingConversation, message: message, completion: {(success, _conversationID) in
+        PulseDatabase.sendMessage(existing: isExistingConversation, message: message, completion: {(success, _conversationID) in
             if success {
                 self.msgBody.text = "Type message here"
+                
                 self.msgBody.textColor = UIColor.lightGray
                 self.msgSend.setDisabled()
                 
                 self.conversationID = _conversationID!
                 self.keepConversationUpdated()
+                
+                self.textViewHeightConstraint.constant = IconSizes.medium.rawValue
             } else {
+                self.textViewHeightConstraint.constant = IconSizes.medium.rawValue
+
                 GlobalFunctions.showAlertBlock("Error Sending Message",
                                                erMessage: "Sorry we had a problem sending your message. Please try again!")
             }
@@ -158,9 +165,9 @@ class MessageVC: PulseVC, UITextViewDelegate{
     
     internal func showSubscribeMenu(selectedChannel: Channel, inviteID: String) {
         
-        Database.subscribeChannel(selectedChannel, completion: { success, error in
+        PulseDatabase.subscribeChannel(selectedChannel, completion: { success, error in
             if success {
-                Database.markInviteCompleted(inviteID: inviteID)
+                PulseDatabase.markInviteCompleted(inviteID: inviteID)
                 GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Subsribed!",
                                                erMessage: "You will now see all the updates in your feed. Enjoy!",
                                                buttonTitle: "done")
@@ -175,9 +182,12 @@ class MessageVC: PulseVC, UITextViewDelegate{
     }
     
     internal func showConfirmationMenu(status: Bool, inviteID: String) {
-        Database.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
+        PulseDatabase.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
             success ?
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "You are in!", erMessage: "You have been confirmed as a contributor. Now you can start creating, sharing and showcasing!", buttonTitle: "okay") :
+                GlobalFunctions.showAlertBlock(viewController: self,
+                                               erTitle: "You are in!",
+                                               erMessage: "You have been confirmed as a contributor. Now you can start creating, sharing and showcasing!",
+                                               buttonTitle: "okay") :
                 GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite",
                                                erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
         })
@@ -207,15 +217,8 @@ class MessageVC: PulseVC, UITextViewDelegate{
     }
     
     fileprivate func setupLayout() {
-        view.addSubview(msgTo)
         view.addSubview(sendContainer)
         view.addSubview(conversationHistory)
-
-        msgTo.translatesAutoresizingMaskIntoConstraints = false
-        msgTo.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        msgTo.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        msgTo.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        msgTo.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         
         sendContainer.translatesAutoresizingMaskIntoConstraints = false
         sendBottomConstraint = sendContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
@@ -226,10 +229,10 @@ class MessageVC: PulseVC, UITextViewDelegate{
         sendContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
 
         conversationHistory.translatesAutoresizingMaskIntoConstraints = false
-        conversationHistory.topAnchor.constraint(equalTo: msgTo.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
-        conversationHistory.bottomAnchor.constraint(equalTo: sendContainer.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        conversationHistory.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.xs.rawValue).isActive = true
+        conversationHistory.bottomAnchor.constraint(equalTo: sendContainer.topAnchor).isActive = true
         conversationHistory.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        conversationHistory.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
+        conversationHistory.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         conversationHistory.layoutIfNeeded()
         
         conversationHistory.register(MessageTableCell.self, forCellReuseIdentifier: reuseIdentifier)
@@ -251,9 +254,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
         msgBody.centerYAnchor.constraint(equalTo: sendContainer.centerYAnchor).isActive = true
         msgBody.leadingAnchor.constraint(equalTo: sendContainer.leadingAnchor).isActive = true
         msgBody.trailingAnchor.constraint(equalTo: msgSend.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        
-        textViewHeightConstraint = msgBody.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
-        textViewHeightConstraint.isActive = true
+        msgBody.heightAnchor.constraint(equalTo:sendContainer.heightAnchor).isActive = true
         msgBody.layoutIfNeeded()
         
         msgBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
@@ -272,33 +273,6 @@ class MessageVC: PulseVC, UITextViewDelegate{
         msgSend.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
 
         sendContainer.layoutIfNeeded()
-    }
-    
-    fileprivate func setupToUserLayout() {
-        msgTo.addSubview(msgToUserName)
-        msgTo.addSubview(msgToUserBio)
-
-        msgToUserName.translatesAutoresizingMaskIntoConstraints = false
-        msgToUserName.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
-        msgToUserName.topAnchor.constraint(equalTo: msgTo.topAnchor).isActive = true
-        
-        msgToUserName.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)
-        
-        msgToUserBio.translatesAutoresizingMaskIntoConstraints = false
-        msgToUserBio.centerXAnchor.constraint(equalTo: msgTo.centerXAnchor).isActive = true
-        msgToUserBio.topAnchor.constraint(equalTo: msgToUserName.bottomAnchor).isActive = true
-        
-        msgToUserBio.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: UIColor.gray, alignment: .center)
-    }
-    
-    fileprivate func updateToUserData() {
-        if let _uName = toUser.name {
-            msgToUserName.text = _uName
-        }
-        
-        if let _uBio = toUser.shortBio {
-            msgToUserBio.text = _uBio
-        }
     }
     
     func textViewDidBeginEditing(_ textView: UITextView) {
@@ -339,12 +313,16 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! MessageTableCell
         let _currentMessage = messages[indexPath.row]
         
-        if _currentMessage.from.uID == User.currentUser?.uID {
+        if _currentMessage.from.uID == PulseUser.currentUser.uID {
             cell.messageType = .sent
-            cell.messageSenderImage.image = User.currentUser?.thumbPicImage
+            cell.messageSenderImage.image = PulseUser.currentUser.thumbPicImage
         } else {
             cell.messageType = .received
             cell.messageSenderImage.image = toUserImage
+        }
+        
+        if _currentMessage.mType != .message && cell.messageType == .received {
+            cell.accessoryType = .disclosureIndicator
         }
 
         cell.message = messages[indexPath.row]
@@ -353,7 +331,7 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
         let message = messages[indexPath.row]
-        if message.mType != .message, message.from.uID != User.currentUser?.uID {
+        if message.mType != .message, message.from.uID != PulseUser.currentUser.uID {
             return true
         }
         return false
@@ -362,10 +340,10 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let message = messages[indexPath.row]
         switch message.mType {
-        case .perspectiveInvite, .questionInvite:
+        case .perspectiveInvite, .questionInvite, .showcaseInvite:
             let contentVC = ContentManagerVC()
             toggleLoading(show: true, message: "loading Invite...", showIcon: true)
-            Database.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
+            PulseDatabase.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
                 if let selectedItem = selectedItem {
                     DispatchQueue.main.async {
                         let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
@@ -392,7 +370,7 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         case .channelInvite:
             
             toggleLoading(show: true, message: "loading Invite...", showIcon: true)
-            Database.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
+            PulseDatabase.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
                 if let selectedItem = selectedItem {
                     DispatchQueue.main.async {
                         let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)

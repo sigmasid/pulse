@@ -12,9 +12,7 @@ class ContentOverlay: UIView {
 
     fileprivate var footerBackground = UIView()
     fileprivate var userTitles = PulseMenu(_axis: .vertical, _spacing: 0)
-    
-    fileprivate lazy var exploreButton = PulseButton(size: .large, type: .blank, isRound: true, background: UIColor.white.withAlphaComponent(0.7), tint: .white)
-    fileprivate lazy var nextItemButton = PulseButton(size: .large, type: .blank, isRound: true, background: UIColor.white.withAlphaComponent(0.7), tint: .white)
+    fileprivate lazy var nextItemButton = PulseButton(title: "Skip", isRound: true)
 
     fileprivate var menu = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .xSmall, type: .upvote, isRound: true, hasBackground: false)
@@ -38,6 +36,9 @@ class ContentOverlay: UIView {
     fileprivate var timeLeftShapeLayer = CAShapeLayer()
     fileprivate var bgShapeLayer = CAShapeLayer()
     
+    fileprivate var pagers = [UIView]()
+    fileprivate lazy var pagersStack = UIStackView()
+    
     weak var delegate : ItemDetailDelegate!
     
     internal enum AnswersButtonSelector: Int {
@@ -50,9 +51,11 @@ class ContentOverlay: UIView {
     
     convenience init(frame: CGRect, iconColor: UIColor, iconBackground: UIColor) {
         self.init(frame: frame)
-        addFooterButton()
-        addHeaderBackground()
-        addFooterBackground()
+        setupFooterButton()
+        setupHeader()
+        setupFooter()
+        setupNextButton()
+        setupPagers()
         
     }
     
@@ -116,13 +119,6 @@ class ContentOverlay: UIView {
         }
     }
     
-    func handleExpandItemTap() {
-        if delegate != nil {
-            delegate.userClickedExpandItem()
-            hideExploreDetail()
-        }
-    }
-    
     func handleSendMessage() {
         if delegate != nil {
             delegate.userClickedSendMessage()
@@ -137,22 +133,50 @@ class ContentOverlay: UIView {
         }
     }
     
-    func showExploreDetail() {
-        exploreButton.isHidden = false
-        nextItemButton.isHidden = false
-        
-        UIView.animate(withDuration: 0.2, animations: {
-            self.exploreButton.alpha = 1.0
-            self.nextItemButton.alpha = 1.0
-        })
+    //Not used anymore
+    func handleExpandItemTap() {
+        if delegate != nil {
+            delegate.userClickedExpandItem()
+            hideExploreDetail()
+        }
     }
     
-    func hideExploreDetail() {
-        exploreButton.alpha = 0.0
-        nextItemButton.alpha = 0.0
+    //EXPLORE DETAIL + PAGERS
+    public func highlightExploreDetail() {
+        nextItemButton.isHidden = false
+        pagersStack.isHidden = false
         
-        exploreButton.isHidden = true
-        nextItemButton.isHidden = true
+        UIView.animate(withDuration: 0.2, animations: {
+            self.nextItemButton.alpha = 0.7
+            self.pagersStack.alpha = 0.7
+        })
+    }
+
+    
+    public func dimExploreDetail() {
+        nextItemButton.alpha = 0.2
+        pagersStack.alpha = 0.2
+    }
+    
+    public func hideExploreDetail() {
+        nextItemButton.alpha = 0.0
+        pagersStack.alpha = 0.0
+        clearPagers()
+    }
+    
+    public func clearPagers() {
+        for currentView in pagersStack.arrangedSubviews {
+            pagersStack.removeArrangedSubview(currentView)
+            currentView.removeFromSuperview()
+        }
+    }
+    
+    public func updateSelectedPager(num: Int) {
+        pagersStack.arrangedSubviews[num].backgroundColor = .pulseBlue
+        
+        if num > 0 {
+            pagersStack.arrangedSubviews[num - 1].backgroundColor = .pulseBlue
+        }
     }
     
     /* PUBLIC SETTER FUNCTIONS */
@@ -174,6 +198,7 @@ class ContentOverlay: UIView {
     
     func setTitle(_ title : String) {
         itemTitleLabel.text = title
+        itemTitleLabel.backgroundColor = title == "" ? UIColor.clear : UIColor.black.withAlphaComponent(0.3)
     }
     
     func clearButtons() {
@@ -276,11 +301,42 @@ class ContentOverlay: UIView {
             voteImage.removeFromSuperview()
         })
     }
+    
+    public func addPagers(num: Int) {
+        for _ in 1...num {
+            let _pager = UIView()
+            _pager.translatesAutoresizingMaskIntoConstraints = false
+            _pager.heightAnchor.constraint(equalTo: _pager.widthAnchor).isActive = true
+            _pager.backgroundColor = .white
+            
+            pagersStack.addArrangedSubview(_pager)
+            
+            _pager.layoutIfNeeded()
+            _pager.layer.cornerRadius = _pager.frame.width / 2
+            _pager.layer.masksToBounds = true
+            _pager.addShadow(cornerRadius: _pager.frame.width / 2)
+        }
+    }
 }
 
 /** Layout Sections **/
 extension ContentOverlay {
-    fileprivate func addFooterBackground() {
+    fileprivate func setupPagers() {
+        addSubview(pagersStack)
+        
+        pagersStack.translatesAutoresizingMaskIntoConstraints = false
+        pagersStack.widthAnchor.constraint(equalToConstant: 7.5).isActive = true
+        pagersStack.bottomAnchor.constraint(equalTo: nextItemButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        pagersStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant : -Spacing.xs.rawValue).isActive = true
+        
+        pagersStack.axis = .vertical
+        pagersStack.distribution = .fillEqually
+        pagersStack.spacing = Spacing.xs.rawValue
+        
+        pagersStack.isHidden = true
+    }
+    
+    fileprivate func setupFooter() {
         addSubview(footerBackground)
         footerBackground.translatesAutoresizingMaskIntoConstraints = false
         
@@ -290,11 +346,11 @@ extension ContentOverlay {
         footerBackground.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         footerBackground.layoutIfNeeded()
         
-        addFooterButton()
+        setupFooterButton()
         addTitle()
     }
     
-    fileprivate func addHeaderBackground() {
+    fileprivate func setupHeader() {
         addSubview(userImage)
         addSubview(userTitles)
         addSubview(headerMenu)
@@ -336,37 +392,25 @@ extension ContentOverlay {
         
         headerMenu.addTarget(self, action: #selector(handleHeaderMenuTap), for: .touchUpInside)
         headerMenu.removeShadow()
-        
-        addSeeMoreButton()
     }
     
-    fileprivate func addSeeMoreButton() {
+    fileprivate func setupNextButton() {
         
-        exploreButton.isHidden = true
         nextItemButton.isHidden = true
 
-        addSubview(exploreButton)
         addSubview(nextItemButton)
-
-        exploreButton.setTitle("Explore", for: .normal)
-        exploreButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
-        
-        nextItemButton.setTitle("Next", for: .normal)
-        nextItemButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
-        
-        exploreButton.translatesAutoresizingMaskIntoConstraints = false
-        exploreButton.centerXAnchor.constraint(equalTo: centerXAnchor, constant: -bounds.width/4).isActive = true
-        exploreButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
-        exploreButton.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        exploreButton.heightAnchor.constraint(equalTo: exploreButton.widthAnchor).isActive = true
         
         nextItemButton.translatesAutoresizingMaskIntoConstraints = false
-        nextItemButton.centerXAnchor.constraint(equalTo: centerXAnchor, constant: bounds.width/4).isActive = true
-        nextItemButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+        nextItemButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: IconSizes.xSmall.rawValue / 2).isActive = true
+        nextItemButton.bottomAnchor.constraint(equalTo: itemTitleLabel.topAnchor, constant: -Spacing.s.rawValue).isActive = true
         nextItemButton.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        nextItemButton.heightAnchor.constraint(equalTo: nextItemButton.widthAnchor).isActive = true
+        nextItemButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         
-        exploreButton.addTarget(self, action: #selector(handleExpandItemTap), for: UIControlEvents.touchUpInside)
+        nextItemButton.layoutIfNeeded()
+        nextItemButton.makeRound()
+        nextItemButton.backgroundColor = .white
+        nextItemButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
+        
         nextItemButton.addTarget(self, action: #selector(handleNextItemTap), for: UIControlEvents.touchUpInside)
     }
     
@@ -384,10 +428,11 @@ extension ContentOverlay {
         itemTitleLabel.bottomAnchor.constraint(equalTo: footerBackground.topAnchor).isActive = true
         itemTitleLabel.trailingAnchor.constraint(equalTo: footerBackground.trailingAnchor).isActive = true
         itemTitleLabel.leadingAnchor.constraint(equalTo: footerBackground.leadingAnchor).isActive = true
+        itemTitleLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: IconSizes.xxSmall.rawValue).isActive = true
     }
     
     ///Add Icon in header
-    func addFooterButton() {
+    func setupFooterButton() {
         
         browseButton.setTitle("Browse", for: .normal)
         browseButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .right)

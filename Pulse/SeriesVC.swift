@@ -16,7 +16,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     public var selectedItem : Item! {
         didSet {
             toggleLoading(show: true, message: "Loading Series...", showIcon: true)
-            Database.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+            PulseDatabase.getItemCollection(selectedItem.itemID, completion: {(success, items) in
                 self.allItems = items
                 self.updateDataSource()
                 self.updateHeader()
@@ -28,7 +28,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     /** main datasource var **/
     fileprivate var allItems = [Item]()
-    fileprivate var allUsers = [User]() //caches user image / user for reuse
+    fileprivate var allUsers = [PulseUser]() //caches user image / user for reuse
     fileprivate var hasReachedEnd = false
     
     /** Card to show the mini info of item **/
@@ -110,6 +110,13 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         navigationController?.pushViewController(newThread, animated: true)
     }
     
+    internal func startShowcase() {
+        let newShowcase = NewShowcaseVC()
+        newShowcase.selectedChannel = selectedChannel
+        newShowcase.selectedItem = selectedItem
+        navigationController?.pushViewController(newShowcase, animated: true)
+    }
+    
     internal func getFeedback() {
         let contentVC = ContentManagerVC()
         
@@ -148,7 +155,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         
         if let lastItemID = allItems.last?.itemID, !hasReachedEnd {
 
-            Database.getItemCollection(selectedItem.itemID, lastItem: lastItemID, completion: { success, items in
+            PulseDatabase.getItemCollection(selectedItem.itemID, lastItem: lastItemID, completion: { success, items in
                 if items.count > 0 {
                     
                     var indexPaths = [IndexPath]()
@@ -218,7 +225,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
         } else {
-            Database.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
+            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
                 if let item = item {
                     
                     cell.itemType = item.type
@@ -235,7 +242,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     
                     //Get the image if content type is a post or perspectives thread
                     if item.content == nil, item.type == .post || item.type == .thread || item.type == .session, !item.fetchedContent {
-                        Database.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                        PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
                                 
@@ -251,7 +258,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     }
                     
                     // Get the user details
-                    if let user = self.checkUserDownloaded(user: User(uID: item.itemUserID)) {
+                    if let user = self.checkUserDownloaded(user: PulseUser(uID: item.itemUserID)) {
                         self.allItems[indexPath.row].user = user
                         cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: nil)
                         
@@ -270,7 +277,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                             }
                         }
                     } else {
-                        Database.getUser(item.itemUserID, completion: {(user, error) in
+                        PulseDatabase.getUser(item.itemUserID, completion: {(user, error) in
                             if let user = user {
                                 self.allItems[indexPath.row].user = user
                                 self.allUsers.append(user)
@@ -321,7 +328,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
     }
     
     //Find the index of downloaded user and return that user
-    func checkUserDownloaded(user: User) -> User? {
+    func checkUserDownloaded(user: PulseUser) -> PulseUser? {
         if let index = allUsers.index(of: user) {
             return allUsers[index]
         }
@@ -329,7 +336,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
     }
     
     //Add user downloaded image for a newly downloaded user
-    func updateUserImageDownloaded(user: User, thumbPicImage : UIImage?) {
+    func updateUserImageDownloaded(user: PulseUser, thumbPicImage : UIImage?) {
         if let image = thumbPicImage , let index = allUsers.index(of: user) {
             allUsers[index].thumbPicImage = image
         }
@@ -405,11 +412,13 @@ extension SeriesVC {
                     selectedShareItem.tag = selectedItem
                     
                     toggleLoading(show: true, message: "sending invite...", showIcon: true)
-                    Database.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: nil, toName: nil, toEmail: text,
+                    PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: nil, toName: nil, toEmail: text,
                                                  childItems: [], parentItemID: parentItemID, completion: {(success, error) in
                             success ?
-                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
-                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                            GlobalFunctions.showAlertBlock(viewController: self,
+                                                           erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
+                            GlobalFunctions.showAlertBlock(viewController: self,
+                                                           erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
                         self.toggleLoading(show: false, message: nil)
                     })
                 }
@@ -419,7 +428,7 @@ extension SeriesVC {
     
     //delegate for mini user search - send the invite
     internal func userSelected(item: Any) {
-        guard let toUser = item as? User else {
+        guard let toUser = item as? PulseUser else {
             GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invalid User Selected", erMessage: "Sorry! The user you selected is not valid")
             return
         }
@@ -434,7 +443,7 @@ extension SeriesVC {
             selectedShareItem.tag = selectedItem
             
             toggleLoading(show: true, message: "sending invite...", showIcon: true)
-            Database.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+            PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {(success, error) in
                 success ?
                     GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
                     GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
@@ -450,14 +459,14 @@ extension SeriesVC {
         
         //can only be a question or a post that user selects since it's in a tag already
         switch item.type {
-        case .post:
+        case .post, .showcase:
             showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
         case .question, .thread, .interview:
-            Database.getItemCollection(item.itemID, completion: {(success, items) in
+            PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                 success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
             })
         case .session:
-            Database.getItemCollection(item.itemID, completion: {(success, items) in
+            PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                 if success, items.count > 1 {
                     //since ordering is cron based - move the first 'question' item to front
                     if let lastItem = items.last {
@@ -517,7 +526,7 @@ extension SeriesVC {
         miniPreview = MiniPreview(frame: _profileFrame, buttonTitle: "Become Contributor")
         miniPreview!.delegate = self
 
-        Database.getItem(selectedItem.itemID, completion: { (item, error) in
+        PulseDatabase.getItem(selectedItem.itemID, completion: { (item, error) in
             if let item = item {
                 self.miniPreview!.setTitleLabel(item.itemTitle)
                 self.miniPreview!.setMiniDescriptionLabel(item.itemDescription)
@@ -542,10 +551,10 @@ extension SeriesVC {
         miniPreview!.removeFromSuperview()
         removeBlurBackground()
         
-        let applyExpertVC = ApplyExpertVC()
-        applyExpertVC.selectedChannel = self.selectedChannel
+        let becomeContributorVC = BecomeContributorVC()
+        becomeContributorVC.selectedChannel = self.selectedChannel
         
-        self.navigationController?.pushViewController(applyExpertVC, animated: true)
+        self.navigationController?.pushViewController(becomeContributorVC, animated: true)
     }
 
     
@@ -573,10 +582,6 @@ extension SeriesVC {
             
                 menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
                     self.showInviteMenu(currentItem: currentItem)
-                }))
-            } else if User.isLoggedIn() {
-                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                    self.showNonExpertMenu(selectedItem: currentItem)
                 }))
             }
         })
@@ -620,6 +625,8 @@ extension SeriesVC {
                         self.getFeedback()
                     case .posts:
                         self.addNewItem(selectedItem: self.selectedItem)
+                    case .showcases:
+                        self.startShowcase()
                     default: break
                     }
                 }))
@@ -674,7 +681,8 @@ extension SeriesVC {
         })
     }
     
-    internal func showNonExpertMenu(selectedItem : Item) {
+    //NOT BEING USED - CAN USE LATER TO EXPAND WHO CAN ANSWER > PROB WANT TO PUT IN A SEPARATE BUCKET
+    internal func showNonContributorMenu(selectedItem : Item) {
         let menu = UIAlertController(title: "Become a Contributor?", message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
@@ -682,10 +690,10 @@ extension SeriesVC {
         }))
         
         menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
-            let applyExpertVC = ApplyExpertVC()
-            applyExpertVC.selectedChannel = self.selectedChannel
+            let becomeContributorVC = BecomeContributorVC()
+            becomeContributorVC.selectedChannel = self.selectedChannel
             
-            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in

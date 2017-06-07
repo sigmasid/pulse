@@ -149,7 +149,7 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            Database.getImage(channelID: selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            PulseDatabase.getImage(channelID: selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
                 if error == nil {
                     
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
@@ -177,7 +177,7 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
         } else {
             itemStack[indexPath.row].gettingInfoForPreview = true
             
-            Database.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
+            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
                 
                 if let item = item {
                     
@@ -185,7 +185,7 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
                     self.allItems[indexPath.row] = item
                     
                     // Get the user details
-                    Database.getUser(item.itemUserID, completion: {(user, error) in
+                    PulseDatabase.getUser(item.itemUserID, completion: {(user, error) in
                         if let user = user {
                             self.allItems[indexPath.row].user = user
                             DispatchQueue.main.async {

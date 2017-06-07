@@ -10,7 +10,7 @@ import Foundation
 import FirebaseDatabase
 
 class Conversation : NSObject {
-    var cUser : User!
+    var cUser : PulseUser!
     var cID : String!
     
     var cLastMessageID : String!
@@ -20,7 +20,7 @@ class Conversation : NSObject {
 
     dynamic var cCreated = false
 
-    init(snapshot : FIRDataSnapshot) {
+    init(snapshot : DataSnapshot) {
         super.init()
         if snapshot.hasChild("conversationID") {
             self.cID = snapshot.childSnapshot(forPath: "conversationID").value as? String
@@ -58,7 +58,7 @@ class Conversation : NSObject {
             self.cLastMessageTime = convertedDate
         }
 
-        self.cUser = User(uID: snapshot.key)
+        self.cUser = PulseUser(uID: snapshot.key)
     }
     
     func getLastMessageTime() -> String? {

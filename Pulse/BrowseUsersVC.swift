@@ -10,14 +10,14 @@ import UIKit
 
 class BrowseUsersVC: PulseVC, HeaderDelegate {
     //Main data source var -
-    public var allUsers = [User]()
+    public var allUsers = [PulseUser]()
     public var delegate : SelectionDelegate!
     
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
             if allUsers.isEmpty {
-                Database.getChannelContributors(channelID: selectedChannel.cID, completion: {(success, users) in
+                PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {(success, users) in
                     self.allUsers = users
                     self.updateDataSource()
                 })
@@ -88,10 +88,10 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "become Contributor", style: .default, handler: { (action: UIAlertAction!) in
-            let applyExpertVC = ApplyExpertVC()
-            applyExpertVC.selectedChannel = self.selectedChannel
+            let becomeContributorVC = BecomeContributorVC()
+            becomeContributorVC.selectedChannel = self.selectedChannel
             
-            self.navigationController?.pushViewController(applyExpertVC, animated: true)
+            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -140,7 +140,7 @@ extension BrowseUsersVC : UICollectionViewDelegate, UICollectionViewDataSource {
         
         if !currentUser.uCreated {
             // Get the user details
-            Database.getUser(currentUser.uID!, completion: {(user, error) in
+            PulseDatabase.getUser(currentUser.uID!, completion: {(user, error) in
                 if let user = user {
                     self.allUsers[indexPath.row] = user
                     

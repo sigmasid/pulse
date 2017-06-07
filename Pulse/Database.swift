@@ -14,13 +14,13 @@ import TwitterKit
 import FBSDKLoginKit
 import GeoFire
 
-let storage = FIRStorage.storage()
+let storage = Storage.storage()
 let storageRef = storage.reference(forURL: "gs://pulse-84022.appspot.com")
-let databaseRef = FIRDatabase.database().reference()
+let databaseRef = Database.database().reference()
 var initialFeedUpdateComplete = false
 var currentAuthState : AuthStates = .loggedOut
 
-class Database {
+class PulseDatabase {
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
     static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
     static let channelContributorsRef = databaseRef.child(Element.ChannelContributors.rawValue)
@@ -33,8 +33,8 @@ class Database {
     static let messagesRef = databaseRef.child(Element.Messages.rawValue)
     static let conversationsRef = databaseRef.child(Element.Conversations.rawValue)
 
-    static var currentUserRef : FIRDatabaseReference!
-    static var currentUserFeedRef : FIRDatabaseReference!
+    static var currentUserRef : DatabaseReference!
+    static var currentUserFeedRef : DatabaseReference!
 
     static let usersRef = databaseRef.child(Element.Users.rawValue)
     static let usersPublicDetailedRef = databaseRef.child(Element.UserDetailedSummary.rawValue)
@@ -49,16 +49,16 @@ class Database {
     static var masterQuestionIndex = [String : String]()
     static var masterTagIndex = [String : String]()
 
-    static let querySize : UInt = 5
-    static var activeListeners = [FIRDatabaseReference]()
+    static let querySize : UInt = 10
+    static var activeListeners = [DatabaseReference]()
     static var profileListenersAdded = false
     
     static func updateNotificationToken(tokenID: String?) {
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             return
         }
         
-        databaseRef.child("notificationIDs").child(user.uid).setValue(tokenID)
+        databaseRef.child("notificationIDs").child(PulseUser.currentUser.uID!).setValue(tokenID)
     }
     
     static func createShareLink(linkString : String, completion: @escaping (String?) -> Void) {
@@ -165,7 +165,7 @@ class Database {
                 if snap.childSnapshot(forPath: "hits").exists() {
                     for result in snap.childSnapshot(forPath: "hits/hits").children {
 
-                        if let result = result as? FIRDataSnapshot, let itemID = result.childSnapshot(forPath: "_id").value as? String {
+                        if let result = result as? DataSnapshot, let itemID = result.childSnapshot(forPath: "_id").value as? String {
                             let itemType = result.childSnapshot(forPath: "fields/type/0").value as? String
                             let currentItem = Item(itemID: itemID, type: itemType ?? "")
                             currentItem.itemTitle = result.childSnapshot(forPath: "fields/title/0").value as? String ?? ""
@@ -198,7 +198,7 @@ class Database {
                 if snap.childSnapshot(forPath: "hits").exists() {
                     for result in snap.childSnapshot(forPath: "hits/hits").children {
                         
-                        if let result = result as? FIRDataSnapshot, let id = result.childSnapshot(forPath: "_id").value as? String {
+                        if let result = result as? DataSnapshot, let id = result.childSnapshot(forPath: "_id").value as? String {
                             let cDescription = result.childSnapshot(forPath: "fields/description/0").value as? String
                             let cTitle = result.childSnapshot(forPath: "fields/title/0").value as? String
 
@@ -218,24 +218,24 @@ class Database {
         })
     }
     
-    static func searchUsers(searchText : String, completion: @escaping (_ peopleResult : [User]) -> Void) {
+    static func searchUsers(searchText : String, completion: @escaping (_ peopleResult : [PulseUser]) -> Void) {
         let query = buildQuery(searchTerm: searchText, type: .users)
         let searchKey = databaseRef.child("search/request").childByAutoId().key
         
         databaseRef.child("search/request").child(searchKey).updateChildValues(query)
         
         databaseRef.child("search/response").child(searchKey).observe( .value, with: { snap in
-            var _results = [User]()
+            var _results = [PulseUser]()
             
             if snap.exists() {
                 if snap.childSnapshot(forPath: "hits").exists() {
                     for result in snap.childSnapshot(forPath: "hits/hits").children {
-                        if let result = result as? FIRDataSnapshot, let uID = result.childSnapshot(forPath: "_id").value as? String {
+                        if let result = result as? DataSnapshot, let uID = result.childSnapshot(forPath: "_id").value as? String {
                             let uName = result.childSnapshot(forPath: "fields/name/0").value as? String
                             let uShortBio = result.childSnapshot(forPath: "fields/shortBio/0").value as? String
                             let uPic = result.childSnapshot(forPath: "fields/thumbPic/0").value as? String
 
-                            let currentUser = User(uID: uID)
+                            let currentUser = PulseUser(uID: uID)
                             
                             currentUser.name = uName
                             currentUser.shortBio = uShortBio
@@ -257,9 +257,9 @@ class Database {
     
     /** MARK : MESSAGING **/
     ///Check if user has an existing conversation with receiver, if yes then return the conversation ID
-    static func checkExistingConversation(to : User, completion: @escaping (Bool, String?) -> Void) {
-        if let _user = FIRAuth.auth()?.currentUser {
-            usersRef.child(_user.uid).child("conversations").child(to.uID!).observeSingleEvent(of: .value, with: { snapshot in
+    static func checkExistingConversation(to : PulseUser, completion: @escaping (Bool, String?) -> Void) {
+        if PulseUser.isLoggedIn() {
+            usersRef.child(PulseUser.currentUser.uID!).child("conversations").child(to.uID!).observeSingleEvent(of: .value, with: { snapshot in
                 snapshot.exists() ? completion(true, snapshot.childSnapshot(forPath: "conversationID").value as? String) : completion(false, nil)
             })
         }
@@ -296,18 +296,28 @@ class Database {
     }
     
     //Retrieve all messages in conversation
-    static func getConversationMessages(conversationID : String, completion: @escaping ([Message], String?, Error?) -> Void) {
+    static func getConversationMessages(user: PulseUser, conversationID : String, completion: @escaping ([Message], String?, Error?) -> Void) {
         var messages = [Message]()
         
         conversationsRef.child(conversationID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
             for messageID in snapshot.children {
                 messagesRef.child((messageID as AnyObject).key).observeSingleEvent(of: .value, with: { snap in
-                    let message = Message(snapshot: snap)
-                    messages.append(message)
+                    if snap.exists() {
+                        let message = Message(snapshot: snap)
+                        messages.append(message)
+                    }
                     
                     if messages.count == Int(snapshot.childrenCount) {
                         let lastMessageID = snap.key
                         completion(messages, lastMessageID, nil)
+                    }
+                }, withCancel: { error in
+                    
+                    let message = Message(from: user, to: PulseUser.currentUser, body: "Error getting this message")
+                    messages.append(message)
+                    
+                    if messages.count == Int(snapshot.childrenCount) {
+                        completion(messages, (messageID as AnyObject).key, nil)
                     }
                 })
             }
@@ -319,10 +329,10 @@ class Database {
     //Get all conversations for given user - can only do for auth user
     static func getConversations(completion: @escaping ([Conversation]) -> Void) {
         var conversations = [Conversation]()
-        if let _user = FIRAuth.auth()?.currentUser {
-            usersRef.child(_user.uid).child("conversations").queryLimited(toLast: querySize).queryOrdered(byChild: "lastMessageID").observeSingleEvent(of: .value, with: { snapshot in
+        if PulseUser.isLoggedIn() {
+            usersRef.child(PulseUser.currentUser.uID!).child("conversations").queryLimited(toLast: querySize).queryOrdered(byChild: "lastMessageID").observeSingleEvent(of: .value, with: { snapshot in
                 for conversation in snapshot.children {
-                    let _conversation = Conversation(snapshot: conversation as! FIRDataSnapshot)
+                    let _conversation = Conversation(snapshot: conversation as! DataSnapshot)
                     conversations.append(_conversation)
                 }
                 conversations.reverse()
@@ -333,10 +343,11 @@ class Database {
     
     //Keep conversation updated
     static func keepConversationsUpdated(completion: @escaping (Conversation) -> Void) {
-        if let _user = FIRAuth.auth()?.currentUser {
-            activeListeners.append(usersRef.child(_user.uid).child("conversations"))
+        if PulseUser.isLoggedIn()  {
+            
+            activeListeners.append(usersRef.child(PulseUser.currentUser.uID!).child("conversations"))
 
-            usersRef.child(_user.uid).child("conversations").observe(.childChanged, with: { snap in
+            usersRef.child(PulseUser.currentUser.uID!).child("conversations").observe(.childChanged, with: { snap in
                 let _conversation = Conversation(snapshot: snap)
                 completion(_conversation)
             })
@@ -345,11 +356,13 @@ class Database {
     
     ///Send message
     static func sendMessage(existing : Bool, message: Message, completion: @escaping (_ success : Bool, _ conversationID : String?) -> Void) {
-        let _user = FIRAuth.auth()?.currentUser
-        let messagePost : [ String : AnyObject ] = ["fromID": _user!.uid as AnyObject,
+        guard PulseUser.isLoggedIn() else { return }
+        let user = PulseUser.currentUser
+        
+        let messagePost : [ String : AnyObject ] = ["fromID": user.uID! as AnyObject,
                                                     "toID": message.to.uID! as AnyObject,
                                                     "body": message.body as AnyObject,
-                                                    "createdAt" : FIRServerValue.timestamp() as AnyObject]
+                                                    "createdAt" : ServerValue.timestamp() as AnyObject]
         
         let messageKey = messagesRef.childByAutoId().key
         
@@ -359,16 +372,16 @@ class Database {
         if existing {
             //append to existing conversation if it already exists - message.mID has conversationID saved
             let conversationPost : [AnyHashable: Any] =
-                ["conversations/\(message.mID!)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : message.mType.rawValue,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
-                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
+                ["conversations/\(message.mID!)/\(messageKey)": ServerValue.timestamp() as AnyObject,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageType" : message.mType.rawValue,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageID" : messageKey,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessage" : message.body,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessage" : message.body,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
+                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : ServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
                 completionError != nil ? completion(false, nil) : completion(true, message.mID)
@@ -376,18 +389,18 @@ class Database {
         } else {
             //start new conversation
             let conversationPost : [AnyHashable: Any] =
-                ["conversations/\(messageKey)/\(messageKey)": FIRServerValue.timestamp() as AnyObject,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/conversationID" : messageKey,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessage" : message.body,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
-                 "users/\(_user!.uid)/conversations/\(message.to.uID!)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/conversationID" : messageKey,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageID" : messageKey,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessage" : message.body,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageType" : message.mType.rawValue,
-                 "users/\(message.to.uID!)/conversations/\(_user!.uid)/lastMessageTime" : FIRServerValue.timestamp() as AnyObject,
-                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : FIRServerValue.timestamp() as AnyObject]
+                ["conversations/\(messageKey)/\(messageKey)": ServerValue.timestamp() as AnyObject,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/conversationID" : messageKey,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessage" : message.body,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/conversationID" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageID" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessage" : message.body,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageType" : message.mType.rawValue,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
+                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : ServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
                 completionError != nil ? completion(false, nil) : completion(true, messageKey)
@@ -398,20 +411,20 @@ class Database {
 
     /*** MARK START : DATABASE PATHS ***/
     static func setCurrentUserPaths() {
-        if let user = FIRAuth.auth()?.currentUser {
-            currentUserRef = usersRef.child(user.uid)
-            currentUserFeedRef = usersRef.child(user.uid).child(Element.Feed.rawValue)
+        if PulseUser.isLoggedIn() {
+            currentUserRef = usersRef.child(PulseUser.currentUser.uID!)
+            currentUserFeedRef = usersRef.child(PulseUser.currentUser.uID!).child(Element.Feed.rawValue)
         } else {
             currentUserRef = nil
             currentUserFeedRef = nil
         }
     }
     
-    static func getDatabasePath(_ type : Element, itemID : String) -> FIRDatabaseReference {
+    static func getDatabasePath(_ type : Element, itemID : String) -> DatabaseReference {
         return databaseRef.child(type.rawValue).child(itemID)
     }
     
-    static func getStoragePath(_ type : Element, itemID : String) -> FIRStorageReference {
+    static func getStoragePath(_ type : Element, itemID : String) -> StorageReference {
         return storageRef.child(type.rawValue).child(itemID)
     }
     /*** MARK END : DATABASE PATHS ***/
@@ -422,7 +435,7 @@ class Database {
         
         channelsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
             for channel in snapshot.children {
-                let child = channel as! FIRDataSnapshot
+                let child = channel as! DataSnapshot
                 allChannels.append(Channel(cID: child.key, snapshot: child))
             }
             completion(allChannels, nil)
@@ -439,7 +452,7 @@ class Database {
         settingSectionsRef.observeSingleEvent(of: .value, with: { snapshot in
 
             for section in snapshot.children {
-                let _section = section as! FIRDataSnapshot
+                let _section = section as! DataSnapshot
                 _sections.append(SettingSection(sectionID: _section.key, snapshot: _section))
             }
             completion(_sections, nil)
@@ -453,7 +466,7 @@ class Database {
         
         settingSectionsRef.observeSingleEvent(of: .value, with: { snapshot in
             for settingsSection in snapshot.children {
-                if let settingsSection = settingsSection as? FIRDataSnapshot {
+                if let settingsSection = settingsSection as? DataSnapshot {
                     let section = SettingSection(sectionID: settingsSection.key, snapshot: settingsSection)
                     settings.append(section)
                 }
@@ -514,7 +527,7 @@ class Database {
 
             if snap.exists() {
                 for child in snap.children {
-                    let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+                    let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! DataSnapshot)
                     currentItem.cID = channelID
                     items.append(currentItem)
                 }
@@ -526,13 +539,13 @@ class Database {
         })
     }
     
-    static func getChannelContributors(channelID : String, completion: @escaping (_ success : Bool, _ users : [User]) -> Void) {
-        var users = [User]()
+    static func getChannelContributors(channelID : String, completion: @escaping (_ success : Bool, _ users : [PulseUser]) -> Void) {
+        var users = [PulseUser]()
         
         channelContributorsRef.child(channelID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
-                    let user = User(uID: (child as AnyObject).key)
+                    let user = PulseUser(uID: (child as AnyObject).key)
                     users.append(user)
                 }
                 completion(false, users)
@@ -556,9 +569,9 @@ class Database {
     }
     
     static func getInviteItem(_ itemID : String,
-                              completion: @escaping (_ item : Item?, _ type: MessageType?, _ questions: [Item], _ toUser : User?, _ conversationID: String?, _ error : NSError?) -> Void) {
-        var allQuestions = [Item]()
-        var toUser : User? = nil
+                              completion: @escaping (_ item : Item?, _ type: MessageType?, _ questions: [Item], _ toUser : PulseUser?, _ conversationID: String?, _ error : NSError?) -> Void) {
+        var allItems = [Item]()
+        var toUser : PulseUser? = nil
         var type : MessageType?
         
         databaseRef.child("invites").child(itemID).observeSingleEvent(of: .value, with: { snap in
@@ -575,7 +588,7 @@ class Database {
                 }
 
                 if let userID = snap.childSnapshot(forPath: "fromUserID").value as? String {
-                    currentItem.user = User(uID: userID)
+                    currentItem.user = PulseUser(uID: userID)
                 }
                 
                 if let userName = snap.childSnapshot(forPath: "fromUserName").value as? String {
@@ -588,23 +601,23 @@ class Database {
                 
                 
                 if snap.childSnapshot(forPath: "items").exists() {
-                    for question in snap.childSnapshot(forPath: "items").children {
-                        if let qSnap = question as? FIRDataSnapshot, let qTitle = qSnap.value as? String {
-                            let newItem = Item(itemID: qSnap.key)
-                            newItem.itemTitle = qTitle
-                            allQuestions.append(newItem)
+                    for aItem in snap.childSnapshot(forPath: "items").children {
+                        if let aSnap = aItem as? DataSnapshot, let itemTitle = aSnap.value as? String {
+                            let newItem = Item(itemID: aSnap.key)
+                            newItem.itemTitle = itemTitle
+                            allItems.append(newItem)
                         }
                     }
                 }
                 
-                if let toUserID = snap.childSnapshot(forPath: "toUserID").value as? String, User.currentUser?.uID != nil, toUserID == User.currentUser?.uID! {
-                    toUser = User.currentUser
+                if let toUserID = snap.childSnapshot(forPath: "toUserID").value as? String, PulseUser.isLoggedIn(), toUserID == PulseUser.currentUser.uID! {
+                    toUser = PulseUser.currentUser
                 } else if let toUserID = snap.childSnapshot(forPath: "toUserID").value as? String {
-                    toUser = User(uID: toUserID)
+                    toUser = PulseUser(uID: toUserID)
                     toUser?.name = snap.childSnapshot(forPath: "toUserName").value as? String
                 }
                 
-                completion(currentItem, type, allQuestions, toUser, conversationID, nil)
+                completion(currentItem, type, allItems, toUser, conversationID, nil)
             }
             else {
                 let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
@@ -618,7 +631,7 @@ class Database {
         
         databaseRef.child("seriesTypes").observeSingleEvent(of: .value, with: { snap in
             for child in snap.children {
-                let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! FIRDataSnapshot)
+                let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! DataSnapshot)
                 allItems.append(currentItem)
             }
             completion(allItems)
@@ -664,10 +677,10 @@ class Database {
 
     /*** MARK START : GET USER ***/
     ///Returns the shortest public profile
-    static func getUser(_ uID : String, completion: @escaping (_ user : User?, _ error : NSError?) -> Void) {
+    static func getUser(_ uID : String, completion: @escaping (_ user : PulseUser?, _ error : NSError?) -> Void) {
         usersPublicSummaryRef.child(uID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
-                let _returnUser = User(uID: uID, snapshot: snap)
+                let _returnUser = PulseUser(uID: uID, snapshot: snap)
                 completion(_returnUser, nil)
             } else {
                 let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
@@ -696,7 +709,7 @@ class Database {
         })
     }
     
-    static func getDetailedUserProfile(user: User, completion: @escaping (_ user: User) -> Void) {
+    static func getDetailedUserProfile(user: PulseUser, completion: @escaping (_ user: PulseUser) -> Void) {
         usersPublicDetailedRef.child(user.uID!).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 user.updateUser(detailedSnapshot: snap)
@@ -707,17 +720,17 @@ class Database {
     
     //items a user has saved
     static func getUserSavedItems(completion: @escaping (_ items : [Item]) -> Void) {
-        guard let user = User.currentUser else { return }
+        guard PulseUser.isLoggedIn() else { return }
         var allItems = [Item]()
         
-        usersRef.child(user.uID!).child("savedItems").observeSingleEvent(of: .value, with: { snap in
+        usersRef.child(PulseUser.currentUser.uID!).child("savedItems").observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for item in snap.children {
-                    if let item = item as? FIRDataSnapshot, let type = item.value as? String{
+                    if let item = item as? DataSnapshot, let type = item.value as? String{
                         let savedItem = Item(itemID: item.key, type: type)
                         
-                        if !User.currentUser!.savedItems.contains(savedItem) {
-                            User.currentUser!.savedItems.append(savedItem)
+                        if !PulseUser.currentUser.savedItems.contains(savedItem) {
+                            PulseUser.currentUser.savedItems.append(savedItem)
                             allItems.append(savedItem)
                         }
                     }
@@ -747,11 +760,11 @@ class Database {
     
     //Create Feed for current user from followed tags
     static func createFeed(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
-        guard let user = User.currentUser else { return }
+        guard PulseUser.isLoggedIn() else { return }
         var allNewsItems = [Item]()
-        var itemStack = [Bool](repeating: false, count: user.subscriptions.count)
+        var itemStack = [Bool](repeating: false, count: PulseUser.currentUser.subscriptions.count)
         
-        if user.subscriptions.count == 0 && !initialFeedUpdateComplete {
+        if PulseUser.currentUser.subscriptions.count == 0 && !initialFeedUpdateComplete {
             completion(allNewsItems)
             
             keepChannelsUpdated(completion: { newItems in
@@ -761,15 +774,15 @@ class Database {
             //add listener if user subscribes to new channel
             initialFeedUpdateComplete = true
 
-        } else if user.subscriptions.count > 0 && !initialFeedUpdateComplete {
+        } else if PulseUser.currentUser.subscriptions.count > 0 && !initialFeedUpdateComplete {
             
             keepChannelsUpdated(completion: { newItems in
                 completion(newItems)
             })
             
             //add in new posts before returning feed
-            for (index, channel) in user.subscriptions.enumerated() {
-                Database.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
+            for (index, channel) in PulseUser.currentUser.subscriptions.enumerated() {
+                PulseDatabase.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
                     
                     allNewsItems.append(contentsOf: newItems)
                     itemStack[index] = true
@@ -784,14 +797,14 @@ class Database {
     }
     
     static func fetchMoreItems(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
-        guard let user = User.currentUser else { return }
+        guard PulseUser.isLoggedIn() else { return }
         var allNewsItems = [Item]()
-        var itemStack = [Bool](repeating: false, count: user.subscriptions.count)
+        var itemStack = [Bool](repeating: false, count: PulseUser.currentUser.subscriptions.count)
         
         //add in new posts before returning feed
-        for (index, channel) in user.subscriptions.enumerated() {
+        for (index, channel) in PulseUser.currentUser.subscriptions.enumerated() {
             
-            Database.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
+            PulseDatabase.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
                 allNewsItems.append(contentsOf: newItems)
                 itemStack[index] = true
                 
@@ -819,7 +832,7 @@ class Database {
     static func addNewItemsToFeed(channel : Channel, startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
         var channelNewItems = [Item]()
         
-        let channelItems : FIRDatabaseQuery = channelItemsRef.child(channel.cID)
+        let channelItems : DatabaseQuery = channelItemsRef.child(channel.cID)
         
         if !activeListeners.contains(channelItemsRef.child(channel.cID)) {
             activeListeners.append(channelItemsRef.child(channel.cID))
@@ -828,7 +841,7 @@ class Database {
         channelItems.queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for item in snap.children {
-                    if let item = item as? FIRDataSnapshot {
+                    if let item = item as? DataSnapshot {
                         let item = Item(itemID: item.key, snapshot: item)
                         item.cID = channel.cID
                         item.cTitle = channel.cTitle
@@ -843,9 +856,9 @@ class Database {
     }
     
     static func keepChannelsUpdated(completion: @escaping (_ items : [Item]) -> Void) {
-        if User.isLoggedIn() {
+        if PulseUser.isLoggedIn() {
             
-            let subscriptions : FIRDatabaseQuery = currentUserRef.child("subscriptions")
+            let subscriptions : DatabaseQuery = currentUserRef.child("subscriptions")
             activeListeners.append(currentUserRef.child("subscriptions"))
             let endUpdateAt : Date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
 
@@ -875,13 +888,13 @@ class Database {
     }
     
     /* AUTH METHODS */
-    static func createEmailUser(_ email : String, password: String, completion: @escaping (_ user : User?, _ error : NSError?) -> Void) {
-        FIRAuth.auth()?.createUser(withEmail: email, password: password) { (_user, _error) in
+    static func createEmailUser(_ email : String, password: String, completion: @escaping (_ user : PulseUser?, _ error : NSError?) -> Void) {
+        Auth.auth().createUser(withEmail: email, password: password) { (_user, _error) in
             if _error != nil {
                 completion(nil, _error as NSError?)
             } else {
                 saveUserToDatabase(_user!, completion: { (success , error) in
-                    error != nil ? completion(nil, error) : completion(User(user: _user!), nil)
+                    error != nil ? completion(nil, error) : completion(PulseUser(user: _user!), nil)
                 })
             }
         }
@@ -889,9 +902,9 @@ class Database {
     
     // Update FIR auth profile - name, profilepic
     static func updateUserData(_ updateType: UserProfileUpdateType, value: String, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        let user = FIRAuth.auth()?.currentUser
+        let user = Auth.auth().currentUser
         if let user = user {
-            let changeRequest = user.profileChangeRequest()
+            let changeRequest = user.createProfileChangeRequest()
             
             switch updateType {
             case .displayName: changeRequest.displayName = value
@@ -911,34 +924,32 @@ class Database {
     }
     
     static func signOut( _ completion: (_ success: Bool) -> Void ) {
-        if let user = FIRAuth.auth() {
-            do {
-                try user.signOut()
-                //might not want to remove the tokens - but need to check its working first
-                if let session = Twitter.sharedInstance().sessionStore.session() {
-                    Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
-                }
-                if FBSDKAccessToken.current() != nil {
-                    FBSDKLoginManager().logOut()
-                }
-                cleanupListeners()
-                removeCurrentUser()
-                initialFeedUpdateComplete = false
-                currentAuthState = .loggedOut
-                
-                NotificationCenter.default.post(name: Notification.Name(rawValue: "LogoutSuccess"), object: self)
-                completion(true)
-            } catch {
-                completion(false)
+        do {
+            try Auth.auth().signOut()
+            //might not want to remove the tokens - but need to check its working first
+            if let session = Twitter.sharedInstance().sessionStore.session() {
+                Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
             }
+            if FBSDKAccessToken.current() != nil {
+                FBSDKLoginManager().logOut()
+            }
+            cleanupListeners()
+            removeCurrentUser()
+            initialFeedUpdateComplete = false
+            currentAuthState = .loggedOut
+            
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "LogoutSuccess"), object: self)
+            completion(true)
+        } catch {
+            completion(false)
         }
     }
     
     static func checkSocialTokens(_ completion: @escaping (_ result: Bool) -> Void) {
         if FBSDKAccessToken.current() != nil {
             let token = FBSDKAccessToken.current().tokenString
-            let credential = FIRFacebookAuthProvider.credential(withAccessToken: token!)
-            FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
+            let credential = FacebookAuthProvider.credential(withAccessToken: token!)
+            Auth.auth().signIn(with: credential) { (aUser, error) in
                 if error != nil {
                     GlobalFunctions.showAlertBlock("Error logging in", erMessage: error!.localizedDescription)
                 } else {
@@ -946,8 +957,8 @@ class Database {
                 }
             }
         } else if let session = Twitter.sharedInstance().sessionStore.session() {
-            let credential = FIRTwitterAuthProvider.credential(withToken: session.authToken, secret: session.authTokenSecret)
-            FIRAuth.auth()?.signIn(with: credential) { (aUser, error) in
+            let credential = TwitterAuthProvider.credential(withToken: session.authToken, secret: session.authTokenSecret)
+            Auth.auth().signIn(with: credential) { (aUser, error) in
                 if error != nil {
                     completion(false)
                 } else {
@@ -961,11 +972,11 @@ class Database {
     
     ///Check if user is logged in
     static func checkCurrentUser(_ completion: @escaping (Bool) -> Void) {
-        Database.checkSocialTokens({(result) in
+        PulseDatabase.checkSocialTokens({(result) in
             //result ? completion(true) : completion(false) //user not populated yet - so shouldn't fire completion block - wait till auth listener fires
         })
 
-        FIRAuth.auth()?.addStateDidChangeListener { auth, user in
+        Auth.auth().addStateDidChangeListener { auth, user in
             if let _user = user, currentAuthState != .loggedIn {
                 currentAuthState = .loggedIn
                 
@@ -988,8 +999,9 @@ class Database {
     
     ///Remove current user
     static func removeCurrentUser() {
-        guard let currentUser = User.currentUser else { return }
+        guard PulseUser.isLoggedIn() else { return }
         
+        let currentUser = PulseUser.currentUser
         currentUser.uID = nil
         currentUser.name = nil
         currentUser.items = []
@@ -999,8 +1011,9 @@ class Database {
         currentUser.subscriptions = []
         currentUser.subscriptionIDs = []
 
-        currentUser.verifiedChannels = []
-        
+        currentUser.contributorChannels = []
+        currentUser.editorChannels = []
+
         currentUser.profilePic = nil
         currentUser.thumbPic = nil
         currentUser.thumbPicImage = nil
@@ -1015,31 +1028,33 @@ class Database {
     
     ///Get user image
     static func getUserProfilePic() {
-        let userPicPath = User.currentUser!.profilePic != nil ? User.currentUser!.profilePic : User.currentUser!.thumbPic
+        guard PulseUser.isLoggedIn() else { return }
+
+        let userPicPath = PulseUser.currentUser.profilePic != nil ? PulseUser.currentUser.profilePic : PulseUser.currentUser.thumbPic
         
         if let userPicPath = userPicPath {
             if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
-                User.currentUser?.thumbPicImage = UIImage(data: _userImageData)
+                PulseUser.currentUser.thumbPicImage = UIImage(data: _userImageData)
                 NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
             }
         }
     }
     
-    ///Populate current user
-    static func populateCurrentUser(_ user: FIRUser!, completion: @escaping (_ success: Bool) -> Void) {
+    ///Populate current user - takes the Firebase User and uses it to populate the current user
+    static func populateCurrentUser(_ user: User!, completion: @escaping (_ success: Bool) -> Void) {
         
-        User.currentUser!.uID = user.uid
+        PulseUser.currentUser.uID = user.uid
         
         usersPublicSummaryRef.child(user.uid).observe(.value, with: { snap in
             if snap.hasChild(SettingTypes.name.rawValue) {
-                User.currentUser!.name = snap.childSnapshot(forPath: SettingTypes.name.rawValue).value as? String
+                PulseUser.currentUser.name = snap.childSnapshot(forPath: SettingTypes.name.rawValue).value as? String
             }
             if snap.hasChild(SettingTypes.profilePic.rawValue) {
-                User.currentUser!.profilePic = snap.childSnapshot(forPath: SettingTypes.profilePic.rawValue).value as? String
+                PulseUser.currentUser.profilePic = snap.childSnapshot(forPath: SettingTypes.profilePic.rawValue).value as? String
                 getUserProfilePic()
             }
             if snap.hasChild(SettingTypes.shortBio.rawValue) {
-                User.currentUser!.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
+                PulseUser.currentUser.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
             }
             
             completion(true)
@@ -1050,36 +1065,48 @@ class Database {
         
         usersPublicDetailedRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
             if snap.hasChild(SettingTypes.birthday.rawValue) {
-                User.currentUser!.birthday = snap.childSnapshot(forPath: SettingTypes.birthday.rawValue).value as? String
+                PulseUser.currentUser.birthday = snap.childSnapshot(forPath: SettingTypes.birthday.rawValue).value as? String
             }
             if snap.hasChild(SettingTypes.bio.rawValue) {
-                User.currentUser!.bio = snap.childSnapshot(forPath: SettingTypes.bio.rawValue).value as? String
+                PulseUser.currentUser.bio = snap.childSnapshot(forPath: SettingTypes.bio.rawValue).value as? String
             }
             if snap.hasChild(SettingTypes.gender.rawValue) {
-                User.currentUser!.gender = snap.childSnapshot(forPath: SettingTypes.gender.rawValue).value as? String
+                PulseUser.currentUser.gender = snap.childSnapshot(forPath: SettingTypes.gender.rawValue).value as? String
             }
             if snap.hasChild("items") {
-                User.currentUser!.items = []
+                PulseUser.currentUser.items = []
                 for item in snap.childSnapshot(forPath: "items").children {
-                    if let item = item as? FIRDataSnapshot {
+                    if let item = item as? DataSnapshot {
                         let currentItem = Item(itemID: item.key, snapshot: item)
-                        User.currentUser!.items.append(currentItem)
+                        PulseUser.currentUser.items.append(currentItem)
                     }
                 }
             } else {
-                User.currentUser!.items = []
+                PulseUser.currentUser.items = []
             }
             
-            if snap.hasChild("verifiedChannels") {
-                User.currentUser!.verifiedChannels = []
-                for channel in snap.childSnapshot(forPath: "verifiedChannels").children {
-                    if let channelSnap = channel as? FIRDataSnapshot {
+            if snap.hasChild("contributorChannels") {
+                PulseUser.currentUser.contributorChannels = []
+                for channel in snap.childSnapshot(forPath: "contributorChannels").children {
+                    if let channelSnap = channel as? DataSnapshot {
                         let channel = Channel(cID: channelSnap.key, title: channelSnap.value as? String ?? "")
-                        User.currentUser!.verifiedChannels.append(channel)
+                        PulseUser.currentUser.contributorChannels.append(channel)
                     }
                 }
             } else {
-                User.currentUser!.verifiedChannels = []
+                PulseUser.currentUser.contributorChannels = []
+            }
+            
+            if snap.hasChild("editorChannels") {
+                PulseUser.currentUser.editorChannels = []
+                for channel in snap.childSnapshot(forPath: "editorChannels").children {
+                    if let channelSnap = channel as? DataSnapshot {
+                        let channel = Channel(cID: channelSnap.key, title: channelSnap.value as? String ?? "")
+                        PulseUser.currentUser.editorChannels.append(channel)
+                    }
+                }
+            } else {
+                PulseUser.currentUser.editorChannels = []
             }
             
             setCurrentUserPaths()
@@ -1092,12 +1119,12 @@ class Database {
 
         usersRef.child(user.uid).child("subscriptions").observeSingleEvent(of: .value, with: { snap in
             for channel in snap.children {
-                if let channel = channel as? FIRDataSnapshot {
+                if let channel = channel as? DataSnapshot {
                     let savedChannel = Channel(cID: channel.key, title: channel.value as? String ?? "")
                     
-                    if !User.currentUser!.subscriptionIDs.contains(channel.key) {
-                        User.currentUser!.subscriptions.append(savedChannel)
-                        User.currentUser!.subscriptionIDs.append(channel.key)
+                    if !PulseUser.currentUser.subscriptionIDs.contains(channel.key) {
+                        PulseUser.currentUser.subscriptions.append(savedChannel)
+                        PulseUser.currentUser.subscriptionIDs.append(channel.key)
                     }
                 }
             }
@@ -1110,25 +1137,25 @@ class Database {
     static func addUserProfileListener(uID : String) {
         if !profileListenersAdded {
             usersPublicDetailedRef.child(uID).child("gender").observe(.value, with: { snap in
-                User.currentUser!.gender = snap.value as? String
+                PulseUser.currentUser.gender = snap.value as? String
             })
             activeListeners.append(usersPublicDetailedRef.child(uID).child("gender"))
             
             usersPublicDetailedRef.child(uID).child("birthday").observe(.value, with: { snap in
-                User.currentUser!.birthday = snap.value as? String
+                PulseUser.currentUser.birthday = snap.value as? String
             })
             activeListeners.append(usersPublicDetailedRef.child(uID).child("birthday"))
 
             usersPublicDetailedRef.child(uID).child("bio").observe(.value, with: { snap in
-                User.currentUser!.bio = snap.value as? String
+                PulseUser.currentUser.bio = snap.value as? String
             })
             activeListeners.append(usersPublicDetailedRef.child(uID).child("bio"))
 
             usersPublicDetailedRef.child(uID).child("items").observe(.childAdded, with: { snap in
                 let currentItem = Item(itemID: snap.key, snapshot: snap)
 
-                if !User.currentUser!.items.contains(currentItem) {
-                    User.currentUser!.items.append(currentItem)
+                if !PulseUser.currentUser.items.contains(currentItem) {
+                    PulseUser.currentUser.items.append(currentItem)
                     NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
                 }
             })
@@ -1139,32 +1166,32 @@ class Database {
     
     ///Update user profile to Pulse database from settings
     static func updateUserProfile(_ setting : Setting, newValue : String, completion: @escaping (Bool, Error?) -> Void) {
-        let _user = FIRAuth.auth()?.currentUser
+        let _user = PulseUser.currentUser
         
         var userPost = [String : String]()
-        if User.isLoggedIn() {
+        if PulseUser.isLoggedIn() {
             switch setting.type! {
             case .email:
-                _user?.updateEmail(newValue) { completionError in
+                _user.updateEmail(to: newValue) { completionError in
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 }
             case .password:
-                _user?.updatePassword(newValue) { completionError in
+                _user.updatePassword(to: newValue) { completionError in
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 }
             case .shortBio, .name, .profilePic, .thumbPic:
                 userPost[setting.settingID] = newValue
-                usersPublicSummaryRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
+                usersPublicSummaryRef.child(_user.uID!).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             case .birthday, .gender, .location, .bio:
                 userPost[setting.settingID] = newValue
-                usersPublicDetailedRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
+                usersPublicDetailedRef.child(_user.uID!).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             default:
                 userPost[setting.settingID] = newValue
-                usersRef.child(_user!.uid).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
+                usersRef.child(_user.uID!).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             }
@@ -1172,32 +1199,32 @@ class Database {
     }
     
     static func updateUserLocation(newValue : CLLocation, completion: @escaping (Bool, Error?) -> Void) {
-        let _user = FIRAuth.auth()?.currentUser
+        guard PulseUser.isLoggedIn() else {
+            return
+        }
+        
         let geoFire = GeoFire(firebaseRef: databaseRef.child("userLocations"))
         
-        if let _user = _user {
-            geoFire?.setLocation(newValue, forKey: _user.uid) { (error) in
-                if (error != nil) {
-                    completion(false, error)
-                } else {
-                    completion(true, nil)
-                }
+        geoFire?.setLocation(newValue, forKey: PulseUser.currentUser.uID!) { (error) in
+            if (error != nil) {
+                completion(false, error)
+            } else {
+                completion(true, nil)
             }
         }
     }
     
     static func getUserLocation(completion: @escaping (CLLocation?, Error?) -> Void) {
-        let _user = FIRAuth.auth()?.currentUser
         let geoFire = GeoFire(firebaseRef: databaseRef.child("userLocations"))
 
-        if let _user = _user {
-            geoFire?.getLocationForKey(_user.uid, withCallback: { (location, error) in
+        if PulseUser.isLoggedIn() {
+            geoFire?.getLocationForKey(PulseUser.currentUser.uID!, withCallback: { (location, error) in
                 if (error != nil) {
                     let userInfo = [ NSLocalizedDescriptionKey : "error getting location" ]
                     completion(nil, NSError.init(domain: "NoLocation", code: 404, userInfo: userInfo))
                 } else if (location != nil) {
                     let location = CLLocation(latitude: location!.coordinate.latitude, longitude: location!.coordinate.longitude)
-                    User.currentUser?.location = location
+                    PulseUser.currentUser.location = location
                     completion(location, nil)
                 } else {
                     let userInfo = [ NSLocalizedDescriptionKey : "no location found" ]
@@ -1228,7 +1255,7 @@ class Database {
     
     
     ///Save user to Pulse database after Auth
-    static func saveUserToDatabase(_ user: FIRUser, completion: @escaping (Bool, NSError?) -> Void) {
+    static func saveUserToDatabase(_ user: User, completion: @escaping (Bool, NSError?) -> Void) {
         var userPost = [String : String]()
         if let _uName = user.displayName {
             userPost["name"] = _uName
@@ -1244,10 +1271,10 @@ class Database {
     ///Save individual item to Pulse database after Auth
     static func addItemToDatabase( _ item : Item, channelID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
-        if let _user = FIRAuth.auth()?.currentUser {
+        if PulseUser.isLoggedIn() {
             var itemPost : [ String : AnyObject] = ["title": item.itemTitle as AnyObject,
-                                                   "uID": _user.uid as AnyObject,
-                                                   "createdAt" : FIRServerValue.timestamp() as AnyObject,
+                                                   "uID": PulseUser.currentUser.uID! as AnyObject,
+                                                   "createdAt" : ServerValue.timestamp() as AnyObject,
                                                    "type" : item.type.rawValue as AnyObject,
                                                    "cID": channelID as AnyObject]
             
@@ -1280,11 +1307,13 @@ class Database {
     static func addItemCollectionToDatabase(_ item : Item, parentItem : Item, channelID : String, post : [String : String],
                                             completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
-        guard let _user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
             return
         }
+        
+        let _user = PulseUser.currentUser
         
         var collectionPost : [AnyHashable: Any]! = [:]
         
@@ -1293,7 +1322,7 @@ class Database {
                                                 "tagTitle" : item.tag?.itemTitle as AnyObject,
                                                 "title" : item.itemTitle as AnyObject,
                                                 "uID" : item.itemUserID as AnyObject,
-                                                "createdAt" : FIRServerValue.timestamp() as AnyObject]
+                                                "createdAt" : ServerValue.timestamp() as AnyObject]
         
         if let contentType = item.contentType {
             channelPost["contentType"] = contentType.rawValue as AnyObject?
@@ -1314,13 +1343,13 @@ class Database {
         
         //only add one entry for user for an interview
         if parentItem.type != .interview {
-            collectionPost["userDetailedPublicSummary/\(_user.uid)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
         
         //if it's an item in response to a feedback request - add the new item and update the created at for channelItems - keeps only one post for each feedback request
         if parentItem.type == .session, item.type == .session {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
-            collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = FIRServerValue.timestamp() as AnyObject
+            collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = ServerValue.timestamp() as AnyObject
         }
             
         //if it's new feedback session then add it to channel items & series but with the new key
@@ -1329,7 +1358,7 @@ class Database {
 
             //duplicate the thumbnail for the item
             if let _image = item.content as? UIImage  {
-                Database.uploadThumbImage(channelID: item.cID, itemID: feedbackItemKey, image: _image, completion: { (success, error) in } )
+                PulseDatabase.uploadThumbImage(channelID: item.cID, itemID: feedbackItemKey, image: _image, completion: { (success, error) in } )
             }
             
             collectionPost["channelItems/\(channelID)/\(feedbackItemKey)"] = channelPost
@@ -1348,21 +1377,27 @@ class Database {
     }
     
     static func updateItemViewCount(itemID : String) {
-        itemStatsRef.child(itemID).child("views").runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+        itemStatsRef.child(itemID).child("views").runTransactionBlock({ (currentData: MutableData) -> TransactionResult in
             if let currentViews = currentData.value as? Float {
                 currentData.value = currentViews + 1
-                return FIRTransactionResult.success(withValue: currentData)
+                return TransactionResult.success(withValue: currentData)
             }
-            return FIRTransactionResult.success(withValue: currentData)
+            return TransactionResult.success(withValue: currentData)
         })
     }
     
     static func addVote(_ _vote : VoteType, itemID : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard PulseUser.isLoggedIn() else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to vote" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
         var upVoteCount = 0
         var downVoteCount = 0
         
-        if User.currentUser?.savedVotes[itemID] != true {
-            itemStatsRef.child(itemID).runTransactionBlock({ (currentData: FIRMutableData) -> FIRTransactionResult in
+        if PulseUser.currentUser.savedVotes[itemID] != true {
+            itemStatsRef.child(itemID).runTransactionBlock({ (currentData: MutableData) -> TransactionResult in
                 if var item = currentData.value as? [String : AnyObject] {
                     upVoteCount = item["upVoteCount"] as? Int ?? 0
                     downVoteCount = item["downVoteCount"] as? Int ?? 0
@@ -1376,16 +1411,16 @@ class Database {
                     item["downVoteCount"] = downVoteCount as AnyObject?
                     
                     currentData.value = item
-                    return FIRTransactionResult.success(withValue: currentData)
+                    return TransactionResult.success(withValue: currentData)
                 }
-                return FIRTransactionResult.success(withValue: currentData)
+                return TransactionResult.success(withValue: currentData)
             }) { (error, committed, snapshot) in
                 if let error = error {
                     completion(false, error as Error?)
                 } else if committed == true {
                     let post = [itemID:true]
                     currentUserRef.child("votes").updateChildValues(post , withCompletionBlock: { (error, ref) in
-                        User.currentUser?.savedVotes[itemID] = true
+                        PulseUser.currentUser.savedVotes[itemID] = true
                     })
                     completion(true, nil)
                 }
@@ -1395,7 +1430,7 @@ class Database {
     
     /** ASK QUESTIONS **/
     static func askQuestion(parentItem : Item, qText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to ask a question" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
@@ -1407,31 +1442,33 @@ class Database {
             return
         }
         
-        guard User.currentUser!.subscriptionIDs.contains(parentItem.cID) else {
+        guard PulseUser.currentUser.subscriptionIDs.contains(parentItem.cID) else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you need to be subscribed to the channel to ask a question" ]
             completion(false, NSError.init(domain: "NotSubscribed", code: 404, userInfo: errorInfo))
             return
         }
         
+        let user = PulseUser.currentUser
+        
         let itemKey = itemsRef.childByAutoId().key
         
         let itemPost : [String : Any] = ["title": qText,
                                          "type":"question",
-                                         "uID": user.uid,
+                                         "uID": user.uID!,
                                          "cID":parentItem.cID,
-                                         "createdAt" : FIRServerValue.timestamp() as AnyObject]
+                                         "createdAt" : ServerValue.timestamp() as AnyObject]
         
         let channelPost : [String : AnyObject] = ["type" : "question" as AnyObject,
                                                   "tagID" : parentItem.itemID as AnyObject,
                                                   "tagTitle" : parentItem.itemTitle as AnyObject,
                                                   "title" : qText as AnyObject,
-                                                  "uID" : user.uid as AnyObject,
-                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
+                                                  "uID" : user.uID! as AnyObject,
+                                                  "createdAt" : ServerValue.timestamp() as AnyObject]
         
         let post = ["channelItems/\(channelID)/\(itemKey)":channelPost,
                     "items/\(itemKey)":itemPost,
                     "itemCollection/\(parentItem.itemID)/\(itemKey)":"question",
-                    "users/\(user.uid)/askedQuestions/\(itemKey)":true] as [String: Any]
+                    "userDetailedPublicSummary/\(user.uID!)/items/\(itemKey)":"question"] as [String: Any]
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
@@ -1444,21 +1481,23 @@ class Database {
     }
     
     static func askUserQuestion(askUserID : String, qText: String, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to ask a question" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
+        
+        let user = PulseUser.currentUser
 
         let itemKey = itemsRef.childByAutoId().key
         
         let itemPost : [String : Any] = ["title": qText,
                                          "type":"question",
-                                         "uID": user.uid,
-                                         "createdAt" : FIRServerValue.timestamp() as AnyObject]
+                                         "uID": user.uID!,
+                                         "createdAt" : ServerValue.timestamp() as AnyObject]
 
         let post = ["items/\(itemKey)": itemPost,
-                    "users/\(user.uid)/askedQuestions/\(itemKey)":true,
+                    "userDetailedPublicSummary/\(user.uID!)/items/\(itemKey)":"question",
                     "users/\(askUserID)/unansweredQuestions/\(itemKey)":true] as [String: Any]
         
         databaseRef.updateChildValues(post, withCompletionBlock: { (completionError, ref) in
@@ -1471,11 +1510,11 @@ class Database {
         })
     }
     
-    /* RECOMMEND EXPERT */
+    /* RECOMMEND CONTRIBUTOR */
     static func recommendContributorRequest(channel: Channel, applyName: String, applyEmail: String, applyText: String,
                                 completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
     
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to recommend contributors" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
@@ -1487,11 +1526,13 @@ class Database {
             return
         }
         
+        let user = PulseUser.currentUser
+        
         let post = ["email":applyEmail,
                     "tagID":channelID,
                     "name":applyName,
                     "reason":applyText,
-                    "recommenderID": user.uid]
+                    "recommenderID": user.uID!]
     
         databaseRef.child("contributorRequests").childByAutoId().updateChildValues(post, withCompletionBlock: { (completionError, ref) in
             if completionError != nil {
@@ -1503,9 +1544,9 @@ class Database {
         })
     }
     
-    /* BECOME EXPERT */
+    /* BECOME CONTRIBUTOR */
     static func contributorRequest(channel : Channel, applyText: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
@@ -1517,8 +1558,9 @@ class Database {
             return
         }
         
+        let user = PulseUser.currentUser
         let verificationPath = databaseRef.child("contributorRequests")
-        let post = ["uID":user.uid,
+        let post = ["uID":user.uID!,
                     "reason":applyText,
                     "channelID":channelID]
         
@@ -1549,7 +1591,7 @@ class Database {
     
     /** INTERVIEW ITEMS **/
     static func declineInterview(interviewItemID: String, interviewParentItem :Item, conversationID: String?, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        guard let _ = FIRAuth.auth()?.currentUser else {
+        guard let _ = Auth.auth().currentUser else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
             return
@@ -1561,10 +1603,10 @@ class Database {
             return
         }
         
-        let message = Message(from: User.currentUser!, to: fromUser, body: "Sorry! Interview request declined")
+        let message = Message(from: PulseUser.currentUser, to: fromUser, body: "Sorry! Interview request declined")
         message.mID = conversationID != nil ? conversationID! : interviewParentItem.itemID
         
-        Database.sendMessage(existing: true, message: message, completion: {(success, conversationID) in
+        PulseDatabase.sendMessage(existing: true, message: message, completion: {(success, conversationID) in
             if success {
                 //remove interview type from conversations
                 markInviteCompleted(inviteID: interviewItemID)
@@ -1579,20 +1621,22 @@ class Database {
     }
     
     static func addInterviewToDatabase(interviewItemID: String, interviewParentItem : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        guard let _user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
             return
         }
         
+        let _user = PulseUser.currentUser
+        
         let channelPost : [String : AnyObject] = ["type" : interviewParentItem.type.rawValue as AnyObject,
                                                   "tagID" : interviewParentItem.tag?.itemID as AnyObject,
                                                   "tagTitle" : interviewParentItem.tag?.itemTitle as AnyObject,
                                                   "title" : interviewParentItem.itemTitle as AnyObject,
-                                                  "uID" : _user.uid as AnyObject,
-                                                  "createdAt" : FIRServerValue.timestamp() as AnyObject]
+                                                  "uID" : _user.uID! as AnyObject,
+                                                  "createdAt" : ServerValue.timestamp() as AnyObject]
         
-        var collectionPost = ["userDetailedPublicSummary/\(_user.uid)/items/\(interviewParentItem.itemID)": interviewParentItem.type.rawValue as AnyObject,
+        var collectionPost = ["userDetailedPublicSummary/\(_user.uID!)/items/\(interviewParentItem.itemID)": interviewParentItem.type.rawValue as AnyObject,
                               "items/\(interviewParentItem.itemID)" : channelPost,
                               "channelItems/\(interviewParentItem.cID!)/\(interviewParentItem.itemID)" : channelPost,
                               "invites/\(interviewItemID)/completed": true,
@@ -1607,27 +1651,29 @@ class Database {
         })
     }
     
-    static func createContributorInvite(channel: Channel, type: MessageType, description: String = "", toUser: User?, toName: String?, toEmail: String? = nil,                                          								approved: Bool = false, completion: @escaping (_ inviteID : String?, _ error : Error?) -> Void) {
+    static func createContributorInvite(channel: Channel, type: MessageType, description: String = "", toUser: PulseUser?, toName: String?, toEmail: String? = nil,                                          								completion: @escaping (_ inviteID : String?, _ error : Error?) -> Void) {
         
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn()  else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to send invites" ]
             completion(nil, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
+        let user = PulseUser.currentUser
+
         let inviteKey = databaseRef.child("invites").childByAutoId().key
 
         var channelPost : [String : Any] = ["title" : channel.cTitle ?? "Contributor Invite",
                                             "type" : type.rawValue,
-                                            "fromUserID" : user.uid,
-                                            "fromUserName" : User.currentUser?.name ?? "",
-                                            "createdAt" : FIRServerValue.timestamp(),
+                                            "fromUserID" : user.uID!,
+                                            "fromUserName" : user.name ?? "",
+                                            "createdAt" : ServerValue.timestamp(),
                                             "cID": channel.cID,
                                             "cTitle": channel.cDescription ?? ""]
         
         var userPost : [String : Any] = ["title" : channel.cTitle ?? "Contributor Invite",
                                          "type" : type.rawValue,
-                                         "createdAt" : FIRServerValue.timestamp()]
+                                         "createdAt" : ServerValue.timestamp()]
         
         //add in toUser
         if let toUser = toUser {
@@ -1644,10 +1690,7 @@ class Database {
         
         if let toEmail = toEmail {
             channelPost["toUserEmail"] = toEmail
-        }
-        
-        if approved {
-            channelPost["approved"] = true
+            userPost["toUserEmail"] = toEmail
         }
         
         if description != "" {
@@ -1656,45 +1699,58 @@ class Database {
 
         var collectionPost : [String : Any] = ["invites/\(inviteKey)": channelPost]
         
-        if let toUser = toUser, toUser.uID != user.uid {
+        if let toUser = toUser, toUser.uID != user.uID! {
             //user is inviting / recommending someone
-            collectionPost["users/\(user.uid)/sentInvites/\(inviteKey)"] = userPost
-        } else {
+            collectionPost["users/\(user.uID!)/sentInvites/\(inviteKey)"] = userPost
+        } else if let _ = toEmail {
+            //user is inviting someone via email
+            collectionPost["users/\(user.uID!)/sentInvites/\(inviteKey)"] = userPost
+
+        } else if let toUser = toUser, toUser.uID == user.uID! {
             //user is applying for himself
-            collectionPost["users/\(user.uid)/verificationRequests/\(channel.cID!)"] = inviteKey
+            let request : [String : Any] = ["inviteID" : inviteKey,
+                                            "type" : "contributorInvite"]
+            collectionPost["users/\(user.uID!)/pendingInvites/\(channel.cID!)"] = request
+            print("user is applying for himself and post is ", collectionPost)
+
         }
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
+            
             completionError == nil ? completion(inviteKey, nil) : completion(nil, completionError)
         })
         
     }
     
     static func updateContributorInvite(status: Bool, inviteID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        guard let _ = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to send invites" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
-        databaseRef.child("invites/\(inviteID)/accepted").setValue(status, withCompletionBlock: {(error, ref) in
+        let post : [ String : Any ] = ["accepted" : status]
+        
+        databaseRef.child("invites/\(inviteID)").updateChildValues(post, withCompletionBlock: {(error, ref) in
             error == nil ? completion(true, nil) : completion(false, error)
         })
     }
     
-    static func createInviteRequest(item: Item, type: MessageType, toUser: User?, toName: String?, toEmail: String? = nil, childItems: [String],
+    static func createInviteRequest(item: Item, type: MessageType, toUser: PulseUser?, toName: String?, toEmail: String? = nil, childItems: [String],
                                     parentItemID: String?, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
+        let user = PulseUser.currentUser
+        
         var itemPost : [String : Any] = ["title" : item.itemTitle,
                                          "type" : type.rawValue,
-                                         "fromUserID" : user.uid,
-                                         "fromUserName" : User.currentUser?.name ?? "",
-                                         "createdAt" : FIRServerValue.timestamp(),
+                                         "fromUserID" : user.uID!,
+                                         "fromUserName" : PulseUser.currentUser.name ?? "",
+                                         "createdAt" : ServerValue.timestamp(),
                                          "cID": item.cID,
                                          "cTitle": item.cTitle,
                                          "tagID": item.tag?.itemID ?? "",
@@ -1702,7 +1758,7 @@ class Database {
         
         var userPost : [String : Any] = ["title" : item.itemTitle,
                                          "type" : type.rawValue,
-                                         "createdAt" : FIRServerValue.timestamp()]
+                                         "createdAt" : ServerValue.timestamp()]
         
         if let parentItemID = parentItemID {
             itemPost["parentItemID"] = parentItemID
@@ -1737,7 +1793,7 @@ class Database {
         }
         
         let collectionPost = ["invites/\(item.itemID)": itemPost,
-                              "users/\(user.uid)/sentInvites/\(item.itemID)" : userPost]
+                              "users/\(user.uID!)/sentInvites/\(item.itemID)" : userPost]
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in
             completionError == nil ? completion(true, nil) : completion(false, completionError)
@@ -1759,25 +1815,29 @@ class Database {
     
     /** ADD NEW SERIES TO CHANNEL **/
     static func startNewChannel(cTitle: String, cDescription : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        guard let user = FIRAuth.auth()?.currentUser else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
-        let userPost = ["cTitle": cTitle,
-                        "cDescription":cDescription]
+        let user = PulseUser.currentUser
         
         let post = ["cTitle": cTitle,
                     "cDescription":cDescription,
-                    "fromUserName":User.currentUser!.name ?? "",
-                    "fromUserID":user.uid]
+                    "fromUserName":PulseUser.currentUser.name ?? "",
+                    "fromUserID":user.uID!]
         
         let newChannelRequestID = databaseRef.child("newChannelRequests").childByAutoId().key
         
+        let userPost = ["cTitle": cTitle,
+                        "cDescription":cDescription,
+                        "type" : "newChannel",
+                        "requestID" : newChannelRequestID]
+        
         let combinedPost : [AnyHashable: Any] =
             ["newChannelRequests/\(newChannelRequestID)": post as AnyObject,
-             "users/\(user.uid)/newChannelRequests/\(newChannelRequestID)" : userPost]
+             "users/\(user.uID!)/pendingRequests/\(newChannelRequestID)" : userPost]
 
         
         databaseRef.updateChildValues(combinedPost, withCompletionBlock: { (error, ref) in
@@ -1792,7 +1852,7 @@ class Database {
                                         "description" : item.itemDescription,
                                         "type" : item.type.rawValue,
                                         "uID" : item.itemUserID,
-                                        "createdAt" : FIRServerValue.timestamp(),
+                                        "createdAt" : ServerValue.timestamp(),
                                         "cID":channelID]
         
         let channelPost : [String : Any] = ["title" : item.itemTitle,
@@ -1809,12 +1869,14 @@ class Database {
     
     /** ADD NEW THREAD TO SERIES **/
     static func addThread(channelID: String, parentItem: Item, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
-        guard let user = User.currentUser, user.uID != nil else {
+        guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to start a thread" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
             return
         }
         
+        let user = PulseUser.currentUser
+
         guard item.type != .unknown else {
             let errorInfo = [ NSLocalizedDescriptionKey : "sorry this thread is not valid" ]
             completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
@@ -1823,7 +1885,7 @@ class Database {
         
         guard user.isVerified(for: Channel(cID: channelID)) else {
             let errorInfo = [ NSLocalizedDescriptionKey : "only verified contributors can start a thread" ]
-            completion(false, NSError.init(domain: "NotExpert", code: 404, userInfo: errorInfo))
+            completion(false, NSError.init(domain: "NotContributor", code: 404, userInfo: errorInfo))
             return
         }
         
@@ -1831,14 +1893,14 @@ class Database {
                                          "description" : item.itemDescription,
                                          "type" : item.type.rawValue,
                                          "uID" : user.uID!,
-                                         "createdAt" : FIRServerValue.timestamp(),
+                                         "createdAt" : ServerValue.timestamp(),
                                          "cID":channelID]
         
         let channelItemsPost : [String : Any] = ["title" : item.itemTitle,
                                                  "tagID" : parentItem.itemID,
                                                  "tagTitle" : parentItem.itemTitle,
                                                  "uID" : user.uID!,
-                                                 "createdAt" : FIRServerValue.timestamp(),
+                                                 "createdAt" : ServerValue.timestamp(),
                                                  "type" : item.type.rawValue]
         
         let collectionPost = ["channelItems/\(channelID)/\(item.itemID)": channelItemsPost,
@@ -1862,14 +1924,14 @@ class Database {
     static func getImage(channelID: String, itemID : String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = storageRef.child("channels/\(channelID)").child(itemID).child(fileType.rawValue)
         
-        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
+        path.getData(maxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
     }
     
     static func getSeriesImage(seriesName: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = storageRef.child("seriesTypes/\(seriesName)").child(fileType.rawValue)
-        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
+        path.getData(maxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
     }
@@ -1877,12 +1939,12 @@ class Database {
     static func getChannelImage(channelID: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = storageRef.child("channels/\(channelID)").child(fileType.rawValue)
         
-        path.data(withMaxSize: maxImgSize) { (data, error) -> Void in
+        path.getData(maxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
     }
     
-    static func getProfilePicForUser(user: User, completion: @escaping (_ image : UIImage?) -> Void) {
+    static func getProfilePicForUser(user: PulseUser, completion: @escaping (_ image : UIImage?) -> Void) {
         let userPicPath = user.profilePic != nil ? user.thumbPic : user.profilePic
         
         if let userPicPath = userPicPath {
@@ -1896,16 +1958,16 @@ class Database {
     
     //Save an item for a user
     static func saveItem(item : Item, completion: @escaping (Bool, Error?) -> Void) {
-        if User.isLoggedIn() {
-            if User.currentUser?.savedItems != nil, User.currentUser!.savedItems.contains(item) { //remove item
-                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems/\(item.itemID)")
+        if PulseUser.isLoggedIn() {
+            if PulseUser.currentUser.savedItems.contains(item) { //remove item
+                let _path = getDatabasePath(Element.Users, itemID: PulseUser.currentUser.uID!).child("savedItems/\(item.itemID)")
                 _path.setValue("true", withCompletionBlock: { (completionError, ref) in
                     completionError != nil ? completion(false, completionError!) : completion(false, nil)
                 })
             } else { //pin item
-                let _path = getDatabasePath(Element.Users, itemID: User.currentUser!.uID!).child("savedItems")
+                let _path = getDatabasePath(Element.Users, itemID: PulseUser.currentUser.uID!).child("savedItems")
                 _path.updateChildValues([item.itemID: item.type.rawValue], withCompletionBlock: { (completionError, ref) in
-                    User.currentUser!.savedItems.append(item)
+                    PulseUser.currentUser.savedItems.append(item)
                     completionError != nil ? completion(false, completionError) : completion(true, nil)
                 })
             }
@@ -1916,19 +1978,19 @@ class Database {
     }
     
     static func subscribeChannel(_ channel : Channel, completion: @escaping (Bool, NSError?) -> Void) {
-        if User.isLoggedIn(), let user = User.currentUser {
-            if let savedIndex = user.subscriptionIDs.index(of: channel.cID), let channelID = channel.cID  { //unsubscribe
+        if PulseUser.isLoggedIn() {
+            if let savedIndex = PulseUser.currentUser.subscriptionIDs.index(of: channel.cID), let channelID = channel.cID  { //unsubscribe
                 let _path = currentUserRef.child("subscriptions/\(channelID)")
                 
                 _path.setValue(nil, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     } else {
-                        if let savedChannelIndex = user.subscriptions.index(of: channel) {
-                            user.subscriptions.remove(at: savedChannelIndex)
+                        if let savedChannelIndex = PulseUser.currentUser.subscriptions.index(of: channel) {
+                            PulseUser.currentUser.subscriptions.remove(at: savedChannelIndex)
                         }
                         
-                        user.subscriptionIDs.remove(at: savedIndex)
+                        PulseUser.currentUser.subscriptionIDs.remove(at: savedIndex)
 
                         completion(true, nil)
 
@@ -1936,23 +1998,23 @@ class Database {
                     }
                 })
                 
-                databaseRef.child("channelSubscribers").child(channel.cID).child(user.uID!).setValue(nil)
+                databaseRef.child("channelSubscribers").child(channel.cID).child(PulseUser.currentUser.uID!).setValue(nil)
                 
             } else { //subscribe
-                let subscriberPost = ["users/\(user.uID!)/subscriptions/\(channel.cID!)":channel.cTitle ?? "",
-                            "channelSubscribers/\(channel.cID!)/\(user.uID!)":true] as [String: Any]
+                let subscriberPost = ["users/\(PulseUser.currentUser.uID!)/subscriptions/\(channel.cID!)":channel.cTitle ?? "",
+                            "channelSubscribers/\(channel.cID!)/\(PulseUser.currentUser.uID!)":true] as [String: Any]
                 
                 databaseRef.updateChildValues(subscriberPost, withCompletionBlock: { (completionError, ref) in
                     if completionError != nil {
                         completion(false, completionError as NSError?)
                     }
                     else {
-                        if !User.currentUser!.subscriptionIDs.contains(channel.cID) {
-                            user.subscriptionIDs.append(channel.cID)
-                            user.subscriptions.append(channel)
+                        if !PulseUser.currentUser.subscriptionIDs.contains(channel.cID) {
+                            PulseUser.currentUser.subscriptionIDs.append(channel.cID)
+                            PulseUser.currentUser.subscriptions.append(channel)
                         }
                         
-                        if user.subscriptions.count == 1 { //was empty before
+                        if PulseUser.currentUser.subscriptions.count == 1 { //was empty before
                             NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
                         }
                         
@@ -1977,16 +2039,16 @@ class Database {
                                  completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
         let path = storageRef.child("channels").child(channelID).child(itemID).child(fileType.rawValue)
         
-        let _metadata = FIRStorageMetadata()
+        let _metadata = StorageMetadata()
         _metadata.contentType = "image/jpeg"
         
         let data : Data? = fileType == .content ? resizeImageHeight(image, newHeight: min(UIScreen.main.bounds.height, image.size.height)) : resizeImageHeight(image, newHeight: defaultPostHeight)
 
         if let data = data {
-            let _metadata = FIRStorageMetadata()
+            let _metadata = StorageMetadata()
             _metadata.contentType = "image/jpeg"
             
-            path.put(data, metadata: _metadata) { (metadata, error) in
+            path.putData(data, metadata: _metadata) { (metadata, error) in
                 if (error != nil) {
                     completion(false, error as NSError?)
                 } else {
@@ -1999,11 +2061,11 @@ class Database {
     ///upload image to firebase and update current user with photoURL upon success
     static func uploadProfileImage(_ imgData : Data, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
         var _downloadURL : URL?
-        let _metadata = FIRStorageMetadata()
+        let _metadata = StorageMetadata()
         _metadata.contentType = "image/jpeg"
         
-        if let _currentUserID = User.currentUser?.uID, let _imageToResize = UIImage(data: imgData), let _img = resizeImage(_imageToResize, newWidth: 600){
-            usersStorageRef.child(_currentUserID).child("profilePic").put(_img, metadata: nil) { (metadata, error) in
+        if PulseUser.isLoggedIn(), let _imageToResize = UIImage(data: imgData), let _img = resizeImage(_imageToResize, newWidth: 600){
+            usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(_img, metadata: nil) { (metadata, error) in
                 if let metadata = metadata {
                     _downloadURL = metadata.downloadURL()
                     updateUserData(.photoURL, value: String(describing: _downloadURL!)) { success, error in
@@ -2015,10 +2077,10 @@ class Database {
             }
             
             if let _thumbImageData = resizeImage(UIImage(data: imgData)!, newWidth: 100) {
-                usersStorageRef.child(_currentUserID).child("thumbPic").put(_thumbImageData, metadata: nil) { (metadata, error) in
+                usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: nil) { (metadata, error) in
                     if let url = metadata?.downloadURL() {
                         let userPost = ["thumbPic" : String(describing: url)]
-                        usersPublicSummaryRef.child(_currentUserID).updateChildValues(userPost)
+                        usersPublicSummaryRef.child(PulseUser.currentUser.uID!).updateChildValues(userPost)
                     }
                 }
             }

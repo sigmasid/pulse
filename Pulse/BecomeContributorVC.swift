@@ -1,5 +1,5 @@
 //
-//  ApplyExpertVC.swift
+//  BecomeContributorVC.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 1/3/17.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
+class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
 
     public var selectedChannel : Channel!
     
@@ -37,8 +37,8 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
     fileprivate var scopeBar : XMSegmentedControl!
     
     fileprivate var isMovedUp = false
-    fileprivate let subText1 = "tell us why you will make a great expert"
-    fileprivate let subText2 = "tell us why this person would be a great expert"
+    fileprivate let subText1 = "tell us why you will make a great contributor"
+    fileprivate let subText2 = "tell us why this person would be a great contributor"
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -60,7 +60,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
         addBackButton()
         tabBarHidden = true
 
-        headerNav?.setNav(title: "Become Contributor", subtitle: selectedChannel.cTitle)
+        headerNav?.setNav(title: "Channel Contributors", subtitle: selectedChannel.cTitle)
     }
     
     fileprivate func setupScope() {
@@ -124,7 +124,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
     }
     
     internal func clickedApply() {
-        guard let user = User.currentUser, user.uID != nil else {
+        guard PulseUser.isLoggedIn() else {
             GlobalFunctions.showAlertBlock("Please Login", erMessage: "You need to be logged in to apply!")
             return
         }
@@ -134,8 +134,8 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
         dismissKeyboard()
         
         if selectedChannel != nil {
-            Database.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: applyText.text,
-                                             toUser: user, toName: user.name, completion: {(inviteID, error) in
+            PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: applyText.text,
+                                             toUser: PulseUser.currentUser, toName: PulseUser.currentUser.name, completion: {(inviteID, error) in
                 
                 if error == nil {
                     let applyConfirmation = UIAlertController(title: "Thanks for applying!",
@@ -172,7 +172,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
         dismissKeyboard()
         
         if selectedChannel != nil {
-            Database.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: recommendText.text,
+            PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: recommendText.text,
                                              toUser: nil, toName: recommendName.text ?? "", toEmail: recommendEmail.text!, completion: {(inviteID, error) in
             
                 if error == nil {
@@ -219,7 +219,7 @@ class ApplyExpertVC: PulseVC, XMSegmentedControlDelegate {
 }
 
 //MARK: Setup UI Items
-extension ApplyExpertVC {
+extension BecomeContributorVC {
     fileprivate func setupRecommendView() {
         view.addSubview(recommendView)
 
@@ -274,7 +274,7 @@ extension ApplyExpertVC {
         recommendText.layer.borderColor = UIColor.lightGray.cgColor
         recommendText.layer.borderWidth = 1.0
         
-        recommendText.text = "tell us why this person would be a great expert"
+        recommendText.text = "tell us why this person would be a great contributor"
         recommendText.textColor = UIColor.lightGray
         recommendText.delegate = self
         
@@ -298,8 +298,8 @@ extension ApplyExpertVC {
         recommendName.layer.addSublayer(GlobalFunctions.addBorders(self.recommendName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         recommendEmail.layer.addSublayer(GlobalFunctions.addBorders(self.recommendEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
         
-        recommendName.placeholder = "expert name"
-        recommendEmail.placeholder = "expert email"
+        recommendName.placeholder = "contributor name"
+        recommendEmail.placeholder = "contributor email"
         
         recommendName.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         recommendEmail.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
@@ -384,7 +384,7 @@ extension ApplyExpertVC {
 }
 
 //MARK: Text View and Text Field Delegate Methods
-extension ApplyExpertVC: UITextFieldDelegate, UITextViewDelegate {
+extension BecomeContributorVC: UITextFieldDelegate, UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         if !isMovedUp, textView == recommendText {
 

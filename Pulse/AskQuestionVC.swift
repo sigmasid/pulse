@@ -11,7 +11,7 @@ import UIKit
 class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedTag : Item!
-    public var selectedUser : User!
+    public var selectedUser : PulseUser!
     public var modalDelegate : ModalDelegate!
     
     fileprivate var observersAdded = false
@@ -103,7 +103,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         dismissKeyboard()
         
         if selectedTag != nil {
-            Database.askQuestion(parentItem: selectedTag, qText: questionBody.text, completion: {(success, error) in
+            PulseDatabase.askQuestion(parentItem: selectedTag, qText: questionBody.text, completion: {(success, error) in
                 if success {
                     let questionConfirmation = UIAlertController(title: "Question Posted!",
                                                                  message: "Thanks for your question. You will get a notification as soon as someone posts an answer",
@@ -139,7 +139,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
                 }
             })
         } else if selectedUser != nil {
-            Database.askUserQuestion(askUserID: selectedUser.uID!, qText: questionBody.text, completion: {(success, error) in
+            PulseDatabase.askUserQuestion(askUserID: selectedUser.uID!, qText: questionBody.text, completion: {(success, error) in
                 if success {
                     let personName = self.selectedUser.name ?? " the user"
                     let questionConfirmation = UIAlertController(title: "Question Posted!",
