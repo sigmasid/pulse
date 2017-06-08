@@ -10,7 +10,8 @@ import UIKit
 
 class ItemHeader: UICollectionReusableView {
     public var delegate : HeaderDelegate!
-    
+    fileprivate var loadingIndicator : UIView!
+    fileprivate var loadingAdded = false
     fileprivate var titleLabel = UILabel()
     lazy var headerMenu = PulseButton(size: .small, type: .ellipsis, isRound: true, background: .white, tint: .black)
     
@@ -40,9 +41,22 @@ class ItemHeader: UICollectionReusableView {
         super.prepareForReuse()
     }
     
-    func clickedMenu() {
+    public func clickedMenu() {
         if delegate != nil {
             delegate.clickedHeaderMenu()
+        }
+    }
+    
+    public func addLoadingIndicator(hide: Bool) {
+        if !hide, !loadingAdded {
+            headerMenu.setImage(nil, for: .normal)
+            loadingIndicator = headerMenu.addLoadingIndicator()
+            loadingAdded = true
+        } else {
+            headerMenu.setImage(UIImage(named: "ellipsis"), for: .normal)
+            loadingIndicator.removeFromSuperview()
+            headerMenu.isHidden = hide
+            loadingAdded = false
         }
     }
     

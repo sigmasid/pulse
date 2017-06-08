@@ -284,6 +284,7 @@ extension UIButton {
     func addLoadingIndicator() -> UIView {
         let _loadingIndicatorFrame = CGRect(x: 5, y: 0, width: self.frame.height, height: self.frame.height)
         let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.white)
+
         self.addSubview(_loadingIndicator)
         return _loadingIndicator
     }

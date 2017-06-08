@@ -325,7 +325,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         introVC = ContentIntroVC()
         if selectedItem != nil {
             switch selectedItem.type {
-            case .question, .answer, .perspective, .post, .thread, .interview, .session:
+            case .question, .answer, .perspective, .post, .thread, .interview, .session, .showcase:
                 //selected item is a tag
                 introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].tag?.itemTitle
             case .feedback, .posts, .perspectives: //case of tag - this is currently never the case

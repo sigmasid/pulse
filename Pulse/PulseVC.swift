@@ -23,6 +23,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     /** Collection View Vars **/
     internal let headerReuseIdentifier = "HeaderCell"
+    internal let footerReuseIdentifier = "FooterCell"
     internal let sectionReuseIdentifier = "SectionHeaderCell"
     internal let emptyReuseIdentifier = "EmptyCell"
     internal let reuseIdentifier = "ItemCell"

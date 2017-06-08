@@ -17,6 +17,7 @@ class Conversation : NSObject {
     var cLastMessage : String?
     var cLastMessageTime : Date!
     var cLastMessageType : MessageType!
+    var cLastMessageSender : PulseUser!
 
     dynamic var cCreated = false
 
@@ -34,6 +35,10 @@ class Conversation : NSObject {
             self.cLastMessage = snapshot.childSnapshot(forPath: "lastMessage").value as? String
         }
         
+        if snapshot.hasChild("lastMessageSender") {
+            self.cLastMessageSender = PulseUser(uID: snapshot.childSnapshot(forPath: "lastMessageSender").value as? String)
+        }
+        
         if snapshot.hasChild("lastMessageType"), let type = snapshot.childSnapshot(forPath: "lastMessageType").value as? String {
             switch type {
             case "interviewInvite":
@@ -42,8 +47,12 @@ class Conversation : NSObject {
                 self.cLastMessageType = .channelInvite
             case "perspectiveInvite":
                 self.cLastMessageType = .perspectiveInvite
-            case "questioneInvite":
-                self.cLastMessageType = .perspectiveInvite
+            case "questionInvite":
+                self.cLastMessageType = .questionInvite
+            case "showcaseInvite":
+                self.cLastMessageType = .showcaseInvite
+            case "contributorInvite":
+                self.cLastMessageType = .contributorInvite
             default:
                 self.cLastMessageType = .message
             }

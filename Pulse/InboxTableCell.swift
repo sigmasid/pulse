@@ -47,8 +47,29 @@ class InboxTableCell: UITableViewCell {
         userName.text = name?.capitalized
     }
     
-    func updateLastMessage(message : String?) {
-        lastMessage.text = message
+    func updateLastMessage(conversation: Conversation, sentByUser: Bool?) {
+        let firstName = conversation.cUser.getFirstName() ?? "user"
+        
+        if let sentByUser = sentByUser {
+            switch conversation.cLastMessageType! {
+            case .message:
+                lastMessage.text = conversation.cLastMessage
+            case .interviewInvite:
+                lastMessage.text = sentByUser ? "You sent an interview request" : "You received an interview request"
+            case .perspectiveInvite:
+                lastMessage.text = sentByUser ? "You invited \(firstName) to share perspectives" : "You are invited to share your perspectives"
+            case .contributorInvite:
+                lastMessage.text = sentByUser ? "You invited \(firstName) to become a contributor" : "You are invite to be a featured contributor!"
+            case .channelInvite:
+                lastMessage.text = sentByUser ? "You invited \(firstName) to a new channel" : "You are invited to check out a new channel"
+            case .questionInvite:
+                lastMessage.text = sentByUser ? "You sent a question to \(firstName)" : "You have a new question to answer"
+            case .showcaseInvite:
+                lastMessage.text = sentByUser ? "You invted \(firstName) to create a showcase" : "You got an invite to create a showcase"
+            }
+        } else {
+            lastMessage.text = conversation.cLastMessage
+        }
     }
     
     func updateMessageTime(time: String?) {

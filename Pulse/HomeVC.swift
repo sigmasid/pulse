@@ -17,13 +17,13 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     
     fileprivate var isLayoutSetup = false
     
-    //fileprivate var feed : Tag!
     fileprivate var notificationsSetup : Bool = false
     fileprivate var initialLoadComplete = false
     fileprivate var minItemsInFeed = 4
     fileprivate var hasReachedEnd = false
     fileprivate var updateIncrement = -7 //get one week's worth of data on first load
     fileprivate var emptyMessage = "Discover & add new channels to your feed"
+    fileprivate var footerMessage = "Fetching More..."
     fileprivate var shouldShowHeader = true //used for the "subscriptions" header - hide it if logged out or no subscriptions
     
     /** Collection View Vars **/
@@ -193,7 +193,9 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 self.getMoreItems(completion: { _ in })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
                 self.shouldShowHeader = false
+                self.footerMessage = "that's the end!"
                 self.emptyMessage = "Discover & add new channels to your feed"
+                self.hasReachedEnd = true
             } else {
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {
@@ -247,6 +249,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(HeaderChannelsCell.self, forCellWithReuseIdentifier: sectionReuseIdentifier)
             collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
+            collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionFooter, withReuseIdentifier: footerReuseIdentifier)
             
             view.addSubview(collectionView)
             
@@ -309,9 +312,8 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
-            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective || currentItem.type == .session
             //Get the image if content type is a post
-            if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
+            if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
                 PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
@@ -463,7 +465,17 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //headerView.delegate = self
             return headerView
-            
+        case UICollectionElementKindSectionFooter:
+            let footerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                             withReuseIdentifier: footerReuseIdentifier, for: indexPath) as! ItemHeader
+            switch indexPath.section {
+            case 1:
+                footerView.backgroundColor = UIColor.white
+                footerView.updateLabel(footerMessage)
+            default:
+                break
+            }
+            return footerView
         default: assert(false, "Unexpected element kind")
         }
         return UICollectionReusableView()
@@ -482,7 +494,7 @@ extension HomeVC {
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
-            case .post, .perspective:
+            case .post, .perspective, .showcase:
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
@@ -795,6 +807,14 @@ extension HomeVC {
 
 
 extension HomeVC: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
+        switch section {
+        case 1:
+            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
+        default:
+            return CGSize(width: collectionView.frame.width, height: 0)
+        }
+    }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         switch section {

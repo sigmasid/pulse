@@ -375,6 +375,8 @@ class PulseDatabase {
                 ["conversations/\(message.mID!)/\(messageKey)": ServerValue.timestamp() as AnyObject,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageType" : message.mType.rawValue,
+                 "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageSender" : user.uID!,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageSender" : user.uID!,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageID" : messageKey,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessage" : message.body,
@@ -392,11 +394,13 @@ class PulseDatabase {
                 ["conversations/\(messageKey)/\(messageKey)": ServerValue.timestamp() as AnyObject,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/conversationID" : messageKey,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageID" : messageKey,
+                "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageSender" : user.uID!,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessage" : message.body,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageType" : message.mType.rawValue,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/conversationID" : messageKey,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageID" : messageKey,
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageSender" : user.uID!,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessage" : message.body,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageType" : message.mType.rawValue,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
@@ -412,8 +416,10 @@ class PulseDatabase {
     /*** MARK START : DATABASE PATHS ***/
     static func setCurrentUserPaths() {
         if PulseUser.isLoggedIn() {
-            currentUserRef = usersRef.child(PulseUser.currentUser.uID!)
-            currentUserFeedRef = usersRef.child(PulseUser.currentUser.uID!).child(Element.Feed.rawValue)
+            if PulseUser.currentUser.uID != nil {
+                currentUserRef = usersRef.child(PulseUser.currentUser.uID!)
+                currentUserFeedRef = usersRef.child(PulseUser.currentUser.uID!).child(Element.Feed.rawValue)
+            }
         } else {
             currentUserRef = nil
             currentUserFeedRef = nil

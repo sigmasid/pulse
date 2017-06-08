@@ -38,7 +38,7 @@ class ItemCell: UICollectionViewCell {
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
                 titleLabel.numberOfLines = 2
 
-            case .post, .thread, .perspective, .session:
+            case .post, .thread, .perspective, .session, .showcase:
                 itemHeightAnchor.constant = defaultPostHeight
                 titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
                 titleLabel.numberOfLines = 2
@@ -105,7 +105,7 @@ class ItemCell: UICollectionViewCell {
                     attributedString.append(restAttributedString)
 
                 case .thread:
-                    let restAttributedString = NSAttributedString(string: " started thread", attributes: subRestAttributes)
+                    let restAttributedString = NSAttributedString(string: " created a thread", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
                 case .perspective:
@@ -118,6 +118,10 @@ class ItemCell: UICollectionViewCell {
                     
                 case .session:
                     let restAttributedString = NSAttributedString(string: " requested feedback", attributes: subRestAttributes)
+                    attributedString.append(restAttributedString)
+                    
+                case .showcase:
+                    let restAttributedString = NSAttributedString(string: " added a showcase", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
                 default:

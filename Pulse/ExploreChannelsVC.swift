@@ -171,14 +171,14 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         if let item = item as? Item {
             switch item.type {
                 
-            case .posts, .feedback, .perspectives, .interviews:
+            case .posts, .feedback, .perspectives, .interviews, .showcases:
                 
                 let seriesVC = SeriesVC()
                 seriesVC.selectedChannel = Channel(cID: item.cID)
                 navigationController?.pushViewController(seriesVC, animated: true)
                 seriesVC.selectedItem = item
             
-            case .perspective, .answer, .post:
+            case .perspective, .answer, .post, .showcase:
                 
                 showItemDetail(item: item, allItems: [item])
             
@@ -365,6 +365,8 @@ extension ExploreChannelsVC {
             case "invites", "invite":
                 guard PulseUser.isLoggedIn() else {
                     GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Please login", erMessage: "You need to be logged in to see the invite")
+                    toggleLoading(show: false, message: nil)
+
                     return
                 }
                 
@@ -453,7 +455,7 @@ extension ExploreChannelsVC {
     internal func showConfirmationMenu(status: Bool, inviteID: String) {
         PulseDatabase.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
             success ?
-                GlobalFunctions.showAlertBlock("All Set!", erMessage: "You have been confirmed as a contributor - get started & start creating!") :
+                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "All Set!", erMessage: "You have been confirmed as a contributor - get started & start creating!", buttonTitle: "done") :
                 GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite", erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
         })
     }

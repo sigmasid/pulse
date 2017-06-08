@@ -208,7 +208,9 @@ extension InboxVC: UITableViewDelegate, UITableViewDataSource {
             }
         }
         
-        cell.updateLastMessage(message: conversations[indexPath.row].cLastMessage)
+        let sentByUser : Bool? = conversations[indexPath.row].cLastMessageSender != nil ? conversations[indexPath.row].cLastMessageSender == PulseUser.currentUser : nil
+        
+        cell.updateLastMessage(conversation: conversations[indexPath.row], sentByUser: sentByUser)
         cell.updateMessageTime(time: conversations[indexPath.row].getLastMessageTime())
         return cell
     }

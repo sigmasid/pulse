@@ -147,6 +147,11 @@ class PulseUser: User {
     func isEditor(for channel : Channel) -> Bool {
         return editorChannels.contains(channel) ? true : false
     }
+    
+    func getFirstName() -> String? {
+        let firstNameArray = name?.components(separatedBy: " ")
+        return firstNameArray != nil ? firstNameArray![0] : nil
+    }
 
     
     func getLocation(completion: @escaping (String?) -> Void) {

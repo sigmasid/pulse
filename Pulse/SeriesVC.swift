@@ -241,7 +241,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     self.allItems[indexPath.row] = item
                     
                     //Get the image if content type is a post or perspectives thread
-                    if item.content == nil, item.type == .post || item.type == .thread || item.type == .session, !item.fetchedContent {
+                    if item.content == nil, item.shouldGetImage(), !item.fetchedContent {
                         PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
@@ -664,6 +664,8 @@ extension SeriesVC {
                         self.getFeedback()
                     case .posts:
                         self.addNewItem(selectedItem: self.selectedItem)
+                    case .showcases:
+                        self.startShowcase()
                     default: break
                     }
                 }))

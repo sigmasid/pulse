@@ -180,10 +180,14 @@ class Item: NSObject {
         case "interviewInvite":
             self.type = .interview
         case "showcaseInvite":
-            self.type = .showcase
+            self.type = .showcases
         default:
             self.type = .unknown
         }
+    }
+    
+    func shouldGetImage() -> Bool {
+        return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase
     }
     
     func childActionType() -> String {

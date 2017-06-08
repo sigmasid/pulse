@@ -21,10 +21,10 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 })
             } else if !selectedChannel.cDetailedCreated {
                 getChannelItems()
-                updateDataSource()
-            } else {
-                allItems = selectedChannel.items
                 updateHeader()
+            } else {
+                updateDataSource()
+                toggleLoading(show: false, message: nil)
             }
         }
     }
@@ -56,7 +56,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
 
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
-    
+    fileprivate var footerMessage = "Fetching More..."
     fileprivate var selectedShareItem : Any?
     
     override init() {
@@ -95,32 +95,56 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     internal func getChannelItems() {
         PulseDatabase.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { updatedChannel in
             self.startUpdateAt = self.endUpdateAt
-
+            
             if let updatedChannel = updatedChannel {
                 updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
-                self.updateIncrement = -7
-                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
-                self.toggleLoading(show: false, message: nil)
 
-            } else {
-                self.updateIncrement = self.updateIncrement * 2
-                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
-                self.getMoreChannelItems()
+                var indexPaths = [IndexPath]()
+                for (index, _) in updatedChannel.items.enumerated() {
+                    let newIndexPath = IndexPath(row: index , section: 1)
+                    indexPaths.append(newIndexPath)
+                }
+                
+                if self.collectionView == nil {
+                    self.setupScreenLayout()
+                }
+                
+                if !updatedChannel.items.isEmpty {
+                    self.collectionView.performBatchUpdates({
+                        self.collectionView?.insertItems(at: indexPaths)
+                        self.allItems.append(contentsOf: updatedChannel.items)
+                        
+                        self.collectionView?.reloadData()
+                        self.collectionView?.collectionViewLayout.invalidateLayout()
+                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+                        
+                    })
+                }
+
+                if self.collectionView.contentSize.height < self.view.frame.height || updatedChannel.items.count < 4 {
+                    //content fits the screen so fetch more
+                    self.getMoreChannelItems(completion: { _ in
+                        self.collectionView?.reloadData()
+                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+                    })
+                }
             }
         })
     }
     
     //get more items if scrolled to end
-    func getMoreChannelItems() {
+    func getMoreChannelItems(completion: @escaping (Bool) -> Void)  {
         
         PulseDatabase.getChannelItems(channelID: selectedChannel.cID, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { success, items in
-            if items.count < 4, self.updateIncrement > -365 { //max lookback is one year
+            if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
-                self.getMoreChannelItems()
+                self.getMoreChannelItems(completion: { _ in })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
+                self.footerMessage = "that's the end!"
                 self.hasReachedEnd = true
+                completion(true)
             } else {
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {
@@ -133,15 +157,18 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                     self.selectedChannel.items.append(contentsOf: items)
                     self.allItems.append(contentsOf: items)
                     
-                    self.updateIncrement = -7
+                    if items.count < 4 {
+                        self.getMoreChannelItems(completion: { success in completion(success)})
+                    } else {
+                        self.updateIncrement = -7
+                        completion(true)
+                    }
                 })
-                
-                self.startUpdateAt = self.endUpdateAt
-                self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
-                self.toggleLoading(show: false, message: nil)
-
             }
         })
+        
+        self.startUpdateAt = self.endUpdateAt
+        self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
     }
     
     //Once the channel is set and pulled from database -> reload the datasource for collection view
@@ -209,7 +236,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
             collectionView?.register(HeaderTagsCell.self, forCellWithReuseIdentifier: sectionReuseIdentifier)
             collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
-                        
+            collectionView?.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionFooter, withReuseIdentifier: footerReuseIdentifier)
+            
             view.addSubview(collectionView!)
             
             isLayoutSetup = true
@@ -358,7 +386,7 @@ extension ChannelVC {
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
             switch inviteType {
-            case .perspectiveInvite, .questionInvite:
+            case .perspectiveInvite, .questionInvite, .showcaseInvite:
                 if let currentItem = currentItem as? Item {
                     self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
                                             completion: { selectedShareItem , error in
@@ -542,7 +570,7 @@ extension ChannelVC {
         if let item = item as? Item {
             switch item.type {
                 
-            case .post, .perspective, .answer:
+            case .post, .perspective, .answer, .showcase:
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
@@ -710,7 +738,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
         case 1:
             //if near the end then get more items
             if indexPath.row == allItems.count - 3, !hasReachedEnd {
-                getMoreChannelItems()
+                getMoreChannelItems(completion: { _ in })
             }
             
             let currentItem = allItems[indexPath.row]
@@ -775,10 +803,8 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 }
             }
             
-            let shouldGetImage = currentItem.type == .post || currentItem.type == .thread || currentItem.type == .perspective || currentItem.type == .session
-            
             //Get the image if content type is a post
-            if currentItem.content == nil, shouldGetImage, !currentItem.fetchedContent {
+            if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
                 PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
@@ -838,7 +864,17 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 break
             }
             return headerView
-            
+        case UICollectionElementKindSectionFooter:
+            let footerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind,
+                                                                             withReuseIdentifier: footerReuseIdentifier, for: indexPath) as! ItemHeader
+            switch indexPath.section {
+            case 1:
+                footerView.backgroundColor = UIColor.white
+                footerView.updateLabel(footerMessage)
+            default:
+                break
+            }
+            return footerView
         default: assert(false, "Unexpected element kind")
         }
         return UICollectionReusableView()
@@ -853,6 +889,15 @@ extension ChannelVC: UICollectionViewDelegateFlowLayout {
             return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
         case 1:
             return CGSize(width: collectionView.frame.width, height: 0)
+        default:
+            return CGSize(width: collectionView.frame.width, height: 0)
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
+        switch section {
+        case 1:
+            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
         default:
             return CGSize(width: collectionView.frame.width, height: 0)
         }
