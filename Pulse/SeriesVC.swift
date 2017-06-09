@@ -59,7 +59,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     fileprivate func updateHeader() {
         addBackButton()
         headerNav?.followScrollView(collectionView, delay: 25.0)
-        headerNav?.setNav(title: selectedChannel.cTitle ?? selectedItem.itemTitle)
+        headerNav?.setNav(title: selectedItem.itemTitle, subtitle: selectedChannel.cTitle)
         headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
     }
     
@@ -111,10 +111,24 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     }
     
     internal func startShowcase() {
-        let newShowcase = NewShowcaseVC()
-        newShowcase.selectedChannel = selectedChannel
-        newShowcase.selectedItem = selectedItem
-        navigationController?.pushViewController(newShowcase, animated: true)
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "create Showcase", style: .default, handler: { (action: UIAlertAction!) in
+            self.addNewItem(selectedItem: self.selectedItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: { (action: UIAlertAction!) in
+            let newShowcase = NewShowcaseVC()
+            newShowcase.selectedChannel = self.selectedChannel
+            newShowcase.selectedItem = self.selectedItem
+            self.navigationController?.pushViewController(newShowcase, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
     }
     
     internal func getFeedback() {
@@ -462,11 +476,15 @@ extension SeriesVC {
         case .post, .showcase:
             showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
         case .question, .thread, .interview:
+            toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
             PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
                 success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
+                self.toggleLoading(show: false, message: nil)
             })
         case .session:
+            toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
             PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+                self.toggleLoading(show: false, message: nil)
                 if success, items.count > 1 {
                     //since ordering is cron based - move the first 'question' item to front
                     if let lastItem = items.last {
@@ -580,7 +598,7 @@ extension SeriesVC {
                     self.addNewItem(selectedItem: currentItem)
                 }))
             
-                menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: { (action: UIAlertAction!) in
                     self.showInviteMenu(currentItem: currentItem)
                 }))
             }
@@ -626,6 +644,7 @@ extension SeriesVC {
                     case .posts:
                         self.addNewItem(selectedItem: self.selectedItem)
                     case .showcases:
+                        menu.dismiss(animated: false, completion: nil)
                         self.startShowcase()
                     default: break
                     }
@@ -706,7 +725,7 @@ extension SeriesVC {
     }
     
     internal func showInviteMenu(currentItem : Item) {
-        let menu = UIAlertController(title: "Invite Contributors", message: "know someone who can add to the discussion?", preferredStyle: .actionSheet)
+        let menu = UIAlertController(title: "Invite Guests", message: "know someone who is an expert? Invite them below", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedShareItem = currentItem

@@ -146,7 +146,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     internal func addNewItem(selectedItem: Item) {
         dismiss(animated: true, completion: { _ in
             self.isNavigationBarHidden = true
-            self.showCamera(true)
+            self.showCamera(animated: true)
         })
     }
     /** End Browse Content Delegate **/
@@ -243,6 +243,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         //recordedVideoVC.selectedItem = selectedItem
         recordedVideoVC.isNewEntry = false
         recordedVideoVC.recordedItems = recordedItems
+        recordedVideoVC.currentItemIndex = recordedVideoVC.currentItemIndex
         
         pushViewController(recordedVideoVC, animated: true)
     }
@@ -273,34 +274,40 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             returnToAnswers()
             popToViewController(contentDetailVC, animated: true)
         } else {
-            self.dismiss(animated: true, completion: nil)
+            let doneRecordingMenu = UIAlertController(title: "Success!",
+                                                    message: "You are all done. Thanks for your post!",
+                                                    preferredStyle: .actionSheet)
             
-            if completedRecordingDelegate != nil {
-                completedRecordingDelegate.doneRecording(success: success)
-            }
+            doneRecordingMenu.addAction(UIAlertAction(title: "done", style: .destructive, handler: { (action: UIAlertAction!) in
+                self.dismiss(animated: true, completion: nil)
+                
+                if self.completedRecordingDelegate != nil {
+                    self.completedRecordingDelegate.doneRecording(success: success)
+                }
+            }))
+            
+            present(doneRecordingMenu, animated: true, completion: nil)
         }
     }
     
     func noItemsToShow(_ currentVC : UIViewController) {
-        selectedItem.checkVerifiedInput(completion: { success, error in
-            if success {
-                self.showCamera()
-            } else {
-                self.hasMoreItems = false
-                self.dismiss(animated: true, completion: nil)
-            }
-        })
-    }
-    
-    func showCamera() {
-        if !isCameraLoaded {
-            showCamera(true)
-            isCameraLoaded = true
+        if selectedItem != nil {
+            selectedItem.checkVerifiedInput(completion: { success, error in
+                if success {
+                    self.showCamera()
+                } else {
+                    self.hasMoreItems = false
+                    self.dismiss(animated: true, completion: nil)
+                }
+            })
+        } else {
+            self.dismiss(animated: true, completion: nil)
         }
     }
     
-    func showCamera(_ animated : Bool) {
+    func showCamera(animated : Bool = true, mode: CameraOutputMode = .videoWithMic) {
         cameraVC = CameraVC()
+        cameraVC.cameraMode = mode
         cameraVC.delegate = self
         cameraVC.screenTitle = selectedItem.itemTitle
         
@@ -308,6 +315,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         panDismissInteractionController.delegate = self
         
         isNavigationBarHidden = true
+        isCameraLoaded = true
+        
         pushViewController(cameraVC, animated: animated)
     }
     
@@ -324,21 +333,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     func showIntro() {
         introVC = ContentIntroVC()
         if selectedItem != nil {
-            switch selectedItem.type {
-            case .question, .answer, .perspective, .post, .thread, .interview, .session, .showcase:
-                //selected item is a tag
-                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].tag?.itemTitle
-            case .feedback, .posts, .perspectives: //case of tag - this is currently never the case
-                //selected item is the parent tag
-                introVC?.itemTitle = selectedItem != nil ? selectedItem.itemTitle : allItems[itemIndex].itemTitle
-            default: break
-            }
-            
-            introVC?.numAnswers = allItems.count
-            
-            if let image = selectedItem.content as? UIImage {
-                introVC?.image = image
-            }
+            introVC?.item = selectedItem
             
             isNavigationBarHidden = true
             pushViewController(introVC!, animated: true)
@@ -374,7 +369,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         
         if isCover {
             isAddingCover = true
-            cameraVC.screenTitle = "choose a cover image for your post"
+            cameraVC.updateOverlayTitle(title: "take or choose a cover image")
+            cameraVC.cameraMode = .stillImage
         } else {
             isAddingMoreItems = true
         }
@@ -392,6 +388,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         self.recordedItems = recordedItems
         
         popViewController(animated: true)
+
         isAddingMoreItems = false
         showCamera()
     }

@@ -50,7 +50,7 @@ class ItemHeader: UICollectionReusableView {
     public func addLoadingIndicator(hide: Bool) {
         if !hide, !loadingAdded {
             headerMenu.setImage(nil, for: .normal)
-            loadingIndicator = headerMenu.addLoadingIndicator()
+            loadingIndicator = headerMenu.addLoadingIndicator(color: .black)
             loadingAdded = true
         } else {
             headerMenu.setImage(UIImage(named: "ellipsis"), for: .normal)

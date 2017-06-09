@@ -281,9 +281,9 @@ extension UIButton {
         self.backgroundColor = UIColor(red: 57/255, green: 63/255, blue: 75/255, alpha: 1.0 )
     }
     
-    func addLoadingIndicator() -> UIView {
+    func addLoadingIndicator(color: UIColor = UIColor.white) -> UIView {
         let _loadingIndicatorFrame = CGRect(x: 5, y: 0, width: self.frame.height, height: self.frame.height)
-        let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: UIColor.white)
+        let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: color)
 
         self.addSubview(_loadingIndicator)
         return _loadingIndicator

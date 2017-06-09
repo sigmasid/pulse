@@ -253,20 +253,20 @@ class RecordingOverlay: UIView {
     }
     
     func addPagers() {
-        let _pager = UIView()
-        _pager.translatesAutoresizingMaskIntoConstraints = false
-        _pager.heightAnchor.constraint(equalTo: _pager.widthAnchor).isActive = true
-        _pager.backgroundColor = .pulseBlue
+        let pagerButton = UIView()
+        pagerButton.translatesAutoresizingMaskIntoConstraints = false
+        pagerButton.heightAnchor.constraint(equalTo: pagerButton.widthAnchor).isActive = true
+        pagerButton.backgroundColor = .pulseBlue
         
         if pagersStack.arrangedSubviews.last != nil {
             pagersStack.arrangedSubviews.last!.backgroundColor = .white
         }
         
-        pagersStack.addArrangedSubview(_pager)
+        pagersStack.addArrangedSubview(pagerButton)
         
-        _pager.layoutIfNeeded()
-        _pager.layer.cornerRadius = _pager.frame.width / 2
-        _pager.layer.masksToBounds = true
+        pagerButton.layoutIfNeeded()
+        pagerButton.layer.cornerRadius = pagerButton.frame.width / 2
+        pagerButton.layer.masksToBounds = true
     }
     
     func removePager() {

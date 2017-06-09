@@ -229,38 +229,40 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             controlsOverlay.getButton(.post).isEnabled = false
             aPlayer.pause()
             
-            if coverAdded {
+            if let firstItem = recordedItems.first, firstItem.needsCover() && !coverAdded {
+                //if cover image is needed - ask user if they want to add one
+                confirmPost()
+            } else {
+                //continue w/ the post
                 controlsOverlay.addProgressLabel("Posting...")
                 controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
                 uploadItems(allItems: recordedItems)
-            } else {
-                confirmPost()
             }
         }
     }
     
     fileprivate func confirmPost() {
-        let confirmLogout = UIAlertController(title: "Post",
+        let confirmPostMenu = UIAlertController(title: "Post",
                                               message: "Would you like to add a cover image? Cover images help content stand out.",
                                               preferredStyle: .actionSheet)
         
-        confirmLogout.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: { (action: UIAlertAction!) in
+        confirmPostMenu.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: { (action: UIAlertAction!) in
             if let delegate = self.delegate {
                 delegate.addMoreItems(self, recordedItems: self.recordedItems, isCover : true)
             }
         }))
         
-        confirmLogout.addAction(UIAlertAction(title: "continue Posting", style: .destructive, handler: { (action: UIAlertAction!) in
+        confirmPostMenu.addAction(UIAlertAction(title: "continue Posting", style: .destructive, handler: { (action: UIAlertAction!) in
             self.controlsOverlay.addProgressLabel("Posting...")
             self.controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
             self.uploadItems(allItems: self.recordedItems)
         }))
         
-        confirmLogout.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            confirmLogout.dismiss(animated: true, completion: nil)
+        confirmPostMenu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            confirmPostMenu.dismiss(animated: true, completion: nil)
         }))
         
-        present(confirmLogout, animated: true, completion: nil)
+        present(confirmPostMenu, animated: true, completion: nil)
     }
     
     ///upload video to firebase and update current item with URL upon success

@@ -20,7 +20,7 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
 
     //Update Profile Image
     internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
-    fileprivate lazy var cameraVC : CameraVC = CameraVC()
+    fileprivate var cameraVC : CameraVC!
     
     //View for Profile Image
     internal var profilePicView = UIView()
@@ -187,8 +187,10 @@ extension SettingsTableVC: CameraDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
     func showCamera() {
         guard let nav = navigationController else { return }
-        
+        cameraVC = CameraVC()
+
         cameraVC.delegate = self
+        cameraVC.cameraMode = .stillImage
         cameraVC.screenTitle = "smile!"
         
         panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)

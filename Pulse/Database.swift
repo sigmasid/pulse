@@ -2071,7 +2071,7 @@ class PulseDatabase {
         _metadata.contentType = "image/jpeg"
         
         if PulseUser.isLoggedIn(), let _imageToResize = UIImage(data: imgData), let _img = resizeImage(_imageToResize, newWidth: 600){
-            usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(_img, metadata: nil) { (metadata, error) in
+            usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(_img, metadata: _metadata) { (metadata, error) in
                 if let metadata = metadata {
                     _downloadURL = metadata.downloadURL()
                     updateUserData(.photoURL, value: String(describing: _downloadURL!)) { success, error in
@@ -2083,7 +2083,7 @@ class PulseDatabase {
             }
             
             if let _thumbImageData = resizeImage(UIImage(data: imgData)!, newWidth: 100) {
-                usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: nil) { (metadata, error) in
+                usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: _metadata) { (metadata, error) in
                     if let url = metadata?.downloadURL() {
                         let userPost = ["thumbPic" : String(describing: url)]
                         usersPublicSummaryRef.child(PulseUser.currentUser.uID!).updateChildValues(userPost)

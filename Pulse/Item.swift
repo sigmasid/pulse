@@ -186,11 +186,11 @@ class Item: NSObject {
         }
     }
     
-    func shouldGetImage() -> Bool {
+    internal func shouldGetImage() -> Bool {
         return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase
     }
     
-    func childActionType() -> String {
+    internal func childActionType() -> String {
         switch type {
         case .feedback: return "get"
         case .session: return "give"
@@ -208,7 +208,7 @@ class Item: NSObject {
         }
     }
     
-    func childType(plural: Bool = false) -> String {
+    internal func childType(plural: Bool = false) -> String {
         switch type {
         case .feedback: return plural ? " feedback" : " feedback"
         case .posts: return plural ? " posts" : " post"
@@ -228,7 +228,7 @@ class Item: NSObject {
         }
     }
     
-    func childItemType() -> ItemTypes {
+    internal func childItemType() -> ItemTypes {
         switch type {
         case .posts: return .post
         case .thread: return .perspective
@@ -243,7 +243,7 @@ class Item: NSObject {
         }
     }
     
-    func inviteType() -> MessageType? {
+    internal func inviteType() -> MessageType? {
         switch type {
         case .thread: return .perspectiveInvite
         case .question: return .questionInvite
@@ -279,20 +279,25 @@ class Item: NSObject {
         }
     }
     
-    fileprivate func needsCover() -> Bool {
-        switch type {
-        case .post: return true
-        case .perspective: return false
-        case .answer: return false
-        case .session: return false
-        case .interview: return true
-        case .showcase: return true
-            
-        default: return false
+    internal func needsCover() -> Bool {
+        if self.contentType == .recordedVideo || contentType == .albumVideo {
+            switch type {
+            case .post: return true
+            case .perspective: return false
+            case .answer: return false
+            case .session: return false
+            case .interview: return true
+            case .showcase: return true
+                
+            default: return false
+            }
+        } else {
+            //if it's an image - don't need a cover
+            return false
         }
     }
     
-    func checkVerifiedInput(completion: @escaping (Bool, String?) -> Void) {
+    internal func checkVerifiedInput(completion: @escaping (Bool, String?) -> Void) {
         if !PulseUser.isLoggedIn() {
             completion(false, "Please login to continue")
         } else if let inputOpenToUser = acceptsInput() {
@@ -329,11 +334,11 @@ class Item: NSObject {
         }
     }
     
-    func getCreatedAt() -> String? {
+    internal func getCreatedAt() -> String? {
         return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt!) : nil
     }
     
-    func createShareLink(invite: Bool = false, completion: @escaping (String?) -> Void) {
+    internal func createShareLink(invite: Bool = false, completion: @escaping (String?) -> Void) {
         if !invite {
             PulseDatabase.createShareLink(linkString: "i/"+itemID, completion: { link in
                 completion(link)

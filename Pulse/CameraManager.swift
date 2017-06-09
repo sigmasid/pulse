@@ -398,8 +398,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      */
     open func capturePictureWithCompletion(_ imageCompletion: @escaping (UIImage?, Bool, NSError?) -> Void) {
         self.capturePhoto { data, capturing, error in
-            
-            guard error == nil, let imageData = data else {
+            guard let imageData = data else {
                 imageCompletion(nil, capturing, error)
                 return
             }
@@ -428,6 +427,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                     
                 })
             }
+                
             imageCompletion(UIImage(data: imageData), capturing, nil)
                 
             })
@@ -513,8 +513,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             // Use a separate object for the photo capture delegate to isolate each capture life cycle.
             let photoCaptureDelegate = PhotoCaptureDelegate(with: self.photoSettings, shouldSaveToLibrary: false, willCapturePhotoAnimation: {
                 
-                imageCompletion(nil, true, nil)
-                
             }, capturingLivePhoto: { capturing in
                 /*
                  Because Live Photo captures can overlap, we need to keep track of the
@@ -527,7 +525,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 self.sessionQueue.async { [unowned self] in
                     self.inProgressPhotoCaptureDelegates[photoCaptureDelegate.requestedPhotoSettings.uniqueID] = nil
                 }
-                
                 imageCompletion(photoData, false, nil)
                 
                 }

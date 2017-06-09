@@ -14,7 +14,14 @@ protocol CameraManagerProtocol: class {
 }
 
 class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
-    public var cameraMode : CameraOutputMode = .videoWithMic
+    public var cameraMode : CameraOutputMode = .videoWithMic {
+        didSet {
+            camera.cameraOutputMode = cameraMode
+            if longTap != nil {
+                longTap.isEnabled = cameraMode == .stillImage ? false : true
+            }
+        }
+    }
     
     fileprivate let camera = CameraManager()
     fileprivate var cameraOverlay : CameraOverlayView!
@@ -86,6 +93,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     fileprivate func stopVideoCapture() {
         cameraOverlay.stopCountdown()
         camera.stopRecordingVideo({ (videoURL, image, error) -> Void in
+
             if let errorOccured = error {
                 self.camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
@@ -208,6 +216,10 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.album).addTarget(self, action: #selector(showAlbumPicker), for: UIControlEvents.touchUpInside)
+    }
+    
+    func updateOverlayTitle(title: String) {
+        cameraOverlay.updateTitle(title)
     }
     
     func respondToShutterTap() {
