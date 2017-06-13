@@ -13,7 +13,7 @@ import TwitterKit
 import FBSDKLoginKit
 
 class LoginVC: PulseVC, UITextFieldDelegate {
-    weak var loginVCDelegate : ContentDelegate?
+    public weak var loginVCDelegate : ContentDelegate?
     var nav : PulseNavVC!
     
     @IBOutlet weak var emailLabelButton: UIButton!
@@ -164,7 +164,11 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         dismissKeyboard()
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
-        Auth.auth().signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) { (aUser, blockError) in
+        Auth.auth().signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) {[weak self] (aUser, blockError) in
+            guard let `self` = self else {
+                return
+            }
+            
             if let blockError = blockError {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
                 sender.setEnabled()
@@ -174,13 +178,13 @@ class LoginVC: PulseVC, UITextFieldDelegate {
                 case .invalidEmail: self._emailErrorLabel.text = "invalid email"
                 case .userNotFound: self._emailErrorLabel.text = "email not found"
 
-                default: self.nav?.setNav(title: "error signing in")
+                default: self.headerNav?.setNav(title: "Login", subtitle: "error logging in")
                 }
             }
             else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loadingIndicator)
-                self.nav?.setNav(title: "Welcome")
+                self.headerNav?.setNav(title: "Welcome")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
                 self.userEmail.text = ""

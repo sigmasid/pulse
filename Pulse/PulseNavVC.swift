@@ -16,26 +16,6 @@ public enum NavBarState { case expanded, collapsed, scrolling }
  - expanded: the navigation bar is fully visible
  - scrolling: the navigation bar is transitioning to either `Collapsed` or `Scrolling`
  */
-
-public protocol PulseNavControllerDelegate: NSObjectProtocol {
-    /**
-     Called when the state of the navigation bar changes
-     */
-    func scrollingNavigationController(_ controller: PulseNavVC, didChangeState state: NavigationBarState)
-    
-    /**
-     Called when the state of the navigation bar is about to change
-     */
-    func scrollingNavigationController(_ controller: PulseNavVC, willChangeState state: NavigationBarState)
-}
-
-
-/**
- The state of the navigation bar
- - collapsed: the navigation bar is fully collapsed
- - expanded: the navigation bar is fully visible
- - scrolling: the navigation bar is transitioning to either `Collapsed` or `Scrolling`
- */
 public enum NavigationBarState: Int {
     case collapsed, expanded, scrolling
 }

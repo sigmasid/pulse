@@ -62,9 +62,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     func checkReachability() {
         guard let r = reachability else { return }
         if r.isReachable, !isLoaded {
-            self.setupControllers()
+            setupControllers()
             
-            PulseDatabase.checkCurrentUser { success in
+            PulseDatabase.checkCurrentUser {[weak self] success in
+                guard let `self` = self else { return }
+                
                 if let link = self.universalLink {
                     self.selectedIndex = 1
                     self.exploreChannelsVC.universalLink = link

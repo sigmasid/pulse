@@ -17,10 +17,10 @@ class PanEdgeInteractionController: UIPercentDrivenInteractiveTransition {
     
     fileprivate var lastProgress: CGFloat?
     
-    func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, edge : UIRectEdge) {
-        self.fromViewController = fromViewController
-        self.toViewController = toViewController
-        prepareGestureRecognizerInView(fromViewController.view, edge: edge)
+    func wireToViewController(_ _fromViewController: UIViewController, _toViewController: UIViewController?, edge : UIRectEdge) {
+        fromViewController = _fromViewController
+        toViewController = _toViewController
+        prepareGestureRecognizerInView(_fromViewController.view, edge: edge)
     }
     
     fileprivate func prepareGestureRecognizerInView(_ view: UIView, edge : UIRectEdge) {

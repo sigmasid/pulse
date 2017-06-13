@@ -847,8 +847,8 @@ class PulseDatabase {
         channelItems.queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for item in snap.children {
-                    if let item = item as? DataSnapshot {
-                        let item = Item(itemID: item.key, snapshot: item)
+                    if let itemSnap = item as? DataSnapshot {
+                        let item = Item(itemID: itemSnap.key, snapshot: itemSnap)
                         item.cID = channel.cID
                         item.cTitle = channel.cTitle
                         
@@ -900,7 +900,7 @@ class PulseDatabase {
                 completion(nil, _error as NSError?)
             } else {
                 saveUserToDatabase(_user!, completion: { (success , error) in
-                    error != nil ? completion(nil, error) : completion(PulseUser(user: _user!), nil)
+                    error != nil ? completion(nil, error) : completion(PulseUser(uID: _user?.uid), nil)
                 })
             }
         }
@@ -1342,20 +1342,11 @@ class PulseDatabase {
             collectionPost["itemCollection/\(item.itemID)"] = post
         }
         
-        //don't add entry to chanel items for session // for feedback - will be a new itemID generated below // interview has only one combined entry
-        if parentItem.type != .interview, parentItem.type != .session, parentItem.type != .feedback {
-            collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
-        }
-        
-        //only add one entry for user for an interview
-        if parentItem.type != .interview {
-            collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
-        }
-        
         //if it's an item in response to a feedback request - add the new item and update the created at for channelItems - keeps only one post for each feedback request
         if parentItem.type == .session, item.type == .session {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = ServerValue.timestamp() as AnyObject
+            collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
             
         //if it's new feedback session then add it to channel items & series but with the new key
@@ -1371,10 +1362,21 @@ class PulseDatabase {
             collectionPost["itemCollection/\(feedbackItemKey)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["itemCollection/\(parentItem.itemID)/\(feedbackItemKey)"] = item.type.rawValue as AnyObject
             collectionPost["items/\(feedbackItemKey)"] = channelPost
-
-        } else {
-        //if any other item - add the actual item to the series collection
+            collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+        }
+        //if it's an item in response to a perspective request - add the new item and update the created at for channelItems - keeps only one post for each thread
+        else if parentItem.type == .thread, item.type == .perspective {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = ServerValue.timestamp() as AnyObject
+            collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+        }
+            
+        //if any other except interview - add the actual item to the series collection, add the item to channel & update user
+        //interviews are added to separate collection & only one entry is added
+        else if parentItem.type != .interview {
+            collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
+            collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (blockError, ref) in

@@ -66,6 +66,8 @@ class InboxTableCell: UITableViewCell {
                 lastMessage.text = sentByUser ? "You sent a question to \(firstName)" : "You have a new question to answer"
             case .showcaseInvite:
                 lastMessage.text = sentByUser ? "You invted \(firstName) to create a showcase" : "You got an invite to create a showcase"
+            case .feedbackInvite:
+                lastMessage.text = sentByUser ? "You invted \(firstName) to give feed" : "You got an invite to give feedback"
             }
         } else {
             lastMessage.text = conversation.cLastMessage

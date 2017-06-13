@@ -19,7 +19,7 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
         }
     }
     
-    public var delegate: SelectionDelegate!
+    public weak var delegate: SelectionDelegate!
     public var selectedChannel : Channel!
     
     private var collectionView : UICollectionView!
@@ -36,6 +36,13 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        items = []
+        delegate = nil
+        selectedChannel = nil
+        collectionView = nil
     }
     
     fileprivate func setupChannelHeader() {
@@ -88,7 +95,11 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         cell.delegate = self
         
         if item.content == nil, !item.fetchedContent {
-            PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
+            PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] data, error in
+                guard let `self` = self else {
+                    return
+                }
+                
                 if let data = data {
                     
                     self.items[indexPath.row].content = UIImage(data: data)

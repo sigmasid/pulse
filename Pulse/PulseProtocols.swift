@@ -22,7 +22,7 @@ protocol ParentDelegate: class {
     func dismissVC(_ viewController : UIViewController)
 }
 
-protocol ParentTextViewDelegate {
+protocol ParentTextViewDelegate: class {
     func dismiss(_ view : UIView)
     func buttonClicked(_ text: String, sender: UIView)
 }
@@ -92,3 +92,42 @@ protocol BrowseContentDelegate: class {
 protocol ModalDelegate : class {
     func userClosedModal(_ viewController : UIViewController)
 }
+
+protocol CameraManagerProtocol: class {
+    func didReachMaxRecording(_ fileURL : URL?, image: UIImage?, error : NSError?)
+}
+
+protocol LoadingDelegate : class {
+    func clickedRefresh()
+}
+
+protocol PreviewPlayerItemDelegate: class {
+    func itemStatusReady()
+}
+
+protocol searchVCDelegate: class {
+    func userCancelledSearch()
+    func userSelectedSearchResult(type : ItemTypes?, id : String)
+}
+
+
+/**
+ The state of the navigation bar
+ - collapsed: the navigation bar is fully collapsed
+ - expanded: the navigation bar is fully visible
+ - scrolling: the navigation bar is transitioning to either `Collapsed` or `Scrolling`
+ */
+
+public protocol PulseNavControllerDelegate: NSObjectProtocol {
+    /**
+     Called when the state of the navigation bar changes
+     */
+    func scrollingNavigationController(_ controller: PulseNavVC, didChangeState state: NavigationBarState)
+    
+    /**
+     Called when the state of the navigation bar is about to change
+     */
+    func scrollingNavigationController(_ controller: PulseNavVC, willChangeState state: NavigationBarState)
+}
+
+

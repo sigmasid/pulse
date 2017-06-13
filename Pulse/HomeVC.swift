@@ -128,7 +128,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     internal func updateFeed() {
 
         if PulseUser.isLoggedIn() {
-            PulseDatabase.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
+            PulseDatabase.createFeed(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] items in
+                guard let `self` = self else {
+                    return
+                }
+                
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {
                     let newIndexPath = IndexPath(row: index , section: 1)
@@ -186,7 +190,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     //get more items if scrolled to end
     internal func getMoreItems(completion: @escaping (Bool) -> Void) {
         
-        PulseDatabase.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { items in
+        PulseDatabase.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] items in
+            guard let `self` = self else {
+                return
+            }
+            
             if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
@@ -314,7 +322,11 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
-                PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (data, error) in
+                    guard let `self` = self else {
+                        return
+                    }
+                    
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
                         
@@ -351,8 +363,8 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 } else {
                     // Get the user details
-                    PulseDatabase.getUser(currentItem.itemUserID, completion: {(user, error) in
-                        if let user = user {
+                    PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
+                        if let user = user, let `self` = self {
                             self.allItems[indexPath.row].user = user
                             self.allUsers.append(user)
                             DispatchQueue.main.async {
@@ -506,14 +518,17 @@ extension HomeVC {
                 
                 toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
                 
-                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
                     self.toggleLoading(show: false, message: nil)
                     success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
                 })
             
             case .session:
                 
-                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+
                     if success, items.count > 1 {
                         //since ordering is cron based - move the first 'question' item to front
                         if let lastItem = items.last {
@@ -550,7 +565,9 @@ extension HomeVC {
         if let selectedShareItem = selectedShareItem {
             
             let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
-            self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: { _ , _ in
+            self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: {[weak self] _ , _ in
+                guard let `self` = self else { return }
+
                 self.selectedShareItem = nil
             })
             
@@ -568,7 +585,9 @@ extension HomeVC {
     internal func showNoItemsMenu(selectedItem : Item) {
         let menu = UIAlertController(title: "Sorry! No\(selectedItem.childType(plural: true)) yet", message: nil, preferredStyle: .actionSheet)
         
-        selectedItem.checkVerifiedInput(completion: { success, error in
+        selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
                 menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
                 
@@ -698,7 +717,9 @@ extension HomeVC {
         let currentItem = allItems[itemRow]
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        currentItem.checkVerifiedInput(completion: { success, error in
+        currentItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
                 menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
                     self.addNewItem(selectedItem: currentItem)
@@ -780,7 +801,9 @@ extension HomeVC {
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
             self.toggleLoading(show: true, message: "loading invite options", showIcon: true)
             let selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
-            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: { selectedShareItem , error in
+            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: {[weak self] selectedShareItem , error in
+                guard let `self` = self else { return }
+
                 if error == nil, let selectedShareItem = selectedShareItem {
                     let shareText = "Can you add \(currentItem.childActionType())\(currentItem.childType()) on '\(currentItem.itemTitle)'"
                     self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
@@ -862,7 +885,7 @@ extension HomeVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame

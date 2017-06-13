@@ -10,9 +10,9 @@ import UIKit
 
 class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
-    var watchedFullPreview: Bool = false
-    var contentDelegate : BrowseContentDelegate!
-    var modalDelegate : ModalDelegate!
+    public var watchedFullPreview: Bool = false
+    public weak var contentDelegate : BrowseContentDelegate!
+    public weak var modalDelegate : ModalDelegate!
     /** End Delegate Vars **/
     
     //Main data source var
@@ -28,7 +28,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     public var selectedChannel : Channel!
     public var selectedItem : Item! {
         didSet {
-            if allItems.isEmpty {
+            if selectedItem != nil, allItems.isEmpty {
                 PulseDatabase.getItemCollection(selectedItem.itemID, completion: {(success, items) in
                     if success {
                         let type = self.selectedItem.type == .question ? "answer" : "post"
@@ -110,7 +110,14 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
         updateHeader()
     }
     
-    func setupLayout() {
+    deinit {
+        allItems = []
+        itemStack = []
+        selectedChannel = nil
+        selectedItem = nil
+    }
+    
+    fileprivate func setupLayout() {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
         
@@ -401,7 +408,7 @@ extension BrowseContentVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame

@@ -9,10 +9,6 @@
 import UIKit
 import FirebaseDatabase
 
-protocol CameraManagerProtocol: class {
-    func didReachMaxRecording(_ fileURL : URL?, image: UIImage?, error : NSError?)
-}
-
 class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     public var cameraMode : CameraOutputMode = .videoWithMic {
         didSet {
@@ -23,9 +19,10 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         }
     }
     
-    fileprivate let camera = CameraManager()
+    fileprivate var camera = CameraManager()
     fileprivate var cameraOverlay : CameraOverlayView!
     fileprivate var loadingOverlay : LoadingView!
+    fileprivate var cameraLayer : UIView!
     
     /* duration set in milliseconds */
     fileprivate let videoDuration : Double = 60
@@ -36,22 +33,58 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     
     fileprivate var tap : UITapGestureRecognizer!
     fileprivate var longTap : UILongPressGestureRecognizer!
+    fileprivate var zoomPinch : UIPinchGestureRecognizer!
     
     override func viewDidLoad() {
-            super.viewDidLoad()
+        super.viewDidLoad()
+    }
+    
+    deinit {
+        print("camera deinit fired")
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        camera.stopAndRemoveCaptureSession()
+        
+        if cameraOverlay != nil {
+            cameraOverlay.removeFromSuperview()
+            cameraOverlay = nil
+        }
+        
+        if loadingOverlay != nil {
+            loadingOverlay.removeFromSuperview()
+            loadingOverlay = nil
+        }
+        
+        if cameraLayer != nil {
+            cameraLayer.removeFromSuperview()
+            cameraLayer = nil
+        }
+        
+        delegate = nil
+        screenTitle = nil
+        
+        tap = nil
+        longTap = nil
+        zoomPinch = nil
     }
     
     override func viewWillAppear(_ animated: Bool) {
         if !isLoaded {
-            let zoomPinch = UIPinchGestureRecognizer()
+            zoomPinch = UIPinchGestureRecognizer()
             zoomPinch.delegate = self
+            
             camera.maxRecordingDelegate = self
             
             view.isUserInteractionEnabled = true
             view.isMultipleTouchEnabled = true
             view.addGestureRecognizer(zoomPinch)
             
-            cameraOverlay = CameraOverlayView(frame: UIScreen.main.bounds)
+            cameraOverlay = CameraOverlayView(frame: view.bounds)
+            cameraLayer = UIView(frame: view.bounds)
+            view.addSubview(cameraLayer)
             
             setupLoading()
             setupCamera()
@@ -74,7 +107,11 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     
     //Camera is in still image mode
     fileprivate func takeStillImage() {
-        camera.capturePictureWithCompletion({ (image, capturing, error) in
+        camera.capturePictureWithCompletion({[weak self] (image, capturing, error) in
+            guard let `self` = self else {
+                return
+            }
+            
             if capturing {
                 self.delegate!.doneRecording(isCapturing: true, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
             } else if let image = image {
@@ -92,8 +129,11 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     
     fileprivate func stopVideoCapture() {
         cameraOverlay.stopCountdown()
-        camera.stopRecordingVideo({ (videoURL, image, error) -> Void in
-
+        camera.stopRecordingVideo({[weak self] (videoURL, image, error) -> Void in
+            guard let `self` = self else {
+                return
+            }
+            
             if let errorOccured = error {
                 self.camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
@@ -114,8 +154,8 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
 
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
-            } else {
-                delegate!.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+            } else if let delegate = delegate {
+                delegate.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
                 camera.stopCaptureSession()
             }
         } else {
@@ -124,8 +164,8 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
-            } else {
-                delegate!.doneRecording(isCapturing: false, url: fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+            } else if let delegate = delegate {
+                delegate.doneRecording(isCapturing: false, url: fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
                 camera.stopCaptureSession()
             }
         }
@@ -168,7 +208,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         camera.cameraDevice = .front
         camera.cameraVideoDuration = videoDuration
 
-        let _ = camera.addPreviewLayerToView(view, newCameraOutputMode: cameraMode, completition: {() in
+        let _ = camera.addPreviewLayerToView(cameraLayer, newCameraOutputMode: cameraMode, completition: {() in
             DispatchQueue.main.async {
                 UIView.animate(withDuration: 0.2, animations: { self.loadingOverlay.alpha = 0.0 } ,
                     completion: {(value: Bool) in
@@ -184,11 +224,14 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         })
         
         camera.showErrorBlock = { [weak self] (erTitle: String, erMessage: String) -> Void in
+            guard let `self` = self else {
+                return
+            }
             
             let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.default, handler: { (alertAction) -> Void in  }))
             
-            self?.present(alertController, animated: true, completion: nil)
+            self.present(alertController, animated: true, completion: nil)
         }
     }
     

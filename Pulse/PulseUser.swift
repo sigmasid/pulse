@@ -75,21 +75,21 @@ class PulseUser: User {
     init(uID: String, snapshot: DataSnapshot) {
         self.uID = uID
         if snapshot.hasChild("name") {
-            self.name = snapshot.childSnapshot(forPath: "name").value as? String
+            name = snapshot.childSnapshot(forPath: "name").value as? String
         }
         
         if snapshot.hasChild("profilePic") {
-            self.profilePic = snapshot.childSnapshot(forPath: "profilePic").value as? String
+            profilePic = snapshot.childSnapshot(forPath: "profilePic").value as? String
         }
         
         if snapshot.hasChild("thumbPic") {
-            self.thumbPic = snapshot.childSnapshot(forPath: "thumbPic").value as? String
+            thumbPic = snapshot.childSnapshot(forPath: "thumbPic").value as? String
         } else {
-            self.thumbPic = self.profilePic
+            thumbPic = self.profilePic
         }
 
         if snapshot.hasChild("shortBio") {
-            self.shortBio = snapshot.childSnapshot(forPath: "shortBio").value as? String
+            shortBio = snapshot.childSnapshot(forPath: "shortBio").value as? String
         }
         
         uCreated = true
@@ -97,14 +97,14 @@ class PulseUser: User {
     
     func updateUser(detailedSnapshot : DataSnapshot) {
         if detailedSnapshot.hasChild("bio") {
-            self.bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String
+            bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String
         }
         
         if detailedSnapshot.hasChild("items") {
             for child in detailedSnapshot.childSnapshot(forPath: "items").children {
                 if let child = child as? DataSnapshot, let type = child.value as? String {
                     let item = Item(itemID: child.key, type: type)
-                    self.items.append(item)
+                    items.append(item)
                 }
             }
         }
@@ -113,15 +113,11 @@ class PulseUser: User {
             for child in detailedSnapshot.childSnapshot(forPath: "contributorChannels").children {
                 let channel = Channel(cID: (child as AnyObject).key)
                 channel.cTitle = (child as! DataSnapshot).value as? String
-                self.contributorChannels.append(channel)
+                contributorChannels.append(channel)
             }
         }
         
         uDetailedCreated = true
-    }
-    
-    init(user: User) {
-        self.uID = user.uid
     }
     
     static func isLoggedIn() -> Bool {
@@ -129,7 +125,7 @@ class PulseUser: User {
     }
     
     func isSubscribedToChannel(cID: String) -> Bool {
-        return self.subscriptionIDs.contains(cID)
+        return subscriptionIDs.contains(cID)
     }
     
     func totalItems() -> Int {
@@ -158,14 +154,18 @@ class PulseUser: User {
         if let sLocation = self.sLocation {
             completion(sLocation)
         } else if let location = self.location {
-            PulseDatabase.getCityFromLocation(location: location, completion: {(city) in
+            PulseDatabase.getCityFromLocation(location: location, completion: {[weak self] (city) in
+                guard let `self` = self else {
+                    return
+                }
+                
                 self.sLocation = city != nil ? city : nil
                 city != nil ? completion(city!) : completion(nil)
             })
         }
         else {
-            PulseDatabase.getUserLocation(completion: {(location, error) in
-                if let _location = location {
+            PulseDatabase.getUserLocation(completion: {[weak self] (location, error) in
+                if let _location = location, let `self` = self {
                     self.location = _location
                     PulseDatabase.getCityFromLocation(location: _location, completion: {(city) in
                         self.sLocation = city != nil ? city : nil
@@ -208,5 +208,11 @@ class PulseUser: User {
         } else {
             return false
         }
+    }
+    
+    deinit {
+        thumbPicImage = nil
+        savedItems = []
+        items = []
     }
 }

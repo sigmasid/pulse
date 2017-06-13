@@ -12,7 +12,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedTag : Item!
     public var selectedUser : PulseUser!
-    public var modalDelegate : ModalDelegate!
+    public weak var modalDelegate : ModalDelegate!
     
     fileprivate var observersAdded = false
     
@@ -48,6 +48,11 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
             
             observersAdded = true
         }
+    }
+    
+    deinit {
+        selectedTag = nil
+        selectedUser = nil
     }
     
     override func viewDidLayoutSubviews() {

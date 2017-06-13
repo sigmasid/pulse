@@ -9,7 +9,7 @@
 import UIKit
 
 class ItemHeader: UICollectionReusableView {
-    public var delegate : HeaderDelegate!
+    weak var delegate : HeaderDelegate!
     fileprivate var loadingIndicator : UIView!
     fileprivate var loadingAdded = false
     fileprivate var titleLabel = UILabel()
@@ -28,6 +28,11 @@ class ItemHeader: UICollectionReusableView {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        loadingIndicator = nil
+        delegate = nil
     }
     
     func updateLabel(_ _title : String?) {

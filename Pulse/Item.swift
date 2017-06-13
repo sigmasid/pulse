@@ -65,9 +65,10 @@ class Item: NSObject {
     var createdAt : Date?
     
     var user : PulseUser?
-    var tag : Item?
+    weak var tag : Item?
     
     dynamic var itemCreated = false
+    var itemCollection = [Item]()
     var fetchedContent = false
     
     init(itemID: String) {
@@ -78,7 +79,7 @@ class Item: NSObject {
         super.init()
 
         self.itemID = itemID
-        setType(type: type)
+        setType(_type: type)
     }
     
     init(itemID: String, itemUserID: String, itemTitle: String, type: ItemTypes, contentURL: URL?, content: Any?, contentType : CreatedAssetType?, tag: Item?, cID: String) {
@@ -99,90 +100,90 @@ class Item: NSObject {
         self.itemID = itemID
         super.init()
         if snapshot.hasChild("title") {
-            self.itemTitle = snapshot.childSnapshot(forPath: "title").value as? String ?? ""
+            itemTitle = snapshot.childSnapshot(forPath: "title").value as? String ?? ""
         }
         
         if snapshot.hasChild("description") {
-            self.itemDescription = snapshot.childSnapshot(forPath: "description").value as? String ?? ""
+            itemDescription = snapshot.childSnapshot(forPath: "description").value as? String ?? ""
         }
         
         if let type = snapshot.childSnapshot(forPath: "type").value as? String {
-            setType(type: type)
+            setType(_type: type)
         }
         
         if snapshot.hasChild("uID") {
-            self.itemUserID = snapshot.childSnapshot(forPath: "uID").value as? String
+            itemUserID = snapshot.childSnapshot(forPath: "uID").value as? String
         }
         
-        if let cID = snapshot.childSnapshot(forPath: "cID").value as? String {
-            self.cID = cID
+        if let _cID = snapshot.childSnapshot(forPath: "cID").value as? String {
+            cID = _cID
         }
         
-        if let cTitle = snapshot.childSnapshot(forPath: "cTitle").value as? String {
-            self.cTitle = cTitle
+        if let _cTitle = snapshot.childSnapshot(forPath: "cTitle").value as? String {
+            cTitle = _cTitle
         }
         
         if let url = snapshot.childSnapshot(forPath: "url").value as? String {
-            self.contentURL = URL(string: url)
+            contentURL = URL(string: url)
         }
         
         if let assetType = snapshot.childSnapshot(forPath: "contentType").value as? String {
-            self.contentType = CreatedAssetType.getAssetType(assetType)
+            contentType = CreatedAssetType.getAssetType(assetType)
         }
         
-        if let createdAt = snapshot.childSnapshot(forPath: "createdAt").value as? Double {
-            let convertedDate = Date(timeIntervalSince1970: createdAt / 1000)
-            self.createdAt = convertedDate
+        if let _createdAt = snapshot.childSnapshot(forPath: "createdAt").value as? Double {
+            let convertedDate = Date(timeIntervalSince1970: _createdAt / 1000)
+            createdAt = convertedDate
         }
         
         if let tagID = snapshot.childSnapshot(forPath: "tagID").value as? String, let tagTitle = snapshot.childSnapshot(forPath: "tagTitle").value as? String {
-            self.tag = Item(itemID: tagID, type: "tag")
-            self.tag?.itemTitle = tagTitle
+            tag = Item(itemID: tagID, type: "tag")
+            tag?.itemTitle = tagTitle
         }
         
         itemCreated = true
     }
     
-    internal func setType(type : String) {
-        switch type {
+    internal func setType(_type : String) {
+        switch _type {
         case "question":
-            self.type = .question
+            type = .question
         case "questions":
-            self.type = .questions
+            type = .questions
         case "answer":
-            self.type = .answer
+            type = .answer
         case "post":
-            self.type = .post
+            type = .post
         case "posts":
-            self.type = .posts
+            type = .posts
         case "feedback":
-            self.type = .feedback
+            type = .feedback
         case "perspectives":
-            self.type = .perspectives
+            type = .perspectives
         case "perspective":
-            self.type = .perspective
+            type = .perspective
         case "interviews":
-            self.type = .interviews
+            type = .interviews
         case "interview":
-            self.type = .interview
+            type = .interview
         case "thread":
-            self.type = .thread
+            type = .thread
         case "session":
-            self.type = .session
+            type = .session
         case "showcases":
-            self.type = .showcases
+            type = .showcases
         case "showcase":
             self.type = .showcase
         case "perspectiveInvite":
-            self.type = .thread
+            type = .thread
         case "questionInvite":
-            self.type = .question
+            type = .question
         case "interviewInvite":
-            self.type = .interview
+            type = .interview
         case "showcaseInvite":
-            self.type = .showcases
+            type = .showcases
         default:
-            self.type = .unknown
+            type = .unknown
         }
     }
     
@@ -249,6 +250,7 @@ class Item: NSObject {
         case .question: return .questionInvite
         case .interviews: return .interviewInvite
         case .showcases: return .showcaseInvite
+        case .session: return .feedbackInvite
         default: return nil
         }
     }
@@ -303,6 +305,12 @@ class Item: NSObject {
         } else if let inputOpenToUser = acceptsInput() {
             //user is logged in and
             let user = PulseUser.currentUser
+            
+            guard self.cID != nil else {
+                completion(false, "Sorry error getting item")
+                return
+            }
+            
             switch inputOpenToUser {
             case .contributor:
                 //check if user is verified
@@ -356,5 +364,13 @@ class Item: NSObject {
         } else {
             return false
         }
+    }
+    
+    deinit {
+        content = nil
+        tag = nil
+        user = nil
+        itemCollection = []
+        contentURL = nil
     }
 }

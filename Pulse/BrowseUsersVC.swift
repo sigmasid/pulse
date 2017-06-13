@@ -11,7 +11,7 @@ import UIKit
 class BrowseUsersVC: PulseVC, HeaderDelegate {
     //Main data source var -
     public var allUsers = [PulseUser]()
-    public var delegate : SelectionDelegate!
+    public weak var delegate : SelectionDelegate!
     
     //set by delegate
     public var selectedChannel : Channel! {
@@ -266,7 +266,7 @@ extension BrowseUsersVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame

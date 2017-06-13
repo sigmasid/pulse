@@ -20,7 +20,7 @@ class UserProfileHeader: UICollectionReusableView {
     fileprivate var longBioHeightConstraint : NSLayoutConstraint!
     fileprivate var nameHeightAnchor: NSLayoutConstraint!
     
-    public var profileDelegate : UserProfileDelegate!
+    public weak var profileDelegate : UserProfileDelegate!
     
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {

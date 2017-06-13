@@ -627,12 +627,14 @@ enum MediaAssetType {
 
 enum MessageType: String {
     case message
+    case contributorInvite
+
     case interviewInvite
     case channelInvite
-    case contributorInvite
     case showcaseInvite
     case perspectiveInvite
     case questionInvite
+    case feedbackInvite
     
     static func getMessageType(type : String) -> MessageType {
         switch type {

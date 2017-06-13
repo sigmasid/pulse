@@ -18,7 +18,7 @@ class HeaderChannelsCell: UICollectionViewCell, SelectionDelegate {
             }
         }
     }
-    public var delegate: SelectionDelegate!
+    public weak var delegate: SelectionDelegate!
     public var selectedChannel : Channel!
     
     private var collectionView : UICollectionView!
@@ -34,6 +34,13 @@ class HeaderChannelsCell: UICollectionViewCell, SelectionDelegate {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        channels = []
+        delegate = nil
+        collectionView = nil
+        selectedChannel = nil
     }
     
     fileprivate func setupChannelHeader() {
@@ -76,8 +83,8 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
         cell.updateCell(channel.cTitle?.capitalized, _image : channel.cThumbImage)
         
         if channel.cThumbImage == nil {
-            PulseDatabase.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: { data, error in
-                if let data = data {
+            PulseDatabase.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] data, error in
+                if let data = data, let `self` = self {
                     self.channels[indexPath.row].cThumbImage = UIImage(data: data)
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {

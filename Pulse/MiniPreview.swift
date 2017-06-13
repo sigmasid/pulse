@@ -17,7 +17,7 @@ class MiniPreview: UIView {
     fileprivate lazy var actionButton : PulseButton = PulseButton(title: "View Profile", isRound: true)
     fileprivate var closeButton : PulseButton!
     
-    var delegate : ItemPreviewDelegate!
+    public weak var delegate : ItemPreviewDelegate!
 
     override init(frame: CGRect) {
         super.init(frame: frame)

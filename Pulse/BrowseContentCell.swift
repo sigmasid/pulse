@@ -9,7 +9,7 @@
 import UIKit
 
 class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
-    var delegate : PreviewDelegate!
+    public weak var delegate : PreviewDelegate!
     
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()
@@ -44,6 +44,11 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        delegate = nil
+        previewImage.image = nil
     }
     
     override func point(inside point : CGPoint, with event : UIEvent?) -> Bool {

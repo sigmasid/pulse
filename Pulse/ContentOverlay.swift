@@ -39,7 +39,7 @@ class ContentOverlay: UIView {
     fileprivate var pagers = [UIView]()
     fileprivate lazy var pagersStack = UIStackView()
     
-    weak var delegate : ItemDetailDelegate!
+    public weak var delegate : ItemDetailDelegate!
     
     internal enum AnswersButtonSelector: Int {
         case upvote, downvote, save, album
@@ -59,12 +59,25 @@ class ContentOverlay: UIView {
         
     }
     
+    deinit {
+        print("content overlay deinit called")
+        userImage.removeFromSuperview()
+        headerMenu.removeFromSuperview()
+        browseButton.removeFromSuperview()
+        messageButton.removeFromSuperview()
+        videoTimer.removeFromSuperview()
+        userTitles.removeFromSuperview()
+        delegate = nil
+        pagers = []
+        pagersStack.removeFromSuperview()
+    }
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
     override func point(inside point : CGPoint, with event : UIEvent?) -> Bool {
-        for _view in self.subviews {
+        for _view in subviews {
             
             if _view.isUserInteractionEnabled == true && _view.point(inside: convert(point, to: _view) , with: event) {
                 return true
@@ -407,7 +420,6 @@ extension ContentOverlay {
         nextItemButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         
         nextItemButton.layoutIfNeeded()
-        nextItemButton.makeRound()
         nextItemButton.backgroundColor = .white
         nextItemButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
         

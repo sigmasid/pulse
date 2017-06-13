@@ -8,22 +8,19 @@
 
 import UIKit
 
-protocol LoadingDelegate : class {
-    func clickedRefresh()
-}
-
 class LoadingView: UIView {
     
     fileprivate let messageLabel = UILabel()
     fileprivate var iconManager : Icon!
     fileprivate lazy var refreshButton = PulseButton(size: .small, type: .refresh, isRound: true, hasBackground: true)
-    var loadingDelegate : LoadingDelegate!
+    weak var loadingDelegate : LoadingDelegate!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
     
     convenience init(frame: CGRect, backgroundColor : UIColor) {
+        print("loading init fired")
         self.init(frame: frame)
         self.backgroundColor = backgroundColor
     }

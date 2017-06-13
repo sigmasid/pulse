@@ -66,7 +66,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
-    weak var delegate : ContentDelegate?
+    public weak var delegate : ContentDelegate?
     
     fileprivate lazy var controlsOverlay : RecordingOverlay = RecordingOverlay(frame: self.view.bounds)
     fileprivate var itemFilters : FiltersOverlay?
@@ -149,7 +149,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         
         if isNewEntry && currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo {
             DispatchQueue.global(qos: .background).async {
-                compressVideo(contentURL, completion: {(resultURL, thumbnailImage, error) in
+                compressVideo(contentURL, completion: {[weak self] (resultURL, thumbnailImage, error) in
+                    guard let `self` = self else {
+                        return
+                    }
+                    
                     if let resultURL = resultURL {
                         self.currentItem.contentURL = resultURL
                         self.currentItem.content = thumbnailImage

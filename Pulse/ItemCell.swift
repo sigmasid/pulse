@@ -10,7 +10,7 @@ import UIKit
 
 class ItemCell: UICollectionViewCell {
     
-    public var delegate : ItemCellDelegate!
+    public weak var delegate : ItemCellDelegate!
 
     fileprivate var titleLabel = UILabel()
     fileprivate var subtitleLabel = UILabel()
@@ -28,7 +28,6 @@ class ItemCell: UICollectionViewCell {
     fileprivate var itemButton = PulseButton(size: .xSmall, type: .logoCircle, isRound: true, hasBackground: false)
     fileprivate var itemMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
     
-    public var showRightMenuButton = false
     public var itemType : ItemTypes? {
         didSet {
             switch itemType! {
@@ -53,8 +52,6 @@ class ItemCell: UICollectionViewCell {
         }
     }
     
-    fileprivate var reuseCell = false
-    
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.backgroundColor = .white
@@ -64,6 +61,10 @@ class ItemCell: UICollectionViewCell {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        delegate = nil
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?, _createdAt: Date?, _tag : String?) {
@@ -105,11 +106,11 @@ class ItemCell: UICollectionViewCell {
                     attributedString.append(restAttributedString)
 
                 case .thread:
-                    let restAttributedString = NSAttributedString(string: " created a thread", attributes: subRestAttributes)
+                    let restAttributedString = NSAttributedString(string: " thread on", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
                 case .perspective:
-                    let restAttributedString = NSAttributedString(string: " added a perspective", attributes: subRestAttributes)
+                    let restAttributedString = NSAttributedString(string: " perspective on", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
                 case .interview:

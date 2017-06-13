@@ -10,18 +10,23 @@ import UIKit
 
 class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, ItemPreviewDelegate, CompletedRecordingDelegate {
     
+    //set by delegate - selected item is a collection - type questions / posts / perspectives etc. since its a series
     public var selectedChannel: Channel!
-    
-    //set by delegate - is of type questions / posts / perspectives etc. since its a series
     public var selectedItem : Item! {
         didSet {
-            toggleLoading(show: true, message: "Loading Series...", showIcon: true)
-            PulseDatabase.getItemCollection(selectedItem.itemID, completion: {(success, items) in
-                self.allItems = items
-                self.updateDataSource()
-                self.updateHeader()
-                self.toggleLoading(show: false, message: nil)
-            })
+            if selectedItem != nil {
+                toggleLoading(show: true, message: "Loading Series...", showIcon: true)
+                PulseDatabase.getItemCollection(selectedItem.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else {
+                        return
+                    }
+                    
+                    self.allItems = items
+                    self.updateDataSource()
+                    self.updateHeader()
+                    self.toggleLoading(show: false, message: nil)
+                })
+            }
         }
     }
     //end set by delegate
@@ -55,6 +60,16 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         updateHeader()
     }
     
+    deinit {
+        print("deinit for series called")
+        allItems = []
+        allUsers = []
+        selectedChannel = nil
+        selectedItem = nil
+        miniPreview = nil
+        collectionView = nil
+    }
+    
     //Update Nav Header
     fileprivate func updateHeader() {
         addBackButton()
@@ -63,7 +78,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
     }
     
-    func setupLayout() {
+    fileprivate func setupLayout() {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
         
@@ -73,7 +88,8 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         view.addSubview(collectionView)
     }
     
-    func userClosedModal(_ viewController: UIViewController) {
+    /** DELEGATE FUNCTIONS **/
+    internal func userClosedModal(_ viewController: UIViewController) {
         dismiss(animated: true, completion: { _ in })
     }
     
@@ -82,8 +98,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
             GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Feedback Request Submitted", erMessage: "Stay tuned for updates & responses from experts!", buttonTitle: "done") :
             GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Feedback Request", erMessage: "Sorry there was an error adding the feedback request. Please try again")
     }
-    
-
+    /** END DELEGATE FUNCTIONS **/
     
     internal func askQuestion() {
         let questionVC = AskQuestionVC()
@@ -93,7 +108,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         questionVC.modalPresentationStyle = .overCurrentContext
         questionVC.modalTransitionStyle = .crossDissolve
         
-        self.navigationController?.present(questionVC, animated: true, completion: nil)
+        navigationController?.present(questionVC, animated: true, completion: nil)
     }
     
     internal func addInterview() {
@@ -235,12 +250,12 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
         //Already fetched this item
         if allItems[indexPath.row].itemCreated {
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
         } else {
-            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
-                if let item = item {
+            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: {[weak self] (item, error) in
+                if let item = item, let `self` = self {
                     
                     cell.itemType = item.type
 
@@ -412,20 +427,20 @@ extension SeriesVC {
     }
     
     internal func buttonClicked(_ text: String, sender: UIView) {
-        GlobalFunctions.validateEmail(text, completion: {(success, error) in
+        GlobalFunctions.validateEmail(text, completion: {[unowned self] (success, error) in
             if !success {
                 self.showAddEmail(bodyText: "invalid email - try again")
             } else {
-                if let selectedShareItem = selectedShareItem {
+                if let selectedShareItem = self.selectedShareItem {
                     let itemKey = databaseRef.child("items").childByAutoId().key
                     let parentItemID = selectedShareItem.itemID
                     
                     selectedShareItem.itemID = itemKey
-                    selectedShareItem.cID = selectedChannel.cID
-                    selectedShareItem.cTitle = selectedChannel.cTitle
-                    selectedShareItem.tag = selectedItem
+                    selectedShareItem.cID = self.selectedChannel.cID
+                    selectedShareItem.cTitle = self.selectedChannel.cTitle
+                    selectedShareItem.tag = self.selectedItem
                     
-                    toggleLoading(show: true, message: "sending invite...", showIcon: true)
+                    self.toggleLoading(show: true, message: "sending invite...", showIcon: true)
                     PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: nil, toName: nil, toEmail: text,
                                                  childItems: [], parentItemID: parentItemID, completion: {(success, error) in
                             success ?
@@ -474,16 +489,24 @@ extension SeriesVC {
         //can only be a question or a post that user selects since it's in a tag already
         switch item.type {
         case .post, .showcase:
-            showItemDetail(allItems: self.allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
+            showItemDetail(allItems: allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
         case .question, .thread, .interview:
             toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
-            PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+            PulseDatabase.getItemCollection(item.itemID, completion: {[weak self](success, items) in
+                guard let `self` = self else {
+                    return
+                }
+                
                 success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
                 self.toggleLoading(show: false, message: nil)
             })
         case .session:
             toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
-            PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+            PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                guard let `self` = self else {
+                    return
+                }
+                
                 self.toggleLoading(show: false, message: nil)
                 if success, items.count > 1 {
                     //since ordering is cron based - move the first 'question' item to front
@@ -544,8 +567,8 @@ extension SeriesVC {
         miniPreview = MiniPreview(frame: _profileFrame, buttonTitle: "Become Contributor")
         miniPreview!.delegate = self
 
-        PulseDatabase.getItem(selectedItem.itemID, completion: { (item, error) in
-            if let item = item {
+        PulseDatabase.getItem(selectedItem.itemID, completion: { [weak self] (item, error) in
+            if let item = item, let `self` = self {
                 self.miniPreview!.setTitleLabel(item.itemTitle)
                 self.miniPreview!.setMiniDescriptionLabel(item.itemDescription)
                 self.miniPreview!.setBackgroundImage(self.selectedItem.content as? UIImage ?? GlobalFunctions.imageWithColor(UIColor.black))
@@ -570,9 +593,9 @@ extension SeriesVC {
         removeBlurBackground()
         
         let becomeContributorVC = BecomeContributorVC()
-        becomeContributorVC.selectedChannel = self.selectedChannel
+        becomeContributorVC.selectedChannel = selectedChannel
         
-        self.navigationController?.pushViewController(becomeContributorVC, animated: true)
+        navigationController?.pushViewController(becomeContributorVC, animated: true)
     }
 
     
@@ -669,25 +692,16 @@ extension SeriesVC {
 
         selectedItem.checkVerifiedInput(completion: { success, error in
             if success {
-                menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
+                menu.message = "No\(selectedItem.childType())s yet - want to add one?"
                 
-                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                    switch self.selectedItem.type {
-                    case .interviews:
-                        self.addInterview()
-                    case .perspectives:
-                        self.startThread()
-                    case .questions:
-                        self.askQuestion()
-                    case .feedback:
-                        self.getFeedback()
-                    case .posts:
-                        self.addNewItem(selectedItem: self.selectedItem)
-                    case .showcases:
-                        self.startShowcase()
+                switch selectedItem.type {
+                case .thread, .question, .session:
+                    menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                        self.addNewItem(selectedItem: selectedItem)
+                    }))
                     default: break
-                    }
-                }))
+                }
+
             } else {
                 menu.message = "We are still waiting for \(selectedItem.childType())!"
             }
@@ -769,7 +783,7 @@ extension SeriesVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame

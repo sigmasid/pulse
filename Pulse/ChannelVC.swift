@@ -14,15 +14,18 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         didSet {
             isSubscribed = PulseUser.currentUser.subscriptionIDs.contains(selectedChannel.cID) ? true : false
             if !selectedChannel.cCreated {
-                PulseDatabase.getChannel(cID: selectedChannel.cID!, completion: { channel, error in
+                PulseDatabase.getChannel(cID: selectedChannel.cID!, completion: {[weak self] channel, error in
+                    guard let `self` = self else { return }
+                    
                     channel.cPreviewImage = self.selectedChannel.cPreviewImage
                     self.selectedChannel = channel
                     self.updateHeader()
                 })
             } else if !selectedChannel.cDetailedCreated {
                 getChannelItems()
-                updateHeader()
             } else {
+                allItems = selectedChannel.items
+                updateHeader()
                 updateDataSource()
                 toggleLoading(show: false, message: nil)
             }
@@ -69,8 +72,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         if !isLoaded, allItems.isEmpty {
+            
             toggleLoading(show: true, message: "Loading Channel...", showIcon: true)
             statusBarStyle = .lightContent
             tabBarHidden = true
@@ -86,17 +89,19 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     }
     
     deinit {
+        print("channel vc deinit fired")
         selectedChannel = nil
-        headerNav = nil //the category item - might be the question / tag / post etc.
-        
         allItems = []
+        allUsers = []
+        collectionView = nil
     }
     
     internal func getChannelItems() {
-        PulseDatabase.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { updatedChannel in
-            self.startUpdateAt = self.endUpdateAt
+        PulseDatabase.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] updatedChannel in
             
-            if let updatedChannel = updatedChannel {
+            if let updatedChannel = updatedChannel,  let `self` = self {
+                self.startUpdateAt = self.endUpdateAt
+
                 updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
 
@@ -136,7 +141,11 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     //get more items if scrolled to end
     func getMoreChannelItems(completion: @escaping (Bool) -> Void)  {
         
-        PulseDatabase.getChannelItems(channelID: selectedChannel.cID, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: { success, items in
+        PulseDatabase.getChannelItems(channelID: selectedChannel.cID, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] success, items in
+            guard let `self` = self else {
+                return
+            }
+            
             if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
@@ -187,7 +196,11 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         subscribeButton.setImage(nil, for: .normal)
         let indicator = subscribeButton.addLoadingIndicator()
         
-        subscribeChannel(channel: selectedChannel, completion: {( success, error ) in
+        subscribeChannel(channel: selectedChannel, completion: {[weak self]( success, error ) in
+            guard let `self` = self else {
+                return
+            }
+            
             if !success {
                 GlobalFunctions.showAlertBlock("Error Subscribing", erMessage: error!.localizedDescription)
                 self.subscribeButton.setImage(UIImage(named: "add")?.withRenderingMode(.alwaysTemplate), for: UIControlState())
@@ -267,7 +280,9 @@ extension ChannelVC {
         let currentItem = allItems[itemRow]
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        currentItem.checkVerifiedInput(completion: { success, error in
+        currentItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
                 menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
                     self.addNewItem(selectedItem: currentItem)
@@ -303,7 +318,9 @@ extension ChannelVC {
     internal func showNoItemsMenu(selectedItem : Item) {
         let menu = UIAlertController(title: "Sorry! No\(selectedItem.childType(plural: true)) yet", message: nil, preferredStyle: .actionSheet)
         
-        selectedItem.checkVerifiedInput(completion: { success, error in
+        selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
                 menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
                 
@@ -341,18 +358,20 @@ extension ChannelVC {
     
     //after email - user submitted the text
     internal func buttonClicked(_ text: String, sender: UIView) {
-        GlobalFunctions.validateEmail(text, completion: {(success, error) in
+        GlobalFunctions.validateEmail(text, completion: {[weak self](success, error) in
+            guard let `self` = self else { return }
+            
             if !success {
                 self.showAddEmail(bodyText: "invalid email - try again")
             } else {
-                if let selectedShareItem = selectedShareItem as? Item {
+                if let selectedShareItem = self.selectedShareItem as? Item {
                     
-                    createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
+                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
                         self.selectedShareItem = nil
                     })
                     
-                } else if let selectedShareItem = selectedShareItem as? Channel {
-                    createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: { _ , _ in
+                } else if let selectedShareItem = self.selectedShareItem as? Channel {
+                    self.createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: { _ , _ in
                         self.selectedShareItem = nil
                     })
                     
@@ -389,7 +408,7 @@ extension ChannelVC {
             case .perspectiveInvite, .questionInvite, .showcaseInvite:
                 if let currentItem = currentItem as? Item {
                     self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
-                                            completion: { selectedShareItem , error in
+                                            completion: {[unowned self] selectedShareItem , error in
                                                 //using the share item returned from the request
                                                 if error == nil, let selectedShareItem = selectedShareItem {
                                                     let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
@@ -402,13 +421,13 @@ extension ChannelVC {
                 if let shareChannel = currentItem as? Channel {
                     self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
                     
-                    self.createContributorInvite(selectedChannel: shareChannel, toUser: nil, toEmail: nil, showAlert: true, completion: { inviteID , error in
+                    self.createContributorInvite(selectedChannel: shareChannel, toUser: nil, toEmail: nil, showAlert: true, completion: {[unowned self] inviteID , error in
                         
                         if error == nil, let inviteID = inviteID {
                             let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
                             let shareText = "You are invited to be a contributor on \(channelTitle)"
                             
-                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: { link in
+                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: {[unowned self] link in
                                 guard let link = link else {
                                     self.toggleLoading(show: false, message: nil)
                                     return
@@ -428,12 +447,13 @@ extension ChannelVC {
                     let shareItem = Item(itemID: "")
                     shareItem.itemTitle = "Check out \(shareChannel.cTitle ?? " this channel")" //send blank item since we are inviting users to come to channel
                     
-                    self.createShareRequest(selectedShareItem: shareItem, shareType: .channelInvite, selectedChannel: shareChannel, toUser: nil, completion: { item, error in
+                    self.createShareRequest(selectedShareItem: shareItem, shareType: .channelInvite, selectedChannel: shareChannel, toUser: nil, completion: { [unowned self] item, error in
+                        
                         if error == nil, let inviteID = item?.itemID {
                             let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
                             let shareText = "\(PulseUser.currentUser.name ?? "Your friend") invited you to \(channelTitle)"
                             
-                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: { link in
+                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: {[unowned self] link in
                                 guard let link = link else {
                                     self.toggleLoading(show: false, message: nil)
                                     return
@@ -509,7 +529,7 @@ extension ChannelVC {
         //anyone can share
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
-            self.selectedChannel.createShareLink(completion: { link in
+            self.selectedChannel.createShareLink(completion: {[unowned self] link in
                 guard let link = link else { return }
                 self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle ?? "", shareLink: link)
             })
@@ -538,7 +558,7 @@ extension ChannelVC {
         
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
-            self.selectedChannel.createShareLink(completion: { link in
+            self.selectedChannel.createShareLink(completion: {[unowned self] link in
                 guard let link = link else { return }
                 self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle ?? "", shareLink: link)
             })
@@ -581,7 +601,9 @@ extension ChannelVC {
             case .session:
                 toggleLoading(show: true, message: "loading session...", showIcon: true)
                 
-                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
                     self.toggleLoading(show: false, message: nil)
 
                     if success, items.count > 1 {
@@ -603,9 +625,13 @@ extension ChannelVC {
             case .interview, .question, .thread:
                 
                 toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
                     self.toggleLoading(show: false, message: nil)
-                    success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
+                    success ?
+                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) :
+                        self.showNoItemsMenu(selectedItem : item)
                 })
                 
             default: break
@@ -629,7 +655,7 @@ extension ChannelVC {
         
         if let selectedShareItem = selectedShareItem as? Item {
             //
-            self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: { _ , _ in
+            self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: {[unowned self] _ , _ in
                 self.selectedShareItem = nil
             })
         } else if let selectedShareItem = selectedShareItem as? Channel {
@@ -672,12 +698,11 @@ extension ChannelVC {
     }
     
     internal func showBrowse(selectedItem: Item) {
-        let _selectedItem = selectedItem
-        _selectedItem.cID = selectedChannel.cID
+        selectedItem.cID = selectedChannel.cID
         
         let itemCollection = BrowseContentVC()
         itemCollection.selectedChannel = selectedChannel
-        itemCollection.selectedItem = _selectedItem
+        itemCollection.selectedItem = selectedItem
         itemCollection.contentDelegate = self
         
         navigationController?.pushViewController(itemCollection, animated: true)
@@ -697,7 +722,7 @@ extension ChannelVC {
         
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
         PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, toUser: toUser, toName: toUser?.name,
-                                         toEmail: toEmail, completion: {(inviteID, error) in
+                                         toEmail: toEmail, completion: {[unowned self] (inviteID, error) in
                                         
             self.toggleLoading(show: false, message: nil)
 
@@ -775,7 +800,9 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 } else {
                     // Get the user details
-                    PulseDatabase.getUser(currentItem.itemUserID, completion: {(user, error) in
+                    PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
+                    guard let `self` = self else { return }
+                        
                     if let user = user {
                         self.allItems[indexPath.row].user = user
                         self.allUsers.append(user)
@@ -786,9 +813,9 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         }
                         
                         DispatchQueue.global(qos: .background).async {
-                            if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
-                                self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
-                                self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
+                            if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL), let image = UIImage(data: _imageData) {
+                                self.allItems[indexPath.row].user?.thumbPicImage = image
+                                self.updateUserImageDownloaded(user: user, thumbPicImage: image)
                                 
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
@@ -805,7 +832,9 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
-                PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (data, error) in
+                    guard let `self` = self else { return }
+                    
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
                         
@@ -960,7 +989,7 @@ extension ChannelVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            //panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame

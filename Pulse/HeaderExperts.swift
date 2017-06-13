@@ -16,7 +16,7 @@ class HeaderContributors: UICollectionReusableView {
             contributorsPreview?.reloadData()
         }
     }
-    public var delegate: SelectionDelegate!
+    public weak var delegate: SelectionDelegate!
     
     private var contributorsPreview : UICollectionView!
     private var contributorsLabel = UILabel()
@@ -28,6 +28,11 @@ class HeaderContributors: UICollectionReusableView {
         backgroundColor = UIColor.clear
         addShadow()
         setupChannelHeader()
+    }
+    
+    deinit {
+        delegate = nil
+        contributorsPreview = nil
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -73,8 +78,8 @@ extension HeaderContributors: UICollectionViewDataSource, UICollectionViewDelega
         let _user = contributors[indexPath.row]
         
         if !_user.uCreated { //search case - get question from database
-            PulseDatabase.getUser(_user.uID!, completion: { (user, error) in
-                if let user = user {
+            PulseDatabase.getUser(_user.uID!, completion: {[weak self] (user, error) in
+                if let user = user, let `self` = self {
                     cell.updateCell(user.name?.capitalized, _image: nil)
                     
                     self.contributors[indexPath.row] = user

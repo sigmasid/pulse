@@ -15,7 +15,7 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     fileprivate lazy var previewVC : Preview = Preview()
     fileprivate var reuseCell = false
     
-    public var delegate : SelectionDelegate!
+    public weak var delegate : SelectionDelegate!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -25,6 +25,10 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        delegate = nil
     }
     
     func updateCell(_ _title : String?, _image : UIImage?) {

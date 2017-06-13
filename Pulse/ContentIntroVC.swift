@@ -49,6 +49,11 @@ class ContentIntroVC: UIViewController {
         }
     }
     
+    deinit {
+        item = nil
+        userImage.image = nil
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = UIColor.white

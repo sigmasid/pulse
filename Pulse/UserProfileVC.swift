@@ -10,9 +10,9 @@ import UIKit
 
 class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegate {
     
-    var modalDelegate : ModalDelegate!
-    var isCurrentUser = false
-    var isModal = false
+    public weak var modalDelegate : ModalDelegate!
+    fileprivate var isCurrentUser = false
+    public var isModal = false
     
     /** Delegate Vars **/
     public var selectedUser : PulseUser! {
@@ -27,13 +27,16 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                                                        name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
                 headerNav?.setNav(title: PulseUser.currentUser.name ?? "Your Profile")
 
-                PulseDatabase.getUserItems(uID: PulseUser.currentUser.uID!, completion: { items in
+                PulseDatabase.getUserItems(uID: PulseUser.currentUser.uID!, completion: {[weak self] items in
+                    guard let `self` = self else { return }
                     self.allItems = items
                     self.updateDataSource()
                 })
                 isCurrentUser = true
             } else if selectedUser != nil, !selectedUser.uCreated {
-                PulseDatabase.getUser(selectedUser.uID!, completion: {(user, error) in
+                PulseDatabase.getUser(selectedUser.uID!, completion: {[weak self] (user, error) in
+                    guard let `self` = self else { return }
+                    
                     if error == nil {
                         self.selectedUser = user
                         self.updateHeader()
@@ -121,6 +124,13 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         headerNav?.setNav(title: selectedUser.name ?? "Profile")
     }
     
+    deinit {
+        itemStack = []
+        collectionView = nil
+        allItems.removeAll()
+        selectedUser = nil
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
@@ -193,7 +203,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func getDetailUserProfile() {
-        PulseDatabase.getDetailedUserProfile(user: selectedUser, completion: { updatedUser in
+        PulseDatabase.getDetailedUserProfile(user: selectedUser, completion: {[weak self] updatedUser in
+            guard let `self` = self else { return }
             let userImage = self.selectedUser.thumbPicImage
             
             self.selectedUser = updatedUser
@@ -202,7 +213,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func getUserProfilePic() {
-        PulseDatabase.getProfilePicForUser(user: selectedUser, completion: { profileImage in
+        PulseDatabase.getProfilePicForUser(user: selectedUser, completion: {[weak self] profileImage in
+            guard let `self` = self else { return }
             self.selectedUser.thumbPicImage = profileImage
             if let collectionView = self.collectionView {
                 for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
@@ -279,10 +291,12 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
         
         confirmLogout.addAction(UIAlertAction(title: "logout", style: .destructive, handler: { (action: UIAlertAction!) in
-            PulseDatabase.signOut({ success in
+            PulseDatabase.signOut({[weak self] success in
+                guard let `self` = self else { return }
                 if !success {
                     GlobalFunctions.showAlertBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
                 } else {
+                    self.headerNav?.setNav(title: "Profile")
                     self.selectedUser = nil
                 }
             })
@@ -296,8 +310,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func share() {
-        selectedUser.createShareLink(completion: { link in
-            guard let link = link else { return }
+        selectedUser.createShareLink(completion: {[weak self] link in
+            guard let link = link, let `self` = self else { return }
             self.activityController = GlobalFunctions.shareContent(shareType: "person",
                                                                    shareText: self.selectedUser.name ?? "",
                                                                    shareLink: link, presenter: self)
@@ -313,7 +327,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func shareProfile() {
-        selectedUser.createShareLink(completion: { link in
+        selectedUser.createShareLink(completion: {[unowned self] link in
             guard let link = link else { return }
             self.shareContent(shareType: "user", shareText: self.selectedUser.name ?? "", shareLink: link)
         })
@@ -412,7 +426,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         } else if currentItem.itemCreated {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self](_data, error) in
+                guard let `self` = self else { return }
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -441,7 +456,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             itemStack[indexPath.row].gettingInfoForPreview = true
             
             // Get the user details
-            PulseDatabase.getItem(currentItem.itemID, completion: {(item, error) in
+            PulseDatabase.getItem(currentItem.itemID, completion: {[weak self] (item, error) in
+                guard let `self` = self else { return }
                 if let item = item {
                     let tempImage = self.allItems[indexPath.row].content
                     self.allItems[indexPath.row] = item
@@ -453,7 +469,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         }
                     }
 
-                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self](_data, error) in
+                        guard let `self` = self else { return }
                         if error == nil {
                             let _previewImage = GlobalFunctions.createImageFromData(_data!)
                             self.allItems[indexPath.row].content = _previewImage
@@ -482,7 +499,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self](hasDetail, itemCollection) in
+                    guard let `self` = self else { return }
                     if hasDetail {
                         cell.showTapForMore = true
                         self.itemStack[indexPath.row].itemCollection = itemCollection
@@ -495,7 +513,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 cell.showItemPreview(item: currentItem)
             } else {
                 toggleLoading(show: true, message: "Loading Interview...")
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
+                    guard let `self` = self else { return }
                     self.toggleLoading(show: false, message: nil)
                     self.showItemDetail(selectedItem : currentItem, allItems: itemCollection)
                     self.selectedIndex = nil
@@ -574,7 +593,7 @@ extension UserProfileVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, toViewController: nil, edge: UIRectEdge.left)
+            panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
             
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame

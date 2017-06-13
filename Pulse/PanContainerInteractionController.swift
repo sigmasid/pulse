@@ -19,7 +19,7 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
     fileprivate var lastProgress: CGFloat?
     fileprivate var isModal = false
     
-    var delegate : CameraDelegate!
+    weak var delegate : CameraDelegate!
     
     func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController, modal: Bool) {
         isModal = modal ? true : false

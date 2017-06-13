@@ -11,7 +11,7 @@ import UIKit
 class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedUser : PulseUser!
-    public var delegate : ParentDelegate!
+    public weak var delegate : ParentDelegate!
     
     fileprivate var isLoaded = false
     fileprivate var observersAdded = false
@@ -54,6 +54,10 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
             
             isLoaded = true
         }
+    }
+    
+    deinit {
+        selectedUser = nil
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {

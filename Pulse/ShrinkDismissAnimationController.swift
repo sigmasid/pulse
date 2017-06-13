@@ -70,4 +70,8 @@ class ShrinkDismissController: BaseAnimator {
             
         CATransaction.commit()
     }
+    
+    deinit {
+        shrinkToView = nil
+    }
 }

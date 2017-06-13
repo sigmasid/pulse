@@ -15,7 +15,7 @@ class ExploreChannelsCell: UICollectionViewCell {
     fileprivate var subscribeButton = PulseButton(size: .xxSmall, type: .addCircle, isRound: true, hasBackground: false, tint: .black)
     fileprivate lazy var previewImage = UIImageView()
     
-    public var delegate : ExploreChannelsDelegate!
+    public weak var delegate : ExploreChannelsDelegate!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -26,6 +26,10 @@ class ExploreChannelsCell: UICollectionViewCell {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        delegate = nil
     }
     
     public func updateCell(_ _title : String?, subtitle : String?) {

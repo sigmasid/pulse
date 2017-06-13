@@ -10,7 +10,7 @@ import UIKit
 
 class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
 
-    public var delegate : ParentTextViewDelegate!
+    public weak var delegate : ParentTextViewDelegate!
     
     fileprivate var isLoaded = false
     fileprivate var observersAdded = false
@@ -58,6 +58,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         if tap != nil {
             removeGestureRecognizer(tap)
         }
+        delegate = nil
     }
     
     func addObservers() {

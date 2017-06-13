@@ -20,12 +20,14 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     fileprivate var tapForMore = UILabel()
     
     //delegate vars
-    var delegate : PreviewDelegate!
+    public weak var delegate : PreviewDelegate!
     var showTapForMore = false
     var currentItem : Item! {
         didSet {
-            addItem(item: currentItem)
-            addLoadingIndicator()
+            if currentItem != nil {
+                addItem(item: currentItem)
+                addLoadingIndicator()
+            }
         }
     }
     //end delegate vars
@@ -46,6 +48,8 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     
     deinit {
         removeClip()
+        delegate = nil
+        currentItem = nil
     }
     
     func removeClip() {
@@ -148,13 +152,9 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     }
 }
 
-protocol PreviewPlayerItemDelegate {
-    func itemStatusReady()
-}
-
 class PreviewPlayerItem: AVPlayerItem {
     
-    var delegate : PreviewPlayerItemDelegate?
+    weak var delegate : PreviewPlayerItemDelegate?
     var isObserving = false
     
     init(url URL: URL) {

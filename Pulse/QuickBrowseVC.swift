@@ -9,7 +9,7 @@
 import UIKit
 
 class QuickBrowseVC: UIViewController {
-    weak var delegate : ItemDetailDelegate!
+    public weak var delegate : ItemDetailDelegate!
     internal var collectionViewLayout: QuickBrowseLayout!
     internal var collectionView: UICollectionView!
     

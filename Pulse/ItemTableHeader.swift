@@ -9,7 +9,7 @@
 import UIKit
 
 class ItemTableHeader: UITableViewHeaderFooterView {
-    public var delegate : HeaderDelegate!
+    public weak var delegate : HeaderDelegate!
     
     fileprivate var titleLabel = UILabel()
     lazy var addButton = PulseButton(size: .small, type: .add, isRound: true, background: .white, tint: .black)
@@ -26,6 +26,10 @@ class ItemTableHeader: UITableViewHeaderFooterView {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        delegate = nil
     }
     
     func updateLabel(_ _title : String?) {

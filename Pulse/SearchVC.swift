@@ -8,11 +8,6 @@
 
 import UIKit
 
-protocol searchVCDelegate: class {
-    func userCancelledSearch()
-    func userSelectedSearchResult(type : ItemTypes?, id : String)
-}
-
 enum SearchTypes {
     case channels
     case users
@@ -21,8 +16,8 @@ enum SearchTypes {
 
 
 class SearchVC: PulseVC, XMSegmentedControlDelegate {
-    public var modalDelegate : ModalDelegate!
-    public var selectionDelegate : SelectionDelegate!
+    public weak var modalDelegate : ModalDelegate!
+    public weak var selectionDelegate : SelectionDelegate!
 
     fileprivate var searchController = UISearchController(searchResultsController: nil)
     fileprivate var scopeBar : XMSegmentedControl!

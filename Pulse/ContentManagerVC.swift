@@ -22,12 +22,12 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     var openingScreen : OpeningScreenOptions = .item
     enum OpeningScreenOptions { case camera, item }
-    var completedRecordingDelegate : CompletedRecordingDelegate!
+    public weak var completedRecordingDelegate : CompletedRecordingDelegate!
 
     fileprivate var recordedItems = [Item]()
     
     /* CHILD VIEW CONTROLLERS */
-    fileprivate var loadingVC = LoadingVC()
+    fileprivate var loadingVC : LoadingVC?
 
     fileprivate let contentDetailVC = ContentDetailVC()
     fileprivate var cameraVC : CameraVC!
@@ -62,7 +62,9 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
 
         if !isLoaded {
             delegate = self // set the navigation controller delegate
-            pushViewController(loadingVC, animated: false)
+            
+            loadingVC = LoadingVC()
+            pushViewController(loadingVC!, animated: false)
             
             if openingScreen == .item {
                 showItemDetail(shouldShowIntro: true)
@@ -75,6 +77,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     deinit {
+        print("content manager deinit fired")
         selectedChannel = nil
         selectedItem = nil //the category item - might be the question / tag / post etc.
         allItems = []
@@ -85,6 +88,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         contentDetailVC.delegate = nil
         panDismissInteractionController.delegate = nil
         recordedVideoVC.delegate = nil
+        completedRecordingDelegate = nil
         
         if cameraVC != nil {
             cameraVC.delegate = nil
@@ -92,7 +96,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         }
         
         introVC = nil
-        cameraVC = nil
     }
     
     override func didReceiveMemoryWarning() {
@@ -108,7 +111,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
 
         //need to be set first - to determine if first clip should be answer detail or the answer itself
         contentDetailVC.watchedFullPreview = watchedFullPreview
-        contentDetailVC.itemDetailCollection = itemCollection
+        contentDetailVC.itemDetail = itemCollection
         contentDetailVC.selectedChannel = selectedChannel != nil ? selectedChannel : Channel(cID: selectedItem.cID, title: selectedItem.cTitle ?? "")
         contentDetailVC.selectedItem = selectedItem
         contentDetailVC.itemIndex = itemIndex
@@ -128,8 +131,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             contentDetailVC.allItems = allItems
             contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
             
-            dismiss(animated: true, completion: { _ in
-            })
+            dismiss(animated: true, completion: { _ in }) //dismisses the quick browse
         }
     }
     
@@ -153,17 +155,21 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
 
     func loadMoreFromTag() {
         if let selectedTag = selectedItem.tag, !selectedTag.itemCreated {
-            PulseDatabase.getItemCollection(selectedTag.itemID, completion: { (success, items) in
+            PulseDatabase.getItemCollection(selectedTag.itemID, completion: {[weak self] (success, items) in
+                guard let `self` = self else {
+                    return
+                }
                 self.itemIndex = items.index(of: self.selectedItem) ?? 0
                 self.allItems = items
             })
         } else {
-            dismiss(animated: true, completion: nil)
+            dismiss(animated: true, completion: {
+                self.transitioningDelegate = nil
+            })
         }
     }
     
     func userClickedProfileDetail() {
-        
         
         let userProfileVC = UserProfileVC()        
         userProfileVC.selectedUser = selectedItem?.user
@@ -250,7 +256,11 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     /* check if social token available - if yes, then login and post on return, else ask user to login */
     func askUserToLogin(_ currentVC : UIViewController) {
-        PulseDatabase.checkSocialTokens({ result in
+        PulseDatabase.checkSocialTokens({ [weak self] result in
+            guard let `self` = self else {
+                return
+            }
+            
             if !result {
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
                 if let showLoginVC = storyboard.instantiateViewController(withIdentifier: "LoginVC") as? LoginVC {
@@ -292,16 +302,24 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     func noItemsToShow(_ currentVC : UIViewController) {
         if selectedItem != nil {
-            selectedItem.checkVerifiedInput(completion: { success, error in
+            selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
+                guard let `self` = self else {
+                    return
+                }
+                
                 if success {
                     self.showCamera()
                 } else {
                     self.hasMoreItems = false
-                    self.dismiss(animated: true, completion: nil)
+                    self.dismiss(animated: true, completion: {
+                        self.transitioningDelegate = nil
+                    })
                 }
             })
         } else {
-            self.dismiss(animated: true, completion: nil)
+            dismiss(animated: true, completion: {
+                self.transitioningDelegate = nil
+            })
         }
     }
     
@@ -350,9 +368,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         }
     }
     
-    func addCover(_ currentVC : UIViewController, recordedItems : [Item]) {
+    //NOT USED
+    func addCover(_ currentVC : UIViewController, _recordedItems : [Item]) {
         recordedVideoVC = currentVC as! RecordedVideoVC
-        self.recordedItems = recordedItems
+        recordedItems = _recordedItems
         isAddingCover = true
         
         if !self.viewControllers.contains(cameraVC) {
@@ -394,10 +413,17 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     func userDismissedCamera() {
+        if cameraVC != nil {
+            cameraVC.delegate = nil
+        }
+        
         if isAddingMoreItems || isAddingCover {
             returnToRecordings()
         } else {
-            dismiss(animated: false, completion: nil)
+            dismiss(animated: true, completion: {
+                self.transitioningDelegate = nil
+            })
+            //dismiss(animated: false, completion: nil)
         }
     }
     

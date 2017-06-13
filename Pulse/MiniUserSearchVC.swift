@@ -21,8 +21,8 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
             }
         }
     }
-    public var modalDelegate : ModalDelegate!
-    public var selectionDelegate : SelectionDelegate!
+    public weak var modalDelegate : ModalDelegate!
+    public weak var selectionDelegate : SelectionDelegate!
     
     fileprivate var searchController = UISearchController(searchResultsController: nil)
     fileprivate var searchContainer = UIView()
@@ -66,6 +66,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         addBackButton()
     }
     
@@ -77,6 +78,8 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         if tap != nil {
             view.removeGestureRecognizer(tap)
         }
+        
+        NotificationCenter.default.removeObserver(self)
     }
     
     internal func closeSearch() {
@@ -111,7 +114,6 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         if !observersAdded {
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
-            view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
             
             tap = UITapGestureRecognizer(target: self, action: #selector(closeSearch))
             tap.cancelsTouchesInView = false

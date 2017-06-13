@@ -149,7 +149,9 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     internal func userClickedSubscribe(senderTag: Int) {
         let selectedChannel = allChannels[senderTag]
         toggleLoading(show: true, message: "Updating Subscriptions...", showIcon: true)
-        PulseDatabase.subscribeChannel(selectedChannel, completion: {(success, error) in
+        PulseDatabase.subscribeChannel(selectedChannel, completion: {[weak self](success, error) in
+            guard let `self` = self else { return }
+
             self.toggleLoading(show: false, message: nil)
             if !success {
                 GlobalFunctions.showAlertBlock("Error Subscribing", erMessage: error!.localizedDescription)
@@ -185,7 +187,9 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
             case .question, .thread, .interview:
                 
                 toggleLoading(show: true, message: "Loading Item...", showIcon: true)
-                PulseDatabase.getItemCollection(item.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self](success, items) in
+                    guard let `self` = self else { return }
+
                     success ?
                         self.showItemDetail(item: item, allItems: items) :
                         self.showBrowse(selectedItem: item)
@@ -230,8 +234,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     internal func showChannel(channel : Channel) {
         let channelVC = ChannelVC()
-        navigationController?.pushViewController(channelVC, animated: true)
         channelVC.selectedChannel = channel
+        navigationController?.pushViewController(channelVC, animated: true)
     }
 
     //used for handling links
@@ -276,7 +280,9 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
         }
         
         if !channel.cCreated {
-            PulseDatabase.getChannel(cID: channel.cID, completion: { (channel, error) in
+            PulseDatabase.getChannel(cID: channel.cID, completion: {[weak self] (channel, error) in
+                guard let `self` = self else { return }
+
                 channel.cPreviewImage = self.allChannels[indexPath.row].cPreviewImage
                 self.allChannels[indexPath.row] = channel
                 cell.updateCell(channel.cTitle, subtitle: channel.cDescription)
@@ -371,7 +377,9 @@ extension ExploreChannelsVC {
                 }
                 
                 let inviteID = urlComponents[2]
-                PulseDatabase.getInviteItem(inviteID, completion: { item, type, items, toUser, conversationID, error in
+                PulseDatabase.getInviteItem(inviteID, completion: {[weak self] item, type, items, toUser, conversationID, error in
+                    guard let `self` = self else { return }
+
                     if error == nil, let item = item, let type = type, toUser?.uID == PulseUser.currentUser.uID {
                         switch type {
                         case .interviewInvite:

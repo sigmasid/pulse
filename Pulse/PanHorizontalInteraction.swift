@@ -15,7 +15,7 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
     
     fileprivate var rightToLeftPan : Bool = false
     
-    var delegate : ContentDelegate!
+    public weak var delegate : ContentDelegate!
     
     func wireToViewController(_ tabBarController : UITabBarController) {
         self.tabBarController = tabBarController

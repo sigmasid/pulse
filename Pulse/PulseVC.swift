@@ -83,13 +83,6 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        headerNav = navigationController as? PulseNavVC
-        
-        headerNav?.navbarDelegate = self
-        headerNav?.updateBackgroundImage(image: nil)
-        
-        view.backgroundColor = .white
-        definesPresentationContext = true
     }
 
     override func didReceiveMemoryWarning() {
@@ -98,6 +91,15 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
+        headerNav = navigationController as? PulseNavVC
+        
+        headerNav?.navbarDelegate = self
+        headerNav?.updateBackgroundImage(image: nil)
+        
+        view.backgroundColor = .white
+        definesPresentationContext = true
+        
         currentNavState = .expanded
     }
     
@@ -158,10 +160,10 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         if show {
             if loadingView != nil, loadingView.superview == view {
                 if showIcon {
-                    self.loadingView.addIcon(.medium, _iconColor: .gray, _iconBackgroundColor: UIColor.white)
+                    loadingView.addIcon(.medium, _iconColor: .gray, _iconBackgroundColor: UIColor.white)
                 }
                 
-                self.loadingView.addMessage(message, _color: .gray)
+                loadingView.addMessage(message, _color: .gray)
                 
             } else {
                 loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.white.withAlphaComponent(backgroundOpacity))
@@ -197,16 +199,21 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
             return
         }
         
-        let itemKey = databaseRef.child("items").childByAutoId().key
-        let parentItemID = selectedShareItem.itemID
         
-        selectedShareItem.itemID = itemKey
-        selectedShareItem.cID = selectedChannel.cID
-        selectedShareItem.cTitle = selectedChannel.cTitle
+        let itemKey = databaseRef.child("items").childByAutoId().key        
+        let newShareItem = Item(itemID: itemKey)
+        newShareItem.itemID = itemKey
+        newShareItem.cID = selectedChannel.cID
+        newShareItem.cTitle = selectedChannel.cTitle
+        newShareItem.tag = selectedShareItem.tag
+        newShareItem.itemTitle = selectedShareItem.itemTitle
         
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        PulseDatabase.createInviteRequest(item: selectedShareItem, type: shareType, toUser: toUser, toName: nil, toEmail: toEmail,
-                                     childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+        PulseDatabase.createInviteRequest(item: newShareItem, type: shareType, toUser: toUser, toName: nil, toEmail: toEmail,
+                                     childItems: [], parentItemID: selectedShareItem.itemID, completion: {[weak self] (success, error) in
+            guard let `self` = self else {
+                return
+            }
                                         
             if success, showAlert {
                 GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
@@ -215,14 +222,18 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
             }
             
             self.toggleLoading(show: false, message: nil)
-            completion(selectedShareItem, error)
+            completion(newShareItem, error)
         })
     }
     
     internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
         let isInvite = type == "invite" ? true : false
-        selectedItem.createShareLink(invite: isInvite, completion: { link in
+        selectedItem.createShareLink(invite: isInvite, completion: {[weak self] link in
+            guard let `self` = self else {
+                return
+            }
+            
             guard let link = link else {
                 self.toggleLoading(show: false, message: nil)
                 return

@@ -38,7 +38,7 @@ public enum CameraOutputQuality: Int {
 open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGestureRecognizerDelegate, CLLocationManagerDelegate, AVCapturePhotoCaptureDelegate {
     
     
-    var maxRecordingDelegate : CameraManagerProtocol!
+    weak var maxRecordingDelegate : CameraManagerProtocol!
     // MARK: - Public properties
     
     /// Capture session to customize camera settings.
