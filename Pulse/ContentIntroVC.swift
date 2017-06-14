@@ -23,6 +23,7 @@ class ContentIntroVC: UIViewController {
     fileprivate var seriesImage = UIImageView()
     
     fileprivate var loadingButton = UIButton()
+    fileprivate var cleanupComplete = false
     
     public var item : Item! {
         didSet {
@@ -50,8 +51,20 @@ class ContentIntroVC: UIViewController {
     }
     
     deinit {
-        item = nil
-        userImage.image = nil
+        performCleanup()
+        //print("loading intro deinit called")
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            item = nil
+            userImage.image = nil
+            userStack.removeFromSuperview()
+            seriesImage.image = nil
+            seriesImage.removeFromSuperview()
+            loadingButton.removeFromSuperview()
+            cleanupComplete = true
+        }
     }
     
     override func viewDidLoad() {

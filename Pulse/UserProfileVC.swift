@@ -593,8 +593,6 @@ extension UserProfileVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
-            
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
             animator.exitFrame = getRectToLeft()
@@ -603,26 +601,5 @@ extension UserProfileVC: UIViewControllerTransitioningDelegate {
         } else {
             return nil
         }
-    }
-    
-    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is ContentManagerVC {
-            let animator = PanAnimationController()
-            
-            animator.initialFrame = getRectToLeft()
-            animator.exitFrame = getRectToRight()
-            animator.transitionType = .dismiss
-            return animator
-        } else {
-            return nil
-        }
-    }
-    
-    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return panPresentInteractionController.interactionInProgress ? panPresentInteractionController : nil
-    }
-    
-    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }

@@ -106,10 +106,10 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
      - parameter duration: Optional animation duration. Defaults to 0.1
      */
     public func hideNavbar(animated: Bool = true, duration: TimeInterval = 0.1) {
-        guard let _ = self.scrollableView, let visibleViewController = self.visibleViewController else { return }
+        guard let _ = scrollableView, let visibleViewController = visibleViewController else { return }
         
         if state == .expanded {
-            self.state = .scrolling
+            state = .scrolling
             UIView.animate(withDuration: animated ? duration : 0, animations: { () -> Void in
                 self.scrollWithDelta(self.fullNavbarHeight)
                 visibleViewController.view.setNeedsLayout()
@@ -131,11 +131,11 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
      - parameter duration: Optional animation duration. Defaults to 0.1
      */
     public func showNavbar(animated: Bool = true, duration: TimeInterval = 0.1) {
-        guard let _ = self.scrollableView, let visibleViewController = self.visibleViewController else { return }
+        guard let _ = scrollableView, let visibleViewController = visibleViewController else { return }
         
         if state == .collapsed {
             gestureRecognizer?.isEnabled = false
-            self.state = .scrolling
+            state = .scrolling
             UIView.animate(withDuration: animated ? duration : 0.0, animations: {
                 self.lastContentOffset = 0;
                 self.delayDistance = -self.fullNavbarHeight
@@ -307,7 +307,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     }
     
     private func updateSizing(_ delta: CGFloat) {
-        guard let topViewController = self.topViewController else { return }
+        guard let topViewController = topViewController else { return }
         
         var frame = navBar.frame
         
@@ -449,6 +449,10 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        scrollableView = nil
+        navbarDelegate = nil
+        navBar = nil
+        followers = []
     }
     
     override init(navigationBarClass: AnyClass?, toolbarClass: AnyClass?) {

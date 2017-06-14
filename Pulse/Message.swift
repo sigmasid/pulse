@@ -9,7 +9,7 @@
 import Foundation
 import FirebaseDatabase
 
-class Message : NSObject {
+class Message {
     var mID : String!
     var from : PulseUser!
     var to : PulseUser!

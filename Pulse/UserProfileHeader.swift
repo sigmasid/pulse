@@ -34,6 +34,13 @@ class UserProfileHeader: UICollectionReusableView {
         super.init(coder: aDecoder)
     }
     
+    deinit {
+        profileDelegate = nil
+        menuButton.removeFromSuperview()
+        profileImage.image = nil
+        profileImage.removeFromSuperview()
+    }
+    
     public func updateUserDetails(selectedUser: PulseUser?, isModal : Bool) {
         if let selectedUser = selectedUser {
             profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")

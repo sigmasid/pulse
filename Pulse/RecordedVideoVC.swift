@@ -44,7 +44,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     //includes currentItem - set by delegate - the image / video is replaced after processing when uploading file or adding more
-    var recordedItems = [Item]()
+    var recordedItems : [Item]! = [Item]()
     var isNewEntry = true //don't reprocess video / image if the user is returning back to prior entry
     
     var currentItemIndex : Int = 0 {
@@ -80,6 +80,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate var looper : AVPlayerLooper!
     
     fileprivate var itemCollectionPost = [ String : String ]()
+    fileprivate var cleanupComplete = false
     
     fileprivate var mode : AddOrPostMode = .base
     
@@ -90,6 +91,10 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     }
     fileprivate var placeholderText = "add a title"
     
+    deinit {
+        performCleanup()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
@@ -99,6 +104,10 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         if aPlayer != nil {
             aPlayer.pause()
         }
+    }
+    
+    override var prefersStatusBarHidden : Bool {
+        return true
     }
     
     fileprivate func setupImageView() {
@@ -435,6 +444,38 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                 }
             }
         })
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            uploadTask = nil
+            currentItem = nil
+            parentItem = nil
+            recordedItems.removeAll()
+            recordedItems = nil
+            delegate = nil
+            
+            controlsOverlay.removeFromSuperview()
+            itemFilters = nil
+            
+            
+            if aPlayer != nil {
+                aPlayer.removeAllItems()
+                avPlayerLayer.removeFromSuperlayer()
+                aPlayer = nil
+                looper = nil
+                currentVideo = nil
+            }
+            
+            if imageView != nil {
+                imageView.image = nil
+                imageView = nil
+            }
+            
+            itemCollectionPost.removeAll()
+            
+            cleanupComplete = true
+        }
     }
 }
 

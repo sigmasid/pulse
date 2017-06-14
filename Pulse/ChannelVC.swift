@@ -89,7 +89,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     }
     
     deinit {
-        print("channel vc deinit fired")
         selectedChannel = nil
         allItems = []
         allUsers = []
@@ -1001,6 +1000,7 @@ extension ChannelVC: UIViewControllerTransitioningDelegate {
         }
     }
     
+    /**
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         if dismissed is ContentManagerVC {
             let animator = PanAnimationController()
@@ -1020,5 +1020,5 @@ extension ChannelVC: UIViewControllerTransitioningDelegate {
     
     func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
-    }
+    } **/
 }

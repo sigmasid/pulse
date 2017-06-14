@@ -14,7 +14,7 @@ class CameraOverlayView: UIView {
     fileprivate var shutterButton = UIButton()
     fileprivate var flipCameraButton = UIButton()
     fileprivate var flashModeButton = UIButton()
-    fileprivate var questionBackground = UILabel()
+    fileprivate var titleBackground = UILabel()
     fileprivate var countdownTimer = UILabel()
     fileprivate var showAlbumPicker = UIButton()
     
@@ -25,7 +25,7 @@ class CameraOverlayView: UIView {
     }
     
     fileprivate var timeLeftShapeLayer : CAShapeLayer!
-    fileprivate var questionBackgroundHeight : CGFloat = 40
+    fileprivate var titleBackgroundHeight : CGFloat = 40
     fileprivate var shutterButtonRadius : CGFloat!
     fileprivate var iconSize : CGFloat = IconSizes.xxSmall.rawValue
     fileprivate var elementSpacing : CGFloat = Spacing.s.rawValue
@@ -48,7 +48,7 @@ class CameraOverlayView: UIView {
         shutterButtonRadius = frame.size.width / 11
         drawAlbumPicker()
         drawShutterButton()
-        drawQuestionBackground()
+        drawTitleBackground()
         drawFlashCamera()
         drawFlipCamera()
 
@@ -58,11 +58,19 @@ class CameraOverlayView: UIView {
         super.init(coder: aDecoder)
     }
     
+    deinit {
+        if timeLeftShapeLayer != nil {
+            timeLeftShapeLayer.removeFromSuperlayer()
+            timeLeftShapeLayer = nil
+        }
+        
+    }
+    
     /* PUBLIC ACCESSIBLE FUNCTIONS */
     
     ///Update question text
     public func updateTitle(_ title : String?) {
-        questionBackground.text = title
+        titleBackground.text = title
     }
     
     public func stopCountdown() {
@@ -89,7 +97,7 @@ class CameraOverlayView: UIView {
         
         countdownTimer.translatesAutoresizingMaskIntoConstraints = false
         
-        countdownTimer.topAnchor.constraint(equalTo: questionBackground.bottomAnchor, constant: elementSpacing + countdownTimerRadius).isActive = true
+        countdownTimer.topAnchor.constraint(equalTo: titleBackground.bottomAnchor, constant: elementSpacing + countdownTimerRadius).isActive = true
         countdownTimer.widthAnchor.constraint(equalToConstant: countdownTimerRadius * 2 + countdownTimerRadiusStroke).isActive = true
         countdownTimer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: elementSpacing + countdownTimerRadius).isActive = true
         countdownTimer.heightAnchor.constraint(equalToConstant: countdownTimerRadius * 2 + countdownTimerRadiusStroke).isActive = true
@@ -137,7 +145,7 @@ class CameraOverlayView: UIView {
         flashModeButton.alpha = 0.7
         
         flashModeButton.translatesAutoresizingMaskIntoConstraints = false
-        flashModeButton.topAnchor.constraint(equalTo: questionBackground.bottomAnchor, constant: elementSpacing).isActive = true
+        flashModeButton.topAnchor.constraint(equalTo: titleBackground.bottomAnchor, constant: elementSpacing).isActive = true
         flashModeButton.widthAnchor.constraint(equalToConstant: iconSize).isActive = true
         flashModeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -elementSpacing).isActive = true
         flashModeButton.heightAnchor.constraint(equalToConstant: iconSize).isActive = true
@@ -184,28 +192,28 @@ class CameraOverlayView: UIView {
     }
     
     ///Adds the stripe for the question
-    fileprivate func drawQuestionBackground() {
-        addSubview(questionBackground)
-        questionBackground.translatesAutoresizingMaskIntoConstraints = false
+    fileprivate func drawTitleBackground() {
+        addSubview(titleBackground)
+        titleBackground.translatesAutoresizingMaskIntoConstraints = false
         
-        questionBackground.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        questionBackground.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1.0).isActive = true
-        questionBackground.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        questionBackground.heightAnchor.constraint(equalToConstant: questionBackgroundHeight).isActive = true
+        titleBackground.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        titleBackground.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1.0).isActive = true
+        titleBackground.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        titleBackground.heightAnchor.constraint(equalToConstant: titleBackgroundHeight).isActive = true
         
-        questionBackground.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        questionBackground.textColor = UIColor.white
-        questionBackground.textAlignment = .center
-        questionBackground.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        questionBackground.numberOfLines = 2
-        questionBackground.adjustsFontSizeToFitWidth = true
-        questionBackground.minimumScaleFactor = 0.3
+        titleBackground.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        titleBackground.textColor = UIColor.white
+        titleBackground.textAlignment = .center
+        titleBackground.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        titleBackground.numberOfLines = 2
+        titleBackground.adjustsFontSizeToFitWidth = true
+        titleBackground.minimumScaleFactor = 0.3
     }
     
     fileprivate func drawBgShape() -> CAShapeLayer {
         let bgShapeLayer = CAShapeLayer()
         bgShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0 , y: 0), radius: countdownTimerRadius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
-        bgShapeLayer.strokeColor = UIColor.white.cgColor
+        bgShapeLayer.strokeColor = UIColor.pulseGrey.cgColor
         bgShapeLayer.fillColor = UIColor.clear.cgColor
         bgShapeLayer.opacity = elementOpacity
         bgShapeLayer.lineWidth = countdownTimerRadiusStroke

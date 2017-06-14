@@ -9,17 +9,16 @@
 import UIKit
 
 class RecordingOverlay: UIView {
-    fileprivate var saveButton = PulseButton(size: .small, type: .save, isRound: true, hasBackground: false, tint: .white)
-    fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: false, tint: .white)
-    fileprivate var titleButton = PulseButton(size: .small, type: .text, isRound: true, hasBackground: false, tint: .white)
-
+    fileprivate var saveButton = PulseButton(size: .xSmall, type: .save, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var titleButton = PulseButton(size: .xSmall, type: .text, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
     fileprivate var addMoreStack = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
     fileprivate var addMoreLabel = UILabel()
-    fileprivate var addMoreButton = PulseButton(size: .large, type: .addCircle, isRound: true, hasBackground: false, tint: .pulseBlue)
+    fileprivate var addMoreButton = PulseButton(size: .small, type: .add, isRound: true, background: UIColor.white.withAlphaComponent(0.6), tint: .black)
 
     fileprivate var postLabel = UILabel()
     fileprivate var postStack = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
-    fileprivate var postButton = PulseButton(size: .large, type: .postCircle, isRound: true, hasBackground: false, tint: .pulseBlue)
+    fileprivate var postButton = PulseButton(size: .small, type: .post, isRound: true, background: UIColor.white.withAlphaComponent(0.6), tint: .black)
     
     fileprivate var progressLabel = UILabel()
     fileprivate var progressBar = UIProgressView()
@@ -34,6 +33,15 @@ class RecordingOverlay: UIView {
     
     internal enum ControlButtons: Int {
         case save, post, close, addMore
+    }
+    
+    deinit {
+        addMoreStack.removeFromSuperview()
+        postStack.removeFromSuperview()
+        pagers.removeAll()
+        NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillHide, object: nil)
+        pagersStack.removeFromSuperview()
     }
     
     override init(frame: CGRect) {
@@ -90,15 +98,30 @@ class RecordingOverlay: UIView {
         
         addSubview(postLabel)
         addSubview(addMoreLabel)
+        
+        addMoreLabel.translatesAutoresizingMaskIntoConstraints = false
+        addMoreLabel.centerXAnchor.constraint(equalTo: centerXAnchor, constant: -frame.width / 4).isActive = true
+        addMoreLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        
+        postLabel.translatesAutoresizingMaskIntoConstraints = false
+        postLabel.centerXAnchor.constraint(equalTo: centerXAnchor, constant: frame.width / 4).isActive = true
+        postLabel.bottomAnchor.constraint(equalTo: addMoreLabel.bottomAnchor).isActive = true
+        
+        postLabel.layoutIfNeeded()
+        addMoreLabel.layoutIfNeeded()
 
         postButton.translatesAutoresizingMaskIntoConstraints = false
-        postButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.m.rawValue).isActive = true
-        postButton.centerXAnchor.constraint(equalTo: centerXAnchor, constant: frame.width / 4).isActive = true
+        postButton.bottomAnchor.constraint(equalTo: postLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        postButton.centerXAnchor.constraint(equalTo: postLabel.centerXAnchor).isActive = true
+        postButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        postButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         postButton.layoutIfNeeded()
         
         addMoreButton.translatesAutoresizingMaskIntoConstraints = false
-        addMoreButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.m.rawValue).isActive = true
-        addMoreButton.centerXAnchor.constraint(equalTo: centerXAnchor, constant: -frame.width / 4).isActive = true
+        addMoreButton.bottomAnchor.constraint(equalTo: addMoreLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        addMoreButton.centerXAnchor.constraint(equalTo: addMoreLabel.centerXAnchor).isActive = true
+        addMoreButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        addMoreButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         addMoreButton.layoutIfNeeded()
 
         postLabel.text = "Post"
@@ -110,16 +133,7 @@ class RecordingOverlay: UIView {
         postLabel.setBlurredBackground()
         addMoreLabel.setBlurredBackground()
         
-        addMoreLabel.translatesAutoresizingMaskIntoConstraints = false
-        addMoreLabel.centerXAnchor.constraint(equalTo: addMoreButton.centerXAnchor).isActive = true
-        addMoreLabel.topAnchor.constraint(equalTo: addMoreButton.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
-        
-        postLabel.translatesAutoresizingMaskIntoConstraints = false
-        postLabel.centerXAnchor.constraint(equalTo: postButton.centerXAnchor).isActive = true
-        postLabel.topAnchor.constraint(equalTo: postButton.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
-        
-        postLabel.layoutIfNeeded()
-        addMoreLabel.layoutIfNeeded()
+
     }
     
     func userClickedAddTitle(sender: UIButton) {
@@ -186,8 +200,8 @@ class RecordingOverlay: UIView {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
         closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
-        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         
         closeButton.layoutIfNeeded()
         
@@ -199,8 +213,8 @@ class RecordingOverlay: UIView {
         saveButton.translatesAutoresizingMaskIntoConstraints = false
         saveButton.topAnchor.constraint(equalTo: closeButton.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         saveButton.leadingAnchor.constraint(equalTo: closeButton.leadingAnchor).isActive = true
-        saveButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        saveButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        saveButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        saveButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         saveButton.layoutIfNeeded()
         
         saveButton.removeShadow()
@@ -213,8 +227,8 @@ class RecordingOverlay: UIView {
         titleButton.translatesAutoresizingMaskIntoConstraints = false
         titleButton.topAnchor.constraint(equalTo: saveButton.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         titleButton.leadingAnchor.constraint(equalTo: saveButton.leadingAnchor).isActive = true
-        titleButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        titleButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        titleButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        titleButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         titleButton.layoutIfNeeded()
         
         titleButton.addTarget(self, action: #selector(userClickedAddTitle), for: .touchUpInside)

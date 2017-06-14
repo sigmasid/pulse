@@ -417,8 +417,16 @@ extension NewSeriesVC: UITextFieldDelegate {
     }
 }
 
-extension NewSeriesVC: CameraDelegate {
+extension NewSeriesVC: CameraDelegate, PanAnimationDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
+    func panCompleted(success: Bool, fromVC: UIViewController?) {
+        if success {
+            if fromVC is CameraVC {
+                cameraVC.dismiss(animated: true, completion: nil)
+            }
+        }
+    }
+    
     func showCamera() {
         guard let nav = navigationController else { return }
         

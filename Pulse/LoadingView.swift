@@ -20,13 +20,23 @@ class LoadingView: UIView {
     }
     
     convenience init(frame: CGRect, backgroundColor : UIColor) {
-        print("loading init fired")
         self.init(frame: frame)
         self.backgroundColor = backgroundColor
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    deinit {
+        if iconManager != nil {
+            iconManager.removeFromSuperview()
+            iconManager = nil
+        }
+        
+        if loadingDelegate != nil {
+            loadingDelegate = nil
+        }
     }
     
     public func addMessage(_ _text : String?) {

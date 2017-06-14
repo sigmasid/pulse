@@ -16,9 +16,9 @@ enum ButtonSizes { case xxSmall, xSmall, small, medium, large }
 open class PulseButton: UIButton {
     
     var size : ButtonSizes!
-    @IBInspectable open var highlightedTint : UIColor = .pulseBlue
+    @IBInspectable open var highlightedTint : UIColor! = .pulseBlue
     
-    @IBInspectable open var regularTint : UIColor = UIColor.white {
+    @IBInspectable open var regularTint : UIColor! = UIColor.white {
         didSet {
             tintColor = regularTint
         }
@@ -30,13 +30,13 @@ open class PulseButton: UIButton {
         }
     }
     
-    @IBInspectable open var rippleColor: UIColor = UIColor(white: 0.9, alpha: 1) {
+    @IBInspectable open var rippleColor: UIColor! = UIColor(white: 0.9, alpha: 1) {
         didSet {
             rippleView.backgroundColor = rippleColor
         }
     }
     
-    @IBInspectable open var rippleBackgroundColor: UIColor = UIColor(white: 0.95, alpha: 1) {
+    @IBInspectable open var rippleBackgroundColor: UIColor! = UIColor(white: 0.95, alpha: 1) {
         didSet {
             rippleBackgroundView.backgroundColor = rippleBackgroundColor
         }
@@ -111,6 +111,19 @@ open class PulseButton: UIButton {
     public override init(frame: CGRect) {
         super.init(frame: frame)
         setupRipple()
+    }
+    
+    deinit {
+        rippleView.removeFromSuperview()
+        rippleBackgroundView.removeFromSuperview()
+        shadowColor = nil
+        regularTint = nil
+        highlightedTint = nil
+        rippleColor = nil
+        rippleBackgroundColor = nil
+        downRect = nil
+        upRect = nil
+        setImage(nil, for: .normal)
     }
     
     convenience init(title: String, isRound : Bool) {
@@ -309,14 +322,15 @@ open class PulseButton: UIButton {
         }
         else {
             // Erase shadow:
-            self.layer.shadowOpacity = 0.0
+            layer.shadowOpacity = 0.0
         }
     }
     
     fileprivate func setupButtonType(size: ButtonSizes, type : ButtonType) {
         
         switch size {
-        case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) //smaller insets for xSmall button
+        case .xxSmall: imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) //smaller insets for xSmall button
+        case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //smaller insets for xSmall button
         case .medium: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15) //smaller insets for xSmall button
         case .large: imageEdgeInsets = UIEdgeInsetsMake(22.5, 22.5, 22.5, 22.5) //smaller insets for xSmall button
 
@@ -381,7 +395,8 @@ open class PulseButton: UIButton {
         case .post:
             let tintedTimage = UIImage(named: "post")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            
+            imageEdgeInsets = UIEdgeInsetsMake(7.5, 7.5, 7.5, 7.5)
+
         case .channels:
             let tintedTimage = UIImage(named: "channels")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)

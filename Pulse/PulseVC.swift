@@ -18,8 +18,6 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     /** Transition Vars **/
     internal var initialFrame = CGRect.zero
-    internal var panPresentInteractionController = PanEdgeInteractionController()
-    internal var panDismissInteractionController = PanEdgeInteractionController()
     
     /** Collection View Vars **/
     internal let headerReuseIdentifier = "HeaderCell"

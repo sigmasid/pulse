@@ -14,7 +14,7 @@ class PanEdgeInteractionController: UIPercentDrivenInteractiveTransition {
     fileprivate var shouldCompleteTransition = false
     fileprivate var fromViewController: UIViewController?
     fileprivate var toViewController: UIViewController?
-    
+    fileprivate weak var gesture : UIScreenEdgePanGestureRecognizer!
     fileprivate var lastProgress: CGFloat?
     
     func wireToViewController(_ _fromViewController: UIViewController, _toViewController: UIViewController?, edge : UIRectEdge) {
@@ -23,8 +23,15 @@ class PanEdgeInteractionController: UIPercentDrivenInteractiveTransition {
         prepareGestureRecognizerInView(_fromViewController.view, edge: edge)
     }
     
+    deinit {
+        fromViewController = nil
+        toViewController = nil
+        fromViewController?.view.removeGestureRecognizer(gesture)
+        gesture = nil
+    }
+    
     fileprivate func prepareGestureRecognizerInView(_ view: UIView, edge : UIRectEdge) {
-        let gesture = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+        gesture = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
         gesture.edges = edge
         view.addGestureRecognizer(gesture)
     }

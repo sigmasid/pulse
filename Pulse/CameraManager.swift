@@ -173,7 +173,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     /// Property to check video recording file size when in progress
     open var recordedFileSize : Int64 { return movieOutput?.recordedFileSize ?? 0 }
     
-    open var location : CLLocation? { return self.locationManager.latestLocation }
+    open var location : CLLocation? { return locationManager.latestLocation }
     
     func cameraWithPosition(_ position: AVCaptureDevicePosition?) -> AVCaptureDevice?
     {
@@ -277,7 +277,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                     validCompletition()
                 }
             } else {
-                _setupCamera({ Void -> Void in
+                _setupCamera({[weak self] Void -> Void in
+                    guard let `self` = self else { return }
                     self._addPreviewLayerToView(view)
                     self.cameraOutputMode = newCameraOutputMode
                     if let validCompletition = completition {
@@ -295,7 +296,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      :param: completition Completition block with the result of permission request
      */
     open func askUserForCameraPermissions(_ completition: @escaping (Bool) -> Void) {
-        AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeVideo, completionHandler: { (alowedAccess) -> Void in
+        AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeVideo, completionHandler: {[unowned self] (alowedAccess) -> Void in
             if self.cameraOutputMode == .videoWithMic {
                 AVCaptureDevice.requestAccess(forMediaType: AVMediaTypeAudio, completionHandler: { (alowedAccess) -> Void in
                     DispatchQueue.main.sync(execute: { () -> Void in
@@ -334,7 +335,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 if cameraIsSetup {
                     stopAndRemoveCaptureSession()
                 }
-                _setupCamera({Void -> Void in
+                _setupCamera({[unowned self] Void -> Void in
                     if let validEmbeddingView = self.embeddingView {
                         self._addPreviewLayerToView(validEmbeddingView)
                     }
@@ -349,6 +350,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      */
     open func stopAndRemoveCaptureSession() {
         stopCaptureSession()
+        _stopFollowingDeviceOrientation()
+        
         cameraDevice = .back
         cameraIsSetup = false
         previewLayer = nil
@@ -358,6 +361,10 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         mic = nil
         stillImageOutput = nil
         movieOutput = nil
+        maxRecordingDelegate = nil
+        library = nil
+        embeddingView = nil
+        NotificationCenter.default.removeObserver(self)
     }
     
     fileprivate func _performShutterAnimation(_ completion: (() -> Void)?) {
@@ -397,8 +404,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      :param: imageCompletition Completition block containing the captured UIImage
      */
     open func capturePictureWithCompletion(_ imageCompletion: @escaping (UIImage?, Bool, NSError?) -> Void) {
-        self.capturePhoto { data, capturing, error in
-            guard let imageData = data else {
+        capturePhoto {[weak self] data, capturing, error in
+            guard let `self` = self, let imageData = data else {
                 imageCompletion(nil, capturing, error)
                 return
             }
@@ -411,7 +418,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                     flippedImage = UIImage(cgImage: flippedImage.cgImage!, scale: (flippedImage.scale), orientation:.rightMirrored)
                 }
                 
-                library.performChanges({
+                library.performChanges({[unowned self] in
                     let request = PHAssetChangeRequest.creationRequestForAsset(from: flippedImage)
                     request.creationDate = Date()
                     
@@ -432,7 +439,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 
             })
         }
-        
     }
     
     /**
@@ -488,7 +494,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         }
         
         
-        self._performShutterAnimation() {}
+        _performShutterAnimation() {}
         /*
          Retrieve the video preview layer's video orientation on the main queue before
          entering the session queue. We do this to ensure UI elements are accessed on
@@ -496,7 +502,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
          */
         let videoPreviewLayerOrientation = previewLayer?.connection.videoOrientation
         
-        sessionQueue.async {
+        sessionQueue.async {[unowned self] in
             // Update the photo output's connection to match the video orientation of the video preview layer.
             if let photoOutputConnection = self._getStillImageOutput().connection(withMediaType: AVMediaTypeVideo) {
                 photoOutputConnection.videoOrientation = videoPreviewLayerOrientation!
@@ -520,7 +526,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                  Live Photo label stays visible during these captures.
                  */
 
-            }, completed: { [unowned self] photoCaptureDelegate, photoData in
+            }, completed: {[unowned self] photoCaptureDelegate, photoData in
                 // When the capture is complete, remove a reference to the photo capture delegate so it can be deallocated.
                 self.sessionQueue.async { [unowned self] in
                     self.inProgressPhotoCaptureDelegates[photoCaptureDelegate.requestedPhotoSettings.uniqueID] = nil
@@ -614,7 +620,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 _didReachMaxRecording = true
                 
                 if writeFilesToPhoneLibrary {
-                    _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: URL?, error: NSError?) -> Void in
+                    _saveVideoToAlbum(outputFileURL, completionBlock: {[weak self] (assetURL: URL?, error: NSError?) -> Void in
+                        guard let `self` = self else { return }
                         if (error != nil) {
                             self._show(NSLocalizedString("Unable to save video to the iPhone.", comment:""), message: error!.localizedDescription)
                             self._executeVideoCompletitionWithURL(nil, blockError: error)
@@ -633,7 +640,9 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             }
         } else {
             if writeFilesToPhoneLibrary {
-                _saveVideoToAlbum(outputFileURL, completionBlock: { (assetURL: URL?, error: NSError?) -> Void in
+                _saveVideoToAlbum(outputFileURL, completionBlock: {[weak self] (assetURL: URL?, error: NSError?) -> Void in
+                    guard let `self` = self else { return }
+
                     if (error != nil) {
                         self._show(NSLocalizedString("Unable to save video to the iPhone.", comment:""), message: error!.localizedDescription)
                         self._executeVideoCompletitionWithURL(nil, blockError: error)
@@ -746,10 +755,10 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
 
                 if _duration > 0.5 {
                     validCompletition(url, nil, blockError)
-                    self.videoCompletition = nil
+                    videoCompletition = nil
                 } else {
                     if let url = url {
-                        capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, blockError) in
+                        capturePictureDataFromVideoWithCompletition(url, imageCompletion: {[unowned self] (image, blockError) in
                             validCompletition(nil, image, blockError)
                             self.videoCompletition = nil
                         })
@@ -763,7 +772,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                     maxRecordingDelegate.didReachMaxRecording(url, image: nil, error: blockError)
                 } else {
                     if let url = url {
-                        capturePictureDataFromVideoWithCompletition(url, imageCompletion: {(image, blockError) in
+                        capturePictureDataFromVideoWithCompletition(url, imageCompletion: {[unowned self] (image, blockError) in
                             if self._didReachMaxRecording {
                                 self.maxRecordingDelegate.didReachMaxRecording(nil, image: image, error: blockError)
                             }
@@ -848,7 +857,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                     validOutputLayerConnection.videoOrientation = _currentVideoOrientation()
                 }
             }
-            DispatchQueue.main.async(execute: { () -> Void in
+            DispatchQueue.main.async(execute: {[unowned self] () -> Void in
                 if let validEmbeddingView = self.embeddingView {
                     validPreviewLayer.frame = validEmbeddingView.bounds
                 }
@@ -875,8 +884,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     fileprivate func _setupCamera(_ completition: @escaping (Void) -> Void) {
         captureSession = AVCaptureSession()
         
-        sessionQueue.async(execute: {
-            if let validCaptureSession = self.captureSession {
+        sessionQueue.async(execute: {[weak self] in
+            if let `self` = self, let validCaptureSession = self.captureSession {
                 validCaptureSession.beginConfiguration()
                 validCaptureSession.sessionPreset = AVCaptureSessionPresetHigh
                 self._updateCameraDevice()
@@ -915,7 +924,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         embeddingView = view
         attachZoom(view)
         
-        DispatchQueue.main.async(execute: { () -> Void in
+        DispatchQueue.main.async(execute: {[unowned self] () -> Void in
             guard let _ = self.previewLayer else {
                 return
             }
@@ -950,11 +959,13 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
             } else if authorizationStatus == AVAuthorizationStatus.notDetermined {
                 return .notDetermined
             } else {
-                _show(NSLocalizedString("Camera access denied", comment:""), message:NSLocalizedString("You need to go to settings app and grant acces to the camera device to use it.", comment:""))
+                _show(NSLocalizedString("Camera access denied", comment:""),
+                      message:NSLocalizedString("You need to go to settings app and grant acces to the camera device to use it.", comment:""))
                 return .accessDenied
             }
         } else {
-            _show(NSLocalizedString("Camera unavailable", comment:""), message:NSLocalizedString("The device does not have a camera.", comment:""))
+            _show(NSLocalizedString("Camera unavailable", comment:""),
+                  message:NSLocalizedString("The device does not have a camera.", comment:""))
             return .noDeviceFound
         }
     }
@@ -1138,23 +1149,23 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     /* Location vars */
     /// setup the location tracking defaults
     fileprivate class CameraLocationManager: NSObject, CLLocationManagerDelegate {
-        var locationManager = CLLocationManager()
+        var _locationManager = CLLocationManager()
         var latestLocation: CLLocation?
         
         override init() {
             super.init()
-            locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
-            locationManager.distanceFilter = 100.0
-            locationManager.requestWhenInUseAuthorization()
+            _locationManager.delegate = self
+            _locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
+            _locationManager.distanceFilter = 100.0
+            _locationManager.requestWhenInUseAuthorization()
         }
         
         func startUpdatingLocation() {
-            locationManager.startUpdatingLocation()
+            _locationManager.startUpdatingLocation()
         }
         
         func stopUpdatingLocation() {
-            locationManager.stopUpdatingLocation()
+            _locationManager.stopUpdatingLocation()
         }
         
         // MARK: - CLLocationManagerDelegate
@@ -1164,15 +1175,19 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         }
         
         func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-            print("Error while updating location " + error.localizedDescription)
+            //print("Error while updating location " + error.localizedDescription)
         }
         
         func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
             if status == .authorizedAlways || status == .authorizedWhenInUse {
-                locationManager.startUpdatingLocation()
+                _locationManager.startUpdatingLocation()
             } else {
-                locationManager.stopUpdatingLocation()
+                _locationManager.stopUpdatingLocation()
             }
+        }
+        
+        deinit {
+            _locationManager.delegate = nil
         }
     }
 

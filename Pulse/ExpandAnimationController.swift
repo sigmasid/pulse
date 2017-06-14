@@ -10,8 +10,13 @@ import UIKit
 
 class ExpandAnimationController: BaseAnimator {
     
-    var initialFrame : CGRect = UIScreen.main.bounds
+    var initialFrame : CGRect! = UIScreen.main.bounds
     var exitFrame : CGRect!
+    
+    deinit {
+        initialFrame = nil
+        exitFrame = nil
+    }
     
     override func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         return 0.2

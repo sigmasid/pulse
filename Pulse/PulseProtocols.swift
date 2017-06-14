@@ -56,6 +56,10 @@ protocol CameraDelegate : class {
     func showAlbumPicker()
 }
 
+protocol PanAnimationDelegate : class {
+    func panCompleted(success: Bool, fromVC: UIViewController?)
+}
+
 protocol CompletedRecordingDelegate : class {
     func doneRecording(success: Bool)
 }

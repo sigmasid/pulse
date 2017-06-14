@@ -54,6 +54,13 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         super.didReceiveMemoryWarning()
     }
     
+    deinit {
+        allChannels = []
+        searchButton.removeFromSuperview()
+        menuButton.removeFromSuperview()
+        channelCollection = nil
+    }
+    
     fileprivate func setupScreenLayout() {
         if !isLayoutSetup {
             

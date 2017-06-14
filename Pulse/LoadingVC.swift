@@ -24,4 +24,11 @@ class LoadingVC: UIViewController {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
+    
+    deinit {
+        if loadingView != nil {
+            loadingView?.removeFromSuperview()
+            loadingView = nil
+        }
+    }
 }

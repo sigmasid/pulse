@@ -783,8 +783,6 @@ extension SeriesVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
-            panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
-            
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
             animator.exitFrame = getRectToLeft()
@@ -795,6 +793,7 @@ extension SeriesVC: UIViewControllerTransitioningDelegate {
         }
     }
     
+    /**
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         if dismissed is ContentManagerVC {
             let animator = PanAnimationController()
@@ -814,5 +813,5 @@ extension SeriesVC: UIViewControllerTransitioningDelegate {
     
     func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
-    }
+    } **/
 }

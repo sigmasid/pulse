@@ -18,7 +18,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         didSet {
             if isViewLoaded {
                 removeObserverIfNeeded()
-                watchedFullPreview ? loadWatchedPreviewItem() : loadItem(index: itemIndex)
+                loadItem(index: itemIndex)
             }
         }
     }
@@ -27,11 +27,23 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     internal var currentItem : Item? {
         didSet {
             guard let currentItem = currentItem else { return }
-
+            
+            guard nextItemReady else {
+                addNextItem(item: currentItem, completion: { success in
+                    if success {
+                        let _currentItem = self.currentItem
+                        self.currentItem = _currentItem
+                    } else {
+                        self.handleTap()
+                    }
+                })
+                return
+            }
+            
             //whenever this is set - advance with this item
             advanceItem(completion: { [weak self] success in
                 guard let `self` = self else { return }
-
+                
                 if currentItem.itemCollection.count > 1 {
                     //set the next detail item from fullItem which adds the next item to queue
                     self.updateOverlayData(currentItem, updateUser: true)
@@ -39,12 +51,11 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     self.itemDetailIndex = 0
                     self.showItemDetail(show: true)
                     self.shouldShowExplore = true
-                    self.isExploring = true
-                } else if self.isExploring {
+                } else if self.shouldShowExplore {
                     //is a detail item so just update the overlay
                     currentItem.user = oldValue?.user
                     self.updateOverlayData(currentItem, updateUser: false)
-                    self.contentOverlay.updateSelectedPager(num: self.itemDetailIndex)
+                    self.contentOverlay?.updateSelectedPager(num: self.itemDetailIndex)
                 } else {
                     //not a detail item and does not have any item detail
                     self.showItemDetail(show: false)
@@ -52,24 +63,19 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     self.shouldShowExplore = false
                 }
                 
-                self.checkNextItem(detail: self.shouldShowExplore, completion: {[unowned self] success in
-                    if success, self.shouldShowExplore {
-                        //this will also add as next item in queue
-                        self.nextDetailItem = self.itemDetail[self.itemDetailIndex]
-                    } else if self.shouldShowExplore {
-                        //no more detail items - so check if can move to fullItems
-                        self.checkNextItem(detail: false, completion: {[unowned self] success in
-                            if success {
-                                self.nextFullItem = self.allItems[self.itemIndex]
-                            }
-                            self.isExploring = false
-                        })
-                    } else if success {
-                        //this will also add as next item in queue
-                        self.isExploring = false
-                        self.nextFullItem = self.allItems[self.itemIndex]
-                    }
-                })
+                if self.shouldShowExplore {
+                    self.checkNextItem(detail: true, completion: {[unowned self] success in
+                        if success {
+                            //this will also add as next item in queue
+                            self.nextDetailItem = self.itemDetail[self.itemDetailIndex]
+                        } else if self.canAdvanceReady, let nextFullItem = self.nextFullItem {
+                            //no more detail items - so check if can move to fullItems
+                            self.addNextItem(item: nextFullItem, completion: { _ in })
+                        }
+                    })
+                } else if self.canAdvanceReady, let nextFullItem = self.nextFullItem {
+                    self.addNextItem(item: nextFullItem, completion: { _ in })
+                }
             })
         }
     }
@@ -80,7 +86,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         didSet {
             guard nextDetailItem != nil else { return }
             if nextDetailItem!.itemCreated {
-                self.addNextItem(item: self.nextDetailItem!, completion: { _ in })
+                addNextItem(item: nextDetailItem!, completion: { _ in })
             } else {
                 PulseDatabase.getItem(nextDetailItem!.itemID, completion: {[weak self] item, error in
                     if let item = item, let `self` = self {
@@ -96,19 +102,14 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         didSet {
             guard let nextFullItem = nextFullItem else { return }
             if nextFullItem.itemCreated {
-                addNextItem(item: nextFullItem, completion: {[unowned self] success in
-                    if success {
-                        PulseDatabase.getItemCollection(nextFullItem.itemID, completion: {[weak self] (_ success : Bool, _ items : [Item]) in
-                            guard let `self` = self else { return }
-                            if success, items.count > 1 {
-                                self.nextFullItem?.itemCollection = items.reversed() //otherwise items are in chron order - need to get oldest first
-                            } else {
-                                self.nextFullItem?.itemCollection = []
-                                self.itemDetail = []
-                            }
-                        })
+                PulseDatabase.getItemCollection(nextFullItem.itemID, completion: {(_ success : Bool, _ items : [Item]) in
+                    if success, items.count > 1 {
+                        nextFullItem.itemCollection = items.reversed() //otherwise items are in chron order - need to get oldest first
+                    } else {
+                        nextFullItem.itemCollection = []
                     }
                 })
+
             } else {
                 PulseDatabase.getItem(nextFullItem.itemID, completion: {[weak self] item, error in
                     if let item = item, let `self` = self {
@@ -121,7 +122,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     fileprivate var canAdvanceReady = false
     fileprivate var canAdvanceDetailReady = false
-
+    fileprivate var tapReady = false
+    fileprivate var nextItemReady = false
+    
     lazy var itemDetail = [Item]()
     lazy var itemDetailIndex = 0
     
@@ -132,7 +135,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     /** Media Player Items **/
     fileprivate var avPlayerLayer: AVPlayerLayer!
-    fileprivate var contentOverlay : ContentOverlay!
+    fileprivate var contentOverlay : ContentOverlay?
     fileprivate var qPlayer = AVQueuePlayer()
     fileprivate var nextPlayerItem : AVPlayerItem?
     fileprivate var imageView : UIImageView!
@@ -140,22 +143,20 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     /* bools to make sure can click next video and no errors from unhandled observers */
     public var _isShowingIntro = false
     
-    fileprivate var tapReady = false
-    fileprivate var nextItemReady = false
     fileprivate var isObserving = false
     fileprivate var isMiniProfileShown = false
     fileprivate var isImageViewShown = false
     fileprivate var isQuickBrowseShown = false
     fileprivate var shouldShowExplore = false
-    fileprivate var isExploring = false
-
+    fileprivate var cleanupComplete = false
+    
     fileprivate var playedTillEndObserver : Any!
-    
+    fileprivate var timeObserver : Any!
+
     fileprivate var miniProfile : MiniPreview?
-    
     public weak var delegate : ContentDelegate!
-    fileprivate weak var tap : UITapGestureRecognizer!
-    fileprivate weak var detailTap : UITapGestureRecognizer!
+    fileprivate var tap : UITapGestureRecognizer!
+    fileprivate var detailTap : UITapGestureRecognizer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -173,16 +174,16 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             
             qPlayer.actionAtItemEnd = AVPlayerActionAtItemEnd.none
             contentOverlay = ContentOverlay(frame: view.bounds, iconColor: .white, iconBackground: .black)
-            contentOverlay.addClipTimerCountdown()
-            contentOverlay.delegate = self
+            contentOverlay?.addClipTimerCountdown()
+            contentOverlay?.delegate = self
             
             avPlayerLayer = AVPlayerLayer(player: qPlayer)
             view.layer.insertSublayer(avPlayerLayer, at: 0)
-            view.insertSubview(contentOverlay, at: 2)
+            view.insertSubview(contentOverlay!, at: 2)
             avPlayerLayer.frame = view.bounds
             
             if (allItems.count > itemIndex) { //to make sure that allItems has been set
-                watchedFullPreview ? loadWatchedPreviewItem() : loadItem(index: itemIndex)
+               loadItem(index: itemIndex)
             }
             
             NotificationCenter.default.addObserver(self,
@@ -191,7 +192,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                                                    object: nextPlayerItem)
             
             //align the timer to actually when the video starts
-            let _ = qPlayer.addBoundaryTimeObserver(forTimes: [NSValue(time: CMTimeMake(1, 20))],
+            timeObserver = qPlayer.addBoundaryTimeObserver(forTimes: [NSValue(time: CMTimeMake(1, 20))],
                                                                     queue: nil,
                                                                     using: {
                                                                         NotificationCenter.default.post(name: Notification.Name(rawValue: "PlaybackStartedNotification"),
@@ -202,22 +203,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     deinit {
-        print("content detail deinit fired")
-        NotificationCenter.default.removeObserver(self)
-        tap = nil
-        detailTap = nil
-        delegate = nil
-        miniProfile = nil
-        currentItem = nil
-        nextFullItem = nil
-        nextDetailItem = nil
-        selectedChannel = nil
-        selectedItem = nil
-        nextPlayerItem = nil
-        itemDetail = []
-        allItems = []
-        avPlayerLayer.removeFromSuperlayer()
-        contentOverlay.removeFromSuperview()
+        performCleanup()
     }
     
     
@@ -232,11 +218,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         removeObserverIfNeeded()
-        
-        if qPlayer.currentItem != nil {
-            qPlayer.pause()
-            qPlayer.removeAllItems()
-        }
+    }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
     }
     
     override var prefersStatusBarHidden : Bool {
@@ -245,7 +230,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     internal func didPlayTillEnd() {
         if shouldShowExplore {
-            contentOverlay.highlightExploreDetail()
+            contentOverlay?.highlightExploreDetail()
         }
         
         if let currentItem = currentItem {
@@ -257,11 +242,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
-    fileprivate func loadWatchedPreviewItem() {
-        PulseDatabase.updateItemViewCount(itemID: allItems[itemIndex].itemID)
-        userClickedExpandItem()
-    }
-    
     fileprivate func loadItem(index: Int) {
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         canAdvanceReady = false
@@ -270,6 +250,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             
             PulseDatabase.getItem( allItems[index].itemID, completion: {[weak self] item, error in
                 if let item = item, let `self` = self {
+                    print("adding next item 4")
                     self.addNextItem(item: item, completion: { success in
                         if success {
                             PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (_ success : Bool, _ items : [Item]) in
@@ -280,7 +261,19 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                                 } else {
                                     item.itemCollection = []
                                 }
-                                self.currentItem = item
+                                
+                                self.checkNextItem(detail: false, completion: {[unowned self] success in
+                                    if success {
+                                        PulseDatabase.getItem(self.allItems[self.itemIndex].itemID, completion: {[weak self] nextItem, error in
+                                            guard let `self` = self else { return }
+
+                                            self.nextFullItem = nextItem
+                                            self.currentItem = item
+                                        })
+                                    } else {
+                                        self.currentItem = item
+                                    }
+                                })
                             })
                         }
                     })
@@ -317,13 +310,13 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate func showItemDetail(show: Bool) {
         if show {
             addDetailTap()
-            contentOverlay.addPagers(num: itemDetail.count)
-            contentOverlay.dimExploreDetail()
+            contentOverlay?.addPagers(num: itemDetail.count)
+            contentOverlay?.dimExploreDetail()
             tapReady = false
         
         } else {
             removeDetailTap()
-            contentOverlay.clearPagers()
+            contentOverlay?.clearPagers()
         }
     }
     
@@ -332,13 +325,17 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         
         if success, detail {
             itemDetailIndex += 1
+            //print("incrementing itemDetailIndex to \(itemDetailIndex)")
             canAdvanceDetailReady = true
         } else if success {
             itemIndex += 1
+            //print("incrementing itemIndex to \(itemIndex)")
             canAdvanceReady = true
         } else if detail {
+            itemDetailIndex += 1
             canAdvanceDetailReady = false
         } else {
+            itemIndex += 1
             canAdvanceReady = false
         }
         
@@ -346,7 +343,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     fileprivate func addNextItem(item: Item, completion: @escaping (_ success : Bool) -> Void) {
-        
         guard item.contentURL != nil else {
             completion(false)
             return
@@ -445,13 +441,14 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate func playItem(completion: @escaping (_ success : Bool) -> Void) {
         removeImageView()
         qPlayer.pause()
-        contentOverlay.resetTimer()
+        contentOverlay?.resetTimer()
         
         if qPlayer.items().count > 1 {
             qPlayer.advanceToNextItem()
-            addObserverForStatusReady { success in completion(success)}
+            addObserverForStatusReady { success in
+                completion(success)
+            }
         } else {
-            
             addObserverForStatusReady {[weak self] success in
                 guard let `self` = self else { return }
                 
@@ -464,40 +461,40 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     internal func startCountdownTimer() {
         if let currentItem = qPlayer.currentItem {
             let duration = currentItem.duration
-            contentOverlay.startTimer(duration.seconds)
+            contentOverlay?.startTimer(duration.seconds)
         }
     }
     
     fileprivate func updateOverlayData(_ item : Item, updateUser: Bool = true) {
-        contentOverlay.resetTimer()
-        contentOverlay.setTitle(item.itemTitle)
-        contentOverlay.clearButtons()
+        contentOverlay?.resetTimer()
+        contentOverlay?.setTitle(item.itemTitle)
+        contentOverlay?.clearButtons()
         
         if updateUser, let user = item.user {
-            contentOverlay.setUserName(user.name)
-            contentOverlay.setUserSubtitle(user.shortBio)
+            contentOverlay?.setUserName(user.name)
+            contentOverlay?.setUserSubtitle(user.shortBio)
             
             if let userPic = user.thumbPicImage {
-                contentOverlay.setUserImage(userPic)
+                contentOverlay?.setUserImage(userPic)
             } else if let uPicURL = user.thumbPic {
                 DispatchQueue.main.async {
                     let _userImageData = try? Data(contentsOf: URL(string: uPicURL)!)
                     DispatchQueue.main.async(execute: {
                         if _userImageData != nil, item.user?.uID == self.currentItem?.user?.uID {
                             self.currentItem?.user?.thumbPicImage = UIImage(data: _userImageData!)
-                            self.contentOverlay.setUserImage(self.currentItem?.user?.thumbPicImage)
+                            self.contentOverlay?.setUserImage(self.currentItem?.user?.thumbPicImage)
                         }
                     })
                 }
             }
         } else if updateUser {
-            contentOverlay.setUserImage(UIImage(named: "default-profile"))
+            contentOverlay?.setUserImage(UIImage(named: "default-profile"))
             
             PulseDatabase.getUser(item.itemUserID ?? "", completion: {[weak self] (user, error) in
                 if let user = user, let `self` = self, self.currentItem?.itemUserID == user.uID {
                     self.currentItem?.user = user
-                    self.contentOverlay.setUserName(user.name)
-                    self.contentOverlay.setUserSubtitle(user.shortBio)
+                    self.contentOverlay?.setUserName(user.name)
+                    self.contentOverlay?.setUserSubtitle(user.shortBio)
                     
                     if let _uPic = user.thumbPic {
                         
@@ -506,7 +503,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                             DispatchQueue.main.async(execute: {
                                 if _userImageData != nil, item.user?.uID == self.currentItem?.user?.uID {
                                     self.currentItem?.user?.thumbPicImage = UIImage(data: _userImageData!)
-                                    self.contentOverlay.setUserImage(self.currentItem?.user?.thumbPicImage)
+                                    self.contentOverlay?.setUserImage(self.currentItem?.user?.thumbPicImage)
                                 }
                             })
                         }
@@ -544,6 +541,11 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             if playedTillEndObserver != nil {
                 NotificationCenter.default.removeObserver(playedTillEndObserver)
             }
+            
+            if timeObserver != nil {
+                NotificationCenter.default.removeObserver(timeObserver)
+            }
+            
             
             isObserving = false
         }
@@ -633,13 +635,13 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             if vote == .favorite {
                 PulseDatabase.saveItem(item: _currentItem, completion: {[weak self] success, error in
                     if success, let `self` = self {
-                        self.contentOverlay.itemSaved(type: vote)
+                        self.contentOverlay?.itemSaved(type: vote)
                     }
                 })
             } else {
                 PulseDatabase.addVote( vote, itemID: _currentItem.itemID, completion: {[weak self] (success, error) in
                     if let `self` = self, success {
-                        self.contentOverlay.itemSaved(type: vote)
+                        self.contentOverlay?.itemSaved(type: vote)
                     }
                 })
             }
@@ -677,7 +679,20 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     func userClickedNextItem() {
-        handleTap()
+        if shouldShowExplore, canAdvanceItemDetail(itemDetailIndex) {
+            if let nextFullItem = nextFullItem {
+                print("adding next item 5")
+                addNextItem(item: nextFullItem, completion: {[unowned self] success in
+                    if success {
+                        self.handleTap()
+                    }
+                })
+            } else {
+                handleTap()
+            }
+        } else {
+            handleTap()
+        }
     }
     
     func userClickedProfile() {
@@ -754,6 +769,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     func dismissVC(_ viewController: UIViewController) {
+        if quickBrowse != nil, viewController == quickBrowse {
+            quickBrowse.delegate = nil
+        }
+        
         GlobalFunctions.dismissVC(viewController)
     }
     
@@ -765,7 +784,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     /* MARK : HANDLE GESTURES */
     func handleTap() {
-
+        //print("handle tap fired")
+        
         //ignore tap if mini profile is shown or if quick browse is shown
         guard !isMiniProfileShown, !isQuickBrowseShown else {
             return
@@ -778,16 +798,29 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         else if canAdvanceReady {
             
             shouldShowExplore = false
-            isExploring = false
             showItemDetail(show: false)
-            currentItem = nextFullItem
-
+            
+            self.checkNextItem(detail: false, completion: {[unowned self] success in
+                let _nextItem = self.nextFullItem
+                if success {
+                    PulseDatabase.getItem(self.allItems[self.itemIndex].itemID, completion: {[weak self] item, error in
+                        guard let `self` = self else { return }
+                        if let item = item {
+                            self.nextFullItem = item
+                        }
+                        self.currentItem = _nextItem
+                    })
+                } else {
+                    self.currentItem = _nextItem
+                }
+            })
         }
             
         else {
             if (delegate != nil) {
                 removeObserverIfNeeded()
                 delegate.noItemsToShow(self)
+                performCleanup()
             }
         }
     }
@@ -816,7 +849,57 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
+    public func performCleanup() {        
+        if !cleanupComplete {
+            
+            if tap != nil {
+                view.removeGestureRecognizer(tap)
+                tap.delegate = nil
+                tap = nil
+            }
+            
+            if detailTap != nil {
+                view.removeGestureRecognizer(detailTap)
+                detailTap.delegate = nil
+                detailTap = nil
+            }
+            
+            delegate = nil
+            
+            if miniProfile != nil {
+                miniProfile?.delegate = nil
+            }
+            
+            currentItem = nil
+            nextFullItem = nil
+            nextDetailItem = nil
+            selectedChannel = nil
+            selectedItem = nil
+            nextPlayerItem = nil
+            itemDetail = []
+            allItems = []
+            
+            if quickBrowse != nil {
+                quickBrowse.delegate = nil
+                quickBrowse = nil
+            }
+            miniProfile = nil
+            
+            if contentOverlay != nil {
+                contentOverlay?.delegate = nil
+                contentOverlay?.removeFromSuperview()
+                contentOverlay = nil
+            }
+            
+            avPlayerLayer.removeFromSuperlayer()
+            
+            if imageView != nil {
+                imageView.image = nil
+                imageView = nil
+            }
+            
+            qPlayer.removeAllItems()
+            cleanupComplete = true
+        }
     }
 }

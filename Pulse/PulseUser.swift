@@ -20,21 +20,21 @@ class PulseUser: User {
     var birthday : String?
     var location : CLLocation?
     var sLocation : String?
-    var items = [Item]()
+    lazy var items = [Item]()
     
     var profilePic : String?
     var thumbPic : String?
     var thumbPicImage : UIImage?
     
-    var contributorChannels = [Channel]()
-    var editorChannels = [Channel]()
+    lazy var contributorChannels : [Channel] = [Channel]()
+    lazy var editorChannels : [Channel] = [Channel]()
 
-    var shownCameraForQuestion = [ String : String ]()
-    var subscriptions = [Channel]()
-    var subscriptionIDs = [String]()
+    lazy var shownCameraForQuestion = [ String : String ]()
+    lazy var subscriptions : [Channel] = [Channel]()
+    lazy var subscriptionIDs = [String]()
     
-    var savedItems = [Item]()
-    var savedVotes = [String : Bool]()
+    lazy var savedItems : [Item] = [Item]()
+    lazy var savedVotes = [String : Bool]()
     
     dynamic var uCreated = false
     dynamic var uDetailedCreated = false
@@ -212,7 +212,12 @@ class PulseUser: User {
     
     deinit {
         thumbPicImage = nil
-        savedItems = []
-        items = []
+        savedItems.removeAll()
+        items.removeAll()
+        contributorChannels.removeAll()
+        editorChannels.removeAll()
+        subscriptions.removeAll()
+        savedItems.removeAll()
+        
     }
 }

@@ -29,6 +29,9 @@ class ExploreChannelsCell: UICollectionViewCell {
     }
     
     deinit {
+        subscribeButton.removeFromSuperview()
+        titleStack.removeFromSuperview()
+        previewImage.image = nil
         delegate = nil
     }
     

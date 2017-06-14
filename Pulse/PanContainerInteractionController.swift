@@ -19,7 +19,20 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
     fileprivate var lastProgress: CGFloat?
     fileprivate var isModal = false
     
-    weak var delegate : CameraDelegate!
+    weak var delegate : PanAnimationDelegate!
+    
+    deinit {
+        if delegate != nil {
+            delegate = nil
+        }
+        
+        if parentViewController != nil {
+            parentViewController = nil
+        }
+        
+        fromViewController = nil
+        toViewController = nil
+    }
     
     func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController, modal: Bool) {
         isModal = modal ? true : false
@@ -80,10 +93,15 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
             
             if !shouldCompleteTransition {
                 cancel()
+                if delegate != nil {
+                    delegate.panCompleted(success: false, fromVC: fromViewController)
+                }
             } else {
                 finish()
                 shouldCompleteTransition = false
-                delegate.userDismissedCamera()
+                if delegate != nil {
+                    delegate.panCompleted(success: true, fromVC: fromViewController)
+                }
             }
             
         default: return

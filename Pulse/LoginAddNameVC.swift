@@ -11,7 +11,7 @@ import FirebaseAuth
 import MobileCoreServices
 import CoreLocation
 
-class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PanAnimationDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
@@ -71,7 +71,6 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         panDismissCameraInteractionController.delegate = self
         
         present(cameraVC, animated: true, completion: nil)
-
     }
     
     @IBAction func addName(_ sender: UIButton) {
@@ -143,6 +142,14 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         })
     }
     
+    func panCompleted(success: Bool, fromVC: UIViewController?) {
+        if success {
+            if cameraVC != nil, fromVC is CameraVC {
+                cameraVC.dismiss(animated: true, completion: nil)
+            }
+        }
+    }
+    
     func userDismissedCamera() {
         cameraVC.dismiss(animated: true, completion: nil)
     }
@@ -153,7 +160,7 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         albumPicker.delegate = self
         albumPicker.allowsEditing = false
         albumPicker.sourceType = .photoLibrary
-        albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
+        albumPicker.mediaTypes = [kUTTypeImage as String]
         
         cameraVC.present(albumPicker, animated: true, completion: nil)
     }

@@ -28,6 +28,10 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
         view.addGestureRecognizer(gesture)
     }
     
+    deinit {
+        delegate = nil
+        tabBarController = nil
+    }
     
     
     func handleGesture(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {        

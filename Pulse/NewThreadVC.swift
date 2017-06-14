@@ -51,6 +51,11 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         capturedImage = nil
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
+    
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
@@ -243,8 +248,17 @@ extension NewThreadVC: UITextFieldDelegate {
     }
 }
 
-extension NewThreadVC: CameraDelegate {
+extension NewThreadVC: CameraDelegate, PanAnimationDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
+    func panCompleted(success: Bool, fromVC: UIViewController?) {
+        if success {
+            if fromVC is CameraVC {
+                print("from vc is content camera VC")
+                userDismissedCamera()
+            }
+        }
+    }
+    
     func showCamera() {
         guard let nav = navigationController else { return }
         
@@ -302,7 +316,7 @@ extension NewThreadVC: CameraDelegate {
         let albumPicker = UIImagePickerController()
         
         albumPicker.delegate = self
-        albumPicker.allowsEditing = false
+        albumPicker.allowsEditing = true
         albumPicker.sourceType = .photoLibrary
         albumPicker.mediaTypes = [kUTTypeImage as String]
         

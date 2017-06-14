@@ -183,8 +183,16 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-extension SettingsTableVC: CameraDelegate {
+extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
+    func panCompleted(success: Bool, fromVC: UIViewController?) {
+        if success {
+            if cameraVC != nil, fromVC is CameraVC {
+                cameraVC.dismiss(animated: true, completion: nil)
+            }
+        }
+    }
+    
     func showCamera() {
         guard let nav = navigationController else { return }
         cameraVC = CameraVC()
@@ -228,9 +236,9 @@ extension SettingsTableVC: CameraDelegate {
         let albumPicker = UIImagePickerController()
         
         albumPicker.delegate = self
-        albumPicker.allowsEditing = false
+        albumPicker.allowsEditing = true
         albumPicker.sourceType = .photoLibrary
-        albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
+        albumPicker.mediaTypes = [kUTTypeImage as String]
         
         cameraVC.present(albumPicker, animated: true, completion: nil)
     }

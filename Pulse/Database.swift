@@ -50,6 +50,7 @@ class PulseDatabase {
     static var masterTagIndex = [String : String]()
 
     static let querySize : UInt = 10
+    static let maxVideoLength : Double = 20
     static var activeListeners = [DatabaseReference]()
     static var profileListenersAdded = false
     
@@ -655,6 +656,7 @@ class PulseDatabase {
                 }
                 items.reverse()
                 completion(true, items)
+                items.removeAll()
             } else {
                 completion(false, items)
             }
@@ -674,6 +676,7 @@ class PulseDatabase {
                 }
                 items.reverse()
                 completion(false, items)
+                items.removeAll()
             } else {
                 completion(false, items)
             }
@@ -743,6 +746,7 @@ class PulseDatabase {
                 }
             }
             completion(allItems)
+            allItems.removeAll()
         })
     }
     
@@ -759,6 +763,7 @@ class PulseDatabase {
             } else {
                 completion(allItems)
             }
+            allItems.removeAll()
         })
     }
     
@@ -767,11 +772,11 @@ class PulseDatabase {
     //Create Feed for current user from followed tags
     static func createFeed(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
         guard PulseUser.isLoggedIn() else { return }
-        var allNewsItems = [Item]()
+        var allNewItems = [Item]()
         var itemStack = [Bool](repeating: false, count: PulseUser.currentUser.subscriptions.count)
         
         if PulseUser.currentUser.subscriptions.count == 0 && !initialFeedUpdateComplete {
-            completion(allNewsItems)
+            completion(allNewItems)
             
             keepChannelsUpdated(completion: { newItems in
                 completion(newItems)
@@ -790,12 +795,12 @@ class PulseDatabase {
             for (index, channel) in PulseUser.currentUser.subscriptions.enumerated() {
                 PulseDatabase.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
                     
-                    allNewsItems.append(contentsOf: newItems)
+                    allNewItems.append(contentsOf: newItems)
                     itemStack[index] = true
                     
                     if isUpdateComplete(stack: itemStack) {
                         initialFeedUpdateComplete = true
-                        completion(sortNewItems(items: allNewsItems))
+                        completion(sortNewItems(items: allNewItems))
                     }
                 })
             }
@@ -804,18 +809,20 @@ class PulseDatabase {
     
     static func fetchMoreItems(startingAt : Date, endingAt: Date, completion: @escaping (_ items : [Item]) -> Void) {
         guard PulseUser.isLoggedIn() else { return }
-        var allNewsItems = [Item]()
+        var allNewItems = [Item]()
         var itemStack = [Bool](repeating: false, count: PulseUser.currentUser.subscriptions.count)
         
         //add in new posts before returning feed
         for (index, channel) in PulseUser.currentUser.subscriptions.enumerated() {
             
             PulseDatabase.addNewItemsToFeed(channel: channel, startingAt: startingAt, endingAt: endingAt, completion: { newItems in
-                allNewsItems.append(contentsOf: newItems)
+                allNewItems.append(contentsOf: newItems)
                 itemStack[index] = true
                 
                 if isUpdateComplete(stack: itemStack) {
-                    completion(sortNewItems(items: allNewsItems))
+                    completion(sortNewItems(items: allNewItems))
+                    allNewItems.removeAll()
+                    itemStack.removeAll()
                 }
             })
         }
@@ -858,6 +865,7 @@ class PulseDatabase {
             }
             channelNewItems.reverse()
             completion(channelNewItems)
+            channelNewItems.removeAll()
         })
     }
     

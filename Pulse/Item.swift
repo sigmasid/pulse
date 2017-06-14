@@ -67,9 +67,9 @@ class Item: NSObject {
     var user : PulseUser?
     weak var tag : Item?
     
-    dynamic var itemCreated = false
-    var itemCollection = [Item]()
-    var fetchedContent = false
+    lazy var itemCreated = false
+    lazy var itemCollection = [Item]()
+    lazy var fetchedContent = false
     
     init(itemID: String) {
         self.itemID = itemID
@@ -215,7 +215,9 @@ class Item: NSObject {
         case .posts: return plural ? " posts" : " post"
         case .session: return plural ? " session" : " feedback"
 
+        case .perspectives: return plural ? " threads" : " thread"
         case .thread: return plural ? " perspectives" : " perspective"
+            
         case .question: return plural ? " answers" : " answer"
         case .questions: return plural ? " questions" : " question"
 
@@ -372,5 +374,7 @@ class Item: NSObject {
         user = nil
         itemCollection = []
         contentURL = nil
+        contentType = nil
+        createdAt = nil
     }
 }

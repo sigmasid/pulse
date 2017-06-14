@@ -25,7 +25,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     fileprivate var cameraLayer : UIView!
     
     /* duration set in milliseconds */
-    fileprivate let videoDuration : Double = 60
+    fileprivate let videoDuration : Double = PulseDatabase.maxVideoLength * 10
     fileprivate var countdownTimer : CALayer!
     
     var screenTitle : String? //set by delegate
@@ -35,40 +35,18 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     fileprivate var longTap : UILongPressGestureRecognizer!
     fileprivate var zoomPinch : UIPinchGestureRecognizer!
     
+    fileprivate var cleanupComplete = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
     
     deinit {
-        print("camera deinit fired")
+        performCleanup()
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-
-        camera.stopAndRemoveCaptureSession()
-        
-        if cameraOverlay != nil {
-            cameraOverlay.removeFromSuperview()
-            cameraOverlay = nil
-        }
-        
-        if loadingOverlay != nil {
-            loadingOverlay.removeFromSuperview()
-            loadingOverlay = nil
-        }
-        
-        if cameraLayer != nil {
-            cameraLayer.removeFromSuperview()
-            cameraLayer = nil
-        }
-        
-        delegate = nil
-        screenTitle = nil
-        
-        tap = nil
-        longTap = nil
-        zoomPinch = nil
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -142,7 +120,6 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
                 } else if videoURL != nil {
                     self.delegate!.doneRecording(isCapturing: false, url: videoURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
                 }
-                self.camera.stopCaptureSession()
             }
         })
     }
@@ -156,7 +133,6 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else if let delegate = delegate {
                 delegate.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
-                camera.stopCaptureSession()
             }
         } else {
             //it's a video
@@ -166,7 +142,6 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else if let delegate = delegate {
                 delegate.doneRecording(isCapturing: false, url: fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
-                camera.stopCaptureSession()
             }
         }
     }
@@ -277,14 +252,64 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     func respondToShutterLongTap(_ longPress : UILongPressGestureRecognizer) {
         if longPress.state == .began {
             startVideoCapture()
+            let shutterButton = cameraOverlay.getButton(.shutter)
+            let xForm = CGAffineTransform.identity.scaledBy(x: 1.3, y: 1.3)
+            UIView.animate(withDuration: 0.5, animations: { shutterButton.transform = xForm; shutterButton.alpha = 1 } , completion: {_ in })
+            
         } else if longPress.state == .ended {
             stopVideoCapture()
+            
+            let shutterButton = cameraOverlay.getButton(.shutter)
+            let xForm = CGAffineTransform.identity.scaledBy(x: 1.0, y: 1.0)
+            UIView.animate(withDuration: 0.5, animations: { shutterButton.transform = xForm; shutterButton.alpha = 0.7 } , completion: {_ in })
         }
     }
     
     func showAlbumPicker() {
-        if let childDelegate = delegate {
-            childDelegate.showAlbumPicker()
+        if let delegate = delegate {
+            delegate.showAlbumPicker()
+        }
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            camera.stopAndRemoveCaptureSession()
+            camera.maxRecordingDelegate = nil
+            
+            if cameraOverlay != nil {
+                cameraOverlay.removeFromSuperview()
+                cameraOverlay = nil
+            }
+            
+            if loadingOverlay != nil {
+                loadingOverlay.removeFromSuperview()
+                loadingOverlay = nil
+            }
+            
+            if cameraLayer != nil {
+                cameraLayer.removeFromSuperview()
+                cameraLayer = nil
+            }
+            
+            delegate = nil
+            screenTitle = nil
+            
+            if tap != nil {
+                tap.delegate = nil
+                tap = nil
+            }
+            
+            if longTap != nil {
+                longTap.delegate = nil
+                longTap = nil
+            }
+            
+            if zoomPinch != nil {
+                zoomPinch.delegate = nil
+                zoomPinch = nil
+            }
+            
+            isLoaded = false
         }
     }
 }
