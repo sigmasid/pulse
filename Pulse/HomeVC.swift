@@ -25,7 +25,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     fileprivate var emptyMessage = "Discover & add new channels to your feed"
     fileprivate var footerMessage = "Fetching More..."
     fileprivate var shouldShowHeader = true //used for the "subscriptions" header - hide it if logged out or no subscriptions
-    
+
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
     
@@ -81,9 +81,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     }
     
     fileprivate func updateHeader() {
-        //let logoButton = PulseButton(size: .small, type: .logo, isRound : true, background: .white, tint: .black)
-        //navigationItem.leftBarButtonItem = UIBarButtonItem(customView: logoButton)
-        
         headerNav?.showNavbar(animated: true)
         headerNav?.setLogo()
         headerNav?.updateBackgroundImage(image: nil)
@@ -116,7 +113,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             
             emptyMessage = "Please login to see your feed"
             shouldShowHeader = false
-            
+
             updateFeed()
             updateDataSource()
             
@@ -842,7 +839,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
         switch section {
         case 1:
-            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
+            return CGSize(width: collectionView.frame.width, height: shouldShowHeader ? skinnyHeaderHeight : 0)
         default:
             return CGSize(width: collectionView.frame.width, height: 0)
         }

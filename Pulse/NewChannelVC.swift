@@ -34,6 +34,11 @@ class NewChannelVC: PulseVC {
         // Dispose of any resources that can be recreated.
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
+    
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()

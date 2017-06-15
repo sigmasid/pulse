@@ -148,10 +148,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: false)
         
-        if !tabBarHidden {
-            collectionView.contentInset = UIEdgeInsetsMake(0, 0, tabBarController!.tabBar.frame.height + Spacing.m.rawValue, 0)
-        }
-        
         collectionView?.register(EmptyCell.self,
                                  forCellWithReuseIdentifier: emptyReuseIdentifier)
         collectionView?.register(BrowseContentCell.self,
@@ -182,6 +178,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                 setupClose()
                 closeButton.addTarget(self, action: #selector(closeModal), for: UIControlEvents.touchUpInside)
             }
+        }
+        
+        if !tabBarHidden, collectionView != nil {
+            collectionView.contentInset = UIEdgeInsetsMake(0, 0, tabBarController!.tabBar.frame.height + Spacing.m.rawValue, 0)
         }
     }
     
