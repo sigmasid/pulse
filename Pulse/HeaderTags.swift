@@ -96,17 +96,14 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         
         if item.content == nil, !item.fetchedContent {
             PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] data, error in
-                guard let `self` = self else {
-                    return
-                }
+                guard let `self` = self else { return }
                 
-                if let data = data {
-                    
-                    self.items[indexPath.row].content = UIImage(data: data)
+                if let data = data, let image = UIImage(data: data) {
+                    self.items[indexPath.row].content = image
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateCell(item.itemTitle.capitalized, _image : UIImage(data: data))
+                            cell.updateCell(item.itemTitle.capitalized, _image : image)
                         }
                     }
                 }

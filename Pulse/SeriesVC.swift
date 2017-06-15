@@ -61,7 +61,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     }
     
     deinit {
-        print("deinit for series called")
         allItems = []
         allUsers = []
         selectedChannel = nil
@@ -128,11 +127,13 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     internal func startShowcase() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "create Showcase", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "create Showcase", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.addNewItem(selectedItem: self.selectedItem)
         }))
         
-        menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             let newShowcase = NewShowcaseVC()
             newShowcase.selectedChannel = self.selectedChannel
             newShowcase.selectedItem = self.selectedItem
@@ -184,7 +185,9 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         
         if let lastItemID = allItems.last?.itemID, !hasReachedEnd {
 
-            PulseDatabase.getItemCollection(selectedItem.itemID, lastItem: lastItemID, completion: { success, items in
+            PulseDatabase.getItemCollection(selectedItem.itemID, lastItem: lastItemID, completion: {[weak self] success, items in
+                guard let `self` = self else { return }
+
                 if items.count > 0 {
                     
                     var indexPaths = [IndexPath]()
@@ -255,7 +258,9 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
             
         } else {
             PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: {[weak self] (item, error) in
-                if let item = item, let `self` = self {
+                guard let `self` = self else { return }
+
+                if let item = item {
                     
                     cell.itemType = item.type
 
@@ -271,7 +276,8 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     
                     //Get the image if content type is a post or perspectives thread
                     if item.content == nil, item.shouldGetImage(), !item.fetchedContent {
-                        PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
+                        PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (data, error) in
+                            guard let `self` = self else { return }
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
                                 
@@ -306,7 +312,9 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                             }
                         }
                     } else {
-                        PulseDatabase.getUser(item.itemUserID, completion: {(user, error) in
+                        PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
+                            guard let `self` = self else { return }
+
                             if let user = user {
                                 self.allItems[indexPath.row].user = user
                                 self.allUsers.append(user)
@@ -442,7 +450,9 @@ extension SeriesVC {
                     
                     self.toggleLoading(show: true, message: "sending invite...", showIcon: true)
                     PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: nil, toName: nil, toEmail: text,
-                                                 childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+                                                 childItems: [], parentItemID: parentItemID, completion: {[weak self](success, error) in
+                            guard let `self` = self else { return }
+
                             success ?
                             GlobalFunctions.showAlertBlock(viewController: self,
                                                            erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
@@ -472,7 +482,9 @@ extension SeriesVC {
             selectedShareItem.tag = selectedItem
             
             toggleLoading(show: true, message: "sending invite...", showIcon: true)
-            PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {(success, error) in
+            PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+
                 success ?
                     GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
                     GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
@@ -567,7 +579,7 @@ extension SeriesVC {
         miniPreview = MiniPreview(frame: _profileFrame, buttonTitle: "Become Contributor")
         miniPreview!.delegate = self
 
-        PulseDatabase.getItem(selectedItem.itemID, completion: { [weak self] (item, error) in
+        PulseDatabase.getItem(selectedItem.itemID, completion: {[weak self] (item, error) in
             if let item = item, let `self` = self {
                 self.miniPreview!.setTitleLabel(item.itemTitle)
                 self.miniPreview!.setMiniDescriptionLabel(item.itemDescription)
@@ -615,25 +627,31 @@ extension SeriesVC {
         
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        currentItem.checkVerifiedInput(completion: { success, error in
+        currentItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
-                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.addNewItem(selectedItem: currentItem)
                 }))
             
-                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.showInviteMenu(currentItem: currentItem)
                 }))
             }
         })
         
         if currentItem.childItemType() != .unknown {
-            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
                 self.showBrowse(selectedItem: currentItem)
             }))
         }
         
-        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
         }))
         
@@ -648,11 +666,13 @@ extension SeriesVC {
     func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "about Series", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "about Series", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.aboutSeries()
         }))
         
-        selectedItem.checkVerifiedInput(completion: { success, error in
+        selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
             if success {
                 menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
                     switch self.selectedItem.type {
@@ -675,7 +695,8 @@ extension SeriesVC {
             }
         })
         
-        menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showShare(selectedItem: self.selectedItem, type: "series", fullShareText: self.selectedItem.itemTitle)
         }))
         
@@ -690,17 +711,16 @@ extension SeriesVC {
     internal func showNoItemsMenu(selectedItem : Item) {
         let menu = UIAlertController(title: "Sorry! No\(selectedItem.childType(plural: true)) yet", message: nil, preferredStyle: .actionSheet)
 
-        selectedItem.checkVerifiedInput(completion: { success, error in
+        selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
                 menu.message = "No\(selectedItem.childType())s yet - want to add one?"
                 
-                switch selectedItem.type {
-                case .thread, .question, .session:
-                    menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
-                        self.addNewItem(selectedItem: selectedItem)
-                    }))
-                    default: break
-                }
+                menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
+                    self.addNewItem(selectedItem: selectedItem)
+                }))
 
             } else {
                 menu.message = "We are still waiting for \(selectedItem.childType())!"
@@ -720,11 +740,13 @@ extension SeriesVC {
     internal func showNonContributorMenu(selectedItem : Item) {
         let menu = UIAlertController(title: "Become a Contributor?", message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).", preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.addNewItem(selectedItem: selectedItem)
         }))
         
-        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             let becomeContributorVC = BecomeContributorVC()
             becomeContributorVC.selectedChannel = self.selectedChannel
             
@@ -739,9 +761,12 @@ extension SeriesVC {
     }
     
     internal func showInviteMenu(currentItem : Item) {
-        let menu = UIAlertController(title: "Invite Guests", message: "know someone who is an expert? Invite them below", preferredStyle: .actionSheet)
+        let menu = UIAlertController(title: "invite Guests",
+                                     message: "know an expert who can \(currentItem.childActionType())\(currentItem.childType())?\nInvite them below!",
+                                     preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.selectedShareItem = currentItem
             
             let browseUsers = MiniUserSearchVC()
@@ -754,14 +779,17 @@ extension SeriesVC {
             self.navigationController?.present(browseUsers, animated: true, completion: nil)
         }))
         
-        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.selectedShareItem = currentItem
             self.showAddEmail(bodyText: "enter email")
         }))
         
-        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
-                                    completion: { selectedShareItem , error in
+                                    completion: {[weak self] selectedShareItem , error in
+                guard let `self` = self else { return }
                 if error == nil, let selectedShareItem = selectedShareItem {
                     let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) - \(currentItem.itemTitle)"
                     self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
@@ -792,26 +820,4 @@ extension SeriesVC: UIViewControllerTransitioningDelegate {
             return nil
         }
     }
-    
-    /**
-    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is ContentManagerVC {
-            let animator = PanAnimationController()
-            
-            animator.initialFrame = getRectToLeft()
-            animator.exitFrame = getRectToRight()
-            animator.transitionType = .dismiss
-            return animator
-        } else {
-            return nil
-        }
-    }
-    
-    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return panPresentInteractionController.interactionInProgress ? panPresentInteractionController : nil
-    }
-    
-    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
-    } **/
 }

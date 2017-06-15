@@ -41,7 +41,15 @@ class QuickBrowseVC: UIViewController {
     
     internal var itemStack = [ItemMetaData]()
 
-
+    deinit {
+        delegate = nil
+        collectionView = nil
+        selectedChannel = nil
+        collectionViewLayout = nil
+        closeButton.removeFromSuperview()
+        seeAll.removeFromSuperview()
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.8)
     }
@@ -149,7 +157,8 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            PulseDatabase.getImage(channelID: selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            PulseDatabase.getImage(channelID: selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
+                guard let `self` = self else { return }
                 if error == nil {
                     
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
@@ -177,7 +186,8 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
         } else {
             itemStack[indexPath.row].gettingInfoForPreview = true
             
-            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
+            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: {[weak self] (item, error) in
+                guard let `self` = self else { return }
                 
                 if let item = item {
                     
@@ -185,7 +195,8 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
                     self.allItems[indexPath.row] = item
                     
                     // Get the user details
-                    PulseDatabase.getUser(item.itemUserID, completion: {(user, error) in
+                    PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
+                        guard let `self` = self else { return }
                         if let user = user {
                             self.allItems[indexPath.row].user = user
                             DispatchQueue.main.async {

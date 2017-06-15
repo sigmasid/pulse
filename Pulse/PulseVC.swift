@@ -209,9 +209,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
         PulseDatabase.createInviteRequest(item: newShareItem, type: shareType, toUser: toUser, toName: nil, toEmail: toEmail,
                                      childItems: [], parentItemID: selectedShareItem.itemID, completion: {[weak self] (success, error) in
-            guard let `self` = self else {
-                return
-            }
+            guard let `self` = self else { return }
                                         
             if success, showAlert {
                 GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")

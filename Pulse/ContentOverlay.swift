@@ -60,7 +60,6 @@ class ContentOverlay: UIView {
     }
     
     deinit {
-        print("content overlay deinit called")
         userImage.removeFromSuperview()
         headerMenu.removeFromSuperview()
         browseButton.removeFromSuperview()

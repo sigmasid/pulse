@@ -39,9 +39,17 @@ class Channel : NSObject {
         self.cID = cID
         super.init()
         
-        self.cTitle  = snapshot.childSnapshot(forPath: "title").value as? String
-        self.cDescription  = snapshot.childSnapshot(forPath: "description").value as? String
-        self.cImageURL = snapshot.childSnapshot(forPath: "image").value as? String
+        if let _title = snapshot.childSnapshot(forPath: "title").value as? String {
+            self.cTitle = _title
+        }
+        
+        if let _description = snapshot.childSnapshot(forPath: "description").value as? String {
+            self.cDescription = _description
+        }
+        
+        if let _imageURL = snapshot.childSnapshot(forPath: "image").value as? String {
+            self.cImageURL = _imageURL
+        }
         
         for tag in snapshot.childSnapshot(forPath: "tags").children {
             if let tag = tag as? DataSnapshot, let type = tag.childSnapshot(forPath: "type").value as? String {

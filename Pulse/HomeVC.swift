@@ -157,7 +157,8 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 }
                 
                 if self.collectionView.contentSize.height < self.view.frame.height { //content fits the screen so fetch more
-                    self.getMoreItems(completion: { _ in
+                    self.getMoreItems(completion: {[weak self] _ in
+                        guard let `self` = self else { return }
                         self.collectionView?.reloadData()
                         self.collectionView?.reloadSections(IndexSet(integer: 0))
                     })
@@ -198,7 +199,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
-                self.getMoreItems(completion: { _ in })
+                self.getMoreItems(completion: { success in completion(success) })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
                 self.shouldShowHeader = false
                 self.footerMessage = "that's the end!"
@@ -216,7 +217,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                     self.allItems.append(contentsOf: items)
                     
                     if items.count < 4 {
-                        self.getMoreItems(completion: { _ in })
+                        self.getMoreItems(completion: { success in completion(success) })
                     } else {
                         self.updateIncrement = -7
                         completion(true)
@@ -270,7 +271,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
         subscriptionVC.forUser = true
         
         navigationController?.pushViewController(subscriptionVC, animated: true)
-        
         subscriptionVC.allChannels = self.allChannels
     }
 }
@@ -567,17 +567,13 @@ extension HomeVC {
             let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
             self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: {[weak self] _ , _ in
                 guard let `self` = self else { return }
-
                 self.selectedShareItem = nil
             })
-            
         } else {
-            
             //if not mini search then just go to the user profile
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
             userProfileVC.selectedUser = toUser
-            
         }
     }
     
@@ -591,7 +587,8 @@ extension HomeVC {
             if success {
                 menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
                 
-                menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.addNewItem(selectedItem: selectedItem)
                 }))
             } else {
@@ -652,13 +649,15 @@ extension HomeVC {
     //after email - user submitted the text
     internal func buttonClicked(_ text: String, sender: UIView) {
         tabBarHidden = false
-        GlobalFunctions.validateEmail(text, completion: {(success, error) in
+        GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
+            guard let `self` = self else { return }
             if !success {
                 self.showAddEmail(bodyText: "invalid email - try again")
             } else {
-                if let selectedShareItem = selectedShareItem {
+                if let selectedShareItem = self.selectedShareItem {
                     let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
-                    createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
+                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
+                        guard let `self` = self else { return }
                         self.selectedShareItem = nil
                     })
                     
@@ -683,7 +682,6 @@ extension HomeVC {
     
     internal func showTag(selectedItem : Item) {
         let seriesVC = SeriesVC()
-        
         navigationController?.pushViewController(seriesVC, animated: true)
         seriesVC.selectedItem = selectedItem
     }
@@ -692,7 +690,8 @@ extension HomeVC {
     internal func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "browse Subscriptions", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "browse Subscriptions", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showSubscriptions()
         }))
         
@@ -721,23 +720,27 @@ extension HomeVC {
             guard let `self` = self else { return }
 
             if success {
-                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.addNewItem(selectedItem: currentItem)
                 }))
                 
-                menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.showInviteMenu(currentItem: currentItem)
                 }))
             }
         })
         
         if currentItem.childItemType() != .unknown {
-            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
                 self.showBrowse(selectedItem: currentItem)
             }))
         }
         
-        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
         }))
         
@@ -754,14 +757,15 @@ extension HomeVC {
                                      message: "looks like you are not yet a verified contributor. To ensure quality, we recommend getting verified. You can continue with your submission (might be reviewed for quality).",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.addNewItem(selectedItem: selectedItem)
         }))
         
-        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             let becomeContributorVC = BecomeContributorVC()
             becomeContributorVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
-            
             self.navigationController?.pushViewController(becomeContributorVC, animated: true)
         }))
         
@@ -776,11 +780,12 @@ extension HomeVC {
     internal func showInviteMenu(currentItem : Item) {
         tabBarHidden = true
         
-        let menu = UIAlertController(title: "invite Contributors",
-                                     message: "know someone who can add to the conversation? invite them to be a contributor!",
+        let menu = UIAlertController(title: "Invite Guests",
+                                     message: "know an expert who can \(currentItem.childActionType())\(currentItem.childType())?\nInvite them below!",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.selectedShareItem = currentItem
             
             let browseUsers = MiniUserSearchVC()
@@ -793,12 +798,15 @@ extension HomeVC {
             self.navigationController?.present(browseUsers, animated: true, completion: nil)
         }))
         
-        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.selectedShareItem = currentItem
             self.showAddEmail(bodyText: "enter email")
         }))
         
-        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+
             self.toggleLoading(show: true, message: "loading invite options", showIcon: true)
             let selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
             self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: {[weak self] selectedShareItem , error in
@@ -811,7 +819,8 @@ extension HomeVC {
             })
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.tabBarHidden = false
             menu.dismiss(animated: true, completion: nil)
         }))

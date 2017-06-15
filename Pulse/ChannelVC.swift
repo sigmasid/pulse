@@ -76,15 +76,16 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             
             toggleLoading(show: true, message: "Loading Channel...", showIcon: true)
             statusBarStyle = .lightContent
-            tabBarHidden = true
             setupScreenLayout()
-            
+            tabBarHidden = true
+
             isLoaded = true
         }
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = true
         updateHeader()
     }
     
@@ -128,7 +129,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
 
                 if self.collectionView.contentSize.height < self.view.frame.height || updatedChannel.items.count < 4 {
                     //content fits the screen so fetch more
-                    self.getMoreChannelItems(completion: { _ in
+                    self.getMoreChannelItems(completion: {[weak self] _ in
+                        guard let `self` = self else { return}
                         self.collectionView?.reloadData()
                         self.collectionView?.reloadSections(IndexSet(integer: 0))
                     })
@@ -148,7 +150,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
-                self.getMoreChannelItems(completion: { _ in })
+                self.getMoreChannelItems(completion: { success in completion(success) })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
                 self.footerMessage = "that's the end!"
                 self.hasReachedEnd = true
@@ -196,9 +198,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         let indicator = subscribeButton.addLoadingIndicator()
         
         subscribeChannel(channel: selectedChannel, completion: {[weak self]( success, error ) in
-            guard let `self` = self else {
-                return
-            }
+            guard let `self` = self else { return }
             
             if !success {
                 GlobalFunctions.showAlertBlock("Error Subscribing", erMessage: error!.localizedDescription)
@@ -283,26 +283,32 @@ extension ChannelVC {
             guard let `self` = self else { return }
 
             if success {
-                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "\(currentItem.childActionType())\(currentItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.addNewItem(selectedItem: currentItem)
                 }))
                 
-                menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
-                    self.showInviteMenu(currentItem: currentItem,
-                                        inviteTitle: "Invite Contributors",
-                                        inviteMessage: "know someone who can add to the conversation? invite them below!",
-                                        inviteType: .contributorInvite)
-                }))
+                if let inviteType = currentItem.inviteType() {
+                    menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
+                        self.showInviteMenu(currentItem: currentItem,
+                                            inviteTitle: "Invite Guests",
+                                            inviteMessage: "know an expert who can \(currentItem.childActionType())\(currentItem.childType())?\nInvite them below!",
+                                            inviteType: inviteType)
+                    }))
+                }
             }
         })
         
         if currentItem.childItemType() != .unknown {
-            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: " browse\(currentItem.childType(plural: true).capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
                 self.showBrowse(selectedItem: currentItem)
             }))
         }
         
-        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
         }))
         
@@ -323,7 +329,8 @@ extension ChannelVC {
             if success {
                 menu.message = "No\(selectedItem.childType())s yet - want to be the first?"
                 
-                menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "\(selectedItem.childActionType())\(selectedItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.addNewItem(selectedItem: selectedItem)
                 }))
             } else {
@@ -343,11 +350,11 @@ extension ChannelVC {
     //user clicked menu in the header section
     internal func clickedHeaderMenu() {
         guard PulseUser.isLoggedIn() else {
-            showRegularMenu()
+            showSubscriberHeaderMenu()
             return
         }
         
-        PulseUser.currentUser.isVerified(for: selectedChannel) ? showContributorMenu() : showRegularMenu()
+        PulseUser.currentUser.isVerified(for: selectedChannel) ? showContributorHeaderMenu() : showSubscriberHeaderMenu()
     }
     
     //close modal - e.g. mini search
@@ -357,7 +364,7 @@ extension ChannelVC {
     
     //after email - user submitted the text
     internal func buttonClicked(_ text: String, sender: UIView) {
-        GlobalFunctions.validateEmail(text, completion: {[weak self](success, error) in
+        GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
             guard let `self` = self else { return }
             
             if !success {
@@ -365,12 +372,14 @@ extension ChannelVC {
             } else {
                 if let selectedShareItem = self.selectedShareItem as? Item {
                     
-                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, toEmail: text, completion: { _ , _ in
+                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
+                        guard let `self` = self else { return }
                         self.selectedShareItem = nil
                     })
                     
                 } else if let selectedShareItem = self.selectedShareItem as? Channel {
-                    self.createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: { _ , _ in
+                    self.createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
+                        guard let `self` = self else { return }
                         self.selectedShareItem = nil
                     })
                     
@@ -384,7 +393,8 @@ extension ChannelVC {
     internal func showInviteMenu(currentItem : Any?, inviteTitle: String, inviteMessage: String, inviteType: MessageType) {
         let menu = UIAlertController(title: inviteTitle, message: inviteMessage, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.selectedShareItem = currentItem
             
             let browseUsers = MiniUserSearchVC()
@@ -397,12 +407,14 @@ extension ChannelVC {
             self.navigationController?.present(browseUsers, animated: true, completion: nil)
         }))
         
-        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.selectedShareItem = currentItem
             self.showAddEmail(bodyText: "enter email")
         }))
         
-        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             switch inviteType {
             case .perspectiveInvite, .questionInvite, .showcaseInvite:
                 if let currentItem = currentItem as? Item {
@@ -483,50 +495,30 @@ extension ChannelVC {
         view.addSubview(addText)
     }
     
-    //NOT BEING USED >> PROB WANT TO PUT IN SEPARATE BUCKET TO BE APPROVED PRIOR TO POSTING
-    internal func showNonContributorMenu(selectedItem : Item) {
-        let menu = UIAlertController(title: "Want to be a Contributor?",
-                                     message: "looks like you are not yet a verified contributor. To ensure quality, we recommend applying to be verified. You can still continue with your submission (will be reviewed for quality).",
-                                     preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
-            self.addNewItem(selectedItem: selectedItem)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
-            let becomeContributorVC = BecomeContributorVC()
-            becomeContributorVC.selectedChannel = self.selectedChannel
-            
-            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
+    /*** HEADER MENUS ***/
     //when user clicks menu in the header
-    func showContributorMenu() {
+    func showContributorHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         //only editors can start series
         if PulseUser.isLoggedIn(), PulseUser.currentUser.isEditor(for: selectedChannel) {
-            menu.addAction(UIAlertAction(title: "start New Series", style: .default, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: "start New Series", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
                 self.startSeries()
             }))
         }
         
         //contributors & editors can invite contributors
-        menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showInviteMenu(currentItem: self.selectedChannel,
                                 inviteTitle: "invite Contributors",
                                 inviteMessage: "contributors can add posts, answer questions and share their perspecives. To ensure quality, please only invite qualified contributors. All new contributor requests are reviewed.", inviteType: .contributorInvite)
         }))
         
         //anyone can share
-        menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: {[unowned self] link in
                 guard let link = link else { return }
@@ -543,11 +535,12 @@ extension ChannelVC {
     }
     
     //for header
-    func showRegularMenu() {
+    func showSubscriberHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         //all users can browse the featured contributors
-        menu.addAction(UIAlertAction(title: "featured Contributors", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "featured Contributors", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             let browseContributorsVC = BrowseUsersVC()
             browseContributorsVC.selectedChannel = self.selectedChannel
             browseContributorsVC.delegate = self
@@ -555,7 +548,8 @@ extension ChannelVC {
             self.navigationController?.pushViewController(browseContributorsVC, animated: true)
         }))
         
-        menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: {[unowned self] link in
                 guard let link = link else { return }
@@ -581,7 +575,6 @@ extension ChannelVC {
     internal func startSeries() {
         let newSeries = NewSeriesVC()
         newSeries.selectedChannel = selectedChannel
-        
         navigationController?.pushViewController(newSeries, animated: true)
     }
     
@@ -987,9 +980,7 @@ extension ChannelVC: UIViewControllerTransitioningDelegate {
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
-        if presented is ContentManagerVC {
-            //panDismissInteractionController.wireToViewController(contentVC, _toViewController: nil, edge: UIRectEdge.left)
-            
+        if presented is ContentManagerVC {            
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
             animator.exitFrame = getRectToLeft()
@@ -1020,5 +1011,29 @@ extension ChannelVC: UIViewControllerTransitioningDelegate {
     
     func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
+    } **/
+    
+    /**
+    internal func showNonContributorMenu(selectedItem : Item) {
+        let menu = UIAlertController(title: "Want to be a Contributor?",
+                                     message: "looks like you are not yet a verified contributor. To ensure quality, we recommend applying to be verified. You can still continue with your submission (will be reviewed for quality).",
+                                     preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
+            self.addNewItem(selectedItem: selectedItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
+            let becomeContributorVC = BecomeContributorVC()
+            becomeContributorVC.selectedChannel = self.selectedChannel
+            
+            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
     } **/
 }

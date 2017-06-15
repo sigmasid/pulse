@@ -16,12 +16,12 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
-            if allUsers.isEmpty {
+            if allUsers.isEmpty, selectedChannel != nil {
                 PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {(success, users) in
                     self.allUsers = users
                     self.updateDataSource()
                 })
-            } else {
+            } else if selectedChannel != nil {
                 updateDataSource()
             }
         }
@@ -48,6 +48,13 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     }
     
     fileprivate var isLayoutSetup = false
+    
+    deinit {
+        delegate = nil
+        selectedChannel = nil
+        collectionView = nil
+        allUsers.removeAll()
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -87,7 +94,8 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
 
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "become Contributor", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "become Contributor", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             let becomeContributorVC = BecomeContributorVC()
             becomeContributorVC.selectedChannel = self.selectedChannel
             
@@ -140,7 +148,8 @@ extension BrowseUsersVC : UICollectionViewDelegate, UICollectionViewDataSource {
         
         if !currentUser.uCreated {
             // Get the user details
-            PulseDatabase.getUser(currentUser.uID!, completion: {(user, error) in
+            PulseDatabase.getUser(currentUser.uID!, completion: {[weak self] (user, error) in
+                guard let `self` = self else { return }
                 if let user = user {
                     self.allUsers[indexPath.row] = user
                     

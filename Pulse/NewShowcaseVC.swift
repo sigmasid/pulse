@@ -28,6 +28,8 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
     fileprivate var placeholderName = "enter name or tap search"
     fileprivate var placeholderDescription = "description for what you want the recipient to showcase"
     
+    fileprivate var cleanupComplete = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -42,6 +44,34 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
             isLoaded = true
         }
     }
+    
+    deinit {
+        performCleanup()
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            selectedUser = nil
+            selectedChannel = nil
+            selectedItem = nil
+            
+            iImage.removeFromSuperview()
+            sTypeDescription.removeFromSuperview()
+            searchButton.removeFromSuperview()
+
+            if addEmail != nil {
+                addEmail.removeFromSuperview()
+                addEmail = nil
+            }
+            
+            cleanupComplete = true
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -52,7 +82,7 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
     internal func updateHeader() {
         addBackButton()
         
-        headerNav?.setNav(title: "Add A Showcase", subtitle: selectedChannel.cTitle)
+        headerNav?.setNav(title: "Invite to Showcase", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
         headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
         headerNav?.showNavbar(animated: true)
     }

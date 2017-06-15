@@ -40,6 +40,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     fileprivate let searchButton = PulseButton(size: .small, type: .search, isRound: true, hasBackground: false, tint: .black)
 
     fileprivate var selectedIndex : Int?
+    fileprivate var cleanupComplete = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -56,15 +57,47 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
+    
     deinit {
-        allQuestions = []
+        performCleanup()
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            allQuestions = []
+            selectedUser = nil
+            selectedChannel = nil
+            selectedItem = nil
+            
+            iImage.removeFromSuperview()
+            sTypeDescription.removeFromSuperview()
+            
+            if tableView != nil {
+                tableView.removeFromSuperview()
+                tableView = nil
+            }
+            
+            if addQuestion != nil {
+                addQuestion.removeFromSuperview()
+                addQuestion = nil
+            }
+            
+            addButton.removeFromSuperview()
+            searchButton.removeFromSuperview()
+            
+            cleanupComplete = true
+        }
     }
     
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
         
-        headerNav?.setNav(title: "Start a New Interview", subtitle: selectedChannel.cTitle)
+        headerNav?.setNav(title: "New Interview", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
         headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
         headerNav?.showNavbar(animated: true)
     }

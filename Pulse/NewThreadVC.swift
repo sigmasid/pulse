@@ -28,11 +28,13 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     fileprivate var sTypeDescription = PaddingLabel()
     
     //Capture Image
-    internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
-    fileprivate lazy var cameraVC : CameraVC = CameraVC()
+    fileprivate lazy var panDismissInteractionController : PanContainerInteractionController! = PanContainerInteractionController()
+    fileprivate lazy var cameraVC : CameraVC! = CameraVC()
     fileprivate var capturedImage : UIImage?
     fileprivate var contentType : CreatedAssetType? = .recordedImage
     
+    //Deinit check
+    fileprivate var cleanupComplete = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,7 +50,30 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     }
     
     deinit {
-        capturedImage = nil
+        performCleanup()
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            selectedChannel = nil
+            selectedItem = nil
+            
+            sAddCover.removeFromSuperview()
+            sShowCamera.removeFromSuperview()
+            sShowCameraLabel.removeFromSuperview()
+            
+            if cameraVC != nil {
+                cameraVC.performCleanup()
+                cameraVC.delegate = nil
+                cameraVC = nil
+            }
+            
+            capturedImage = nil
+            panDismissInteractionController.delegate = nil
+            panDismissInteractionController = nil
+            
+            cleanupComplete = true
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -268,8 +293,8 @@ extension NewThreadVC: CameraDelegate, PanAnimationDelegate {
         cameraVC.delegate = self
         cameraVC.screenTitle = "snap a pic to use as cover!"
         
-        panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
-        panDismissCameraInteractionController.delegate = self
+        panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
+        panDismissInteractionController.delegate = self
         
         present(cameraVC, animated: true, completion: nil)
     }

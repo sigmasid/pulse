@@ -29,7 +29,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     public var selectedItem : Item! {
         didSet {
             if selectedItem != nil, allItems.isEmpty {
-                PulseDatabase.getItemCollection(selectedItem.itemID, completion: {(success, items) in
+                PulseDatabase.getItemCollection(selectedItem.itemID, completion: {[weak self](success, items) in
+                    guard let `self` = self else { return }
                     if success {
                         let type = self.selectedItem.type == .question ? "answer" : "post"
                         self.allItems = items.map{ item -> Item in
@@ -163,15 +164,18 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     internal func clickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        selectedItem.checkVerifiedInput(completion: { success, error in
+        selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
             if success {
-                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
                     self.clickedAddItem()
                 }))
             }
         })
         
-        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showShare(selectedItem: self.selectedItem, type: self.selectedItem.type.rawValue)
 
         }))
@@ -234,7 +238,8 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            PulseDatabase.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {(_data, error) in
+            PulseDatabase.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
+                guard let `self` = self else { return }
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
                     self.allItems[indexPath.row].content = _previewImage
@@ -261,7 +266,8 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
         } else {
             itemStack[indexPath.row].gettingInfoForPreview = true
 
-            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: { (item, error) in
+            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: {[weak self] (item, error) in
+                guard let `self` = self else { return }
                 
                 if let item = item {
                     
@@ -272,7 +278,8 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                         cell.updateLabel(nil, _subtitle: item.itemTitle)
                     } else {
                     // Get the user details
-                        PulseDatabase.getUser(item.itemUserID, completion: {(user, error) in
+                        PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
+                            guard let `self` = self else { return }
                             if let user = user {
                                 self.allItems[indexPath.row].user = user
                                 DispatchQueue.main.async {
@@ -297,7 +304,8 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self](hasDetail, itemCollection) in
+                    guard let `self` = self else { return }
                     if hasDetail {
                         cell.showTapForMore = true
                         self.itemStack[indexPath.row].itemCollection = itemCollection.reversed()
@@ -310,7 +318,8 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                 cell.showItemPreview(item: currentItem)
             } else {
                 toggleLoading(show: true, message: "loading interview...")
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {(hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
+                    guard let `self` = self else { return }
                     self.toggleLoading(show: false, message: nil)
                     self.showItemDetail(item: self.selectedItem, index: 0, itemCollection: itemCollection)
                     self.selectedIndex = nil

@@ -74,30 +74,30 @@ class PulseUser: User {
     
     init(uID: String, snapshot: DataSnapshot) {
         self.uID = uID
-        if snapshot.hasChild("name") {
-            name = snapshot.childSnapshot(forPath: "name").value as? String
+        if snapshot.hasChild("name"), let _name = snapshot.childSnapshot(forPath: "name").value as? String {
+            name = _name
         }
         
-        if snapshot.hasChild("profilePic") {
-            profilePic = snapshot.childSnapshot(forPath: "profilePic").value as? String
+        if snapshot.hasChild("profilePic"), let _profilePic = snapshot.childSnapshot(forPath: "profilePic").value as? String {
+            profilePic = _profilePic
         }
         
-        if snapshot.hasChild("thumbPic") {
-            thumbPic = snapshot.childSnapshot(forPath: "thumbPic").value as? String
+        if snapshot.hasChild("thumbPic"), let _thumbPic = snapshot.childSnapshot(forPath: "thumbPic").value as? String {
+            thumbPic = _thumbPic
         } else {
             thumbPic = self.profilePic
         }
 
-        if snapshot.hasChild("shortBio") {
-            shortBio = snapshot.childSnapshot(forPath: "shortBio").value as? String
+        if snapshot.hasChild("shortBio"), let _shortBio = snapshot.childSnapshot(forPath: "shortBio").value as? String {
+            shortBio = _shortBio
         }
         
         uCreated = true
     }
     
     func updateUser(detailedSnapshot : DataSnapshot) {
-        if detailedSnapshot.hasChild("bio") {
-            bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String
+        if detailedSnapshot.hasChild("bio"), let _bio = detailedSnapshot.childSnapshot(forPath: "bio").value as? String {
+            bio = _bio
         }
         
         if detailedSnapshot.hasChild("items") {

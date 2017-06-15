@@ -50,6 +50,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     self.itemDetail = currentItem.itemCollection
                     self.itemDetailIndex = 0
                     self.showItemDetail(show: true)
+                    self.contentOverlay?.updateSelectedPager(num: self.itemDetailIndex)
                     self.shouldShowExplore = true
                 } else if self.shouldShowExplore {
                     //is a detail item so just update the overlay
@@ -250,7 +251,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             
             PulseDatabase.getItem( allItems[index].itemID, completion: {[weak self] item, error in
                 if let item = item, let `self` = self {
-                    print("adding next item 4")
                     self.addNextItem(item: item, completion: { success in
                         if success {
                             PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (_ success : Bool, _ items : [Item]) in
@@ -325,11 +325,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         
         if success, detail {
             itemDetailIndex += 1
-            //print("incrementing itemDetailIndex to \(itemDetailIndex)")
             canAdvanceDetailReady = true
         } else if success {
             itemIndex += 1
-            //print("incrementing itemIndex to \(itemIndex)")
             canAdvanceReady = true
         } else if detail {
             itemDetailIndex += 1
@@ -681,7 +679,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     func userClickedNextItem() {
         if shouldShowExplore, canAdvanceItemDetail(itemDetailIndex) {
             if let nextFullItem = nextFullItem {
-                print("adding next item 5")
                 addNextItem(item: nextFullItem, completion: {[unowned self] success in
                     if success {
                         self.handleTap()
@@ -784,8 +781,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     /* MARK : HANDLE GESTURES */
     func handleTap() {
-        //print("handle tap fired")
-        
         //ignore tap if mini profile is shown or if quick browse is shown
         guard !isMiniProfileShown, !isQuickBrowseShown else {
             return
@@ -891,7 +886,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 contentOverlay = nil
             }
             
-            avPlayerLayer.removeFromSuperlayer()
+            if avPlayerLayer != nil {
+                avPlayerLayer.removeFromSuperlayer()
+            }
             
             if imageView != nil {
                 imageView.image = nil

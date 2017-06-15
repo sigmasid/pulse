@@ -125,10 +125,13 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     deinit {
-        itemStack = []
+        selectedUser = nil
+        itemStack.removeAll()
         collectionView = nil
         allItems.removeAll()
-        selectedUser = nil
+        modalDelegate = nil
+        
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
     }
     
     override func didReceiveMemoryWarning() {
@@ -246,11 +249,13 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     func showUserMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "send Message", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "send Message", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.sendMessage()
         }))
         
-        menu.addAction(UIAlertAction(title: "share Profile", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Profile", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.shareProfile()
         }))
         
@@ -265,17 +270,20 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         if isRootController() {
-            menu.addAction(UIAlertAction(title: "edit Profile", style: .default, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: "edit Profile", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
                 menu.dismiss(animated: true, completion: nil)
                 self.navigationController?.pushViewController(SettingsTableVC(), animated: true)
             }))
             
-            menu.addAction(UIAlertAction(title: "logout", style: .destructive, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: "logout", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
                 menu.dismiss(animated: true, completion: nil)
                 self.clickedLogout()
             }))
         } else {
-            menu.addAction(UIAlertAction(title: "share Profile", style: .default, handler: { (action: UIAlertAction!) in
+            menu.addAction(UIAlertAction(title: "share Profile", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
                 self.shareProfile()
             }))
         }
@@ -290,7 +298,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     internal func clickedLogout() {
         let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
         
-        confirmLogout.addAction(UIAlertAction(title: "logout", style: .destructive, handler: { (action: UIAlertAction!) in
+        confirmLogout.addAction(UIAlertAction(title: "logout", style: .destructive, handler: {(action: UIAlertAction!) in
             PulseDatabase.signOut({[weak self] success in
                 guard let `self` = self else { return }
                 if !success {
@@ -426,7 +434,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         } else if currentItem.itemCreated {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self](_data, error) in
+            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
                 guard let `self` = self else { return }
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
@@ -469,7 +477,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         }
                     }
 
-                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self](_data, error) in
+                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
                         guard let `self` = self else { return }
                         if error == nil {
                             let _previewImage = GlobalFunctions.createImageFromData(_data!)
@@ -499,7 +507,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self](hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
                     guard let `self` = self else { return }
                     if hasDetail {
                         cell.showTapForMore = true

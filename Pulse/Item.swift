@@ -65,7 +65,7 @@ class Item: NSObject {
     var createdAt : Date?
     
     var user : PulseUser?
-    weak var tag : Item?
+    var tag : Item?
     
     lazy var itemCreated = false
     lazy var itemCollection = [Item]()
@@ -99,20 +99,24 @@ class Item: NSObject {
     init(itemID: String, snapshot: DataSnapshot) {
         self.itemID = itemID
         super.init()
-        if snapshot.hasChild("title") {
-            itemTitle = snapshot.childSnapshot(forPath: "title").value as? String ?? ""
+        if snapshot.hasChild("title"), let _itemTitle = snapshot.childSnapshot(forPath: "title").value as? String {
+            itemTitle = _itemTitle
+        } else {
+            itemTitle = ""
         }
         
-        if snapshot.hasChild("description") {
-            itemDescription = snapshot.childSnapshot(forPath: "description").value as? String ?? ""
+        if snapshot.hasChild("description"), let _itemDescription = snapshot.childSnapshot(forPath: "description").value as? String {
+            itemDescription = _itemDescription
+        } else {
+            itemDescription = ""
         }
         
         if let type = snapshot.childSnapshot(forPath: "type").value as? String {
             setType(_type: type)
         }
         
-        if snapshot.hasChild("uID") {
-            itemUserID = snapshot.childSnapshot(forPath: "uID").value as? String
+        if snapshot.hasChild("uID"), let userID = snapshot.childSnapshot(forPath: "uID").value as? String  {
+            itemUserID = userID
         }
         
         if let _cID = snapshot.childSnapshot(forPath: "cID").value as? String {
@@ -123,8 +127,8 @@ class Item: NSObject {
             cTitle = _cTitle
         }
         
-        if let url = snapshot.childSnapshot(forPath: "url").value as? String {
-            contentURL = URL(string: url)
+        if let url = snapshot.childSnapshot(forPath: "url").value as? String, let _contentURL = URL(string: url) {
+            contentURL = _contentURL
         }
         
         if let assetType = snapshot.childSnapshot(forPath: "contentType").value as? String {
@@ -137,7 +141,7 @@ class Item: NSObject {
         }
         
         if let tagID = snapshot.childSnapshot(forPath: "tagID").value as? String, let tagTitle = snapshot.childSnapshot(forPath: "tagTitle").value as? String {
-            tag = Item(itemID: tagID, type: "tag")
+            tag = Item(itemID: tagID)
             tag?.itemTitle = tagTitle
         }
         

@@ -36,13 +36,12 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
         super.viewDidLayoutSubviews()
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func viewWillLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         
         if !isSetupComplete {
 
             definesPresentationContext = false
-            
             
             setupSearch()
             setupScope()
@@ -54,7 +53,7 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        addBackButton()
+        //addBackButton()
     }
 
     override func didReceiveMemoryWarning() {

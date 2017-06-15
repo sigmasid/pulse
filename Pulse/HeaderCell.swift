@@ -12,9 +12,6 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var previewButton = PulseButton(size: .medium, type: .blank, isRound: true, background: .white, tint: .clear)
     
-    fileprivate lazy var previewVC : Preview = Preview()
-    fileprivate var reuseCell = false
-    
     public weak var delegate : SelectionDelegate!
     
     override init(frame: CGRect) {
@@ -29,6 +26,8 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     
     deinit {
         delegate = nil
+        previewButton.removeFromSuperview()
+        titleLabel.removeFromSuperview()
     }
     
     func updateCell(_ _title : String?, _image : UIImage?) {

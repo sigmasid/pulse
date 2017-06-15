@@ -103,7 +103,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     fileprivate func updateRootScopeSelection() {
         if allChannels.isEmpty {
-            PulseDatabase.getExploreChannels({ channels, error in
+            PulseDatabase.getExploreChannels({[weak self] channels, error in
+                guard let `self` = self else { return }
                 if error == nil {
                     self.allChannels = channels
                     self.toggleLoading(show: false, message: nil)
@@ -115,11 +116,12 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     internal func menuButtonClicked() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "start a Channel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "start a Channel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.startChannel()
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {(action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
         }))
         
@@ -365,7 +367,9 @@ extension ExploreChannelsVC {
 
             case "i":
                 let itemID = urlComponents[2]
-                PulseDatabase.getItem(itemID, completion: {(item, error) in
+                PulseDatabase.getItem(itemID, completion: {[weak self] (item, error) in
+                    guard let `self` = self else { return }
+
                     self.toggleLoading(show: false, message: nil)
 
                     if let item = item {
@@ -428,11 +432,13 @@ extension ExploreChannelsVC {
         let menu = UIAlertController(title: "Congratulations!",
                                      message: "You were recommended as a contributor for \(inviteItem.cTitle ?? " a channel"). Contributors shape the content & experience for each channel and get an amazing platform to showcase their brand", preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showConfirmationMenu(status: true, inviteID: inviteItem.itemID)
         }))
         
-        menu.addAction(UIAlertAction(title: "decline Invite", style: .destructive, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "decline Invite", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showConfirmationMenu(status: false, inviteID: inviteItem.itemID)
         }))
         
@@ -448,7 +454,9 @@ extension ExploreChannelsVC {
                                      message: "Ready to add your \(inviteItem.childType(plural: true))? We spotlight expert voices, standout ideas & content and give you a platform to showcase your brand",
                                      preferredStyle: .actionSheet)
     
-        menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+
             DispatchQueue.main.async {
                 let selectedChannel = Channel(cID: inviteItem.cID, title: inviteItem.cTitle)
                 self.contentVC = ContentManagerVC()

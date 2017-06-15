@@ -14,10 +14,12 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     //Set by parent
     public var selectedChannel : Channel! {
         didSet {
-            PulseDatabase.getSeriesTypes(completion: { seriesTypes in
-                self.allItems = seriesTypes
-                self.updateDataSource()
-            })
+            if selectedChannel != nil {
+                PulseDatabase.getSeriesTypes(completion: { seriesTypes in
+                    self.allItems = seriesTypes
+                    self.updateDataSource()
+                })
+            }
         }
     }
     
@@ -45,7 +47,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     
     //Capture Image
     internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
-    fileprivate lazy var cameraVC : CameraVC = CameraVC()
+    fileprivate lazy var cameraVC : CameraVC! = CameraVC()
     fileprivate var capturedImage : UIImage?
     fileprivate var contentType : CreatedAssetType? = .recordedImage
     
@@ -58,6 +60,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     internal var contentOffset: CGFloat {
         return collectionView.contentOffset.x + collectionView.contentInset.left
     }
+    fileprivate var cleanupComplete = false
         
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -72,9 +75,32 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        updateHeader()
+    }
+    
     deinit {
-        allItems = []
-        capturedImage = nil
+        performCleanup()
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            selectedChannel = nil
+            
+            sAddCover.removeFromSuperview()
+            sShowCamera.removeFromSuperview()
+            sShowCameraLabel.removeFromSuperview()
+            
+            collectionView = nil
+            allItems.removeAll()
+            cameraVC = nil
+            capturedImage = nil
+            panDismissCameraInteractionController.delegate = nil
+            collectionViewLayout = nil
+            
+            cleanupComplete = true
+        }
     }
     
     internal func scrollToPage(index: Int, animated: Bool) {

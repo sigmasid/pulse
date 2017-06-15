@@ -16,7 +16,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
                 PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {success, users in
                     self.users = users
                 })
-            } else {
+            } else if selectedChannel != nil {
                 users = selectedChannel.contributors
             }
         }
@@ -34,7 +34,9 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     fileprivate var isSetupComplete = false
     fileprivate var observersAdded = false
     fileprivate var tap: UITapGestureRecognizer!
-
+    fileprivate var oldTabBarVisible = false
+    fileprivate var cleanupComplete = false
+    
     var users = [PulseUser]() {
         didSet {
             if collectionView != nil {
@@ -54,18 +56,21 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         if !isSetupComplete {
             
             definesPresentationContext = false
+            view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
             
             addObservers()
             setupCollectionView()
             setupSearch()
-            
+            oldTabBarVisible = tabBarHidden
+
             isSetupComplete = true
         }
 
     }
     
-    override func viewDidAppear(_ animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = true
         view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         addBackButton()
     }
@@ -75,11 +80,29 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     }
     
     deinit {
-        if tap != nil {
-            view.removeGestureRecognizer(tap)
+        performCleanup()
+    }
+    
+    internal func performCleanup() {
+        if !cleanupComplete {
+            if tap != nil {
+                tap.delegate = nil
+                view.removeGestureRecognizer(tap)
+            }
+            
+            modalDelegate = nil
+            selectionDelegate = nil
+            selectedChannel = nil
+            
+            collectionView = nil
+            searchContainer.removeFromSuperview()
+            tap = nil
+            
+            users.removeAll()
+            NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillShow, object: nil)
+            NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillHide, object: nil)
+            cleanupComplete = true
         }
-        
-        NotificationCenter.default.removeObserver(self)
     }
     
     internal func closeSearch() {
@@ -98,7 +121,9 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
                 self.collectionView.alpha = 1
                 self.searchContainer.alpha = 1
                 
+                self.tabBarHidden = self.oldTabBarVisible
                 self.modalDelegate.userClosedModal(self)
+                self.performCleanup()
             })
         }
     }
@@ -227,8 +252,8 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
         if !_user.uCreated {
             cell.updateImage(image : UIImage(named: "default-profile"))
 
-            PulseDatabase.getUser(_user.uID!, completion: { (user, error) in
-                if let user = user {
+            PulseDatabase.getUser(_user.uID!, completion: {[weak self] (user, error) in
+                if let user = user, let `self` = self {
                     cell.updateCell(user.name?.capitalized, _image: nil)
                     
                     self.users[indexPath.row] = user
@@ -237,7 +262,8 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
                         DispatchQueue.global(qos: .background).async {
                             if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
                                 
-                                DispatchQueue.main.async {
+                                DispatchQueue.main.async {[weak self] in
+                                    guard let `self` = self else { return }
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                                         self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
                                         cell.updateImage(image : UIImage(data: _userImageData))
@@ -254,8 +280,9 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
             } else if let _uPic = _user.thumbPic {
                 cell.updateCell(_user.name?.capitalized, _image: UIImage(named: "default-profile"))
                 
-                DispatchQueue.global(qos: .background).async {
+                DispatchQueue.global(qos: .background).async {[weak self] in
                     if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
+                        guard let `self` = self else { return }
                         if self.users.count > indexPath.row {
                             self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
                         }
@@ -320,7 +347,8 @@ extension MiniUserSearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISear
         let _searchText = searchController.searchBar.text!
         
         if _searchText != "" && _searchText.characters.count > 1 {
-            PulseDatabase.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
+            PulseDatabase.searchUsers(searchText: _searchText.lowercased(), completion:  {[weak self] searchResults in
+                guard let `self` = self else { return }
                 self.users = searchResults
             })
         }

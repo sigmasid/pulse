@@ -54,6 +54,7 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        updateHeader()
     }
     
     fileprivate func updateHeader() {
