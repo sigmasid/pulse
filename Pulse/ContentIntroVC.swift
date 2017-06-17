@@ -52,7 +52,6 @@ class ContentIntroVC: UIViewController {
     
     deinit {
         performCleanup()
-        //print("loading intro deinit called")
     }
     
     public func performCleanup() {

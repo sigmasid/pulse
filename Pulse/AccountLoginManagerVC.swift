@@ -12,7 +12,6 @@ class AccountLoginManagerVC: PulseNavVC {
     
     fileprivate lazy var loginVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "LoginVC") as? LoginVC
     fileprivate lazy var accountVC = UserProfileVC()
-    let _storyboard = UIStoryboard(name: "Main", bundle: nil)
     fileprivate var _currentLoadedView : currentLoadedView?
     fileprivate var initialUserUpdateComplete = false
     
@@ -50,7 +49,6 @@ class AccountLoginManagerVC: PulseNavVC {
             _currentLoadedView = .account
             
         } else if !PulseUser.isLoggedIn() {
-            print("should push login VC")
             pushViewController(loginVC!, animated: false)
 
             NotificationCenter.default.addObserver(self, selector: #selector(loginSuccess), name: NSNotification.Name(rawValue: "LoginSuccess"), object: nil)

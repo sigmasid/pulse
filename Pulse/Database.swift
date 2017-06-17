@@ -91,7 +91,7 @@ class PulseDatabase {
         task.resume()
     }
     
-    static func removeItem(userID : String, itemID : String) {
+    static func removeItem(userID : String, itemID : String, completion: @escaping (Bool) -> Void) {
         databaseRef.child("userDetailedPublicSummary/\(userID)/items/\(itemID)").observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 itemsRef.child(itemID).setValue(nil, withCompletionBlock: { (error, snap) in
@@ -112,16 +112,15 @@ class PulseDatabase {
                     // Delete the file
                     itemStorageRef.delete { (error) -> Void in
                         if (error != nil) {
-                            //print("error deleting thumbnail \(error)")
-                            // Uh-oh, an error occurred!
+                            completion(false)
                         } else {
-                            //print("deleted thumbnail")
+                            completion(true)
                         }
                     }
                 }
 
             } else {
-                print("nothing to delete")
+                completion(false)
             }
         })
     }
@@ -496,12 +495,12 @@ class PulseDatabase {
     /*** MARK END : SETTINGS ***/
  
     /*** MARK START : GET ITEMS ***/
-    static func getChannel(cID : String, completion: @escaping (_ channel : Channel, _ error : NSError?) -> Void) {
-        channelsRef.child(cID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+    static func getChannel(cID : String, completion: @escaping (_ channel : Channel?, _ error : Error?) -> Void) {
+        channelsRef.child(cID).observeSingleEvent(of: .value, with: { snap in
             let _currentChannel = Channel(cID: cID, snapshot: snap)
             completion(_currentChannel, nil)
         }, withCancel: { error in
-            //print("error gettings tag \(error)")
+            completion(nil, error)
         })
     }
     
@@ -1074,7 +1073,7 @@ class PulseDatabase {
             completion(true)
 
         }, withCancel: { error in
-            //print("error getting user public summary \(error)")
+            completion(false)
         })
         
         usersPublicDetailedRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
@@ -1128,13 +1127,13 @@ class PulseDatabase {
             addUserProfileListener(uID: user.uid)
             
         }, withCancel: { error in
-            print("error getting user public detailed summary \(error)")
+            completion(false)
         })
 
         usersRef.child(user.uid).child("subscriptions").observeSingleEvent(of: .value, with: { snap in
             for channel in snap.children {
                 if let channel = channel as? DataSnapshot {
-                    let savedChannel = Channel(cID: channel.key, title: channel.value as? String ?? "")
+                    let savedChannel = Channel(cID: channel.key, title: channel.value as? String)
                     
                     if !PulseUser.currentUser.subscriptionIDs.contains(channel.key) {
                         PulseUser.currentUser.subscriptions.append(savedChannel)
@@ -1727,8 +1726,6 @@ class PulseDatabase {
             let request : [String : Any] = ["inviteID" : inviteKey,
                                             "type" : "contributorInvite"]
             collectionPost["users/\(user.uID!)/pendingInvites/\(channel.cID!)"] = request
-            print("user is applying for himself and post is ", collectionPost)
-
         }
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (completionError, ref) in

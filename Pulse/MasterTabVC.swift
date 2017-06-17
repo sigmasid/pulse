@@ -19,10 +19,13 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
   }
 }
 
-class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelegate {
+class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelegate, FirstLaunchDelegate {
     
-    var reachability: Reachability? = Reachability.networkReachabilityForInternetConnection()
+    public var reachability: Reachability? = Reachability.networkReachabilityForInternetConnection()
+    public var showAppIntro = false
+    public var introDelegate : FirstLaunchDelegate!
 
+    fileprivate var introTab : IntroType = .other
     fileprivate var initialLoadComplete = false
     fileprivate var loadingView : LoadingView!
 
@@ -32,7 +35,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     var homeVC : HomeVC!
 
     fileprivate var panInteractionController = PanHorizonInteractionController()
-    
     fileprivate var initialFrame : CGRect!
     fileprivate var rectToRight : CGRect!
     fileprivate var rectToLeft : CGRect!
@@ -45,13 +47,20 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         setupLoading()
         
         NotificationCenter.default.addObserver(self, selector: #selector(reachabilityDidChange(_:)), name: NSNotification.Name(rawValue: ReachabilityDidChangeNotificationName), object: nil)
-
+        checkReachability()
+        
         _ = reachability?.startNotifier()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        checkReachability()
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        if showAppIntro {
+            let appIntro = FirstLoadVC()
+            appIntro.introDelegate = self
+            appIntro.transitioningDelegate = self
+            present(appIntro, animated: true, completion: {})
+        }
     }
     
     deinit {
@@ -59,7 +68,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         reachability?.stopNotifier()
     }
     
-    func checkReachability() {
+    internal func checkReachability() {
         guard let r = reachability else { return }
         if r.isReachable, !isLoaded {
             setupControllers()
@@ -70,6 +79,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
                 if let link = self.universalLink {
                     self.selectedIndex = 1
                     self.exploreChannelsVC.universalLink = link
+                    self.initialLoadComplete = true
+                    
+                } else if self.introTab == .login {
+                    self.selectedIndex = 0
                     self.initialLoadComplete = true
                 }
                     // get feed and show initial view controller
@@ -96,13 +109,30 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         }
     }
     
-    func reachabilityDidChange(_ notification: Notification) {
+    internal func reachabilityDidChange(_ notification: Notification) {
         checkReachability()
     }
     
+    internal func doneWithIntro(mode: IntroType) {
+        showAppIntro = false //update in userdefaults
+        introTab = mode
+
+        if !isLoaded {
+            checkReachability()
+        } else {
+            if mode == .login {
+                selectedIndex = 0
+            }
+        }
+        
+        if introDelegate != nil {
+            introDelegate.doneWithIntro(mode: mode)
+        }
+    }
+    
     //DELEGATE METHOD TO REMOVE INITIAL LOADING SCREEN WHEN THE FEED IS LOADED
-    func removeLoading() {
-        UIView.animate(withDuration: 0.25, animations: { self.loadingView.alpha = 0 } , completion: {(value: Bool) in
+    internal func removeLoading() {
+        UIView.animate(withDuration: 1, animations: { self.loadingView.alpha = 0 } , completion: {(value: Bool) in
             self.loadingView.isHidden = true
         })
     }
@@ -111,7 +141,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         super.didReceiveMemoryWarning()
     }
     
-    func setupControllers() {
+    internal func setupControllers() {
         accountVC = AccountLoginManagerVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         
         exploreChannelsVC = ExploreChannelsVC()
@@ -156,16 +186,16 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         view.addSubview(loadingView!)
         
         loadingView?.addLongIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
-        loadingView?.addMessage("P U L S E", _color: .black)
+        loadingView?.addTextLogo()
         loadingView?.loadingDelegate = self
     }
     
-    func clickedRefresh() {
+    internal func clickedRefresh() {
         loadingView?.addMessage("Loading...", _color: .black)
         checkReachability()
     }
     
-    func handleLink(link: URL) {
+    internal func handleLink(link: URL) {
         if isLoaded {
             exploreChannelsVC.universalLink = link
             selectedIndex = 1
@@ -200,5 +230,33 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     func tabBarController(_ tabBarController: UITabBarController,
                             interactionControllerFor animationController: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
         return panInteractionController.interactionInProgress ? panInteractionController : nil
+    }
+}
+
+extension MasterTabVC: UIViewControllerTransitioningDelegate {
+    func animationController(forPresented presented: UIViewController,
+                             presenting: UIViewController,
+                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        
+        if presented is FirstLoadVC {
+            let animator = FadeAnimationController()
+            animator.transitionType = .present
+            
+            return animator            
+        } else {
+            return nil
+        }
+    }
+    
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        if dismissed is FirstLoadVC {
+
+            let animator = FadeAnimationController()
+            animator.transitionType = .dismiss
+            
+            return animator
+        } else {
+            return nil
+        }
     }
 }

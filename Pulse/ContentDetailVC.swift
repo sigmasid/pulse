@@ -179,6 +179,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             contentOverlay?.delegate = self
             
             avPlayerLayer = AVPlayerLayer(player: qPlayer)
+            avPlayerLayer.backgroundColor = UIColor.black.withAlphaComponent(0.7).cgColor
             view.layer.insertSublayer(avPlayerLayer, at: 0)
             view.insertSubview(contentOverlay!, at: 2)
             avPlayerLayer.frame = view.bounds
@@ -316,6 +317,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         
         } else {
             removeDetailTap()
+            contentOverlay?.hideExploreDetail()
             contentOverlay?.clearPagers()
         }
     }
@@ -427,6 +429,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         } else if itemType == .recordedImage || itemType == .albumImage {
             if let image = item.content as? UIImage {
                 showImageView(image)
+                if shouldShowExplore {
+                    contentOverlay?.highlightExploreDetail()
+                }
                 completion(true)
             } else {
                 completion(false)
@@ -803,6 +808,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                         if let item = item {
                             self.nextFullItem = item
                         }
+                        self.removeObserverIfNeeded()
                         self.currentItem = _nextItem
                     })
                 } else {
@@ -831,6 +837,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
         else if canAdvanceDetailReady {
             
+            removeObserverIfNeeded()
             currentItem = nextDetailItem
             
         } else {

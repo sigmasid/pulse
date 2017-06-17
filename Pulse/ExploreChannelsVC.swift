@@ -290,7 +290,7 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
         
         if !channel.cCreated {
             PulseDatabase.getChannel(cID: channel.cID, completion: {[weak self] (channel, error) in
-                guard let `self` = self else { return }
+                guard let `self` = self, let channel = channel else { return }
 
                 channel.cPreviewImage = self.allChannels[indexPath.row].cPreviewImage
                 self.allChannels[indexPath.row] = channel

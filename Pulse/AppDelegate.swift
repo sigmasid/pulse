@@ -16,11 +16,14 @@ import FirebaseDynamicLinks
 import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
 
     var window: UIWindow?
     let gcmMessageIDKey = "gcm.message_id"
-
+    lazy var firstLoadVC :FirstLoadVC! = FirstLoadVC()
+    
+    var firstLaunchComplete : Bool = UserDefaults.standard.bool(forKey: "firstLaunchComplete")
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Register for remote notifications. This shows a permission dialog on first run, to
         // show the dialog at a more appropriate time move this registration accordingly.
@@ -55,17 +58,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FBSDKProfile.enableUpdates(onAccessTokenChange: true)
         
         window = UIWindow(frame: UIScreen.main.bounds)
-        window?.rootViewController = MasterTabVC()
+        let masterTabVC = MasterTabVC()
+        
+        if !firstLaunchComplete {
+            masterTabVC.showAppIntro = true
+            masterTabVC.introDelegate = self
+        }
+        
+        window?.rootViewController = masterTabVC
         window?.makeKeyAndVisible()
-        
-        
-        // [START add_token_refresh_observer]
-        // Add observer for InstanceID token refresh callback. - DON"T NEED BECAUSE WE USE DELEGATE METHOD NOW
-        // NotificationCenter.default.addObserver(self,
-        //                                       selector: #selector(self.tokenRefreshNotification),
-        //                                       name: .firInstanceIDTokenRefresh,
-        //                                       object: nil)
-        // [END add_token_refresh_observer]
         
         return true
     }
@@ -161,6 +162,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Messaging.messaging().shouldEstablishDirectChannel = true
 
     }
+    
     // [END connect_to_fcm]
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
@@ -173,6 +175,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         // With swizzling disabled you must set the APNs token here.
         Messaging.messaging().apnsToken = deviceToken
+    }
+    
+    func doneWithIntro(mode : IntroType) {
+        let defaults = UserDefaults.standard
+
+        defaults.setValue(true, forKey: "firstLaunchComplete")
+        print(defaults.bool(forKey: "firstLaunchComplete"))
     }
 }
 

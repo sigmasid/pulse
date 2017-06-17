@@ -192,7 +192,6 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     }
     
     internal func getSelectedType() -> String {
-        print("selected type is \(allItems[centerIndex].itemID)")
         return allItems[centerIndex].itemID
     }
     

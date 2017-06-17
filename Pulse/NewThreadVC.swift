@@ -278,7 +278,6 @@ extension NewThreadVC: CameraDelegate, PanAnimationDelegate {
     func panCompleted(success: Bool, fromVC: UIViewController?) {
         if success {
             if fromVC is CameraVC {
-                print("from vc is content camera VC")
                 userDismissedCamera()
             }
         }

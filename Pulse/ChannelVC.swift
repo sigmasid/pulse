@@ -15,7 +15,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             isSubscribed = PulseUser.currentUser.subscriptionIDs.contains(selectedChannel.cID) ? true : false
             if !selectedChannel.cCreated {
                 PulseDatabase.getChannel(cID: selectedChannel.cID!, completion: {[weak self] channel, error in
-                    guard let `self` = self else { return }
+                    guard let `self` = self, let channel = channel else { return }
                     
                     channel.cPreviewImage = self.selectedChannel.cPreviewImage
                     self.selectedChannel = channel

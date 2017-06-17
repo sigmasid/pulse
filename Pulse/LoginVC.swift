@@ -11,6 +11,7 @@ import FirebaseAuth
 import FirebaseDatabase
 import TwitterKit
 import FBSDKLoginKit
+import SafariServices
 
 class LoginVC: PulseVC, UITextFieldDelegate {
     public weak var loginVCDelegate : ContentDelegate?
@@ -27,9 +28,13 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     @IBOutlet weak var forgotPassword: UIButton!
     @IBOutlet weak var _emailErrorLabel: UILabel!
     @IBOutlet weak var _passwordErrorLabel: UILabel!
+    @IBOutlet weak var termsDescription: UILabel!
+    @IBOutlet weak var showTermsButton: UIButton!
+    @IBOutlet weak var showPrivacyButton: UIButton!
     
     var _currentLoadedView : currentLoadedView?
-
+    var agreeTermsButton = PulseButton(size: .xxSmall, type: .check, isRound: false, background: .pulseGrey, tint: .black)
+    
     enum currentLoadedView {
         case login
         case createAccount
@@ -38,6 +43,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     var currentTWTRSession : TWTRSession?
     
     fileprivate var _hasMovedUp = false
+    fileprivate var termsChecked = true
     
     fileprivate var emailValidated = false {
         didSet {
@@ -59,10 +65,16 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         }
     }
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     override func viewDidLayoutSubviews() {
         if !isLoaded {
             hideKeyboardWhenTappedAround()
             setupView()
+            addTermsButton()
+            
             emailButton.setDisabled()
             _currentLoadedView = .login
             
@@ -75,6 +87,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updateHeader()
+        
     }
     
     fileprivate func updateHeader() {
@@ -107,8 +120,48 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         let _footerDividerLine = UIView(frame:CGRect(x: forgotPassword.frame.width - 1, y: 0 , width: 1 , height: forgotPassword.frame.height))
         _footerDividerLine.backgroundColor = UIColor.black
         forgotPassword.addSubview(_footerDividerLine)
-
     }
+    
+    fileprivate func addTermsButton() {
+        view.addSubview(agreeTermsButton)
+        
+        agreeTermsButton.translatesAutoresizingMaskIntoConstraints = false
+        agreeTermsButton.centerYAnchor.constraint(equalTo: termsDescription.centerYAnchor).isActive = true
+        agreeTermsButton.leadingAnchor.constraint(equalTo: forgotPassword.leadingAnchor).isActive = true
+        agreeTermsButton.widthAnchor.constraint(equalToConstant: IconSizes.xxSmall.rawValue).isActive = true
+        agreeTermsButton.heightAnchor.constraint(equalTo: agreeTermsButton.widthAnchor).isActive = true
+        
+        agreeTermsButton.layoutIfNeeded()
+        agreeTermsButton.removeShadow()
+        
+        agreeTermsButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+        agreeTermsButton.setImage(UIImage(named: "check"), for: .selected)
+        agreeTermsButton.setImage(nil, for: .normal)
+        
+        agreeTermsButton.isSelected = true
+        agreeTermsButton.addTarget(self, action: #selector(handleAgreeTerms), for: .touchUpInside)
+    }
+    
+    func handleAgreeTerms(_ sender: UIButton) {
+        termsChecked = !sender.isSelected
+        agreeTermsButton.isSelected = !sender.isSelected
+    }
+    
+    @IBAction func handleShowPolicy(_ sender: UIButton) {
+        var url : URL?
+        
+        if sender == showTermsButton {
+            url = URL(string: "https://checkpulse.co/terms")
+        } else if sender == showPrivacyButton {
+            url = URL(string: "https://checkpulse.co/privacy")
+        }
+        
+        if let url = url {
+            let svc = SFSafariViewController(url: url)
+            present(svc, animated: true, completion: nil)
+        }
+    }
+    
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         if !_hasMovedUp {
@@ -128,7 +181,9 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         }
         
         if textField.tag == userEmail.tag {
-            GlobalFunctions.validateEmail(userEmail.text, completion: {(verified, error) in
+            GlobalFunctions.validateEmail(userEmail.text, completion: {[weak self] (verified, error) in
+                guard let `self` = self else { return }
+
                 if !verified {
                     self.emailValidated = false
                     DispatchQueue.main.async {
@@ -144,7 +199,9 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     
     func textFieldDidChange(_ textField: UITextField) {
         if textField.tag == userPassword.tag {
-            GlobalFunctions.validatePassword(userPassword.text, completion: {(verified, error) in
+            GlobalFunctions.validatePassword(userPassword.text, completion: {[weak self] (verified, error) in
+                guard let `self` = self else { return }
+
                 if !verified {
                     self.passwordValidated = false
                     DispatchQueue.main.async {
@@ -165,9 +222,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         Auth.auth().signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) {[weak self] (aUser, blockError) in
-            guard let `self` = self else {
-                return
-            }
+            guard let `self` = self else { return }
             
             if let blockError = blockError {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
@@ -195,9 +250,11 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     }
     
     @IBAction func createAccount(_ sender: UIButton) {
-        if let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
+        if termsChecked, let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
             _currentLoadedView = .createAccount
             navigationController?.pushViewController(createAccountVC, animated: true)
+        } else if !termsChecked {
+            GlobalFunctions.showAlertBlock("Please Review Terms of Service", erMessage: "You need to agree to our terms of service prior to continuing")
         }
     }
     
@@ -208,8 +265,12 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         
         let resetAction = UIAlertAction(title: "reset", style: .default, handler: { (action: UIAlertAction!) in
             if let email = resetPasswordConfirmation.textFields?.first?.text {
-                Auth.auth().sendPasswordReset(withEmail: email) { (error) in
-                    self.resetSent()
+                Auth.auth().sendPasswordReset(withEmail: email) {[weak self] (error) in
+                    guard let `self` = self else { return }
+                    GlobalFunctions.showAlertBlock(viewController : self,
+                                                   erTitle: "Request Sent",
+                                                   erMessage: "check your inbox for the reset link",
+                                                   buttonTitle: "done")
                 }
             } else {
                 resetPasswordConfirmation.textFields?.first?.text = ""
@@ -234,23 +295,18 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         self.present(resetPasswordConfirmation, animated: true, completion: nil)
     }
     
-    func resetSent() {
-        let alert = UIAlertController(title: "Request Sent",
-                                      message: "check your inbox for the reset link",
-                                      preferredStyle: .alert)
-        
-        self.present(alert, animated: true, completion: nil)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            alert.dismiss(animated: true, completion: nil)
-        }
-    }
-    
     @IBAction func fbLogin(_ sender: UIButton) {
+        guard termsChecked else {
+            GlobalFunctions.showAlertBlock("Please Review Terms of Service", erMessage: "You need to agree to our terms of service prior to continuing")
+            return
+        }
+        
         toggleLoading(show: true, message: "Signing in...", showIcon: true)
         let facebookReadPermissions = ["public_profile", "email", "user_friends"]
         let loginButton = FBSDKLoginManager()
-        loginButton.logIn(withReadPermissions: facebookReadPermissions, from: self, handler: { (result, blockError) -> Void in
+        loginButton.logIn(withReadPermissions: facebookReadPermissions, from: self, handler: {[weak self] (result, blockError) -> Void in
+            guard let `self` = self else { return }
+
             if blockError != nil {
                 self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
@@ -275,7 +331,9 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         })
         
         let credential = FacebookAuthProvider.credential(withAccessToken: _accessToken.tokenString)
-        Auth.auth().signIn(with: credential) { (aUser, error) in
+        Auth.auth().signIn(with: credential) {[weak self] (aUser, error) in
+            guard let `self` = self else { return }
+
             if error != nil {
                 self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
@@ -290,12 +348,21 @@ class LoginVC: PulseVC, UITextFieldDelegate {
     }
     
     @IBAction func twtrLogin(_ sender: UIButton) {
-        self.toggleLoading(show: true, message: "Signing in...", showIcon: true)
-        Twitter.sharedInstance().logIn { session, error in
+        guard termsChecked else {
+            GlobalFunctions.showAlertBlock("Please Review Terms of Service", erMessage: "You need to agree to our terms of service prior to continuing")
+            return
+        }
+        
+        toggleLoading(show: true, message: "Signing in...", showIcon: true)
+        Twitter.sharedInstance().logIn {[weak self] session, error in
+            guard let `self` = self else { return }
+            
             if (session != nil) {
                 self.currentTWTRSession = session
                 let credential = TwitterAuthProvider.credential(withToken: session!.authToken, secret: session!.authTokenSecret)
-                Auth.auth().signIn(with: credential) { (aUser, blockError) in
+                Auth.auth().signIn(with: credential) {[weak self] (aUser, blockError) in
+                    guard let `self` = self else { return }
+
                     if let blockError = blockError {
                         self.toggleLoading(show: false, message: nil)
                         self.nav?.setNav(title: blockError.localizedDescription)

@@ -69,7 +69,7 @@ extension UICollectionViewCell {
         contentView.layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
     }
     
-    func addBorder(color: UIColor, thickness: CGFloat) {
+    override func addBorder(color: UIColor, thickness: CGFloat) {
         contentView.layer.addBorder(color: color, thickness: thickness)
     }
 }
@@ -104,6 +104,10 @@ extension UIView {
     
     func addBottomBorder() {
         layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+    }
+    
+    func addBorder(color : UIColor = .pulseGrey, thickness: CGFloat = 1.0) {
+        layer.addBorder(color: color, thickness: thickness)
     }
 }
 
@@ -447,6 +451,11 @@ enum VoteType {
     case downvote
 }
 
+enum IntroType {
+    case login
+    case other
+}
+
 enum Spacing: CGFloat {
     case xxs = 5
     case xs = 10
@@ -455,6 +464,7 @@ enum Spacing: CGFloat {
     case l = 40
     case xl = 50
     case xxl = 60
+    case max = 100
 }
 
 enum buttonCornerRadius : CGFloat {

@@ -12,6 +12,8 @@ class LoadingView: UIView {
     
     fileprivate let messageLabel = UILabel()
     fileprivate var iconManager : Icon!
+    fileprivate var textLogo : UIImageView!
+
     fileprivate lazy var refreshButton = PulseButton(size: .small, type: .refresh, isRound: true, hasBackground: true)
     weak var loadingDelegate : LoadingDelegate!
     
@@ -48,7 +50,9 @@ class LoadingView: UIView {
         
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         
-        if iconManager != nil {
+        if iconManager != nil, textLogo != nil {
+            messageLabel.topAnchor.constraint(equalTo: textLogo.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        } else if iconManager != nil {
             messageLabel.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
         } else {
             messageLabel.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
@@ -60,6 +64,21 @@ class LoadingView: UIView {
     public func addMessage(_ _text : String?, _color : UIColor) {
         messageLabel.textColor = _color
         addMessage(_text)
+    }
+    
+    public func addTextLogo() {
+        textLogo = UIImageView(image: UIImage(named: "pulse-logo-text"))
+        textLogo.tintColor = .black
+        addSubview(textLogo)
+        
+        textLogo.translatesAutoresizingMaskIntoConstraints = false
+        textLogo.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        textLogo.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        textLogo.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.xxs.rawValue + 2).isActive = true
+        textLogo.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        textLogo.layoutIfNeeded()
+        
+        textLogo.contentMode = .scaleAspectFit
     }
     
     public func addIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {

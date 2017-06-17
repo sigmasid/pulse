@@ -166,8 +166,14 @@ class ContentOverlay: UIView {
 
     
     public func dimExploreDetail() {
-        nextItemButton.alpha = 0.2
-        pagersStack.alpha = 0.2
+        nextItemButton.isHidden = false
+        pagersStack.isHidden = false
+        
+        UIView.animate(withDuration: 0.2, animations: {
+            self.nextItemButton.alpha = 0.2
+            self.pagersStack.alpha = 0.2
+        })
+
     }
     
     public func hideExploreDetail() {

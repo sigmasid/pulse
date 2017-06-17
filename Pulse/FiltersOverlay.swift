@@ -87,16 +87,9 @@ extension FiltersOverlay : UICollectionViewDataSource, UICollectionViewDelegate,
 
 //    override func hitTest(point: CGPoint, withEvent event: UIEvent?) -> UIView? {
 //        if let _controlsOverlay = controlsOverlay {
-//            print("hit test fired in filters")
 //            let _test = _controlsOverlay.hitTest(point, withEvent: event)
-//            if _test != nil {
-//                print("we found a view")
-//            } else {
-//                print("returning self")
-//            }
 //            return _test ?? self
 //        } else {
-//            print("hit test returned self")
 //            return self
 //        }
 //    }

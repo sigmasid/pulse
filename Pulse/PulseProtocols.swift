@@ -109,11 +109,9 @@ protocol PreviewPlayerItemDelegate: class {
     func itemStatusReady()
 }
 
-protocol searchVCDelegate: class {
-    func userCancelledSearch()
-    func userSelectedSearchResult(type : ItemTypes?, id : String)
+protocol FirstLaunchDelegate {
+    func doneWithIntro(mode: IntroType)
 }
-
 
 /**
  The state of the navigation bar
