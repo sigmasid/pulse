@@ -25,33 +25,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
     var firstLaunchComplete : Bool = UserDefaults.standard.bool(forKey: "firstLaunchComplete")
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        // Register for remote notifications. This shows a permission dialog on first run, to
-        // show the dialog at a more appropriate time move this registration accordingly.
-        // [START register_for_notifications]
-        if #available(iOS 10.0, *) {
-            // For iOS 10 display notification (sent via APNS)
-            UNUserNotificationCenter.current().delegate = self
-            
-            let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-            UNUserNotificationCenter.current().requestAuthorization(
-                options: authOptions,
-                completionHandler: {_, _ in })
-            
-            // For iOS 10 data message (sent via FCM)
-            Messaging.messaging().delegate = self
-            
-        } else {
-            let settings: UIUserNotificationSettings =
-                UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
-            application.registerUserNotificationSettings(settings)
-        }
         
-        application.registerForRemoteNotifications()
+        // Register for remote notifications. Check if permissions have been shown before registering.
+        if GlobalFunctions.hasAskedNotificationPermission {
+            registerForNotifications(application: application)
+        }
         
         // setup firebase, check twitter and facebook tokens to login if available
         FirebaseOptions.defaultOptions()?.deepLinkURLScheme = "co.checkpulse.pulse"
-
         FirebaseApp.configure()
+        
         Fabric.with([Twitter.self()])
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
         FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:Error?) -> Void in }
@@ -152,6 +135,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
     }
     // [END refresh_token]
     
+    func registerForNotifications(application: UIApplication) {
+        if #available(iOS 10.0, *) {
+            // For iOS 10 display notification (sent via APNS)
+            UNUserNotificationCenter.current().delegate = self
+            
+            let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+            UNUserNotificationCenter.current().requestAuthorization(
+                options: authOptions,
+                completionHandler: {_, _ in })
+            
+            // For iOS 10 data message (sent via FCM)
+            Messaging.messaging().delegate = self
+            
+        } else {
+            let settings: UIUserNotificationSettings =
+                UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
+            application.registerUserNotificationSettings(settings)
+        }
+        application.registerForRemoteNotifications()
+    }
+    
     // [START connect_to_fcm]
     func connectToFcm() {
         // Won't connect since there is no token
@@ -160,7 +164,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
         }
         
         Messaging.messaging().shouldEstablishDirectChannel = true
-
     }
     
     // [END connect_to_fcm]

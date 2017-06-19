@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 import SystemConfiguration
+import UserNotifications
 
 let maxImgSize : Int64 = 1242 * 2208
 let searchBarHeight : CGFloat = 44
@@ -19,8 +20,10 @@ let defaultPostHeight : CGFloat = 325
 let scopeBarHeight : CGFloat = 40
 let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
 
-class GlobalFunctions {
-    
+enum GlobalFunctions {
+    static var hasAskedNotificationPermission : Bool = UserDefaults.standard.bool(forKey: "askedNotificationPermission")
+
+    /** START: NETWORK + PERMISSIONS **/
     static func isConnectedToNetwork() -> Bool {
         
         var zeroAddress = sockaddr_in(sin_len: 0, sin_family: 0,
@@ -45,16 +48,48 @@ class GlobalFunctions {
         return isReachable && !needsConnection
     }
     
-    static func getPulseCollectionLayout() -> UICollectionViewFlowLayout {
-        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
-        layout.scrollDirection = UICollectionViewScrollDirection.vertical
-        layout.minimumLineSpacing = 10
-        layout.minimumInteritemSpacing = 10
-        layout.sectionHeadersPinToVisibleBounds = true
+    static func askNotificationPermssion(viewController: UIViewController) -> MiniPreview? {
+        let _frame = CGRect(x: viewController.view.bounds.width * (1/6),
+                            y: viewController.view.bounds.height * (1/5),
+                            width: viewController.view.bounds.width * (2/3),
+                            height: viewController.view.bounds.height * (3/5))
         
-        return layout
+        if !hasAskedNotificationPermission {
+            let miniPreview =  MiniPreview(frame: _frame, buttonTitle: "Enable")
+            miniPreview.backgroundColor = .white
+            if let image = UIImage(named: "notifications-popup") {
+                miniPreview.setIcon(image: image, tintColor: .white, backgroundColor: .pulseBlue)
+                miniPreview.setTitleLabel("Allow Notifications?", textColor: .white, blurText: false)
+            } else {
+                miniPreview.setTitleLabel("Allow Notifications?", textColor: .black)
+            }
+            miniPreview.setLongDescriptionLabel("So we can remind you of requests to share your perspectives, ideas & expertise!",
+                                                textColor: .darkGray, blurText: false)
+            return miniPreview
+        } else {
+            return nil
+        }
     }
     
+    static func showNotificationPermissions() {
+        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+        UNUserNotificationCenter.current().requestAuthorization(
+            options: authOptions,
+            completionHandler: { success, _ in
+            print("should request for authorization")
+            
+            let defaults = UserDefaults.standard
+            defaults.setValue(true, forKey: "askedNotificationPermission")
+                
+            if !success {
+                GlobalFunctions.showAlertBlock("Error Registering",
+                                               erMessage: "you can change notifications permissions by going into the settings")
+            }
+        })
+    }
+    /** END: NETWORK + PERMISSIONS **/
+    
+    /** START: UIVIEW / LAYER EFFECTS **/
     static func addBorders(_ _textField : UITextField) -> CAShapeLayer {
         let color = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 )
         return addBorders(_textField, _color: color, thickness : 1.0)
@@ -79,7 +114,30 @@ class GlobalFunctions {
         view.layer.shadowRadius = 4.0
         view.layer.shadowOpacity = 0.7
     }
+    
+    static func getLabelSize(title : String, width: CGFloat, fontAttributes: [String : Any]) -> CGFloat {
+        let tempLabel = UILabel()
+        tempLabel.numberOfLines = 0
+        tempLabel.attributedText = NSMutableAttributedString(string: title , attributes: fontAttributes )
+        let neededSize : CGSize = tempLabel.sizeThatFits(CGSize(width: width, height: CGFloat.greatestFiniteMagnitude))
+        let labelHeight = neededSize.height
+        
+        return labelHeight
+    }
+    
+    static func getLabelWidth(title : String, fontAttributes: [String : Any]) -> CGFloat {
+        let tempLabel = UILabel()
+        tempLabel.numberOfLines = 1
+        tempLabel.attributedText = NSMutableAttributedString(string: title , attributes: fontAttributes )
+        let neededSize : CGSize = tempLabel.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: tempLabel.font.capHeight))
+        let labelWidth = neededSize.width
+        
+        return labelWidth
+    }
+    /** END: UIVIEW / LAYER EFFECTS **/
 
+    
+    /** START CHANGE VIEW / VCS **/
     static func addNewVC(_ newVC: UIViewController, parentVC: UIViewController) {
         parentVC.addChildViewController(newVC)
         parentVC.view.addSubview(newVC.view)
@@ -135,36 +193,9 @@ class GlobalFunctions {
         default: return
         }
     }
+    /** END CHANGE VIEW / VCS **/
     
-    static func createImageFromData(_ data : Data) -> UIImage? {
-        if let _image = UIImage(data: data, scale: 1.0) {
-            let _orientatedImage = UIImage(cgImage: _image.cgImage!, scale: 1.0, orientation: .up)
-            return _orientatedImage
-        } else {
-            return nil
-        }
-    }
-    
-    static func getLabelSize(title : String, width: CGFloat, fontAttributes: [String : Any]) -> CGFloat {
-        let tempLabel = UILabel()
-        tempLabel.numberOfLines = 0
-        tempLabel.attributedText = NSMutableAttributedString(string: title , attributes: fontAttributes )
-        let neededSize : CGSize = tempLabel.sizeThatFits(CGSize(width: width, height: CGFloat.greatestFiniteMagnitude))
-        let labelHeight = neededSize.height
-        
-        return labelHeight
-    }
-    
-    static func getLabelWidth(title : String, fontAttributes: [String : Any]) -> CGFloat {
-        let tempLabel = UILabel()
-        tempLabel.numberOfLines = 1
-        tempLabel.attributedText = NSMutableAttributedString(string: title , attributes: fontAttributes )
-        let neededSize : CGSize = tempLabel.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: tempLabel.font.capHeight))
-        let labelWidth = neededSize.width
-        
-        return labelWidth
-    }
-    
+    /** START: FORMAT TIME **/
     static func getFormattedTime(timeString : Date) -> String {
         
         return getFormattedTime(timeString: timeString, style : .medium)
@@ -177,6 +208,18 @@ class GlobalFunctions {
         let stringDate: String = formatter.string(from: timeString)
         
         return stringDate
+    }
+    /** END: FORMAT TIME **/
+    
+    /** START: COLLECTION VIEW ITEMS **/
+    static func getPulseCollectionLayout() -> UICollectionViewFlowLayout {
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.scrollDirection = UICollectionViewScrollDirection.vertical
+        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 10
+        layout.sectionHeadersPinToVisibleBounds = true
+        
+        return layout
     }
     
     static func getCellHeight(type : ItemTypes) -> CGFloat {
@@ -192,6 +235,7 @@ class GlobalFunctions {
         default: return 145
         }
     }
+    /** END: COLLECTION VIEW ITEMS **/
     
     ///Share content
     static func shareContent(shareType: String, shareText: String, shareLink: String, presenter: UIViewController) -> UIActivityViewController {
@@ -209,6 +253,7 @@ class GlobalFunctions {
         return activityViewController
     }
     
+    /** START: VALIDATE ITEMS **/
     ///Validate email
     static func validateEmail(_ enteredEmail:String?, completion: (_ verified: Bool, _ error: NSError?) -> Void) {
         let emailFormat = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
@@ -252,7 +297,10 @@ class GlobalFunctions {
             completion(false, NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
         }
     }
+    /** END: VALIDATE ITEMS **/
     
+    
+    /** START: ALERTS **/
     static func showAlertBlock(_ erTitle: String, erMessage: String) {
         if let topController = UIApplication.shared.keyWindow?.rootViewController {
             showAlertBlock(viewController: topController, erTitle: erTitle, erMessage: erMessage)
@@ -265,8 +313,18 @@ class GlobalFunctions {
         alertController.addAction(UIAlertAction(title: buttonTitle, style: buttonTitle == "cancel" ? .destructive : .default, handler: { (alertAction) -> Void in  }))
         viewController.present(alertController, animated: true, completion:nil)
     }
+    /** END: ALERTS **/
     
-    /** IMAGE FUNCTIONS **/
+    /** START: IMAGE FUNCTIONS **/
+    static func createImageFromData(_ data : Data) -> UIImage? {
+        if let _image = UIImage(data: data, scale: 1.0) {
+            let _orientatedImage = UIImage(cgImage: _image.cgImage!, scale: 1.0, orientation: .up)
+            return _orientatedImage
+        } else {
+            return nil
+        }
+    }
+    
     static func fixOrientation(_ img:UIImage) -> UIImage {
         if (img.imageOrientation == UIImageOrientation.up) {
             return img;
@@ -322,4 +380,5 @@ class GlobalFunctions {
             return image
         }
     }
+    /** END: IMAGE FUNCTIONS **/
 }

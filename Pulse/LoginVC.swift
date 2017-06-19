@@ -13,7 +13,7 @@ import TwitterKit
 import FBSDKLoginKit
 import SafariServices
 
-class LoginVC: PulseVC, UITextFieldDelegate {
+class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     public weak var loginVCDelegate : ContentDelegate?
     var nav : PulseNavVC!
     
@@ -142,7 +142,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         agreeTermsButton.addTarget(self, action: #selector(handleAgreeTerms), for: .touchUpInside)
     }
     
-    func handleAgreeTerms(_ sender: UIButton) {
+    internal func handleAgreeTerms(_ sender: UIButton) {
         termsChecked = !sender.isSelected
         agreeTermsButton.isSelected = !sender.isSelected
     }
@@ -318,7 +318,7 @@ class LoginVC: PulseVC, UITextFieldDelegate {
         })
     }
     
-    func onFBProfileUpdated(_ notification: Notification) {
+    internal func onFBProfileUpdated(_ notification: Notification) {
 
         guard let _accessToken = FBSDKAccessToken.current() else {
             return
@@ -373,16 +373,39 @@ class LoginVC: PulseVC, UITextFieldDelegate {
                 }
             } else {
                 self.toggleLoading(show: false, message: nil)
-                self.nav?.setNav(title: "Uh oh! That didn't work")
+                self.nav?.setNav(title: "Login", subtitle: "Error Logging in!")
             }
         }
     }
     
-    func _loggedInSuccess() {
+    fileprivate func _loggedInSuccess() {
+        if let permissionsPopup = GlobalFunctions.askNotificationPermssion(viewController: self) {
+            permissionsPopup.delegate = self
+            
+            blurViewBackground()
+            view.addSubview(permissionsPopup)
+        } else {
+            postLoggedInNotification()
+        }
+    }
+    
+    fileprivate func postLoggedInNotification() {
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
     }
     
-    func returnToParent(_ currentVC : UIViewController) {
+    internal func returnToParent(_ currentVC : UIViewController) {
         GlobalFunctions.dismissVC(currentVC)
+    }
+    
+    
+    internal func userClosedPreview(_ view : UIView) {
+        view.removeFromSuperview()
+        postLoggedInNotification()
+    }
+    
+    internal func userClickedButton() {
+        view.removeFromSuperview()
+        GlobalFunctions.showNotificationPermissions()
+        postLoggedInNotification()
     }
 }

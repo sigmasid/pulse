@@ -466,7 +466,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             // Get the user details
             PulseDatabase.getItem(currentItem.itemID, completion: {[weak self] (item, error) in
                 guard let `self` = self else { return }
-                if let item = item {
+                if let item = item, indexPath.row < self.allItems.count {
                     let tempImage = self.allItems[indexPath.row].content
                     self.allItems[indexPath.row] = item
                     self.allItems[indexPath.row].content = tempImage

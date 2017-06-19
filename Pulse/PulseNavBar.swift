@@ -56,6 +56,7 @@ public class PulseNavBar: UINavigationBar {
     public func setLogo() {
         navTitle.text = nil
         navSubtitle.text = nil
+        navLogo.tintColor = .black
         navLogo.image = UIImage(named: "pulse-logo-text")
     }
     

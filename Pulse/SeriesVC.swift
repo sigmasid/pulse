@@ -576,7 +576,7 @@ extension SeriesVC {
         /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
         blurViewBackground()
     
-        miniPreview = MiniPreview(frame: _profileFrame, buttonTitle: "Become Contributor")
+        miniPreview = MiniPreview(frame: _profileFrame, buttonTitle: "become contributor")
         miniPreview!.delegate = self
 
         PulseDatabase.getItem(selectedItem.itemID, completion: {[weak self] (item, error) in

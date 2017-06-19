@@ -143,49 +143,26 @@ extension UIViewController {
     
     func setDarkBackground() {
         self.view.backgroundColor = UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0)
-
-//        let gradientLayer = CAGradientLayer()
-//        self.view.backgroundColor = UIColor(red: 21/255, green: 27/255, blue: 31/255, alpha: 1.0)
-//        gradientLayer.frame = self.view.bounds
-//        
-//        // 3
-//        let color1 = UIColor(red: 21/255, green: 27/255, blue: 31/255, alpha: 1.0).CGColor as CGColorRef
-//        let color2 = UIColor(red: 9/255, green: 21/255, blue: 77/255, alpha: 1.0).CGColor as CGColorRef
-//        let color3 = UIColor(red: 50/255, green: 5/255, blue: 66/255, alpha: 1.0).CGColor as CGColorRef
-//        let color4 = UIColor(red: 3/255, green: 1/255, blue: 1/255, alpha: 1.0).CGColor as CGColorRef
-//        gradientLayer.colors = [color1, color2, color3, color4]
-//        
-//        // 4
-//        gradientLayer.locations = [0.0, 0.25, 0.75, 1.0]
-//        
-//        // 5
-//        self.view.layer.addSublayer(gradientLayer)
     }
     
-//    func addHeader(text : String) -> LoginHeaderView {
-//        let _headerView = UIView()
-//        
-//        view.addSubview(_headerView)
-//        
-//        _headerView.translatesAutoresizingMaskIntoConstraints = false
-//        
-//        if self.prefersStatusBarHidden {
-//            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.s.rawValue).isActive = true
-//        } else {
-//            _headerView.topAnchor.constraint(equalTo: topLayoutGuide.topAnchor, constant: Spacing.l.rawValue).isActive = true
-//        }
-//        _headerView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-//        _headerView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
-//        _headerView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-//        _headerView.layoutIfNeeded()
-//        
-//        let _loginHeader = LoginHeaderView(frame: _headerView.bounds)
-//        _loginHeader.setAppTitleLabel(_message: "PULSE")
-//        _loginHeader.setScreenTitleLabel(_message: text)
-//        _headerView.addSubview(_loginHeader)
-//        
-//        return _loginHeader
-//    }
+    func setGradientBackground() {
+        let gradientLayer = CAGradientLayer()
+        self.view.backgroundColor = UIColor(red: 21/255, green: 27/255, blue: 31/255, alpha: 1.0)
+        gradientLayer.frame = self.view.bounds
+
+        // 3
+        let color1 = UIColor(red: 21/255, green: 27/255, blue: 31/255, alpha: 1.0).cgColor as CGColor
+        let color2 = UIColor(red: 9/255, green: 21/255, blue: 77/255, alpha: 1.0).cgColor as CGColor
+        let color3 = UIColor(red: 50/255, green: 5/255, blue: 66/255, alpha: 1.0).cgColor as CGColor
+        let color4 = UIColor(red: 3/255, green: 1/255, blue: 1/255, alpha: 1.0).cgColor as CGColor
+        gradientLayer.colors = [color1, color2, color3, color4]
+
+        // 4
+        gradientLayer.locations = [0.0, 0.25, 0.75, 1.0]
+        
+        // 5
+        self.view.layer.addSublayer(gradientLayer)
+    }
     
     func addIcon(text : String) -> IconContainer {
         let iconContainer = IconContainer(frame: CGRect(x: 0,y: 0,width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue + Spacing.m.rawValue))

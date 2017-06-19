@@ -1,5 +1,5 @@
 //
-//  MiniProfile.swift
+//  MiniPreview.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 8/5/16.
@@ -16,7 +16,8 @@ class MiniPreview: UIView {
     fileprivate var longDescriptionLabel : UILabel!
     fileprivate lazy var actionButton : PulseButton = PulseButton(title: "View Profile", isRound: true)
     fileprivate var closeButton : PulseButton!
-    
+    fileprivate lazy var previewIcon : UIImageView = UIImageView()
+
     public weak var delegate : ItemPreviewDelegate!
 
     override init(frame: CGRect) {
@@ -25,7 +26,7 @@ class MiniPreview: UIView {
         layer.cornerRadius = buttonCornerRadius.radius(.regular)
         clipsToBounds = true
         
-        addbackgroundImage()
+        addBackgroundImage()
         addActionButton()
         addLabels()
         addCloseButton()
@@ -33,7 +34,6 @@ class MiniPreview: UIView {
     
     convenience init(frame: CGRect, buttonTitle: String) {
         self.init(frame: frame)
-        
         actionButton.setTitle(buttonTitle, for: .normal)
     }
     
@@ -54,13 +54,7 @@ class MiniPreview: UIView {
         return false
     }
     
-    func setActionButton(disabled : Bool) {
-        if disabled {
-            actionButton.setDisabled()
-        }
-    }
-    
-    fileprivate func addbackgroundImage() {
+    fileprivate func addBackgroundImage() {
         backgroundImage = UIImageView(frame: bounds)
         addSubview(backgroundImage)
         
@@ -84,11 +78,19 @@ class MiniPreview: UIView {
         longDescriptionLabel.bottomAnchor.constraint(equalTo: actionButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
         longDescriptionLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         longDescriptionLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
+        longDescriptionLabel.heightAnchor.constraint(equalToConstant: 70).isActive = true
+        longDescriptionLabel.layoutIfNeeded()
         
         miniDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         miniDescriptionLabel.bottomAnchor.constraint(equalTo: actionButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
         miniDescriptionLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         miniDescriptionLabel.widthAnchor.constraint(equalTo: longDescriptionLabel.widthAnchor).isActive = true
+        
+        longDescriptionLabel.numberOfLines = 3
+        longDescriptionLabel.lineBreakMode = .byTruncatingTail
+        
+        miniDescriptionLabel.numberOfLines = 2
+        miniDescriptionLabel.lineBreakMode = .byTruncatingTail
     }
     
     fileprivate func addActionButton() {
@@ -100,7 +102,7 @@ class MiniPreview: UIView {
         actionButton.translatesAutoresizingMaskIntoConstraints = false
         actionButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.s.rawValue).isActive = true
         actionButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        actionButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7).isActive = true
+        actionButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
         actionButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         actionButton.layoutIfNeeded()
 
@@ -111,7 +113,7 @@ class MiniPreview: UIView {
     }
     
     fileprivate func addCloseButton() {
-        closeButton = PulseButton(size: .small, type: .close, isRound : true, hasBackground: false)
+        closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
         closeButton.addTarget(self, action: #selector(closeButtonClicked), for: UIControlEvents.touchUpInside)
 
         addSubview(closeButton)
@@ -119,64 +121,103 @@ class MiniPreview: UIView {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor).isActive = true
         closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
-        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         
         closeButton.layoutIfNeeded()
     }
     
+    fileprivate func setupPreviewIcon() {
+        insertSubview(previewIcon, aboveSubview: backgroundImage)
+        
+        previewIcon.translatesAutoresizingMaskIntoConstraints = false
+        previewIcon.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        previewIcon.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        previewIcon.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        previewIcon.bottomAnchor.constraint(equalTo: longDescriptionLabel.topAnchor, constant: -Spacing.s.rawValue).isActive = true
+        
+        previewIcon.layoutIfNeeded()
+    }
+    
     /* SETTER / PUBLIC FUNCTIONS */
-    func closeButtonClicked() {
+    public func closeButtonClicked() {
         delegate.userClosedPreview(self)
     }
     
-    func actionButtonClicked() {
+    public func actionButtonClicked() {
         delegate.userClickedButton()
     }
     
-    func setTitleLabel(_ name : String?) {
-        titleLabel.text = name?.capitalized
-        titleLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .left)
-        titleLabel.setBlurredBackground()
+    
+    public func setActionButton(disabled : Bool) {
+        if disabled {
+            actionButton.setDisabled()
+        }
     }
     
-    func setMiniDescriptionLabel(_ text : String?) {
+    public func setTitleLabel(_ name : String?, textColor : UIColor = .white, blurText : Bool = true) {
+        titleLabel.text = name?.capitalized
+        titleLabel.setFont(FontSizes.title.rawValue, weight: UIFontWeightHeavy, color: textColor, alignment: .left)
+        
+        if textColor != .black, blurText {
+            titleLabel.setBlurredBackground()
+        }
+    }
+    
+    public func setMiniDescriptionLabel(_ text : String?, textColor : UIColor = .white, blurText : Bool = true) {
         miniDescriptionLabel.text = text
         miniDescriptionLabel.numberOfLines = 0
-        miniDescriptionLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
-        miniDescriptionLabel.setBlurredBackground()
+        miniDescriptionLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightHeavy, color: textColor, alignment: .center)
+        
+        if textColor != .black, blurText {
+            miniDescriptionLabel.setBlurredBackground()
+        }
     }
     
-    func setLongDescriptionLabel(_ text : String?) {
-        //longDescriptionLabel.text = text
+    public func setLongDescriptionLabel(_ text : String?, textColor : UIColor = .white, blurText : Bool = true) {
+        longDescriptionLabel.text = text
         longDescriptionLabel.numberOfLines = 0
         
-        longDescriptionLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
-        longDescriptionLabel.setBlurredBackground()
+        longDescriptionLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: textColor, alignment: .center)
+        
+        if textColor != .black, blurText {
+            longDescriptionLabel.setBlurredBackground()
+        }
     }
     
-    func setBackgroundImage(_ image : UIImage) {
+    public func setBackgroundImage(_ image : UIImage, shouldFilter: Bool = true) {
         guard let cgimg = image.cgImage else {
             return
         }
         
-        let openGLContext = EAGLContext(api: .openGLES2)
-        let context = CIContext(eaglContext: openGLContext!)
-        
-        let coreImage = CIImage(cgImage: cgimg)
-        
-        let filter = CIFilter(name: "CIPhotoEffectTransfer")
-        filter?.setValue(coreImage, forKey: kCIInputImageKey)
-        
-        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
-            let cgimgresult = context.createCGImage(output, from: output.extent)
-            let result = UIImage(cgImage: cgimgresult!)
-            backgroundImage?.image = result
+        if shouldFilter {
+            let openGLContext = EAGLContext(api: .openGLES2)
+            let context = CIContext(eaglContext: openGLContext!)
+            
+            let coreImage = CIImage(cgImage: cgimg)
+            
+            let filter = CIFilter(name: "CIPhotoEffectTransfer")
+            filter?.setValue(coreImage, forKey: kCIInputImageKey)
+            
+            if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
+                let cgimgresult = context.createCGImage(output, from: output.extent)
+                let result = UIImage(cgImage: cgimgresult!)
+                backgroundImage?.image = result
+            } else {
+                backgroundImage.image = image
+            }
         } else {
             backgroundImage.image = image
         }
-        
         backgroundImage.clipsToBounds = true
+    }
+    
+    public func setIcon(image: UIImage, tintColor: UIColor, backgroundColor: UIColor) {
+        setupPreviewIcon()
+        previewIcon.backgroundColor = backgroundColor
+        previewIcon.image = image
+        previewIcon.tintColor = tintColor
+        previewIcon.contentMode = .center
     }
 
 }

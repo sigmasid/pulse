@@ -11,7 +11,7 @@ import FirebaseAuth
 import MobileCoreServices
 import CoreLocation
 
-class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PanAnimationDelegate {
+class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PanAnimationDelegate, ItemPreviewDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
@@ -95,9 +95,13 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
                                 sender.setEnabled()
                             }
                             else {
-                                NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
-                                sender.setEnabled()
-                                self.profileUpdated()
+                                if let checkPermissions = GlobalFunctions.askNotificationPermssion(viewController: self) {
+                                    checkPermissions.delegate = self
+                                } else {
+                                    NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
+                                    sender.setEnabled()
+                                    self.profileUpdated()
+                                }
                             }
                         })
                     }
@@ -106,7 +110,22 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         })
     }
     
-    func profileUpdated() {
+    internal func userClosedPreview(_ view : UIView) {
+        postCompletedNotification()
+    }
+    
+    internal func userClickedButton() {
+        GlobalFunctions.showNotificationPermissions()
+        postCompletedNotification()
+    }
+    
+    internal func postCompletedNotification() {
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
+        doneButton.setEnabled()
+        profileUpdated()
+    }
+    
+    internal func profileUpdated() {
         let _ = navigationController?.popToRootViewController(animated: true)
     }
     

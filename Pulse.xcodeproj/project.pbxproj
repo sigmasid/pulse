@@ -281,6 +281,7 @@
 		BA03C43C1DB5A53900277382 /* Pulse Shared */ = {
 			isa = PBXGroup;
 			children = (
+				BA1550C41D5554C4000EF1AA /* MiniPreview.swift */,
 				BA3BB22A1E89B4AB00F74000 /* LoadingVC.swift */,
 				BA10B8BF1E7AFF4C000F6622 /* AddText.swift */,
 				BA06EDEC1DA7081C00F880EE /* XMSegmentedControl.swift */,
@@ -389,7 +390,6 @@
 				BA2CCC111D4A94B5003C94FC /* SettingsTableVC.swift */,
 				BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */,
 				BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */,
-				BA1550C41D5554C4000EF1AA /* MiniPreview.swift */,
 			);
 			name = Profile;
 			sourceTree = "<group>";

@@ -31,7 +31,7 @@ class ItemCell: UICollectionViewCell {
     public var itemType : ItemTypes? {
         didSet {
             switch itemType! {
-            case .question, .answer:
+            case .question, .answer, .interview:
                 itemImage.isHidden = true
                 itemHeightAnchor.constant = 0
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)

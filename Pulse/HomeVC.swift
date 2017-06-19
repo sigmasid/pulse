@@ -371,7 +371,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             }
                             
                             DispatchQueue.global(qos: .background).async {
-                                if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
+                                if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL), indexPath.row < self.allItems.count {
                                     self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
                                     self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
                                     
@@ -518,13 +518,19 @@ extension HomeVC {
                 PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
                     guard let `self` = self else { return }
                     self.toggleLoading(show: false, message: nil)
-                    success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
+                    success ?
+                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) :
+                        self.showNoItemsMenu(selectedItem : item)
                 })
             
             case .session:
                 
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+
                 PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
                     guard let `self` = self else { return }
+                    
+                    self.toggleLoading(show: false, message: nil)
 
                     if success, items.count > 1 {
                         //since ordering is cron based - move the first 'question' item to front
