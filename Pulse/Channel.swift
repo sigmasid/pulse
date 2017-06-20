@@ -55,6 +55,12 @@ class Channel : NSObject {
             if let tag = tag as? DataSnapshot, let type = tag.childSnapshot(forPath: "type").value as? String {
                 let _tag = Item(itemID: (tag as AnyObject).key, type: type)
                 _tag.itemTitle = tag.childSnapshot(forPath: "title").value as? String ?? ""
+                
+                if let _createdAt = tag.childSnapshot(forPath: "lastCreatedAt").value as? Double {
+                    let convertedDate = Date(timeIntervalSince1970: _createdAt / 1000)
+                    _tag.createdAt = convertedDate
+                }
+                
                 self.tags.append(_tag)
             }
         }

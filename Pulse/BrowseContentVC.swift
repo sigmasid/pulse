@@ -229,36 +229,47 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
         let currentItem = allItems[indexPath.row]
         
         /* GET PREVIEW IMAGE FROM STORAGE */
-        if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
+        if selectedItem.shouldGetBrowseImage() {
             
-            cell.updateImage(image: currentItem.content as? UIImage)
-        } else if itemStack[indexPath.row].gettingImageForPreview {
-            
-            //ignore if already fetching the image, so don't refetch if already getting
-        } else {
-            itemStack[indexPath.row].gettingImageForPreview = true
-            
-            PulseDatabase.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
-                guard let `self` = self else { return }
-                if error == nil {
-                    let _previewImage = GlobalFunctions.createImageFromData(_data!)
-                    self.allItems[indexPath.row].content = _previewImage
-                    
-                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                        DispatchQueue.main.async {
-                            cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
+            if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
+                
+                cell.updateImage(image: currentItem.content as? UIImage)
+                
+            } else if itemStack[indexPath.row].gettingImageForPreview {
+                
+                //ignore if already fetching the image, so don't refetch if already getting
+                
+            } else {
+                itemStack[indexPath.row].gettingImageForPreview = true
+                
+                PulseDatabase.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
+                    guard let `self` = self else { return }
+                    if error == nil {
+                        let _previewImage = GlobalFunctions.createImageFromData(_data!)
+                        self.allItems[indexPath.row].content = _previewImage
+                        
+                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                            DispatchQueue.main.async {
+                                cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
+                            }
                         }
+                    } else {
+                        cell.updateImage(image: nil)
                     }
-                } else {
-                    cell.updateImage(image: nil)
-                }
-            })
+                })
+            }
         }
         
         //Already fetched this item
         if allItems[indexPath.row].itemCreated, let user = allItems[indexPath.row].user  {
             
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
+            
+            if let image = user.thumbPicImage, !selectedItem.shouldGetBrowseImage() {
+                
+                cell.updateImage(image: image)
+
+            }
 
         } else if itemStack[indexPath.row].gettingInfoForPreview {
             
@@ -287,6 +298,21 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                                         
                                         cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
 
+                                    }
+                                }
+                                
+                                if !self.selectedItem.shouldGetBrowseImage() {
+                                    DispatchQueue.global(qos: .background).async {
+                                        if let imageString = user.profilePic ?? user.thumbPic, let imageURL = URL(string: imageString),
+                                            let _imageData = try? Data(contentsOf: imageURL) {
+                                            if indexPath.row < self.allItems.count { //prevent crash if user navigates away
+                                                self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
+                                                
+                                                DispatchQueue.main.async {
+                                                    cell.updateImage(image: self.allItems[indexPath.row].user?.thumbPicImage)
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -388,7 +414,9 @@ extension BrowseContentVC  {
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
         }
         
-        if let image = allItems[indexPath.row].content as? UIImage  {
+        if  selectedItem.shouldGetBrowseImage(), let image = allItems[indexPath.row].content as? UIImage  {
+            cell.updateImage(image: image)
+        } else if !selectedItem.shouldGetBrowseImage(), let image = allItems[indexPath.row].user?.thumbPicImage {
             cell.updateImage(image: image)
         }
     }

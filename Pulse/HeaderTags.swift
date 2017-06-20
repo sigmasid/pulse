@@ -12,6 +12,11 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     public var items = [Item]() {
         didSet {
             if items != oldValue {
+                
+                items.sort(by: { (first: Item, second: Item) -> Bool in
+                    first.createdAt! < second.createdAt!
+                })
+                
                 collectionView?.delegate = self
                 collectionView?.dataSource = self
                 collectionView?.reloadData()
@@ -108,8 +113,8 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
                     }
                 }
                 
-                self.items[indexPath.row].fetchedContent = true //so we don't try to fetch again
             })
+            items[indexPath.row].fetchedContent = true //so we don't try to fetch again
         }
         
         return cell

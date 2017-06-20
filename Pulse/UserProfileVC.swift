@@ -11,9 +11,11 @@ import UIKit
 class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegate {
     
     public weak var modalDelegate : ModalDelegate!
-    fileprivate var isCurrentUser = false
     public var isModal = false
     
+    fileprivate var observerAdded = false
+    fileprivate var isCurrentUser = false
+
     /** Delegate Vars **/
     public var selectedUser : PulseUser! {
         didSet {
@@ -23,9 +25,11 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                 updateDataSource()
             } else if PulseUser.isLoggedIn(), selectedUser.uID == PulseUser.currentUser.uID! {
                 //For current user
-                NotificationCenter.default.addObserver(self, selector: #selector(userUpdated),
-                                                       name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
-                headerNav?.setNav(title: PulseUser.currentUser.name ?? "Your Profile")
+                if oldValue != nil {
+                    guard selectedUser.uID != oldValue.uID else { return }
+                    
+                }
+                addObservers()
 
                 PulseDatabase.getUserItems(uID: PulseUser.currentUser.uID!, completion: {[weak self] items in
                     guard let `self` = self else { return }
@@ -120,8 +124,11 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         super.viewWillAppear(animated)        
         updateHeader()
 
-        guard selectedUser != nil else { return }
-        headerNav?.setNav(title: selectedUser.name ?? "Profile")
+        guard selectedUser != nil else {
+            headerNav?.setNav(title: "Profile")
+            return
+        }
+        headerNav?.setNav(title: selectedUser.name)
     }
     
     deinit {
@@ -138,13 +145,24 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         super.didReceiveMemoryWarning()
     }
     
-    func userUpdated() {
+    internal func userUpdated() {
         if PulseUser.isLoggedIn() {
             selectedUser = PulseUser.currentUser
+            headerNav?.setNav(title: PulseUser.currentUser.name ?? "Your Profile")
+        } else {
+            headerNav?.setNav(title: "Profile")
         }
     }
     
-    func setupLayout() {
+    internal func addObservers() {
+        if !observerAdded {
+            NotificationCenter.default.addObserver(self, selector: #selector(userUpdated),
+                                                   name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            observerAdded = true
+        }
+    }
+    
+    fileprivate func setupLayout() {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: false)
         
@@ -304,7 +322,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                 if !success {
                     GlobalFunctions.showAlertBlock("Error Logging Out", erMessage: "Sorry there was an error logging out, please try again!")
                 } else {
-                    self.headerNav?.setNav(title: "Profile")
                     self.selectedUser = nil
                 }
             })
@@ -479,7 +496,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
                     PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
                         guard let `self` = self else { return }
-                        if error == nil {
+                        if error == nil, indexPath.row < self.allItems.count {
                             let _previewImage = GlobalFunctions.createImageFromData(_data!)
                             self.allItems[indexPath.row].content = _previewImage
                             
@@ -489,10 +506,9 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                 }
                             }
                         } else {
-                            cell.updateImage(image: nil)
+                            cell.updateImage(image: self.allItems[indexPath.row].defaultImage())
                         }
                     })
-                
                 }
             })
         }

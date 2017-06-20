@@ -52,7 +52,7 @@ class NewChannelVC: PulseVC {
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
-        PulseDatabase.startNewChannel(cTitle: cTitle.text!, cDescription: cDescription.text!, completion: {(success, error) in
+        PulseDatabase.addNewChannel(cTitle: cTitle.text!, cDescription: cDescription.text!, completion: {(success, error) in
             success ? self.showSuccessMenu(): self.showErrorMenu(errorTitle: "Error Submitting Request", error: error!)
             loading.removeFromSuperview()
         })

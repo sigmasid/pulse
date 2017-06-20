@@ -151,7 +151,9 @@ extension SettingsTableVC : UITableViewDelegate, UITableViewDataSource {
                 cell.accessoryType = .disclosureIndicator
             }
         } else {
-            PulseDatabase.getSetting(settingID, completion: {(_setting, error) in
+            PulseDatabase.getSetting(settingID, completion: {[weak self] (_setting, error) in
+                guard let `self` = self else { return }
+
                 if error == nil, let _setting = _setting {
                     cell.settingNameLabel.text = _setting.display!
                     if _setting.type != nil && _setting.type != .location {
@@ -208,11 +210,13 @@ extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
     }
     
     func doneRecording(isCapturing : Bool, url _: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let imageData = image?.mediumQualityJPEGNSData else { return }
+        guard let image = image else { return }
+        let imageData = image.mediumQualityJPEGNSData
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
         
-        PulseDatabase.uploadProfileImage(imageData, completion: {(URL, error) in
+        PulseDatabase.uploadProfileImage(imageData, completion: {[weak self] (URL, error) in
+            guard let `self` = self else { return }
             if error != nil {
                 GlobalFunctions.showAlertBlock("Sorry!", erMessage: "There was an error saving the photo. Please try again")
             } else {
@@ -253,7 +257,9 @@ extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
             let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
             let pickedImageData = pickedImage.highQualityJPEGNSData
             
-            PulseDatabase.uploadProfileImage(pickedImageData, completion: {(URL, error) in
+            PulseDatabase.uploadProfileImage(pickedImageData, completion: {[weak self] (URL, error) in
+                guard let `self` = self else { return }
+
                 if error != nil {
                     self.cameraVC.toggleLoading(show: false, message: nil)
                 } else {

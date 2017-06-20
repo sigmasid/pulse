@@ -1329,6 +1329,7 @@ class PulseDatabase {
         let _user = PulseUser.currentUser
         
         var collectionPost : [AnyHashable: Any]! = [:]
+        var createdAt : [String : Any] = ["lastCreatedAt" : ServerValue.timestamp()]
         
         var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
                                                 "tagID" : item.tag?.itemID as AnyObject,
@@ -1349,7 +1350,8 @@ class PulseDatabase {
             collectionPost["itemCollection/\(item.itemID)"] = post
         }
         
-        //if it's an item in response to a feedback request - add the new item and update the created at for channelItems - keeps only one post for each feedback request
+        //if it's an item in response to a feedback request - add the new item and update the created at for channelItems - 
+        //keeps only one post for each feedback request
         if parentItem.type == .session, item.type == .session {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = ServerValue.timestamp() as AnyObject
@@ -1379,12 +1381,17 @@ class PulseDatabase {
         }
             
         //if any other except interview - add the actual item to the series collection, add the item to channel & update user
-        //interviews are added to separate collection & only one entry is added
+        //interviews are added to separate collection & only one entry is added in the end
         else if parentItem.type != .interview {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
             collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
+        
+        if let tagID = item.tag?.itemID {
+            collectionPost["channels/\(channelID)/tags/\(tagID)/lastCreatedAt"] = ServerValue.timestamp() as AnyObject
+        }
+
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (blockError, ref) in
             blockError != nil ? completion(false, blockError) : completion(true, nil)
@@ -1642,6 +1649,12 @@ class PulseDatabase {
             return
         }
         
+        guard interviewParentItem.cID != nil else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "error saving to channel" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
         let _user = PulseUser.currentUser
         
         let channelPost : [String : AnyObject] = ["type" : interviewParentItem.type.rawValue as AnyObject,
@@ -1659,6 +1672,7 @@ class PulseDatabase {
         
         if let tagID = interviewParentItem.tag?.itemID {
             collectionPost["itemCollection/\(tagID)/\(interviewParentItem.itemID)"] = interviewParentItem.type.rawValue as AnyObject
+            collectionPost["channels/\(interviewParentItem.cID!)/tags/\(tagID)/lastCreatedAt"] = ServerValue.timestamp() as AnyObject
         }
         
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
@@ -1826,8 +1840,8 @@ class PulseDatabase {
     /** END INTERVIEW ITEMS **/
 
     
-    /** ADD NEW SERIES TO CHANNEL **/
-    static func startNewChannel(cTitle: String, cDescription : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    /** ADD NEW CHANNEL **/
+    static func addNewChannel(cTitle: String, cDescription : String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
@@ -1869,7 +1883,8 @@ class PulseDatabase {
                                         "cID":channelID]
         
         let channelPost : [String : Any] = ["title" : item.itemTitle,
-                                         "type" : item.type.rawValue]
+                                            "type" : item.type.rawValue,
+                                            "lastCreatedAt" : ServerValue.timestamp()]
         
         
         let collectionPost = ["channels/\(channelID)/tags/\(item.itemID)": channelPost,
@@ -1958,7 +1973,7 @@ class PulseDatabase {
     }
     
     static func getProfilePicForUser(user: PulseUser, completion: @escaping (_ image : UIImage?) -> Void) {
-        let userPicPath = user.profilePic != nil ? user.thumbPic : user.profilePic
+        let userPicPath = user.profilePic != nil ? user.profilePic : user.thumbPic
         
         if let userPicPath = userPicPath {
             if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
@@ -2077,7 +2092,7 @@ class PulseDatabase {
         let _metadata = StorageMetadata()
         _metadata.contentType = "image/jpeg"
         
-        if PulseUser.isLoggedIn(), let _imageToResize = UIImage(data: imgData), let _img = resizeImage(_imageToResize, newWidth: 600){
+        if PulseUser.isLoggedIn(), let _imageToResize = UIImage(data: imgData), let _img = resizeImage(_imageToResize, newWidth: 375){
             usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(_img, metadata: _metadata) { (metadata, error) in
                 if let metadata = metadata {
                     _downloadURL = metadata.downloadURL()

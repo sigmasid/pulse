@@ -74,7 +74,6 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     }
     
     
-    
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()

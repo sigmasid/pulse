@@ -100,33 +100,37 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         PulseDatabase.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] updatedChannel in
             
             if let updatedChannel = updatedChannel,  let `self` = self {
-                self.startUpdateAt = self.endUpdateAt
 
                 updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
-
-                var indexPaths = [IndexPath]()
-                for (index, _) in updatedChannel.items.enumerated() {
-                    let newIndexPath = IndexPath(row: index , section: 1)
-                    indexPaths.append(newIndexPath)
-                }
                 
                 if self.collectionView == nil {
                     self.setupScreenLayout()
                 }
                 
                 if !updatedChannel.items.isEmpty {
+                    var indexPaths = [IndexPath]()
+                    for (index, _) in updatedChannel.items.enumerated() {
+                        let newIndexPath = IndexPath(row: index , section: 1)
+                        indexPaths.append(newIndexPath)
+                    }
+                    
                     self.collectionView.performBatchUpdates({
                         self.collectionView?.insertItems(at: indexPaths)
-                        self.allItems.append(contentsOf: updatedChannel.items)
-                        
                         self.collectionView?.reloadData()
                         self.collectionView?.collectionViewLayout.invalidateLayout()
-                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+                        self.collectionView?.reloadSections(IndexSet(integer: 1))
                         
                     })
+                } else {
+                    self.getMoreChannelItems(completion: {[weak self] _ in
+                        guard let `self` = self else { return}
+                        self.collectionView?.reloadData()
+                        self.collectionView?.reloadSections(IndexSet(integer: 1))
+                    })
                 }
-
+                
+                
                 if self.collectionView.contentSize.height < self.view.frame.height || updatedChannel.items.count < 4 {
                     //content fits the screen so fetch more
                     self.getMoreChannelItems(completion: {[weak self] _ in
@@ -137,16 +141,19 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 }
             }
         })
+        startUpdateAt = endUpdateAt
+        endUpdateAt = Calendar.current.date(byAdding: .day, value: updateIncrement, to: startUpdateAt)!
     }
     
     //get more items if scrolled to end
     func getMoreChannelItems(completion: @escaping (Bool) -> Void)  {
-        
+
         PulseDatabase.getChannelItems(channelID: selectedChannel.cID, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] success, items in
+
             guard let `self` = self else {
                 return
             }
-            
+
             if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!

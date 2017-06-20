@@ -256,14 +256,14 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
-		BA03C43A1DB5A51D00277382 /* Standalone Search */ = {
+		BA03C43A1DB5A51D00277382 /* Search */ = {
 			isa = PBXGroup;
 			children = (
 				BAFD76D91D9C8384005FBBD0 /* SearchVC.swift */,
 				BA710BDF1DA6F6860018D88D /* SearchTableCell.swift */,
 				BA7EF93F1E849DE100660FB2 /* MiniUserSearchVC.swift */,
 			);
-			name = "Standalone Search";
+			name = Search;
 			sourceTree = "<group>";
 		};
 		BA03C43B1DB5A52900277382 /* Messaging */ = {
@@ -329,23 +329,21 @@
 				BA1C48C21D243704008F8A04 /* Assets.xcassets */,
 				BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */,
 				BA1C48C71D243704008F8A04 /* Info.plist */,
-				BA03C43A1DB5A51D00277382 /* Standalone Search */,
-				BA1DE12A1D244486004F3ED2 /* Models */,
-				BA1DE1431D244CBD004F3ED2 /* Global Refs */,
+				BA7745CA1E5775040023976F /* Main VCs */,
+				BA6B78B31D2D7D43003EE992 /* Content Manager */,
+				BA6B78B41D2D7D56003EE992 /* User Recorded Item */,
+				BA1DE13C1D244AFD004F3ED2 /* Camera */,
 				BA23C8021D4FE0DC00BA0109 /* Profile */,
 				BAFE7E8B1D2CCC5300DEED6C /* Login */,
-				BA1DE13C1D244AFD004F3ED2 /* Camera */,
-				BA6B78B41D2D7D56003EE992 /* User Recorded Item */,
-				BA6B78B31D2D7D43003EE992 /* Content Manager */,
-				BA7745CA1E5775040023976F /* Main VCs */,
+				BA03C43A1DB5A51D00277382 /* Search */,
+				BA03C43B1DB5A52900277382 /* Messaging */,
+				BADD3DCB1ED8ACC200E5D5FF /* Create New */,
+				BA1DE12A1D244486004F3ED2 /* Models */,
+				BA1DE1431D244CBD004F3ED2 /* Global Refs */,
 				BA722DEF1E5A5F6E00E9699D /* Collection View Items */,
 				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
-				BA03C43B1DB5A52900277382 /* Messaging */,
-				BADD3DCB1ED8ACC200E5D5FF /* New Items */,
 				BA03C43C1DB5A53900277382 /* Pulse Shared */,
 				BAD37D611D2640E800BACB04 /* Database.swift */,
-				BAB4B00E1EF340FA00FB7F27 /* PulseIntroCell.swift */,
-				BAB4B0101EF3489900FB7F27 /* FirstLoadVC.swift */,
 			);
 			path = Pulse;
 			sourceTree = "<group>";
@@ -433,6 +431,7 @@
 				BA722DEB1E5A4AE400E9699D /* ItemHeader.swift */,
 				BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */,
 				BAC918511E73241E005772EC /* EmptyCell.swift */,
+				BAB4B00E1EF340FA00FB7F27 /* PulseIntroCell.swift */,
 				BA434FB51E594697004686CB /* ExploreChannelsCell.swift */,
 				BA659EFC1E844F32004C46F9 /* ItemTableHeader.swift */,
 			);
@@ -450,6 +449,7 @@
 				BA79B69E1E5627FA0037CE3A /* UserProfileVC.swift */,
 				BAFA88741D59245000854B12 /* QuickBrowseVC.swift */,
 				BA7294CD1E7CAB1C005DF387 /* BrowseUsersVC.swift */,
+				BAB4B0101EF3489900FB7F27 /* FirstLoadVC.swift */,
 				BA7618561E57B40500C335AE /* BrowseContentVC.swift */,
 			);
 			name = "Main VCs";
@@ -470,7 +470,7 @@
 			name = "Transition Animation";
 			sourceTree = "<group>";
 		};
-		BADD3DCB1ED8ACC200E5D5FF /* New Items */ = {
+		BADD3DCB1ED8ACC200E5D5FF /* Create New */ = {
 			isa = PBXGroup;
 			children = (
 				BA2C46321E1C30B400CA8655 /* BecomeContributorVC.swift */,
@@ -482,7 +482,7 @@
 				BA189C831EDDFF59003E8416 /* NewShowcaseVC.swift */,
 				BA3BB2281E89ABB100F74000 /* InterviewRequestVC.swift */,
 			);
-			name = "New Items";
+			name = "Create New";
 			sourceTree = "<group>";
 		};
 		BAFE7E8B1D2CCC5300DEED6C /* Login */ = {

@@ -195,6 +195,10 @@ class Item: NSObject {
         return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase
     }
     
+    internal func shouldGetBrowseImage() -> Bool {
+        return type == .interview
+    }
+    
     internal func childActionType() -> String {
         switch type {
         case .feedback: return "get"
@@ -210,6 +214,31 @@ class Item: NSObject {
         case .interviews: return "start an"
             
         default: return "new"
+        }
+    }
+    
+    internal func defaultImage() -> UIImage? {
+        switch type {
+        case .feedback: return UIImage(named: "feedback")
+        case .session: return UIImage(named: "feedback")
+            
+        case .posts: return UIImage(named: "post")
+        case .post: return UIImage(named: "post")
+            
+        case .thread: return UIImage(named: "perspectives")
+        case .perspectives: return UIImage(named: "perspectives")
+        case .perspective: return UIImage(named: "perspectives")
+
+        case .question: return UIImage(named: "questions")
+        case .questions: return UIImage(named: "questions")
+            
+        case .showcases: return UIImage(named: "showcase")
+        case .showcase: return UIImage(named: "showcase")
+            
+        case .interview: return UIImage(named: "interview")
+        case .interviews: return UIImage(named: "interview")
+            
+        default: return nil
         }
     }
     

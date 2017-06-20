@@ -78,18 +78,21 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         sender.setDisabled()
         let _ = sender.addLoadingIndicator()
         
-        GlobalFunctions.validateName(firstName.text, completion: {(verified, error) in
+        GlobalFunctions.validateName(firstName.text, completion: {[weak self] (verified, error) in
+            guard let `self` = self else { return }
             if !verified {
                 self._firstNameError.text = error!.localizedDescription
                 sender.setEnabled()
             } else {
-                GlobalFunctions.validateName(self.lastName.text, completion: {(verified, error) in
+                GlobalFunctions.validateName(self.lastName.text, completion: {[weak self] (verified, error) in
+                    guard let `self` = self else { return }
                     if !verified {
                         self._lastNameError.text = error!.localizedDescription
                         sender.setEnabled()
                     } else {
                         let fullName = self.firstName.text! + " " + self.lastName.text!
-                        PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: fullName, completion: { (success, error) in
+                        PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: fullName, completion: {[weak self] (success, error) in
+                            guard let `self` = self else { return }
                             if !success {
                                 self._firstNameError.text = error!.localizedDescription
                                 sender.setEnabled()
@@ -137,13 +140,10 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
     }
     
     func doneRecording(isCapturing: Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let imageData = image?.mediumQualityJPEGNSData, cameraVC != nil else {
-            if isCapturing {
-                self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
-            }
-            return
-        }
+        guard let image = image, cameraVC != nil else { return }
+        let imageData = image.mediumQualityJPEGNSData
         
+        self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
         PulseDatabase.uploadProfileImage(imageData, completion: {(URL, error) in
             if error == nil {
                 UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
@@ -158,6 +158,7 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
                     self.profilePicButton.setTitle("", for: UIControlState())
                 })
             }
+            self.cameraVC.toggleLoading(show: false, message: nil)
         })
     }
     
