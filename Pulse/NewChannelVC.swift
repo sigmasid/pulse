@@ -108,13 +108,12 @@ class NewChannelVC: PulseVC {
         cDescription.layoutIfNeeded()
         
         cTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        cTitle.layer.addSublayer(GlobalFunctions.addBorders(self.cTitle, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        cTitle.addBottomBorder()
         cTitle.placeholder = "name of channel"
         cTitle.delegate = self
         
         cDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        cDescription.layer.borderColor = UIColor.black.cgColor
-        cDescription.layer.borderWidth = 1.0
+        cDescription.addBorder()
         cDescription.text = descriptionPlaceholder
         cDescription.delegate = self
         cDescription.textColor = UIColor.gray.withAlphaComponent(0.7)

@@ -15,7 +15,6 @@ import SafariServices
 
 class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     public weak var loginVCDelegate : ContentDelegate?
-    var nav : PulseNavVC!
     
     @IBOutlet weak var emailLabelButton: UIButton!
     @IBOutlet weak var fbButton: UIButton!
@@ -32,8 +31,10 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     @IBOutlet weak var showTermsButton: UIButton!
     @IBOutlet weak var showPrivacyButton: UIButton!
     
-    var _currentLoadedView : currentLoadedView?
-    var agreeTermsButton = PulseButton(size: .xxSmall, type: .check, isRound: false, background: .pulseGrey, tint: .black)
+    public var _currentLoadedView : currentLoadedView?
+    public var showInviteAlert : Bool = false
+    
+    fileprivate var agreeTermsButton = PulseButton(size: .xxSmall, type: .check, isRound: false, background: .pulseGrey, tint: .black)
     
     enum currentLoadedView {
         case login
@@ -87,7 +88,14 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updateHeader()
-        
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        if showInviteAlert {
+            presentInviteAlert()
+        }
     }
     
     fileprivate func updateHeader() {
@@ -96,15 +104,23 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
         headerNav?.setNav(title: "Login")
     }
     
+    fileprivate func presentInviteAlert() {
+        if showInviteAlert {
+            GlobalFunctions.showAlertBlock(viewController: self,
+                                           erTitle: "Please login to see invite",
+                                           erMessage: "You need to be logged in to view and respond to the invite",
+                                           buttonTitle: "okay")
+            showInviteAlert = false
+        }
+    }
+    
     fileprivate func setupView() {
         userEmail.delegate = self
         userPassword.delegate = self
         userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
 
-        userEmail.layer.addSublayer(GlobalFunctions.addBorders(userEmail))
-        userPassword.layer.addSublayer(GlobalFunctions.addBorders(userPassword))
-        userEmail.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
-        userPassword.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        userEmail.addBottomBorder()
+        userPassword.addBottomBorder()
         
         userEmail.attributedPlaceholder = NSAttributedString(string: "email", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         userPassword.attributedPlaceholder = NSAttributedString(string: "password", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
@@ -340,7 +356,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
             }
             else {
                 self.toggleLoading(show: false, message: nil)
-                self.nav?.setNav(title: aUser!.displayName)
+                self.headerNav?.setNav(title: aUser!.displayName)
                 self._loggedInSuccess()
             }
         }
@@ -365,7 +381,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
 
                     if let blockError = blockError {
                         self.toggleLoading(show: false, message: nil)
-                        self.nav?.setNav(title: blockError.localizedDescription)
+                        self.headerNav?.setNav(title: blockError.localizedDescription)
                     } else {
                         self.toggleLoading(show: false, message: nil)
                         self._loggedInSuccess()
@@ -373,7 +389,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
                 }
             } else {
                 self.toggleLoading(show: false, message: nil)
-                self.nav?.setNav(title: "Login", subtitle: "Error Logging in!")
+                self.headerNav?.setNav(title: "Login", subtitle: "Error Logging in!")
             }
         }
     }

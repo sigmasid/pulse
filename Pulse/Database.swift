@@ -13,6 +13,7 @@ import FirebaseAuth
 import TwitterKit
 import FBSDKLoginKit
 import GeoFire
+import FirebaseDynamicLinks
 
 let storage = Storage.storage()
 let storageRef = storage.reference(forURL: "gs://pulse-84022.appspot.com")
@@ -62,33 +63,73 @@ class PulseDatabase {
         databaseRef.child("notificationIDs").child(PulseUser.currentUser.uID!).setValue(tokenID)
     }
     
-    static func createShareLink(linkString : String, completion: @escaping (String?) -> Void) {
-        var request = URLRequest(url: URL(string: "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=AIzaSyAJa2_jjaxFCWE0mLbRNfZ9lKZWK0mUyNU")!)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let longLink = "https://tc237.app.goo.gl/?link=http://checkpulse.co/" + linkString +
-                        "&ibi=co.checkpulse.pulse&isi=1200702658"
-        let json: [String: Any] = ["longDynamicLink": longLink, "suffix":["option":"SHORT"]]
-        let jsonData = try? JSONSerialization.data(withJSONObject: json)
-
-        request.httpBody = jsonData
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, let responseJSON = try? JSONSerialization.jsonObject(with: data, options: []) else {
-                completion("https://checkpulse.co/"+linkString)
-                return
-            }
-            
-            if let responseJSON = responseJSON as? [String: Any] {
-                if responseJSON["error"] == nil {
-                    completion(responseJSON["shortLink"] as! String?)
-                } else {
-                    completion(longLink)
-                }
-            }
+    static func createShareLink(item: Any, linkString : String, imageURL : URL? = nil, completion: @escaping (URL?) -> Void) {
+        
+        guard let deepLink = URL(string: "https://checkpulse.co/"+linkString) else { return }
+        
+        let components = DynamicLinkComponents(link: deepLink, domain: "tc237.app.goo.gl")
+        
+        let iOSParams = DynamicLinkIOSParameters(bundleID: "co.checkpulse.pulse")
+        iOSParams.minimumAppVersion = "0.1"
+        iOSParams.appStoreID = "1200702658"
+        
+        //setting fallback URL makes it not go to appstore and instead open in mobile browser
+        /** iOSParams.fallbackURL = URL(string: "https://checkpulse.co/"+linkString) **/
+        
+        let socialParams = DynamicLinkSocialMetaTagParameters()
+        let analyticsParams = DynamicLinkGoogleAnalyticsParameters()
+        let componentOptions = DynamicLinkComponentsOptions()
+        
+        componentOptions.pathLength = .short
+        analyticsParams.source = "app"
+        
+        if linkString.contains("invites") {
+            analyticsParams.campaign = "invites"
+        } else {
+            analyticsParams.campaign = "share"
         }
 
-        task.resume()
+        if let item = item as? Item {
+            analyticsParams.medium = "item"
+            analyticsParams.content = item.itemID
+            
+            socialParams.descriptionText = item.itemDescription != "" ? item.itemDescription : item.tag?.itemTitle ?? item.cTitle
+            socialParams.title = item.itemTitle.capitalized
+            socialParams.imageURL = imageURL ?? item.contentURL
+        } else if let channel = item as? Channel {
+            analyticsParams.medium = "channel"
+            analyticsParams.content = channel.cID
+
+            socialParams.descriptionText = channel.cDescription
+            socialParams.title = channel.cTitle?.capitalized
+            socialParams.imageURL = channel.cImageURL != nil ? URL(string: channel.cImageURL!) : URL(string: "")
+        } else if let user = item as? PulseUser {
+            analyticsParams.medium = "user"
+            analyticsParams.content = user.uID
+
+            socialParams.descriptionText = user.shortBio
+            socialParams.title = user.name?.capitalized
+            socialParams.imageURL = URL(string: user.profilePic ?? user.thumbPic ?? "")
+        }
+        
+        components.iOSParameters = iOSParams
+        components.socialMetaTagParameters = socialParams
+        components.options = componentOptions
+        components.analyticsParameters = analyticsParams
+
+        // Build the dynamic link
+        let link = components.url
+        print("share link is \(link)")
+        
+        // Or create a shortened dynamic link
+        components.shorten { (shortURL, warnings, error) in
+            if error != nil {
+                completion(link)
+                return
+            } else {
+                completion(shortURL)
+            }
+        }
     }
     
     static func removeItem(userID : String, itemID : String, completion: @escaping (Bool) -> Void) {
@@ -635,7 +676,7 @@ class PulseDatabase {
     static func getSeriesTypes(completion: @escaping (_ allItems : [Item]) -> Void) {
         var allItems = [Item]()
         
-        databaseRef.child("seriesTypes").observeSingleEvent(of: .value, with: { snap in
+        databaseRef.child("seriesTypes").queryOrdered(byChild: "rank").observeSingleEvent(of: .value, with: { snap in
             for child in snap.children {
                 let currentItem = Item(itemID: (child as AnyObject).key, snapshot: child as! DataSnapshot)
                 allItems.append(currentItem)
@@ -1329,7 +1370,6 @@ class PulseDatabase {
         let _user = PulseUser.currentUser
         
         var collectionPost : [AnyHashable: Any]! = [:]
-        var createdAt : [String : Any] = ["lastCreatedAt" : ServerValue.timestamp()]
         
         var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
                                                 "tagID" : item.tag?.itemID as AnyObject,
@@ -1350,9 +1390,9 @@ class PulseDatabase {
             collectionPost["itemCollection/\(item.itemID)"] = post
         }
         
-        //if it's an item in response to a feedback request - add the new item and update the created at for channelItems - 
+        //if it's an item in response to a feedback request, thread or question - add the new item and update the created at for channelItems -
         //keeps only one post for each feedback request
-        if parentItem.type == .session, item.type == .session {
+        if (parentItem.type == .session && item.type == .session) || (parentItem.type == .question && item.type == .answer) || (parentItem.type == .thread && item.type == .perspective) {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = ServerValue.timestamp() as AnyObject
             collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
@@ -1371,12 +1411,6 @@ class PulseDatabase {
             collectionPost["itemCollection/\(feedbackItemKey)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["itemCollection/\(parentItem.itemID)/\(feedbackItemKey)"] = item.type.rawValue as AnyObject
             collectionPost["items/\(feedbackItemKey)"] = channelPost
-            collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
-        }
-        //if it's an item in response to a perspective request - add the new item and update the created at for channelItems - keeps only one post for each thread
-        else if parentItem.type == .thread, item.type == .perspective {
-            collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
-            collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = ServerValue.timestamp() as AnyObject
             collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
             
@@ -1941,8 +1975,8 @@ class PulseDatabase {
     }
     
     /* STORAGE METHODS */
-    static func getItemURL(channelID: String, fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
-        let path = storageRef.child("channels/\(channelID)").child(fileID).child("content")
+    static func getItemStorageURL(channelID: String, type: String = "content", fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
+        let path = storageRef.child("channels/\(channelID)").child(fileID).child(type)
         
         let _ = path.downloadURL { (URL, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(URL!, nil)

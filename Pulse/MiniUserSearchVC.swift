@@ -173,8 +173,10 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
             self.collectionView.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight
             self.searchContainer.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight - searchBarHeight
         }, completion: {(value: Bool) in
-            self.collectionView.layoutIfNeeded()
-            self.searchContainer.layoutIfNeeded()
+            if self.collectionView != nil {
+                self.collectionView.layoutIfNeeded()
+                self.searchContainer.layoutIfNeeded()
+            }
         })
     }
     
@@ -207,15 +209,13 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         searchController.searchBar.delegate = self
         searchController.delegate = self
         
-        searchContainer.addBottomBorder()
+        searchContainer.addBottomBorder(color: .pulseGrey)
     }
     
     fileprivate func setupCollectionView() {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.minimumInteritemSpacing = 5
-        
-        
         
         let collectionViewFrame = CGRect(x: 0, y: view.bounds.maxY - collectionViewHeight,
                                          width: view.frame.width, height: collectionViewHeight)

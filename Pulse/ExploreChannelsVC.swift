@@ -13,17 +13,21 @@ protocol ExploreChannelsDelegate: class {
 }
 
 class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate, BrowseContentDelegate {
-    
+    public weak var tabDelegate : MasterTabDelegate!
+
     // Set by MasterTabVC
     public var universalLink : URL? {
         didSet {
-            if isLayoutSetup, let _ = universalLink {
+            handledLink = false
+            
+            if viewIfLoaded?.window != nil, let _ = universalLink {
                 handleLink()
+                handledLink = true
             }
         }
     }
     public var forUser = false //in case we are browsing channels for a specific user
-
+    
     public var allChannels = [Channel]() {
         didSet {
             updateDataSource()
@@ -34,7 +38,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     fileprivate var isLayoutSetup = false
     fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
     fileprivate lazy var menuButton : PulseButton = PulseButton(size: .small, type: .ellipsis, isRound : true, hasBackground: false, tint: .black)
-
+    fileprivate var handledLink = false
+    
     override func viewDidLayoutSubviews() {
         if !isLayoutSetup {
             toggleLoading(show: true, message: "Loading...", showIcon: true)
@@ -48,6 +53,13 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         super.viewWillAppear(animated)
         updateOnscreenRows()
         updateHeader()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if universalLink != nil, !handledLink {
+            handleLink()
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -63,7 +75,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     fileprivate func setupScreenLayout() {
         if !isLayoutSetup {
-            
             channelCollection = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
             let _ = PulseFlowLayout.configureLayout(collectionView: channelCollection, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
             channelCollection.register(ExploreChannelsCell.self, forCellWithReuseIdentifier: reuseIdentifier)
@@ -71,10 +82,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
             view.addSubview(channelCollection)
 
             searchButton.addTarget(self, action: #selector(userClickedSearch), for: UIControlEvents.touchUpInside)
-            
-            if universalLink != nil {
-                handleLink()
-            }
             
             isLayoutSetup = true
         }
@@ -348,6 +355,7 @@ extension ExploreChannelsVC: UICollectionViewDelegateFlowLayout {
 extension ExploreChannelsVC {
      func handleLink() {
         toggleLoading(show: true, message: "Loading Link...", showIcon: true)
+        
         if let universalLink = universalLink, let link = URLComponents(url: universalLink, resolvingAgainstBaseURL: true) {
      
             let urlComponents = link.path.components(separatedBy: "/").dropFirst()
@@ -390,8 +398,10 @@ extension ExploreChannelsVC {
                 let inviteID = urlComponents[2]
                 PulseDatabase.getInviteItem(inviteID, completion: {[weak self] item, type, items, toUser, conversationID, error in
                     guard let `self` = self else { return }
-
-                    if error == nil, let item = item, let type = type, toUser?.uID == PulseUser.currentUser.uID {
+                    
+                    let userConfirmed : Bool = toUser?.uID == PulseUser.currentUser.uID || toUser == nil
+                    
+                    if error == nil, let item = item, let type = type, userConfirmed {
                         switch type {
                         case .interviewInvite:
                             DispatchQueue.main.async {
@@ -399,14 +409,14 @@ extension ExploreChannelsVC {
                                 //need to do in this order so all items are set before itemID
                                 interviewVC.conversationID = conversationID
                                 interviewVC.allQuestions = items
-                                interviewVC.selectedUser = toUser
+                                interviewVC.selectedUser = PulseUser.currentUser
                                 interviewVC.interviewItem = item
                                 self.navigationController?.pushViewController(interviewVC, animated: true)
 
                                 interviewVC.interviewItemID = item.itemID
                                 
                             }
-                        case .perspectiveInvite, .questionInvite, .showcaseInvite:
+                        case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite:
                             self.showCameraMenu(inviteItem: item)
 
                         case .contributorInvite:
@@ -421,16 +431,13 @@ extension ExploreChannelsVC {
             default: break
             }
         
-            if !isLayoutSetup {
-                isLayoutSetup = true
-                self.universalLink = nil
-            }
+            self.universalLink = nil
         }
      }
     
     internal func showContributorMenu(inviteItem: Item) {
         let menu = UIAlertController(title: "Congratulations!",
-                                     message: "You were recommended as a contributor for \(inviteItem.cTitle ?? " a channel"). Contributors shape the content & experience for each channel and get an amazing platform to showcase their brand", preferredStyle: .actionSheet)
+                                     message: "You were recommended as a contributor for \(inviteItem.cTitle ?? " a channel"). Contributors shape the content & experience for each channel and get an amazing platform to showcase their expertise & brand", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
@@ -450,8 +457,8 @@ extension ExploreChannelsVC {
     }
     
     internal func showCameraMenu(inviteItem: Item) {
-        let menu = UIAlertController(title: "Hi There!",
-                                     message: "Ready to add your \(inviteItem.childType(plural: true))? We spotlight expert voices, standout ideas & content and give you a platform to showcase your brand",
+        let menu = UIAlertController(title: "Invitation to \(inviteItem.childActionType())\(inviteItem.childType())",
+                                     message: "Topic: \(inviteItem.itemTitle)\nWe are excited for your\(inviteItem.childType())!",
                                      preferredStyle: .actionSheet)
     
         menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: {[weak self] (action: UIAlertAction!) in
@@ -467,7 +474,7 @@ extension ExploreChannelsVC {
             }
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .destructive, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
         }))
         

@@ -9,6 +9,7 @@
 import UIKit
 
 class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
+    public weak var tabDelegate : MasterTabDelegate!
     
     internal var tableView : UITableView!
     internal var addButton = PulseButton(size: .small, type: .add, isRound : true, background: .white, tint: .black)
@@ -16,12 +17,14 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     var conversations = [Conversation]()
     fileprivate var isShowingUserSearch = false
     fileprivate var selectedUser : PulseUser? //user selected by mini search
+    fileprivate var cleanupComplete = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
             NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
 
+            tabBarHidden = false
             setupLayout()
             updateDataSource()
         }
@@ -32,6 +35,17 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
         tabBarHidden = false
         statusBarHidden = false
         updateHeader()
+    }
+    
+    deinit {
+        if !cleanupComplete {
+            tableView.removeFromSuperview()
+            conversations = []
+            selectedUser = nil
+            tabDelegate = nil
+            cleanupComplete = true
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+        }
     }
 
     internal func setupLayout() {
@@ -128,6 +142,10 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
         headerNav?.setNav(title: "Conversations")
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: addButton)
         addButton.addTarget(self, action: #selector(newConversation), for: UIControlEvents.touchUpInside)
+        
+        if !tabBarHidden, tableView != nil {
+            tableView.contentInset = UIEdgeInsetsMake(0, 0, tabBarController!.tabBar.frame.height + Spacing.xxl.rawValue, 0)
+        }
     }
     
     //close modal - e.g. mini search

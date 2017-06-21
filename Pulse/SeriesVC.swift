@@ -697,7 +697,12 @@ extension SeriesVC {
         
         menu.addAction(UIAlertAction(title: "share Series", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
-            self.showShare(selectedItem: self.selectedItem, type: "series", fullShareText: self.selectedItem.itemTitle)
+            self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
+
+            self.selectedItem.createShareLink(completion: {[unowned self] link in
+                guard let link = link else { return }
+                self.shareContent(shareType: "series", shareText: self.selectedItem.itemTitle.capitalized, shareLink: link)
+            })            
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -792,7 +797,7 @@ extension SeriesVC {
                 guard let `self` = self else { return }
                 if error == nil, let selectedShareItem = selectedShareItem {
                     let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) - \(currentItem.itemTitle)"
-                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
+                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
                 }
             })
         }))

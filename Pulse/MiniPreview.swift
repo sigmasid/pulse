@@ -107,7 +107,7 @@ class MiniPreview: UIView {
         actionButton.layoutIfNeeded()
 
         actionButton.makeRound()
-        actionButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
+        actionButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)
 
         actionButton.addTarget(self, action: #selector(actionButtonClicked), for: UIControlEvents.touchDown)
     }

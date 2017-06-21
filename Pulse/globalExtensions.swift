@@ -46,8 +46,8 @@ class PaddingLabel: UILabel {
 }
 
 extension UIImageView {
-    func makeRound() {
-        GlobalFunctions.makeRound(self)
+    override func makeRound() {
+        super.makeRound()
         layer.masksToBounds = true
         clipsToBounds = true
     }
@@ -63,14 +63,6 @@ extension UICollectionViewCell {
         
         layer.masksToBounds = false
         layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: contentView.layer.cornerRadius).cgPath
-    }
-    
-    override func addBottomBorder() {
-        contentView.layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
-    }
-    
-    override func addBorder(color: UIColor, thickness: CGFloat) {
-        contentView.layer.addBorder(color: color, thickness: thickness)
     }
 }
 
@@ -102,12 +94,16 @@ extension UIView {
         layer.masksToBounds = false
     }
     
-    func addBottomBorder() {
-        layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+    func addBottomBorder(color: UIColor = .darkGray, thickness: CGFloat = 1.0) {
+        layer.addBorder(edge: .bottom, color: color, thickness: thickness)
     }
     
-    func addBorder(color : UIColor = .pulseGrey, thickness: CGFloat = 1.0) {
+    func addBorder(color : UIColor = .darkGray, thickness: CGFloat = 1.0) {
         layer.addBorder(color: color, thickness: thickness)
+    }
+    
+    func makeRound() {
+        layer.cornerRadius = frame.width > frame.height ?  frame.height / 2 : frame.width / 2
     }
 }
 
@@ -274,10 +270,6 @@ extension UIButton {
         indicator.removeFromSuperview()
     }
     
-    func makeRound() {
-        GlobalFunctions.makeRound(self)
-    }
-    
     func setButtonFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
         self.titleLabel?.textAlignment = alignment
         self.titleLabel?.font = UIFont.systemFont(ofSize: size, weight: weight)
@@ -291,6 +283,13 @@ extension UIButton {
             self.setImage(image, for: state)
             self.tintColor = color
         }
+    }
+}
+
+extension UITextField {
+    override func addBorder(color: UIColor, thickness: CGFloat) {
+        super.addBottomBorder(color: color, thickness: thickness)
+        layer.sublayerTransform = CATransform3DMakeTranslation(7.5, 0, 0)
     }
 }
 
@@ -318,21 +317,13 @@ extension CALayer {
         }
         
         border.backgroundColor = color.cgColor;
-        
         self.addSublayer(border)
     }
     
     func addBorder(color: UIColor, thickness: CGFloat) {
-        
-        let border = CALayer()
-        
-        border.frame = CGRect.init(x: 0, y: 0, width: frame.width - (thickness / 2), height: frame.height - (thickness / 2))
-        border.backgroundColor = color.cgColor
-        
-        self.addSublayer(border)
+        borderColor = color.cgColor
+        borderWidth = thickness
     }
-    
-    
 }
 
 extension UIImage
@@ -431,6 +422,13 @@ enum VoteType {
 enum IntroType {
     case login
     case other
+}
+
+enum TabType {
+    case login
+    case explore
+    case conversations
+    case home
 }
 
 enum Spacing: CGFloat {
@@ -637,6 +635,8 @@ enum MessageType: String {
             return .contributorInvite
         case "showcaseInvite":
             return .showcaseInvite
+        case "feedbackInvite":
+            return .feedbackInvite
         default:
             return .message
         }

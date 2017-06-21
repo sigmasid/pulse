@@ -249,6 +249,9 @@ extension AppDelegate : MessagingDelegate {
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
         // If you are receiving a notification message while your app is in the background,
         // this callback will not be fired till the user taps on the notification launching the application.
+        if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
+            masterTabVC.handleLink(link: linkURL)
+        }
         
         // With swizzling disabled you must let Messaging know about the message, for Analytics
         Messaging.messaging().appDidReceiveMessage(userInfo)

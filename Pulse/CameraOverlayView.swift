@@ -179,6 +179,7 @@ class CameraOverlayView: UIView {
     fileprivate func drawAlbumPicker() {
         addSubview(showAlbumPicker)
         
+        showAlbumPicker.tintColor = .white
         showAlbumPicker.setImage(UIImage(named: "down-arrow"), for: UIControlState())
         showAlbumPicker.backgroundColor = UIColor.white.withAlphaComponent(0.01)
         showAlbumPicker.alpha = CGFloat(elementOpacity)

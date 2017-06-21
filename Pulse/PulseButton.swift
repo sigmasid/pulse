@@ -10,7 +10,7 @@ import UIKit
 import QuartzCore
 
 enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical}
-enum ButtonSizes { case xxSmall, xSmall, small, medium, large }
+enum ButtonSizes { case xxSmall, xSmall, small, medium, large, xLarge }
 
 @IBDesignable
 open class PulseButton: UIButton {
@@ -158,6 +158,7 @@ open class PulseButton: UIButton {
         case .small: frame = CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue)
         case .medium: frame = CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)
         case .large: frame = CGRect(x: 0, y: 0, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+        case .xLarge: frame = CGRect(x: 0, y: 0, width: IconSizes.xLarge.rawValue, height: IconSizes.xLarge.rawValue)
         }
         self.init(frame: frame)
         
@@ -194,6 +195,7 @@ open class PulseButton: UIButton {
         case .small: frame = CGRect(x: 0, y: 0, width: IconSizes.small.rawValue, height: IconSizes.small.rawValue)
         case .medium: frame = CGRect(x: 0, y: 0, width: IconSizes.medium.rawValue, height: IconSizes.medium.rawValue)
         case .large: frame = CGRect(x: 0, y: 0, width: IconSizes.large.rawValue, height: IconSizes.large.rawValue)
+        case .xLarge: frame = CGRect(x: 0, y: 0, width: IconSizes.xLarge.rawValue, height: IconSizes.xLarge.rawValue)
         }
         self.init(frame: frame)
         
@@ -235,7 +237,7 @@ open class PulseButton: UIButton {
             
             let titleInset = UIEdgeInsetsMake(imageView!.frame.height + Spacing.s.rawValue, -imageView!.frame.width, 0, 0)
             titleEdgeInsets = titleInset
-        case .medium, .large:
+        case .medium, .large, .xLarge:
             let imageInset = UIEdgeInsetsMake(Spacing.xxs.rawValue, Spacing.xs.rawValue, Spacing.xxs.rawValue, 0)
             imageEdgeInsets = imageInset
             
@@ -333,6 +335,7 @@ open class PulseButton: UIButton {
         case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //smaller insets for xSmall button
         case .medium: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15) //smaller insets for xSmall button
         case .large: imageEdgeInsets = UIEdgeInsetsMake(22.5, 22.5, 22.5, 22.5) //smaller insets for xSmall button
+        case .xLarge: imageEdgeInsets = UIEdgeInsetsMake(30, 30, 30, 30) //smaller insets for xSmall button
 
         default: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //standard insets
         }

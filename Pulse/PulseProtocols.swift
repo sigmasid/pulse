@@ -113,6 +113,11 @@ protocol FirstLaunchDelegate {
     func doneWithIntro(mode: IntroType)
 }
 
+protocol MasterTabDelegate : class {
+    func setTab(to: TabType)
+    func userUpdated()
+}
+
 /**
  The state of the navigation bar
  - collapsed: the navigation bar is fully collapsed

@@ -423,15 +423,14 @@ extension ChannelVC {
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             switch inviteType {
-            case .perspectiveInvite, .questionInvite, .showcaseInvite:
+            case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite:
                 if let currentItem = currentItem as? Item {
-                    self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
-                                            completion: {[unowned self] selectedShareItem , error in
-                                                //using the share item returned from the request
-                                                if error == nil, let selectedShareItem = selectedShareItem {
-                                                    let shareText = "Can you add a\(currentItem.childType()) on \(currentItem.itemTitle)"
-                                                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
-                                                }
+                    self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false, completion: {[unowned self] selectedShareItem , error in
+                        //using the share item returned from the request
+                        if error == nil, let selectedShareItem = selectedShareItem {
+                            let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) on \(currentItem.itemTitle)"
+                            self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
+                        }
                     })
                     
                 }
@@ -445,7 +444,7 @@ extension ChannelVC {
                             let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
                             let shareText = "You are invited to be a contributor on \(channelTitle)"
                             
-                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: {[unowned self] link in
+                            PulseDatabase.createShareLink(item: shareChannel, linkString: "invites/"+inviteID, completion: {[unowned self] link in
                                 guard let link = link else {
                                     self.toggleLoading(show: false, message: nil)
                                     return
@@ -471,7 +470,7 @@ extension ChannelVC {
                             let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
                             let shareText = "\(PulseUser.currentUser.name ?? "Your friend") invited you to \(channelTitle)"
                             
-                            PulseDatabase.createShareLink(linkString: "invites/"+inviteID, completion: {[unowned self] link in
+                            PulseDatabase.createShareLink(item: shareChannel, linkString: "invites/"+inviteID, completion: {[unowned self] link in
                                 guard let link = link else {
                                     self.toggleLoading(show: false, message: nil)
                                     return
@@ -529,7 +528,7 @@ extension ChannelVC {
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: {[unowned self] link in
                 guard let link = link else { return }
-                self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle ?? "", shareLink: link)
+                self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle?.capitalized ?? "", shareLink: link)
             })
         }))
         
@@ -560,7 +559,7 @@ extension ChannelVC {
             self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
             self.selectedChannel.createShareLink(completion: {[unowned self] link in
                 guard let link = link else { return }
-                self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle ?? "", shareLink: link)
+                self.shareContent(shareType: "channel", shareText: self.selectedChannel.cTitle?.capitalized ?? "", shareLink: link)
             })
         }))
         

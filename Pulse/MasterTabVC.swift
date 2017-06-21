@@ -19,7 +19,7 @@ fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
   }
 }
 
-class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelegate, FirstLaunchDelegate {
+class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelegate, FirstLaunchDelegate, MasterTabDelegate {
     
     public var reachability: Reachability? = Reachability.networkReachabilityForInternetConnection()
     public var showAppIntro = false
@@ -34,6 +34,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     var inboxVC : InboxVC!
     var homeVC : HomeVC!
 
+    var exploreNavVC : PulseNavVC!
+    
     fileprivate var panInteractionController = PanHorizonInteractionController()
     fileprivate var initialFrame : CGRect!
     fileprivate var rectToRight : CGRect!
@@ -136,6 +138,23 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
             self.loadingView.isHidden = true
         })
     }
+    
+    internal func setTab(to tabName: TabType) {
+        switch tabName {
+        case .login:
+            selectedIndex = 0
+
+        case .explore:
+            selectedIndex = 1
+
+        case .conversations:
+            selectedIndex = 2
+
+        case .home:
+            selectedIndex = 3
+        }
+    }
+
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -143,16 +162,20 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     
     internal func setupControllers() {
         accountVC = AccountLoginManagerVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
-        
+        accountVC.tabDelegate = self
+
         exploreChannelsVC = ExploreChannelsVC()
-        let exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+        exploreChannelsVC.tabDelegate = self
+        exploreNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         exploreNavVC.viewControllers = [exploreChannelsVC]
         
         inboxVC = InboxVC()
+        inboxVC.tabDelegate = self
         let inboxNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         inboxNavVC.viewControllers = [inboxVC]
-        
+
         homeVC = HomeVC()
+        homeVC.tabDelegate = self
         let homeNavVC = PulseNavVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
         homeNavVC.viewControllers = [homeVC]
 
@@ -196,11 +219,25 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     }
     
     internal func handleLink(link: URL) {
-        if isLoaded {
+        if isLoaded, PulseUser.isLoggedIn() {
+            if !exploreChannelsVC.isRootController() {
+                exploreNavVC.popToRootViewController(animated: false)
+            }
             exploreChannelsVC.universalLink = link
             selectedIndex = 1
+        } else if isLoaded, !PulseUser.isLoggedIn() {
+            selectedIndex = 0
+            accountVC.showInviteAlert = true
+            universalLink = link
         } else {
             universalLink = link
+        }
+    }
+    
+    internal func userUpdated() {
+        if let link = universalLink {
+            selectedIndex = 1
+            exploreChannelsVC.universalLink = link
         }
     }
     

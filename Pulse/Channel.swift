@@ -79,13 +79,13 @@ class Channel : NSObject {
         cDetailedCreated = true
     }
 
-    func createShareLink(completion: @escaping (String?) -> Void) {
+    func createShareLink(completion: @escaping (URL?) -> Void) {
         guard let cID = self.cID else {
             completion(nil)
             return
         }
         
-        PulseDatabase.createShareLink(linkString: "c/"+cID, completion: { link in
+        PulseDatabase.createShareLink(item: self, linkString: "c/"+cID, completion: { link in
             completion(link)
         })
     }

@@ -16,7 +16,9 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     public var interviewItemID : String! {
         didSet {
             if interviewItem == nil || allQuestions.isEmpty || selectedUser == nil {
-                PulseDatabase.getInviteItem(interviewItemID, completion: { interviewItem, _, questions, toUser, conversationID, error in
+                PulseDatabase.getInviteItem(interviewItemID, completion: {[weak self] interviewItem, _, questions, toUser, conversationID, error in
+                    guard let `self` = self else { return }
+
                     self.selectedUser = toUser
                     self.interviewItem = interviewItem
                     self.allQuestions = questions
@@ -79,7 +81,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         addBackButton()
         addMenuButton()
         
-        headerNav?.setNav(title: "Interview Request")
+        headerNav?.setNav(title: "Interview Request", subtitle: interviewItem.tag?.itemTitle)
         headerNav?.updateBackgroundImage(image: nil)
         headerNav?.showNavbar(animated: true)
     }
@@ -114,7 +116,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     }
     
     internal func checkPartialInterview() {
-        PulseDatabase.getItemCollection(interviewItemID, completion: { success, items in
+        PulseDatabase.getItemCollection(interviewItemID, completion: {[weak self] success, items in
+            guard let `self` = self else { return }
             if success {
                 for item in items {
                     if let itemIndex = self.allQuestions.index(of: item) {
@@ -129,7 +132,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal func confirmDecline() {
         let menu = UIAlertController(title: "Are you sure you want to decline the interview?", message: "Interviews are a great way to share your perspectives, build your brand and help improve community's understanding of key issues & topics.", preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "decline Interview", style: .destructive, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "decline Interview", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.markInterviewDeclined()
         }))
         
@@ -142,8 +146,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     
     internal func showShare() {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
-        interviewItem.createShareLink(completion: { link in
-            guard let link = link else { return }
+        interviewItem.createShareLink(completion: {[weak self] link in
+            guard let `self` = self, let link = link else { return }
             self.shareContent(shareType: "interview", shareText: self.interviewItem.itemTitle, shareLink: link)
         })
     }
@@ -151,7 +155,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal func showMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "decline Interview", style: .destructive, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "decline Interview", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.confirmDecline()
         }))
         
@@ -165,7 +170,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal func showIncompleteMenu() {
         let menu = UIAlertController(title: "Mark Interview Complete?", message: "There are a few questions remaining. Are you sure you want to leave?", preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "mark Complete", style: .destructive, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "mark Complete", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.markInterviewCompleted()
         }))
         
@@ -179,7 +185,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal func confirmOverwriteAnswer(qItem : Item) {
         let confirmMenu = UIAlertController(title: "Already Answered", message: "Would you like to replace your answer?", preferredStyle: .actionSheet)
         
-        confirmMenu.addAction(UIAlertAction(title: "replace Answer", style: .destructive, handler: { (action: UIAlertAction!) in
+        confirmMenu.addAction(UIAlertAction(title: "replace Answer", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.askQuestion(qItem: qItem)
         }))
         
@@ -195,11 +202,13 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
                                      message: "Share your interview or tap done to the go back!",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "share Interview", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Interview", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showShare()
         }))
         
-        menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.submitButton.setEnabled()
             self.goBack()
@@ -211,7 +220,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal func showErrorMenu(errorTitle : String, error : Error) {
         let menu = UIAlertController(title: errorTitle, message: error.localizedDescription, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.submitButton.setEnabled()
         }))
@@ -327,7 +337,8 @@ extension InterviewRequestVC {
     }
     
     internal func markInterviewCompleted() {
-        PulseDatabase.addInterviewToDatabase(interviewItemID: interviewItemID, interviewParentItem: interviewItem, completion: {(success, error) in
+        PulseDatabase.addInterviewToDatabase(interviewItemID: interviewItemID, interviewParentItem: interviewItem, completion: {[weak self] (success, error) in
+            guard let `self` = self else { return }
             if success {
                 self.showSuccessMenu()
             } else {
@@ -338,7 +349,9 @@ extension InterviewRequestVC {
     
     internal func markInterviewDeclined() {
         toggleLoading(show: true, message: "Declining Interview Request...", showIcon: true)
-        PulseDatabase.declineInterview(interviewItemID: interviewItemID, interviewParentItem: interviewItem, conversationID: conversationID, completion: {(success, error) in
+        PulseDatabase.declineInterview(interviewItemID: interviewItemID, interviewParentItem: interviewItem, conversationID: conversationID, completion: {[weak self] (success, error) in
+            guard let `self` = self else { return }
+
             self.toggleLoading(show: false, message: nil)
             if success {
                 self.goBack()
@@ -374,7 +387,7 @@ extension InterviewRequestVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         if let header = view as? UITableViewHeaderFooterView {
             header.backgroundView?.backgroundColor = .white
-            header.textLabel!.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .pulseBlue, alignment: .left)
+            header.textLabel!.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
         }
     }
     

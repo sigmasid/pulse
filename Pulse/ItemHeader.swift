@@ -20,7 +20,7 @@ class ItemHeader: UICollectionReusableView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        addBottomBorder()
+        addBottomBorder(color: .pulseGrey)
         setupPreview()
         headerMenu.removeShadow()
         backgroundColor = .white

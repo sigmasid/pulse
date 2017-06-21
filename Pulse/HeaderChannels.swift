@@ -28,7 +28,7 @@ class HeaderChannelsCell: UICollectionViewCell, SelectionDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.backgroundColor = .white
-        addBottomBorder()
+        addBottomBorder(color: .pulseGrey)
         setupChannelHeader()
     }
     

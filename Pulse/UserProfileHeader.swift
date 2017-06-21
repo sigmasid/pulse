@@ -26,7 +26,7 @@ class UserProfileHeader: UICollectionReusableView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = UIColor.white
-        addBottomBorder()
+        addBottomBorder(color: .pulseGrey)
         setupProfileDetails()
     }
     

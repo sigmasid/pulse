@@ -197,6 +197,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
             return
         }
         
+        toggleLoading(show: true, message: "creating invite...", showIcon: true)
         
         let itemKey = databaseRef.child("items").childByAutoId().key        
         let newShareItem = Item(itemID: itemKey)
@@ -206,26 +207,27 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         newShareItem.tag = selectedShareItem.tag
         newShareItem.itemTitle = selectedShareItem.itemTitle
         
-        toggleLoading(show: true, message: "creating invite...", showIcon: true)
         PulseDatabase.createInviteRequest(item: newShareItem, type: shareType, toUser: toUser, toName: nil, toEmail: toEmail,
                                      childItems: [], parentItemID: selectedShareItem.itemID, completion: {[weak self] (success, error) in
             guard let `self` = self else { return }
                                         
             if success, showAlert {
+                self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
             } else if showAlert {
+                self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
             }
             
-            self.toggleLoading(show: false, message: nil)
             completion(newShareItem, error)
         })
     }
     
-    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "") {
+    internal func showShare(selectedItem: Item, type: String, fullShareText: String = "", inviteItemID: String? = nil) {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
         let isInvite = type == "invite" ? true : false
-        selectedItem.createShareLink(invite: isInvite, completion: {[weak self] link in
+        
+        selectedItem.createShareLink(invite: isInvite, inviteItemID: inviteItemID, completion: {[weak self] link in
             guard let `self` = self else {
                 return
             }
@@ -234,23 +236,24 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 self.toggleLoading(show: false, message: nil)
                 return
             }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText, img: selectedItem.content as? UIImage ?? nil)
-            self.toggleLoading(show: false, message: nil)
+            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
         })
     }
     
-    internal func shareContent(shareType: String, shareText: String, shareLink: String, fullShareText: String = "", img: UIImage? = nil) {
+    internal func shareContent(shareType: String, shareText: String, shareLink: URL, fullShareText: String = "") {
         // set up activity view controller
-        let textToShare = fullShareText == "" ? "Check out this \(shareType) on Pulse: " + shareText + " - " + shareLink : fullShareText + " - " + shareLink
-        let shareItems = img != nil ? [textToShare, img!] : [textToShare]
+        let textToShare = fullShareText == "" ? "Check out this \(shareType) on Pulse: " + shareText : fullShareText
+        let shareItems = [textToShare, shareLink] as [Any]
         activityController = UIActivityViewController(activityItems: shareItems, applicationActivities: nil)
         activityController.popoverPresentationController?.sourceView = view // so that iPads won't crash
 
         // exclude some activity types from the list (optional)
         activityController.excludedActivityTypes = [ UIActivityType.airDrop, UIActivityType.postToFlickr, UIActivityType.saveToCameraRoll, UIActivityType.print, UIActivityType.addToReadingList ]
-        toggleLoading(show: false, message: nil)
+        
         // present the view controller
-        present(activityController, animated: true, completion: nil)
+        present(activityController, animated: true, completion: { _ in
+            self.toggleLoading(show: false, message: nil)
+        })
     }
     
     /**

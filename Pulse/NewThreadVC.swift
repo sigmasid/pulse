@@ -17,7 +17,7 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     
     //UI Vars
     fileprivate var sAddCover = UIImageView()
-    fileprivate var sShowCamera = PulseButton(size: .large, type: .camera, isRound: true, background: .white, tint: .black)
+    fileprivate var sShowCamera = PulseButton(size: .xLarge, type: .camera, isRound: true, background: .white, tint: .black)
     fileprivate var sShowCameraLabel = UILabel()
     
     fileprivate var sTitle = UITextField()
@@ -106,9 +106,11 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         item.contentType = contentType
         item.cID = selectedChannel.cID
         
-        PulseDatabase.addThread(channelID: selectedChannel.cID, parentItem: selectedItem, item: item, completion: { success, error in
+        PulseDatabase.addThread(channelID: selectedChannel.cID, parentItem: selectedItem, item: item, completion: {[weak self] success, error in
+            guard let `self` = self else { return }
             if success, let capturedImage = self.capturedImage {
-                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {(success, error) in
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {[weak self] (success, error) in
+                    guard let `self` = self else { return }
                     success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
                     loading.removeFromSuperview()
                     self.submitButton.setEnabled()
@@ -129,7 +131,8 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
                                      message: "Tap okay to return and start contributing to this thread!",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.goBack()
         }))
@@ -165,15 +168,14 @@ extension NewThreadVC {
         sAddCover.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         sAddCover.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         sAddCover.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        sAddCover.heightAnchor.constraint(equalToConstant: 175).isActive = true
+        sAddCover.heightAnchor.constraint(equalToConstant: 150).isActive = true
         sAddCover.layoutIfNeeded()
-        sAddCover.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
         
         sShowCamera.translatesAutoresizingMaskIntoConstraints = false
         sShowCamera.centerXAnchor.constraint(equalTo: sAddCover.centerXAnchor).isActive = true
         sShowCamera.centerYAnchor.constraint(equalTo: sAddCover.centerYAnchor).isActive = true
-        sShowCamera.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        sShowCamera.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        sShowCamera.heightAnchor.constraint(equalToConstant: IconSizes.xLarge.rawValue).isActive = true
+        sShowCamera.widthAnchor.constraint(equalToConstant: IconSizes.xLarge.rawValue).isActive = true
         sShowCamera.layoutIfNeeded()
         
         sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
@@ -185,7 +187,7 @@ extension NewThreadVC {
         sShowCameraLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .black, alignment: .center)
         
         sTitle.translatesAutoresizingMaskIntoConstraints = false
-        sTitle.topAnchor.constraint(equalTo: sAddCover.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        sTitle.topAnchor.constraint(equalTo: sAddCover.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         sTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
         sTitle.layoutIfNeeded()
@@ -202,8 +204,8 @@ extension NewThreadVC {
         sTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         sDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         
-        sTitle.layer.addSublayer(GlobalFunctions.addBorders(self.sTitle, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        sDescription.layer.addSublayer(GlobalFunctions.addBorders(self.sDescription, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        sTitle.addBottomBorder()
+        sDescription.addBottomBorder()
         
         sTitle.attributedPlaceholder = NSAttributedString(string: "short title for thread",
                                                           attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
@@ -219,7 +221,7 @@ extension NewThreadVC {
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "Threads are open to all channel contributors and anyone invited by a verified contributor."
+        sTypeDescription.text = "Threads are open to all channel contributors and invited guests."
         
         addSubmitButton()
     }
@@ -266,7 +268,7 @@ extension NewThreadVC: UITextFieldDelegate {
         if textField == sTitle, let text = textField.text?.lowercased() {
             return text.characters.count + (text.characters.count - range.length) <= 100
         } else if textField == sDescription, let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 150
+            return text.characters.count + (text.characters.count - range.length) <= 140
         }
         
         return true
@@ -315,13 +317,15 @@ extension NewThreadVC: CameraDelegate, PanAnimationDelegate {
                             self.cameraVC.toggleLoading(show: false, message: nil)
                             
                             if let capturedImage = self.capturedImage {
-                                self.sAddCover.image = capturedImage
-                                self.sAddCover.contentMode = .scaleAspectFill
-                                self.sAddCover.clipsToBounds = true
+                                self.sShowCamera.setImage(capturedImage, for: .normal)
+                                self.sShowCamera.imageView?.contentMode = .scaleAspectFit
+                                self.sShowCamera.imageView?.clipsToBounds = true
                                 
-                                self.sShowCamera.imageView?.alpha = 0.5
-                                self.sShowCameraLabel.text = "tap icon to change"
-                                self.sShowCameraLabel.textColor = .white
+                                self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+                                self.sShowCamera.clipsToBounds = true
+                                
+                                self.sShowCameraLabel.text = "tap image to change"
+                                self.sShowCameraLabel.textColor = .gray
                             }
                             
                             //update the header
@@ -354,20 +358,24 @@ extension NewThreadVC: CameraDelegate, PanAnimationDelegate {
             return
         }
         
-        picker.dismiss(animated: true, completion: nil)
-        capturedImage = info[UIImagePickerControllerOriginalImage] as? UIImage
+        capturedImage = info[UIImagePickerControllerEditedImage] as? UIImage
 
         if let capturedImage = capturedImage {
-            self.sAddCover.image = capturedImage
-            self.sAddCover.contentMode = .scaleAspectFill
-            self.sAddCover.clipsToBounds = true
+            self.sShowCamera.setImage(capturedImage, for: .normal)
+            self.sShowCamera.imageView?.contentMode = .scaleAspectFit
+            self.sShowCamera.imageView?.clipsToBounds = true
+            self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+            self.sShowCamera.clipsToBounds = true
             
-            self.sShowCamera.imageView?.alpha = 0.5
             self.sShowCameraLabel.text = "tap icon to change"
-            self.sShowCameraLabel.textColor = .white
-            
-            cameraVC.dismiss(animated: true, completion: nil)
+            self.sShowCameraLabel.textColor = .gray
         }
+        
+        UIView.animate(withDuration: 0.2, animations: { picker.view.alpha = 0.0 } ,
+                       completion: {(value: Bool) in
+                        picker.dismiss(animated: false, completion: nil)
+                        self.cameraVC.dismiss(animated: true, completion: nil)
+        })
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {

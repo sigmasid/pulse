@@ -364,7 +364,12 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         albumPicker.videoMaximumDuration = PulseDatabase.maxVideoLength
         albumPicker.allowsEditing = true
         albumPicker.sourceType = .photoLibrary
-        albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
+        
+        if isAddingCover {
+            albumPicker.mediaTypes = [kUTTypeImage as String]
+        } else {
+            albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
+        }
         
         present(albumPicker, animated: true, completion: nil)
     }
@@ -435,6 +440,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     func userDismissedCamera() {
         if isAddingMoreItems || isAddingCover {
             returnToRecordings()
+            isAddingCover = false
         } else {
             dismiss(animated: true, completion: {[weak self] in
                 guard let `self` = self else { return }

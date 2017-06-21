@@ -119,7 +119,8 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
             GlobalFunctions.showAlertBlock("Please Login", erMessage: "You need to be logged in to send invites")
             return
         }
-        
+        toggleLoading(show: true, message: "creating invite...", showIcon: true)
+
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
@@ -132,13 +133,10 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
         item.cTitle = selectedChannel.cTitle
         item.tag = selectedItem
         
-        toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        
         PulseDatabase.createInviteRequest(item: item, type: item.inviteType()!, toUser: selectedUser,
                                           toName: selectedUser?.name ?? iName.text, toEmail: email, childItems: [],  parentItemID: selectedItem.itemID,
                                           completion: {(success, error) in
             success ? completion(true, item) : completion(false, nil)
-            self.toggleLoading(show: false, message: nil)
             loading.removeFromSuperview()
         })
     }
@@ -204,22 +202,19 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
                                      message: "How would you like to send it to the recipient?",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "copy Invite Link", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "send Invite Email", style: .default, handler: { (action: UIAlertAction!) in
+            self.showAddEmail(bodyText: "enter recipient email")
+        }))
+        
+        menu.addAction(UIAlertAction(title: "more Share Options", style: .default, handler: { (action: UIAlertAction!) in
             self.toggleLoading(show: true, message: "creating invite link...", showIcon: true)
             self.createInvite(completion: { success, item in
+                let shareText = "Would you like to \(self.selectedItem.childActionType())\(self.selectedItem.childType()) for the series \(self.selectedItem.itemTitle)?"
                 success ?
-                    item?.createShareLink(invite: true, completion: { link in
-                            UIPasteboard.general.string = link
-                            self.showSuccessMenu(message: "Copied link to clipboard!")
-                            self.toggleLoading(show: false, message: nil)
-                    }) :
+                    self.showShare(selectedItem: item!, type: "invite", fullShareText: shareText, inviteItemID: self.selectedItem.itemID) :
                     GlobalFunctions.showAlertBlock(viewController: self,
                                                    erTitle: "Error Sending Invite", erMessage: "Sorry there was an error sending the invite")
             })
-        }))
-        
-        menu.addAction(UIAlertAction(title: "send Invite Email", style: .default, handler: { (action: UIAlertAction!) in
-            self.showAddEmail(bodyText: "enter recipient email")
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -243,7 +238,7 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
     
     internal func showSuccessMenu(message: String) {
         let menu = UIAlertController(title: message,
-                                     message: "Tap okay to return to the series page!",
+                                     message: "Tap done to return to the series page!",
                                      preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
@@ -287,7 +282,7 @@ extension NewShowcaseVC {
         
         iName.delegate = self
         iName.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        iName.layer.addSublayer(GlobalFunctions.addBorders(self.iName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        iName.addBottomBorder()
         iName.attributedPlaceholder = NSAttributedString(string: placeholderName,
                                                          attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         

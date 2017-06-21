@@ -53,8 +53,9 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
             userEmail.tag = 100
             userPassword.tag = 200
             
-            userEmail.layer.addSublayer(GlobalFunctions.addBorders(self.userEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-            userPassword.layer.addSublayer(GlobalFunctions.addBorders(self.userPassword, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+            userEmail.addBottomBorder()
+            userPassword.addBottomBorder()
+            
             userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
             
             userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!,

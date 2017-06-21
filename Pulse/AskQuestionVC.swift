@@ -59,9 +59,13 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         if !isLoaded {
             setupQuestionBox()
             questionBody.becomeFirstResponder()
-            
+
             isLoaded = true
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
     }
     
     override func didReceiveMemoryWarning() {

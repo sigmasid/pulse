@@ -136,7 +136,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             aPlayer = AVQueuePlayer(items: [currentVideo])
             avPlayerLayer = AVPlayerLayer(player: aPlayer)
             avPlayerLayer.frame = view.bounds
-            avPlayerLayer.backgroundColor = UIColor.white.cgColor
+            avPlayerLayer.backgroundColor = UIColor.black.cgColor
         
             isVideoLoaded = true
         } else {
@@ -240,7 +240,10 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
         } else {
             controlsOverlay.getButton(.post).isEnabled = false
-            aPlayer.pause()
+            
+            if aPlayer != nil {
+                aPlayer.pause()
+            }
             
             if let firstItem = recordedItems.first, firstItem.needsCover() && !coverAdded {
                 //if cover image is needed - ask user if they want to add one
@@ -262,6 +265,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         confirmPostMenu.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: { (action: UIAlertAction!) in
             if let delegate = self.delegate {
                 delegate.addMoreItems(self, recordedItems: self.recordedItems, isCover : true)
+                self.controlsOverlay.getButton(.post).isEnabled = false
             }
         }))
         

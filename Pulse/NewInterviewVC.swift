@@ -270,7 +270,7 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
             self.createInterviewRequest(completion: { success, item in
                 success ?
                     item?.createShareLink(invite: true, completion: { link in
-                        UIPasteboard.general.string = link
+                        UIPasteboard.general.url = link
                         self.showSuccessMenu(message: "Copied link to clipboard!")
                         self.toggleLoading(show: false, message: nil)
                     }) :
@@ -412,12 +412,12 @@ extension NewInterviewVC {
         
         iName.delegate = self
         iName.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        iName.layer.addSublayer(GlobalFunctions.addBorders(self.iName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        iName.addBottomBorder()
         iName.attributedPlaceholder = NSAttributedString(string: placeholderName,
                                                           attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         iTopic.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        iTopic.layer.addSublayer(GlobalFunctions.addBorders(self.iName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        iTopic.addBottomBorder()
         iTopic.attributedPlaceholder = NSAttributedString(string: placeholderDescription,
                                                          attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         

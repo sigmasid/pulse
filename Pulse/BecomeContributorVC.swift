@@ -296,8 +296,8 @@ extension BecomeContributorVC {
         recommendEmail.borderStyle = .none
         recommendName.borderStyle = .none
         
-        recommendName.layer.addSublayer(GlobalFunctions.addBorders(self.recommendName, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        recommendEmail.layer.addSublayer(GlobalFunctions.addBorders(self.recommendEmail, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        recommendName.addBottomBorder()
+        recommendEmail.addBottomBorder()
         
         recommendName.placeholder = "contributor name"
         recommendEmail.placeholder = "contributor email"

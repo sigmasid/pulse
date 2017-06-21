@@ -90,31 +90,6 @@ enum GlobalFunctions {
     /** END: NETWORK + PERMISSIONS **/
     
     /** START: UIVIEW / LAYER EFFECTS **/
-    static func addBorders(_ _textField : UITextField) -> CAShapeLayer {
-        let color = UIColor( red: 191/255, green: 191/255, blue:191/255, alpha: 1.0 )
-        return addBorders(_textField, _color: color, thickness : 1.0)
-    }
-    
-    static func addBorders(_ _textField : UITextField, _color : UIColor, thickness : CGFloat) -> CAShapeLayer {
-        let _bottomBorder = CAShapeLayer()
-        
-        _bottomBorder.frame = CGRect(x: 0, y: _textField.frame.size.height - thickness, width: _textField.frame.size.width, height: thickness);
-        _bottomBorder.backgroundColor = _color.cgColor
-        
-        return _bottomBorder
-    }
-    
-    static func makeRound(_ view: UIView) {
-        view.layer.cornerRadius = view.frame.width > view.frame.height ?  view.frame.height / 2 : view.frame.width / 2
-    }
-    
-    static func addShadow(_ view: UIView) {
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOffset = CGSize(width: 2, height: 4)
-        view.layer.shadowRadius = 4.0
-        view.layer.shadowOpacity = 0.7
-    }
-    
     static func getLabelSize(title : String, width: CGFloat, fontAttributes: [String : Any]) -> CGFloat {
         let tempLabel = UILabel()
         tempLabel.numberOfLines = 0
@@ -238,10 +213,10 @@ enum GlobalFunctions {
     /** END: COLLECTION VIEW ITEMS **/
     
     ///Share content
-    static func shareContent(shareType: String, shareText: String, shareLink: String, presenter: UIViewController) -> UIActivityViewController {
+    static func shareContent(shareType: String, shareText: String, shareLink: URL, presenter: UIViewController) -> UIActivityViewController {
         // set up activity view controller
-        let textToShare = "Check out this \(shareType) on Pulse - " + shareText + " " + shareLink
-        let activityViewController = UIActivityViewController(activityItems: [textToShare], applicationActivities: nil)
+        let textToShare = "Check out this \(shareType) on Pulse - " + shareText
+        let activityViewController = UIActivityViewController(activityItems: [textToShare, shareLink], applicationActivities: nil)
         activityViewController.popoverPresentationController?.sourceView = presenter.view // so that iPads won't crash
         
         // exclude some activity types from the list (optional)

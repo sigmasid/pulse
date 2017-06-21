@@ -145,8 +145,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         shortTextField.backgroundColor = UIColor.clear
         shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         shortTextField.textColor = UIColor.black
-        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        shortTextField.addBottomBorder()
         shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         if _currentSetting.type == .password {
@@ -176,8 +175,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         shortTextField.backgroundColor = UIColor.clear
         shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         shortTextField.textColor = UIColor.black
-        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        shortTextField.addBottomBorder()
         shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         shortTextField.inputView = genderPicker
 
@@ -194,8 +192,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         shortTextField.backgroundColor = UIColor.clear
         shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         shortTextField.textColor = UIColor.black
-        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        shortTextField.addBottomBorder()
         getLocationOrPlaceholder()
         
         setupLocation()
@@ -214,8 +211,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         shortTextField.borderStyle = .none
         shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         shortTextField.textColor = UIColor.black
-        shortTextField.layer.addSublayer(GlobalFunctions.addBorders(self.shortTextField, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        shortTextField.layer.sublayerTransform = CATransform3DMakeTranslation(10, 0, 0)
+        shortTextField.addBottomBorder()
         
         shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         shortTextField.inputView = birthdayPicker

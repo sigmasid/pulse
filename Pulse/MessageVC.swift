@@ -40,6 +40,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
     fileprivate var isUserLoaded = false
     
     fileprivate var observersAdded = false
+    fileprivate var cleanupComplete = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -69,6 +70,23 @@ class MessageVC: PulseVC, UITextViewDelegate{
         
         if let _conversationID = conversationID {
             PulseDatabase.removeConversationObserver(conversationID: _conversationID)
+        }
+    }
+    
+    deinit {
+        if !cleanupComplete {
+            conversationHistory.removeFromSuperview()
+            messages = []
+            toUserImage = nil
+            toUser = nil
+            
+            NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillShow, object: nil)
+            NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillHide, object: nil)
+            
+            if let _conversationID = conversationID {
+                PulseDatabase.removeConversationObserver(conversationID: _conversationID)
+            }
+            cleanupComplete = true
         }
     }
 

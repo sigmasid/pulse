@@ -186,6 +186,8 @@ class Item: NSObject {
             type = .interview
         case "showcaseInvite":
             type = .showcases
+        case "feedbackInvite":
+            type = .session
         default:
             type = .unknown
         }
@@ -381,16 +383,18 @@ class Item: NSObject {
         return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt!) : nil
     }
     
-    internal func createShareLink(invite: Bool = false, completion: @escaping (String?) -> Void) {
-        if !invite {
-            PulseDatabase.createShareLink(linkString: "i/"+itemID, completion: { link in
-                completion(link)
-            })
-        } else {
-            PulseDatabase.createShareLink(linkString: "invites/"+itemID, completion: { link in
-                completion(link)
-            })
-        }
+    internal func createShareLink(invite: Bool = false, inviteItemID: String? = nil, completion: @escaping (URL?) -> Void) {
+        PulseDatabase.getItemStorageURL(channelID: cID, type: "thumb", fileID : inviteItemID != nil ? inviteItemID! : itemID, completion: { url, error in
+            if !invite {
+                PulseDatabase.createShareLink(item: self, linkString: "i/"+self.itemID, imageURL: url, completion: { link in
+                    completion(link)
+                })
+            } else {
+                PulseDatabase.createShareLink(item: self, linkString: "invites/"+self.itemID, imageURL: url, completion: { link in
+                    completion(link)
+                })
+            }
+        })
     }
     
     override func isEqual(_ object: Any?) -> Bool {

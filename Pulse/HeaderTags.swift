@@ -14,7 +14,7 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
             if items != oldValue {
                 
                 items.sort(by: { (first: Item, second: Item) -> Bool in
-                    first.createdAt! < second.createdAt!
+                    first.createdAt! > second.createdAt!
                 })
                 
                 collectionView?.delegate = self
@@ -35,7 +35,7 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.backgroundColor = UIColor.white
-        addBottomBorder()
+        addBottomBorder(color: .pulseGrey)
         setupChannelHeader()
     }
     
@@ -112,9 +112,8 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
                         }
                     }
                 }
-                
+                self.items[indexPath.row].fetchedContent = true //so we don't try to fetch again
             })
-            items[indexPath.row].fetchedContent = true //so we don't try to fetch again
         }
         
         return cell

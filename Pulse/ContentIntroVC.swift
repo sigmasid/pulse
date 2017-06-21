@@ -118,6 +118,8 @@ class ContentIntroVC: UIViewController {
         titleLabel.setFont(FontSizes.headline2.rawValue, weight: UIFontWeightBlack, color: .black, alignment: .left)
         
         titleLabel.numberOfLines = 3
+        titleLabel.minimumScaleFactor = 0.5
+        titleLabel.adjustsFontSizeToFitWidth = true
         titleLabel.lineBreakMode = .byTruncatingTail
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false

@@ -9,7 +9,8 @@
 import UIKit
 
 class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate, ItemCellDelegate, ModalDelegate, ParentTextViewDelegate {
-    
+    public weak var tabDelegate : MasterTabDelegate!
+
     //Main data source vars
     var allItems = [Item]()
     var allChannels = [Channel]()
@@ -562,6 +563,7 @@ extension HomeVC {
         }
     }
     
+    //PULSE USER INVITE or SELECTED USER PROFILE
     //checks to make sure we are not in mini search case
     internal func userSelectedUser(toUser: PulseUser) {
         
@@ -649,7 +651,7 @@ extension HomeVC {
         dismiss(animated: true, completion: { _ in })
     }
     
-    //after email - user submitted the text
+    //EMAIL INVITE - user submitted the text
     internal func buttonClicked(_ text: String, sender: UIView) {
         tabBarHidden = false
         GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
@@ -810,14 +812,13 @@ extension HomeVC {
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
 
-            self.toggleLoading(show: true, message: "loading invite options", showIcon: true)
             let selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
             self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: {[weak self] selectedShareItem , error in
                 guard let `self` = self else { return }
 
                 if error == nil, let selectedShareItem = selectedShareItem {
                     let shareText = "Can you add \(currentItem.childActionType())\(currentItem.childType()) on '\(currentItem.itemTitle)'"
-                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText)
+                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
                 }
             })
         }))

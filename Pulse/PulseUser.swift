@@ -191,13 +191,13 @@ class PulseUser: User {
         }
     }
     
-    func createShareLink(completion: @escaping (String?) -> Void) {
+    func createShareLink(completion: @escaping (URL?) -> Void) {
         guard let uID = self.uID else {
             completion(nil)
             return
         }
         
-        PulseDatabase.createShareLink(linkString: "u/"+uID, completion: { link in
+        PulseDatabase.createShareLink(item: self, linkString: "u/"+uID, completion: { link in
             completion(link)
         })
     }

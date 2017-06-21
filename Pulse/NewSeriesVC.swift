@@ -25,7 +25,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     
     //UI Vars
     fileprivate var sAddCover = UIView()
-    fileprivate var sShowCamera = PulseButton(size: .large, type: .camera, isRound: true, background: .white, tint: .black)
+    fileprivate var sShowCamera = PulseButton(size: .xLarge, type: .camera, isRound: true, background: .white, tint: .black)
     fileprivate var sShowCameraLabel = UILabel()
     
     fileprivate var sTitle = UITextField()
@@ -243,24 +243,7 @@ extension NewSeriesVC: UICollectionViewDataSource, UICollectionViewDelegate {
         } else {
             cell.updateLabel(currentItem.itemTitle, _subtitle: nil)
         }
-        cell.updateImage(image: allItems[indexPath.row].content as? UIImage)
-        
-        if !currentItem.fetchedContent {
-            PulseDatabase.getSeriesImage(seriesName: self.allItems[indexPath.row].itemID,
-                                    fileType: .thumb, maxImgSize: maxImgSize, completion: { (data, error) in
-                if let data = data {
-                    self.allItems[indexPath.row].content = UIImage(data: data)
-                    
-                    DispatchQueue.main.async {
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
-                        }
-                    }
-                }
-                
-                self.allItems[indexPath.row].fetchedContent = true
-            })
-        }
+        cell.updateImage(image: UIImage(named: self.allItems[indexPath.row].itemID))
         
         return cell
     }
@@ -305,15 +288,14 @@ extension NewSeriesVC {
         sAddCover.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         sAddCover.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         sAddCover.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        sAddCover.heightAnchor.constraint(equalToConstant: 125).isActive = true
+        sAddCover.heightAnchor.constraint(equalToConstant: 150).isActive = true
         sAddCover.layoutIfNeeded()
-        sAddCover.backgroundColor = UIColor.white.withAlphaComponent(0.7)
         
         sShowCamera.translatesAutoresizingMaskIntoConstraints = false
         sShowCamera.centerXAnchor.constraint(equalTo: sAddCover.centerXAnchor).isActive = true
         sShowCamera.centerYAnchor.constraint(equalTo: sAddCover.centerYAnchor).isActive = true
-        sShowCamera.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        sShowCamera.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        sShowCamera.heightAnchor.constraint(equalToConstant: IconSizes.xLarge.rawValue).isActive = true
+        sShowCamera.widthAnchor.constraint(equalToConstant: IconSizes.xLarge.rawValue).isActive = true
         sShowCamera.layoutIfNeeded()
         
         sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
@@ -342,8 +324,8 @@ extension NewSeriesVC {
         sTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         sDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         
-        sTitle.layer.addSublayer(GlobalFunctions.addBorders(self.sTitle, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
-        sDescription.layer.addSublayer(GlobalFunctions.addBorders(self.sDescription, _color: UIColor.black, thickness: IconThickness.thin.rawValue))
+        sTitle.addBottomBorder()
+        sDescription.addBottomBorder()
         
         sTitle.attributedPlaceholder = NSAttributedString(string: "short title for series",
                                                              attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
@@ -435,7 +417,7 @@ extension NewSeriesVC: UITextFieldDelegate {
         if textField == sTitle, let text = textField.text?.lowercased() {
             return text.characters.count + (text.characters.count - range.length) <= 33
         } else if textField == sDescription, let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 70
+            return text.characters.count + (text.characters.count - range.length) <= 140
         }
         
         return true
@@ -477,25 +459,28 @@ extension NewSeriesVC: CameraDelegate, PanAnimationDelegate {
         
         capturedImage = UIImage(data: imageData)
         
-        UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
+        UIView.animate(withDuration: 0.2, animations: { self.cameraVC.view.alpha = 0.0 } ,
                        completion: {(value: Bool) in
                         
             DispatchQueue.main.async {
+                
                 self.cameraVC.toggleLoading(show: false, message: nil)
                 
                 if let capturedImage = self.capturedImage {
+                    
                     self.sShowCamera.setImage(capturedImage, for: .normal)
-                    self.sShowCamera.imageView?.contentMode = .scaleAspectFill
+                    self.sShowCamera.imageView?.contentMode = .scaleAspectFit
                     self.sShowCamera.imageView?.clipsToBounds = true
+                    
                     self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
                     self.sShowCamera.clipsToBounds = true
-                    
+                                
                     self.sShowCameraLabel.text = "tap image to change"
                     self.sShowCameraLabel.textColor = .gray
                 }
                 
                 //update the header
-                self.cameraVC.dismiss(animated: true, completion: nil)
+                self.cameraVC.dismiss(animated: false, completion: nil)
             }
 
         })
@@ -510,7 +495,7 @@ extension NewSeriesVC: CameraDelegate, PanAnimationDelegate {
         let albumPicker = UIImagePickerController()
         
         albumPicker.delegate = self
-        albumPicker.allowsEditing = false
+        albumPicker.allowsEditing = true
         albumPicker.sourceType = .photoLibrary
         albumPicker.mediaTypes = [kUTTypeImage as String]
         
@@ -524,20 +509,26 @@ extension NewSeriesVC: CameraDelegate, PanAnimationDelegate {
             return
         }
         
-        picker.dismiss(animated: true, completion: nil)
-        capturedImage = info[UIImagePickerControllerOriginalImage] as? UIImage
+        capturedImage = info[UIImagePickerControllerEditedImage] as? UIImage
         
         if let capturedImage = capturedImage {
             self.sShowCamera.setImage(capturedImage, for: .normal)
-            self.sShowCamera.imageView?.contentMode = .scaleAspectFill
+            self.sShowCamera.imageView?.contentMode = .scaleAspectFit
             self.sShowCamera.imageView?.clipsToBounds = true
             self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
             self.sShowCamera.clipsToBounds = true
             
+            self.sAddCover.backgroundColor = .white
+            
             self.sShowCameraLabel.text = "tap image to change"
             self.sShowCameraLabel.textColor = .gray
             
-            cameraVC.dismiss(animated: true, completion: nil)
+            
+            UIView.animate(withDuration: 0.2, animations: { picker.view.alpha = 0.0 } ,
+                           completion: {(value: Bool) in
+                            picker.dismiss(animated: false, completion: nil)
+                            self.cameraVC.dismiss(animated: true, completion: nil)
+            })
         }
     }
     

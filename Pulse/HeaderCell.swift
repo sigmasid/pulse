@@ -63,10 +63,13 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
         previewButton.widthAnchor.constraint(equalTo: previewButton.heightAnchor).isActive = true
         previewButton.layoutIfNeeded()
         
-        previewButton.addTarget(self, action: #selector(clickedSelect), for: .touchUpInside)
-
+        previewButton.imageView?.contentMode = .scaleAspectFill
+        previewButton.imageView?.frame = previewButton.bounds
+        previewButton.imageView?.clipsToBounds = true
         previewButton.contentMode = .scaleAspectFill
         previewButton.clipsToBounds = true
+        
+        previewButton.addTarget(self, action: #selector(clickedSelect), for: .touchUpInside)
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.centerXAnchor.constraint(equalTo: previewButton.centerXAnchor).isActive = true

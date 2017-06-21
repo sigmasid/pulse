@@ -334,15 +334,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         present(confirmLogout, animated: true, completion: nil)
     }
     
-    internal func share() {
-        selectedUser.createShareLink(completion: {[weak self] link in
-            guard let link = link, let `self` = self else { return }
-            self.activityController = GlobalFunctions.shareContent(shareType: "person",
-                                                                   shareText: self.selectedUser.name ?? "",
-                                                                   shareLink: link, presenter: self)
-        })
-    }
-    
     /** Start Delegate Functions **/
     internal func askQuestion() {
         let questionVC = AskQuestionVC()
@@ -352,6 +343,8 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func shareProfile() {
+        self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
+
         selectedUser.createShareLink(completion: {[unowned self] link in
             guard let link = link else { return }
             self.shareContent(shareType: "user", shareText: self.selectedUser.name ?? "", shareLink: link)
