@@ -39,12 +39,16 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     
     deinit {
         if !cleanupComplete {
-            tableView.removeFromSuperview()
+            
+            if tableView != nil {
+                tableView.removeFromSuperview()
+            }
             conversations = []
             selectedUser = nil
             tabDelegate = nil
             cleanupComplete = true
             NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            isLoaded = false
         }
     }
 

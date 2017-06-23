@@ -12,7 +12,7 @@ class ExploreChannelsCell: UICollectionViewCell {
     fileprivate var titleStack = PulseMenu(_axis: .vertical, _spacing: 0)
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()
-    fileprivate var subscribeButton = PulseButton(size: .xxSmall, type: .addCircle, isRound: true, hasBackground: false, tint: .black)
+    fileprivate var subscribeButton = PulseButton(size: .xSmall, type: .addCircle, isRound: true, hasBackground: false, tint: .black)
     fileprivate lazy var previewImage = UIImageView()
     
     public weak var delegate : ExploreChannelsDelegate!
@@ -68,13 +68,14 @@ class ExploreChannelsCell: UICollectionViewCell {
     }
     
     fileprivate func setupCell() {
-        previewImage.frame = CGRect(x: contentView.bounds.origin.x, y: contentView.bounds.origin.y, width: contentView.bounds.width, height: contentView.bounds.height * 0.75)
+        previewImage.frame = CGRect(x: contentView.bounds.origin.x, y: contentView.bounds.origin.y, width: contentView.bounds.width, height: 275)
         //titleStack.frame = CGRect(x: Spacing.xs.rawValue, y: contentView.bounds.height * 0.75,
         //                          width: contentView.bounds.width - IconSizes.small.rawValue - Spacing.xs.rawValue, height: contentView.bounds.height * 0.24)
         subscribeButton.frame.origin = CGPoint(x: contentView.bounds.maxX - IconSizes.small.rawValue - Spacing.xxs.rawValue,
-                                            y: contentView.bounds.height * 0.75 + ((contentView.bounds.height * 0.25 - IconSizes.xSmall.rawValue) / 2))
+                                            y: previewImage.frame.height + (contentView.bounds.height - previewImage.frame.height) / 2 - (IconSizes.xSmall.rawValue / 2))
         subscribeButton.addTarget(self, action: #selector(userClickedSubscribe), for: .touchUpInside)
-
+        subscribeButton.removeShadow()
+        
         addSubview(previewImage)
         addSubview(titleStack)
         addSubview(subscribeButton)
@@ -82,11 +83,13 @@ class ExploreChannelsCell: UICollectionViewCell {
         titleStack.translatesAutoresizingMaskIntoConstraints = false
         titleStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
         titleStack.topAnchor.constraint(equalTo: previewImage.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        titleStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         titleStack.trailingAnchor.constraint(equalTo: subscribeButton.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
         titleStack.addArrangedSubview(titleLabel)
         titleStack.addArrangedSubview(subtitleLabel)
         titleStack.alignment = .leading
+        titleStack.distribution = .fillProportionally
         
         titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .left)
         titleLabel.numberOfLines = 1

@@ -112,12 +112,12 @@ class FirstLoadVC: UIViewController {
     internal func updateSelectedPager(num: Int) {
         pagersStack.arrangedSubviews[num].backgroundColor = .pulseBlue
         
-        if num - 1 >= 0 {
-            pagersStack.arrangedSubviews[num - 1].backgroundColor = .pulseGrey
-        }
-        
-        if num + 1 < screenTitles.count {
-            pagersStack.arrangedSubviews[num + 1].backgroundColor = .pulseGrey
+        for (index, _) in pagersStack.arrangedSubviews.enumerated() {
+            if index == num {
+                pagersStack.arrangedSubviews[index].backgroundColor = .pulseBlue
+            } else {
+                pagersStack.arrangedSubviews[index].backgroundColor = .pulseGrey
+            }
         }
     }
 

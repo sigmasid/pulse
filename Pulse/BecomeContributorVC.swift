@@ -68,7 +68,7 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
         let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: scopeBarHeight)
         scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Apply", "Recommend"] , selectedItemHighlightStyle: .bottomEdge)
         scopeBar.delegate = self
-        scopeBar.addBottomBorder()
+        scopeBar.addBottomBorder(color: .pulseGrey)
         
         scopeBar.backgroundColor = .white
         scopeBar.highlightColor = .pulseBlue
@@ -92,11 +92,9 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
             
             reasonVerified = false
             
-            if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Apply", subtitle: title)
-                applySubtitle.text = "Contributors are thought leaders who create content, shape conversations, give feedback & answer questions!"
-                applyText.text = subText1
-            }
+            applySubtitle.text = "Showcase your expertise & brand!\nContributors can showcase new content, start discussions & invite guests!"
+            applyText.text = subText1
+            
             checkButton()
             view.layoutIfNeeded()
             
@@ -112,11 +110,9 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
             nameVerified = false
             reasonVerified = false
             
-            if let title = selectedChannel.cTitle {
-                headerNav?.setNav(title: "Recommend", subtitle: title)
-                applySubtitle.text = "Know someone with standout ideas who should be featured on this topic? Tell us below!"
-                applyText.text = subText2
-            }
+            applySubtitle.text = "Know someone with standout ideas who would be interested in becoming a contributor? Tell us below!"
+            applyText.text = subText2
+            
             checkButton()
             view.layoutIfNeeded()
             

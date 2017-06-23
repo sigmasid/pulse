@@ -343,7 +343,7 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
 
 extension ExploreChannelsVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.frame.width - 20, height: 200)
+        return CGSize(width: collectionView.frame.width - 20, height: 350)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {

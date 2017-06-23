@@ -236,6 +236,13 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
         let _loadingIndicator = sender.addLoadingIndicator()
         dismissKeyboard()
         
+        guard termsChecked else {
+            GlobalFunctions.showAlertBlock("Please Review Terms of Service", erMessage: "You need to agree to our terms of service prior to continuing")
+            sender.setEnabled()
+            sender.removeLoadingIndicator(_loadingIndicator)
+            return
+        }
+        
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         Auth.auth().signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) {[weak self] (aUser, blockError) in
             guard let `self` = self else { return }
@@ -266,11 +273,14 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     }
     
     @IBAction func createAccount(_ sender: UIButton) {
-        if termsChecked, let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
+        guard termsChecked else {
+            GlobalFunctions.showAlertBlock("Please Review Terms of Service", erMessage: "You need to agree to our terms of service prior to continuing")
+            return
+        }
+        
+        if let createAccountVC = storyboard?.instantiateViewController(withIdentifier: "LoginCreateAccountVC") as? LoginCreateAccountVC {
             _currentLoadedView = .createAccount
             navigationController?.pushViewController(createAccountVC, animated: true)
-        } else if !termsChecked {
-            GlobalFunctions.showAlertBlock("Please Review Terms of Service", erMessage: "You need to agree to our terms of service prior to continuing")
         }
     }
     

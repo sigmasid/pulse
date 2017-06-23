@@ -182,9 +182,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
     
     func doneWithIntro(mode : IntroType) {
         let defaults = UserDefaults.standard
-
         defaults.setValue(true, forKey: "firstLaunchComplete")
-        print(defaults.bool(forKey: "firstLaunchComplete"))
     }
 }
 

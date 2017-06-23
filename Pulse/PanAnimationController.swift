@@ -62,10 +62,6 @@ class PanAnimationController: BaseAnimator  {
                         options: animOptions,
                         animations: {
                     })
-                    
-                    if transitionContext.transitionWasCancelled {
-                        //self.delegate.cancelledTransition()
-                    }
 
                     transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
             })

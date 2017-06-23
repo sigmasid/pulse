@@ -119,7 +119,6 @@ class PulseDatabase {
 
         // Build the dynamic link
         let link = components.url
-        print("share link is \(link)")
         
         // Or create a shortened dynamic link
         components.shorten { (shortURL, warnings, error) in
@@ -547,12 +546,8 @@ class PulseDatabase {
     
     static func getChannelItems(channel : Channel, startingAt : Date, endingAt: Date, completion: @escaping (_ channel : Channel?) -> Void) {
         channelItemsRef.child(channel.cID!).queryOrdered(byChild: "createdAt").queryStarting(atValue: NSNumber(value: endingAt.timeIntervalSince1970 * 1000)).queryEnding(atValue: startingAt.timeIntervalSince1970 * 1000).observeSingleEvent(of: .value, with: { snap in
-            if snap.childrenCount > 0 {
-                channel.updateChannel(detailedSnapshot: snap)
-                completion(channel)
-            } else {
-                completion(nil)
-            }
+            channel.updateChannel(detailedSnapshot: snap)
+            completion(channel)
         }, withCancel: { error in
             completion(nil)
         })
@@ -1999,7 +1994,7 @@ class PulseDatabase {
     }
     
     static func getChannelImage(channelID: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
-        let path = storageRef.child("channels/\(channelID)").child(fileType.rawValue)
+        let path = storageRef.child("channelCovers/\(channelID)").child(fileType.rawValue)
         
         path.getData(maxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)

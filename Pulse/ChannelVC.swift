@@ -100,7 +100,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         PulseDatabase.getChannelItems(channel: selectedChannel, startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] updatedChannel in
             
             if let updatedChannel = updatedChannel,  let `self` = self {
-
                 updatedChannel.cPreviewImage = self.selectedChannel.cPreviewImage
                 self.selectedChannel = updatedChannel
                 
@@ -117,26 +116,33 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                     
                     self.collectionView.performBatchUpdates({
                         self.collectionView?.insertItems(at: indexPaths)
-                        self.collectionView?.reloadData()
+                        //self.collectionView?.reloadData()
                         self.collectionView?.collectionViewLayout.invalidateLayout()
                         self.collectionView?.reloadSections(IndexSet(integer: 1))
                         
                     })
                 } else {
-                    self.getMoreChannelItems(completion: {[weak self] _ in
+                    self.getMoreChannelItems(completion: {[weak self] success in
                         guard let `self` = self else { return}
-                        self.collectionView?.reloadData()
-                        self.collectionView?.reloadSections(IndexSet(integer: 1))
+                        //self.collectionView?.reloadData()
+                        if success {
+                            self.collectionView?.reloadSections(IndexSet(integer: 1))
+                        } else {
+                            self.collectionView?.reloadData()
+                        }
                     })
                 }
                 
                 
                 if self.collectionView.contentSize.height < self.view.frame.height || updatedChannel.items.count < 4 {
                     //content fits the screen so fetch more
-                    self.getMoreChannelItems(completion: {[weak self] _ in
-                        guard let `self` = self else { return}
-                        self.collectionView?.reloadData()
-                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+                    self.getMoreChannelItems(completion: {[weak self] success in
+                        guard let `self` = self else { return }
+                        if success {
+                            self.collectionView?.reloadSections(IndexSet(integer: 1))
+                        } else {
+                            self.collectionView?.reloadData()
+                        }
                     })
                 }
             }
@@ -161,7 +167,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
                 self.footerMessage = "that's the end!"
                 self.hasReachedEnd = true
-                completion(true)
+                completion(false)
             } else {
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {

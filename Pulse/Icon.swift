@@ -147,21 +147,19 @@ class Icon : UIView {
     }
     
     ///Draw background circle behind logo with parameter color - should be contrasting color
-    func drawIconBackground(_ color: UIColor) {
+    func drawIconBackground(_ color: UIColor, shadow: Bool = true) {
         let circleShape = CAShapeLayer()
         
-        if frame.height == frame.width {
-            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.midX , y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
-        } else {
-            circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.maxX - (frame.height / 2), y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
-        }
+        circleShape.path = UIBezierPath(arcCenter: CGPoint(x: frame.midX , y: frame.midY), radius: (frame.height / 2) * 0.9, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
         circleShape.fillColor = color.cgColor
         
         layer.addSublayer(circleShape)
         
-        layer.shadowColor = UIColor.pulseGrey.cgColor
-        layer.shadowOpacity = 0.5
-        layer.shadowRadius = 1.5
-        layer.shadowPath = circleShape.path
+        if shadow {
+            layer.shadowColor = UIColor.pulseGrey.cgColor
+            layer.shadowOpacity = 0.5
+            layer.shadowRadius = 1.5
+            layer.shadowPath = circleShape.path
+        }
     }
 }

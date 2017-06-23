@@ -21,6 +21,7 @@ class Channel : NSObject {
     
     var cThumbImage : UIImage?
     var cPreviewImage : UIImage?
+    
     var cImageURL : String?
     
     dynamic var cCreated = false

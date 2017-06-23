@@ -494,7 +494,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
     
     public func updateBackgroundImage(image : UIImage?) {
         guard navBar != nil else { return }
-       
+        
         if let image = image {
             navBar.setDarkNav()
             navBar.setBackgroundImage(image, for: .default)

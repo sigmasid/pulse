@@ -97,7 +97,7 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
         let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: scopeBarHeight)
         scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Channels", "Series", "People"] , selectedItemHighlightStyle: .bottomEdge)
         scopeBar.delegate = self
-        scopeBar.addBottomBorder()
+        scopeBar.addBottomBorder(color: .pulseGrey)
         
         scopeBar.backgroundColor = .clear
         scopeBar.highlightColor = .pulseBlue

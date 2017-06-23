@@ -105,9 +105,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         } else {
             loadingView.isHidden = false
             loadingView.alpha = 1.0
-            loadingView?.addMessage("Sorry! No Internet Connection", _color: .black)
+            loadingView?.addMessage("Sorry! No Internet Connection", _color: .white)
             loadingView?.addRefreshButton()
-            view.bringSubview(toFront: loadingView)
         }
     }
     
@@ -134,9 +133,7 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     
     //DELEGATE METHOD TO REMOVE INITIAL LOADING SCREEN WHEN THE FEED IS LOADED
     internal func removeLoading() {
-        UIView.animate(withDuration: 1, animations: { self.loadingView.alpha = 0 } , completion: {(value: Bool) in
-            self.loadingView.isHidden = true
-        })
+        loadingView.shrinkDismiss(duration: 0.3)
     }
     
     internal func setTab(to tabName: TabType) {
@@ -205,11 +202,12 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     }
     
     fileprivate func setupLoading() {
-        loadingView = LoadingView(frame: view.bounds, backgroundColor: .white)
+        loadingView = LoadingView(frame: view.bounds, backgroundColor: UIColor.pulseDarkGrey)
         view.addSubview(loadingView!)
         
-        loadingView?.addLongIcon(IconSizes.medium, _iconColor: UIColor.black, _iconBackgroundColor: nil)
-        loadingView?.addTextLogo()
+        loadingView?.addLongIcon(IconSizes.large, _iconColor: UIColor.white,
+                                 _iconBackgroundColor: UIColor.white.withAlphaComponent(0.2), _iconThickness: IconThickness.extraThick.rawValue)
+        loadingView?.addTextLogo(tintColor: .white)
         loadingView?.loadingDelegate = self
     }
     
@@ -245,6 +243,8 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
                                 animationControllerForTransitionFrom
                                 fromVC: UIViewController,
                                 to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        
+        guard isLoaded else { return nil }
         
         let fromVCIndex = tabBarController.viewControllers?.index(of: fromVC)
         let toVCIndex = tabBarController.viewControllers?.index(of: toVC)

@@ -66,9 +66,9 @@ class LoadingView: UIView {
         addMessage(_text)
     }
     
-    public func addTextLogo() {
+    public func addTextLogo(tintColor: UIColor = .black) {
         textLogo = UIImageView(image: UIImage(named: "pulse-logo-text"))
-        textLogo.tintColor = .black
+        textLogo.tintColor = tintColor
         addSubview(textLogo)
         
         textLogo.translatesAutoresizingMaskIntoConstraints = false
@@ -99,9 +99,14 @@ class LoadingView: UIView {
         iconManager.layoutIfNeeded()
     }
     
-    public func addLongIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?) {
+    public func addLongIcon(_ iconSize : IconSizes, _iconColor : UIColor, _iconBackgroundColor : UIColor?, _iconThickness: CGFloat = IconThickness.medium.rawValue) {
         let _iconSize = iconSize.rawValue
         iconManager = Icon(frame: CGRect(x: 0, y: 0, width: frame.width, height: _iconSize))
+        
+        if let _iconBackgroundColor = _iconBackgroundColor {
+            iconManager.drawIconBackground(_iconBackgroundColor, shadow: false)
+        }
+        
         addSubview(iconManager)
         
         iconManager.translatesAutoresizingMaskIntoConstraints = false
@@ -111,7 +116,7 @@ class LoadingView: UIView {
         iconManager.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         iconManager.layoutIfNeeded()
 
-        iconManager.drawLongIcon(_iconColor, iconThickness: IconThickness.medium.rawValue, tillEnd : true)
+        iconManager.drawLongIcon(_iconColor, iconThickness: _iconThickness, tillEnd : true)
 
     }
     
@@ -121,7 +126,7 @@ class LoadingView: UIView {
         refreshButton.translatesAutoresizingMaskIntoConstraints = false
         refreshButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         refreshButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        refreshButton.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        refreshButton.topAnchor.constraint(equalTo: iconManager.bottomAnchor, constant: Spacing.max.rawValue).isActive = true
         refreshButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         refreshButton.layoutIfNeeded()
         

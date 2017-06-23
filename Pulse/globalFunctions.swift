@@ -76,7 +76,6 @@ enum GlobalFunctions {
         UNUserNotificationCenter.current().requestAuthorization(
             options: authOptions,
             completionHandler: { success, _ in
-            print("should request for authorization")
             
             let defaults = UserDefaults.standard
             defaults.setValue(true, forKey: "askedNotificationPermission")

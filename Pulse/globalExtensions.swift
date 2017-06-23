@@ -10,11 +10,11 @@ import Foundation
 import UIKit
 
 extension UIColor {
-    static var iconColor: UIColor  { return UIColor( red: 255/255, green: 255/255, blue:255/255, alpha: 1.0 ) }
     static var iconBackgroundColor: UIColor  { return UIColor( red: 237/255, green: 19/255, blue:90/255, alpha: 1.0 ) }
     static var pulseBlue: UIColor  { return UIColor(red: 67/255, green: 217/255, blue: 253/255, alpha: 1.0) }
     static var pulseRed: UIColor  { return UIColor(red: 238/255, green: 49/255, blue: 93/255, alpha: 1.0) }
     static var pulseGrey: UIColor  { return UIColor(red: 233/255, green: 233/255, blue: 233/255, alpha: 1.0) }
+    static var pulseDarkGrey: UIColor  { return UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0) }
 }
 
 class PaddingLabel: UILabel {
@@ -104,6 +104,42 @@ extension UIView {
     
     func makeRound() {
         layer.cornerRadius = frame.width > frame.height ?  frame.height / 2 : frame.width / 2
+    }
+    
+    func shrinkDismiss(duration: Double = 0.3) {
+        let endFrame = CGRect(x: frame.width / 2 - 2, y: frame.height / 2 - 2,
+                              width: 4, height: 4)
+        
+        let maskPath : UIBezierPath = UIBezierPath(arcCenter: CGPoint(x: frame.midX, y: frame.midY), radius: frame.width / 2, startAngle: 0, endAngle: 180, clockwise: true)
+        let maskLayer = CAShapeLayer()
+        maskLayer.frame = frame
+        maskLayer.path = maskPath.cgPath
+        
+        let smallCirclePath = UIBezierPath(ovalIn: endFrame)
+        maskLayer.path = smallCirclePath.cgPath
+        layer.mask = maskLayer
+        
+        let pathAnimation = CABasicAnimation(keyPath: "path")
+        pathAnimation.fromValue = maskPath.cgPath
+        pathAnimation.toValue   = smallCirclePath
+        pathAnimation.duration  = duration
+        
+        let opacityAnimation = CABasicAnimation(keyPath:"opacity")
+        opacityAnimation.fromValue = 1.0
+        opacityAnimation.toValue = 0.3
+        opacityAnimation.duration = duration
+        
+        CATransaction.begin()
+        
+        CATransaction.setCompletionBlock {
+            self.isHidden = true
+            self.layer.mask = nil
+        }
+        
+        maskLayer.add(pathAnimation, forKey:"pathAnimation")
+        maskLayer.add(opacityAnimation, forKey:"opacityAnimation")
+        
+        CATransaction.commit()
     }
 }
 
@@ -405,7 +441,7 @@ enum IconThickness: CGFloat {
     case thin = 1.0
     case medium = 2.0
     case thick = 3.0
-    case extraThick = 5.0
+    case extraThick = 4.0
 }
 
 enum UserProfileUpdateType {
@@ -473,6 +509,18 @@ enum FontSizes: CGFloat {
     case headline = 20
     case headline2 = 30
     case mammoth = 40
+}
+
+enum ZoomDirection {
+    case LEFT_DOWN
+    case LEFT_UP
+    case RIGHT_DOWN
+    case RIGHT_UP
+}
+
+enum ZoomType {
+    case IN
+    case OUT
 }
 
 enum UserErrors: Error {
