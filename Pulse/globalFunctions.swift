@@ -171,7 +171,6 @@ enum GlobalFunctions {
     
     /** START: FORMAT TIME **/
     static func getFormattedTime(timeString : Date) -> String {
-        
         return getFormattedTime(timeString: timeString, style : .medium)
     }
     
@@ -366,6 +365,14 @@ enum GlobalFunctions {
         UIGraphicsEndImageContext()
         
         return newImage
+    }
+    
+    static func cropImage(image: UIImage?, toRect: CGRect) -> UIImage? {
+        if let image = image, let imageRef = image.cgImage!.cropping(to: toRect) {
+            return UIImage(cgImage: imageRef, scale: 0, orientation: image.imageOrientation)
+        }
+        
+        return nil
     }
     /** END: IMAGE FUNCTIONS **/
 }

@@ -118,7 +118,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         addBackButton()
         
         headerNav?.setNav(title: "Start a New Series", subtitle: selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
+        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
     }
     

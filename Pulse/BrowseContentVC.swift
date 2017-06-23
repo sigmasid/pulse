@@ -136,7 +136,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
             addBackButton()
             headerNav?.followScrollView(collectionView, delay: 25.0)
             headerNav?.setNav(title: selectedItem.tag?.itemTitle, subtitle: selectedItem.cTitle)
-            headerNav?.updateBackgroundImage(image: selectedChannel.cPreviewImage ?? selectedChannel.cThumbImage)
+            headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         } else {
             //was shown modally
             statusBarHidden = true

@@ -86,7 +86,7 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         addBackButton()
         
         headerNav?.setNav(title: "Start a New Thread", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
+        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
     }
     

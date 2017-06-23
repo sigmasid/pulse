@@ -74,7 +74,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         addBackButton()
         headerNav?.followScrollView(collectionView, delay: 25.0)
         headerNav?.setNav(title: selectedItem.itemTitle, subtitle: selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
+        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
     }
     
     fileprivate func setupLayout() {

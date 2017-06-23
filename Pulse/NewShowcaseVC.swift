@@ -83,7 +83,7 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
         addBackButton()
         
         headerNav?.setNav(title: "Invite to Showcase", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
+        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
     }
     

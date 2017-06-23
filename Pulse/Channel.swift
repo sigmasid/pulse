@@ -19,6 +19,7 @@ class Channel : NSObject {
     var contributors = [PulseUser]()
     var items = [Item]()
     
+    var cNavImage: UIImage?
     var cThumbImage : UIImage?
     var cPreviewImage : UIImage?
     
@@ -48,7 +49,7 @@ class Channel : NSObject {
             self.cDescription = _description
         }
         
-        if let _imageURL = snapshot.childSnapshot(forPath: "image").value as? String {
+        if let _imageURL = snapshot.childSnapshot(forPath: "url").value as? String {
             self.cImageURL = _imageURL
         }
         
@@ -89,6 +90,23 @@ class Channel : NSObject {
         PulseDatabase.createShareLink(item: self, linkString: "c/"+cID, completion: { link in
             completion(link)
         })
+    }
+    
+    func getNavImage() -> UIImage? {
+        guard cNavImage == nil else {
+            return cNavImage
+        }
+        
+        guard let image = cPreviewImage else {
+            return cThumbImage
+        }
+        
+        let cropRect = CGRect(x: 0, y: 30, width: image.size.width, height: 130)
+        let resizedImage = GlobalFunctions.resizeImage(image: image, newWidth: UIScreen.main.fixedCoordinateSpace.bounds.width * 1.2)
+        let croppedImage = GlobalFunctions.cropImage(image: resizedImage, toRect: cropRect)
+        cNavImage = GlobalFunctions.processImage(croppedImage)
+        
+        return cNavImage
     }
 
     override func isEqual(_ object: Any?) -> Bool {

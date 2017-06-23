@@ -243,7 +243,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         addBackButton()
 
         headerNav?.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
-        headerNav?.updateBackgroundImage(image: GlobalFunctions.processImage(selectedChannel.cPreviewImage))
+        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
+
         headerNav?.showNavbar(animated: true)
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }

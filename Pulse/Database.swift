@@ -1879,9 +1879,9 @@ class PulseDatabase {
         
         let user = PulseUser.currentUser
         
-        let post = ["cTitle": cTitle,
-                    "cDescription":cDescription,
-                    "fromUserName":PulseUser.currentUser.name ?? "",
+        let post = ["title": cTitle,
+                    "description":cDescription,
+                    "fromUserName":user.name ?? "",
                     "fromUserID":user.uID!]
         
         let newChannelRequestID = databaseRef.child("newChannelRequests").childByAutoId().key
@@ -1893,7 +1893,7 @@ class PulseDatabase {
         
         let combinedPost : [AnyHashable: Any] =
             ["newChannelRequests/\(newChannelRequestID)": post as AnyObject,
-             "users/\(user.uID!)/pendingRequests/\(newChannelRequestID)" : userPost]
+             "users/\(user.uID!)/sentRequests/\(newChannelRequestID)" : userPost]
 
         
         databaseRef.updateChildValues(combinedPost, withCompletionBlock: { (error, ref) in
