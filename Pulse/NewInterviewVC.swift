@@ -330,7 +330,7 @@ extension NewInterviewVC : UITableViewDelegate, UITableViewDataSource {
             
             cell.contentView.addSubview(addButton)
             cell.contentView.backgroundColor = UIColor.white
-            addButton.addTarget(self, action: #selector(userClickedMenu as (Void) -> Void), for: .touchUpInside)
+            addButton.addTarget(self, action: #selector(userClickedMenu as () -> Void), for: .touchUpInside)
 
             cell.textLabel?.text = "add interview questions"
             cell.textLabel?.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)

@@ -263,7 +263,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     open func addPreviewLayerToView(_ view: UIView, newCameraOutputMode: CameraOutputMode) -> CameraState {
         return addPreviewLayerToView(view, newCameraOutputMode: newCameraOutputMode, completition: nil)
     }
-    open func addPreviewLayerToView(_ view: UIView, newCameraOutputMode: CameraOutputMode, completition: ((Void) -> Void)?) -> CameraState {
+    open func addPreviewLayerToView(_ view: UIView, newCameraOutputMode: CameraOutputMode, completition: (() -> Void)?) -> CameraState {
         if _canLoadCamera() {
             if let _ = embeddingView {
                 if let validPreviewLayer = previewLayer {
@@ -881,7 +881,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         return currentCameraState == .ready || (currentCameraState == .notDetermined && showAccessPermissionPopupAutomatically)
     }
     
-    fileprivate func _setupCamera(_ completition: @escaping (Void) -> Void) {
+    fileprivate func _setupCamera(_ completition: @escaping () -> Void) {
         captureSession = AVCaptureSession()
         
         sessionQueue.async(execute: {[weak self] in

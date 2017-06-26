@@ -52,22 +52,22 @@ open class PulseButton: UIButton {
     open var upRect : CGRect!
 
     /** A CGFLoat representing the opacity of the shadow of RAISED buttons when they are lowered (idle). Default is 0.5. */
-    @IBInspectable var loweredShadowOpacity : CGFloat!
+    var loweredShadowOpacity : CGFloat!
     
     /** A CGFLoat representing the radius of the shadow of RAISED buttons when they are lowered (idle). Default is 1.5f. */
-    @IBInspectable var loweredShadowRadius : CGFloat!
+    var loweredShadowRadius : CGFloat!
     
     /** A CGSize representing the offset of the shadow of RAISED buttons when they are lowered (idle). Default is (0, 1). */
-    @IBInspectable var loweredShadowOffset : CGSize!
+    var loweredShadowOffset : CGSize!
     
     /** A CGFLoat representing the opacity of the shadow of RAISED buttons when they are lifted (on touch down). Default is 0.5f. */
-    @IBInspectable var liftedShadowOpacity : CGFloat!
+    var liftedShadowOpacity : CGFloat!
     
     /** A CGFLoat representing the radius of the shadow of RAISED buttons when they are lifted (on touch down). Default is 4.5f. */
-    @IBInspectable var liftedShadowRadius : CGFloat!
+    var liftedShadowRadius : CGFloat!
     
     /** A CGSize representing the offset of the shadow of RAISED buttons when they are lifted (on touch down). Default is (2, 4). */
-    @IBInspectable var liftedShadowOffset : CGSize!
+    var liftedShadowOffset : CGSize!
     
     /** The UIColor for the shadow of a raised button. An alpha value of 1 is recommended as shadowOpacity overwrites the alpha of this color. */
     @IBInspectable var shadowColor : UIColor!
