@@ -28,7 +28,6 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     public var selectedChannel : Channel!
     
     private var collectionView : UICollectionView!
-    internal var tagCount = 10
     let collectionReuseIdentifier = "thumbCell"
     
     ///setup order: first profile image + bio labels, then buttons + scope bar
@@ -73,12 +72,12 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
         let visiblePaths = collectionView.indexPathsForVisibleItems
         for indexPath in visiblePaths {
             let cell = collectionView.cellForItem(at: indexPath) as! HeaderCell
-            updateCell(cell, inCollectionView: collectionView, atIndexPath: indexPath)
+            updateCell(cell, atIndexPath: indexPath)
         }
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    internal func updateCell(_ cell: HeaderCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
+    internal func updateCell(_ cell: HeaderCell, atIndexPath indexPath: IndexPath) {
         if items[indexPath.row].itemCreated {
             let currentItem = items[indexPath.row]
             cell.updateCell(currentItem.itemTitle.capitalized, _image : currentItem.content as? UIImage)
@@ -126,7 +125,7 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: frame.width / 4.5,
+        return CGSize(width: frame.width / 4,
                       height: IconSizes.medium.rawValue + Spacing.m.rawValue)
     }
     

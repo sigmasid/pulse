@@ -223,7 +223,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 })
             }
         })
-        
+
         startUpdateAt = endUpdateAt
         endUpdateAt = Calendar.current.date(byAdding: .day, value: updateIncrement, to: startUpdateAt)!
     }

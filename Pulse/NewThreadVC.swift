@@ -36,6 +36,9 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     //Deinit check
     fileprivate var cleanupComplete = false
     
+    //Loading icon on Button
+    fileprivate var loading : UIView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -93,7 +96,7 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     internal func handleSubmit() {
         guard PulseUser.isLoggedIn() else { return }
         
-        let loading = submitButton.addLoadingIndicator()
+        loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
         let itemKey = databaseRef.child("items").childByAutoId().key
@@ -106,24 +109,30 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         item.contentType = contentType
         item.cID = selectedChannel.cID
         
+        if let capturedImage = self.capturedImage {
+            PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .cover, completion: {[weak self] (metadata, error) in
+                guard let `self` = self else { return }
+                
+                item.contentURL = metadata?.downloadURL()
+                self.addThreadToDatabase(item: item)
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .thumb, completion: {_ in })
+            })
+        } else {
+            self.addThreadToDatabase(item: item)
+        }
+    }
+    
+    internal func addThreadToDatabase(item: Item) {
         PulseDatabase.addThread(channelID: selectedChannel.cID, parentItem: selectedItem, item: item, completion: {[weak self] success, error in
             guard let `self` = self else { return }
-            if success, let capturedImage = self.capturedImage {
-                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .content, completion: {[weak self] (success, error) in
-                    guard let `self` = self else { return }
-                    success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
-                    loading.removeFromSuperview()
-                    self.submitButton.setEnabled()
-                })
-                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .thumb, completion: {(success, error) in
-                    loading.removeFromSuperview()
-                })
-            } else {
-                loading.removeFromSuperview()
-                self.showErrorMenu(error: error!)
-                self.submitButton.setEnabled()
+            
+            success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
+            if self.loading != nil {
+                self.loading.removeFromSuperview()
             }
+            self.submitButton.setEnabled()
         })
+        
     }
     
     internal func showSuccessMenu() {

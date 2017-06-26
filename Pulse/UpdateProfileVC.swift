@@ -48,6 +48,14 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         updateHeader()
     }
     
+    deinit {
+        print("update profile deinit called")
+        settingsTable.delegate = nil
+        settingsTable.removeFromSuperview()
+        options.removeAll()
+        location = nil
+    }
+    
     fileprivate func updateHeader() {
         addBackButton()
         headerNav?.setNav(title: "Update Profile")
@@ -264,7 +272,8 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     fileprivate func getLocationOrPlaceholder() {
-        PulseUser.currentUser.getLocation(completion: {(city) in
+        PulseUser.currentUser.getLocation(completion: {[weak self] (city) in
+            guard let `self` = self else { return }
             if let city = city {
                 self.shortTextField.text = city
             } else if let _placeholder = self._currentSetting.placeholder {
@@ -293,7 +302,9 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     open func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {(placemarks, error)-> Void in
+        CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {[weak self] (placemarks, error)-> Void in
+            guard let `self` = self else { return }
+
             if (error != nil) {
                 return
             }
@@ -322,7 +333,9 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         case .birthday:
             let _birthday = shortTextField.text
             addStatusLabel()
-            PulseDatabase.updateUserProfile(_currentSetting, newValue: _birthday!, completion: {(success, error) in
+            PulseDatabase.updateUserProfile(_currentSetting, newValue: _birthday!, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+
                 if success {
                     self.statusLabel.text = "Profile Updated!"
                     self.goBack()
@@ -335,7 +348,9 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         case .bio, .shortBio:
             let _bio = longTextField.text
             addStatusLabel()
-            PulseDatabase.updateUserProfile(_currentSetting, newValue: _bio!, completion: {(success, error) in
+            PulseDatabase.updateUserProfile(_currentSetting, newValue: _bio!, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+
                 if success {
                     self.statusLabel.text = "Profile Updated!"
                     self.goBack()
@@ -349,11 +364,13 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             let _name = shortTextField.text
             addStatusLabel()
 
-            GlobalFunctions.validateName(_name, completion: {(verified, error) in
+            GlobalFunctions.validateName(_name, completion: {[unowned self] (verified, error) in
                 if !verified {
                     self.statusLabel.text = error?.localizedDescription
                 } else {
-                    PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: _name!, completion: { (success, error) in
+                    PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: _name!, completion: {[weak self] (success, error) in
+                        guard let `self` = self else { return }
+
                         if success {
                             self.statusLabel.text = "Profile Updated!"
                             self.goBack()
@@ -369,11 +386,14 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             let _email = shortTextField.text
             addStatusLabel()
             
-            GlobalFunctions.validateEmail(_email, completion: {(verified, error) in
+            GlobalFunctions.validateEmail(_email, completion: {[unowned self] (verified, error) in
+
                 if !verified {
                     self.statusLabel.text = error?.localizedDescription
                 } else {
-                    PulseDatabase.updateUserProfile(self._currentSetting, newValue: _email!, completion: {(success, error) in
+                    PulseDatabase.updateUserProfile(self._currentSetting, newValue: _email!, completion: {[weak self] (success, error) in
+                        guard let `self` = self else { return }
+
                         if success {
                             self.statusLabel.text = "Profile Updated!"
                             self.goBack()
@@ -389,11 +409,13 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             let _password = shortTextField.text
             addStatusLabel()
             
-            GlobalFunctions.validatePassword(_password, completion: {(verified, error) in
+            GlobalFunctions.validatePassword(_password, completion: {[unowned self] (verified, error) in
                 if !verified {
                     self.statusLabel.text = error?.localizedDescription
                 } else {
-                    PulseDatabase.updateUserProfile(self._currentSetting, newValue: _password!, completion: {(success, error) in
+                    PulseDatabase.updateUserProfile(self._currentSetting, newValue: _password!, completion: {[weak self] (success, error) in
+                        guard let `self` = self else { return }
+
                         if success {
                             self.statusLabel.text = "Profile Updated!"
                             self.goBack()
@@ -410,7 +432,9 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             let _gender = shortTextField.text
             addStatusLabel()
             
-            PulseDatabase.updateUserProfile(self._currentSetting, newValue: _gender!, completion: {(success, error) in
+            PulseDatabase.updateUserProfile(self._currentSetting, newValue: _gender!, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+
                 if success {
                     self.statusLabel.text = "Profile Updated!"
                     self.goBack()
@@ -424,7 +448,9 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             
         case .location:
             if let location = location {
-                PulseDatabase.updateUserLocation(newValue: location, completion: {(success, error) in
+                PulseDatabase.updateUserLocation(newValue: location, completion: {[weak self] (success, error) in
+                    guard let `self` = self else { return }
+
                     if success {
                         self.statusLabel.text = "Profile Updated!"
                         self.goBack()
@@ -439,7 +465,9 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             else if let _location = shortTextField.text {
                 addStatusLabel()
                 
-                PulseDatabase.updateUserProfile(self._currentSetting, newValue: _location, completion: {(success, error) in
+                PulseDatabase.updateUserProfile(self._currentSetting, newValue: _location, completion: {[weak self] (success, error) in
+                    guard let `self` = self else { return }
+
                     if success {
                         self.statusLabel.text = "Profile Updated!"
                         self.goBack()

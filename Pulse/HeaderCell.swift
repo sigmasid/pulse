@@ -11,6 +11,7 @@ import UIKit
 class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var previewButton = PulseButton(size: .medium, type: .blank, isRound: true, background: .white, tint: .clear)
+    fileprivate var titleHeightAnchor: NSLayoutConstraint!
     
     public weak var delegate : SelectionDelegate!
     
@@ -31,6 +32,10 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     }
     
     func updateCell(_ _title : String?, _image : UIImage?) {
+        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
+        let titleLabelHeight = GlobalFunctions.getLabelSize(title: _title ?? "", width: titleLabel.frame.width, fontAttributes: fontAttributes)
+        titleHeightAnchor.constant = titleLabelHeight
+        
         titleLabel.text = _title
         previewButton.setImage(_image, for: .normal)
     }
@@ -72,17 +77,18 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
         previewButton.addTarget(self, action: #selector(clickedSelect), for: .touchUpInside)
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.centerXAnchor.constraint(equalTo: previewButton.centerXAnchor).isActive = true
-        titleLabel.widthAnchor.constraint(equalTo: previewButton.widthAnchor).isActive = true
+        titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         titleLabel.topAnchor.constraint(equalTo: previewButton.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
         titleLabel.layoutIfNeeded()
         titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .black, alignment: .center)
 
         let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
-        let titleLabelHeight = GlobalFunctions.getLabelSize(title: "Very Long Name", width: titleLabel.frame.width, fontAttributes: fontAttributes)
-        titleLabel.heightAnchor.constraint(equalToConstant: titleLabelHeight).isActive = true
+        let titleLabelHeight = GlobalFunctions.getLabelSize(title: "Very Long Name That Goes Forever", width: titleLabel.frame.width, fontAttributes: fontAttributes)
+        titleHeightAnchor = titleLabel.heightAnchor.constraint(equalToConstant: titleLabelHeight)
+        titleHeightAnchor.isActive = true
         
-        titleLabel.numberOfLines = 0
+        titleLabel.numberOfLines = 2
         titleLabel.lineBreakMode = .byTruncatingTail
     }
 }

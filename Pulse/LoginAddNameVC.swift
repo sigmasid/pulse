@@ -140,11 +140,10 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
     }
     
     func doneRecording(isCapturing: Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image, cameraVC != nil else { return }
-        let imageData = image.mediumQualityJPEGNSData
+        guard let image = image, let squareImage = image.getSquareImage(newWidth: 375), cameraVC != nil else { return }
         
         self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
-        PulseDatabase.uploadProfileImage(imageData, completion: {(URL, error) in
+        PulseDatabase.uploadProfileImage(squareImage, completion: {(URL, error) in
             if error == nil {
                 UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
                                completion: {(value: Bool) in
@@ -153,8 +152,8 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
                 })
                 
                 DispatchQueue.main.async(execute: {
-                    self.profilePicButton.setImage(image, for: UIControlState())
-                    self.profilePicButton.contentMode = .scaleAspectFit
+                    self.profilePicButton.setImage(squareImage, for: UIControlState())
+                    self.profilePicButton.contentMode = .scaleAspectFill
                     self.profilePicButton.setTitle("", for: UIControlState())
                 })
             }
@@ -186,15 +185,14 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
         picker.dismiss(animated: true, completion: nil)
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
         
-        if mediaType.isEqual(to: kUTTypeImage as String) {
-            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
-            
-            PulseDatabase.uploadProfileImage(pickedImage.highQualityJPEGNSData, completion: {(URL, error) in
+        let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+        
+        if let squareImage = pickedImage.getSquareImage(newWidth: 375) {
+            PulseDatabase.uploadProfileImage(squareImage, completion: {(URL, error) in
                 if error != nil {
                     self.cameraVC.toggleLoading(show: false, message: nil)
                 } else {
@@ -202,6 +200,12 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
                                    completion: {(value: Bool) in
                                     self.cameraVC.toggleLoading(show: false, message: nil)
                                     self.cameraVC.dismiss(animated: true, completion: nil)
+                    })
+                    
+                    DispatchQueue.main.async(execute: {
+                        self.profilePicButton.setImage(squareImage, for: UIControlState())
+                        self.profilePicButton.contentMode = .scaleAspectFill
+                        self.profilePicButton.setTitle("", for: UIControlState())
                     })
                 }
             })

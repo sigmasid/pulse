@@ -230,11 +230,36 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         centerIndex = Int(self.contentOffset / self.pageWidth)
+        updateOnscreenRows()
     }
     
     func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
         if animationsCount - 1 == 0 {
             collectionView.isUserInteractionEnabled = true
         }
+    }
+    
+    //reload data isn't called on existing cells so this makes sure visible cells always have data in them
+    func updateQuickBrowseCell(_ cell: QuickBrowseCell, atIndexPath indexPath: IndexPath) {
+        if let user = allItems[indexPath.row].user  {
+            cell.updateLabel(user.name?.capitalized)
+        }
+        
+        if let image = allItems[indexPath.row].content as? UIImage {
+            cell.updateImage(image: image)
+        }
+    }
+    
+    func updateOnscreenRows() {
+        if let visiblePaths = collectionView?.indexPathsForVisibleItems {
+            for indexPath in visiblePaths {
+                let cell = collectionView?.cellForItem(at: indexPath) as! QuickBrowseCell
+                updateQuickBrowseCell(cell, atIndexPath: indexPath)
+            }
+        }
+    }
+    
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { updateOnscreenRows() }
     }
 }

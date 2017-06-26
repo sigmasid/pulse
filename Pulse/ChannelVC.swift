@@ -165,7 +165,11 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
                 self.getMoreChannelItems(completion: { success in completion(success) })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
-                self.footerMessage = "that's the end!"
+                if self.allItems.isEmpty {
+                    self.footerMessage = "check back soon for new content!"
+                } else {
+                    self.footerMessage = "that's the end!"
+                }
                 self.hasReachedEnd = true
                 completion(false)
             } else {
@@ -189,9 +193,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
                 })
             }
         })
-        
         self.startUpdateAt = self.endUpdateAt
-        self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
+        self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!        
     }
     
     //Once the channel is set and pulled from database -> reload the datasource for collection view
@@ -241,12 +244,30 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     /** HEADER FUNCTIONS **/
     fileprivate func updateHeader() {
         addBackButton()
+        updateChannelImage()
 
         headerNav?.setNav(title: selectedChannel.cTitle ?? "Explore Channel")
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
-
         headerNav?.showNavbar(animated: true)
         headerNav?.followScrollView(collectionView, delay: 25.0)
+    }
+    
+    fileprivate func updateChannelImage() {
+        if selectedChannel.cPreviewImage != nil {
+            headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
+        } else if let stringURL = selectedChannel.cImageURL, let url = URL(string: stringURL) {
+            DispatchQueue.global().async {
+                if let channelImage = try? Data(contentsOf: url) {
+                    self.selectedChannel.cPreviewImage = UIImage(data: channelImage)
+                    DispatchQueue.main.async {
+                        self.headerNav?.updateBackgroundImage(image: self.selectedChannel.getNavImage())
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self.headerNav?.updateBackgroundImage(image: nil)
+                    }
+                }
+            }
+        }
     }
     
     internal func setupSubscribe() {
@@ -539,7 +560,8 @@ extension ChannelVC {
             })
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.toggleLoading(show: false, message: nil)
         }))
@@ -552,13 +574,21 @@ extension ChannelVC {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         //all users can browse the featured contributors
-        menu.addAction(UIAlertAction(title: "featured Contributors", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "meet Contributors", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             let browseContributorsVC = BrowseUsersVC()
             browseContributorsVC.selectedChannel = self.selectedChannel
             browseContributorsVC.delegate = self
             
             self.navigationController?.pushViewController(browseContributorsVC, animated: true)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "become Contributor", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            let becomeContributorVC = BecomeContributorVC()
+            becomeContributorVC.selectedChannel = self.selectedChannel
+            
+            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
         }))
         
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
@@ -570,7 +600,8 @@ extension ChannelVC {
             })
         }))
         
-        menu.addAction(UIAlertAction(title: isSubscribed ? "unsubscribe" : "subscribe", style: .destructive, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: isSubscribed ? "unsubscribe" : "subscribe", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.subscribeChannel(channel: self.selectedChannel, completion: {(success, error) in
                 menu.dismiss(animated: true, completion: nil)
             })
@@ -907,6 +938,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             case 1:
                 footerView.backgroundColor = UIColor.white
                 footerView.updateLabel(footerMessage)
+                footerView.addLoadingIndicator(hide: false)
             default:
                 break
             }
@@ -922,7 +954,7 @@ extension ChannelVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         switch section {
         case 0:
-            return CGSize(width: collectionView.frame.width, height: skinnyHeaderHeight)
+            return CGSize(width: collectionView.frame.width, height: selectedChannel.tags.count > 0 ? skinnyHeaderHeight : 0)
         case 1:
             return CGSize(width: collectionView.frame.width, height: 0)
         default:
@@ -940,16 +972,16 @@ extension ChannelVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: Spacing.xs.rawValue, right: 0.0)
+        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: selectedChannel.tags.count > 0 ? Spacing.xs.rawValue : 0, right: 0.0)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         switch indexPath.section {
         case 0:
-            return CGSize(width: collectionView.frame.width, height: headerSectionHeight)
+            return CGSize(width: collectionView.frame.width, height: selectedChannel.tags.count > 0 ? headerSectionHeight : 0)
         case 1:
             let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
-            return CGSize(width: collectionView.frame.width, height: cellHeight)
+            return CGSize(width: collectionView.frame.width, height: selectedChannel.tags.count > 0 ? cellHeight : 0)
         default:
             return CGSize(width: collectionView.frame.width, height: 0)
         }

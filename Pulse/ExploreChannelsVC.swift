@@ -12,7 +12,7 @@ protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
 }
 
-class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate, BrowseContentDelegate {
+class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate, BrowseContentDelegate, HeaderDelegate {
     public weak var tabDelegate : MasterTabDelegate!
 
     // Set by MasterTabVC
@@ -41,6 +41,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     fileprivate var handledLink = false
     
     override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         if !isLayoutSetup {
             toggleLoading(show: true, message: "Loading...", showIcon: true)
             setupScreenLayout()
@@ -78,6 +79,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
             channelCollection = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
             let _ = PulseFlowLayout.configureLayout(collectionView: channelCollection, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
             channelCollection.register(ExploreChannelsCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+            channelCollection.register(ItemHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
             
             view.addSubview(channelCollection)
 
@@ -88,16 +90,17 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     }
     
     fileprivate func updateHeader() {
+        //headerNav?.followScrollView(channelCollection, delay: 25.0)
 
         if !forUser {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
-            tabBarHidden = false
+            tabBarHidden = false            
             
             menuButton.removeShadow()
-            menuButton.addTarget(self, action: #selector(menuButtonClicked), for: .touchUpInside)
+            menuButton.addTarget(self, action: #selector(clickedHeaderMenu), for: .touchUpInside)
             navigationItem.rightBarButtonItem = UIBarButtonItem(customView: menuButton)
             
-            headerNav?.setNav(title: "Explore Channels")
+            headerNav?.setNav(title: "Explore")
             headerNav?.updateBackgroundImage(image: nil)
         } else {
             addBackButton()
@@ -120,21 +123,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         }
     }
     
-    internal func menuButtonClicked() {
-        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "start a Channel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.startChannel()
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {(action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
     internal func updateDataSource() {
         if !isLayoutSetup {
             setupScreenLayout()
@@ -144,6 +132,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         channelCollection.dataSource = self
         channelCollection.reloadData()
         channelCollection.layoutIfNeeded()
+        toggleLoading(show: false, message: nil)
     }
     
     internal func userClickedSearch() {
@@ -276,6 +265,21 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         let newChannelVC = NewChannelVC()
         navigationController?.pushViewController(newChannelVC, animated: true)
     }
+    
+    internal func clickedHeaderMenu() {
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "start a Channel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            self.startChannel()
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {(action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
 }
 
 extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelegate {
@@ -324,17 +328,34 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
         showChannel(channel: allChannels[indexPath.row])
-        
     }
+    
+    /**
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        
+        switch kind {
+        case UICollectionElementKindSectionHeader:
+            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
+            headerView.backgroundColor = .white
+            headerView.delegate = self
+            headerView.updateLabel("featured channels")
+            
+            return headerView
+            
+        default: assert(false, "Unexpected element kind")
+        }
+        return UICollectionReusableView()
+    } **/
     
     internal func updateOnscreenRows() {
         if channelCollection != nil {
             let visiblePaths = channelCollection.indexPathsForVisibleItems
             for indexPath in visiblePaths {
                 if let cell = channelCollection.cellForItem(at: indexPath) as? ExploreChannelsCell, PulseUser.isLoggedIn() {
-                    PulseUser.currentUser.isSubscribedToChannel(cID: allChannels[indexPath.row].cID) ? cell.updateSubscribe(type: .unfollow, tag: indexPath.row) : cell.updateSubscribe(type: .follow, tag: indexPath.row)
+                    PulseUser.currentUser.isSubscribedToChannel(cID: allChannels[indexPath.row].cID) ?
+                        cell.updateSubscribe(type: .unfollow, tag: indexPath.row) :
+                        cell.updateSubscribe(type: .follow, tag: indexPath.row)
                 }
             }
         }
@@ -347,7 +368,12 @@ extension ExploreChannelsVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 10.0, left: 10.0, bottom: 1.0, right: 10.0)
+        return UIEdgeInsets(top: 10.0, left: 10.0, bottom: (tabBarController?.tabBar.frame.height ?? 0), right: 10.0)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return CGSize(width: collectionView.frame.width, height: 0)
+        //return CGSize(width: collectionView.frame.width, height: !forUser ? skinnyHeaderHeight : 0)
     }
 }
 
@@ -485,8 +511,12 @@ extension ExploreChannelsVC {
     internal func showConfirmationMenu(status: Bool, inviteID: String) {
         PulseDatabase.updateContributorInvite(status: status, inviteID: inviteID, completion: { success, error in
             success ?
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "All Set!", erMessage: "You have been confirmed as a contributor - get started & start creating!", buttonTitle: "done") :
-                GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite", erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
+                GlobalFunctions.showAlertBlock(viewController: self,
+                                               erTitle: "All Set!",
+                                               erMessage: "You have been confirmed as a contributor - get started & start creating!",
+                                               buttonTitle: "done") :
+                GlobalFunctions.showAlertBlock("Uh Oh! Error Accepting Invite",
+                                               erMessage: "Sorry we encountered an error. Please try again or send us a message so we get this corrected for you!")
         })
     }
 }

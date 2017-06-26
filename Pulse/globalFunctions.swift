@@ -354,8 +354,28 @@ enum GlobalFunctions {
         }
     }
     
-    static func resizeImage(image: UIImage, newWidth: CGFloat) -> UIImage? {
+    static func getSquareImage(image: UIImage, newWidth: CGFloat) -> UIImage? {
+        var cropRect: CGRect!
         
+        if image.size.height > image.size.width, let returnImage = image.resizeImage(newWidth: newWidth) {
+            cropRect = CGRect(x: 0, y: (returnImage.size.height / 2) - (newWidth / 2), width: newWidth, height: newWidth)
+            return returnImage.cropImage(toRect: cropRect)
+        } else if image.size.width > image.size.height {
+            let scale = image.size.width / image.size.height
+            if let returnImage = image.resizeImage(newWidth: newWidth * scale) {
+                cropRect = CGRect(x: returnImage.size.width / 2 - newWidth / 2, y: 0, width: newWidth, height: newWidth)
+                return returnImage.cropImage(toRect: cropRect)
+            } else {
+                return nil
+            }
+        } else if image.size.height == image.size.width {
+            return image.resizeImage(newWidth: newWidth)
+        } else {
+            return nil
+        }
+    }
+    
+    static func resizeImage(image: UIImage, newWidth: CGFloat) -> UIImage? {
         let scale = newWidth / image.size.width
         let newHeight = image.size.height * scale
         UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
@@ -368,7 +388,9 @@ enum GlobalFunctions {
     }
     
     static func cropImage(image: UIImage?, toRect: CGRect) -> UIImage? {
-        if let image = image, let imageRef = image.cgImage!.cropping(to: toRect) {
+        guard let image = image else { return nil }
+        
+        if let imageRef = image.cgImage!.cropping(to: toRect) {
             return UIImage(cgImage: imageRef, scale: 0, orientation: image.imageOrientation)
         }
         

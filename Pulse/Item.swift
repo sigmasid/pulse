@@ -44,6 +44,7 @@ enum ItemTypes: String {
 enum FileTypes: String {
     case content
     case thumb
+    case cover
 }
 
 class Item: NSObject {
@@ -198,7 +199,7 @@ class Item: NSObject {
     }
     
     internal func shouldGetBrowseImage() -> Bool {
-        return type == .interview
+        return type == .interview || type == .posts || type == .showcases
     }
     
     internal func childActionType() -> String {

@@ -262,16 +262,14 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             }
         }
         
+        let hasUserImage = !selectedItem.shouldGetBrowseImage() && allItems[indexPath.row].user?.thumbPicImage != nil
+        
         //Already fetched this item
-        if allItems[indexPath.row].itemCreated, let user = allItems[indexPath.row].user  {
+        if allItems[indexPath.row].itemCreated, let user = allItems[indexPath.row].user, hasUserImage  {
             
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
-            
-            if let image = user.thumbPicImage, !selectedItem.shouldGetBrowseImage() {
-                
-                cell.updateImage(image: image)
+            cell.updateImage(image: user.thumbPicImage)
 
-            }
 
         } else if itemStack[indexPath.row].gettingInfoForPreview {
             

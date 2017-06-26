@@ -80,7 +80,7 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
         cell.tag = indexPath.row
         
         let channel = channels[indexPath.row]
-        cell.updateCell(channel.cTitle?.capitalized, _image : channel.cThumbImage)
+        cell.updateCell(channel.cTitle, _image : channel.cThumbImage)
         
         if channel.cThumbImage == nil {
             PulseDatabase.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] data, error in
@@ -89,7 +89,7 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateCell(channel.cTitle?.capitalized, _image : UIImage(data: data))
+                            cell.updateCell(channel.cTitle, _image : UIImage(data: data))
                         }
                     }
                 }
@@ -106,7 +106,7 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: frame.width / 4.5,
+        return CGSize(width: frame.width / 4,
                       height: IconSizes.medium.rawValue + Spacing.m.rawValue)
     }
     

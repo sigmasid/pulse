@@ -297,7 +297,6 @@ extension UIButton {
     func addLoadingIndicator(color: UIColor = UIColor.white) -> UIView {
         let _loadingIndicatorFrame = CGRect(x: 5, y: 0, width: self.frame.height, height: self.frame.height)
         let _loadingIndicator = LoadingIndicatorView(frame: _loadingIndicatorFrame, color: color)
-
         self.addSubview(_loadingIndicator)
         return _loadingIndicator
     }
@@ -394,6 +393,47 @@ extension UIImage
         image = UIGraphicsGetImageFromCurrentImageContext()!
         UIGraphicsEndImageContext()
         return image
+    }
+    
+    func getSquareImage(newWidth: CGFloat) -> UIImage? {
+        var cropRect: CGRect!
+        
+        if size.height > size.width, let returnImage = resizeImage(newWidth: newWidth) {
+            cropRect = CGRect(x: 0, y: (returnImage.size.height / 2) - (newWidth / 2), width: newWidth, height: newWidth)
+            return returnImage.cropImage(toRect: cropRect)
+        } else if size.width > size.height {
+            let scale = size.width / size.height
+            if let returnImage = resizeImage(newWidth: newWidth * scale) {
+                cropRect = CGRect(x: returnImage.size.width / 2 - newWidth / 2, y: 0, width: newWidth, height: newWidth)
+                return returnImage.cropImage(toRect: cropRect)
+            } else {
+                return nil
+            }
+        } else if size.height == size.width {
+            return resizeImage(newWidth: newWidth)
+        } else {
+            return nil
+        }
+    }
+    
+    func resizeImage(newWidth: CGFloat) -> UIImage? {
+        let scale = newWidth / size.width
+        let newHeight = size.height * scale
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
+        draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage
+    }
+    
+    func cropImage(toRect: CGRect) -> UIImage? {
+        if let imageRef = cgImage!.cropping(to: toRect) {
+            return UIImage(cgImage: imageRef, scale: 0, orientation: imageOrientation)
+        }
+        
+        return nil
     }
 }
 

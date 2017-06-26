@@ -225,7 +225,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     /* user finished recording video or image - send to user recorded answer to add more or post */
     func doneRecording(isCapturing: Bool, url assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
         if isAddingCover {
-            recordedItems.first?.content = image
+            recordedItems.first?.content = image?.getSquareImage(newWidth: 600)
         } else {
             //in case parent provides key for first item use that (interview case) else create a new key. After creation marks the createdItemKey as nil
             let itemKey = createdItemKey != nil ? createdItemKey! : databaseRef.child("items").childByAutoId().key
@@ -477,7 +477,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         
         if mediaType.isEqual(to: kUTTypeImage as String) {
             
-            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+            let pickedImage = isAddingCover ?
+                info[UIImagePickerControllerEditedImage] as? UIImage :
+                info[UIImagePickerControllerOriginalImage] as? UIImage
+            
             doneRecording(isCapturing: false, url: nil, image: pickedImage, location: nil, assetType: .albumImage)
             // Media is an image
 

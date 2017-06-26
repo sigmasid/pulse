@@ -262,14 +262,18 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                                               message: "Would you like to add a cover image? Cover images help content stand out.",
                                               preferredStyle: .actionSheet)
         
-        confirmPostMenu.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: { (action: UIAlertAction!) in
+        confirmPostMenu.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+
             if let delegate = self.delegate {
                 delegate.addMoreItems(self, recordedItems: self.recordedItems, isCover : true)
                 self.controlsOverlay.getButton(.post).isEnabled = false
             }
         }))
         
-        confirmPostMenu.addAction(UIAlertAction(title: "continue Posting", style: .destructive, handler: { (action: UIAlertAction!) in
+        confirmPostMenu.addAction(UIAlertAction(title: "continue Posting", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+
             self.controlsOverlay.addProgressLabel("Posting...")
             self.controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
             self.uploadItems(allItems: self.recordedItems)
@@ -294,31 +298,36 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         guard let contentType = item.contentType else { return }
         
         if let _image = item.content as? UIImage  {
-            PulseDatabase.uploadThumbImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, completion: { (success, error) in } )
+            let itemType : FileTypes!
+            if item.itemID == allItems.first?.itemID, item.needsCover() {
+                itemType = .cover
+            } else {
+                itemType = .thumb
+            }
+            PulseDatabase.uploadImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, fileType: itemType, completion: { _ in } )
         }
         
         if contentType == .recordedVideo || contentType == .albumVideo {
-            uploadVideo(item, completion: {(success, _itemID) in
+            uploadVideo(item, completion: {[weak self] (success, _itemID) in
+                guard let `self` = self else { return }
+
                 self.itemCollectionPost[item.itemID] = item.type.rawValue
                 allItems.removeLast()
                 self.uploadItems(allItems: allItems)
             })
         }
         else if contentType == .recordedImage || contentType == .albumImage, let _image = item.content as? UIImage {
-            let path = storageRef.child("channels").child(selectedChannelID).child(item.itemID).child("content")
             
-            let data = PulseDatabase.resizeImageHeight(_image, newHeight: min(UIScreen.main.bounds.height, _image.size.height)) ?? _image.mediumQualityJPEGNSData
-                
-            let _metadata = StorageMetadata()
-            _metadata.contentType = "image/jpeg"
-            
-            uploadTask = path.putData(data, metadata: _metadata) { metadata, error in
+            PulseDatabase.uploadImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, fileType: .content, completion: {[weak self] metadata, error in
+                guard let `self` = self else { return }
+
                 if (error != nil) {
                     GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                 } else {
                     item.contentURL = metadata?.downloadURL()
                     
-                    PulseDatabase.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
+                    PulseDatabase.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {[weak self] (success, error) in
+                        guard let `self` = self else { return }
                         if !success {
                             GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                         } else {
@@ -328,7 +337,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                         }
                     })
                 }
-            }
+            })
         }
     }
     
@@ -353,15 +362,20 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             do {
                 let assetData = try Data(contentsOf: localFile)
                 
-                uploadTask = path.putData(assetData, metadata: metadata) { metadata, error in
+                uploadTask = path.putData(assetData, metadata: metadata) {[weak self] metadata, error in
+                    guard let `self` = self else { return }
+
                     if (error != nil) {
                         GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Posting Item", erMessage: error!.localizedDescription)
                     } else {
                         // Metadata contains file metadata such as size, content-type, and download URL. This aURL was causing issues w/ upload
                         item.contentURL = metadata?.downloadURL()
-                        PulseDatabase.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {(success, error) in
+                        PulseDatabase.addItemToDatabase(item, channelID: self.selectedChannelID, completion: {[weak self] (success, error) in
+                            guard let `self` = self else { return }
+
                             if !success {
                                 GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
+                                self.uploadTask.removeAllObservers()
                                 completion(false, nil)
                             } else {
                                 self.uploadTask.removeAllObservers()
@@ -373,7 +387,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             }
             catch { }
             
-            uploadTask.observe(.progress) { snapshot in
+            uploadTask.observe(.progress) {[unowned self] snapshot in
                 if fileSize > 0 {
                     let percentComplete = Float(snapshot.progress!.completedUnitCount) / Float(fileSize)
                     DispatchQueue.main.async {
@@ -390,7 +404,9 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                                              parentItem: parentItem,
                                              channelID: selectedChannelID,
                                              post: itemCollectionPost,
-                                             completion: {(success, error) in
+                                             completion: {[weak self] (success, error) in
+            guard let `self` = self else { return }
+
             if let delegate = self.delegate {
                 self.itemCollectionPost.removeAll()
                 self.recordedItems.removeAll()
@@ -420,7 +436,9 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate func _saveVideoToAlbum(_ url: URL) {
         let _ = PHPhotoLibrary.shared().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-        }, completionHandler: { success, error in
+        }, completionHandler: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
                 DispatchQueue.main.async {
                     self.controlsOverlay.hideProgressLabel("Saved video!")
@@ -437,7 +455,9 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate func _saveImageToAlbum(_ image: UIImage) {
         let _ = PHPhotoLibrary.shared().performChanges({
             let _ = PHAssetChangeRequest.creationRequestForAsset(from: image)
-        }, completionHandler: { success, error in
+        }, completionHandler: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             if success {
                 DispatchQueue.main.async {
                     self.controlsOverlay.hideProgressLabel("Saved image!")

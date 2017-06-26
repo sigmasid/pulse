@@ -59,13 +59,18 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
         super.didReceiveMemoryWarning()
     }
     
+    deinit {
+        print("settings table deinit fired")
+    }
+    
     fileprivate func updateHeader() {
         addBackButton()
         headerNav?.setNav(title: "Update Profile")
     }
     
     fileprivate func loadSettingSections() {
-        PulseDatabase.getSettingsSections(completion: { (sections , error) in
+        PulseDatabase.getSettingsSections(completion: {[weak self] (sections , error) in
+            guard let `self` = self else { return }
             self.sections = sections
             for _ in self.sections {
                 self.settings.append([])
@@ -82,11 +87,13 @@ class SettingsTableVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCon
         navigationController?.pushViewController(updateSetting, animated: true)
     }
     
-    internal func updateHeaderImage(img : Data) {
+    internal func updateHeaderImage(img : UIImage) {
         //add profile pic or use default image
-        PulseUser.currentUser.thumbPicImage = UIImage(data: img)
-        profilePic.setImage(PulseUser.currentUser.thumbPicImage, for: .normal)
-        profilePic.makeRound()
+        DispatchQueue.main.async {
+            PulseUser.currentUser.thumbPicImage = img
+            self.profilePic.setImage(img, for: .normal)
+            self.profilePic.makeRound()
+        }
     }
     
     internal func addUserProfilePic() {
@@ -210,12 +217,11 @@ extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
     }
     
     func doneRecording(isCapturing : Bool, url _: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image else { return }
-        let imageData = image.mediumQualityJPEGNSData
+        guard let image = image, let squareImage = image.getSquareImage(newWidth: 375) else { return }
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
         
-        PulseDatabase.uploadProfileImage(imageData, completion: {[weak self] (URL, error) in
+        PulseDatabase.uploadProfileImage(squareImage, completion: {[weak self] (URL, error) in
             guard let `self` = self else { return }
             if error != nil {
                 GlobalFunctions.showAlertBlock("Sorry!", erMessage: "There was an error saving the photo. Please try again")
@@ -225,7 +231,7 @@ extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
                                 self.cameraVC.toggleLoading(show: false, message: nil)
                                 
                                 //update the header
-                                self.updateHeaderImage(img: imageData)
+                                self.updateHeaderImage(img: squareImage)
                                 self.cameraVC.dismiss(animated: true, completion: nil)
                 })
             }
@@ -248,16 +254,12 @@ extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
-        picker.dismiss(animated: true, completion: nil)
         
         cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
         
-        if mediaType.isEqual(to: kUTTypeImage as String) {
-            let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
-            let pickedImageData = pickedImage.highQualityJPEGNSData
+        if let pickedImage = info[UIImagePickerControllerEditedImage] as? UIImage, let squareImage = pickedImage.getSquareImage(newWidth: 375) {
             
-            PulseDatabase.uploadProfileImage(pickedImageData, completion: {[weak self] (URL, error) in
+            PulseDatabase.uploadProfileImage(squareImage, completion: {[weak self] (URL, error) in
                 guard let `self` = self else { return }
 
                 if error != nil {
@@ -265,8 +267,10 @@ extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
                 } else {
                     UIView.animate(withDuration: 0.2, animations: { self.cameraVC.view.alpha = 0.0 } ,
                                    completion: {(value: Bool) in
+                                    picker.dismiss(animated: true, completion: nil)
+                                    picker.delegate = nil
                                     
-                                    self.updateHeaderImage(img: pickedImageData)
+                                    self.updateHeaderImage(img: squareImage)
                                     self.cameraVC.dismiss(animated: true, completion: nil)
                     })
                 }
@@ -275,6 +279,7 @@ extension SettingsTableVC: CameraDelegate, PanAnimationDelegate {
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.delegate = nil
         picker.dismiss(animated: true, completion: nil)
     }
 }

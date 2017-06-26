@@ -449,8 +449,8 @@
 				BA79B69E1E5627FA0037CE3A /* UserProfileVC.swift */,
 				BAFA88741D59245000854B12 /* QuickBrowseVC.swift */,
 				BA7294CD1E7CAB1C005DF387 /* BrowseUsersVC.swift */,
-				BAB4B0101EF3489900FB7F27 /* FirstLoadVC.swift */,
 				BA7618561E57B40500C335AE /* BrowseContentVC.swift */,
+				BAB4B0101EF3489900FB7F27 /* FirstLoadVC.swift */,
 			);
 			name = "Main VCs";
 			sourceTree = "<group>";

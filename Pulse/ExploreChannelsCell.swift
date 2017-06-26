@@ -36,7 +36,7 @@ class ExploreChannelsCell: UICollectionViewCell {
     }
     
     public func updateCell(_ _title : String?, subtitle : String?) {
-        titleLabel.text = _title?.capitalized
+        titleLabel.text = _title
         subtitleLabel.text = subtitle
     }
     

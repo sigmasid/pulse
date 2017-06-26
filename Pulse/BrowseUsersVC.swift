@@ -87,6 +87,7 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
         //is in nav controller
         addBackButton()
         headerNav?.setNav(title: "Featured Contributors", subtitle: selectedChannel.cTitle)
+        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
 

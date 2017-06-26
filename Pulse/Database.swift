@@ -1399,7 +1399,7 @@ class PulseDatabase {
 
             //duplicate the thumbnail for the item
             if let _image = item.content as? UIImage  {
-                PulseDatabase.uploadThumbImage(channelID: item.cID, itemID: feedbackItemKey, image: _image, completion: { (success, error) in } )
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: feedbackItemKey, image: _image,  fileType: .cover, completion: { _ in })
             }
             
             collectionPost["channelItems/\(channelID)/\(feedbackItemKey)"] = channelPost
@@ -2086,43 +2086,60 @@ class PulseDatabase {
     }
     
     /* UPLOAD IMAGE TO STORAGE */
-    static func uploadThumbImage(channelID: String, itemID : String, image : UIImage, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        uploadImage(channelID: channelID, itemID: itemID, image: image, fileType: .thumb, completion: {(success, error) in
-            completion(success, error)
-        })
+    static func uploadImageData(channelID: String, itemID : String, imageData : Data?, fileType : FileTypes,
+                                completion: @escaping (_ metadata: StorageMetadata?, _ error : Error?) -> Void) {
+        let path = storageRef.child("channels").child(channelID).child(itemID).child(fileType.rawValue)
+        
+        if let data = imageData {
+            let _metadata = StorageMetadata()
+            _metadata.contentType = "image/jpeg"
+            
+            path.putData(data, metadata: _metadata) { (metadata, error) in
+                error != nil ? completion(metadata, error) : completion(metadata, nil)
+            }
+        } else {
+            let userInfo = [ NSLocalizedDescriptionKey : "invalid image format" ]
+            completion(nil, NSError(domain: "InvalidImage", code: 200, userInfo: userInfo))            
+        }
     }
     
     static func uploadImage(channelID: String, itemID : String, image : UIImage, fileType : FileTypes,
-                                 completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        let path = storageRef.child("channels").child(channelID).child(itemID).child(fileType.rawValue)
+                                 completion: @escaping (_ metadata : StorageMetadata?, _ error : Error?) -> Void) {
         
-        let _metadata = StorageMetadata()
-        _metadata.contentType = "image/jpeg"
+        let pathType = fileType == .content ? "content" : "thumb"
+        let path = storageRef.child("channels").child(channelID).child(itemID).child(pathType)
         
-        let data : Data? = fileType == .content ? resizeImageHeight(image, newHeight: min(UIScreen.main.bounds.height, image.size.height)) : resizeImageHeight(image, newHeight: defaultPostHeight)
+        let data : Data?
+        
+        switch fileType {
+        case .content:
+            data = GlobalFunctions.resizeImage(image: image, newWidth: 750)?.mediumQualityJPEGNSData
+        case .thumb:
+            data = GlobalFunctions.resizeImage(image: image, newWidth: 375)?.mediumQualityJPEGNSData
+        case .cover:
+            data = GlobalFunctions.getSquareImage(image: image, newWidth: 600)?.mediumQualityJPEGNSData
+        }
 
         if let data = data {
             let _metadata = StorageMetadata()
             _metadata.contentType = "image/jpeg"
             
             path.putData(data, metadata: _metadata) { (metadata, error) in
-                if (error != nil) {
-                    completion(false, error as NSError?)
-                } else {
-                    completion(true, nil)
-                }
+                completion(metadata, error)
             }
         }
     }
     
     ///upload image to firebase and update current user with photoURL upon success
-    static func uploadProfileImage(_ imgData : Data, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
+    static func uploadProfileImage(_ image : UIImage, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
         var _downloadURL : URL?
         let _metadata = StorageMetadata()
         _metadata.contentType = "image/jpeg"
         
-        if PulseUser.isLoggedIn(), let _imageToResize = UIImage(data: imgData), let _img = resizeImage(_imageToResize, newWidth: 375){
-            usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(_img, metadata: _metadata) { (metadata, error) in
+        let imgData = image.highQualityJPEGNSData
+        
+        if PulseUser.isLoggedIn() {
+            usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(imgData, metadata: _metadata) { (metadata, error) in
                 if let metadata = metadata {
                     _downloadURL = metadata.downloadURL()
                     updateUserData(.photoURL, value: String(describing: _downloadURL!)) { success, error in
@@ -2133,7 +2150,7 @@ class PulseDatabase {
                 }
             }
             
-            if let _thumbImageData = resizeImage(UIImage(data: imgData)!, newWidth: 100) {
+            if let _thumbImageData = image.resizeImage(newWidth: 100)?.highQualityJPEGNSData {
                 usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: _metadata) { (metadata, error) in
                     if let url = metadata?.downloadURL() {
                         let userPost = ["thumbPic" : String(describing: url)]
@@ -2152,7 +2169,7 @@ class PulseDatabase {
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        return UIImageJPEGRepresentation(newImage!, 1.0)
+        return UIImageJPEGRepresentation(newImage!, 0.75)
     }
     
     static func resizeImageHeight(_ image: UIImage, newHeight: CGFloat) -> Data? {
@@ -2164,6 +2181,6 @@ class PulseDatabase {
 
         UIGraphicsEndImageContext()
         
-        return UIImageJPEGRepresentation(newImage!, 1.0)
+        return UIImageJPEGRepresentation(newImage!, 0.75)
     }
 }

@@ -62,6 +62,7 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
         tabBarHidden = true
 
         headerNav?.setNav(title: "Channel Contributors", subtitle: selectedChannel.cTitle)
+        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
     }
     
     fileprivate func setupScope() {
