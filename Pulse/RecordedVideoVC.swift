@@ -58,7 +58,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             }
         }
         willSet {
-            if newValue < currentItemIndex {
+            if newValue <= currentItemIndex {
                 isNewEntry = false //return after user dismissed camera with existing videos to show
             } else {
                 controlsOverlay.addPagers()
@@ -70,14 +70,15 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     fileprivate lazy var controlsOverlay : RecordingOverlay = RecordingOverlay(frame: self.view.bounds)
     fileprivate var itemFilters : FiltersOverlay?
-    fileprivate var isVideoLoaded = false
+    
     fileprivate var isImageViewLoaded = false
+    fileprivate var imageView : PulseImageCropView!
     
     fileprivate var aPlayer : AVQueuePlayer!
     fileprivate var avPlayerLayer : AVPlayerLayer!
-    fileprivate var imageView : UIImageView!
     fileprivate var currentVideo : AVPlayerItem!
     fileprivate var looper : AVPlayerLooper!
+    fileprivate var isVideoLoaded = false
     
     fileprivate var itemCollectionPost = [ String : String ]()
     fileprivate var cleanupComplete = false
@@ -112,9 +113,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     fileprivate func setupImageView() {
         if !isImageViewLoaded {
-            imageView = UIImageView(frame: view.bounds)
-            imageView.contentMode = .scaleAspectFill
-            imageView.backgroundColor = .black
+            imageView = PulseImageCropView(frame: view.frame)
             view.addSubview(imageView)
             
             isImageViewLoaded = true
@@ -210,12 +209,20 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         recordedItems[self.currentItemIndex - 1].itemTitle = text
     }
     
+    fileprivate func updateItemImage() {
+        recordedItems[self.currentItemIndex - 1].content = imageView.getCroppedImage()
+    }
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         controlsOverlay.endEditing(true)
     }
 
     func _addMore() {
+        if currentItem.contentType == .albumImage || currentItem.contentType == .recordedImage {
+            updateItemImage()
+        }
+        
         if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
             mode = .add
             controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
@@ -234,6 +241,10 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///post video to firebase
     func _post() {
+        if currentItem.contentType == .albumImage || currentItem.contentType == .recordedImage {
+            updateItemImage()
+        }
+        
         if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
             //add a title if there is none and is first post
             mode = .post

@@ -298,7 +298,11 @@ enum GlobalFunctions {
         }
     }
     
-    static func fixOrientation(_ img:UIImage) -> UIImage {
+    static func fixOrientation(img:UIImage?) -> UIImage? {
+        guard let img = img else {
+            return nil
+        }
+        
         if (img.imageOrientation == UIImageOrientation.up) {
             return img;
         }

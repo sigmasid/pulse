@@ -362,7 +362,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         let albumPicker = UIImagePickerController()
         albumPicker.delegate = self
         albumPicker.videoMaximumDuration = PulseDatabase.maxVideoLength
-        albumPicker.allowsEditing = true
+        albumPicker.allowsEditing = false
         albumPicker.sourceType = .photoLibrary
         
         if isAddingCover {
