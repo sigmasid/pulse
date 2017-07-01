@@ -44,7 +44,6 @@ enum ItemTypes: String {
 enum FileTypes: String {
     case content
     case thumb
-    case cover
 }
 
 class Item: NSObject {

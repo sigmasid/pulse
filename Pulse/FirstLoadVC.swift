@@ -62,13 +62,6 @@ class FirstLoadVC: UIViewController {
         addButtons()
         setupPagers()
         
-        /**
-        let pageControl = UIPageControl.appearance()
-        pageControl.pageIndicatorTintColor = UIColor.lightGray.withAlphaComponent(0.5)
-        pageControl.currentPageIndicatorTintColor = UIColor.pulseBlue
-        pageControl.backgroundColor = UIColor.clear
-        **/
-        
         view.backgroundColor = .white
     }
 
@@ -124,12 +117,14 @@ class FirstLoadVC: UIViewController {
     internal func buttonPressed(sender: UIButton) {
         if sender == loginButton {
             introDelegate.doneWithIntro(mode: .login)
-            dismiss(animated: true, completion: { _ in
+            dismiss(animated: true, completion: {[weak self] _ in
+                guard let `self` = self else { return }
                 self.performCleanup()
             })
         } else if sender == getStartedButton {
             introDelegate.doneWithIntro(mode: .other)
-            dismiss(animated: true, completion: { _ in
+            dismiss(animated: true, completion: {[weak self] _ in
+                guard let `self` = self else { return }
                 self.performCleanup()
             })
         }

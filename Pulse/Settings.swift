@@ -72,8 +72,8 @@ class Setting {
             self.display = nil
         }
         
-        if snap.hasChild("editable") {
-            switch snap.childSnapshot(forPath: "editable").value as! Bool {
+        if snap.hasChild("editable"), let editable = snap.childSnapshot(forPath: "editable").value as? Bool {
+            switch editable {
             case true: self.editable = true
             case false: self.editable = false
             }

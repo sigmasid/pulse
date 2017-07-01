@@ -570,6 +570,11 @@ enum TabType {
     case home
 }
 
+enum AssetSize {
+    case fullScreen
+    case square
+}
+
 enum Spacing: CGFloat {
     case xxs = 5
     case xs = 10
@@ -800,6 +805,11 @@ enum UserTypes: String {
     case subscriber
     case contributor
     case editor
+}
+
+enum InputMode {
+    case album
+    case camera
 }
 
 struct ItemMetaData {

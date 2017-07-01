@@ -11,12 +11,15 @@ import UIKit
 import SystemConfiguration
 import UserNotifications
 
+let fullImageWidth : CGFloat = 750
+let profileThumbWidth : CGFloat = 150
+let itemThumbWidth : CGFloat = 375
 let maxImgSize : Int64 = 1242 * 2208
+
 let searchBarHeight : CGFloat = 44
 let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
 let defaultCellHeight : CGFloat = 225
 let defaultPostHeight : CGFloat = 325
-
 let scopeBarHeight : CGFloat = 40
 let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
 
@@ -182,6 +185,18 @@ enum GlobalFunctions {
         
         return stringDate
     }
+    
+    static func msFrom(seconds: Double) -> String {
+        let (hr,  minf) = modf (seconds / 3600)
+        let (min, secf) = modf (60 * minf)
+        let sec = 60 * secf
+        
+        let hrs = hr > 0 ? String(format:"0%.0f", hr) : ""
+        let mins = min >= 10 ? "\(min)" : String(format:"0%.0f", min)
+        let secs = sec >= 10 ? String(format:"%.0f", sec) : String(format:"0%.0f", sec)
+        
+        return hr > 0 ?  "\(hrs):\(mins):\(secs)" : "\(mins):\(secs)"
+    }
     /** END: FORMAT TIME **/
     
     /** START: COLLECTION VIEW ITEMS **/
@@ -274,16 +289,17 @@ enum GlobalFunctions {
     
     
     /** START: ALERTS **/
-    static func showAlertBlock(_ erTitle: String, erMessage: String) {
+    static func showAlertBlock(_ erTitle: String, erMessage: String?) {
         if let topController = UIApplication.shared.keyWindow?.rootViewController {
             showAlertBlock(viewController: topController, erTitle: erTitle, erMessage: erMessage)
         }
     }
     
-    static func showAlertBlock(viewController : UIViewController, erTitle: String, erMessage: String, buttonTitle: String = "cancel") {
+    static func showAlertBlock(viewController : UIViewController, erTitle: String, erMessage: String?, buttonTitle: String = "cancel") {
         let alertController = UIAlertController(title: erTitle, message: erMessage, preferredStyle: .actionSheet)
         
-        alertController.addAction(UIAlertAction(title: buttonTitle, style: buttonTitle == "cancel" ? .destructive : .default, handler: { (alertAction) -> Void in  }))
+        alertController.addAction(UIAlertAction(title: buttonTitle, style: buttonTitle == "cancel" ? .destructive : .default, handler: { (alertAction) -> Void in
+        }))
         viewController.present(alertController, animated: true, completion:nil)
     }
     /** END: ALERTS **/
@@ -399,6 +415,18 @@ enum GlobalFunctions {
         }
         
         return nil
+    }
+    
+    static func tempFileURL() -> URL {
+        let saveFileName = "/pulse-\(Int(Date().timeIntervalSince1970)).mp4"
+        
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory,
+                                                        FileManager.SearchPathDomainMask.userDomainMask, true)
+        let documentsDirectory: AnyObject = paths[0] as AnyObject
+        let dataPath = documentsDirectory.appending(saveFileName)
+        let outputUrl = URL(fileURLWithPath: dataPath)
+        
+        return outputUrl
     }
     /** END: IMAGE FUNCTIONS **/
 }

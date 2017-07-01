@@ -72,7 +72,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate var itemFilters : FiltersOverlay?
     
     fileprivate var isImageViewLoaded = false
-    fileprivate var imageView : PulseImageCropView!
+    fileprivate var imageView : ImageCropView!
     
     fileprivate var aPlayer : AVQueuePlayer!
     fileprivate var avPlayerLayer : AVPlayerLayer!
@@ -113,7 +113,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     fileprivate func setupImageView() {
         if !isImageViewLoaded {
-            imageView = PulseImageCropView(frame: view.frame)
+            imageView = ImageCropView(frame: view.frame)
             view.addSubview(imageView)
             
             isImageViewLoaded = true
@@ -152,13 +152,12 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         
         view.layer.addSublayer(avPlayerLayer)
         arrangeViews()
-        
         aPlayer.play()
         
         if isNewEntry && currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo {
             DispatchQueue.global(qos: .background).async {
                 compressVideo(contentURL, completion: {[weak self] (resultURL, thumbnailImage, error) in
-                    guard let `self` = self else {
+                    guard let `self` = self, !self.recordedItems.isEmpty else {
                         return
                     }
                     
@@ -167,7 +166,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
                         self.currentItem.content = thumbnailImage
                         self.recordedItems[self.currentItemIndex - 1] = self.currentItem
                     } else {
-
                         let videoAsset = AVAsset(url: contentURL)
                         let thumbImage = thumbnailForVideoAtURL(videoAsset, orientation: .left)
 
@@ -309,13 +307,14 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         guard let contentType = item.contentType else { return }
         
         if let _image = item.content as? UIImage  {
-            let itemType : FileTypes!
+            var thumbImageData : Data?
+            
             if item.itemID == allItems.first?.itemID, item.needsCover() {
-                itemType = .cover
+                thumbImageData = _image.mediumQualityJPEGNSData
             } else {
-                itemType = .thumb
+                thumbImageData = _image.resizeImage(newWidth: itemThumbWidth)?.mediumQualityJPEGNSData
             }
-            PulseDatabase.uploadImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, fileType: itemType, completion: { _ in } )
+            PulseDatabase.uploadImageData(channelID: selectedChannelID, itemID: item.itemID, imageData: thumbImageData, fileType: .thumb, completion: { _ in })
         }
         
         if contentType == .recordedVideo || contentType == .albumVideo {
@@ -490,13 +489,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             recordedItems = nil
             delegate = nil
             
-            controlsOverlay.removeFromSuperview()
             itemFilters = nil
             
             
             if aPlayer != nil {
                 aPlayer.removeAllItems()
-                avPlayerLayer.removeFromSuperlayer()
                 aPlayer = nil
                 looper = nil
                 currentVideo = nil
@@ -508,7 +505,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             }
             
             itemCollectionPost.removeAll()
-            
             cleanupComplete = true
         }
     }

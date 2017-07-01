@@ -50,10 +50,25 @@ protocol ItemCellDelegate : class {
     func clickedMenuButton(itemRow : Int)
 }
 
-protocol CameraDelegate : class {
-    func doneRecording(isCapturing : Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
-    func userDismissedCamera()
-    func showAlbumPicker()
+public protocol ImageTrimmerDelegate : class {
+    func capturedItem(image: UIImage?)
+    func dismissedTrimmer() 
+}
+
+public protocol VideoTrimmerDelegate: class {
+    func dismissedTrimmer()
+    func exportedAsset(url: URL?)
+}
+
+protocol InputItemDelegate : class {
+    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
+    func dismissInput()
+    func switchInput(currentInput: InputMode)
+}
+
+protocol InputMasterDelegate: class {
+    func dismissInput()
+    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
 }
 
 protocol PanAnimationDelegate : class {

@@ -28,6 +28,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     public var selectedChannel : Channel!
     public var selectedItem : Item! {
         didSet {
+            guard !cleanupComplete else { return }
+            
             if selectedItem != nil, allItems.isEmpty {
                 PulseDatabase.getItemCollection(selectedItem.itemID, completion: {[weak self](success, items) in
                     guard let `self` = self else { return }
@@ -58,6 +60,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     
     fileprivate var selectedIndex : IndexPath? {
         didSet {
+            guard !cleanupComplete else { return }
+            
             if selectedIndex != nil {
                 collectionView?.reloadItems(at: [selectedIndex!])
                 if deselectedIndex != nil && deselectedIndex != selectedIndex {
@@ -66,6 +70,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
             }
         }
         willSet {
+            guard !cleanupComplete else { return }
+            
             if selectedIndex != nil {
                 deselectedIndex = selectedIndex
             }
@@ -78,6 +84,8 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     }
     fileprivate var deselectedIndex : IndexPath?
     /** End Collection View **/
+    
+    private var cleanupComplete = false
 
     //once allItems var is set reload the data
     func updateDataSource() {
@@ -112,10 +120,17 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     }
     
     deinit {
-        allItems = []
-        itemStack = []
-        selectedChannel = nil
-        selectedItem = nil
+        performCleanup()
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            cleanupComplete = true
+            allItems = []
+            itemStack = []
+            selectedChannel = nil
+            selectedItem = nil
+        }
     }
     
     fileprivate func setupLayout() {

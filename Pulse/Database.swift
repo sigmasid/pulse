@@ -150,12 +150,8 @@ class PulseDatabase {
                     let itemStorageRef = storageRef.child("channels").child(cID).child(itemID)
                     
                     // Delete the file
-                    itemStorageRef.delete { (error) -> Void in
-                        if (error != nil) {
-                            completion(false)
-                        } else {
-                            completion(true)
-                        }
+                    itemStorageRef.delete { error -> Void in
+                        error != nil ? completion(false) : completion(true)
                     }
                 }
 
@@ -641,7 +637,6 @@ class PulseDatabase {
                     type = MessageType.getMessageType(type: typeString)
                 }
                 
-                
                 if snap.childSnapshot(forPath: "items").exists() {
                     for aItem in snap.childSnapshot(forPath: "items").children {
                         if let aSnap = aItem as? DataSnapshot, let itemTitle = aSnap.value as? String {
@@ -994,25 +989,23 @@ class PulseDatabase {
         }
     }
     
+    static func loginEmail(email: String, password: String, completion: @escaping (_ user: User?, _ error: Error?) -> Void) {
+        Auth.auth().signIn(withEmail: email, password: password) {(user, blockError) in
+            completion(user, blockError)
+        }
+    }
+    
     static func checkSocialTokens(_ completion: @escaping (_ result: Bool) -> Void) {
         if FBSDKAccessToken.current() != nil {
             let token = FBSDKAccessToken.current().tokenString
             let credential = FacebookAuthProvider.credential(withAccessToken: token!)
             Auth.auth().signIn(with: credential) { (aUser, error) in
-                if error != nil {
-                    GlobalFunctions.showAlertBlock("Error logging in", erMessage: error!.localizedDescription)
-                } else {
-                    completion(true)
-                }
+                error != nil ? completion(false) : completion(true)
             }
         } else if let session = Twitter.sharedInstance().sessionStore.session() {
             let credential = TwitterAuthProvider.credential(withToken: session.authToken, secret: session.authTokenSecret)
             Auth.auth().signIn(with: credential) { (aUser, error) in
-                if error != nil {
-                    completion(false)
-                } else {
-                    completion(true)
-                }
+                error != nil ? completion(false) : completion(true)
             }
         } else {
             completion(false)
@@ -1213,6 +1206,52 @@ class PulseDatabase {
         }
     }
     
+    static func reauthUser(completion: @escaping (Bool, Error?) -> Void) {
+        guard let user = Auth.auth().currentUser, let email = user.email else {
+            checkSocialTokens{ success in
+                if success {
+                    completion(success, nil)
+                } else {
+                    let userInfo = [ NSLocalizedDescriptionKey : "unable to verify your account. please try again" ]
+                    completion(false, NSError.init(domain: "InvalidLogin", code: 404, userInfo: userInfo))
+                }
+            }
+            return
+        }
+        
+        let alertController = UIAlertController(title: "Change Password", message: "Please enter your current password ", preferredStyle: .alert)
+        alertController.addTextField(configurationHandler: {(_ textField: UITextField) -> Void in
+            textField.placeholder = "Current password"
+            textField.isSecureTextEntry = true
+        })
+        
+        let confirmAction = UIAlertAction(title: "ok", style: .default, handler: {(_ action: UIAlertAction) -> Void in
+            if let password = alertController.textFields?[0].text {
+                let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+                user.reauthenticate(with: credential) { error in
+                    error != nil ? completion(false, error) : completion(true, nil)
+                }
+            } else {
+                let userInfo = [ NSLocalizedDescriptionKey : "please enter your current password" ]
+                completion(false, NSError.init(domain: "InvalidPassword", code: 404, userInfo: userInfo))
+            }
+        })
+        alertController.addAction(confirmAction)
+        
+        let cancelAction = UIAlertAction(title: "cancel", style: .cancel, handler: {(_ action: UIAlertAction) -> Void in
+            let userInfo = [ NSLocalizedDescriptionKey : "unable to verify current password" ]
+            completion(false, NSError.init(domain: "InvalidPassword", code: 404, userInfo: userInfo))
+        })
+        alertController.addAction(cancelAction)
+        
+        if let topController = UIApplication.shared.keyWindow?.rootViewController {
+            topController.present(alertController, animated: true, completion:nil)
+        } else {
+            let userInfo = [ NSLocalizedDescriptionKey : "unable to verify current password" ]
+            completion(false, NSError.init(domain: "InvalidPassword", code: 404, userInfo: userInfo))
+        }
+    }
+    
     ///Update user profile to Pulse database from settings
     static func updateUserProfile(_ setting : Setting, newValue : String, completion: @escaping (Bool, Error?) -> Void) {
         let _user = PulseUser.currentUser
@@ -1221,13 +1260,41 @@ class PulseDatabase {
         if PulseUser.isLoggedIn() {
             switch setting.type! {
             case .email:
-                _user.updateEmail(to: newValue) { completionError in
-                    completionError != nil ? completion(false, completionError) : completion(true, nil)
+                Auth.auth().currentUser?.updateEmail(to: newValue) { completionError in
+                    if completionError == nil {
+                        completion(true, nil)
+                    } else if let completionError = completionError as NSError?, completionError.code == AuthErrorCode.requiresRecentLogin.rawValue {
+                        reauthUser(completion: { success, error in
+                            if success {
+                                updateUserProfile(setting, newValue: newValue, completion: {success, error in
+                                    completion(success, error)
+                                })
+                            } else {
+                                completion(false, error)
+                            }
+                        })
+                    } else {
+                        completion(false, completionError)
+                    }
                 }
             case .password:
-                _user.updatePassword(to: newValue) { completionError in
-                    completionError != nil ? completion(false, completionError) : completion(true, nil)
-                }
+                Auth.auth().currentUser?.updatePassword(to: newValue, completion: { completionError in
+                    if completionError == nil {
+                        completion(true, nil)
+                    } else if let completionError = completionError as NSError?, completionError.code == AuthErrorCode.requiresRecentLogin.rawValue {
+                        reauthUser(completion: { success, error in
+                            if success {
+                                updateUserProfile(setting, newValue: newValue, completion: {success, error in
+                                    completion(success, error)
+                                })
+                            } else {
+                                completion(false, error)
+                            }
+                        })
+                    } else {
+                        completion(false, completionError)
+                    }
+                })
             case .shortBio, .name, .profilePic, .thumbPic:
                 userPost[setting.settingID] = newValue
                 usersPublicSummaryRef.child(_user.uID!).updateChildValues(userPost, withCompletionBlock: { (completionError, ref) in
@@ -1399,7 +1466,7 @@ class PulseDatabase {
 
             //duplicate the thumbnail for the item
             if let _image = item.content as? UIImage  {
-                PulseDatabase.uploadImage(channelID: item.cID, itemID: feedbackItemKey, image: _image,  fileType: .cover, completion: { _ in })
+                PulseDatabase.uploadImage(channelID: item.cID, itemID: feedbackItemKey, image: _image,  fileType: .thumb, completion: { _ in })
             }
             
             collectionPost["channelItems/\(channelID)/\(feedbackItemKey)"] = channelPost
@@ -2106,27 +2173,13 @@ class PulseDatabase {
     static func uploadImage(channelID: String, itemID : String, image : UIImage, fileType : FileTypes,
                                  completion: @escaping (_ metadata : StorageMetadata?, _ error : Error?) -> Void) {
         
-        let pathType = fileType == .content ? "content" : "thumb"
-        let path = storageRef.child("channels").child(channelID).child(itemID).child(pathType)
-        
-        let data : Data?
-        
-        switch fileType {
-        case .content:
-            data = GlobalFunctions.resizeImage(image: image, newWidth: 750)?.mediumQualityJPEGNSData
-        case .thumb:
-            data = GlobalFunctions.resizeImage(image: image, newWidth: 375)?.mediumQualityJPEGNSData
-        case .cover:
-            data = GlobalFunctions.getSquareImage(image: image, newWidth: 600)?.mediumQualityJPEGNSData
-        }
-
-        if let data = data {
-            let _metadata = StorageMetadata()
-            _metadata.contentType = "image/jpeg"
+        let path = storageRef.child("channels").child(channelID).child(itemID).child(fileType.rawValue)
+        let data = image.mediumQualityJPEGNSData
+        let _metadata = StorageMetadata()
+        _metadata.contentType = "image/jpeg"
             
-            path.putData(data, metadata: _metadata) { (metadata, error) in
-                completion(metadata, error)
-            }
+        path.putData(data, metadata: _metadata) { (metadata, error) in
+            completion(metadata, error)
         }
     }
     
@@ -2136,7 +2189,7 @@ class PulseDatabase {
         let _metadata = StorageMetadata()
         _metadata.contentType = "image/jpeg"
         
-        let imgData = image.highQualityJPEGNSData
+        let imgData = image.mediumQualityJPEGNSData
         
         if PulseUser.isLoggedIn() {
             usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(imgData, metadata: _metadata) { (metadata, error) in
@@ -2150,7 +2203,7 @@ class PulseDatabase {
                 }
             }
             
-            if let _thumbImageData = image.resizeImage(newWidth: 100)?.highQualityJPEGNSData {
+            if let _thumbImageData = image.resizeImage(newWidth: profileThumbWidth)?.highQualityJPEGNSData {
                 usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: _metadata) { (metadata, error) in
                     if let url = metadata?.downloadURL() {
                         let userPost = ["thumbPic" : String(describing: url)]

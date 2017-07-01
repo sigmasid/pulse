@@ -14,19 +14,16 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     public var selectedChannel: Channel!
     public var selectedItem : Item! {
         didSet {
-            if selectedItem != nil {
-                toggleLoading(show: true, message: "Loading Series...", showIcon: true)
-                PulseDatabase.getItemCollection(selectedItem.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else {
-                        return
-                    }
-                    
-                    self.allItems = items
-                    self.updateDataSource()
-                    self.updateHeader()
-                    self.toggleLoading(show: false, message: nil)
-                })
-            }
+            guard selectedItem != nil else { return }
+            toggleLoading(show: true, message: "Loading Series...", showIcon: true)
+            PulseDatabase.getItemCollection(selectedItem.itemID, completion: {[weak self] (success, items) in
+                guard let `self` = self else { return }
+                
+                self.allItems = items
+                self.updateDataSource()
+                self.updateHeader()
+                self.toggleLoading(show: false, message: nil)
+            })
         }
     }
     //end set by delegate
@@ -44,7 +41,8 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     fileprivate var isLayoutSetup = false
     fileprivate var selectedShareItem : Item?
-
+    private var cleanupComplete = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLayoutSetup {
@@ -61,12 +59,25 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     }
     
     deinit {
-        allItems = []
-        allUsers = []
-        selectedChannel = nil
-        selectedItem = nil
-        miniPreview = nil
-        collectionView = nil
+        performCleanup()
+    }
+    
+    override func goBack() {
+        super.goBack()
+    }
+    
+    private func performCleanup() {
+        if !cleanupComplete {
+            allItems = []
+            allUsers = []
+            selectedChannel = nil
+            selectedItem = nil
+            miniPreview = nil
+            collectionView = nil
+            isLayoutSetup = false
+            isLoaded = false
+            cleanupComplete = true
+        }
     }
     
     //Update Nav Header
@@ -674,7 +685,9 @@ extension SeriesVC {
         selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
             guard let `self` = self else { return }
             if success {
-                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+                menu.addAction(UIAlertAction(title: "\(self.selectedItem.childActionType())\(self.selectedItem.childType().capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
+                    
                     switch self.selectedItem.type {
                     case .interviews:
                         self.addInterview()
@@ -792,8 +805,7 @@ extension SeriesVC {
         
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
-            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, showAlert: false,
-                                    completion: {[weak self] selectedShareItem , error in
+            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, showAlert: false, completion: {[weak self] selectedShareItem , error in
                 guard let `self` = self else { return }
                 if error == nil, let selectedShareItem = selectedShareItem {
                     let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) - \(currentItem.itemTitle)"

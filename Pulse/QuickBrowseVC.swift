@@ -46,8 +46,6 @@ class QuickBrowseVC: UIViewController {
         collectionView = nil
         selectedChannel = nil
         collectionViewLayout = nil
-        closeButton.removeFromSuperview()
-        seeAll.removeFromSuperview()
     }
     
     override func viewWillAppear(_ animated: Bool) {

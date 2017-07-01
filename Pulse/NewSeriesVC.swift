@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class NewSeriesVC: PulseVC, UINavigationControllerDelegate  {
     //Set by parent
     public weak var selectedChannel : Channel! {
         didSet {
@@ -47,10 +47,7 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     internal var collectionViewLayout: QuickBrowseLayout!
     
     //Capture Image
-    internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
-    fileprivate lazy var cameraVC : CameraVC! = CameraVC()
-    fileprivate lazy var albumPicker : UIImagePickerController! = UIImagePickerController()
-
+    fileprivate var inputVC : InputVC!
     fileprivate var fullImageData : Data?
     fileprivate var thumbImageData : Data?
     
@@ -89,17 +86,23 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     }
     
     deinit {
-        print("deinit called for series")
         performCleanup()
+    }
+    
+    override func goBack() {
+        DispatchQueue.global(qos: .background).async {[weak self] in
+            guard let `self` = self else { return }
+            if self.inputVC != nil {
+                self.inputVC.performCleanup()
+                self.inputVC = nil
+            }
+        }
+        super.goBack()
     }
     
     public func performCleanup() {
         if !cleanupComplete {
             selectedChannel = nil
-            
-            sAddCover.removeFromSuperview()
-            sShowCamera.removeFromSuperview()
-            sShowCameraLabel.removeFromSuperview()
             
             if collectionView != nil {
                 collectionView?.delegate = nil
@@ -108,17 +111,9 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
 
             allItems.removeAll()
             
-            cameraVC = nil
             fullImageData = nil
             thumbImageData = nil
             
-            if albumPicker != nil {
-                albumPicker.view.removeFromSuperview()
-                albumPicker.delegate = nil
-                albumPicker = nil
-            }
-            
-            panDismissCameraInteractionController.delegate = nil
             collectionViewLayout = nil
             
             sTitle.delegate = nil
@@ -208,7 +203,8 @@ class NewSeriesVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         item.contentType = contentType
         item.cID = selectedChannel.cID
         
-        PulseDatabase.uploadImageData(channelID: item.cID, itemID: itemKey, imageData: fullImageData, fileType: .cover, completion: {[weak self] (metadata, error) in
+        PulseDatabase.uploadImageData(channelID: item.cID, itemID: itemKey, imageData: fullImageData, fileType: .content,
+                                      completion: {[weak self] (metadata, error) in
             guard let `self` = self else { return }
             
             if error == nil {
@@ -400,8 +396,7 @@ extension NewSeriesVC {
         collectionView.layoutIfNeeded()
         
         collectionViewLayout = QuickBrowseLayout.configureLayout(collectionView: collectionView,
-                                                                 itemSize:   CGSize(width: collectionView.bounds.width * 0.3,
-                                                                                    height: collectionView.bounds.height - 10),
+                                                                 itemSize: CGSize(width: collectionView.bounds.width * 0.3, height: collectionView.bounds.height - 10),
                                                                  minimumLineSpacing: collectionView.bounds.width * 0.05)
         collectionView?.register(BrowseContentCell.self, forCellWithReuseIdentifier: reuseIdentifier)
         collectionView?.backgroundColor = UIColor.clear
@@ -466,57 +461,36 @@ extension NewSeriesVC: UITextFieldDelegate {
     }
 }
 
-extension NewSeriesVC: CameraDelegate, PanAnimationDelegate {
+extension NewSeriesVC: InputMasterDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
     func createCompressedImages(image: UIImage) {
-        
-        let fullImage = image.getSquareImage(newWidth: 600)
-        let thumbImage = image.getSquareImage(newWidth: 150)
-        
-        fullImageData = fullImage?.highQualityJPEGNSData
-        thumbImageData = thumbImage?.highQualityJPEGNSData
-        
-        print("full image size is \(fullImage?.size, fullImageData?.count) thumb image size is \(thumbImage?.size, thumbImageData?.count)")
-    }
-    
-    func panCompleted(success: Bool, fromVC: UIViewController?) {
-        if success {
-            if fromVC is CameraVC {
-                cameraVC.dismiss(animated: true, completion: nil)
-            }
-        }
+        fullImageData = image.mediumQualityJPEGNSData
+        thumbImageData = image.resizeImage(newWidth: profileThumbWidth)?.highQualityJPEGNSData
     }
     
     func showCamera() {
-        guard let nav = navigationController else { return }
+        if inputVC == nil {
+            inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
+            inputVC.cameraMode = .stillImage
+            inputVC.captureSize = .square
+            inputVC.albumShowsVideo = false
+            inputVC.inputDelegate = self
+            inputVC.cameraTitle = "snap a pic to use as series cover!"
+        }
         
-        cameraVC = CameraVC()
-        cameraVC.cameraMode = .stillImage
-        
-        cameraVC.delegate = self
-        cameraVC.screenTitle = "snap a pic to use as series cover!"
-        
-        panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
-        panDismissCameraInteractionController.delegate = self
-        
-        present(cameraVC, animated: true, completion: nil)
+        present(inputVC, animated: true, completion: nil)
     }
     
-    func doneRecording(isCapturing: Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
+    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
         guard let image = image else {
-            if isCapturing {
-                self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
-            }
             return
         }
         
-        UIView.animate(withDuration: 0.2, animations: { self.cameraVC.view.alpha = 0.0 } ,
-                       completion: {(value: Bool) in
+        UIView.animate(withDuration: 0.2, animations: { self.inputVC.view.alpha = 0.0 } ,
+                       completion: {[weak self] (value: Bool) in
+                        guard let `self` = self else { return }
                         
             DispatchQueue.main.async {
-                
-                self.cameraVC.toggleLoading(show: false, message: nil)
-                
                 self.sShowCamera.setImage(image, for: .normal)
                 self.sShowCamera.imageView?.contentMode = .scaleAspectFill
                 self.sShowCamera.imageView?.clipsToBounds = true
@@ -528,64 +502,15 @@ extension NewSeriesVC: CameraDelegate, PanAnimationDelegate {
                 self.sShowCameraLabel.textColor = .gray
                 
                 //update the header
-                self.cameraVC.dismiss(animated: false, completion: nil)
+                self.inputVC.view.alpha = 1.0
+                self.inputVC.dismiss(animated: false, completion: nil)
             }
-
         })
         
         self.createCompressedImages(image: image)
     }
     
-    func userDismissedCamera() {
-        cameraVC.dismiss(animated: true, completion: nil)
-    }
-    
-    func showAlbumPicker() {
-        albumPicker = UIImagePickerController()
-        albumPicker.delegate = self
-        albumPicker.allowsEditing = true
-        albumPicker.sourceType = .photoLibrary
-        albumPicker.mediaTypes = [kUTTypeImage as String]
-        
-        cameraVC.present(albumPicker, animated: true, completion: nil)
-    }
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
-        
-        guard mediaType.isEqual(to: kUTTypeImage as String) else {
-            return
-        }
-        
-        guard let capturedImage = info[UIImagePickerControllerEditedImage] as? UIImage else {
-            GlobalFunctions.showAlertBlock("Error Getting Image!", erMessage: "Sorry there was an error getting the image from the library. Please try again")
-            return
-        }
-        
-        self.sShowCamera.setImage(capturedImage, for: .normal)
-        self.sShowCamera.imageView?.contentMode = .scaleAspectFill
-        self.sShowCamera.imageView?.clipsToBounds = true
-        self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-        self.sShowCamera.clipsToBounds = true
-        
-        self.sAddCover.backgroundColor = .white
-        
-        self.sShowCameraLabel.text = "tap image to change"
-        self.sShowCameraLabel.textColor = .gray
-        self.createCompressedImages(image: capturedImage)
-
-        UIView.animate(withDuration: 0.2, animations: { picker.view.alpha = 0.0 } ,
-                       completion: {(value: Bool) in
-                        picker.dismiss(animated: false, completion: nil)
-                        picker.delegate = nil
-                        self.cameraVC.dismiss(animated: true, completion: nil)
-        })
-        
-
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.delegate = nil
-        picker.dismiss(animated: true, completion: nil)
+    func dismissInput() {
+        inputVC.dismiss(animated: true, completion: nil)
     }
 }

@@ -12,6 +12,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
+            guard selectedChannel != nil else { return }
+            
             isSubscribed = PulseUser.currentUser.subscriptionIDs.contains(selectedChannel.cID) ? true : false
             if !selectedChannel.cCreated {
                 PulseDatabase.getChannel(cID: selectedChannel.cID!, completion: {[weak self] channel, error in
@@ -50,7 +52,8 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     fileprivate var allItems = [Item]()
     fileprivate var hasReachedEnd = false
     
-    fileprivate var isLayoutSetup = false
+    private var isLayoutSetup = false
+    private var cleanupComplete = false
     
     /** Sync Vars **/
     fileprivate var startUpdateAt : Date = Date()
@@ -89,11 +92,24 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         updateHeader()
     }
     
+    override func goBack() {
+        super.goBack()
+    }
+    
+    private func performCleanup() {
+        if !cleanupComplete {
+            selectedChannel = nil
+            allItems = []
+            allUsers = []
+            collectionView = nil
+            isLoaded = false
+            isLayoutSetup = false
+            cleanupComplete = true
+        }
+    }
+    
     deinit {
-        selectedChannel = nil
-        allItems = []
-        allUsers = []
-        collectionView = nil
+        performCleanup()
     }
     
     internal func getChannelItems() {
@@ -829,7 +845,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                 self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
 
                                 DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                    if cell.tag == indexPath.row {
                                         cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
                                     }
                                 }
@@ -839,7 +855,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 } else {
                     // Get the user details
                     PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
-                    guard let `self` = self else { return }
+                    guard let `self` = self, self.allItems.count > indexPath.row else { return }
                         
                     if let user = user {
                         self.allItems[indexPath.row].user = user
@@ -856,7 +872,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                 self.updateUserImageDownloaded(user: user, thumbPicImage: image)
                                 
                                 DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                    if cell.tag == indexPath.row {
                                         cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
                                     }
                                 }
@@ -871,7 +887,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
                 PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (data, error) in
-                    guard let `self` = self else { return }
+                    guard let `self` = self, self.allItems.count > indexPath.row else { return }
                     
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)

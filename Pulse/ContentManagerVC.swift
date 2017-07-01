@@ -9,8 +9,9 @@
 import UIKit
 import MobileCoreServices
 import CoreLocation
+import AVFoundation
 
-class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseContentDelegate, ModalDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PanAnimationDelegate  {
+class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, BrowseContentDelegate, ModalDelegate, UINavigationControllerDelegate, PanAnimationDelegate  {
     //set by delegate - questions or posts
     var selectedChannel : Channel! //all items need a channel - only for adding new posts / answers
     var selectedItem: Item! //the category item - might be the question / tag / post etc.
@@ -30,11 +31,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     fileprivate var loadingVC : LoadingVC?
 
     fileprivate var contentDetailVC : ContentDetailVC! = ContentDetailVC()
-    fileprivate var cameraVC : CameraVC!
+    fileprivate var inputVC : InputVC!
     fileprivate lazy var recordedVideoVC : RecordedVideoVC! = RecordedVideoVC()
     fileprivate var introVC : ContentIntroVC?
     
-    fileprivate var isCameraLoaded = false
     fileprivate var isAddingMoreItems = false
     fileprivate var isAddingCover = false
     fileprivate var isShowingIntro = false
@@ -106,10 +106,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
             completedRecordingDelegate = nil
             loadingVC = nil
             
-            if cameraVC != nil {
-                cameraVC.performCleanup()
-                cameraVC.delegate = nil
-                cameraVC = nil
+            if inputVC != nil {
+                inputVC.performCleanup()
+                inputVC.delegate = nil
+                inputVC = nil
             }
             
             if introVC != nil {
@@ -223,9 +223,9 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
-    func doneRecording(isCapturing: Bool, url assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
+    func capturedItem(url assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
         if isAddingCover {
-            recordedItems.first?.content = image?.getSquareImage(newWidth: 600)
+            recordedItems.first?.content = image
         } else {
             //in case parent provides key for first item use that (interview case) else create a new key. After creation marks the createdItemKey as nil
             let itemKey = createdItemKey != nil ? createdItemKey! : databaseRef.child("items").childByAutoId().key
@@ -272,7 +272,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     }
     
     fileprivate func returnToRecordings() {
-        //recordedVideoVC.selectedItem = selectedItem
         recordedVideoVC.isNewEntry = false
         recordedVideoVC.recordedItems = recordedItems
         recordedVideoVC.currentItemIndex = recordedVideoVC.currentItemIndex
@@ -309,14 +308,16 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
                                                 message: "You are all done. Thanks for your post!",
                                                 preferredStyle: .actionSheet)
         
-        doneRecordingMenu.addAction(UIAlertAction(title: "done", style: .destructive, handler: { (action: UIAlertAction!) in
-            self.dismiss(animated: true, completion: nil)
+        doneRecordingMenu.addAction(UIAlertAction(title: "done", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             
             if self.completedRecordingDelegate != nil {
                 self.completedRecordingDelegate.doneRecording(success: success)
             }
             
             self.performCleanup()
+            self.dismiss(animated: true, completion: nil)
+            
         }))
         
         present(doneRecordingMenu, animated: true, completion: nil)
@@ -330,48 +331,30 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
                 if success {
                     self.showCamera()
                 } else {
-                    self.contentDetailVC.dismiss(animated: true, completion: {
+                    self.contentDetailVC.dismiss(animated: true, completion: {[unowned self] in
                         self.performCleanup()
                     })
                 }
             })
         } else {
-            self.contentDetailVC.dismiss(animated: true, completion: {[weak self] in
-                guard let `self` = self else { return }
+            self.contentDetailVC.dismiss(animated: true, completion: {[unowned self] in
                 self.performCleanup()
             })
         }
     }
     
     func showCamera(animated : Bool = true, mode: CameraOutputMode = .videoWithMic) {
-        cameraVC = CameraVC()
-        cameraVC.cameraMode = mode
-        cameraVC.delegate = self
-        cameraVC.screenTitle = selectedItem.itemTitle
-        
-        panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: self)
-        panDismissInteractionController.delegate = self
-        
-        isNavigationBarHidden = true
-        isCameraLoaded = true
-        
-        pushViewController(cameraVC, animated: animated)
-    }
-    
-    func showAlbumPicker() {
-        let albumPicker = UIImagePickerController()
-        albumPicker.delegate = self
-        albumPicker.videoMaximumDuration = PulseDatabase.maxVideoLength
-        albumPicker.allowsEditing = false
-        albumPicker.sourceType = .photoLibrary
-        
-        if isAddingCover {
-            albumPicker.mediaTypes = [kUTTypeImage as String]
-        } else {
-            albumPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeImage as String]
+        if inputVC == nil {
+            inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
+            inputVC.cameraMode = mode
+            inputVC.captureSize = .fullScreen
+            inputVC.inputDelegate = self
         }
         
-        present(albumPicker, animated: true, completion: nil)
+        inputVC.cameraTitle = selectedItem.itemTitle
+        isNavigationBarHidden = true
+        
+        pushViewController(inputVC, animated: animated)
     }
     
     func showIntro() {
@@ -394,35 +377,23 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         }
     }
     
-    //NOT USED
-    func addCover(_ currentVC : UIViewController, _recordedItems : [Item]) {
-        recordedVideoVC = currentVC as! RecordedVideoVC
-        recordedItems = _recordedItems
-        isAddingCover = true
-        
-        if !self.viewControllers.contains(cameraVC) {
-            popViewController(animated: false)
-            pushViewController(cameraVC, animated: false)
-        } else {
-            popViewController(animated: true)
-        }
-    }
-    
     func addMoreItems(_ currentVC : UIViewController, recordedItems : [Item], isCover : Bool) {
         recordedVideoVC = currentVC as! RecordedVideoVC
         self.recordedItems = recordedItems
         
         if isCover {
             isAddingCover = true
-            cameraVC.updateOverlayTitle(title: "take or choose a cover image")
-            cameraVC.cameraMode = .stillImage
+            inputVC.cameraTitle = "take or choose a cover image"
+            inputVC.cameraMode = .stillImage
+            inputVC.captureSize = .square
         } else {
+            inputVC.captureSize = .fullScreen
             isAddingMoreItems = true
         }
         
-        if !viewControllers.contains(cameraVC) {
+        if !viewControllers.contains(inputVC) {
             popViewController(animated: false)
-            pushViewController(cameraVC, animated: false)
+            pushViewController(inputVC, animated: false)
         } else {
             popViewController(animated: true)
         }
@@ -434,10 +405,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         
         popViewController(animated: true)
         isAddingMoreItems = false
-        showCamera(animated: false)
+        //showCamera(animated: false)
     }
     
-    func userDismissedCamera() {
+    func dismissInput() {
         if isAddingMoreItems || isAddingCover {
             returnToRecordings()
             isAddingCover = false
@@ -451,8 +422,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
     
     func panCompleted(success: Bool, fromVC: UIViewController?) {
         if success {
-            if cameraVC != nil, fromVC is CameraVC {
-                userDismissedCamera()
+            if inputVC != nil, fromVC is InputVC {
+                dismissInput()
             } else if fromVC is ContentDetailVC {
                 dismiss(animated: false, completion: {[weak self] in
                     guard let `self` = self else { return }
@@ -472,31 +443,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         popViewController(animated: true)
     }
     
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
-        
-        if mediaType.isEqual(to: kUTTypeImage as String) {
-            
-            let pickedImage = isAddingCover ?
-                info[UIImagePickerControllerEditedImage] as? UIImage :
-                info[UIImagePickerControllerOriginalImage] as? UIImage
-            
-            doneRecording(isCapturing: false, url: nil, image: pickedImage, location: nil, assetType: .albumImage)
-            // Media is an image
-
-        } else if mediaType.isEqual(to: kUTTypeMovie as String) {
-            
-            let videoURL = info[UIImagePickerControllerMediaURL] as? URL
-            doneRecording(isCapturing: false, url: videoURL, image: nil, location: nil, assetType: .albumVideo)
-            // Media is a video
-        }
-        picker.dismiss(animated: true, completion: nil)
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.dismiss(animated: true, completion: nil)
-    }
-    
     func navigationController(_ navigationController: UINavigationController,
                               animationControllerFor operation: UINavigationControllerOperation,
                               from fromVC: UIViewController,
@@ -504,13 +450,13 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
         
         switch operation {
         case .pop:
-            if fromVC is CameraVC {
+            if fromVC is InputVC {
                 let animator = ShrinkDismissController()
                 animator.transitionType = .dismiss
                 animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
                 
                 return animator
-            } else if fromVC is RecordedVideoVC && toVC is CameraVC {
+            } else if fromVC is RecordedVideoVC && toVC is InputVC {
                 let animator = FadeAnimationController()
                 animator.transitionType = .dismiss
                 return animator
@@ -537,13 +483,13 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, CameraDelegate, BrowseConte
                 animator.transitionType = .present
                 
                 return animator
-            } else if toVC is CameraVC && fromVC is RecordedVideoVC {
+            } else if toVC is InputVC && fromVC is RecordedVideoVC {
                 let animator = FadeAnimationController()
                 animator.transitionType = .present
                 
                 return animator
             }
-            else if fromVC is CameraVC && toVC is ContentIntroVC {
+            else if fromVC is InputVC && toVC is ContentIntroVC {
                 let animator = ShrinkDismissController()
                 animator.transitionType = .dismiss
                 animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))

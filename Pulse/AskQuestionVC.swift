@@ -14,8 +14,6 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     public var selectedUser : PulseUser!
     public weak var modalDelegate : ModalDelegate!
     
-    fileprivate var observersAdded = false
-    
     fileprivate var questionContainer = UIView()
     fileprivate var questionBody = UITextView()
     fileprivate var askButton = PulseButton()
@@ -24,6 +22,9 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     fileprivate var textViewHeightConstraint : NSLayoutConstraint!
     fileprivate var containerHeightConstraint: NSLayoutConstraint!
     fileprivate var tap: UITapGestureRecognizer!
+    
+    fileprivate var observersAdded = false
+    private var cleanupComplete = false
     
     fileprivate var hideStatusBar = false {
         didSet {
@@ -51,15 +52,24 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     }
     
     deinit {
-        selectedTag = nil
-        selectedUser = nil
+        performCleanup()
+    }
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            cleanupComplete = true
+            selectedTag = nil
+            selectedUser = nil
+            modalDelegate = nil
+            tap = nil
+            NotificationCenter.default.removeObserver(self)
+        }
     }
     
     override func viewDidLayoutSubviews() {
         if !isLoaded {
             setupQuestionBox()
             questionBody.becomeFirstResponder()
-
             isLoaded = true
         }
     }
@@ -70,11 +80,6 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        view.removeGestureRecognizer(tap)
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
@@ -89,6 +94,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         if modalDelegate != nil {
             questionBody.resignFirstResponder()
             modalDelegate.userClosedModal(self)
+            performCleanup()
         }
     }
     
@@ -112,7 +118,9 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         dismissKeyboard()
         
         if selectedTag != nil {
-            PulseDatabase.askQuestion(parentItem: selectedTag, qText: questionBody.text, completion: {(success, error) in
+            PulseDatabase.askQuestion(parentItem: selectedTag, qText: questionBody.text, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+                
                 if success {
                     let questionConfirmation = UIAlertController(title: "Question Posted!",
                                                                  message: "Thanks for your question. You will get a notification as soon as someone posts an answer",
@@ -120,60 +128,63 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
                     
                     questionConfirmation.addAction(UIAlertAction(title: "done",
                                                                  style: .default,
-                                                                 handler: { (action: UIAlertAction!) in
+                                                                 handler: {[weak self] (action: UIAlertAction!) in
+                            guard let `self` = self else { return }
                             self.dismissAsk()
                     }))
                     
-                    self.present(questionConfirmation, animated: true, completion: nil)
                     self.askButton.setEnabled()
                     self.askButton.removeLoadingIndicator(_loadingIndicator)
                     self.askButton.setTitle("Ask", for: .normal)
-
+                    
+                    self.present(questionConfirmation, animated: true, completion: nil)
                 } else {
                     let questionConfirmation = UIAlertController(title: "Error Posting Question",
                                                                  message: error?.localizedDescription,
                                                                  preferredStyle: .actionSheet)
                     
-                    questionConfirmation.addAction(UIAlertAction(title: "okay",
-                                                                 style: .default,
-                                                                 handler: { (action: UIAlertAction!) in
-                           self.dismissAsk()
+                    questionConfirmation.addAction(UIAlertAction(title: "okay", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
+                        self.dismissAsk()
                     }))
                     
-                    self.present(questionConfirmation, animated: true, completion: nil)
                     self.askButton.setEnabled()
                     self.askButton.removeLoadingIndicator(_loadingIndicator)
                     self.askButton.setTitle("Ask", for: .normal)
-
+                    
+                    self.present(questionConfirmation, animated: true, completion: nil)
                 }
             })
         } else if selectedUser != nil {
-            PulseDatabase.askUserQuestion(askUserID: selectedUser.uID!, qText: questionBody.text, completion: {(success, error) in
+            PulseDatabase.askUserQuestion(askUserID: selectedUser.uID!, qText: questionBody.text, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+                
                 if success {
                     let personName = self.selectedUser.name ?? " the user"
                     let questionConfirmation = UIAlertController(title: "Question Posted!",
                                                                  message: "Thanks for your question. You will get a notification as soon as \(personName) responds",
                                                                 preferredStyle: .actionSheet)
                     
-                    questionConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+                    questionConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
                         self.dismissAsk()
                     }))
                     
-                    self.present(questionConfirmation, animated: true, completion: nil)
                     self.askButton.setEnabled()
                     self.askButton.removeLoadingIndicator(_loadingIndicator)
+                    self.present(questionConfirmation, animated: true, completion: nil)
                     
                 } else {
                     let questionConfirmation = UIAlertController(title: "Error Posting Question", message: error?.localizedDescription, preferredStyle: .actionSheet)
                     
-                    questionConfirmation.addAction(UIAlertAction(title: "okay", style: .default, handler: { (action: UIAlertAction!) in
+                    questionConfirmation.addAction(UIAlertAction(title: "okay", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
                         questionConfirmation.dismiss(animated: true, completion: nil)
                     }))
                     
-                    self.present(questionConfirmation, animated: true, completion: nil)
                     self.askButton.setEnabled()
                     self.askButton.removeLoadingIndicator(_loadingIndicator)
-
+                    self.present(questionConfirmation, animated: true, completion: nil)
                 }
             })
         }

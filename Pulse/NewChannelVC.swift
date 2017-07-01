@@ -52,7 +52,8 @@ class NewChannelVC: PulseVC {
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
-        PulseDatabase.addNewChannel(cTitle: cTitle.text!, cDescription: cDescription.text!, completion: {(success, error) in
+        PulseDatabase.addNewChannel(cTitle: cTitle.text!, cDescription: cDescription.text!, completion: {[weak self] (success, error) in
+            guard let `self` = self else { return }
             success ? self.showSuccessMenu(): self.showErrorMenu(errorTitle: "Error Submitting Request", error: error!)
             loading.removeFromSuperview()
         })
@@ -74,7 +75,8 @@ class NewChannelVC: PulseVC {
                                      message: "You will hear back from the Pulse Team shortly",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.submitButton.setEnabled()
             self.goBack()

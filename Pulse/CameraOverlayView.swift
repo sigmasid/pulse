@@ -10,28 +10,28 @@ import UIKit
 import Foundation
 
 class CameraOverlayView: UIView {
-
-    fileprivate var shutterButton = UIButton()
-    fileprivate var flipCameraButton = UIButton()
-    fileprivate var flashModeButton = UIButton()
-    fileprivate var titleBackground = UILabel()
-    fileprivate var countdownTimer = UILabel()
-    fileprivate var showAlbumPicker = UIButton()
     
-    var _flashMode : CameraFlashMode! {
+    public var countdownTimer = UILabel()
+    public var _flashMode : CameraFlashMode! {
         didSet {
             updateFlashMode(_flashMode)
         }
     }
+    fileprivate var shutterButton = UIButton()
+    fileprivate var closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var flipCameraButton = PulseButton(size: .xSmall, type: .flipCamera, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var flashModeButton = PulseButton(size: .xSmall, type: .flashMode, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    
+    fileprivate var showAlbumPicker = PulseButton(size: .small, type: .showAlbum, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var titleBackground = UILabel()
     
     fileprivate var timeLeftShapeLayer : CAShapeLayer!
-    fileprivate var titleBackgroundHeight : CGFloat = 40
+    fileprivate var titleBackgroundHeight : CGFloat = scopeBarHeight
     fileprivate var shutterButtonRadius : CGFloat!
-    fileprivate var iconSize : CGFloat = IconSizes.xxSmall.rawValue
+    fileprivate var iconSize : CGFloat = IconSizes.xSmall.rawValue
     fileprivate var elementSpacing : CGFloat = Spacing.s.rawValue
     fileprivate var elementOpacity : Float = 0.7
-    fileprivate var countdownTimerRadius : CGFloat = 10
-    fileprivate var countdownTimerRadiusStroke : CGFloat = IconThickness.thick.rawValue
+    fileprivate var radiusStroke : CGFloat = IconThickness.extraThick.rawValue
     
     /// Property to change camera flash mode.
     internal enum CameraFlashMode: Int {
@@ -39,16 +39,17 @@ class CameraOverlayView: UIView {
     }
     
     internal enum CameraButtonSelector: Int {
-        case shutter, flash, flip, album
+        case shutter, flash, flip, album, close
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
 
         shutterButtonRadius = frame.size.width / 11
-        drawAlbumPicker()
         drawShutterButton()
+        drawAlbumPicker()
         drawTitleBackground()
+        drawCloseButton()
         drawFlashCamera()
         drawFlipCamera()
 
@@ -60,10 +61,8 @@ class CameraOverlayView: UIView {
     
     deinit {
         if timeLeftShapeLayer != nil {
-            timeLeftShapeLayer.removeFromSuperlayer()
             timeLeftShapeLayer = nil
         }
-        
     }
     
     /* PUBLIC ACCESSIBLE FUNCTIONS */
@@ -75,10 +74,24 @@ class CameraOverlayView: UIView {
     
     public func stopCountdown() {
         timeLeftShapeLayer.removeAllAnimations()
+        timeLeftShapeLayer.removeFromSuperlayer()
+        
     }
     
     // Add Video Countdown Animation
     public func countdownTimer(_ videoDuration : Double) {
+        if countdownTimer.superview != self {
+            addSubview(countdownTimer)
+        }
+        
+        countdownTimer.translatesAutoresizingMaskIntoConstraints = false
+        
+        countdownTimer.centerXAnchor.constraint(equalTo: shutterButton.centerXAnchor).isActive = true
+        countdownTimer.widthAnchor.constraint(equalTo: shutterButton.widthAnchor).isActive = true
+        countdownTimer.centerYAnchor.constraint(equalTo: shutterButton.centerYAnchor).isActive = true
+        countdownTimer.heightAnchor.constraint(equalTo: shutterButton.heightAnchor).isActive = true
+        countdownTimer.layoutIfNeeded()
+        
         // draw the countdown
         let bgShapeLayer = drawBgShape()
         timeLeftShapeLayer = drawTimeLeftShape()
@@ -93,14 +106,6 @@ class CameraOverlayView: UIView {
         strokeIt.duration = videoDuration
         
         timeLeftShapeLayer.add(strokeIt, forKey: nil)
-        addSubview(countdownTimer)
-        
-        countdownTimer.translatesAutoresizingMaskIntoConstraints = false
-        
-        countdownTimer.topAnchor.constraint(equalTo: titleBackground.bottomAnchor, constant: elementSpacing + countdownTimerRadius).isActive = true
-        countdownTimer.widthAnchor.constraint(equalToConstant: countdownTimerRadius * 2 + countdownTimerRadiusStroke).isActive = true
-        countdownTimer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: elementSpacing + countdownTimerRadius).isActive = true
-        countdownTimer.heightAnchor.constraint(equalToConstant: countdownTimerRadius * 2 + countdownTimerRadiusStroke).isActive = true
     }
     
     public func getButton(_ buttonName : CameraButtonSelector) -> UIButton {
@@ -109,7 +114,17 @@ class CameraOverlayView: UIView {
             case .flip: return flipCameraButton
             case .shutter: return shutterButton
             case .album: return showAlbumPicker
+            case .close: return closeButton
         }
+    }
+    
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        for view in subviews {
+            if !view.isHidden && view.point(inside: self.convert(point, to: view), with: event) {
+                return true
+            }
+        }
+        return false
     }
     
     /* PRIVATE FUNCTIONS */
@@ -120,11 +135,11 @@ class CameraOverlayView: UIView {
         
         // Setup the CAShapeLayer with the path, colors, and line width
         let circleLayer = CAShapeLayer()
-        circleLayer.frame = CGRect(x: 0,y: 0,width: shutterButtonRadius * 2,height: shutterButtonRadius * 2)
+        circleLayer.frame = CGRect(x: 0,y: 0,width: shutterButtonRadius * 2 + 2,height: shutterButtonRadius * 2 + 2)
         circleLayer.path = circlePath.cgPath
-        circleLayer.fillColor = UIColor.iconBackgroundColor.withAlphaComponent(0.5).cgColor
+        circleLayer.fillColor = UIColor.white.withAlphaComponent(0.8).cgColor
         circleLayer.strokeColor = UIColor.white.cgColor
-        circleLayer.lineWidth = 4.0
+        circleLayer.lineWidth = radiusStroke
         
         shutterButton.layer.insertSublayer(circleLayer, at: 0)
         shutterButton.alpha = CGFloat(elementOpacity)
@@ -132,23 +147,37 @@ class CameraOverlayView: UIView {
         
         shutterButton.translatesAutoresizingMaskIntoConstraints = false
         
-        shutterButton.bottomAnchor.constraint(equalTo: showAlbumPicker.bottomAnchor, constant: -Spacing.xl.rawValue).isActive = true
+        shutterButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Spacing.l.rawValue).isActive = true
         shutterButton.widthAnchor.constraint(equalToConstant: shutterButtonRadius * 2).isActive = true
         shutterButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         shutterButton.heightAnchor.constraint(equalToConstant: shutterButtonRadius * 2).isActive = true
         
     }
     
+    private func drawCloseButton() {
+        addSubview(closeButton)
+        closeButton.alpha = CGFloat(elementOpacity)
+        
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.topAnchor.constraint(equalTo: titleBackground.bottomAnchor, constant: elementSpacing).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: iconSize).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: iconSize).isActive = true
+        closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: elementSpacing).isActive = true
+        closeButton.removeShadow()
+    }
+    
     ///Draws the camera flash icon frame
     fileprivate func drawFlashCamera() {
         addSubview(flashModeButton)
-        flashModeButton.alpha = 0.7
+        flashModeButton.alpha = CGFloat(elementOpacity)
         
         flashModeButton.translatesAutoresizingMaskIntoConstraints = false
-        flashModeButton.topAnchor.constraint(equalTo: titleBackground.bottomAnchor, constant: elementSpacing).isActive = true
+        flashModeButton.topAnchor.constraint(equalTo: closeButton.bottomAnchor, constant: elementSpacing).isActive = true
         flashModeButton.widthAnchor.constraint(equalToConstant: iconSize).isActive = true
-        flashModeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -elementSpacing).isActive = true
+        flashModeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: elementSpacing).isActive = true
         flashModeButton.heightAnchor.constraint(equalToConstant: iconSize).isActive = true
+        flashModeButton.removeShadow()
+        
     }
     
     ///Adds the image for camera based on current mode
@@ -163,33 +192,26 @@ class CameraOverlayView: UIView {
     ///Icon to turn the camera from front to back
     fileprivate func drawFlipCamera() {
         addSubview(flipCameraButton)
-        
-        flipCameraButton.setImage(UIImage(named: "flip-camera"), for: UIControlState())
         flipCameraButton.alpha = CGFloat(elementOpacity)
         
         flipCameraButton.translatesAutoresizingMaskIntoConstraints = false
-        
         flipCameraButton.topAnchor.constraint(equalTo: flashModeButton.bottomAnchor, constant: elementSpacing).isActive = true
         flipCameraButton.widthAnchor.constraint(equalToConstant: iconSize).isActive = true
-        flipCameraButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -elementSpacing).isActive = true
+        flipCameraButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: elementSpacing).isActive = true
         flipCameraButton.heightAnchor.constraint(equalToConstant: iconSize).isActive = true
+        flipCameraButton.removeShadow()
     }
     
     ///Icon to turn the bring up photo album
     fileprivate func drawAlbumPicker() {
         addSubview(showAlbumPicker)
-        
-        showAlbumPicker.tintColor = .white
-        showAlbumPicker.setImage(UIImage(named: "down-arrow"), for: UIControlState())
-        showAlbumPicker.backgroundColor = UIColor.white.withAlphaComponent(0.01)
         showAlbumPicker.alpha = CGFloat(elementOpacity)
-        
         showAlbumPicker.translatesAutoresizingMaskIntoConstraints = false
-        
-        showAlbumPicker.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -elementSpacing).isActive = true
-        showAlbumPicker.widthAnchor.constraint(equalToConstant: iconSize).isActive = true
-        showAlbumPicker.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        showAlbumPicker.heightAnchor.constraint(equalToConstant: iconSize).isActive = true
+        showAlbumPicker.bottomAnchor.constraint(equalTo: shutterButton.bottomAnchor).isActive = true
+        showAlbumPicker.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        showAlbumPicker.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.m.rawValue).isActive = true
+        showAlbumPicker.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        showAlbumPicker.removeShadow()
     }
     
     ///Adds the stripe for the question
@@ -213,21 +235,24 @@ class CameraOverlayView: UIView {
     
     fileprivate func drawBgShape() -> CAShapeLayer {
         let bgShapeLayer = CAShapeLayer()
-        bgShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0 , y: 0), radius: countdownTimerRadius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
+        bgShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: countdownTimer.frame.width / 2 , y: countdownTimer.frame.height / 2),
+                                         radius: shutterButtonRadius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
         bgShapeLayer.strokeColor = UIColor.pulseGrey.cgColor
         bgShapeLayer.fillColor = UIColor.clear.cgColor
         bgShapeLayer.opacity = elementOpacity
-        bgShapeLayer.lineWidth = countdownTimerRadiusStroke
+        bgShapeLayer.lineWidth = radiusStroke
         
         return bgShapeLayer
     }
     
     fileprivate func drawTimeLeftShape() -> CAShapeLayer {
         let timeLeftShapeLayer = CAShapeLayer()
-        timeLeftShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: 0, y: 0), radius: countdownTimerRadius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians, clockwise: true).cgPath
+        timeLeftShapeLayer.path = UIBezierPath(arcCenter: CGPoint(x: countdownTimer.frame.width / 2 , y: countdownTimer.frame.height / 2),
+                                               radius: shutterButtonRadius, startAngle: -90.degreesToRadians, endAngle: 270.degreesToRadians,
+                                               clockwise: true).cgPath
         timeLeftShapeLayer.strokeColor = UIColor.red.cgColor
         timeLeftShapeLayer.fillColor = UIColor.clear.cgColor
-        timeLeftShapeLayer.lineWidth = countdownTimerRadiusStroke
+        timeLeftShapeLayer.lineWidth = radiusStroke
         timeLeftShapeLayer.opacity = elementOpacity
         
         return timeLeftShapeLayer

@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate, ParentTextViewDelegate, ModalDelegate, SelectionDelegate  {
+class NewInterviewVC: PulseVC, UINavigationControllerDelegate, ParentTextViewDelegate, ModalDelegate, SelectionDelegate  {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
@@ -73,21 +73,13 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
             selectedChannel = nil
             selectedItem = nil
             
-            iImage.removeFromSuperview()
-            sTypeDescription.removeFromSuperview()
-            
             if tableView != nil {
-                tableView.removeFromSuperview()
                 tableView = nil
             }
             
             if addQuestion != nil {
-                addQuestion.removeFromSuperview()
                 addQuestion = nil
             }
-            
-            addButton.removeFromSuperview()
-            searchButton.removeFromSuperview()
             
             cleanupComplete = true
         }
@@ -114,7 +106,8 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     
     internal func handleSubmit() {
         if selectedUser != nil {
-            createInterviewRequest(completion: { success, item in
+            createInterviewRequest(completion: {[weak self] success, item in
+                guard let `self` = self else { return }
                 if success {
                     //clear interview stuff
                     self.selectedUser = nil
@@ -152,7 +145,8 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
         item.cTitle = selectedChannel.cTitle
         item.tag = selectedItem
 
-        PulseDatabase.createInviteRequest(item: item, type: .interviewInvite, toUser: selectedUser, toName: iName.text!, toEmail: email, childItems: allQuestions, parentItemID: nil, completion: { success, error in
+        PulseDatabase.createInviteRequest(item: item, type: .interviewInvite, toUser: selectedUser, toName: iName.text!, toEmail: email, childItems: allQuestions, parentItemID: nil, completion: {[weak self] success, error in
+            guard let `self` = self else { return }
             success ? completion(true, item) : completion(false, nil)
             self.toggleLoading(show: false, message: nil)
             loading.removeFromSuperview()
@@ -171,7 +165,8 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
     
     internal func addChannelContributors() {
         if selectedChannel.contributors.isEmpty {
-            PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {success, contributors in
+            PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {[weak self] success, contributors in
+                guard let `self` = self else { return }
                 self.selectedChannel.contributors = contributors
             })
         }
@@ -211,11 +206,13 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
             }
             checkEnableButton()
         } else if addEmail != nil, sender == addEmail {
-            GlobalFunctions.validateEmail(text, completion: {(success, error) in
+            GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
                 if !success {
                     self.showAddEmail(bodyText: "invalid email - try again")
                 } else {
-                    self.createInterviewRequest(email: text, completion: { success, item in
+                    self.createInterviewRequest(email: text, completion: {[weak self] success, item in
+                        guard let `self` = self else { return }
                         if success {
                             self.showSuccessMenu(message: "Invite Sent!")
                             self.iTopic.text = self.placeholderDescription
@@ -265,11 +262,14 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
                                      message: "How would you like to send it to the recipient?",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "copy Interview Link", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "copy Interview Link", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.toggleLoading(show: true, message: "creating interview link...", showIcon: true)
-            self.createInterviewRequest(completion: { success, item in
+            self.createInterviewRequest(completion: {[weak self] success, item in
+                guard let `self` = self else { return }
                 success ?
-                    item?.createShareLink(invite: true, completion: { link in
+                    item?.createShareLink(invite: true, completion: {[weak self] link in
+                        guard let `self` = self else { return }
                         UIPasteboard.general.url = link
                         self.showSuccessMenu(message: "Copied link to clipboard!")
                         self.toggleLoading(show: false, message: nil)
@@ -280,11 +280,13 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
             })
         }))
         
-        menu.addAction(UIAlertAction(title: "send Interview Email", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "send Interview Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showAddEmail(bodyText: "enter interviewee email")
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             DispatchQueue.main.async {
                 self.submitButton.setTitle("Send Invite", for: .normal)
@@ -301,7 +303,8 @@ class NewInterviewVC: PulseVC, UIImagePickerControllerDelegate, UINavigationCont
                                      message: "Tap okay to return to the series page!",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.checkEnableButton()
             self.goBack()

@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical, play, flashMode, flipCamera, showAlbum}
 enum ButtonSizes { case xxSmall, xSmall, small, medium, large, xLarge }
 
 @IBDesignable
@@ -331,11 +331,11 @@ open class PulseButton: UIButton {
     fileprivate func setupButtonType(size: ButtonSizes, type : ButtonType) {
         
         switch size {
-        case .xxSmall: imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5) //smaller insets for xSmall button
-        case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //smaller insets for xSmall button
-        case .medium: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15) //smaller insets for xSmall button
-        case .large: imageEdgeInsets = UIEdgeInsetsMake(22.5, 22.5, 22.5, 22.5) //smaller insets for xSmall button
-        case .xLarge: imageEdgeInsets = UIEdgeInsetsMake(30, 30, 30, 30) //smaller insets for xSmall button
+        case .xxSmall: imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+        case .xSmall: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
+        case .medium: imageEdgeInsets = UIEdgeInsetsMake(15, 15, 15, 15)
+        case .large: imageEdgeInsets = UIEdgeInsetsMake(22.5, 22.5, 22.5, 22.5)
+        case .xLarge: imageEdgeInsets = UIEdgeInsetsMake(35, 35, 35, 35)
 
         default: imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10) //standard insets
         }
@@ -362,8 +362,10 @@ open class PulseButton: UIButton {
             setImage(tintedTimage, for: UIControlState.normal)
         
         case .close:
-            let tintedTimage = UIImage(named: "close")?.withRenderingMode(.alwaysTemplate)
-            setImage(tintedTimage, for: UIControlState.normal)
+            setImage(UIImage(named: "close"), for: UIControlState.normal)
+            
+        case .play:
+            setImage(UIImage(named: "play"), for: UIControlState.normal)
 
         case .settings:
             let tintedTimage = UIImage(named: "settings")?.withRenderingMode(.alwaysTemplate)
@@ -377,15 +379,25 @@ open class PulseButton: UIButton {
         case .check:
             let tintedTimage = UIImage(named: "check")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
-            imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
             
         case .message:
             let tintedTimage = UIImage(named: "message")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             
+        case .flipCamera:
+            setImage(UIImage(named: "flip-camera"), for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(imageEdgeInsets.top / 1.25, imageEdgeInsets.left / 1.25, imageEdgeInsets.bottom / 1.25, imageEdgeInsets.right / 1.25)
+            
+        case .flashMode:
+            setImage(UIImage(named: "flash-off"), for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(imageEdgeInsets.top / 1.25, imageEdgeInsets.left / 1.25, imageEdgeInsets.bottom / 1.25, imageEdgeInsets.right / 1.25)
+            
         case .camera:
-            let tintedTimage = UIImage(named: "camera")?.withRenderingMode(.alwaysTemplate)
-            setImage(tintedTimage, for: UIControlState.normal)
+            setImage(UIImage(named: "camera"), for: UIControlState.normal)
+            imageEdgeInsets = UIEdgeInsetsMake(imageEdgeInsets.top / 1.25, imageEdgeInsets.left / 1.25, imageEdgeInsets.bottom / 1.25, imageEdgeInsets.right / 1.25)
+            
+        case .showAlbum:
+            setImage(UIImage(named: "library"), for: UIControlState.normal)
             
         case .refresh:
             let tintedTimage = UIImage(named: "refresh")?.withRenderingMode(.alwaysTemplate)

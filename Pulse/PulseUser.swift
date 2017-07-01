@@ -180,12 +180,12 @@ class PulseUser: User {
     
     func getValueForStringProperty(_ property : String) -> String? {
         switch property {
-        case "name": return PulseUser.currentUser.name
+        case "name": return PulseUser.currentUser.name?.capitalized
         case "shortBio": return PulseUser.currentUser.shortBio
         case "bio": return PulseUser.currentUser.bio
         case "birthday": return PulseUser.currentUser.birthday
-        case "gender": return PulseUser.currentUser.gender
-        case "email": return getEmail()
+        case "gender": return PulseUser.currentUser.gender?.capitalized
+        case "email": return getEmail()?.lowercased()
         case "password": return nil
         default: return nil
         }

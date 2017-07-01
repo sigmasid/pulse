@@ -15,19 +15,21 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     
     fileprivate var observerAdded = false
     fileprivate var isCurrentUser = false
-
+    private var cleanupComplete = false
+    
     /** Delegate Vars **/
     public var selectedUser : PulseUser! {
         didSet {
-            if selectedUser == nil || selectedUser.uID == nil {
+            guard !cleanupComplete else { return }
+            
+            if (selectedUser == nil || selectedUser.uID == nil) {
                 allItems = []
                 headerNav?.setNav(title: "Profile")
                 updateDataSource()
             } else if PulseUser.isLoggedIn(), selectedUser.uID == PulseUser.currentUser.uID! {
                 //For current user
-                if oldValue != nil {
+                if  oldValue != nil {
                     guard selectedUser.uID != oldValue.uID else { return }
-                    
                 }
                 addObservers()
 
@@ -132,13 +134,20 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     deinit {
-        selectedUser = nil
-        itemStack.removeAll()
-        collectionView = nil
-        allItems.removeAll()
-        modalDelegate = nil
-        
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+        performCleanup()
+    }
+    
+    internal func performCleanup() {
+        if !cleanupComplete {
+            cleanupComplete = true
+            selectedUser = nil
+            itemStack.removeAll()
+            collectionView = nil
+            allItems.removeAll()
+            modalDelegate = nil
+            
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+        }
     }
     
     override func didReceiveMemoryWarning() {

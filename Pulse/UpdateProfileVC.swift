@@ -11,7 +11,7 @@ import CoreLocation
 
 class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     
-    var _currentSetting : Setting! //set by delegate
+    public var _currentSetting : Setting! //set by delegate
     
     fileprivate var settingDescription = UILabel()
     fileprivate var settingSection = UIView()
@@ -22,11 +22,11 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     fileprivate lazy var genderPicker = UIPickerView()
     fileprivate lazy var settingsTable = UITableView()
     fileprivate lazy var options = [String]()
-    fileprivate lazy var statusLabel = UILabel()
     fileprivate lazy var locationManager = CLLocationManager()
     fileprivate var location : CLLocation?
     
     fileprivate var updateButton = UIButton()
+    private var cleanupComplete = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,11 +49,16 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     deinit {
-        print("update profile deinit called")
-        settingsTable.delegate = nil
-        settingsTable.removeFromSuperview()
-        options.removeAll()
-        location = nil
+        performCleanup()
+    }
+    
+    private func performCleanup() {
+        if !cleanupComplete {
+            cleanupComplete = true
+            settingsTable.delegate = nil
+            options.removeAll()
+            location = nil
+        }
     }
     
     fileprivate func updateHeader() {
@@ -233,25 +238,13 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         updateButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         updateButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
         updateButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        updateButton.layoutIfNeeded()
         
         updateButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         updateButton.setTitle("Save", for: UIControlState())
         updateButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         updateButton.setEnabled()
-    }
-    
-    fileprivate func addStatusLabel() {
-        view.addSubview(statusLabel)
         
-        statusLabel.translatesAutoresizingMaskIntoConstraints = false
-        statusLabel.topAnchor.constraint(equalTo: updateButton.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
-        statusLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        statusLabel.widthAnchor.constraint(equalTo: updateButton.widthAnchor, multiplier: 0.7).isActive = true
-        
-        statusLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        statusLabel.textAlignment = .center
-        statusLabel.textColor = UIColor.black
-        statusLabel.numberOfLines = 0
     }
 
     fileprivate func getValueOrPlaceholder() -> String {
@@ -303,11 +296,8 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     
     open func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         CLGeocoder().reverseGeocodeLocation(manager.location!, completionHandler: {[weak self] (placemarks, error)-> Void in
-            guard let `self` = self else { return }
-
-            if (error != nil) {
-                return
-            }
+            guard let `self` = self, error == nil else { return }
+            
             if let _location = manager.location {
                 self.location = _location
             }
@@ -315,135 +305,110 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             if let allPlacemarks = placemarks {
                 if allPlacemarks.count != 0 {
                     let pm = allPlacemarks[0] as CLPlacemark
-                    self.locationManager.stopUpdatingLocation()
                     self.shortTextField.text = pm.locality
                 }
             } else {
                 self.shortTextField.text = nil
                 GlobalFunctions.showAlertBlock("Location Error", erMessage: "Sorry - there was an error getting your location!")
             }
+            self.locationManager.stopUpdatingLocation()
         })
     }
     
     func updateProfile() {
-        updateButton.setDisabled()
         let _loading = updateButton.addLoadingIndicator()
+        updateButton.setDisabled()
         
         switch _currentSetting.type! {
         case .birthday:
             let _birthday = shortTextField.text
-            addStatusLabel()
             PulseDatabase.updateUserProfile(_currentSetting, newValue: _birthday!, completion: {[weak self] (success, error) in
                 guard let `self` = self else { return }
 
-                if success {
-                    self.statusLabel.text = "Profile Updated!"
-                    self.goBack()
-                } else {
-                    self.statusLabel.text = error?.localizedDescription
-                }
+                success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
                 self.updateButton.setEnabled()
                 self.updateButton.removeLoadingIndicator(_loading)
             })
         case .bio, .shortBio:
             let _bio = longTextField.text
-            addStatusLabel()
             PulseDatabase.updateUserProfile(_currentSetting, newValue: _bio!, completion: {[weak self] (success, error) in
                 guard let `self` = self else { return }
 
-                if success {
-                    self.statusLabel.text = "Profile Updated!"
-                    self.goBack()
-                } else {
-                    self.statusLabel.text = error?.localizedDescription
-                }
+                success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
                 self.updateButton.setEnabled()
                 self.updateButton.removeLoadingIndicator(_loading)
             })
         case .name:
             let _name = shortTextField.text
-            addStatusLabel()
-
-            GlobalFunctions.validateName(_name, completion: {[unowned self] (verified, error) in
+            
+            GlobalFunctions.validateName(_name, completion: {[weak self] (verified, error) in
+                guard let `self` = self else { return }
+                
                 if !verified {
-                    self.statusLabel.text = error?.localizedDescription
+                    GlobalFunctions.showAlertBlock("Invalid Name", erMessage: error?.localizedDescription)
+                    self.updateButton.setEnabled()
+                    self.updateButton.removeLoadingIndicator(_loading)
                 } else {
                     PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: _name!, completion: {[weak self] (success, error) in
                         guard let `self` = self else { return }
 
-                        if success {
-                            self.statusLabel.text = "Profile Updated!"
-                            self.goBack()
-                        } else {
-                            self.statusLabel.text = error?.localizedDescription
-                        }
+                        success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
+                        self.updateButton.setEnabled()
+                        self.updateButton.removeLoadingIndicator(_loading)
                     })
                 }
-                self.updateButton.setEnabled()
-                self.updateButton.removeLoadingIndicator(_loading)
+                
             })
         case .email:
             let _email = shortTextField.text
-            addStatusLabel()
             
-            GlobalFunctions.validateEmail(_email, completion: {[unowned self] (verified, error) in
-
+            GlobalFunctions.validateEmail(_email, completion: {[weak self] (verified, error) in
+                guard let `self` = self else { return }
+                
                 if !verified {
-                    self.statusLabel.text = error?.localizedDescription
+                    GlobalFunctions.showAlertBlock("Invalid Email", erMessage: error?.localizedDescription)
+                    self.updateButton.setEnabled()
+                    self.updateButton.removeLoadingIndicator(_loading)
                 } else {
                     PulseDatabase.updateUserProfile(self._currentSetting, newValue: _email!, completion: {[weak self] (success, error) in
                         guard let `self` = self else { return }
 
-                        if success {
-                            self.statusLabel.text = "Profile Updated!"
-                            self.goBack()
-                        } else {
-                            self.statusLabel.text = error?.localizedDescription
-                        }
+                        success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
+                        self.updateButton.setEnabled()
+                        self.updateButton.removeLoadingIndicator(_loading)
                     })
                 }
-                self.updateButton.setEnabled()
-                self.updateButton.removeLoadingIndicator(_loading)
             })
         case .password:
             let _password = shortTextField.text
-            addStatusLabel()
             
-            GlobalFunctions.validatePassword(_password, completion: {[unowned self] (verified, error) in
+            GlobalFunctions.validatePassword(_password, completion: {[weak self] (verified, error) in
+                guard let `self` = self else { return }
+
                 if !verified {
-                    self.statusLabel.text = error?.localizedDescription
+                    GlobalFunctions.showAlertBlock("Invalid Password", erMessage: error?.localizedDescription)
+                    self.updateButton.setEnabled()
+                    self.updateButton.removeLoadingIndicator(_loading)
                 } else {
                     PulseDatabase.updateUserProfile(self._currentSetting, newValue: _password!, completion: {[weak self] (success, error) in
                         guard let `self` = self else { return }
 
-                        if success {
-                            self.statusLabel.text = "Profile Updated!"
-                            self.goBack()
-                        } else {
-                            self.statusLabel.text = error?.localizedDescription
-                        }
+                        success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
+                        self.updateButton.setEnabled()
+                        self.updateButton.removeLoadingIndicator(_loading)
                     })
                 }
-                self.updateButton.setEnabled()
-                self.updateButton.removeLoadingIndicator(_loading)
             })
             
         case .gender:
             let _gender = shortTextField.text
-            addStatusLabel()
             
             PulseDatabase.updateUserProfile(self._currentSetting, newValue: _gender!, completion: {[weak self] (success, error) in
                 guard let `self` = self else { return }
 
-                if success {
-                    self.statusLabel.text = "Profile Updated!"
-                    self.goBack()
-                } else {
-                    self.statusLabel.text = error?.localizedDescription
-                }
+                success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
                 self.updateButton.setEnabled()
                 self.updateButton.removeLoadingIndicator(_loading)
-
             })
             
         case .location:
@@ -451,30 +416,17 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
                 PulseDatabase.updateUserLocation(newValue: location, completion: {[weak self] (success, error) in
                     guard let `self` = self else { return }
 
-                    if success {
-                        self.statusLabel.text = "Profile Updated!"
-                        self.goBack()
-                    } else {
-                        self.statusLabel.text = error?.localizedDescription
-                    }
-                    
+                    success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
                     self.updateButton.setEnabled()
                     self.updateButton.removeLoadingIndicator(_loading)
                 })
             }
             else if let _location = shortTextField.text {
-                addStatusLabel()
                 
                 PulseDatabase.updateUserProfile(self._currentSetting, newValue: _location, completion: {[weak self] (success, error) in
                     guard let `self` = self else { return }
 
-                    if success {
-                        self.statusLabel.text = "Profile Updated!"
-                        self.goBack()
-                    } else {
-                        self.statusLabel.text = error?.localizedDescription
-                    }
-                    
+                    success ? self.showSuccessMenu() : GlobalFunctions.showAlertBlock("Error Updating Profile", erMessage: error?.localizedDescription)
                     self.updateButton.setEnabled()
                     self.updateButton.removeLoadingIndicator(_loading)
                 })
@@ -491,6 +443,17 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         formatter.dateStyle = DateFormatter.Style.medium
         
         shortTextField.text = formatter.string(from: datePicker.date)
+    }
+    
+    private func showSuccessMenu() {
+        let menu = UIAlertController(title: "Update Successful", message: "your profile has been updated!", preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            self.goBack()
+        }))
+        
+        present(menu, animated: true, completion: nil)
     }
 }
 

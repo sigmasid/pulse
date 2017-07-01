@@ -249,8 +249,6 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
             
             if let blockError = blockError {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
-                sender.setEnabled()
-                sender.removeLoadingIndicator(_loadingIndicator)
                 switch AuthErrorCode(rawValue: blockError._code)! {
                 case .wrongPassword: self._passwordErrorLabel.text = "incorrect password"
                 case .invalidEmail: self._emailErrorLabel.text = "invalid email"
@@ -260,8 +258,6 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
                 }
             }
             else {
-                sender.setEnabled()
-                sender.removeLoadingIndicator(_loadingIndicator)
                 self.headerNav?.setNav(title: "Welcome")
                 self.view.endEditing(true)
                 self._loggedInSuccess()
@@ -269,6 +265,8 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
                 self.userPassword.text = ""
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
+            sender.setEnabled()
+            sender.removeLoadingIndicator(_loadingIndicator)
         }
     }
     

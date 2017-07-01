@@ -8,7 +8,7 @@
 
 import UIKit
 
-class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate, ParentTextViewDelegate, ModalDelegate, SelectionDelegate {
+class NewShowcaseVC: PulseVC, UINavigationControllerDelegate, ParentTextViewDelegate, ModalDelegate, SelectionDelegate {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
@@ -51,20 +51,15 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
     
     public func performCleanup() {
         if !cleanupComplete {
+            cleanupComplete = true
+            
             selectedUser = nil
             selectedChannel = nil
             selectedItem = nil
-            
-            iImage.removeFromSuperview()
-            sTypeDescription.removeFromSuperview()
-            searchButton.removeFromSuperview()
 
             if addEmail != nil {
-                addEmail.removeFromSuperview()
                 addEmail = nil
             }
-            
-            cleanupComplete = true
         }
     }
     
@@ -99,9 +94,8 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
         if selectedUser != nil {
             createInvite(completion: { success, item in
                 if success {
-                    GlobalFunctions.showAlertBlock(viewController: self,
-                            erTitle: "Invite Sent",
-                            erMessage: "You will get a notification when the user adds the showcase!", buttonTitle: "okay")
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent",
+                                                   erMessage: "You will get a notification when the user adds the showcase!", buttonTitle: "okay")
                     self.selectedUser = nil
                     self.iTopic.text = self.placeholderDescription
                 } else {
@@ -136,6 +130,7 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
         PulseDatabase.createInviteRequest(item: item, type: item.inviteType()!, toUser: selectedUser,
                                           toName: selectedUser?.name ?? iName.text, toEmail: email, childItems: [],  parentItemID: selectedItem.itemID,
                                           completion: {(success, error) in
+                                            
             success ? completion(true, item) : completion(false, nil)
             loading.removeFromSuperview()
         })
@@ -164,20 +159,20 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
     //Button clicked delegate for after adding in email
     internal func buttonClicked(_ text: String, sender: UIView) {
         if addEmail != nil, sender == addEmail {
-            GlobalFunctions.validateEmail(text, completion: {(success, error) in
+            GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
                 if !success {
                     self.showAddEmail(bodyText: "invalid email - try again")
                 } else {
-                    self.createInvite(email: text, completion: { success, item in
+                    self.createInvite(email: text, completion: {[weak self] success, item in
+                        guard let `self` = self else { return }
                         if success {
-                            GlobalFunctions.showAlertBlock(viewController: self,
-                                                           erTitle: "Invite Sent",
+                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent",
                                                            erMessage: "You will get a notification when the user adds the showcase!", buttonTitle: "okay")
                             self.iTopic.text = self.placeholderDescription
                             self.iName.text = self.placeholderName
                         } else {
-                            GlobalFunctions.showAlertBlock(viewController: self,
-                                                           erTitle: "Error Sending Invite",
+                            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Invite",
                                                            erMessage: "Sorry there was an error sending the invite")
                         }
                     })
@@ -202,13 +197,16 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
                                      message: "How would you like to send it to the recipient?",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "send Invite Email", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "send Invite Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showAddEmail(bodyText: "enter recipient email")
         }))
         
-        menu.addAction(UIAlertAction(title: "more Share Options", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "more Share Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.toggleLoading(show: true, message: "creating invite link...", showIcon: true)
-            self.createInvite(completion: { success, item in
+            self.createInvite(completion: {[weak self] success, item in
+                guard let `self` = self else { return }
                 let shareText = "Would you like to \(self.selectedItem.childActionType())\(self.selectedItem.childType()) for the series \(self.selectedItem.itemTitle)?"
                 success ?
                     self.showShare(selectedItem: item!, type: "invite", fullShareText: shareText, inviteItemID: self.selectedItem.itemID) :
@@ -217,7 +215,8 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
             })
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             DispatchQueue.main.async {
                 self.submitButton.setTitle("Send Invite", for: .normal)
@@ -237,11 +236,11 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
     }
     
     internal func showSuccessMenu(message: String) {
-        let menu = UIAlertController(title: message,
-                                     message: "Tap done to return to the series page!",
+        let menu = UIAlertController(title: message, message: "Tap done to return to the series page!",
                                      preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.submitButton.setEnabled()
             self.goBack()
@@ -253,7 +252,8 @@ class NewShowcaseVC: PulseVC, UIImagePickerControllerDelegate, UINavigationContr
     internal func showErrorMenu(error : Error) {
         let menu = UIAlertController(title: "Error Creating Invite", message: error.localizedDescription, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.submitButton.setEnabled()
         }))

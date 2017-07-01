@@ -13,7 +13,8 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     public var selectedChannel : Channel! {
         didSet {
             if selectedChannel != nil, selectedChannel.contributors.isEmpty {
-                PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {success, users in
+                PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {[weak self] success, users in
+                    guard let `self` = self else { return }
                     self.users = users
                 })
             } else if selectedChannel != nil {
@@ -72,7 +73,6 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         super.viewWillAppear(animated)
         tabBarHidden = true
         view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        addBackButton()
     }
     
     override func didReceiveMemoryWarning() {
@@ -95,7 +95,6 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
             selectedChannel = nil
             
             collectionView = nil
-            searchContainer.removeFromSuperview()
             tap = nil
             
             users.removeAll()
@@ -114,7 +113,8 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
                 self.collectionView.alpha = 0
                 self.searchContainer.alpha = 0
 
-            }, completion: {(value: Bool) in
+            }, completion: {[weak self] (value: Bool) in
+                guard let `self` = self else { return }
                 self.collectionView.layoutIfNeeded()
                 self.searchContainer.layoutIfNeeded()
                 
@@ -186,7 +186,6 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         if collectionView.frame.contains(point) {
             return false
         }
-        
         return true
     }
     
@@ -255,7 +254,6 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
             PulseDatabase.getUser(_user.uID!, completion: {[weak self] (user, error) in
                 if let user = user, let `self` = self {
                     cell.updateCell(user.name?.capitalized, _image: nil)
-                    
                     self.users[indexPath.row] = user
                     
                     if let _uPic = user.profilePic {
@@ -263,8 +261,8 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
                             if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
                                 
                                 DispatchQueue.main.async {[weak self] in
-                                    guard let `self` = self else { return }
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                    guard let `self` = self, !self.cleanupComplete else { return }
+                                    if  cell.tag == indexPath.row {
                                         self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
                                         cell.updateImage(image : UIImage(data: _userImageData))
                                     }
@@ -282,12 +280,12 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
                 
                 DispatchQueue.global(qos: .background).async {[weak self] in
                     if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                        guard let `self` = self else { return }
+                        guard let `self` = self, !self.cleanupComplete else { return }
                         if self.users.count > indexPath.row {
                             self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
                         }
                         
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                        if  cell.tag == indexPath.row {
                             DispatchQueue.main.async {
                                 cell.updateCell(_user.name?.capitalized, _image : UIImage(data: _userImageData))
                             }

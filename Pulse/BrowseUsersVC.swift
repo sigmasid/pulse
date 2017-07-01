@@ -16,12 +16,14 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
-            if allUsers.isEmpty, selectedChannel != nil {
+            guard selectedChannel != nil else { return }
+            
+            if allUsers.isEmpty {
                 PulseDatabase.getChannelContributors(channelID: selectedChannel.cID, completion: {(success, users) in
                     self.allUsers = users
                     self.updateDataSource()
                 })
-            } else if selectedChannel != nil {
+            } else {
                 updateDataSource()
             }
         }
@@ -32,6 +34,8 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     internal var collectionView : UICollectionView!
     fileprivate let minCellHeight : CGFloat = 225
     /** End Collection View **/
+    
+    private var cleanupComplete = false
     
     //once allUsers var is set reload the data
     func updateDataSource() {
@@ -50,10 +54,7 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     fileprivate var isLayoutSetup = false
     
     deinit {
-        delegate = nil
-        selectedChannel = nil
-        collectionView = nil
-        allUsers.removeAll()
+        performCleanup()
     }
     
     override func viewDidLoad() {
@@ -71,7 +72,17 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
         updateHeader()
     }
     
-    func setupLayout() {
+    private func performCleanup() {
+        if !cleanupComplete {
+            cleanupComplete = true
+            delegate = nil
+            selectedChannel = nil
+            collectionView = nil
+            allUsers.removeAll()
+        }
+    }
+    
+    private func setupLayout() {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: true)
         

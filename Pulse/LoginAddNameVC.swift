@@ -11,7 +11,7 @@ import FirebaseAuth
 import MobileCoreServices
 import CoreLocation
 
-class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, PanAnimationDelegate, ItemPreviewDelegate {
+class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
@@ -20,8 +20,7 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
     @IBOutlet weak var _lastNameError: UILabel!
     @IBOutlet weak var profilePicButton: UIButton!
     
-    fileprivate var cameraVC : CameraVC!
-    internal lazy var panDismissCameraInteractionController = PanContainerInteractionController()
+    fileprivate var inputVC : InputVC!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,22 +54,20 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
     
     fileprivate func updateHeader() {
         let checkButton = PulseButton(size: .small, type: .check, isRound : true, background: .white, tint: .black)
+        checkButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+        
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
         headerNav?.setNav(title: "Add Name")
     }
     
     @IBAction func addPic(_ sender: UIButton) {
-        guard let nav = navigationController else { return }
+        inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
+        inputVC.cameraMode = .stillImage
+        inputVC.albumShowsVideo = false
+        inputVC.inputDelegate = self
+        inputVC.cameraTitle = "smile!"
         
-        cameraVC = CameraVC()
-        cameraVC.cameraMode = .stillImage
-        cameraVC.delegate = self
-        cameraVC.screenTitle = "smile!"
-        
-        panDismissCameraInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
-        panDismissCameraInteractionController.delegate = self
-        
-        present(cameraVC, animated: true, completion: nil)
+        present(inputVC, animated: true, completion: nil)
     }
     
     @IBAction func addName(_ sender: UIButton) {
@@ -139,81 +136,35 @@ class LoginAddNameVC: PulseVC, CameraDelegate, UIImagePickerControllerDelegate, 
         textField.text = ""
     }
     
-    func doneRecording(isCapturing: Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image, let squareImage = image.getSquareImage(newWidth: 375), cameraVC != nil else { return }
+    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
+        guard let image = image else { return }
         
-        self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
-        PulseDatabase.uploadProfileImage(squareImage, completion: {(URL, error) in
+        
+        UIView.animate(withDuration: 0.1, animations: { self.inputVC.view.alpha = 0.0; self.toggleLoading(show: true, message: "saving! just a sec...") } ,
+                       completion: {(value: Bool) in
+                        self.toggleLoading(show: false, message: nil)
+                        self.inputVC.view.alpha = 1.0
+                        self.inputVC.dismiss(animated: true, completion: nil)
+        })
+        
+        PulseDatabase.uploadProfileImage(image, completion: {(URL, error) in
             if error == nil {
-                UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
-                               completion: {(value: Bool) in
-                                self.cameraVC.toggleLoading(show: false, message: nil)
-                                self.cameraVC.dismiss(animated: true, completion: nil)
-                })
-                
                 DispatchQueue.main.async(execute: {
-                    self.profilePicButton.setImage(squareImage, for: UIControlState())
+                    self.profilePicButton.setImage(image, for: UIControlState())
                     self.profilePicButton.contentMode = .scaleAspectFill
                     self.profilePicButton.setTitle("", for: UIControlState())
+                    self.toggleLoading(show: false, message: nil)
+                })
+            } else {
+                DispatchQueue.main.async(execute: {
+                    self.toggleLoading(show: false, message: nil)
+                    GlobalFunctions.showAlertBlock("Error adding photo", erMessage: "Sorry there was an error - please try again!")
                 })
             }
-            self.cameraVC.toggleLoading(show: false, message: nil)
         })
     }
     
-    func panCompleted(success: Bool, fromVC: UIViewController?) {
-        if success {
-            if cameraVC != nil, fromVC is CameraVC {
-                cameraVC.dismiss(animated: true, completion: nil)
-            }
-        }
+    func dismissInput() {
+        inputVC.dismiss(animated: true, completion: nil)
     }
-    
-    func userDismissedCamera() {
-        cameraVC.dismiss(animated: true, completion: nil)
-    }
-    
-    func showAlbumPicker() {
-        let albumPicker = UIImagePickerController()
-        
-        albumPicker.delegate = self
-        albumPicker.allowsEditing = false
-        albumPicker.sourceType = .photoLibrary
-        albumPicker.mediaTypes = [kUTTypeImage as String]
-        
-        cameraVC.present(albumPicker, animated: true, completion: nil)
-    }
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        picker.dismiss(animated: true, completion: nil)
-        
-        cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
-        
-        let pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
-        
-        if let squareImage = pickedImage.getSquareImage(newWidth: 375) {
-            PulseDatabase.uploadProfileImage(squareImage, completion: {(URL, error) in
-                if error != nil {
-                    self.cameraVC.toggleLoading(show: false, message: nil)
-                } else {
-                    UIView.animate(withDuration: 0.2, animations: { self.cameraVC.view.alpha = 0.0 } ,
-                                   completion: {(value: Bool) in
-                                    self.cameraVC.toggleLoading(show: false, message: nil)
-                                    self.cameraVC.dismiss(animated: true, completion: nil)
-                    })
-                    
-                    DispatchQueue.main.async(execute: {
-                        self.profilePicButton.setImage(squareImage, for: UIControlState())
-                        self.profilePicButton.contentMode = .scaleAspectFill
-                        self.profilePicButton.setTitle("", for: UIControlState())
-                    })
-                }
-            })
-        }
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.dismiss(animated: true, completion: nil)
-    }
-
 }

@@ -49,7 +49,9 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal var iImage = PulseButton(size: .medium, type: .profile, isRound: true, hasBackground: false, tint: .black)
     internal var iDescription = PaddingLabel()
     internal var submitButton = PulseButton()
-
+    
+    private var cleanupComplete = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
@@ -73,6 +75,25 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         updateHeader()
         setupLayout()
         hideKeyboardWhenTappedAround()
+    }
+    
+    override func goBack() {
+        DispatchQueue.global(qos: .background).async {[weak self] in
+            guard let `self` = self else { return }
+            self.performCleanup()
+        }
+        super.goBack()
+    }
+    
+    
+    public func performCleanup() {
+        if !cleanupComplete {
+            selectedUser = nil
+            interviewItem = nil
+            allQuestions.removeAll()
+            completedIndex.removeAll()
+            cleanupComplete = true
+        }
     }
     
     

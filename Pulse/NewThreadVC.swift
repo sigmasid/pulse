@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControllerDelegate  {
+class NewThreadVC: PulseVC, UINavigationControllerDelegate  {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
@@ -28,9 +28,9 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
     fileprivate var sTypeDescription = PaddingLabel()
     
     //Capture Image
-    fileprivate lazy var panDismissInteractionController : PanContainerInteractionController! = PanContainerInteractionController()
-    fileprivate lazy var cameraVC : CameraVC! = CameraVC()
-    fileprivate var capturedImage : UIImage?
+    fileprivate var inputVC : InputVC!
+    fileprivate var fullImageData : Data?
+    fileprivate var thumbImageData : Data?
     fileprivate var contentType : CreatedAssetType? = .recordedImage
     
     //Deinit check
@@ -56,25 +56,25 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         performCleanup()
     }
     
+    override func goBack() {
+        DispatchQueue.global(qos: .background).async {[weak self] in
+            guard let `self` = self else { return }
+            if self.inputVC != nil {
+                self.inputVC.performCleanup()
+                self.inputVC.inputDelegate = nil
+                self.inputVC = nil
+            }
+        }
+        super.goBack()
+    }
+    
     public func performCleanup() {
         if !cleanupComplete {
             selectedChannel = nil
             selectedItem = nil
             
-            sAddCover.removeFromSuperview()
-            sShowCamera.removeFromSuperview()
-            sShowCameraLabel.removeFromSuperview()
-            
-            if cameraVC != nil {
-                cameraVC.performCleanup()
-                cameraVC.delegate = nil
-                cameraVC = nil
-            }
-            
-            capturedImage = nil
-            panDismissInteractionController.delegate = nil
-            panDismissInteractionController = nil
-            
+            fullImageData = nil
+            thumbImageData = nil
             cleanupComplete = true
         }
     }
@@ -105,17 +105,16 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         item.itemTitle = sTitle.text ?? ""
         item.itemUserID = PulseUser.currentUser.uID
         item.itemDescription = sDescription.text ?? ""
-        item.content = capturedImage
         item.contentType = contentType
         item.cID = selectedChannel.cID
         
-        if let capturedImage = self.capturedImage {
-            PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .cover, completion: {[weak self] (metadata, error) in
+        if let fullImageData = self.fullImageData {
+            PulseDatabase.uploadImageData(channelID: item.cID, itemID: itemKey, imageData: fullImageData, fileType: .content, completion: {[weak self] (metadata, error) in
                 guard let `self` = self else { return }
                 
                 item.contentURL = metadata?.downloadURL()
                 self.addThreadToDatabase(item: item)
-                PulseDatabase.uploadImage(channelID: item.cID, itemID: itemKey, image: capturedImage, fileType: .thumb, completion: {_ in })
+                PulseDatabase.uploadImageData(channelID: item.cID, itemID: itemKey, imageData: self.thumbImageData, fileType: .thumb, completion: {_ in })
             })
         } else {
             self.addThreadToDatabase(item: item)
@@ -157,6 +156,11 @@ class NewThreadVC: PulseVC, UIImagePickerControllerDelegate, UINavigationControl
         }))
         
         present(menu, animated: true, completion: nil)
+    }
+    
+    fileprivate func createCompressedImages(image: UIImage) {
+        fullImageData = image.mediumQualityJPEGNSData
+        thumbImageData = image.resizeImage(newWidth: profileThumbWidth)?.highQualityJPEGNSData
     }
 }
 
@@ -284,110 +288,55 @@ extension NewThreadVC: UITextFieldDelegate {
     }
 }
 
-extension NewThreadVC: CameraDelegate, PanAnimationDelegate {
+extension NewThreadVC: InputMasterDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
-    func panCompleted(success: Bool, fromVC: UIViewController?) {
-        if success {
-            if fromVC is CameraVC {
-                userDismissedCamera()
-            }
-        }
-    }
-    
     func showCamera() {
-        guard let nav = navigationController else { return }
+        if inputVC == nil {
+            inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
+            inputVC.cameraMode = .stillImage
+            inputVC.captureSize = .square
+            inputVC.albumShowsVideo = false
+            inputVC.inputDelegate = self
+            inputVC.cameraTitle = "snap a pic to use as cover!"
+        }
         
-        cameraVC = CameraVC()
-        cameraVC.cameraMode = .stillImage
-        
-        cameraVC.delegate = self
-        cameraVC.screenTitle = "snap a pic to use as cover!"
-        
-        panDismissInteractionController.wireToViewController(cameraVC, toViewController: nil, parentViewController: nav, modal: true)
-        panDismissInteractionController.delegate = self
-        
-        present(cameraVC, animated: true, completion: nil)
+        present(inputVC, animated: true, completion: nil)
     }
     
-    func doneRecording(isCapturing: Bool, url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let imageData = image?.mediumQualityJPEGNSData else {
-            if isCapturing {
-                self.cameraVC.toggleLoading(show: true, message: "saving! just a sec...")
+    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
+        guard let image = image else {
+            GlobalFunctions.showAlertBlock("Error getting image", erMessage: "Sorry there was an error! Please try again")
+            return
+        }
+        
+        UIView.animate(withDuration: 0.1, animations: { self.inputVC.view.alpha = 0.0 } ,
+                       completion: {(value: Bool) in
+                        
+            DispatchQueue.main.async {
+                
+                self.sShowCamera.setImage(image, for: .normal)
+                self.sShowCamera.imageView?.contentMode = .scaleAspectFill
+                self.sShowCamera.imageView?.clipsToBounds = true
+                
+                self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+                self.sShowCamera.clipsToBounds = true
+                
+                self.sShowCameraLabel.text = "tap image to change"
+                self.sShowCameraLabel.textColor = .gray
+                self.inputVC.view.alpha = 1.0
+                self.contentType = assetType
+                
+                //update the header
+                self.inputVC.dismiss(animated: true, completion: nil)
             }
-            return
-        }
-        
-        capturedImage = UIImage(data: imageData)
-        
-        UIView.animate(withDuration: 0.1, animations: { self.cameraVC.view.alpha = 0.0 } ,
-                       completion: {(value: Bool) in
-                        
-                        DispatchQueue.main.async {
-                            self.cameraVC.toggleLoading(show: false, message: nil)
-                            
-                            if let capturedImage = self.capturedImage {
-                                self.sShowCamera.setImage(capturedImage, for: .normal)
-                                self.sShowCamera.imageView?.contentMode = .scaleAspectFit
-                                self.sShowCamera.imageView?.clipsToBounds = true
-                                
-                                self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-                                self.sShowCamera.clipsToBounds = true
-                                
-                                self.sShowCameraLabel.text = "tap image to change"
-                                self.sShowCameraLabel.textColor = .gray
-                            }
-                            
-                            //update the header
-                            self.cameraVC.dismiss(animated: true, completion: nil)
-                        }
                         
         })
         
+        createCompressedImages(image: image)
+        
     }
     
-    func userDismissedCamera() {
-        cameraVC.dismiss(animated: true, completion: nil)
-    }
-    
-    func showAlbumPicker() {
-        let albumPicker = UIImagePickerController()
-        
-        albumPicker.delegate = self
-        albumPicker.allowsEditing = true
-        albumPicker.sourceType = .photoLibrary
-        albumPicker.mediaTypes = [kUTTypeImage as String]
-        
-        cameraVC.present(albumPicker, animated: true, completion: nil)
-    }
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        let mediaType = info[UIImagePickerControllerMediaType] as! NSString
-        
-        guard mediaType.isEqual(to: kUTTypeImage as String) else {
-            return
-        }
-        
-        capturedImage = info[UIImagePickerControllerEditedImage] as? UIImage
-
-        if let capturedImage = capturedImage {
-            self.sShowCamera.setImage(capturedImage, for: .normal)
-            self.sShowCamera.imageView?.contentMode = .scaleAspectFit
-            self.sShowCamera.imageView?.clipsToBounds = true
-            self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-            self.sShowCamera.clipsToBounds = true
-            
-            self.sShowCameraLabel.text = "tap icon to change"
-            self.sShowCameraLabel.textColor = .gray
-        }
-        
-        UIView.animate(withDuration: 0.2, animations: { picker.view.alpha = 0.0 } ,
-                       completion: {(value: Bool) in
-                        picker.dismiss(animated: false, completion: nil)
-                        self.cameraVC.dismiss(animated: true, completion: nil)
-        })
-    }
-    
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.dismiss(animated: true, completion: nil)
+    func dismissInput() {
+        inputVC.dismiss(animated: true, completion: nil)
     }
 }

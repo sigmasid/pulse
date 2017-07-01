@@ -116,6 +116,7 @@ class RecordingOverlay: UIView {
         postButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         postButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         postButton.layoutIfNeeded()
+        postButton.removeShadow()
         
         addMoreButton.translatesAutoresizingMaskIntoConstraints = false
         addMoreButton.bottomAnchor.constraint(equalTo: addMoreLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
@@ -123,6 +124,7 @@ class RecordingOverlay: UIView {
         addMoreButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         addMoreButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         addMoreButton.layoutIfNeeded()
+        addMoreButton.removeShadow()
 
         postLabel.text = "Post"
         addMoreLabel.text = "Add More"

@@ -403,10 +403,10 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
      
      :param: imageCompletition Completition block containing the captured UIImage
      */
-    open func capturePictureWithCompletion(_ imageCompletion: @escaping (UIImage?, Bool, NSError?) -> Void) {
-        capturePhoto {[weak self] data, capturing, error in
+    open func capturePictureWithCompletion(_ imageCompletion: @escaping (UIImage?, NSError?) -> Void) {
+        capturePhoto {[weak self] data, error in
             guard let `self` = self, let imageData = data else {
-                imageCompletion(nil, capturing, error)
+                imageCompletion(nil, error)
                 return
             }
             
@@ -435,7 +435,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 })
             }
                 
-            imageCompletion(UIImage(data: imageData), capturing, nil)
+            imageCompletion(UIImage(data: imageData), nil)
                 
             })
         }
@@ -481,7 +481,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
 
     private var inProgressLivePhotoCapturesCount = 0
 
-    private func capturePhoto(_ imageCompletion: @escaping (Data?, Bool, NSError?) -> Void) {
+    private func capturePhoto(_ imageCompletion: @escaping (Data?, NSError?) -> Void) {
         
         guard cameraIsSetup else {
             _show(NSLocalizedString("No capture session setup", comment:""), message: NSLocalizedString("I can't take any pictures", comment:""))
@@ -531,7 +531,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
                 self.sessionQueue.async { [unowned self] in
                     self.inProgressPhotoCaptureDelegates[photoCaptureDelegate.requestedPhotoSettings.uniqueID] = nil
                 }
-                imageCompletion(photoData, false, nil)
+                imageCompletion(photoData, nil)
                 
                 }
             )
@@ -662,7 +662,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     // MARK: - UIGestureRecognizerDelegate
     
     fileprivate func attachZoom(_ view: UIView) {
-        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(CameraManager._zoomStart(_:)))
+        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(_zoomStart(_:)))
         view.addGestureRecognizer(pinch)
         pinch.delegate = self
     }
@@ -675,8 +675,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         return true
     }
     
-    @objc
-    fileprivate func _zoomStart(_ recognizer: UIPinchGestureRecognizer) {
+    internal func _zoomStart(_ recognizer: UIPinchGestureRecognizer) {
         guard let view = embeddingView,
             let previewLayer = previewLayer
             else { return }
@@ -940,7 +939,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         beginZoomScale = CGFloat(1.0)
         
         if cameraDevice == .back {
-            maxZoom = (backCameraDevice?.activeFormat.videoMaxZoomFactor)!
+            maxZoom = 3.0
         }
         else if cameraDevice == .front {
             maxZoom = (frontCameraDevice?.activeFormat.videoMaxZoomFactor)!
@@ -1172,10 +1171,6 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
             // Pick the location with best (= smallest value) horizontal accuracy
             latestLocation = locations.sorted { $0.horizontalAccuracy < $1.horizontalAccuracy }.first
-        }
-        
-        func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-            //print("Error while updating location " + error.localizedDescription)
         }
         
         func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {

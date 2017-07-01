@@ -10,6 +10,16 @@ import UIKit
 import FirebaseDatabase
 
 class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
+    /** PUBLIC SETTERS **/
+    public var screenTitle : String? //set by delegate
+    public var captureSize : AssetSize! = .fullScreen {
+        didSet {
+            if cameraLayer != nil {
+                cameraLayer.frame = getCameraFrame()
+            }
+        }
+    }
+    public weak var delegate : InputItemDelegate?
     public var cameraMode : CameraOutputMode = .videoWithMic {
         didSet {
             camera.cameraOutputMode = cameraMode
@@ -18,6 +28,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             }
         }
     }
+    /** END SETTERS **/
     
     fileprivate var camera = CameraManager()
     fileprivate var cameraOverlay : CameraOverlayView!
@@ -28,54 +39,49 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     fileprivate let videoDuration : Double = PulseDatabase.maxVideoLength * 10
     fileprivate var countdownTimer : CALayer!
     
-    var screenTitle : String? //set by delegate
-    weak var delegate : CameraDelegate?
-    
+    /** GESTURE RECOGNIZERS **/
     fileprivate var tap : UITapGestureRecognizer!
     fileprivate var longTap : UILongPressGestureRecognizer!
-    fileprivate var zoomPinch : UIPinchGestureRecognizer!
     
     fileprivate var cleanupComplete = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .black
     }
     
     deinit {
         performCleanup()
     }
     
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-    }
-    
     override func viewWillAppear(_ animated: Bool) {
         if !isLoaded {
-            zoomPinch = UIPinchGestureRecognizer()
-            zoomPinch.delegate = self
-            
             camera.maxRecordingDelegate = self
             
-            view.isUserInteractionEnabled = true
-            view.isMultipleTouchEnabled = true
-            view.addGestureRecognizer(zoomPinch)
-            
             cameraOverlay = CameraOverlayView(frame: view.bounds)
-            cameraLayer = UIView(frame: view.bounds)
+            cameraLayer = UIView(frame: getCameraFrame())
             view.addSubview(cameraLayer)
+            //cameraLayer.isMultipleTouchEnabled = true
             
             setupLoading()
             setupCamera()
             setupCameraOverlay()
             
             isLoaded = true
-        } else {
-            camera.resumeCaptureSession()
         }
     }
     
     override var prefersStatusBarHidden : Bool {
         return true
+    }
+    
+    private func getCameraFrame() -> CGRect {
+        switch captureSize! {
+        case .fullScreen:
+            return view.bounds
+        case .square:
+            return CGRect(x: 0, y: scopeBarHeight, width: min(view.bounds.width, view.bounds.height), height: min(view.bounds.width, view.bounds.height))
+        }
     }
     
     //Camera is in video mode - so will take a 0.3 second image
@@ -85,19 +91,32 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     
     //Camera is in still image mode
     fileprivate func takeStillImage() {
-        camera.capturePictureWithCompletion({[weak self] (image, capturing, error) in
-            guard let `self` = self else {
-                return
-            }
+        camera.capturePictureWithCompletion({[weak self] (image, error) in
+            guard let `self` = self else { return }
             
-            if capturing {
-                self.delegate!.doneRecording(isCapturing: true, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
-            } else if let image = image {
-                self.delegate!.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+            if let image = image {
+                self.sendImage(image: image)
             } else {
-                self.delegate!.doneRecording(isCapturing: false, url: nil, image: nil, location: nil, assetType: nil)
+                self.delegate?.capturedItem(url: nil, image: nil, location: nil, assetType: nil)
             }
         })
+    }
+    
+    fileprivate func sendImage(image: UIImage) {
+        if captureSize == .fullScreen {
+            guard let croppedImage = image.resizeImage(newWidth: fullImageWidth) else {
+                delegate?.capturedItem(url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+                return
+            }
+            delegate?.capturedItem(url: nil, image: croppedImage, location: self.camera.location, assetType: .recordedImage)
+        } else {
+            guard let croppedImage = image.getSquareImage(newWidth: fullImageWidth) else {
+                delegate?.capturedItem(url: nil, image: image.resizeImage(newWidth: fullImageWidth),
+                                            location: self.camera.location, assetType: .recordedImage)
+                return
+            }
+            delegate?.capturedItem(url: nil, image: croppedImage, location: self.camera.location, assetType: .recordedImage)
+        }
     }
     
     fileprivate func startVideoCapture() {
@@ -115,24 +134,26 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             if let errorOccured = error {
                 self.camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                if image != nil {
-                    self.delegate!.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+                if let image = image {
+                    self.sendImage(image: image)
                 } else if videoURL != nil {
-                    self.delegate!.doneRecording(isCapturing: false, url: videoURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+                    self.delegate?.capturedItem(url: videoURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+                } else {
+                    self.delegate?.capturedItem(url: nil, image: nil, location: nil, assetType: nil)
                 }
             }
         })
     }
     
     func didReachMaxRecording(_ fileURL : URL?, image: UIImage?, error : NSError?) {
-        if image != nil {
+        if let image = image {
             //it's an image
             camera.cameraVideoDuration = videoDuration //reset the duration
 
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
-            } else if let delegate = delegate {
-                delegate.doneRecording(isCapturing: false, url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+            } else {
+                sendImage(image: image)
             }
         } else {
             //it's a video
@@ -140,8 +161,8 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
-            } else if let delegate = delegate {
-                delegate.doneRecording(isCapturing: false, url: fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+            } else {
+                delegate?.capturedItem(url: fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
             }
         }
     }
@@ -231,6 +252,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             longTap.isEnabled = false
         }
         
+        cameraOverlay.getButton(.close).addTarget(self, action: #selector(dismissCamera), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.album).addTarget(self, action: #selector(showAlbumPicker), for: UIControlEvents.touchUpInside)
@@ -240,7 +262,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         cameraOverlay.updateTitle(title)
     }
     
-    func respondToShutterTap() {
+    internal func respondToShutterTap() {
         if cameraMode == .stillImage {
             takeStillImage()
         } else {
@@ -249,26 +271,30 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         }
     }
     
-    func respondToShutterLongTap(_ longPress : UILongPressGestureRecognizer) {
+    internal func respondToShutterLongTap(_ longPress : UILongPressGestureRecognizer) {
         if longPress.state == .began {
             startVideoCapture()
             let shutterButton = cameraOverlay.getButton(.shutter)
             let xForm = CGAffineTransform.identity.scaledBy(x: 1.3, y: 1.3)
-            UIView.animate(withDuration: 0.5, animations: { shutterButton.transform = xForm; shutterButton.alpha = 1 } , completion: {_ in })
+            UIView.animate(withDuration: 0.5, animations: { shutterButton.transform = xForm; self.cameraOverlay.countdownTimer.transform = xForm; shutterButton.alpha = 1 } , completion: {_ in })
             
         } else if longPress.state == .ended {
             stopVideoCapture()
             
             let shutterButton = cameraOverlay.getButton(.shutter)
             let xForm = CGAffineTransform.identity.scaledBy(x: 1.0, y: 1.0)
-            UIView.animate(withDuration: 0.5, animations: { shutterButton.transform = xForm; shutterButton.alpha = 0.7 } , completion: {_ in })
+            UIView.animate(withDuration: 0.5, animations: { shutterButton.transform = xForm; self.cameraOverlay.countdownTimer.transform = xForm; shutterButton.alpha = 0.7 } , completion: {_ in
+                self.cameraOverlay.countdownTimer.removeFromSuperview()
+            })
         }
     }
     
-    func showAlbumPicker() {
-        if let delegate = delegate {
-            delegate.showAlbumPicker()
-        }
+    internal func showAlbumPicker() {
+        delegate?.switchInput(currentInput: .camera)
+    }
+    
+    internal func dismissCamera() {
+        delegate?.dismissInput()
     }
     
     public func performCleanup() {
@@ -277,17 +303,14 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             camera.maxRecordingDelegate = nil
             
             if cameraOverlay != nil {
-                cameraOverlay.removeFromSuperview()
                 cameraOverlay = nil
             }
             
             if loadingOverlay != nil {
-                loadingOverlay.removeFromSuperview()
                 loadingOverlay = nil
             }
             
             if cameraLayer != nil {
-                cameraLayer.removeFromSuperview()
                 cameraLayer = nil
             }
             
@@ -302,11 +325,6 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             if longTap != nil {
                 longTap.delegate = nil
                 longTap = nil
-            }
-            
-            if zoomPinch != nil {
-                zoomPinch.delegate = nil
-                zoomPinch = nil
             }
             
             isLoaded = false
