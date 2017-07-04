@@ -359,16 +359,17 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         let message = messages[indexPath.row]
         switch message.mType {
         case .perspectiveInvite, .questionInvite, .showcaseInvite:
-            let contentVC = ContentManagerVC()
+            contentVC = ContentManagerVC()
             toggleLoading(show: true, message: "loading Invite...", showIcon: true)
-            PulseDatabase.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
+            PulseDatabase.getInviteItem(message.mID, completion: {[weak self] selectedItem, _, childItem, toUser, conversationID, error in
+                guard let `self` = self else { return }
                 if let selectedItem = selectedItem {
                     DispatchQueue.main.async {
                         let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
-                        contentVC.selectedChannel = selectedChannel
-                        contentVC.selectedItem = selectedItem
-                        contentVC.openingScreen = .camera
-                        self.present(contentVC, animated: true, completion: nil)
+                        self.contentVC.selectedChannel = selectedChannel
+                        self.contentVC.selectedItem = selectedItem
+                        self.contentVC.openingScreen = .camera
+                        self.present(self.contentVC, animated: true, completion: nil)
                     }
                 }
                 self.toggleLoading(show: false, message: nil)

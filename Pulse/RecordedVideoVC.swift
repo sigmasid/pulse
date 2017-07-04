@@ -11,7 +11,7 @@ import Firebase
 import AVFoundation
 import Photos
 
-class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
+class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDelegate {
     
     fileprivate var uploadTask : StorageUploadTask!
     
@@ -44,8 +44,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     //includes currentItem - set by delegate - the image / video is replaced after processing when uploading file or adding more
-    var recordedItems : [Item]! = [Item]()
-    var isNewEntry = true //don't reprocess video / image if the user is returning back to prior entry
+    public var recordedItems : [Item]! = [Item]()
+    public var isNewEntry = true //don't reprocess video / image if the user is returning back to prior entry
+    
+    private var coverItem: Item?
+    fileprivate var addCoverVC: AddCoverVC?
     
     var currentItemIndex : Int = 0 {
         didSet {
@@ -83,13 +86,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     fileprivate var itemCollectionPost = [ String : String ]()
     fileprivate var cleanupComplete = false
     
-    fileprivate var mode : AddOrPostMode = .base
-    
-    enum AddOrPostMode {
-        case base //case where user is just on the screen
-        case post //user clicked post
-        case add //user clicked add more
-    }
     fileprivate var placeholderText = "add a title"
     
     deinit {
@@ -104,6 +100,14 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         super.viewWillDisappear(animated)
         if aPlayer != nil {
             aPlayer.pause()
+        }
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        if isVideoLoaded, aPlayer != nil, aPlayer.items().count > 0 {
+            aPlayer.play()
         }
     }
     
@@ -200,6 +204,9 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         controlsOverlay.getButton(.addMore).addTarget(self, action: #selector(_addMore), for: UIControlEvents.touchUpInside)
         
         controlsOverlay.getTitleField().delegate = self
+        
+        let postButtonTitle = currentItem.needsCover() ? "Next" : "Post"
+        controlsOverlay.updatePostLabel(text: postButtonTitle)
     }
     
     //takes the title from the text box and adds it to the last time
@@ -208,7 +215,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     fileprivate func updateItemImage() {
-        recordedItems[self.currentItemIndex - 1].content = imageView.getCroppedImage()
+        recordedItems[self.currentItemIndex - 1].content = imageView.getCroppedImage()?.resizeImage(newWidth: fullImageWidth)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -221,16 +228,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             updateItemImage()
         }
         
-        if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
-            mode = .add
-            controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
-        } else if let delegate = delegate {
-            delegate.addMoreItems(self, recordedItems: recordedItems, isCover : false)
-        }
+        delegate?.addMoreItems(self, recordedItems: recordedItems)
     }
     
     ///close window and go back to camera
-    func _close() {
+    internal func _close() {
         // need to check if it was first item -> if yes, go to camera else stay in RecordedVideoVC and go back to last question, remove the current item value from recordedItems
         controlsOverlay.removePager()
         recordedItems.remove(at: currentItemIndex - 1)
@@ -238,62 +240,71 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     }
     
     ///post video to firebase
-    func _post() {
+    internal func _post() {
         if currentItem.contentType == .albumImage || currentItem.contentType == .recordedImage {
             updateItemImage()
         }
         
-        if recordedItems.count == 1, recordedItems.first?.itemTitle == "" {
-            //add a title if there is none and is first post
-            mode = .post
-            controlsOverlay.showAddTitleField(makeFirstResponder: true, placeholderText: placeholderText)
+        if aPlayer != nil {
+            aPlayer.pause()
+        }
+            
+        if currentItem.needsCover() && !coverAdded {
+            addCoverVC = AddCoverVC()
+            addCoverVC?.delegate = self
+            navigationController?.pushViewController(addCoverVC!, animated: true)
         } else {
-            controlsOverlay.getButton(.post).isEnabled = false
-            
-            if aPlayer != nil {
-                aPlayer.pause()
-            }
-            
-            if let firstItem = recordedItems.first, firstItem.needsCover() && !coverAdded {
-                //if cover image is needed - ask user if they want to add one
-                confirmPost()
-            } else {
-                //continue w/ the post
-                controlsOverlay.addProgressLabel("Posting...")
-                controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
-                uploadItems(allItems: recordedItems)
-            }
+            //continue w/ the post
+            controlsOverlay.addProgressLabel("Posting...")
+            controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
+            uploadItems(allItems: recordedItems)
         }
     }
     
-    fileprivate func confirmPost() {
-        let confirmPostMenu = UIAlertController(title: "Post",
-                                              message: "Would you like to add a cover image? Cover images help content stand out.",
-                                              preferredStyle: .actionSheet)
+    internal func createCoverItem() {
+        guard coverItem == nil else { return }
         
-        confirmPostMenu.addAction(UIAlertAction(title: "choose Cover", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-
-            if let delegate = self.delegate {
-                delegate.addMoreItems(self, recordedItems: self.recordedItems, isCover : true)
-                self.controlsOverlay.getButton(.post).isEnabled = false
-            }
-        }))
+        let itemKey = databaseRef.child("items").childByAutoId().key
         
-        confirmPostMenu.addAction(UIAlertAction(title: "continue Posting", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-
-            self.controlsOverlay.addProgressLabel("Posting...")
-            self.controlsOverlay.getButton(.post).backgroundColor = UIColor.darkGray.withAlphaComponent(1)
-            self.uploadItems(allItems: self.recordedItems)
-        }))
+        coverItem = Item(itemID: itemKey,
+                        itemUserID: PulseUser.currentUser.uID!,
+                        itemTitle: "",
+                        type: currentItem.type,
+                        contentURL: nil,
+                        content: nil,
+                        contentType: nil,
+                        tag: currentItem.tag,
+                        cID: currentItem.cID)
         
-        confirmPostMenu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            confirmPostMenu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(confirmPostMenu, animated: true, completion: nil)
+        coverItem?.cTitle = currentItem.cTitle
     }
+    
+    /** ADD COVER DELEGATE **/
+    internal func addCover(image: UIImage, title: String, location: CLLocation?, assetType: CreatedAssetType) {
+        navigationController?.popViewController(animated: true)
+        
+        if addCoverVC != nil {
+            addCoverVC?.performCleanup()
+            addCoverVC = nil
+        }
+        
+        createCoverItem()
+        
+        coverItem!.itemTitle = title
+        coverItem!.content = image
+        coverItem!.contentType = assetType
+        
+        recordedItems.append(coverItem!)
+        coverAdded = true
+        _post()
+    }
+    
+    internal func dismissAddCover() {
+        if aPlayer != nil && (currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo) {
+            aPlayer.play()
+        }
+    }
+    /** END ADD COVER DELEGATE **/
     
     ///upload video to firebase and update current item with URL upon success
     fileprivate func uploadItems( allItems : [Item]) {
@@ -307,13 +318,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
         guard let contentType = item.contentType else { return }
         
         if let _image = item.content as? UIImage  {
-            var thumbImageData : Data?
-            
-            if item.itemID == allItems.first?.itemID, item.needsCover() {
-                thumbImageData = _image.mediumQualityJPEGNSData
-            } else {
-                thumbImageData = _image.resizeImage(newWidth: itemThumbWidth)?.mediumQualityJPEGNSData
-            }
+            let thumbImageData : Data? = _image.resizeImage(newWidth: itemThumbWidth)?.mediumQualityJPEGNSData
             PulseDatabase.uploadImageData(channelID: selectedChannelID, itemID: item.itemID, imageData: thumbImageData, fileType: .thumb, completion: { _ in })
         }
         
@@ -410,21 +415,27 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
     
     ///Called after user has uploaded full item
     fileprivate func doneCreatingItem() {
-        PulseDatabase.addItemCollectionToDatabase(recordedItems.first!,
+        guard let firstItem = coverItem != nil ? coverItem : recordedItems.first else { return }
+        
+        PulseDatabase.addItemCollectionToDatabase(firstItem,
                                              parentItem: parentItem,
                                              channelID: selectedChannelID,
                                              post: itemCollectionPost,
                                              completion: {[weak self] (success, error) in
             guard let `self` = self else { return }
 
-            if let delegate = self.delegate {
+            if success {
                 self.itemCollectionPost.removeAll()
                 self.recordedItems.removeAll()
                 self.currentVideo = nil
                 self.looper.disableLooping()
                 
-                delegate.doneUploadingItem(self, success: success)
-            }
+                self.delegate?.doneUploadingItem(self, success: success)
+            } else {
+                DispatchQueue.main.async {
+                    GlobalFunctions.showAlertBlock("Error Posting", erMessage: error?.localizedDescription)
+                }
+           }
         })
     }
     
@@ -491,6 +502,10 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate {
             
             itemFilters = nil
             
+            if addCoverVC != nil {
+                addCoverVC?.performCleanup()
+                addCoverVC = nil
+            }
             
             if aPlayer != nil {
                 aPlayer.removeAllItems()
@@ -518,14 +533,6 @@ extension RecordedVideoVC: UITextViewDelegate {
         } else {
             textView.resignFirstResponder()
         }
-        
-        if mode == .post {
-            _post()
-            mode = .base
-        } else if mode == .add {
-            _addMore()
-            mode = .base
-        }
     }
     
     func textViewDidChange(_ textView: UITextView) {
@@ -545,15 +552,6 @@ extension RecordedVideoVC: UITextViewDelegate {
     func textViewShouldReturn(_ textView: UITextView) -> Bool {
         updateItemTitle(text: textView.text)
         textView.resignFirstResponder()
-        
-        if mode == .post {
-            _post()
-            mode = .base
-        } else if mode == .add {
-            _addMore()
-            mode = .base
-        }
-        
         return true
     }
     

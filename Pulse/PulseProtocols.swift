@@ -71,6 +71,11 @@ protocol InputMasterDelegate: class {
     func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
 }
 
+protocol AddCoverDelegate: class {
+    func dismissAddCover()
+    func addCover(image: UIImage, title: String, location: CLLocation?, assetType : CreatedAssetType)
+}
+
 protocol PanAnimationDelegate : class {
     func panCompleted(success: Bool, fromVC: UIViewController?)
 }
@@ -97,7 +102,7 @@ protocol ContentDelegate: class {
     
     func userDismissedRecording(_: UIViewController, recordedItems : [Item])
     func loadMoreFromTag()
-    func addMoreItems(_ : UIViewController, recordedItems : [Item], isCover : Bool)
+    func addMoreItems(_ : UIViewController, recordedItems : [Item])
     func userClickedSeeAll(items : [Item])
     func userClickedProfileDetail()
 }

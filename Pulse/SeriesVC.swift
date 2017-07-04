@@ -62,10 +62,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         performCleanup()
     }
     
-    override func goBack() {
-        super.goBack()
-    }
-    
     private func performCleanup() {
         if !cleanupComplete {
             allItems = []
@@ -159,7 +155,8 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     }
     
     internal func getFeedback() {
-        let contentVC = ContentManagerVC()
+        //CONFIRM IF CORRECT
+        contentVC = ContentManagerVC()
         
         //NEEDED TO TO COPY BY VALUE VS REFERENCE
         contentVC.selectedChannel = selectedChannel
@@ -565,7 +562,6 @@ extension SeriesVC {
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
         
-        contentVC.watchedFullPreview = watchedPreview
         contentVC.selectedChannel = selectedChannel
         contentVC.selectedItem = selectedItem
         contentVC.itemCollection = itemCollection
@@ -822,6 +818,7 @@ extension SeriesVC {
     }
 }
 
+/**
 extension SeriesVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
@@ -837,4 +834,4 @@ extension SeriesVC: UIViewControllerTransitioningDelegate {
             return nil
         }
     }
-}
+} **/

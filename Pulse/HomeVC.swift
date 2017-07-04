@@ -613,7 +613,6 @@ extension HomeVC {
     /** Browse Content Delegate **/
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
-        contentVC.watchedFullPreview = watchedPreview
         contentVC.selectedChannel = Channel(cID: selectedItem.cID)
         contentVC.selectedItem = selectedItem
         contentVC.itemCollection = itemCollection
@@ -892,6 +891,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
     }
 }
 
+/**
 extension HomeVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
@@ -907,4 +907,4 @@ extension HomeVC: UIViewControllerTransitioningDelegate {
             return nil
         }
     }
-}
+} **/

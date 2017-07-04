@@ -53,7 +53,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
             headerNav?.navBar.barStyle = statusBarStyle == .default ? .default : .black
         }
     }
-    public lazy var contentVC = ContentManagerVC(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+    public var contentVC : ContentManagerVC!
     public lazy var browseContentVC = BrowseContentVC()
     
     open var tabBarHidden : Bool = false {
@@ -89,7 +89,6 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
         headerNav = navigationController as? PulseNavVC
         
         headerNav?.navbarDelegate = self
@@ -268,5 +267,39 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
      */
     func scrollingNavigationController(_ controller: PulseNavVC, willChangeState state: NavigationBarState) {
 
+    }
+}
+
+extension PulseVC: UIViewControllerTransitioningDelegate {
+    func animationController(forPresented presented: UIViewController,
+                             presenting: UIViewController,
+                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        
+        if presented is ContentManagerVC {
+            let animator = ExpandAnimationController()
+            animator.initialFrame = initialFrame
+            animator.exitFrame = getRectToLeft()
+            
+            return animator
+        } else {
+            return nil
+        }
+    }
+    
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        if dismissed is InputVC {
+            let animator = FadeAnimationController()
+            animator.transitionType = .dismiss
+            
+            return animator
+            
+        } else if dismissed is ImageCropperVC {
+            let animator = FadeAnimationController()
+            animator.transitionType = .dismiss
+            
+            return animator
+        } else {
+            return nil
+        }
     }
 }

@@ -20,18 +20,14 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
     fileprivate var isModal = false
     
     weak var delegate : PanAnimationDelegate!
+    private var panGesture : UIPanGestureRecognizer!
     
     deinit {
-        if delegate != nil {
-            delegate = nil
-        }
-        
-        if parentViewController != nil {
-            parentViewController = nil
-        }
-        
+        delegate = nil
+        parentViewController = nil
         fromViewController = nil
         toViewController = nil
+        panGesture = nil
     }
     
     func wireToViewController(_ fromViewController: UIViewController, toViewController: UIViewController?, parentViewController: UINavigationController, modal: Bool) {
@@ -47,8 +43,8 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
     }
     
     fileprivate func prepareGestureRecognizerInView(_ view: UIView) {
-        let gesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
-        view.addGestureRecognizer(gesture)
+        panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+        view.addGestureRecognizer(panGesture)
     }
     
     func handleGesture(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {

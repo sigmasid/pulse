@@ -12,21 +12,21 @@ class ItemCell: UICollectionViewCell {
     
     public weak var delegate : ItemCellDelegate!
 
-    fileprivate var titleLabel = UILabel()
-    fileprivate var subtitleLabel = UILabel()
-    fileprivate var createdAtLabel = UILabel()
-    fileprivate var itemImage = UIImageView()
+    fileprivate var titleLabel: UILabel! = UILabel()
+    fileprivate var subtitleLabel: UILabel! = UILabel()
+    fileprivate var createdAtLabel: UILabel! = UILabel()
+    fileprivate var itemImage: UIImageView! = UIImageView()
     
-    fileprivate var cellCard = PulseMenu(_axis: .vertical, _spacing: 10)
-    fileprivate var itemFooter = UIView()
-    fileprivate var itemHeader = UIView()
+    fileprivate var cellCard: PulseMenu! = PulseMenu(_axis: .vertical, _spacing: 10)
+    fileprivate var itemFooter: UIView! = UIView()
+    fileprivate var itemHeader: UIView! = UIView()
 
-    fileprivate lazy var itemTag = UILabel()
+    fileprivate lazy var itemTag: UILabel! = UILabel()
     fileprivate var itemHeightAnchor : NSLayoutConstraint!
     fileprivate var footerHeightAnchor : NSLayoutConstraint!
 
-    fileprivate var itemButton = PulseButton(size: .xSmall, type: .logoCircle, isRound: true, hasBackground: false)
-    fileprivate var itemMenu = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
+    fileprivate var itemButton: PulseButton! = PulseButton(size: .xSmall, type: .logoCircle, isRound: true, hasBackground: false)
+    fileprivate var itemMenu: PulseButton! = PulseButton(size: .small, type: .ellipsis, isRound: false, hasBackground: false, tint: .black)
     
     public var itemType : ItemTypes? {
         didSet {
@@ -65,6 +65,9 @@ class ItemCell: UICollectionViewCell {
     
     deinit {
         delegate = nil
+        cellCard = nil
+        itemButton = nil
+        itemMenu = nil
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?, _createdAt: Date?, _tag : String?) {

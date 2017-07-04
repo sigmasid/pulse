@@ -56,14 +56,15 @@ class ImageCropperVC: UIViewController {
 extension ImageCropperVC {
     fileprivate func setupLayout() {
         let buttonHeight = IconSizes.xSmall.rawValue
+        let headerHeight = IconSizes.medium.rawValue * 1.2
         
-        controlsView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: IconSizes.medium.rawValue))
+        controlsView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         imageCropperView = ImageCropView(frame: getCropperFrame())
+        
         titleLabel = UILabel(frame: CGRect(x: Spacing.m.rawValue + buttonHeight, y: 0,
-                                           width: view.bounds.width - (Spacing.m.rawValue + buttonHeight) * 2, height: controlsView.frame.height))
-        cancelButton.frame = CGRect(x: Spacing.s.rawValue, y: controlsView.frame.height / 2 - buttonHeight / 2,
-                                    width: buttonHeight, height: buttonHeight)
-        chooseButton.frame = CGRect(x: controlsView.frame.width - buttonHeight - Spacing.s.rawValue, y: controlsView.frame.height / 2 - buttonHeight / 2,
+                                           width: view.bounds.width - (Spacing.m.rawValue + buttonHeight) * 2, height: headerHeight))
+        cancelButton.frame = CGRect(x: Spacing.s.rawValue, y: headerHeight / 2 - buttonHeight / 2, width: buttonHeight, height: buttonHeight)
+        chooseButton.frame = CGRect(x: controlsView.frame.width - buttonHeight - Spacing.s.rawValue, y: headerHeight / 2 - buttonHeight / 2,
                                     width: buttonHeight, height: buttonHeight)
         
         view.addSubview(imageCropperView)

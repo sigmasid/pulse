@@ -177,8 +177,7 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
                 } else {
                     let questionConfirmation = UIAlertController(title: "Error Posting Question", message: error?.localizedDescription, preferredStyle: .actionSheet)
                     
-                    questionConfirmation.addAction(UIAlertAction(title: "okay", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-                        guard let `self` = self else { return }
+                    questionConfirmation.addAction(UIAlertAction(title: "okay", style: .default, handler: {(action: UIAlertAction!) in
                         questionConfirmation.dismiss(animated: true, completion: nil)
                     }))
                     

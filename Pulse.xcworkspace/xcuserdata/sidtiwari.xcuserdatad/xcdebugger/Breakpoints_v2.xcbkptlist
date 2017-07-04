@@ -9,13 +9,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "Pulse/ContentManagerVC.swift"
-            timestampString = "520582408.407785"
+            filePath = "Pulse/NewSeriesVC.swift"
+            timestampString = "520834949.109331"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "388"
-            endingLineNumber = "388"
-            landmarkName = "addMoreItems(_:recordedItems:isCover:)"
+            startingLineNumber = "472"
+            endingLineNumber = "472"
+            landmarkName = "showCamera()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

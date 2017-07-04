@@ -92,10 +92,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         updateHeader()
     }
     
-    override func goBack() {
-        super.goBack()
-    }
-    
     private func performCleanup() {
         if !cleanupComplete {
             selectedChannel = nil
@@ -642,7 +638,7 @@ extension ChannelVC {
         if let item = item as? Item {
             switch item.type {
                 
-            case .post, .perspective, .answer, .showcase:
+            case .perspective, .answer, .post, .showcase:
                 
                 showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
                 
@@ -729,7 +725,7 @@ extension ChannelVC {
     
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
-        contentVC.watchedFullPreview = watchedPreview
+        
         contentVC.selectedChannel = selectedChannel
         contentVC.selectedItem = selectedItem
         contentVC.itemCollection = itemCollection
@@ -1038,7 +1034,9 @@ extension ChannelVC: UIScrollViewDelegate {
     }
 }
 
-extension ChannelVC: UIViewControllerTransitioningDelegate {
+/**
+extension ChannelVC {
+    
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
@@ -1054,7 +1052,7 @@ extension ChannelVC: UIViewControllerTransitioningDelegate {
         }
     }
     
-    /**
+    
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         if dismissed is ContentManagerVC {
             let animator = PanAnimationController()
@@ -1098,5 +1096,5 @@ extension ChannelVC: UIViewControllerTransitioningDelegate {
         }))
         
         present(menu, animated: true, completion: nil)
-    } **/
-}
+    }
+}**/

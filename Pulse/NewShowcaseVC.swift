@@ -8,7 +8,7 @@
 
 import UIKit
 
-class NewShowcaseVC: PulseVC, UINavigationControllerDelegate, ParentTextViewDelegate, ModalDelegate, SelectionDelegate {
+class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDelegate {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!

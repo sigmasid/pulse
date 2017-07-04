@@ -17,7 +17,7 @@ public struct ImageMetadata {
     public let duration: TimeInterval
 }
 
-class PulseAlbumVC: UIViewController, XMSegmentedControlDelegate {
+class PulseAlbumVC: PulseVC, XMSegmentedControlDelegate {
     /** PUBLIC SETTER VARS **/
     public weak var delegate: InputItemDelegate!
     public var shouldAllowVideo = true
@@ -65,9 +65,18 @@ class PulseAlbumVC: UIViewController, XMSegmentedControlDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupLayout()
-        setupScope()
-        setupAlbum()
+        
+        if !isLoaded {
+            setupLayout()
+            setupScope()
+            setupAlbum()
+            isLoaded = true
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        //view.alpha = 1.0
     }
 
     override func didReceiveMemoryWarning() {
@@ -95,13 +104,14 @@ class PulseAlbumVC: UIViewController, XMSegmentedControlDelegate {
 extension PulseAlbumVC {
     fileprivate func setupLayout() {
         let buttonHeight = IconSizes.xSmall.rawValue
+        let headerHeight = IconSizes.medium.rawValue * 1.2
         
-        controlsView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: IconSizes.large.rawValue))
+        controlsView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         titleLabel = UILabel(frame: CGRect(x: Spacing.m.rawValue + buttonHeight, y: 0,
-                                           width: view.bounds.width - (Spacing.m.rawValue + buttonHeight) * 2, height: controlsView.frame.height))
-        cancelButton.frame = CGRect(x: Spacing.s.rawValue, y: controlsView.frame.height / 2 - buttonHeight / 2,
+                                           width: view.bounds.width - (Spacing.m.rawValue + buttonHeight) * 2, height: headerHeight))
+        cancelButton.frame = CGRect(x: Spacing.s.rawValue, y: headerHeight / 2 - buttonHeight / 2,
                                    width: buttonHeight, height: buttonHeight)
-        cameraButton.frame = CGRect(x: controlsView.frame.width - buttonHeight - Spacing.s.rawValue, y: controlsView.frame.height / 2 - buttonHeight / 2,
+        cameraButton.frame = CGRect(x: controlsView.frame.width - buttonHeight - Spacing.s.rawValue, y: headerHeight / 2 - buttonHeight / 2,
                                     width: buttonHeight, height: buttonHeight)
         
         view.addSubview(controlsView)
@@ -121,7 +131,7 @@ extension PulseAlbumVC {
     
     fileprivate func setupScope() {
         if shouldAllowVideo {
-            let scopeFrame = CGRect(x: 0, y: IconSizes.large.rawValue, width: view.bounds.width, height: scopeBarHeight)
+            let scopeFrame = CGRect(x: 0, y: controlsView.frame.height, width: view.bounds.width, height: scopeBarHeight)
             let segmentTitles : [String] = ["Images", "Videos"]
             let segmentIcons : [UIImage] = [UIImage(named: "photo")!, UIImage(named:"video")!]
             
@@ -140,7 +150,7 @@ extension PulseAlbumVC {
     }
     
     fileprivate func setupAlbum() {
-        let startY = shouldAllowVideo ? IconSizes.large.rawValue + scopeBarHeight : IconSizes.large.rawValue
+        let startY = shouldAllowVideo ? controlsView.frame.height + scopeBarHeight : controlsView.frame.height
         albumView = PulseAlbumView(frame: CGRect(x: 0, y: startY, width: view.frame.width, height: view.frame.height - startY))
         view.addSubview(albumView)
         albumView.layoutIfNeeded()
@@ -151,16 +161,17 @@ extension PulseAlbumVC {
 
 extension PulseAlbumVC: VideoTrimmerDelegate, ImageTrimmerDelegate {
     func dismissedTrimmer() {
+        
         guard let nav = self.navigationController else {
             dismiss(animated: true, completion: nil)
             return
         }
-        nav.popViewController(animated: true)
+        
+        nav.popViewController(animated: false)
     }
     
     func exportedAsset(url: URL?) {
         guard let nav = self.navigationController else {
-            dismiss(animated: true, completion: nil)
             delegate?.capturedItem(url: url, image: nil, location: selectedMetadata?.location, assetType: .albumVideo)
             return
         }
@@ -170,14 +181,15 @@ extension PulseAlbumVC: VideoTrimmerDelegate, ImageTrimmerDelegate {
     }
     
     func capturedItem(image: UIImage?) {
+        let resizedImage = image?.resizeImage(newWidth: fullImageWidth) ?? image
+        
         guard let nav = self.navigationController else {
-            dismiss(animated: true, completion: nil)
-            delegate?.capturedItem(url: nil, image: image, location: selectedMetadata?.location, assetType: .albumImage)
+            delegate?.capturedItem(url: nil, image: resizedImage, location: selectedMetadata?.location, assetType: .albumImage)
             return
         }
         
         nav.popViewController(animated: false)
-        delegate?.capturedItem(url: nil, image: image, location: selectedMetadata?.location, assetType: .albumImage)
+        delegate?.capturedItem(url: nil, image: resizedImage, location: selectedMetadata?.location, assetType: .albumImage)
     }
 }
 
@@ -197,13 +209,15 @@ extension PulseAlbumVC: AlbumViewDelegate {
             imageCropperVC.selectedImage = image
             imageCropperVC.captureSize = captureSize
             imageCropperVC.delegate = self
+            imageCropperVC.transitioningDelegate = self
             
             guard let nav = self.navigationController else {
-                present(imageCropperVC, animated: true, completion: nil)
+                view.alpha = 0.0
+                present(imageCropperVC, animated: false, completion: nil)
                 return
             }
             
-            nav.pushViewController(imageCropperVC, animated: true)
+            nav.pushViewController(imageCropperVC, animated: false)
         }
     }
     
@@ -222,17 +236,22 @@ extension PulseAlbumVC: AlbumViewDelegate {
         guard asset.duration <= PulseDatabase.maxVideoLength else {
             DispatchQueue.global(qos: .default).async(execute: {
                 imageManager.requestAVAsset(forVideo: asset, options: options, resultHandler: { asset, _ , info in
-                    guard let asset = asset, let nav = self.navigationController else {
+                    guard let asset = asset else { return }
+                    
+                    let videoTrimmer = VideoTrimmerVC()
+                    videoTrimmer.asset = asset
+                    videoTrimmer.delegate = self
+                    self.selectedMetadata = metaData
+                    
+                    guard let nav = self.navigationController else {
+                        DispatchQueue.main.async {
+                            self.present(videoTrimmer, animated: false, completion: nil)
+                        }
                         return
                     }
                     
-                    self.selectedMetadata = metaData
-                    
                     DispatchQueue.main.async {
-                        let videoTrimmer = VideoTrimmerVC()
-                        videoTrimmer.asset = asset
-                        videoTrimmer.delegate = self
-                        nav.pushViewController(videoTrimmer, animated: true)
+                        nav.pushViewController(videoTrimmer, animated: false)
                     }
                 })
             })

@@ -455,6 +455,7 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         followers = []
     }
     
+    
     override init(navigationBarClass: AnyClass?, toolbarClass: AnyClass?) {
         super.init(navigationBarClass: navigationBarClass, toolbarClass: toolbarClass)
     }
@@ -564,4 +565,35 @@ extension PulseNavVC {
     var deltaLimit: CGFloat {
         return navbarHeight - statusBarHeight
     }
+    
+    /**
+    public func navigationController(_ navigationController: UINavigationController,
+                              animationControllerFor operation: UINavigationControllerOperation,
+                              from fromVC: UIViewController,
+                              to toVC: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        print("transitioning delegate fired")
+        
+        switch operation {
+        case .pop:
+            if fromVC is InputVC {
+                let animator = FadeAnimationController()
+                animator.transitionType = .dismiss
+                return animator
+                
+            } else if fromVC is ContentDetailVC {
+                let animator = ShrinkDismissController()
+                animator.transitionType = .dismiss
+                animator.shrinkToView = UIView(frame: CGRect(x: 20,y: 400,width: 40,height: 40))
+                
+                return animator
+                
+            } else {
+                return nil
+            }
+        case .push:
+            return nil
+        case .none:
+            return nil
+        }
+    } **/
 }

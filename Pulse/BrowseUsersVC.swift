@@ -281,6 +281,7 @@ extension BrowseUsersVC  {
     }
 }
 
+/**
 extension BrowseUsersVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
@@ -296,4 +297,4 @@ extension BrowseUsersVC: UIViewControllerTransitioningDelegate {
             return nil
         }
     }
-}
+} **/

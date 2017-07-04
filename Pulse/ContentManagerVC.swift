@@ -17,7 +17,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     var selectedItem: Item! //the category item - might be the question / tag / post etc.
     var allItems = [Item]()
     var itemIndex = 0
-    var watchedFullPreview = false
     var itemCollection = [Item]()
     var createdItemKey : String?
     
@@ -30,36 +29,41 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     /* CHILD VIEW CONTROLLERS */
     fileprivate var loadingVC : LoadingVC?
 
-    fileprivate var contentDetailVC : ContentDetailVC! = ContentDetailVC()
+    fileprivate var contentDetailVC : ContentDetailVC!
     fileprivate var inputVC : InputVC!
     fileprivate lazy var recordedVideoVC : RecordedVideoVC! = RecordedVideoVC()
     fileprivate var introVC : ContentIntroVC?
     
     fileprivate var isAddingMoreItems = false
-    fileprivate var isAddingCover = false
     fileprivate var isShowingIntro = false
     fileprivate var isLoaded = false
     fileprivate var cleanupComplete = false
     
-    fileprivate var panDismissInteractionController : PanContainerInteractionController! = PanContainerInteractionController()
+    fileprivate var panDismissInteractionController : PanContainerInteractionController!
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
+    deinit {
+        performCleanup()
+    }
+    
     init() {
-        super.init(nibName:nil, bundle:nil)
-        isNavigationBarHidden = true
+        super.init(navigationBarClass: PulseNavBar.self, toolbarClass: nil)
+    }
+    
+    
+    override init(nibName: String?, bundle: Bundle?) {
+        super.init(nibName: nibName, bundle: bundle)
     }
     
     override init(navigationBarClass: AnyClass?, toolbarClass: AnyClass?) {
         super.init(navigationBarClass: navigationBarClass, toolbarClass: toolbarClass)
-        isNavigationBarHidden = true
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
         if !isLoaded {
             delegate = self // set the navigation controller delegate
             
@@ -96,8 +100,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
                 contentDetailVC = nil
             }
             
-            panDismissInteractionController.delegate = nil
-            panDismissInteractionController = nil
+            if panDismissInteractionController != nil {
+                panDismissInteractionController.delegate = nil
+                panDismissInteractionController = nil
+            }
             
             recordedVideoVC.performCleanup()
             recordedVideoVC.delegate = nil
@@ -130,12 +136,16 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     /* Item Specific Methods */
     func showItemDetail(shouldShowIntro: Bool) {
         isNavigationBarHidden = true
-        contentDetailVC.delegate = self
-        panDismissInteractionController.wireToViewController(contentDetailVC, toViewController: nil, parentViewController: self)
-        panDismissInteractionController.delegate = self
-
+        
+        if contentDetailVC == nil {
+            contentDetailVC = ContentDetailVC()
+            contentDetailVC.delegate = self
+            panDismissInteractionController = PanContainerInteractionController()
+            panDismissInteractionController.wireToViewController(contentDetailVC, toViewController: nil, parentViewController: self)
+            panDismissInteractionController.delegate = self
+        }
+        
         //need to be set first - to determine if first clip should be answer detail or the answer itself
-        contentDetailVC.watchedFullPreview = watchedFullPreview
         contentDetailVC.itemDetail = itemCollection
         contentDetailVC.selectedChannel = selectedChannel != nil ? selectedChannel : Channel(cID: selectedItem.cID, title: selectedItem.cTitle ?? "")
         contentDetailVC.selectedItem = selectedItem
@@ -165,8 +175,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         self.allItems = allItems
         self.itemIndex = index
         self.itemCollection = itemCollection
-        self.watchedFullPreview = watchedPreview
-
+        
         showItemDetail(shouldShowIntro: false)
     }
     
@@ -206,7 +215,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     }
     
     func userClosedModal(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in
+        dismiss(animated: true, completion: {[weak self] _ in
+            guard let `self` = self else { return }
             self.isNavigationBarHidden = true
         })
     }
@@ -224,40 +234,29 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
     func capturedItem(url assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
-        if isAddingCover {
-            recordedItems.first?.content = image
-        } else {
-            //in case parent provides key for first item use that (interview case) else create a new key. After creation marks the createdItemKey as nil
-            let itemKey = createdItemKey != nil ? createdItemKey! : databaseRef.child("items").childByAutoId().key
-            createdItemKey = nil
-            
-            let item = Item(itemID: itemKey,
-                            itemUserID: PulseUser.currentUser.uID!,
-                            itemTitle: getRecordedItemTitle(),
-                            type: selectedItem.childItemType(),
-                            contentURL: assetURL,
-                            content: image,
-                            contentType: assetType,
-                            tag: selectedItem.tag ?? selectedItem, //if its a post / feedback thread, the series item is the selected item, don't need one level up look back
-                            cID: selectedChannel.cID ?? selectedItem.cID)
-            recordedItems.append(item)
-        }
+        
+        //in case parent provides key for first item use that (interview case) else create a new key. After creation marks the createdItemKey as nil
+        let itemKey = createdItemKey != nil ? createdItemKey! : databaseRef.child("items").childByAutoId().key
+        createdItemKey = nil
+        
+        let item = Item(itemID: itemKey,
+                        itemUserID: PulseUser.currentUser.uID!,
+                        itemTitle: getRecordedItemTitle(),
+                        type: selectedItem.childItemType(),
+                        contentURL: assetURL,
+                        content: image,
+                        contentType: assetType,
+                        tag: selectedItem.tag ?? selectedItem, //if its a post / feedback thread, the series item is the selected item, don't need one level up look back
+                        cID: selectedChannel.cID ?? selectedItem.cID)
+        recordedItems.append(item)
         
         recordedVideoVC.delegate = self
         
         recordedVideoVC.selectedChannelID = selectedChannel.cID
         recordedVideoVC.parentItem = selectedItem
-        recordedVideoVC.isNewEntry = true
         recordedVideoVC.recordedItems = recordedItems
-        
-        if isAddingCover {
-            recordedVideoVC.coverAdded = true
-            isAddingCover = false
-            recordedVideoVC.isNewEntry = false
-        } else {
-            recordedVideoVC.isNewEntry = true
-            recordedVideoVC.currentItemIndex += 1
-        }
+        recordedVideoVC.isNewEntry = true
+        recordedVideoVC.currentItemIndex += 1
         
         pushViewController(recordedVideoVC, animated: true)
     }
@@ -331,13 +330,13 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
                 if success {
                     self.showCamera()
                 } else {
-                    self.contentDetailVC.dismiss(animated: true, completion: {[unowned self] in
+                    self.dismiss(animated: true, completion: {[unowned self] in
                         self.performCleanup()
                     })
                 }
             })
         } else {
-            self.contentDetailVC.dismiss(animated: true, completion: {[unowned self] in
+            self.dismiss(animated: true, completion: {[unowned self] in
                 self.performCleanup()
             })
         }
@@ -370,26 +369,19 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     
     func removeIntro() {
         if isShowingIntro {
-            DispatchQueue.main.async {
+            DispatchQueue.main.async {[weak self] in
+                guard let `self` = self else { return }
                 self.popViewController(animated: true)
                 self.isShowingIntro = false
             }
         }
     }
     
-    func addMoreItems(_ currentVC : UIViewController, recordedItems : [Item], isCover : Bool) {
+    func addMoreItems(_ currentVC : UIViewController, recordedItems : [Item]) {
         recordedVideoVC = currentVC as! RecordedVideoVC
         self.recordedItems = recordedItems
-        
-        if isCover {
-            isAddingCover = true
-            inputVC.cameraTitle = "take or choose a cover image"
-            inputVC.cameraMode = .stillImage
-            inputVC.captureSize = .square
-        } else {
-            inputVC.captureSize = .fullScreen
-            isAddingMoreItems = true
-        }
+        inputVC.captureSize = .fullScreen
+        isAddingMoreItems = true
         
         if !viewControllers.contains(inputVC) {
             popViewController(animated: false)
@@ -409,9 +401,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     }
     
     func dismissInput() {
-        if isAddingMoreItems || isAddingCover {
+        if isAddingMoreItems  {
             returnToRecordings()
-            isAddingCover = false
         } else {
             dismiss(animated: true, completion: {[weak self] in
                 guard let `self` = self else { return }
@@ -506,6 +497,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     
     func navigationController(_ navigationController: UINavigationController,
                                 interactionControllerFor animationController: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
+        guard panDismissInteractionController != nil else { return nil } 
         return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
     }
 }

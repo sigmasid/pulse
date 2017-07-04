@@ -90,6 +90,11 @@ class InputVC: UIPageViewController {
             isLoaded = false
         }
     }
+    
+    public func updateAlpha() {
+        albumVC.view.alpha = 1.0
+        cameraVC.view.alpha = 1.0
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

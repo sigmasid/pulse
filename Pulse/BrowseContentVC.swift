@@ -454,6 +454,7 @@ extension BrowseContentVC  {
     }
 }
 
+/**
 extension BrowseContentVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
@@ -469,5 +470,5 @@ extension BrowseContentVC: UIViewControllerTransitioningDelegate {
             return nil
         }
     }
-}
+} **/
 

@@ -110,6 +110,7 @@ public class TrimmerView: AssetTimeSelector {
         assetPreview.rightAnchor.constraint(equalTo: rightAnchor, constant: -handleWidth).isActive = true
         assetPreview.topAnchor.constraint(equalTo: topAnchor).isActive = true
         assetPreview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        assetPreview.layoutIfNeeded()
     }
     
     private func setupTrimmerView() {

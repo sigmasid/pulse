@@ -213,7 +213,7 @@ extension SettingsTableVC: InputMasterDelegate {
             inputVC.inputDelegate = self
             inputVC.cameraMode = .stillImage
             inputVC.captureSize = .square
-            
+            inputVC.transitioningDelegate = self
             inputVC.cameraTitle = "smile!"
             inputVC.albumShowsVideo = false
         }

@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewSeriesVC: PulseVC, UINavigationControllerDelegate  {
+class NewSeriesVC: PulseVC  {
     //Set by parent
     public weak var selectedChannel : Channel! {
         didSet {
@@ -475,6 +475,7 @@ extension NewSeriesVC: InputMasterDelegate {
             inputVC.captureSize = .square
             inputVC.albumShowsVideo = false
             inputVC.inputDelegate = self
+            inputVC.transitioningDelegate = self
             inputVC.cameraTitle = "snap a pic to use as series cover!"
         }
         
@@ -485,29 +486,23 @@ extension NewSeriesVC: InputMasterDelegate {
         guard let image = image else {
             return
         }
-        
-        UIView.animate(withDuration: 0.2, animations: { self.inputVC.view.alpha = 0.0 } ,
-                       completion: {[weak self] (value: Bool) in
-                        guard let `self` = self else { return }
                         
-            DispatchQueue.main.async {
-                self.sShowCamera.setImage(image, for: .normal)
-                self.sShowCamera.imageView?.contentMode = .scaleAspectFill
-                self.sShowCamera.imageView?.clipsToBounds = true
-                
-                self.sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-                self.sShowCamera.clipsToBounds = true
-                            
-                self.sShowCameraLabel.text = "tap image to change"
-                self.sShowCameraLabel.textColor = .gray
-                
-                //update the header
-                self.inputVC.view.alpha = 1.0
-                self.inputVC.dismiss(animated: false, completion: nil)
-            }
-        })
+        sShowCamera.setImage(image, for: .normal)
+        sShowCamera.imageView?.contentMode = .scaleAspectFill
+        sShowCamera.imageView?.clipsToBounds = true
         
-        self.createCompressedImages(image: image)
+        sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+        sShowCamera.clipsToBounds = true
+        
+        sShowCameraLabel.text = "tap image to change"
+        sShowCameraLabel.textColor = .gray
+        
+        dismiss(animated: true, completion: {[weak self] in
+            guard let `self` = self else { return }
+            self.inputVC.updateAlpha()
+        })
+                
+        createCompressedImages(image: image)
     }
     
     func dismissInput() {

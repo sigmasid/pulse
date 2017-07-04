@@ -14,9 +14,12 @@ import AVFoundation
 class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate, ItemPreviewDelegate {
     public var selectedChannel : Channel!
     public var selectedItem : Item! //parentItem
+    public weak var delegate : ContentDelegate?
+    public var _isShowingIntro = false
+    
     internal var allItems = [Item]() {
         didSet {
-            if isViewLoaded {
+            if isViewLoaded, oldValue == [] {
                 removeObserverIfNeeded()
                 loadItem(index: itemIndex)
             }
@@ -29,7 +32,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             guard let currentItem = currentItem else { return }
             
             guard nextItemReady else {
-                addNextItem(item: currentItem, completion: { success in
+                addNextItem(item: currentItem, completion: {[weak self] success in
+                    guard let `self` = self else { return }
                     if success {
                         let _currentItem = self.currentItem
                         self.currentItem = _currentItem
@@ -39,6 +43,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 })
                 return
             }
+            
+            tapReady = false
             
             //whenever this is set - advance with this item
             advanceItem(completion: { [weak self] success in
@@ -65,7 +71,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 }
                 
                 if self.shouldShowExplore {
-                    self.checkNextItem(detail: true, completion: {[unowned self] success in
+                    self.checkNextItem(detail: true, completion: {[weak self] success in
+                        guard let `self` = self else { return }
                         if success {
                             //this will also add as next item in queue
                             self.nextDetailItem = self.itemDetail[self.itemDetailIndex]
@@ -90,7 +97,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 addNextItem(item: nextDetailItem!, completion: { _ in })
             } else {
                 PulseDatabase.getItem(nextDetailItem!.itemID, completion: {[weak self] item, error in
-                    if let item = item, let `self` = self {
+                    guard let `self` = self else { return }
+                    if let item = item {
                         self.nextDetailItem = item
                     }
                 })
@@ -103,17 +111,14 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         didSet {
             guard let nextFullItem = nextFullItem else { return }
             if nextFullItem.itemCreated {
-                PulseDatabase.getItemCollection(nextFullItem.itemID, completion: {(_ success : Bool, _ items : [Item]) in
-                    if success, items.count > 1 {
-                        nextFullItem.itemCollection = items.reversed() //otherwise items are in chron order - need to get oldest first
-                    } else {
-                        nextFullItem.itemCollection = []
-                    }
+                PulseDatabase.getItemCollection(nextFullItem.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    nextFullItem.itemCollection = self.reorderItemDetail(parentItem: nextFullItem, itemCollection: items)
                 })
-
             } else {
                 PulseDatabase.getItem(nextFullItem.itemID, completion: {[weak self] item, error in
-                    if let item = item, let `self` = self {
+                    guard let `self` = self else { return }
+                    if let item = item {
                         self.nextFullItem = item
                     }
                 })
@@ -131,9 +136,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     fileprivate var quickBrowse: QuickBrowseVC!
     
-    //if user has already watched the full preview, go directly to 2nd clip. set by sender - defaults to false
-    internal var watchedFullPreview = false
-    
     /** Media Player Items **/
     fileprivate var avPlayerLayer: AVPlayerLayer!
     fileprivate var contentOverlay : ContentOverlay?
@@ -142,8 +144,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate var imageView : UIImageView!
     
     /* bools to make sure can click next video and no errors from unhandled observers */
-    public var _isShowingIntro = false
-    
     fileprivate var isObserving = false
     fileprivate var isMiniProfileShown = false
     fileprivate var isImageViewShown = false
@@ -153,9 +153,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     fileprivate var playedTillEndObserver : Any!
     fileprivate var timeObserver : Any!
-
+    fileprivate var startCountdownObserver : Any!
+    
     fileprivate var miniProfile : MiniPreview?
-    public weak var delegate : ContentDelegate!
     fileprivate var tap : UITapGestureRecognizer!
     fileprivate var detailTap : UITapGestureRecognizer!
     
@@ -166,7 +166,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             tabBarHidden = true
             statusBarHidden = true
             
-            view.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+            view.backgroundColor = UIColor.black
             
             tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
             tap.cancelsTouchesInView = false
@@ -179,7 +179,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             contentOverlay?.delegate = self
             
             avPlayerLayer = AVPlayerLayer(player: qPlayer)
-            avPlayerLayer.backgroundColor = UIColor.black.withAlphaComponent(0.7).cgColor
+            avPlayerLayer.backgroundColor = UIColor.black.cgColor
             view.layer.insertSublayer(avPlayerLayer, at: 0)
             view.insertSubview(contentOverlay!, at: 2)
             avPlayerLayer.frame = view.bounds
@@ -188,17 +188,15 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                loadItem(index: itemIndex)
             }
             
-            NotificationCenter.default.addObserver(self,
+            startCountdownObserver = NotificationCenter.default.addObserver(self,
                                                    selector: #selector(startCountdownTimer),
                                                    name: NSNotification.Name(rawValue: "PlaybackStartedNotification"),
                                                    object: nextPlayerItem)
             
             //align the timer to actually when the video starts
             timeObserver = qPlayer.addBoundaryTimeObserver(forTimes: [NSValue(time: CMTimeMake(1, 20))],
-                                                                    queue: nil,
-                                                                    using: {
-                                                                        NotificationCenter.default.post(name: Notification.Name(rawValue: "PlaybackStartedNotification"),
-                                                                                                        object: self)}) as AnyObject!
+                                                        queue: nil,
+                                                        using: { NotificationCenter.default.post(name: Notification.Name(rawValue: "PlaybackStartedNotification"), object: self)}) as AnyObject!
             
             isLoaded = true
         }
@@ -208,6 +206,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         performCleanup()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.isNavigationBarHidden = true
+    }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if let view = touch.view, view.isKind(of: PulseButton.self) {
@@ -248,43 +250,68 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         canAdvanceReady = false
         
-        if index < allItems.count  {
-            
+        guard index < allItems.count else {
+            delegate?.noItemsToShow(self)
+            return
+        }
+        
+        guard allItems[index].itemCreated else {
             PulseDatabase.getItem( allItems[index].itemID, completion: {[weak self] item, error in
                 if let item = item, let `self` = self {
-                    self.addNextItem(item: item, completion: { success in
-                        if success {
-                            PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (_ success : Bool, _ items : [Item]) in
-                                guard let `self` = self else { return }
-                                
-                                if success, items.count > 1 {
-                                    item.itemCollection = items.reversed()
-                                } else {
-                                    item.itemCollection = []
-                                }
-                                
-                                self.checkNextItem(detail: false, completion: {[unowned self] success in
-                                    if success {
-                                        PulseDatabase.getItem(self.allItems[self.itemIndex].itemID, completion: {[weak self] nextItem, error in
-                                            guard let `self` = self else { return }
-
-                                            self.nextFullItem = nextItem
-                                            self.currentItem = item
-                                        })
-                                    } else {
-                                        self.currentItem = item
-                                    }
-                                })
-                            })
-                        }
-                    })
+                    self.allItems[index] = item
+                    self.loadItem(index: index)
                 }
             })
-        } else {
-            if (delegate != nil) {
-                delegate.noItemsToShow(self)
+            return
+        }
+        
+        let item = allItems[index]
+                
+        addNextItem(item: item, completion: {[weak self] success in
+            guard let `self` = self else { return }
+            if success {
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (_ success : Bool, _ items : [Item]) in
+                    guard let `self` = self else { return }
+                    
+                    item.itemCollection = self.reorderItemDetail(parentItem: item, itemCollection: items)
+                    
+                    self.checkNextItem(detail: false, completion: {[weak self] success in
+                        guard let `self` = self else { return }
+                        if success {
+                            PulseDatabase.getItem(self.allItems[self.itemIndex].itemID, completion: {[weak self] nextItem, error in
+                                guard let `self` = self else { return }
+                                
+                                self.nextFullItem = nextItem
+                                self.currentItem = item
+                            })
+                        } else {
+                            self.currentItem = item
+                        }
+                    })
+                })
+            }
+        })
+    }
+    
+    fileprivate func reorderItemDetail(parentItem: Item, itemCollection: [Item]) -> [Item] {
+        guard itemCollection.count > 1 else {
+            return []
+        }
+        
+        if parentItem.needsCover() {
+            let _items = itemCollection.reversed()
+            
+            if let lastItem = _items.last {
+                let sessionSlice = _items.dropLast()
+                var arrangedItems = Array(sessionSlice)
+                arrangedItems.insert(lastItem, at: 0)
+                
+                return arrangedItems
             }
         }
+        
+        return itemCollection.reversed()
     }
     
     fileprivate func addDetailTap() {
@@ -313,8 +340,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             addDetailTap()
             contentOverlay?.addPagers(num: itemDetail.count)
             contentOverlay?.dimExploreDetail()
-            tapReady = false
-        
         } else {
             removeDetailTap()
             contentOverlay?.hideExploreDetail()
@@ -403,7 +428,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             return
         }
         
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .background).async {[weak self] in
+            guard let `self` = self else { return }
             if let _imageData = try? Data(contentsOf: itemURL), let image = UIImage(data: _imageData) {
                 item.content = image
                 self.nextItemReady = true
@@ -482,7 +508,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             } else if let uPicURL = user.thumbPic {
                 DispatchQueue.main.async {
                     let _userImageData = try? Data(contentsOf: URL(string: uPicURL)!)
-                    DispatchQueue.main.async(execute: {
+                    DispatchQueue.main.async(execute: {[weak self] in
+                        guard let `self` = self else { return }
                         if _userImageData != nil, item.user?.uID == self.currentItem?.user?.uID {
                             self.currentItem?.user?.thumbPicImage = UIImage(data: _userImageData!)
                             self.contentOverlay?.setUserImage(self.currentItem?.user?.thumbPicImage)
@@ -503,7 +530,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                         
                         DispatchQueue.main.async {
                             let _userImageData = try? Data(contentsOf: URL(string: _uPic)!)
-                            DispatchQueue.main.async(execute: {
+                            DispatchQueue.main.async(execute: {[weak self] in
+                                guard let `self` = self else { return }
                                 if _userImageData != nil, item.user?.uID == self.currentItem?.user?.uID {
                                     self.currentItem?.user?.thumbPicImage = UIImage(data: _userImageData!)
                                     self.contentOverlay?.setUserImage(self.currentItem?.user?.thumbPicImage)
@@ -519,13 +547,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     fileprivate func addObserverForStatusReady(completion: @escaping (_ success : Bool) -> Void) {
         if qPlayer.currentItem != nil {
-            qPlayer.currentItem?.addObserver(self,
-                                                             forKeyPath: "loadedTimeRanges",
-                                                             options: NSKeyValueObservingOptions.new,
-                                                             context: nil)
+            qPlayer.currentItem?.addObserver(self, forKeyPath: "loadedTimeRanges", options: NSKeyValueObservingOptions.new, context: nil)
             
-            playedTillEndObserver = NotificationCenter.default.addObserver(self,
-                                                                           selector: #selector(didPlayTillEnd),
+            playedTillEndObserver = NotificationCenter.default.addObserver(self, selector: #selector(didPlayTillEnd),
                                                                            name: .AVPlayerItemDidPlayToEndTime,
                                                                            object: nextPlayerItem)
             
@@ -545,10 +569,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 NotificationCenter.default.removeObserver(playedTillEndObserver)
             }
             
-            if timeObserver != nil {
-                NotificationCenter.default.removeObserver(timeObserver)
+            if startCountdownObserver != nil {
+                NotificationCenter.default.removeObserver(startCountdownObserver)
             }
-            
             
             isObserving = false
         }
@@ -566,7 +589,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     fileprivate func readyToPlay() {
-        DispatchQueue.main.async(execute: {
+        DispatchQueue.main.async(execute: {[weak self] in
+            guard let `self` = self else { return }
             self.qPlayer.play()
         })
         
@@ -580,7 +604,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     fileprivate func hideIntro() {
         if _isShowingIntro {
-            delegate.removeIntro()
+            delegate?.removeIntro()
             _isShowingIntro = false
         }
     }
@@ -598,15 +622,18 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate func showImageView(_ image : UIImage) {
         
         if isImageViewShown {
-            DispatchQueue.main.async {
+            DispatchQueue.main.async {[weak self] in
+                guard let `self` = self else { return }
                 self.imageView.image = image
                 self.tapReady = true
             }
         } else {
-            DispatchQueue.main.async {
+            DispatchQueue.main.async {[weak self] in
+                guard let `self` = self else { return }
                 self.imageView = UIImageView(frame: self.view.bounds)
                 self.imageView.image = image
-                self.imageView.contentMode = .scaleAspectFill
+                self.imageView.backgroundColor = UIColor.black
+                self.imageView.contentMode = .scaleAspectFit
                 self.view.insertSubview(self.imageView, at: 1)
                 self.isImageViewShown = true
                 self.tapReady = true
@@ -652,7 +679,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     func userClickedButton() {
-        delegate.userClickedProfileDetail()
+        delegate?.userClickedProfileDetail()
     }
     
     func userClickedHeaderMenu() {
@@ -662,7 +689,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             qPlayer.pause()
         }
         
-        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.toggleLoading(show: true, message: "loading share options", showIcon: true)
             self.currentItem?.createShareLink(completion: {[weak self] link in
                 guard let link = link, let `self` = self else { return }
@@ -671,7 +699,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             })
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             if self.qPlayer.currentItem != nil {
                 self.qPlayer.play()
@@ -736,7 +765,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     func userClickedSeeAll(items : [Item]) {
         GlobalFunctions.dismissVC(quickBrowse)
-        delegate.userClickedSeeAll(items: items)
+        delegate?.userClickedSeeAll(items: items)
         removeObserverIfNeeded()
         
         isQuickBrowseShown = false
@@ -800,7 +829,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             shouldShowExplore = false
             showItemDetail(show: false)
             
-            self.checkNextItem(detail: false, completion: {[unowned self] success in
+            self.checkNextItem(detail: false, completion: {[weak self] success in
+                guard let `self` = self else { return }
                 let _nextItem = self.nextFullItem
                 if success {
                     PulseDatabase.getItem(self.allItems[self.itemIndex].itemID, completion: {[weak self] item, error in
@@ -820,7 +850,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         else {
             if (delegate != nil) {
                 removeObserverIfNeeded()
-                delegate.noItemsToShow(self)
+                delegate?.noItemsToShow(self)
                 performCleanup()
             }
         }
@@ -854,6 +884,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     public func performCleanup() {        
         if !cleanupComplete {
             
+            if timeObserver != nil {
+                qPlayer.removeTimeObserver(timeObserver)
+            }
+            
             if tap != nil {
                 view.removeGestureRecognizer(tap)
                 tap.delegate = nil
@@ -872,6 +906,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 miniProfile?.delegate = nil
             }
             
+            playedTillEndObserver = nil
+            timeObserver = nil
+            startCountdownObserver = nil
+            
             currentItem = nil
             nextFullItem = nil
             nextDetailItem = nil
@@ -889,12 +927,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             
             if contentOverlay != nil {
                 contentOverlay?.delegate = nil
-                contentOverlay?.removeFromSuperview()
                 contentOverlay = nil
-            }
-            
-            if avPlayerLayer != nil {
-                avPlayerLayer.removeFromSuperlayer()
             }
             
             if imageView != nil {

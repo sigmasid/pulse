@@ -134,15 +134,17 @@ class RecordingOverlay: UIView {
         
         postLabel.setBlurredBackground()
         addMoreLabel.setBlurredBackground()
-        
-
     }
     
-    func userClickedAddTitle(sender: UIButton) {
+    public func updatePostLabel(text: String) {
+        postLabel.text = text
+    }
+    
+    public func userClickedAddTitle(sender: UIButton) {
         showAddTitleField(makeFirstResponder: true)
     }
     
-    func showAddTitleField(makeFirstResponder: Bool, placeholderText: String) {
+    public func showAddTitleField(makeFirstResponder: Bool, placeholderText: String) {
         if !isTitleSetup {
             setupTitleField(placeholderText: placeholderText)
         }
@@ -153,11 +155,11 @@ class RecordingOverlay: UIView {
         }
     }
     
-    func showAddTitleField(makeFirstResponder: Bool) {
+    public func showAddTitleField(makeFirstResponder: Bool) {
         showAddTitleField(makeFirstResponder: makeFirstResponder, placeholderText: title)
     }
     
-    func clearAddTitleField() {
+    public func clearAddTitleField() {
         addTitleField.text = ""
         addTitleField.frame = CGRect(x: addTitleField.frame.origin.x, y: frame.maxY, width: addTitleField.frame.width, height: addTitleField.frame.height)
     }
@@ -238,7 +240,7 @@ class RecordingOverlay: UIView {
         titleButton.removeShadow()
     }
     
-    func addProgressLabel(_ label : String) {
+    public func addProgressLabel(_ label : String) {
         progressLabel.isHidden = false
         progressLabel.text = label
         progressLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
@@ -255,7 +257,7 @@ class RecordingOverlay: UIView {
         progressLabel.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
     }
     
-    func setupPagers() {
+    public func setupPagers() {
         addSubview(pagersStack)
         
         pagersStack.translatesAutoresizingMaskIntoConstraints = false
@@ -268,7 +270,7 @@ class RecordingOverlay: UIView {
         pagersStack.spacing = Spacing.s.rawValue
     }
     
-    func addPagers() {
+    public func addPagers() {
         let pagerButton = UIView()
         pagerButton.translatesAutoresizingMaskIntoConstraints = false
         pagerButton.heightAnchor.constraint(equalTo: pagerButton.widthAnchor).isActive = true
@@ -285,7 +287,7 @@ class RecordingOverlay: UIView {
         pagerButton.layer.masksToBounds = true
     }
     
-    func removePager() {
+    public func removePager() {
         if pagersStack.arrangedSubviews.last != nil {
             let lastView = pagersStack.arrangedSubviews.last!
             pagersStack.removeArrangedSubview(lastView)
@@ -297,7 +299,7 @@ class RecordingOverlay: UIView {
         }
     }
     
-    func hideProgressLabel(_ label : String) {
+    public func hideProgressLabel(_ label : String) {
         progressLabel.text = label
         
         let delay = 1 * Double(NSEC_PER_SEC)
@@ -317,7 +319,7 @@ class RecordingOverlay: UIView {
         }) 
     }
     
-    func addUploadProgressBar() {
+    public func addUploadProgressBar() {
         progressBar.progressTintColor = UIColor.white
         progressBar.trackTintColor = UIColor.black.withAlphaComponent(0.7)
         progressBar.progressViewStyle = .bar
@@ -332,7 +334,7 @@ class RecordingOverlay: UIView {
         progressBar.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
     }
     
-    func updateProgressBar(_ percentComplete : Float) {
+    public func updateProgressBar(_ percentComplete : Float) {
         progressBar.setProgress(percentComplete, animated: true)
     }
 }

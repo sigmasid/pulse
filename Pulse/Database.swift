@@ -789,7 +789,7 @@ class PulseDatabase {
                     let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
                     allItems.append(item)
                 }
-                completion(allItems)
+                completion(allItems.reversed())
             } else {
                 completion(allItems)
             }

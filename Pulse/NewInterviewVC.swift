@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewInterviewVC: PulseVC, UINavigationControllerDelegate, ParentTextViewDelegate, ModalDelegate, SelectionDelegate  {
+class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDelegate  {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!

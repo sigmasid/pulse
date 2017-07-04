@@ -250,7 +250,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
         contentVC = ContentManagerVC()
-        contentVC.watchedFullPreview = watchedPreview
         contentVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
         contentVC.selectedItem = selectedItem
         contentVC.itemCollection = itemCollection

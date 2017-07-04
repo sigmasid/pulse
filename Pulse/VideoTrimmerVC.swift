@@ -19,9 +19,9 @@ class VideoTrimmerVC: UIViewController {
     fileprivate var trimmerView: TrimmerView!
     fileprivate var controlsView: UIView!
     
-    fileprivate var playButton = PulseButton(size: .small, type: .play, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
-    fileprivate var chooseButton = PulseButton(size: .small, type: .check, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
-    fileprivate var cancelButton = PulseButton(size: .small, type: .close, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var playButton = PulseButton(size: .xSmall, type: .play, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var chooseButton = PulseButton(size: .xSmall, type: .check, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var cancelButton = PulseButton(size: .xSmall, type: .close, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
     
     fileprivate var editingTip = PaddingLabel()
     fileprivate var durationLabel = PaddingLabel()
@@ -201,10 +201,11 @@ extension VideoTrimmerVC: TrimmerViewDelegate {
 //setup layout
 extension VideoTrimmerVC {
     fileprivate func setupLayout() {
-        controlsView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: IconSizes.medium.rawValue))
+        let headerHeight = IconSizes.medium.rawValue * 1.2
+        
+        controlsView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: headerHeight))
         playerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: view.bounds.height))
-        trimmerView = TrimmerView(frame: CGRect(x: 0, y: view.bounds.height - IconSizes.large.rawValue,
-                                                width: view.bounds.width, height: IconSizes.large.rawValue))
+        trimmerView = TrimmerView(frame: CGRect(x: 0, y: view.bounds.height - IconSizes.large.rawValue, width: view.bounds.width, height: IconSizes.large.rawValue))
         durationLabel = PaddingLabel(frame: CGRect(x: view.bounds.width * 0.8, y: view.bounds.height - trimmerView.frame.height - IconSizes.medium.rawValue,
                                              width: view.bounds.width * 0.2, height: IconSizes.medium.rawValue))
         editingTip = PaddingLabel(frame: CGRect(x: 0, y: view.bounds.height - trimmerView.frame.height - IconSizes.medium.rawValue,
@@ -229,7 +230,7 @@ extension VideoTrimmerVC {
     }
     
     fileprivate func addControls() {
-        let buttonHeight = IconSizes.small.rawValue
+        let buttonHeight = IconSizes.xSmall.rawValue
         
         controlsView.backgroundColor = UIColor.black.withAlphaComponent(0.2)
         controlsView.addSubview(cancelButton)

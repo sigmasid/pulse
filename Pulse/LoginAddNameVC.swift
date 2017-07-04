@@ -66,7 +66,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
         inputVC.albumShowsVideo = false
         inputVC.inputDelegate = self
         inputVC.cameraTitle = "smile!"
-        
+        inputVC.transitioningDelegate = self
         present(inputVC, animated: true, completion: nil)
     }
     

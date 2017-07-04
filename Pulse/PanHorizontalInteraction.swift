@@ -16,6 +16,7 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
     fileprivate var rightToLeftPan : Bool = false
     
     public weak var delegate : ContentDelegate!
+    private var panGesture : UIPanGestureRecognizer!
     
     func wireToViewController(_ tabBarController : UITabBarController) {
         self.tabBarController = tabBarController
@@ -24,13 +25,14 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
     }
     
     fileprivate func prepareGestureRecognizerInView(_ view: UIView) {
-        let gesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
-        view.addGestureRecognizer(gesture)
+        panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+        view.addGestureRecognizer(panGesture)
     }
     
     deinit {
         delegate = nil
         tabBarController = nil
+        panGesture = nil
     }
     
     

@@ -374,7 +374,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     
     internal func showItemDetail(selectedItem : Item?, allItems: [Item]) {
         contentVC = ContentManagerVC()
-        contentVC.watchedFullPreview = false
         
         if let selectedItem = selectedItem {
             contentVC.selectedItem = selectedItem
@@ -520,8 +519,6 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             showItemDetail(selectedItem: currentItem)
             
         } else if indexPath == selectedIndex {
-            //if item has more than initial clip, show 'see more at the end'
-            watchedFullPreview = false
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
@@ -613,6 +610,7 @@ extension UserProfileVC: UICollectionViewDelegateFlowLayout {
     }
 }
 
+/**
 extension UserProfileVC: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
@@ -628,4 +626,4 @@ extension UserProfileVC: UIViewControllerTransitioningDelegate {
             return nil
         }
     }
-}
+} **/

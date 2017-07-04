@@ -81,6 +81,7 @@
 		BA7D67811D30DEA100883B88 /* globalFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7D67801D30DEA100883B88 /* globalFunctions.swift */; };
 		BA7EF9401E849DE100660FB2 /* MiniUserSearchVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA7EF93F1E849DE100660FB2 /* MiniUserSearchVC.swift */; };
 		BA819D781D5E82EA002D69FA /* PulseMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA819D771D5E82EA002D69FA /* PulseMenu.swift */; };
+		BA893CC41F08661000623676 /* AddCoverVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA893CC31F08661000623676 /* AddCoverVC.swift */; };
 		BA92F7521DA2C5ED00B89D66 /* MessageVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7511DA2C5ED00B89D66 /* MessageVC.swift */; };
 		BA92F7541DA31B2F00B89D66 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7531DA31B2F00B89D66 /* Message.swift */; };
 		BA92F7561DA44A6200B89D66 /* MessageTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA92F7551DA44A6200B89D66 /* MessageTableCell.swift */; };
@@ -201,6 +202,7 @@
 		BA7D67801D30DEA100883B88 /* globalFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = globalFunctions.swift; sourceTree = "<group>"; };
 		BA7EF93F1E849DE100660FB2 /* MiniUserSearchVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MiniUserSearchVC.swift; sourceTree = "<group>"; };
 		BA819D771D5E82EA002D69FA /* PulseMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseMenu.swift; sourceTree = "<group>"; };
+		BA893CC31F08661000623676 /* AddCoverVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCoverVC.swift; sourceTree = "<group>"; };
 		BA92F7511DA2C5ED00B89D66 /* MessageVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageVC.swift; sourceTree = "<group>"; };
 		BA92F7531DA31B2F00B89D66 /* Message.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		BA92F7551DA44A6200B89D66 /* MessageTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageTableCell.swift; sourceTree = "<group>"; };
@@ -351,6 +353,7 @@
 				BA1C48C21D243704008F8A04 /* Assets.xcassets */,
 				BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */,
 				BA1C48C71D243704008F8A04 /* Info.plist */,
+				BA1DE12A1D244486004F3ED2 /* Models */,
 				BA7745CA1E5775040023976F /* Main VCs */,
 				BA6B78B31D2D7D43003EE992 /* Content Manager */,
 				BA6B78B41D2D7D56003EE992 /* User Recorded Item */,
@@ -361,7 +364,6 @@
 				BA03C43A1DB5A51D00277382 /* Search */,
 				BA03C43B1DB5A52900277382 /* Messaging */,
 				BADD3DCB1ED8ACC200E5D5FF /* Create New */,
-				BA1DE12A1D244486004F3ED2 /* Models */,
 				BA1DE1431D244CBD004F3ED2 /* Global Refs */,
 				BA722DEF1E5A5F6E00E9699D /* Collection View Items */,
 				BAC892DA1D7A28CF0060A928 /* Transition Animation */,
@@ -440,6 +442,7 @@
 				BA1DE1311D244942004F3ED2 /* processVideoHelper.swift */,
 				BAFA8F321D42984F00C1BB14 /* FiltersOverlay.swift */,
 				BAFA8F341D42987000C1BB14 /* FiltersCell.swift */,
+				BA893CC31F08661000623676 /* AddCoverVC.swift */,
 			);
 			name = "User Recorded Item";
 			sourceTree = "<group>";
@@ -769,6 +772,7 @@
 				BA434FB01E59331A004686CB /* Channel.swift in Sources */,
 				BAB03AC81D80D76300090147 /* PanHorizontalInteraction.swift in Sources */,
 				BA1DE1321D244942004F3ED2 /* processVideoHelper.swift in Sources */,
+				BA893CC41F08661000623676 /* AddCoverVC.swift in Sources */,
 				BAF76D891DB0355600FB72EE /* Conversation.swift in Sources */,
 				BA79B6A31E5657BD0037CE3A /* HeaderExperts.swift in Sources */,
 				BAB7CD211D4AEB310058AD9C /* UpdateProfileVC.swift in Sources */,

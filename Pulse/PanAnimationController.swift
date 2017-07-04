@@ -65,6 +65,8 @@ class PanAnimationController: BaseAnimator  {
 
                     transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
             })
+        } else {
+            transitionContext.completeTransition(false)
         }
     }
     
@@ -111,11 +113,10 @@ class PanAnimationController: BaseAnimator  {
 
                 })
                 
-                if transitionContext.transitionWasCancelled {
-                }
-                
                 transitionContext.completeTransition(!transitionContext.transitionWasCancelled)
             })
+        } else {
+            transitionContext.completeTransition(false)
         }
     }
 }

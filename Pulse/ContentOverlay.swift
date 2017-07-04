@@ -9,7 +9,9 @@
 import UIKit
 
 class ContentOverlay: UIView {
-
+    
+    public weak var delegate : ItemDetailDelegate!
+    
     fileprivate var footerBackground = UIView()
     fileprivate var userTitles = PulseMenu(_axis: .vertical, _spacing: 0)
     fileprivate lazy var nextItemButton = PulseButton(title: "Skip", isRound: true)
@@ -39,7 +41,7 @@ class ContentOverlay: UIView {
     fileprivate var pagers = [UIView]()
     fileprivate lazy var pagersStack = UIStackView()
     
-    public weak var delegate : ItemDetailDelegate!
+    fileprivate var headerBackgroundTap : UITapGestureRecognizer!
     
     internal enum AnswersButtonSelector: Int {
         case upvote, downvote, save, album
@@ -60,15 +62,9 @@ class ContentOverlay: UIView {
     }
     
     deinit {
-        userImage.removeFromSuperview()
-        headerMenu.removeFromSuperview()
-        browseButton.removeFromSuperview()
-        messageButton.removeFromSuperview()
-        videoTimer.removeFromSuperview()
-        userTitles.removeFromSuperview()
         delegate = nil
         pagers = []
-        pagersStack.removeFromSuperview()
+        headerBackgroundTap = nil
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -389,7 +385,7 @@ extension ContentOverlay {
         userTitles.leadingAnchor.constraint(equalTo: userImage.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
         userTitles.layoutIfNeeded()
         
-        let headerBackgroundTap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
+        headerBackgroundTap = UITapGestureRecognizer(target: self, action: #selector(handleProfileTap))
         userTitles.addGestureRecognizer(headerBackgroundTap)
         
         userTitles.addArrangedSubview(userTitleLabel)

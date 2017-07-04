@@ -319,20 +319,15 @@ class Item: NSObject {
     }
     
     internal func needsCover() -> Bool {
-        if self.contentType == .recordedVideo || contentType == .albumVideo {
-            switch type {
-            case .post: return true
-            case .perspective: return false
-            case .answer: return false
-            case .session: return false
-            case .interview: return true
-            case .showcase: return true
-                
-            default: return false
-            }
-        } else {
-            //if it's an image - don't need a cover
-            return false
+        switch type {
+        case .post: return true
+        case .perspective: return false
+        case .answer: return false
+        case .session: return false
+        case .interview: return true
+        case .showcase: return true
+            
+        default: return false
         }
     }
     

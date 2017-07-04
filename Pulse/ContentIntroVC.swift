@@ -58,10 +58,7 @@ class ContentIntroVC: UIViewController {
         if !cleanupComplete {
             item = nil
             userImage.image = nil
-            userStack.removeFromSuperview()
             seriesImage.image = nil
-            seriesImage.removeFromSuperview()
-            loadingButton.removeFromSuperview()
             cleanupComplete = true
         }
     }

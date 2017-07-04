@@ -20,7 +20,6 @@ final class ImageCropView: UIScrollView, UIScrollViewDelegate, UIGestureRecogniz
     var cropArea:CGRect{
         get{
             let fullScreen = frame.height > frame.width
-            
             let factor = fullScreen ? image.size.height / frame.height : image.size.width / frame.width
             let scale = 1 / zoomScale
             
@@ -176,10 +175,6 @@ final class ImageCropView: UIScrollView, UIScrollViewDelegate, UIGestureRecogniz
     public func getCroppedImage() -> UIImage? {
         
         guard let imageData = image?.fixOrientation() else {
-            return image
-        }
-        
-        guard zoomScale != 1.0 || contentOffset.x != initialContentOffsetX  || contentOffset.y != initialContentOffsetY else {
             return image
         }
         

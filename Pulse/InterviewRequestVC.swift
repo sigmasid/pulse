@@ -77,14 +77,9 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         hideKeyboardWhenTappedAround()
     }
     
-    override func goBack() {
-        DispatchQueue.global(qos: .background).async {[weak self] in
-            guard let `self` = self else { return }
-            self.performCleanup()
-        }
-        super.goBack()
+    deinit {
+        performCleanup()
     }
-    
     
     public func performCleanup() {
         if !cleanupComplete {
@@ -331,8 +326,8 @@ extension InterviewRequestVC {
             showErrorMenu(errorTitle: "Please Login", error: error)
             return
         }
-        let contentVC = ContentManagerVC()
         
+        contentVC = ContentManagerVC()
         contentVC.selectedChannel = Channel(cID: interviewItem.cID)
         
         //NEEDED TO TO COPY BY VALUE VS REFERENCE
