@@ -19,11 +19,11 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
     fileprivate var addEmail : AddText!
     fileprivate var interviewID: String!
 
-    fileprivate var iImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
-    fileprivate var iName = UITextField()
+    fileprivate var iImage : PulseButton?
+    fileprivate var iName = PaddingTextField()
     fileprivate var iNameDescription = UILabel()
-    fileprivate var iTopic = UITextField()
-    fileprivate var submitButton = UIButton()
+    fileprivate var iTopic = PaddingTextField()
+    fileprivate var submitButton = PulseButton(title: "Send Invite", isRound: true, hasShadow: false)
     
     fileprivate var placeholderName = "enter name or tap search"
     fileprivate var placeholderDescription = "brief description for interview"
@@ -88,10 +88,13 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
+        iImage = addRightButton(type: .profile)
         
         headerNav?.setNav(title: "New Interview", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
         headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
+        
+        //iImage.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
     }
     
     internal func updateDataSource() {
@@ -243,8 +246,9 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
             selectedUser = user
             iNameDescription.text = "Pulse user! Invite will be sent in-app"
             iName.text = user.name?.capitalized
-            iImage.setImage(selectedUser?.thumbPicImage, for: .normal)
-            iImage.clipsToBounds = true
+            iImage?.setImage(selectedUser?.thumbPicImage, for: .normal)
+            iImage?.clipsToBounds = true
+            iImage?.contentMode = .scaleAspectFill
             checkEnableButton()
         }
     }
@@ -334,7 +338,7 @@ extension NewInterviewVC : UITableViewDelegate, UITableViewDataSource {
             cell.contentView.addSubview(addButton)
             cell.contentView.backgroundColor = UIColor.white
             addButton.addTarget(self, action: #selector(userClickedMenu as () -> Void), for: .touchUpInside)
-
+            
             cell.textLabel?.text = "add interview questions"
             cell.textLabel?.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)
         }
@@ -369,7 +373,6 @@ extension NewInterviewVC : UITableViewDelegate, UITableViewDataSource {
 //UI Elements
 extension NewInterviewVC {
     func setupLayout() {
-        view.addSubview(iImage)
         view.addSubview(iName)
         view.addSubview(iNameDescription)
         view.addSubview(iTopic)
@@ -377,9 +380,10 @@ extension NewInterviewVC {
         view.addSubview(submitButton)
         
         iName.translatesAutoresizingMaskIntoConstraints = false
-        iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xl.rawValue).isActive = true
-        iName.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: Spacing.s.rawValue).isActive = true
-        iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.65).isActive = true
+        iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        iName.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        iName.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         iName.layoutIfNeeded()
         
         iNameDescription.translatesAutoresizingMaskIntoConstraints = false
@@ -388,24 +392,16 @@ extension NewInterviewVC {
         iNameDescription.trailingAnchor.constraint(equalTo: iName.trailingAnchor).isActive = true
         iNameDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
         
-        iImage.translatesAutoresizingMaskIntoConstraints = false
-        iImage.trailingAnchor.constraint(equalTo: iName.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        iImage.centerYAnchor.constraint(equalTo: iName.centerYAnchor).isActive = true
-        iImage.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        iImage.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        iImage.layoutIfNeeded()
-        
-        iImage.removeShadow()
-        
         iTopic.translatesAutoresizingMaskIntoConstraints = false
-        iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        iTopic.leadingAnchor.constraint(equalTo: iName.leadingAnchor).isActive = true
-        iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.65).isActive = true
+        iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        iTopic.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        iTopic.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         iTopic.layoutIfNeeded()
         
         searchButton.translatesAutoresizingMaskIntoConstraints = false
         searchButton.trailingAnchor.constraint(equalTo: iName.trailingAnchor).isActive = true
-        searchButton.bottomAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        searchButton.centerYAnchor.constraint(equalTo: iName.centerYAnchor).isActive = true
         searchButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         searchButton.heightAnchor.constraint(equalTo: searchButton.widthAnchor).isActive = true
         searchButton.layoutIfNeeded()
@@ -414,18 +410,12 @@ extension NewInterviewVC {
         searchButton.addTarget(self, action: #selector(userClickedSearchUsers), for: .touchUpInside)
         
         iName.delegate = self
-        iName.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        iName.addBottomBorder()
-        iName.attributedPlaceholder = NSAttributedString(string: placeholderName,
-                                                          attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        iName.placeholder = placeholderName
+        iTopic.placeholder = placeholderDescription
         
-        iTopic.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        iTopic.addBottomBorder()
-        iTopic.attributedPlaceholder = NSAttributedString(string: placeholderDescription,
-                                                         attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        
-        addTableView()
         addSubmitButton()
+        addTableView()
+        
         
     }
     
@@ -434,11 +424,18 @@ extension NewInterviewVC {
         view.addSubview(tableView)
         view.addSubview(sTypeDescription)
         
+        sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
+        sTypeDescription.bottomAnchor.constraint(equalTo: submitButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
+        
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.topAnchor.constraint(equalTo: iTopic.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        tableView.topAnchor.constraint(equalTo: iTopic.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         tableView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        tableView.heightAnchor.constraint(equalToConstant: 275).isActive = true
+        tableView.bottomAnchor.constraint(equalTo: sTypeDescription.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
         tableView.layoutIfNeeded()
         
         tableView?.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
@@ -453,13 +450,6 @@ extension NewInterviewVC {
         tableView?.layoutIfNeeded()
         tableView?.tableFooterView = UIView()
         
-        sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
-        sTypeDescription.topAnchor.constraint(equalTo: tableView.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
-        sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
-        
         sTypeDescription.numberOfLines = 3
         sTypeDescription.text = "the interviewee can answer any or all suggested questions. Requests are sent directly in-app to Pulse users or send via email or text message on the next screen."
         
@@ -468,16 +458,13 @@ extension NewInterviewVC {
     
     internal func addSubmitButton() {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
-        submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        submitButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        submitButton.layoutIfNeeded()
         
-        submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        submitButton.setTitle("Send Interview Request", for: UIControlState())
-        submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         submitButton.setDisabled()
-        
         submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
     }
 }

@@ -48,7 +48,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     //UI Elements
     internal var iImage = PulseButton(size: .medium, type: .profile, isRound: true, hasBackground: false, tint: .black)
     internal var iDescription = PaddingLabel()
-    internal var submitButton = PulseButton()
+    internal var submitButton = PulseButton(title: "Finish Interview", isRound: true, hasShadow: false)
     
     private var cleanupComplete = false
     
@@ -293,16 +293,12 @@ extension InterviewRequestVC {
         view.addSubview(submitButton)
         
         submitButton.translatesAutoresizingMaskIntoConstraints = false
-        submitButton.topAnchor.constraint(equalTo: tableView.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        submitButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        
-        submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        submitButton.setTitle("Done With Interview", for: UIControlState())
-        submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        submitButton.layoutIfNeeded()
         submitButton.setDisabled()
-        
         submitButton.addTarget(self, action: #selector(checkInterviewCompleted), for: .touchUpInside)
     }
     

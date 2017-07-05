@@ -124,6 +124,15 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
+    internal func addRightButton(type: ButtonType) -> PulseButton {
+        if headerNav != nil {
+            let rightButton = PulseButton(size: .small, type: type, isRound : true, background: .white, tint: .black)
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: rightButton)
+            return rightButton
+        }
+        return PulseButton(size: .small, type: .blank, isRound : true, background: .white, tint: .black)
+    }
+    
     internal func blurViewBackground() {
         /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
         blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
@@ -132,7 +141,9 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     }
     
     internal func removeBlurBackground() {
-        blurBackground.removeFromSuperview()
+        if blurBackground.superview == view {
+            blurBackground.removeFromSuperview()
+        }
     }
     
     internal func isRootController() -> Bool {

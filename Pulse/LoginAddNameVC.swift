@@ -11,7 +11,7 @@ import FirebaseAuth
 import MobileCoreServices
 import CoreLocation
 
-class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
+class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
@@ -32,13 +32,14 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
         super.viewDidLayoutSubviews()
 
         if !isLoaded {
-            firstName.addBottomBorder()
-            lastName.addBottomBorder()
+            firstName.placeholder = firstName.placeholder
+            lastName.placeholder = lastName.placeholder
+            profilePicButton.imageEdgeInsets = UIEdgeInsetsMake(22.5, 22.5, 22.5, 22.5)
             
-            firstName.attributedPlaceholder = NSAttributedString(string: firstName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-            lastName.attributedPlaceholder = NSAttributedString(string: lastName.placeholder!, attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            profilePicButton.makeRound()
+            profilePicButton.addShadow()
             
-            doneButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
+            doneButton.makeRound()
             doneButton.setEnabled()
         }
     }
@@ -54,7 +55,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
     
     fileprivate func updateHeader() {
         let checkButton = PulseButton(size: .small, type: .check, isRound : true, background: .white, tint: .black)
-        checkButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+        checkButton.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
         headerNav?.setNav(title: "Add Name")
@@ -63,6 +64,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
     @IBAction func addPic(_ sender: UIButton) {
         inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
         inputVC.cameraMode = .stillImage
+        inputVC.captureSize = .square
         inputVC.albumShowsVideo = false
         inputVC.inputDelegate = self
         inputVC.cameraTitle = "smile!"
@@ -73,10 +75,11 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
     @IBAction func addName(_ sender: UIButton) {
         dismissKeyboard()
         sender.setDisabled()
-        let _ = sender.addLoadingIndicator()
+        let loading = sender.addLoadingIndicator()
         
         GlobalFunctions.validateName(firstName.text, completion: {[weak self] (verified, error) in
             guard let `self` = self else { return }
+            loading.removeFromSuperview()
             if !verified {
                 self._firstNameError.text = error!.localizedDescription
                 sender.setEnabled()
@@ -95,13 +98,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
                                 sender.setEnabled()
                             }
                             else {
-                                if let checkPermissions = GlobalFunctions.askNotificationPermssion(viewController: self) {
-                                    checkPermissions.delegate = self
-                                } else {
-                                    NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
-                                    sender.setEnabled()
-                                    self.profileUpdated()
-                                }
+                                self.checkPremissions()
                             }
                         })
                     }
@@ -110,13 +107,39 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
         })
     }
     
-    internal func userClosedPreview(_ view : UIView) {
-        postCompletedNotification()
+    internal func checkPremissions() {
+        if !hasAskedNotificationPermission {
+            let permissionsPopup = PMAlertController(title: "Allow Notifications",
+                                                     description: "So we can remind you of requests to share your perspectives, ideas & expertise!",
+                                                     image: UIImage(named: "notifications-popup") , style: .walkthrough)
+            
+            permissionsPopup.dismissWithBackgroudTouch = true
+            permissionsPopup.modalDelegate = self
+            
+            permissionsPopup.addAction(PMAlertAction(title: "Allow", style: .default, action: {[weak self] () -> Void in
+                guard let `self` = self else { return }
+                GlobalFunctions.showNotificationPermissions()
+                self.postCompletedNotification()
+            }))
+            
+            permissionsPopup.addAction(PMAlertAction(title: "Cancel", style: .cancel, action: {[weak self] () -> Void in
+                guard let `self` = self else { return }
+                self.removeBlurBackground()
+                self.postCompletedNotification()
+            }))
+            
+            blurViewBackground()
+            present(permissionsPopup, animated: true, completion: nil)
+            
+        } else {
+            self.postCompletedNotification()
+        }
     }
     
-    internal func userClickedButton() {
-        GlobalFunctions.showNotificationPermissions()
+    internal func userClosedModal(_ viewController: UIViewController) {
         postCompletedNotification()
+        removeBlurBackground()
+        dismiss(animated: true, completion: nil)
     }
     
     internal func postCompletedNotification() {
@@ -139,25 +162,21 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ItemPreviewDelegate {
     func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
         guard let image = image else { return }
         
+        profilePicButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+        profilePicButton.clipsToBounds = true
         
-        UIView.animate(withDuration: 0.1, animations: { self.inputVC.view.alpha = 0.0; self.toggleLoading(show: true, message: "saving! just a sec...") } ,
-                       completion: {(value: Bool) in
-                        self.toggleLoading(show: false, message: nil)
-                        self.inputVC.view.alpha = 1.0
-                        self.inputVC.dismiss(animated: true, completion: nil)
+        profilePicButton.setImage(image, for: .normal)
+        profilePicButton.imageView?.contentMode = .scaleAspectFill
+        profilePicButton.imageView?.clipsToBounds = true
+        
+        dismiss(animated: true, completion: {[weak self] in
+            guard let `self` = self else { return }
+            self.inputVC.updateAlpha()
         })
         
         PulseDatabase.uploadProfileImage(image, completion: {(URL, error) in
-            if error == nil {
+            if error != nil {
                 DispatchQueue.main.async(execute: {
-                    self.profilePicButton.setImage(image, for: UIControlState())
-                    self.profilePicButton.contentMode = .scaleAspectFill
-                    self.profilePicButton.setTitle("", for: UIControlState())
-                    self.toggleLoading(show: false, message: nil)
-                })
-            } else {
-                DispatchQueue.main.async(execute: {
-                    self.toggleLoading(show: false, message: nil)
                     GlobalFunctions.showAlertBlock("Error adding photo", erMessage: "Sorry there was an error - please try again!")
                 })
             }

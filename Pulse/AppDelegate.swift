@@ -27,7 +27,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         // Register for remote notifications. Check if permissions have been shown before registering.
-        if GlobalFunctions.hasAskedNotificationPermission {
+        if hasAskedNotificationPermission {
             registerForNotifications(application: application)
         }
         

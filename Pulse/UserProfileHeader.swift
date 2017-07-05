@@ -44,6 +44,7 @@ class UserProfileHeader: UICollectionReusableView {
     public func updateUserDetails(selectedUser: PulseUser?, isModal : Bool) {
         if let selectedUser = selectedUser {
             profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
+            profileImage.tintColor = .black
             
             let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileShortBio.font.pointSize, weight: UIFontWeightMedium)]
             let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!,

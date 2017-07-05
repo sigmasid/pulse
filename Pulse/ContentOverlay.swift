@@ -14,7 +14,7 @@ class ContentOverlay: UIView {
     
     fileprivate var footerBackground = UIView()
     fileprivate var userTitles = PulseMenu(_axis: .vertical, _spacing: 0)
-    fileprivate lazy var nextItemButton = PulseButton(title: "Skip", isRound: true)
+    fileprivate lazy var nextItemButton = PulseButton(title: "Skip", isRound: true, hasShadow: false, buttonColor: UIColor.white, textColor: .black)
 
     fileprivate var menu = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .xSmall, type: .upvote, isRound: true, hasBackground: false)

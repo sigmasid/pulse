@@ -17,13 +17,13 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
     fileprivate var addEmail : AddText!
     
     fileprivate var iImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
-    fileprivate var iName = UITextField()
+    fileprivate var iName = PaddingTextField()
     fileprivate var iNameDescription = UILabel()
     
-    fileprivate var iTopic = UITextView()
-        fileprivate let searchButton = PulseButton(size: .small, type: .search, isRound: true, hasBackground: false, tint: .black)
+    fileprivate var iTopic = PaddingTextView()
+    fileprivate let searchButton = PulseButton(size: .small, type: .search, isRound: true, hasBackground: false, tint: .black)
     fileprivate var sTypeDescription = PaddingLabel()
-    fileprivate var submitButton = UIButton()
+    fileprivate var submitButton = PulseButton(title: "Send Invite", isRound: true, hasShadow: false)
     
     fileprivate var placeholderName = "enter name or tap search"
     fileprivate var placeholderDescription = "description for what you want the recipient to showcase"
@@ -278,13 +278,11 @@ extension NewShowcaseVC {
         iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xxl.rawValue).isActive = true
         iName.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: Spacing.s.rawValue).isActive = true
         iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.65).isActive = true
+        iName.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         iName.layoutIfNeeded()
         
         iName.delegate = self
-        iName.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        iName.addBottomBorder()
-        iName.attributedPlaceholder = NSAttributedString(string: placeholderName,
-                                                         attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        iName.placeholder = placeholderName
         
         iNameDescription.translatesAutoresizingMaskIntoConstraints = false
         iNameDescription.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
@@ -304,16 +302,12 @@ extension NewShowcaseVC {
         iTopic.translatesAutoresizingMaskIntoConstraints = false
         iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         iTopic.leadingAnchor.constraint(equalTo: iName.leadingAnchor).isActive = true
-        iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.65).isActive = true
+        iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         iTopic.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         iTopic.layoutIfNeeded()
         
-        iTopic.backgroundColor = UIColor.clear
-        iTopic.layer.borderColor = UIColor.black.cgColor
-        iTopic.layer.borderWidth = 1.0
-        iTopic.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        iTopic.attributedText = NSAttributedString(string: placeholderDescription,
-                                                   attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        iTopic.text = placeholderDescription
+        iTopic.textColor = UIColor.placeholderGrey
         iTopic.delegate = self
         
         searchButton.translatesAutoresizingMaskIntoConstraints = false
@@ -342,12 +336,11 @@ extension NewShowcaseVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        submitButton.layoutIfNeeded()
         
-        submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        submitButton.setTitle("Send Invite", for: UIControlState())
-        submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        submitButton.makeRound()
         submitButton.setDisabled()
         
         submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
@@ -385,6 +378,7 @@ extension NewShowcaseVC: UITextFieldDelegate, UITextViewDelegate {
             submitButton.setEnabled()
         } else if textView.text == "" {
             textView.text = placeholderDescription
+            textView.textColor = UIColor.placeholderGrey
             submitButton.setDisabled()
         }
     }
@@ -392,6 +386,7 @@ extension NewShowcaseVC: UITextFieldDelegate, UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         if textView.text == placeholderDescription {
             textView.text = ""
+            textView.textColor = UIColor.black
         }
     }
 }

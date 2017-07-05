@@ -48,6 +48,9 @@
 		BA434FB21E5933B3004686CB /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA434FB11E5933B3004686CB /* Item.swift */; };
 		BA434FB41E5943A1004686CB /* ExploreChannelsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA434FB31E5943A1004686CB /* ExploreChannelsVC.swift */; };
 		BA434FB61E594697004686CB /* ExploreChannelsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA434FB51E594697004686CB /* ExploreChannelsCell.swift */; };
+		BA54D90B1F0C5FEF001AF39B /* PMAlertController.xib in Resources */ = {isa = PBXBuildFile; fileRef = BA54D9081F0C5FEE001AF39B /* PMAlertController.xib */; };
+		BA54D90C1F0C5FEF001AF39B /* PMAlertAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA54D9091F0C5FEE001AF39B /* PMAlertAction.swift */; };
+		BA54D90D1F0C5FEF001AF39B /* PMAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA54D90A1F0C5FEF001AF39B /* PMAlertController.swift */; };
 		BA54F05A1E45591500E7640F /* PulseLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA54F0591E45591500E7640F /* PulseLayer.swift */; };
 		BA54F05C1E455C2800E7640F /* PulseCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA54F05B1E455C2800E7640F /* PulseCell.swift */; };
 		BA56400F1E70B1660001A534 /* HeaderChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA56400E1E70B1660001A534 /* HeaderChannels.swift */; };
@@ -169,6 +172,9 @@
 		BA434FB11E5933B3004686CB /* Item.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		BA434FB31E5943A1004686CB /* ExploreChannelsVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreChannelsVC.swift; sourceTree = "<group>"; };
 		BA434FB51E594697004686CB /* ExploreChannelsCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExploreChannelsCell.swift; sourceTree = "<group>"; };
+		BA54D9081F0C5FEE001AF39B /* PMAlertController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PMAlertController.xib; sourceTree = "<group>"; };
+		BA54D9091F0C5FEE001AF39B /* PMAlertAction.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PMAlertAction.swift; sourceTree = "<group>"; };
+		BA54D90A1F0C5FEF001AF39B /* PMAlertController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PMAlertController.swift; sourceTree = "<group>"; };
 		BA54F0591E45591500E7640F /* PulseLayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseLayer.swift; sourceTree = "<group>"; };
 		BA54F05B1E455C2800E7640F /* PulseCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PulseCell.swift; sourceTree = "<group>"; };
 		BA56400E1E70B1660001A534 /* HeaderChannels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HeaderChannels.swift; sourceTree = "<group>"; };
@@ -353,6 +359,7 @@
 				BA1C48C21D243704008F8A04 /* Assets.xcassets */,
 				BA1C48C41D243704008F8A04 /* LaunchScreen.storyboard */,
 				BA1C48C71D243704008F8A04 /* Info.plist */,
+				BA54D9071F0C5FE1001AF39B /* Pulse Alert */,
 				BA1DE12A1D244486004F3ED2 /* Models */,
 				BA7745CA1E5775040023976F /* Main VCs */,
 				BA6B78B31D2D7D43003EE992 /* Content Manager */,
@@ -420,6 +427,16 @@
 				BAB7CD201D4AEB310058AD9C /* UpdateProfileVC.swift */,
 			);
 			name = Profile;
+			sourceTree = "<group>";
+		};
+		BA54D9071F0C5FE1001AF39B /* Pulse Alert */ = {
+			isa = PBXGroup;
+			children = (
+				BA54D9091F0C5FEE001AF39B /* PMAlertAction.swift */,
+				BA54D90A1F0C5FEF001AF39B /* PMAlertController.swift */,
+				BA54D9081F0C5FEE001AF39B /* PMAlertController.xib */,
+			);
+			path = "Pulse Alert";
 			sourceTree = "<group>";
 		};
 		BA6B78B31D2D7D43003EE992 /* Content Manager */ = {
@@ -632,6 +649,7 @@
 				BA1C48C61D243704008F8A04 /* LaunchScreen.storyboard in Resources */,
 				BA94D41C1E405F2800DF7DD9 /* GoogleService-Info.plist in Resources */,
 				BAF220C51D31F0DB00C5B611 /* Main.storyboard in Resources */,
+				BA54D90B1F0C5FEF001AF39B /* PMAlertController.xib in Resources */,
 				BA1C48C31D243704008F8A04 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -763,6 +781,7 @@
 				BA06EDED1DA7081C00F880EE /* XMSegmentedControl.swift in Sources */,
 				BAFBB8C61E8E1D640004C421 /* NewChannelVC.swift in Sources */,
 				BAA794A01D7A50C700700AF7 /* BaseAnimator.swift in Sources */,
+				BA54D90D1F0C5FEF001AF39B /* PMAlertController.swift in Sources */,
 				BA3BB2291E89ABB100F74000 /* InterviewRequestVC.swift in Sources */,
 				BA2CCC121D4A94B5003C94FC /* SettingsTableVC.swift in Sources */,
 				BA7EF9401E849DE100660FB2 /* MiniUserSearchVC.swift in Sources */,
@@ -807,6 +826,7 @@
 				BA17FC061D3E0AEC00DC952D /* LoadingView.swift in Sources */,
 				BAFA88751D59245000854B12 /* QuickBrowseVC.swift in Sources */,
 				BA1DE1401D244C51004F3ED2 /* ContentDetailVC.swift in Sources */,
+				BA54D90C1F0C5FEF001AF39B /* PMAlertAction.swift in Sources */,
 				BAB9AD321F04AD0300968CA6 /* InputVC.swift in Sources */,
 				BA5BE37C1F030D4F006AF3B7 /* PulseAlbumView.swift in Sources */,
 				BAF76D871DB026E700FB72EE /* InboxTableCell.swift in Sources */,

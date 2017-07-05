@@ -11,9 +11,9 @@ import UIKit
 class NewChannelVC: PulseVC {
     
     fileprivate var startChannelInfo = PaddingLabel()
-    fileprivate var cTitle = UITextField()
-    fileprivate var cDescription = UITextView()
-    fileprivate var submitButton = UIButton()
+    fileprivate var cTitle = PaddingTextField()
+    fileprivate var cDescription = PaddingTextView()
+    fileprivate var submitButton = PulseButton(title: "Apply", isRound: true, hasShadow: false)
     
     internal var descriptionPlaceholder = "briefly tell us what your channel will be about!"
     
@@ -99,27 +99,26 @@ class NewChannelVC: PulseVC {
         cTitle.translatesAutoresizingMaskIntoConstraints = false
         cTitle.topAnchor.constraint(equalTo: startChannelInfo.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         cTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        cTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        cTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        cTitle.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         cTitle.layoutIfNeeded()
         
         cDescription.translatesAutoresizingMaskIntoConstraints = false
-        cDescription.topAnchor.constraint(equalTo: cTitle.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        cDescription.topAnchor.constraint(equalTo: cTitle.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         cDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        cDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        cDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         cDescription.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         cDescription.layoutIfNeeded()
         
         cTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        cTitle.addBottomBorder()
         cTitle.placeholder = "name of channel"
         cTitle.delegate = self
         
         cDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        cDescription.addBorder()
         cDescription.text = descriptionPlaceholder
         cDescription.delegate = self
-        cDescription.textColor = UIColor.gray.withAlphaComponent(0.7)
-
+        cDescription.textColor = UIColor.placeholderGrey
+        
         startChannelInfo.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         startChannelInfo.numberOfLines = 0
         startChannelInfo.lineBreakMode = .byWordWrapping
@@ -131,14 +130,12 @@ class NewChannelVC: PulseVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.topAnchor.constraint(equalTo: cDescription.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        submitButton.layoutIfNeeded()
         
-        submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        submitButton.setTitle("Apply", for: UIControlState())
-        submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         submitButton.setDisabled()
-        
+        submitButton.makeRound()
         submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
     }
 }
@@ -161,7 +158,7 @@ extension NewChannelVC: UITextFieldDelegate, UITextViewDelegate {
     func textViewDidEndEditing(_ textView: UITextView) {
         if (textView.text == "") {
             textView.text = descriptionPlaceholder
-            textView.textColor = .lightGray
+            textView.textColor = UIColor.placeholderGrey
         } else if cTitle.text != "" {
             self.submitButton.setEnabled()
         }

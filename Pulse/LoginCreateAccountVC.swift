@@ -50,20 +50,12 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
             userEmail.delegate = self
             userPassword.delegate = self
             
-            userEmail.tag = 100
-            userPassword.tag = 200
-            
-            userEmail.addBottomBorder()
-            userPassword.addBottomBorder()
-            
             userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
             
-            userEmail.attributedPlaceholder = NSAttributedString(string: userEmail.placeholder!,
-                                                                 attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-            userPassword.attributedPlaceholder = NSAttributedString(string: userPassword.placeholder!,
-                                                                    attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+            userEmail.placeholder = userEmail.placeholder
+            userPassword.placeholder = userPassword.placeholder
             
-            signupButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
+            signupButton.makeRound()
             signupButton.setDisabled()
             
             isLoaded = true
@@ -84,7 +76,8 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
         sender.setDisabled()
         let _loading = sender.addLoadingIndicator()
         
-        PulseDatabase.createEmailUser(self.userEmail.text!, password: self.userPassword.text!, completion: { (user, error) in
+        PulseDatabase.createEmailUser(self.userEmail.text!, password: self.userPassword.text!, completion: {[weak self] (user, error) in
+            guard let `self` = self else { return }
             if let _error = error {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loading)
@@ -113,8 +106,9 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        if textField.tag == userEmail.tag {
-            GlobalFunctions.validateEmail(userEmail.text, completion: {(verified, error) in
+        if textField == userEmail {
+            GlobalFunctions.validateEmail(userEmail.text, completion: {[weak self] (verified, error) in
+                guard let `self` = self else { return }
                 if !verified {
                     self.emailValidated = false
                     DispatchQueue.main.async {
@@ -129,8 +123,9 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
     }
     
     func textFieldDidChange(_ textField: UITextField) {
-        if textField.tag == userPassword.tag {
-            GlobalFunctions.validatePassword(userPassword.text, completion: {(verified, error) in
+        if textField == userPassword {
+            GlobalFunctions.validatePassword(userPassword.text, completion: {[weak self](verified, error) in
+                guard let `self` = self else { return }
                 if !verified {
                     self.passwordValidated = false
                     DispatchQueue.main.async {

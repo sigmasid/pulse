@@ -8,7 +8,7 @@
 
 import UIKit
 
-class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, ItemPreviewDelegate, CompletedRecordingDelegate {
+class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, CompletedRecordingDelegate {
     
     //set by delegate - selected item is a collection - type questions / posts / perspectives etc. since its a series
     public var selectedChannel: Channel!
@@ -32,9 +32,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     fileprivate var allItems = [Item]()
     fileprivate var allUsers = [PulseUser]() //caches user image / user for reuse
     fileprivate var hasReachedEnd = false
-    
-    /** Card to show the mini info of item **/
-    fileprivate var miniPreview : MiniPreview?
     
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
@@ -68,7 +65,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
             allUsers = []
             selectedChannel = nil
             selectedItem = nil
-            miniPreview = nil
             collectionView = nil
             isLayoutSetup = false
             isLoaded = false
@@ -96,7 +92,10 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     /** DELEGATE FUNCTIONS **/
     internal func userClosedModal(_ viewController: UIViewController) {
-        dismiss(animated: true, completion: { _ in })
+        dismiss(animated: true, completion: {[weak self] _ in
+            guard let `self` = self else { return }
+            self.removeBlurBackground()
+        })
     }
     
     internal func doneRecording(success: Bool) {
@@ -578,24 +577,25 @@ extension SeriesVC {
     }
     
     internal func aboutSeries() {
-        let _profileFrame = CGRect(x: view.bounds.width * (1/5), y: view.bounds.height * (1/4), width: view.bounds.width * (3/5), height: view.bounds.height * (1/2))
-        
         /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
         blurViewBackground()
-    
-        miniPreview = MiniPreview(frame: _profileFrame, buttonTitle: "become contributor")
-        miniPreview!.delegate = self
-
+        
         PulseDatabase.getItem(selectedItem.itemID, completion: {[weak self] (item, error) in
             if let item = item, let `self` = self {
-                self.miniPreview!.setTitleLabel(item.itemTitle)
-                self.miniPreview!.setMiniDescriptionLabel(item.itemDescription)
-                self.miniPreview!.setBackgroundImage(self.selectedItem.content as? UIImage ?? GlobalFunctions.imageWithColor(UIColor.black))
+                let image = self.selectedItem.content as? UIImage ?? self.selectedChannel.cNavImage
+                let seriesPreview = PMAlertController(title: item.itemTitle, description: item.itemDescription, image: image, style: .alert)
                 
-                self.selectedItem.itemDescription = item.itemDescription
-            
+                seriesPreview.dismissWithBackgroudTouch = true
+                seriesPreview.modalDelegate = self
+                
+                seriesPreview.addAction(PMAlertAction(title: "Become Contributor", style: .cancel, action: {[weak self] () -> Void in
+                    guard let `self` = self else { return }
+                    self.userClickedBecomeContributor()
+                    self.removeBlurBackground()
+                }))
+                
                 DispatchQueue.main.async {
-                    self.view.addSubview(self.miniPreview!)
+                    self.present(seriesPreview, animated: true, completion: nil)
                 }
             }
         })
@@ -607,8 +607,7 @@ extension SeriesVC {
         removeBlurBackground()
     }
     
-    internal func userClickedButton() {
-        miniPreview!.removeFromSuperview()
+    internal func userClickedBecomeContributor() {
         removeBlurBackground()
         
         let becomeContributorVC = BecomeContributorVC()

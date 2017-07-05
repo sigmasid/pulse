@@ -161,12 +161,12 @@ extension PulseAlbumVC {
 
 extension PulseAlbumVC: VideoTrimmerDelegate, ImageTrimmerDelegate {
     func dismissedTrimmer() {
-        
+        view.alpha = 1.0
+
         guard let nav = self.navigationController else {
             dismiss(animated: true, completion: nil)
             return
         }
-        
         nav.popViewController(animated: false)
     }
     

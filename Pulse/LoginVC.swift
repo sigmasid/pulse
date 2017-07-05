@@ -13,7 +13,7 @@ import TwitterKit
 import FBSDKLoginKit
 import SafariServices
 
-class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
+class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
     public weak var loginVCDelegate : ContentDelegate?
     
     @IBOutlet weak var emailLabelButton: UIButton!
@@ -118,20 +118,15 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
         userEmail.delegate = self
         userPassword.delegate = self
         userPassword.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: UIControlEvents.editingChanged)
-
-        userEmail.addBottomBorder()
-        userPassword.addBottomBorder()
         
-        userEmail.attributedPlaceholder = NSAttributedString(string: "email", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        userPassword.attributedPlaceholder = NSAttributedString(string: "password", attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        userEmail.tag = 100
-        userPassword.tag = 200
+        userEmail.placeholder = "email"
+        userPassword.placeholder = "password"
         
         fbButton.makeRound()
         twtrButton.makeRound()
         emailLabelButton.makeRound()
         
-        emailButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
+        emailButton.makeRound()
         
         let _footerDividerLine = UIView(frame:CGRect(x: forgotPassword.frame.width - 1, y: 0 , width: 1 , height: forgotPassword.frame.height))
         _footerDividerLine.backgroundColor = UIColor.black
@@ -196,7 +191,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
             _hasMovedUp = false
         }
         
-        if textField.tag == userEmail.tag {
+        if textField == userEmail {
             GlobalFunctions.validateEmail(userEmail.text, completion: {[weak self] (verified, error) in
                 guard let `self` = self else { return }
 
@@ -214,7 +209,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     }
     
     func textFieldDidChange(_ textField: UITextField) {
-        if textField.tag == userPassword.tag {
+        if textField == userPassword {
             GlobalFunctions.validatePassword(userPassword.text, completion: {[weak self] (verified, error) in
                 guard let `self` = self else { return }
 
@@ -403,11 +398,29 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     }
     
     fileprivate func _loggedInSuccess() {
-        if let permissionsPopup = GlobalFunctions.askNotificationPermssion(viewController: self) {
-            permissionsPopup.delegate = self
+        if !hasAskedNotificationPermission {
+            let permissionsPopup = PMAlertController(title: "Allow Notifications",
+                                                     description: "So we can remind you of requests to share your perspectives, ideas & expertise!",
+                                                     image: UIImage(named: "notifications-popup") , style: .walkthrough)
+            
+            permissionsPopup.dismissWithBackgroudTouch = true
+            permissionsPopup.modalDelegate = self
+            
+            permissionsPopup.addAction(PMAlertAction(title: "Allow", style: .default, action: {[weak self] () -> Void in
+                guard let `self` = self else { return }
+                GlobalFunctions.showNotificationPermissions()
+                self.postLoggedInNotification()
+            }))
+            
+            permissionsPopup.addAction(PMAlertAction(title: "Cancel", style: .cancel, action: {[weak self] () -> Void in
+                guard let `self` = self else { return }
+                self.removeBlurBackground()
+                self.postLoggedInNotification()
+            }))
             
             blurViewBackground()
-            view.addSubview(permissionsPopup)
+            present(permissionsPopup, animated: true, completion: nil)
+            
         } else {
             postLoggedInNotification()
         }
@@ -421,6 +434,10 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
         GlobalFunctions.dismissVC(currentVC)
     }
     
+    internal func userClosedModal(_ viewController: UIViewController) {
+        removeBlurBackground()
+        dismiss(animated: true, completion: nil)
+    }
     
     internal func userClosedPreview(_ view : UIView) {
         view.removeFromSuperview()
@@ -429,7 +446,5 @@ class LoginVC: PulseVC, UITextFieldDelegate, ItemPreviewDelegate {
     
     internal func userClickedButton() {
         view.removeFromSuperview()
-        GlobalFunctions.showNotificationPermissions()
-        postLoggedInNotification()
     }
 }

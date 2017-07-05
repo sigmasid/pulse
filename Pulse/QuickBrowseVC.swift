@@ -12,6 +12,7 @@ class QuickBrowseVC: UIViewController {
     public weak var delegate : ItemDetailDelegate!
     internal var collectionViewLayout: QuickBrowseLayout!
     internal var collectionView: UICollectionView!
+    fileprivate var controlsView : UIView!
     
     fileprivate var reuseIdentifier = "QuickBrowseCell"
     fileprivate var centerIndex = 0
@@ -27,7 +28,7 @@ class QuickBrowseVC: UIViewController {
     
     fileprivate var closeButton = PulseButton(size: .small, type: .close, isRound: true, hasBackground: false, tint: .white)
     fileprivate var animationsCount = 0
-    fileprivate var seeAll = PulseButton(title: "see all", isRound: false)
+    fileprivate var seeAll = PulseButton(title: "see all", isRound: false, hasShadow: false, buttonColor: .clear, textColor: .white)
     
     /* set by parent */
     public var selectedChannel : Channel!
@@ -49,7 +50,17 @@ class QuickBrowseVC: UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        view.backgroundColor = .clear
+    }
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        modalPresentationStyle = .overCurrentContext
+        modalTransitionStyle = .coverVertical
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
     }
     
     override func viewDidLayoutSubviews() {
@@ -63,7 +74,8 @@ class QuickBrowseVC: UIViewController {
     }
     
     internal func addCollectionView() {
-        collectionView = UICollectionView(frame: CGRect(x: 0, y: Spacing.m.rawValue, width: view.bounds.width,height: view.bounds.height * 0.85),
+        collectionView = UICollectionView(frame: CGRect(x: 0, y: view.bounds.height * (2/3) + IconSizes.small.rawValue,
+                                                        width: view.bounds.width, height: view.bounds.height * (1/3) - IconSizes.small.rawValue),
                                           collectionViewLayout: UICollectionViewFlowLayout())
         
         collectionViewLayout = QuickBrowseLayout.configureLayout(collectionView: collectionView,
@@ -75,31 +87,36 @@ class QuickBrowseVC: UIViewController {
         
         collectionView?.dataSource = self
         collectionView?.delegate = self
-        collectionView?.backgroundColor = UIColor.clear
+        collectionView?.backgroundColor = UIColor.black.withAlphaComponent(0.5)
 
         collectionView?.layoutIfNeeded()
         collectionView?.reloadData()
     }
     
     fileprivate func setupLayout() {
-        view.addSubview(closeButton)
-        view.addSubview(seeAll)
-
-        seeAll.removeShadow()
+        controlsView = UIView(frame: CGRect(x: 0, y: view.bounds.height * (2/3), width: view.bounds.width, height: IconSizes.small.rawValue))
+        view.addSubview(controlsView)
+        controlsView.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         
-        closeButton.frame = CGRect(x: view.bounds.maxX - Spacing.s.rawValue - closeButton.frame.width,
-                                   y: Spacing.xxs.rawValue, width: closeButton.frame.width, height: closeButton.frame.height)
+        controlsView.addSubview(closeButton)
+        controlsView.addSubview(seeAll)
         
-        closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        closeButton.centerYAnchor.constraint(equalTo: controlsView.centerYAnchor).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        closeButton.layoutIfNeeded()
         
         seeAll.translatesAutoresizingMaskIntoConstraints = false
         seeAll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        seeAll.centerYAnchor.constraint(equalTo: closeButton.centerYAnchor).isActive = true
+        seeAll.heightAnchor.constraint(equalTo: controlsView.heightAnchor).isActive = true
+        seeAll.centerYAnchor.constraint(equalTo: controlsView.centerYAnchor).isActive = true
 
         seeAll.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .left)
-        seeAll.backgroundColor = .clear
+        
         seeAll.addTarget(self, action: #selector(userClickedSeeAll), for: .touchUpInside)
-
+        closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
     }
     
     internal func close() {

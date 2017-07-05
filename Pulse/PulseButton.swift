@@ -126,27 +126,29 @@ open class PulseButton: UIButton {
         setImage(nil, for: .normal)
     }
     
-    convenience init(title: String, isRound : Bool) {
+    convenience init(title: String, isRound : Bool, hasShadow : Bool = true, buttonColor: UIColor = UIColor.pulseRed, textColor: UIColor = UIColor.white) {
         self.init(frame: CGRect.zero)
         
         setupRipple()
         setTitle(title, for: UIControlState())
         
         buttonCornerRadius = isRound ? 5 : 0
-        backgroundColor = .white
-        setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .darkGray, alignment: .center)
+        backgroundColor = buttonColor
+        setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: textColor, alignment: .center)
         
         // Shadow (for raised views) - Up:
-        shadowColor = UIColor.init(white: 0.2, alpha: 1.0)
+        if hasShadow {
+            shadowColor = UIColor.init(white: 0.2, alpha: 1.0)
 
-        liftedShadowOpacity = 0.5
-        liftedShadowRadius  = 4.5
-        liftedShadowOffset  = CGSize(width: 2, height: 4)
+            liftedShadowOpacity = 0.5
+            liftedShadowRadius  = 4.5
+            liftedShadowOffset  = CGSize(width: 2, height: 4)
 
-        layer.shadowColor = shadowColor.cgColor
-        layer.shadowOpacity = Float(liftedShadowOpacity)
-        layer.shadowRadius = liftedShadowRadius
-        layer.shadowOffset = liftedShadowOffset
+            layer.shadowColor = shadowColor.cgColor
+            layer.shadowOpacity = Float(liftedShadowOpacity)
+            layer.shadowRadius = liftedShadowRadius
+            layer.shadowOffset = liftedShadowOffset
+        }
     }
     
     convenience init(size: ButtonSizes, type : ButtonType, isRound : Bool, background : UIColor, tint: UIColor) {

@@ -224,26 +224,23 @@ extension SettingsTableVC: InputMasterDelegate {
     func capturedItem(url _: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
         guard let image = image else { return }
         
-        //toggleLoading(show: true, message: "saving! just a sec...")
         
-        UIView.animate(withDuration: 0.2, animations: { self.inputVC.view.alpha = 0.0; self.toggleLoading(show: true, message: "saving! just a sec...") }, completion: {(value: Bool) in
-            self.inputVC.view.alpha = 1.0
-            self.inputVC.dismiss(animated: true, completion: nil)
+        //update the header
+        dismiss(animated: true, completion: {[weak self] in
+            guard let `self` = self else { return }
+            self.updateHeaderImage(img: image)
+            self.inputVC.updateAlpha()
         })
         
-        PulseDatabase.uploadProfileImage(image, completion: {[weak self] (URL, error) in
-            guard let `self` = self else { return }
+        PulseDatabase.uploadProfileImage(image, completion: {(URL, error) in
             if error != nil {
                 GlobalFunctions.showAlertBlock("Sorry!", erMessage: "There was an error saving the photo. Please try again")
-            } else {
-                self.updateHeaderImage(img: image)
-                self.toggleLoading(show: false, message: nil)
             }
         })
     }
     
     func dismissInput() {
-        inputVC.dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: nil)
     }
 }
 

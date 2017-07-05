@@ -23,9 +23,10 @@ let defaultPostHeight : CGFloat = 325
 let scopeBarHeight : CGFloat = 40
 let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
 
-enum GlobalFunctions {
-    static var hasAskedNotificationPermission : Bool = UserDefaults.standard.bool(forKey: "askedNotificationPermission")
+var hasAskedNotificationPermission : Bool = UserDefaults.standard.bool(forKey: "askedNotificationPermission")
 
+enum GlobalFunctions {
+    
     /** START: NETWORK + PERMISSIONS **/
     static func isConnectedToNetwork() -> Bool {
         
@@ -49,29 +50,6 @@ enum GlobalFunctions {
         let needsConnection = flags == .connectionRequired
         
         return isReachable && !needsConnection
-    }
-    
-    static func askNotificationPermssion(viewController: UIViewController) -> MiniPreview? {
-        let _frame = CGRect(x: viewController.view.bounds.width * (1/6),
-                            y: viewController.view.bounds.height * (1/5),
-                            width: viewController.view.bounds.width * (2/3),
-                            height: viewController.view.bounds.height * (3/5))
-        
-        if !hasAskedNotificationPermission {
-            let miniPreview =  MiniPreview(frame: _frame, buttonTitle: "Enable")
-            miniPreview.backgroundColor = .white
-            if let image = UIImage(named: "notifications-popup") {
-                miniPreview.setIcon(image: image, tintColor: .white, backgroundColor: .pulseBlue)
-                miniPreview.setTitleLabel("Allow Notifications?", textColor: .white, blurText: false)
-            } else {
-                miniPreview.setTitleLabel("Allow Notifications?", textColor: .black)
-            }
-            miniPreview.setLongDescriptionLabel("So we can remind you of requests to share your perspectives, ideas & expertise!",
-                                                textColor: .darkGray, blurText: false)
-            return miniPreview
-        } else {
-            return nil
-        }
     }
     
     static func showNotificationPermissions() {

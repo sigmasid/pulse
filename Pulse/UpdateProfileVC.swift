@@ -13,11 +13,11 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     
     public var _currentSetting : Setting! //set by delegate
     
-    fileprivate var settingDescription = UILabel()
+    fileprivate var settingDescription = PaddingLabel()
     fileprivate var settingSection = UIView()
     
-    fileprivate lazy var shortTextField = UITextField()
-    fileprivate lazy var longTextField = UITextView()
+    fileprivate lazy var shortTextField : PaddingTextField! = PaddingTextField()
+    fileprivate lazy var longTextField : PaddingTextView! = PaddingTextView()
     fileprivate lazy var birthdayPicker = UIDatePicker()
     fileprivate lazy var genderPicker = UIPickerView()
     fileprivate lazy var settingsTable = UITableView()
@@ -25,7 +25,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     fileprivate lazy var locationManager = CLLocationManager()
     fileprivate var location : CLLocation?
     
-    fileprivate var updateButton = UIButton()
+    fileprivate var updateButton = PulseButton(title: "Update", isRound: true, hasShadow: false)
     private var cleanupComplete = false
     
     override func viewDidLoad() {
@@ -76,10 +76,8 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         settingDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         
         settingDescription.text = _currentSetting.longDescription
-        settingDescription.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         settingDescription.numberOfLines = 0
-        settingDescription.textColor = UIColor.black
-        settingDescription.textAlignment = .center
+        settingDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
     }
     
     fileprivate func addSettingSection() {
@@ -88,7 +86,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         settingSection.translatesAutoresizingMaskIntoConstraints = false
         settingSection.topAnchor.constraint(equalTo: settingDescription.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         settingSection.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        let widthConstraint = settingSection.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7)
+        let widthConstraint = settingSection.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8)
         widthConstraint.isActive = true
         
         switch _currentSetting.type! {
@@ -98,7 +96,11 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
             settingSection.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
             settingSection.layoutIfNeeded()
             addTableView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
-        case .bio, .shortBio:
+        case .shortBio:
+            settingSection.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+            settingSection.layoutIfNeeded()
+            showBioUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        case .bio:
             settingSection.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/8).isActive = true
             settingSection.layoutIfNeeded()
             showBioUpdateView(CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
@@ -151,14 +153,8 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     fileprivate func showNameUpdateView(_ _frame: CGRect) {
-        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        shortTextField = PaddingTextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         settingSection.addSubview(shortTextField)
-        
-        shortTextField.borderStyle = .none
-        shortTextField.backgroundColor = UIColor.clear
-        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        shortTextField.textColor = UIColor.black
-        shortTextField.addBottomBorder()
         shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         
         if _currentSetting.type == .password {
@@ -169,26 +165,14 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     fileprivate func showBioUpdateView(_ _frame: CGRect) {
-        longTextField = UITextView(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        longTextField = PaddingTextView(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         settingSection.addSubview(longTextField)
-        
-        longTextField.backgroundColor = UIColor.clear
-        longTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        longTextField.textColor = UIColor.black
-        longTextField.layer.borderColor = UIColor.black.cgColor
-        longTextField.layer.borderWidth = 1.0
         longTextField.text = getValueOrPlaceholder()
     }
     
     fileprivate func showGenderUpdateView(_ _frame : CGRect) {
-        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        shortTextField = PaddingTextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         settingSection.addSubview(shortTextField)
-        
-        shortTextField.borderStyle = .none
-        shortTextField.backgroundColor = UIColor.clear
-        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        shortTextField.textColor = UIColor.black
-        shortTextField.addBottomBorder()
         shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         shortTextField.inputView = genderPicker
 
@@ -198,21 +182,15 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
     }
     
     fileprivate func showLocationUpdateView(_ _frame : CGRect) {
-        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        shortTextField = PaddingTextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         settingSection.addSubview(shortTextField)
-        
-        shortTextField.borderStyle = .none
-        shortTextField.backgroundColor = UIColor.clear
-        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        shortTextField.textColor = UIColor.black
-        shortTextField.addBottomBorder()
         getLocationOrPlaceholder()
         
         setupLocation()
     }
     
     fileprivate func showBirthdayUpdateView(_ _frame: CGRect) {
-        shortTextField = UITextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
+        shortTextField = PaddingTextField(frame: CGRect(x: 0, y: 0, width: settingSection.frame.width, height: settingSection.frame.height))
         settingSection.addSubview(shortTextField)
         
         birthdayPicker.datePickerMode = .date
@@ -221,10 +199,8 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         birthdayPicker.addTarget(self, action: #selector(onDatePickerValueChanged), for: UIControlEvents.valueChanged)
         birthdayPicker.backgroundColor = .clear
 
-        shortTextField.borderStyle = .none
         shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         shortTextField.textColor = UIColor.black
-        shortTextField.addBottomBorder()
         
         shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         shortTextField.inputView = birthdayPicker
@@ -234,17 +210,14 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         view.addSubview(updateButton)
         
         updateButton.translatesAutoresizingMaskIntoConstraints = false
-        updateButton.topAnchor.constraint(equalTo: settingSection.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        updateButton.topAnchor.constraint(equalTo: settingSection.bottomAnchor, constant: Spacing.xl.rawValue).isActive = true
         updateButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        updateButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        updateButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        updateButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        updateButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         updateButton.layoutIfNeeded()
         
-        updateButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        updateButton.setTitle("Save", for: UIControlState())
-        updateButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        updateButton.makeRound()
         updateButton.setEnabled()
-        
     }
 
     fileprivate func getValueOrPlaceholder() -> String {

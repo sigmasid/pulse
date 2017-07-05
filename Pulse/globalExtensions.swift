@@ -15,6 +15,7 @@ extension UIColor {
     static var pulseRed: UIColor  { return UIColor(red: 238/255, green: 49/255, blue: 93/255, alpha: 1.0) }
     static var pulseGrey: UIColor  { return UIColor(red: 233/255, green: 233/255, blue: 233/255, alpha: 1.0) }
     static var pulseDarkGrey: UIColor  { return UIColor(red: 35/255, green: 31/255, blue: 32/255, alpha: 1.0) }
+    static var placeholderGrey: UIColor  { return UIColor(red: 199/255, green: 199/255, blue: 205/255, alpha: 1.0) }
 }
 
 class PaddingLabel: UILabel {
@@ -103,7 +104,7 @@ extension UIView {
     }
     
     func makeRound() {
-        layer.cornerRadius = frame.width > frame.height ?  frame.height / 2 : frame.width / 2
+        layer.cornerRadius = frame.width > frame.height ?  5 : frame.width / 2
     }
     
     func shrinkDismiss(duration: Double = 0.3) {
@@ -325,6 +326,50 @@ extension UITextField {
     override func addBorder(color: UIColor, thickness: CGFloat) {
         super.addBottomBorder(color: color, thickness: thickness)
         layer.sublayerTransform = CATransform3DMakeTranslation(7.5, 0, 0)
+    }
+}
+
+class PaddingTextField: UITextField {
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
+        layer.cornerRadius = 5
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
+        layer.cornerRadius = 5
+    }
+    
+    override func textRect(forBounds bounds: CGRect) -> CGRect {
+        return CGRect(x: bounds.origin.x + 10, y: bounds.origin.y, width: bounds.width - 10, height: bounds.height)
+    }
+    
+    override func editingRect(forBounds bounds: CGRect) -> CGRect {
+        return CGRect(x: bounds.origin.x + 10, y: bounds.origin.y, width: bounds.width - 10, height: bounds.height)
+    }
+    
+}
+
+class PaddingTextView: UITextView {
+    
+    override init(frame: CGRect, textContainer: NSTextContainer?) {
+        super.init(frame: frame, textContainer: textContainer)
+        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
+        layer.cornerRadius = 5
+        textContainerInset = UIEdgeInsetsMake(7.5, 7.5, 7.5, 7.5)
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
+        layer.cornerRadius = 5
     }
 }
 
@@ -588,7 +633,7 @@ enum Spacing: CGFloat {
 
 enum buttonCornerRadius : CGFloat {
     case regular = 20
-    case small = 10
+    case small = 5
     case round = 0
     
     static func radius(_ type : buttonCornerRadius, width: Int) -> CGFloat {

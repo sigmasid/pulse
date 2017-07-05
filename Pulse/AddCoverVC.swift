@@ -16,7 +16,7 @@ class AddCoverVC: PulseVC  {
     fileprivate var sShowCamera = PulseButton(size: .large, type: .camera, isRound: true, background: .white, tint: .black)
     fileprivate var sShowCameraLabel = UILabel()
     
-    fileprivate var sTitle = UITextField()
+    fileprivate var sTitle = PaddingTextField()
     fileprivate var submitButton = UIButton()
     
     fileprivate var sType = PaddingLabel()
@@ -114,11 +114,11 @@ extension AddCoverVC {
         sAddCover.heightAnchor.constraint(equalToConstant: 250).isActive = true
         sAddCover.layoutIfNeeded()
         
-        sAddCover.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
+        sAddCover.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.1)
         
         sShowCamera.translatesAutoresizingMaskIntoConstraints = false
         sShowCamera.centerXAnchor.constraint(equalTo: sAddCover.centerXAnchor).isActive = true
-        sShowCamera.centerYAnchor.constraint(equalTo: sAddCover.centerYAnchor).isActive = true
+        sShowCamera.centerYAnchor.constraint(equalTo: sAddCover.centerYAnchor, constant: -Spacing.xs.rawValue).isActive = true
         sShowCamera.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         sShowCamera.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         sShowCamera.layoutIfNeeded()
@@ -134,17 +134,15 @@ extension AddCoverVC {
         sTitle.translatesAutoresizingMaskIntoConstraints = false
         sTitle.topAnchor.constraint(equalTo: sAddCover.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         sTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sTitle.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         sTitle.layoutIfNeeded()
         
         sTitle.delegate = self
-        sTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        sTitle.addBottomBorder()
-        sTitle.attributedPlaceholder = NSAttributedString(string: "add a short title",
-                                                          attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
+        sTitle.placeholder = "add a short title"
         
         sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
-        sTypeDescription.topAnchor.constraint(equalTo: sTitle.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        sTypeDescription.topAnchor.constraint(equalTo: sTitle.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
@@ -161,11 +159,10 @@ extension AddCoverVC {
         submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         
-        submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
         submitButton.setTitle("Post", for: UIControlState())
-        submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        submitButton.setButtonFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .white, alignment: .center)
         submitButton.setDisabled()
         
         submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)

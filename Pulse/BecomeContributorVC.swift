@@ -13,15 +13,15 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
     public var selectedChannel : Channel!
     
     fileprivate var applyView = UIView()
-    fileprivate var applyText = UITextView()
-    fileprivate var applyButton = PulseButton()
+    fileprivate var applyText = PaddingTextView()
+    fileprivate var applyButton = PulseButton(title: "Request Approval", isRound: true, hasShadow: false)
     fileprivate var isApplySetup = false
     
     fileprivate var recommendView = UIView()
-    fileprivate var recommendName = UITextField()
-    fileprivate var recommendEmail = UITextField()
-    fileprivate var recommendText = UITextView()
-    fileprivate var recommendButton = PulseButton()
+    fileprivate var recommendName = PaddingTextField()
+    fileprivate var recommendEmail = PaddingTextField()
+    fileprivate var recommendText = PaddingTextView()
+    fileprivate var recommendButton = PulseButton(title: "Send Recommendation", isRound: true, hasShadow: false)
     fileprivate var isRecommendSetup = false
     
     fileprivate var nameErrorLabel = UILabel()
@@ -140,7 +140,8 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
                                                               message: "We individually review & hand select the best contributors and will get back to you soon!",
                                                               preferredStyle: .actionSheet)
                     
-                    applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+                    applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
                         self.goBack()
                     }))
                     
@@ -170,15 +171,17 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
         dismissKeyboard()
         
         if selectedChannel != nil {
-            PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: recommendText.text,
-                                             toUser: nil, toName: recommendName.text ?? "", toEmail: recommendEmail.text!, completion: {(inviteID, error) in
+            PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, description: recommendText.text, toUser: nil,
+                                                  toName: recommendName.text ?? "", toEmail: recommendEmail.text!, completion: {[weak self] (inviteID, error) in
+                guard let `self` = self else { return }
             
                 if error == nil {
                     let applyConfirmation = UIAlertController(title: "Thanks for the recommendation!",
                                                               message: "We review & hand select best contributors and will carefully review your recommendation!",
                                                               preferredStyle: .actionSheet)
                     
-                    applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: { (action: UIAlertAction!) in
+                    applyConfirmation.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
                         self.goBack()
                     }))
                     
@@ -223,10 +226,9 @@ extension BecomeContributorVC {
 
         recommendView.translatesAutoresizingMaskIntoConstraints = false
         recommendView.topAnchor.constraint(equalTo: applyStack.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        recommendView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        recommendView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         recommendView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         recommendView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-
         recommendView.layoutIfNeeded()
         
         recommendView.addSubview(recommendName)
@@ -240,7 +242,7 @@ extension BecomeContributorVC {
         recommendName.topAnchor.constraint(equalTo: recommendView.topAnchor).isActive = true
         recommendName.widthAnchor.constraint(equalTo: recommendView.widthAnchor).isActive = true
         recommendName.centerXAnchor.constraint(equalTo: recommendView.centerXAnchor).isActive = true
-        recommendName.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+        recommendName.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         recommendName.layoutIfNeeded()
         
         nameErrorLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -252,7 +254,7 @@ extension BecomeContributorVC {
         recommendEmail.topAnchor.constraint(equalTo: recommendName.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         recommendEmail.widthAnchor.constraint(equalTo: recommendView.widthAnchor).isActive = true
         recommendEmail.centerXAnchor.constraint(equalTo: recommendView.centerXAnchor).isActive = true
-        recommendEmail.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+        recommendEmail.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         recommendEmail.layoutIfNeeded()
         
         emailErrorLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -261,46 +263,31 @@ extension BecomeContributorVC {
         emailErrorLabel.widthAnchor.constraint(equalTo: recommendView.widthAnchor).isActive = true
 
         recommendText.translatesAutoresizingMaskIntoConstraints = false
-        recommendText.topAnchor.constraint(equalTo: recommendEmail.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        recommendText.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        recommendText.topAnchor.constraint(equalTo: recommendEmail.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
+        recommendText.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         recommendText.centerXAnchor.constraint(equalTo: recommendView.centerXAnchor).isActive = true
         recommendText.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         recommendText.layoutIfNeeded()
-        
-        recommendText.backgroundColor = UIColor.white
-        recommendText.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        recommendText.layer.borderColor = UIColor.lightGray.cgColor
-        recommendText.layer.borderWidth = 1.0
-        
+                
         recommendText.text = "tell us why this person would be a great contributor"
-        recommendText.textColor = UIColor.lightGray
+        recommendText.textColor = UIColor.placeholderGrey
         recommendText.delegate = self
         
         recommendButton.translatesAutoresizingMaskIntoConstraints = false
         recommendButton.topAnchor.constraint(equalTo: recommendText.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         recommendButton.centerXAnchor.constraint(equalTo: recommendView.centerXAnchor).isActive = true
-        recommendButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+        recommendButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
         recommendButton.widthAnchor.constraint(equalTo: recommendView.widthAnchor).isActive = true
         recommendButton.layoutIfNeeded()
-        
-        recommendButton.makeRound()
-        recommendButton.setTitle("Send Recommendation", for: UIControlState())
-        recommendButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         recommendButton.setDisabled()
+        recommendButton.makeRound()
         
         recommendButton.addTarget(self, action: #selector(clickedRecommend), for: .touchUpInside)
         recommendEmail.keyboardType = .emailAddress
-        recommendEmail.borderStyle = .none
-        recommendName.borderStyle = .none
-        
-        recommendName.addBottomBorder()
-        recommendEmail.addBottomBorder()
         
         recommendName.placeholder = "contributor name"
         recommendEmail.placeholder = "contributor email"
         
-        recommendName.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        recommendEmail.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         emailErrorLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
         nameErrorLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
 
@@ -316,7 +303,7 @@ extension BecomeContributorVC {
         
         applyView.translatesAutoresizingMaskIntoConstraints = false
         applyView.topAnchor.constraint(equalTo: applyStack.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        applyView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        applyView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         applyView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         applyView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         applyView.layoutIfNeeded()
@@ -331,28 +318,20 @@ extension BecomeContributorVC {
         applyText.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         applyText.layoutIfNeeded()
         
-        applyText.backgroundColor = UIColor.white
-        applyText.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        applyText.layer.borderColor = UIColor.lightGray.cgColor
-        applyText.layer.borderWidth = 1.0
-        
         applyText.text = subText1
-        applyText.textColor = UIColor.lightGray
+        applyText.textColor = UIColor.placeholderGrey
         applyText.delegate = self
         
         applyButton.translatesAutoresizingMaskIntoConstraints = false
         applyButton.topAnchor.constraint(equalTo: applyText.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         applyButton.centerXAnchor.constraint(equalTo: applyView.centerXAnchor).isActive = true
-        applyButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+        applyButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
         applyButton.widthAnchor.constraint(equalTo: applyView.widthAnchor).isActive = true
         applyButton.layoutIfNeeded()
-        
-        applyButton.makeRound()
-        applyButton.setTitle("Request Approval", for: UIControlState())
-        applyButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
         applyButton.setDisabled()
         
         applyButton.addTarget(self, action: #selector(clickedApply), for: .touchUpInside)
+        applyButton.makeRound()
         
         applyView.isHidden = false
         recommendView.isHidden = true
@@ -421,7 +400,7 @@ extension BecomeContributorVC: UITextFieldDelegate, UITextViewDelegate {
         
         if textView.text == "" {
             textView.text = textView == applyText ? subText1 : subText2
-            textView.textColor = UIColor.lightGray
+            textView.textColor = UIColor.placeholderGrey
             reasonVerified = false
         } else {
             reasonVerified = true

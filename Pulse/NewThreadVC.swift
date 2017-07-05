@@ -20,9 +20,9 @@ class NewThreadVC: PulseVC  {
     fileprivate var sShowCamera = PulseButton(size: .xLarge, type: .camera, isRound: true, background: .white, tint: .black)
     fileprivate var sShowCameraLabel = UILabel()
     
-    fileprivate var sTitle = UITextField()
-    fileprivate var sDescription = UITextField()
-    fileprivate var submitButton = UIButton()
+    fileprivate var sTitle = PaddingTextField()
+    fileprivate var sDescription = PaddingTextField()
+    fileprivate var submitButton = PulseButton(title: "Start Thread", isRound: true, hasShadow: false)
     
     fileprivate var sType = PaddingLabel()
     fileprivate var sTypeDescription = PaddingLabel()
@@ -190,7 +190,6 @@ extension NewThreadVC {
         sShowCamera.heightAnchor.constraint(equalToConstant: IconSizes.xLarge.rawValue).isActive = true
         sShowCamera.widthAnchor.constraint(equalToConstant: IconSizes.xLarge.rawValue).isActive = true
         sShowCamera.layoutIfNeeded()
-        
         sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
         
         sShowCameraLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -202,29 +201,22 @@ extension NewThreadVC {
         sTitle.translatesAutoresizingMaskIntoConstraints = false
         sTitle.topAnchor.constraint(equalTo: sAddCover.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         sTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sTitle.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         sTitle.layoutIfNeeded()
         
         sDescription.translatesAutoresizingMaskIntoConstraints = false
         sDescription.topAnchor.constraint(equalTo: sTitle.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         sDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        sDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sDescription.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         sDescription.layoutIfNeeded()
         
         sTitle.delegate = self
         sDescription.delegate = self
         
-        sTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        sDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        
-        sTitle.addBottomBorder()
-        sDescription.addBottomBorder()
-        
-        sTitle.attributedPlaceholder = NSAttributedString(string: "short title for thread",
-                                                          attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        sDescription.attributedPlaceholder = NSAttributedString(string: "short thread description",
-                                                                attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
-        
+        sTitle.placeholder = "short title for thread"
+        sDescription.placeholder = "short thread description"
         
         sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
         sTypeDescription.topAnchor.constraint(equalTo: sDescription.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
@@ -243,14 +235,12 @@ extension NewThreadVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
-        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        submitButton.layoutIfNeeded()
         
-        submitButton.layer.cornerRadius = buttonCornerRadius.radius(.regular)
-        submitButton.setTitle("Start Thread", for: UIControlState())
-        submitButton.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        submitButton.makeRound()
         submitButton.setDisabled()
-        
         submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
     }
 }

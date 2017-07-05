@@ -11,7 +11,7 @@ import FirebaseDatabase
 import FirebaseStorage
 import AVFoundation
 
-class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate, ItemPreviewDelegate {
+class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate, ParentDelegate, ModalDelegate {
     public var selectedChannel : Channel!
     public var selectedItem : Item! //parentItem
     public weak var delegate : ContentDelegate?
@@ -145,9 +145,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     /* bools to make sure can click next video and no errors from unhandled observers */
     fileprivate var isObserving = false
-    fileprivate var isMiniProfileShown = false
     fileprivate var isImageViewShown = false
-    fileprivate var isQuickBrowseShown = false
     fileprivate var shouldShowExplore = false
     fileprivate var cleanupComplete = false
     
@@ -155,7 +153,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     fileprivate var timeObserver : Any!
     fileprivate var startCountdownObserver : Any!
     
-    fileprivate var miniProfile : MiniPreview?
     fileprivate var tap : UITapGestureRecognizer!
     fileprivate var detailTap : UITapGestureRecognizer!
     
@@ -727,48 +724,57 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     func userClickedProfile() {
-        let _profileFrame = CGRect(x: view.bounds.width * (1/5), y: view.bounds.height * (1/4), width: view.bounds.width * (3/5), height: view.bounds.height * (1/2))
+        //let _profileFrame = CGRect(x: view.bounds.width * (1/5), y: view.bounds.height * (1/4), width: view.bounds.width * (3/5), height: view.bounds.height * (1/2))
         
         /* BLUR BACKGROUND & DISABLE TAP WHEN MINI PROFILE IS SHOWING */
         blurViewBackground()
         
+        if qPlayer.currentItem != nil {
+            qPlayer.pause()
+        }
+        
         if let user = currentItem?.user {
-            miniProfile = MiniPreview(frame: _profileFrame)
-            miniProfile!.delegate = self
-            miniProfile!.setTitleLabel(user.name)
-            miniProfile!.setMiniDescriptionLabel(user.shortBio)
+            let miniProfile = PMAlertController(title: user.name ?? "Pulse User", description: user.shortBio ?? "", image: currentItem?.user?.thumbPicImage, style: .alert)
             
-            if let image = currentItem?.user?.thumbPicImage {
-                miniProfile!.setBackgroundImage(image)
-            }
+            miniProfile.dismissWithBackgroudTouch = true
+            miniProfile.modalDelegate = self
             
             if !PulseUser.isLoggedIn() || PulseUser.currentUser.uID == user.uID {
-                miniProfile?.setActionButton(disabled: true)
+                miniProfile.addAction(PMAlertAction(title: "View Profile", style: .cancel, action: {[weak self] () -> Void in
+                    guard let `self` = self else { return }
+                    self.delegate?.userClickedProfileDetail()
+                    self.removeBlurBackground()
+                }))
             }
             
-            view.addSubview(miniProfile!)
-            isMiniProfileShown = true
+            present(miniProfile, animated: true, completion: nil)
         }
     }
     
     func userClosedPreview(_ _profileView : UIView) {
         _profileView.removeFromSuperview()
         removeBlurBackground()
-        isMiniProfileShown = false
+    }
+    
+    func userClosedModal(_ viewController: UIViewController) {
+        dismiss(animated: true, completion: nil)
+        removeBlurBackground()
+        if qPlayer.currentItem != nil {
+            qPlayer.pause()
+        }
     }
     
     //User selected an item
     func userSelected(_ index : IndexPath) {
         userClosedQuickBrowse()
+        removeBlurBackground()
         loadItem(index: (index as NSIndexPath).row)
     }
     
     func userClickedSeeAll(items : [Item]) {
-        GlobalFunctions.dismissVC(quickBrowse)
+        userClosedQuickBrowse()
         delegate?.userClickedSeeAll(items: items)
         removeObserverIfNeeded()
-        
-        isQuickBrowseShown = false
     }
     
     func userClickedBrowseItems() {
@@ -777,22 +783,19 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
         
         quickBrowse = QuickBrowseVC()
-        quickBrowse.view.frame = CGRect(x: 0, y: view.bounds.height * (2/3), width: view.bounds.width, height: view.bounds.height * (1/3))
-        
         quickBrowse.delegate = self
         quickBrowse.selectedChannel = selectedChannel
         quickBrowse.allItems = allItems
         
         removeObserverIfNeeded()
+        blurViewBackground()
         
-        GlobalFunctions.addNewVC(quickBrowse, parentVC: self)
-        
-        isQuickBrowseShown = true
+        present(quickBrowse, animated: true, completion: nil)
     }
     
     func userClosedQuickBrowse() {
-        isQuickBrowseShown = false
-        GlobalFunctions.dismissVC(quickBrowse)
+        removeBlurBackground()
+        dismiss(animated: true, completion: nil)
     }
     
     func userClickedExpandItem() {
@@ -816,10 +819,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     /* MARK : HANDLE GESTURES */
     func handleTap() {
         //ignore tap if mini profile is shown or if quick browse is shown
-        guard !isMiniProfileShown, !isQuickBrowseShown else {
-            return
-        }
-        
         if (!tapReady || (!nextItemReady && canAdvanceReady)) {
             //ignore tap
         }
@@ -857,11 +856,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     func handleDetailTap() {
-        
-        guard !isMiniProfileShown, !isQuickBrowseShown else {
-            return
-        }
-        
         if (!tapReady || (!nextItemReady && canAdvanceDetailReady)) {
             //ignore tap
         }
@@ -902,10 +896,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             
             delegate = nil
             
-            if miniProfile != nil {
-                miniProfile?.delegate = nil
-            }
-            
             playedTillEndObserver = nil
             timeObserver = nil
             startCountdownObserver = nil
@@ -923,7 +913,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                 quickBrowse.delegate = nil
                 quickBrowse = nil
             }
-            miniProfile = nil
             
             if contentOverlay != nil {
                 contentOverlay?.delegate = nil
