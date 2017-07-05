@@ -10,7 +10,8 @@ import UIKit
 import FirebaseAuth
 import FirebaseDatabase
 import TwitterKit
-import FBSDKLoginKit
+import FacebookLogin
+import FacebookCore
 import SafariServices
 
 class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
@@ -78,8 +79,6 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
             
             emailButton.setDisabled()
             _currentLoadedView = .login
-            
-            NotificationCenter.default.addObserver(self, selector: #selector(onFBProfileUpdated), name:NSNotification.Name.FBSDKAccessTokenDidChange, object: nil)
             
             isLoaded = true
         }
@@ -321,49 +320,43 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
         }
         
         toggleLoading(show: true, message: "Signing in...", showIcon: true)
-        let facebookReadPermissions = ["public_profile", "email", "user_friends"]
-        let loginButton = FBSDKLoginManager()
-        loginButton.logIn(withReadPermissions: facebookReadPermissions, from: self, handler: {[weak self] (result, blockError) -> Void in
-            guard let `self` = self else { return }
-
-            if blockError != nil {
-                self.toggleLoading(show: false, message: nil)
-                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: blockError!.localizedDescription)
-            } else if result!.isCancelled {
-                self.toggleLoading(show: false, message: nil)
-            } else {
-                //login sucess - will get handled by FB profile updated notification
-            }
-        })
-    }
-    
-    internal func onFBProfileUpdated(_ notification: Notification) {
-
-        guard let _accessToken = FBSDKAccessToken.current() else {
+        
+        guard AccessToken.current == nil else {
+            onFBProfileUpdated(token: AccessToken.current!)
             return
         }
-        //var dict : NSDictionary!
-        FBSDKGraphRequest(graphPath: "me", parameters: ["fields": "id, name, first_name, last_name, picture.type(large), email"]).start(completionHandler: { (connection, result, error) -> Void in
-            if (error == nil){
-                //dict = result as! NSDictionary
-            }
-        })
         
-        let credential = FacebookAuthProvider.credential(withAccessToken: _accessToken.tokenString)
+        let loginManager = LoginManager()
+        let permissions : [ReadPermission] = [.publicProfile, .email]
+        loginManager.logIn(permissions, viewController: self) {[weak self] loginResult in
+            guard let `self` = self else { return }
+            
+            switch loginResult {
+            case .failed(let error):
+                self.toggleLoading(show: false, message: nil)
+                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error.localizedDescription)
+            case .cancelled:
+                self.toggleLoading(show: false, message: nil)
+            case .success(_, _, let accessToken):
+                self.onFBProfileUpdated(token: accessToken)
+            }
+        }
+    }
+    
+    internal func onFBProfileUpdated(token: AccessToken) {
+        let credential = FacebookAuthProvider.credential(withAccessToken: token.authenticationToken)
         Auth.auth().signIn(with: credential) {[weak self] (aUser, error) in
             guard let `self` = self else { return }
-
+            self.toggleLoading(show: false, message: nil)
+            
             if error != nil {
-                self.toggleLoading(show: false, message: nil)
                 GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
             }
             else {
-                self.toggleLoading(show: false, message: nil)
                 self.headerNav?.setNav(title: aUser!.displayName)
                 self._loggedInSuccess()
             }
         }
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.FBSDKProfileDidChange, object: nil)
     }
     
     @IBAction func twtrLogin(_ sender: UIButton) {

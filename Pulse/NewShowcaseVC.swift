@@ -265,7 +265,6 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
 //UI Elements
 extension NewShowcaseVC {
     func setupLayout() {
-        view.addSubview(iImage)
         view.addSubview(iName)
         view.addSubview(iNameDescription)
         view.addSubview(iTopic)
@@ -277,7 +276,7 @@ extension NewShowcaseVC {
         iName.translatesAutoresizingMaskIntoConstraints = false
         iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xxl.rawValue).isActive = true
         iName.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: Spacing.s.rawValue).isActive = true
-        iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.65).isActive = true
+        iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         iName.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         iName.layoutIfNeeded()
         
@@ -289,15 +288,6 @@ extension NewShowcaseVC {
         iNameDescription.leadingAnchor.constraint(equalTo: iName.leadingAnchor).isActive = true
         iNameDescription.trailingAnchor.constraint(equalTo: iName.trailingAnchor).isActive = true
         iNameDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
-        
-        iImage.translatesAutoresizingMaskIntoConstraints = false
-        iImage.trailingAnchor.constraint(equalTo: iName.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
-        iImage.centerYAnchor.constraint(equalTo: iName.centerYAnchor).isActive = true
-        iImage.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        iImage.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        iImage.layoutIfNeeded()
-        
-        iImage.removeShadow()
         
         iTopic.translatesAutoresizingMaskIntoConstraints = false
         iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.l.rawValue).isActive = true

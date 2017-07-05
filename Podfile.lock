@@ -6,34 +6,40 @@ PODS:
     - Bolts/Tasks
   - Bolts/Tasks (1.8.4)
   - Fabric (1.6.11)
-  - FBSDKCoreKit (4.23.0):
+  - FacebookCore (0.2.0):
+    - Bolts (~> 1.8)
+    - FBSDKCoreKit (~> 4.15)
+  - FacebookLogin (0.2.0):
+    - Bolts (~> 1.8)
+    - FacebookCore (~> 0.2)
+    - FBSDKCoreKit (~> 4.15)
+    - FBSDKLoginKit (~> 4.15)
+  - FBSDKCoreKit (4.24.0):
     - Bolts (~> 1.7)
-  - FBSDKLoginKit (4.23.0):
+  - FBSDKLoginKit (4.24.0):
     - FBSDKCoreKit
-  - FBSDKShareKit (4.23.0):
-    - FBSDKCoreKit
-  - Firebase/Auth (4.0.0):
+  - Firebase/Auth (4.0.3):
     - Firebase/Core
     - FirebaseAuth (= 4.0.0)
-  - Firebase/Core (4.0.0):
-    - FirebaseAnalytics (= 4.0.0)
-    - FirebaseCore (= 4.0.0)
-  - Firebase/Database (4.0.0):
+  - Firebase/Core (4.0.3):
+    - FirebaseAnalytics (= 4.0.2)
+    - FirebaseCore (= 4.0.3)
+  - Firebase/Database (4.0.3):
     - Firebase/Core
     - FirebaseDatabase (= 4.0.0)
-  - Firebase/DynamicLinks (4.0.0):
+  - Firebase/DynamicLinks (4.0.3):
     - Firebase/Core
     - FirebaseDynamicLinks (= 2.0.0)
-  - Firebase/Messaging (4.0.0):
+  - Firebase/Messaging (4.0.3):
     - Firebase/Core
     - FirebaseMessaging (= 2.0.0)
-  - Firebase/Performance (4.0.0):
+  - Firebase/Performance (4.0.3):
     - Firebase/Core
-    - FirebasePerformance (= 1.0.0)
-  - Firebase/Storage (4.0.0):
+    - FirebasePerformance (= 1.0.3)
+  - Firebase/Storage (4.0.3):
     - Firebase/Core
     - FirebaseStorage (= 2.0.0)
-  - FirebaseAnalytics (4.0.0):
+  - FirebaseAnalytics (4.0.2):
     - FirebaseCore (~> 4.0)
     - FirebaseInstanceID (~> 2.0)
     - GoogleToolboxForMac/NSData+zlib (~> 2.1)
@@ -41,7 +47,7 @@ PODS:
     - FirebaseAnalytics (~> 4.0)
     - GoogleToolboxForMac/NSDictionary+URLArguments (~> 2.1)
     - GTMSessionFetcher/Core (~> 1.1)
-  - FirebaseCore (4.0.0):
+  - FirebaseCore (4.0.3):
     - GoogleToolboxForMac/NSData+zlib (~> 2.1)
   - FirebaseDatabase (4.0.0):
     - FirebaseAnalytics (~> 4.0)
@@ -55,7 +61,7 @@ PODS:
     - FirebaseInstanceID (~> 2.0)
     - GoogleToolboxForMac/Logger (~> 2.1)
     - Protobuf (~> 3.1)
-  - FirebasePerformance (1.0.0):
+  - FirebasePerformance (1.0.3):
     - FirebaseAnalytics (~> 4.0)
     - FirebaseInstanceID (~> 2.0)
     - GoogleToolboxForMac/Logger (~> 2.1)
@@ -90,9 +96,8 @@ PODS:
 DEPENDENCIES:
   - Bolts
   - Fabric
-  - FBSDKCoreKit
-  - FBSDKLoginKit
-  - FBSDKShareKit
+  - FacebookCore
+  - FacebookLogin
   - Firebase/Auth
   - Firebase/Core
   - Firebase/Database
@@ -116,18 +121,19 @@ CHECKOUT OPTIONS:
 SPEC CHECKSUMS:
   Bolts: 8a7995239dbe724f9cba2248b766d48b7ebdd322
   Fabric: 5911403591946b8228ab1c51d98f1d7137e863c6
-  FBSDKCoreKit: d7829f5a69901cd7296105328e4c3c3fc7da6518
-  FBSDKLoginKit: 6b92bd65f319d669d2b0730e49db495ef1660566
-  FBSDKShareKit: 65751c3b9937ab9d594e6c37611ecc115ceeb448
-  Firebase: 284eea779b73fdff309791817da7c68bff8dd572
-  FirebaseAnalytics: 6f08e746f7d66f5452931bc2e822b5df9c66b64a
+  FacebookCore: 2cb3f0fbff218e9d3119cec84bae983b232412de
+  FacebookLogin: c9d606504735780a9e3002465a615512e0a691a5
+  FBSDKCoreKit: f8c9eb0dd34a9cd277c7b60da4b32226d142502d
+  FBSDKLoginKit: 1214c6d5a1c4995b694d8db8a9ba6910c6028acf
+  Firebase: 9e33fdfbca37cab635c693883caa90a4475b842b
+  FirebaseAnalytics: ad41720e3e67fc63fbe3d2948d3e26932a8de311
   FirebaseAuth: ebb6abcbabae00fc47446d690c19ce68d8484fde
-  FirebaseCore: 85ad466044c2f013cdb167f85d426d15b128114a
+  FirebaseCore: c709067051de07bdaffdc4e735cd7299a23c463a
   FirebaseDatabase: d829b3a8c3e2ac7a16773c5df226966b0805dfc2
   FirebaseDynamicLinks: ad3bef2e8addfa1490af9db02201429c5c9447dd
   FirebaseInstanceID: 9fbf536668f4d3f0880e7438456dabd1376e294b
   FirebaseMessaging: 227406c05b0dc9290702d2e9f18ab5528f0c2cf2
-  FirebasePerformance: 77cff325f2adfb20fc03fec32b9811870c1d5130
+  FirebasePerformance: 36bdb0500213b459ae991766801d5dc5399ff231
   FirebaseStorage: 8110a1ed2034c8fbfd83890d2acc9cdbbd99afec
   GeoFire: 02f02683e09367c2eee073c6b09c794da19833ee
   GoogleToolboxForMac: 8e329f1b599f2512c6b10676d45736bcc2cbbeb0
@@ -136,6 +142,6 @@ SPEC CHECKSUMS:
   TwitterCore: e959987be23c767004d29eb7fab8d85d8585a2e5
   TwitterKit: 3b6044a7320340326a4098f3e37aa1dbaeb94942
 
-PODFILE CHECKSUM: 9b1f89ab298ac05a1b0382ba520c378300f6b661
+PODFILE CHECKSUM: 17acadcab9866ae34480346246ec5ee86e5b2700
 
 COCOAPODS: 1.0.1

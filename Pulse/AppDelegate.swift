@@ -10,8 +10,8 @@ import UIKit
 import Firebase
 import Fabric
 import TwitterKit
-import FBSDKCoreKit
-import FBSDKLoginKit
+import FacebookCore
+import FacebookLogin
 import FirebaseDynamicLinks
 import UserNotifications
 
@@ -36,9 +36,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
         FirebaseApp.configure()
         
         Fabric.with([Twitter.self()])
-        FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
-        FBSDKLoginManager.renewSystemCredentials { (result:ACAccountCredentialRenewResult, error:Error?) -> Void in }
-        FBSDKProfile.enableUpdates(onAccessTokenChange: true)
+        
+        SDKApplicationDelegate.shared.application(application, didFinishLaunchingWithOptions: launchOptions)
+        UserProfile.updatesOnAccessTokenChange = true
         
         window = UIWindow(frame: UIScreen.main.bounds)
         let masterTabVC = MasterTabVC()
@@ -59,13 +59,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
 
         let TwitterDidHandle = Twitter.sharedInstance().application(app, open:url, options: options)
         
-        let sourceApplication: String? = options[UIApplicationOpenURLOptionsKey.sourceApplication] as? String
-        let FBDidHandle = FBSDKApplicationDelegate.sharedInstance()
-                            .application(app,
-                            open: url,
-                            sourceApplication: sourceApplication,
-                            annotation: options[UIApplicationOpenURLOptionsKey.annotation])
-        
+        //let sourceApplication: String? = options[UIApplicationOpenURLOptionsKey.sourceApplication] as? String
+        let FBDidHandle = SDKApplicationDelegate.shared.application(app, open: url, options: options)
         let DeepLinkDidHandle =  application(app, open: url, sourceApplication: nil, annotation: [:])
         
         return TwitterDidHandle || FBDidHandle || DeepLinkDidHandle

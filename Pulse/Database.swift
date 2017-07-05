@@ -11,7 +11,8 @@ import FirebaseDatabase
 import FirebaseStorage
 import FirebaseAuth
 import TwitterKit
-import FBSDKLoginKit
+import FacebookLogin
+import FacebookCore
 import GeoFire
 import FirebaseDynamicLinks
 
@@ -974,9 +975,11 @@ class PulseDatabase {
             if let session = Twitter.sharedInstance().sessionStore.session() {
                 Twitter.sharedInstance().sessionStore.logOutUserID(session.userID)
             }
-            if FBSDKAccessToken.current() != nil {
-                FBSDKLoginManager().logOut()
+            if AccessToken.current != nil {
+                let loginManager = LoginManager()
+                loginManager.logOut()
             }
+            
             cleanupListeners()
             removeCurrentUser()
             initialFeedUpdateComplete = false
@@ -996,9 +999,8 @@ class PulseDatabase {
     }
     
     static func checkSocialTokens(_ completion: @escaping (_ result: Bool) -> Void) {
-        if FBSDKAccessToken.current() != nil {
-            let token = FBSDKAccessToken.current().tokenString
-            let credential = FacebookAuthProvider.credential(withAccessToken: token!)
+        if let token = AccessToken.current {
+            let credential = FacebookAuthProvider.credential(withAccessToken: token.authenticationToken)
             Auth.auth().signIn(with: credential) { (aUser, error) in
                 error != nil ? completion(false) : completion(true)
             }
