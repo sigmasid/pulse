@@ -36,7 +36,7 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
     fileprivate var allQuestions = [String]()
     
     fileprivate var headerSetup = false
-    fileprivate let addButton = PulseButton(size: .small, type: .add, isRound: true, background: .white, tint: .black)
+    fileprivate let addButton = PulseButton(size: .xSmall, type: .add, isRound: true, background: .white, tint: .black)
     fileprivate let searchButton = PulseButton(size: .small, type: .search, isRound: true, hasBackground: false, tint: .black)
 
     fileprivate var selectedIndex : Int?
@@ -249,6 +249,7 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
             iImage?.setImage(selectedUser?.thumbPicImage, for: .normal)
             iImage?.clipsToBounds = true
             iImage?.contentMode = .scaleAspectFill
+            iImage?.imageView?.contentMode = .scaleAspectFill
             checkEnableButton()
         }
     }
@@ -333,7 +334,7 @@ extension NewInterviewVC : UITableViewDelegate, UITableViewDataSource {
         let cell = tableView.dequeueReusableHeaderFooterView(withIdentifier: headerReuseIdentifier)
         
         if !headerSetup, let cell = cell {
-            addButton.frame.origin = CGPoint(x: 0, y: cell.contentView.bounds.height / 2 - addButton.frame.height / 2)
+            addButton.frame.origin = CGPoint(x: 2, y: cell.contentView.bounds.height / 2 - addButton.frame.height / 2)
             
             cell.contentView.addSubview(addButton)
             cell.contentView.backgroundColor = UIColor.white
@@ -460,7 +461,7 @@ extension NewInterviewVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         submitButton.layoutIfNeeded()
         

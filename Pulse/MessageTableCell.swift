@@ -17,7 +17,6 @@ class MessageTableCell: UITableViewCell {
             formatter.timeStyle = .short
             let stringDate: String = message.time != nil ? formatter.string(from: message.time) : ""
             messageTimestamp.text = stringDate
-            //messageSenderName.text = message.from.name - not showing the user name
             messageBody.text = message.body
         }
     }
@@ -27,25 +26,40 @@ class MessageTableCell: UITableViewCell {
         didSet {
             if messageType == .sent {
                 sentByUser()
+                messageLeadingAnchor.isActive = false
+                messageTrailingAnchor.isActive = true
+                messageBody.layoutIfNeeded()
+                
                 messageTimestamp.textAlignment = .right
                 messageBody.textAlignment = .right
+                messageBody.backgroundColor = .clear
             } else {
                 receivedByUser()
+                messageTrailingAnchor.isActive = false
+                messageLeadingAnchor.isActive = true
+                messageBody.layoutIfNeeded()
+                
                 messageTimestamp.textAlignment = .left
                 messageBody.textAlignment = .left
+                messageBody.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
+                messageBody.layer.cornerRadius = 5
+                messageBody.layoutIfNeeded()
             }
         }
     }
     
-    fileprivate var leftContainer = UIView()
-    fileprivate var rightContainer = UIView()
-    fileprivate var middleContainer = UIView()
+    private var leftContainer = UIView()
+    private var rightContainer = UIView()
+    private var middleContainer = UIView()
 
-    fileprivate var messageSenderName = UILabel()
+    private var messageSenderName = UILabel()
     var messageSenderImage = UIImageView()
     
-    fileprivate var messageTimestamp = UILabel()
-    fileprivate var messageBody = UILabel()
+    private var messageTimestamp = UILabel()
+    private var messageBody = PaddingLabel()
+    
+    private var messageTrailingAnchor: NSLayoutConstraint!
+    private var messageLeadingAnchor: NSLayoutConstraint!
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -152,14 +166,22 @@ class MessageTableCell: UITableViewCell {
         middleContainer.addSubview(messageBody)
         
         messageBody.translatesAutoresizingMaskIntoConstraints = false
-        messageBody.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true
-        messageBody.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor).isActive = true
+        messageTrailingAnchor = messageBody.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor)
+        messageTrailingAnchor.isActive = false
+        
+        messageLeadingAnchor = messageBody.leadingAnchor.constraint(equalTo: middleContainer.leadingAnchor)
+        messageLeadingAnchor.isActive = false
+        
+        messageBody.widthAnchor.constraint(lessThanOrEqualTo: middleContainer.widthAnchor, multiplier: 0.9).isActive = true
         messageBody.bottomAnchor.constraint(equalTo: middleContainer.bottomAnchor, constant: -Spacing.xs.rawValue).isActive = true
         messageBody.layoutIfNeeded()
         
         messageBody.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
         messageBody.numberOfLines = 0
         messageBody.lineBreakMode = .byWordWrapping
+        messageBody.clipsToBounds = true
+        messageBody.layer.masksToBounds = true
+        messageBody.layer.cornerRadius = buttonCornerRadius.radius(.small)
         
         messageTimestamp.translatesAutoresizingMaskIntoConstraints = false
         messageTimestamp.trailingAnchor.constraint(equalTo: middleContainer.trailingAnchor).isActive = true

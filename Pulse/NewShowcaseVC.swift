@@ -16,7 +16,7 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
     fileprivate var selectedUser : PulseUser?
     fileprivate var addEmail : AddText!
     
-    fileprivate var iImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
+    fileprivate var iImage : PulseButton?
     fileprivate var iName = PaddingTextField()
     fileprivate var iNameDescription = UILabel()
     
@@ -77,6 +77,7 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
     internal func updateHeader() {
         addBackButton()
         
+        iImage = addRightButton(type: .profile)
         headerNav?.setNav(title: "Invite to Showcase", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
         headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
@@ -150,8 +151,10 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
             iNameDescription.text = "Pulse user! Invite will be sent in-app"
             selectedUser = user
             iName.text = user.name?.capitalized
-            iImage.setImage(selectedUser?.thumbPicImage ?? UIImage(named: "default-profile"), for: .normal)
-            iImage.clipsToBounds = true
+            iImage?.setImage(selectedUser?.thumbPicImage ?? UIImage(named: "default-profile"), for: .normal)
+            iImage?.contentMode = .scaleAspectFill
+            iImage?.imageView?.contentMode = .scaleAspectFill
+            iImage?.clipsToBounds = true
             submitButton.setEnabled()
         }
     }
@@ -275,7 +278,7 @@ extension NewShowcaseVC {
         
         iName.translatesAutoresizingMaskIntoConstraints = false
         iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xxl.rawValue).isActive = true
-        iName.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: Spacing.s.rawValue).isActive = true
+        iName.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         iName.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         iName.layoutIfNeeded()
@@ -290,7 +293,7 @@ extension NewShowcaseVC {
         iNameDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .lightGray, alignment: .left)
         
         iTopic.translatesAutoresizingMaskIntoConstraints = false
-        iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         iTopic.leadingAnchor.constraint(equalTo: iName.leadingAnchor).isActive = true
         iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         iTopic.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
@@ -302,7 +305,7 @@ extension NewShowcaseVC {
         
         searchButton.translatesAutoresizingMaskIntoConstraints = false
         searchButton.trailingAnchor.constraint(equalTo: iName.trailingAnchor).isActive = true
-        searchButton.bottomAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
+        searchButton.centerYAnchor.constraint(equalTo: iName.centerYAnchor).isActive = true
         searchButton.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         searchButton.heightAnchor.constraint(equalTo: searchButton.widthAnchor).isActive = true
         searchButton.layoutIfNeeded()
@@ -317,7 +320,7 @@ extension NewShowcaseVC {
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "add in a description. showcase invites are sent directly in-app to existing Pulse users or you can choose to send requests via email or text message on the next screen."
+        sTypeDescription.text = "showcase invites can be sent in-app to Pulse users or can be sent to new users via email or text message on the next screen."
         
         addSubmitButton()
     }
@@ -326,7 +329,7 @@ extension NewShowcaseVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         submitButton.layoutIfNeeded()
         

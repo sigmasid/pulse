@@ -148,6 +148,23 @@ class PulseUser: User {
         let firstNameArray = name?.components(separatedBy: " ")
         return firstNameArray != nil ? firstNameArray![0] : nil
     }
+    
+    func getUserImage(completion: @escaping (UIImage?) -> Void) {
+        guard thumbPicImage == nil else {
+            completion(thumbPicImage)
+            return
+        }
+        
+        if let thumbPicURL = thumbPic, let imageURL = URL(string: thumbPicURL), let _imageData = try? Data(contentsOf: imageURL) {
+            thumbPicImage = UIImage(data: _imageData)
+            completion(thumbPicImage)
+            return
+        } else if let profilePicURL = profilePic, let imageURL = URL(string: profilePicURL), let _imageData = try? Data(contentsOf: imageURL) {
+            thumbPicImage = UIImage(data: _imageData)?.resizeImage(newWidth: profileThumbWidth)
+            completion(thumbPicImage)
+            return
+        }
+    }
 
     
     func getLocation(completion: @escaping (String?) -> Void) {

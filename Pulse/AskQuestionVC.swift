@@ -220,10 +220,9 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         textViewHeightConstraint.isActive = true
         questionBody.layoutIfNeeded()
         
-        questionBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        questionBody.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
         questionBody.backgroundColor = .white
         questionBody.delegate = self
-        questionBody.textColor = UIColor.black
         questionBody.isScrollEnabled = false
         questionBody.text = "Type your question here"
 

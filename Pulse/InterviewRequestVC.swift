@@ -295,7 +295,7 @@ extension InterviewRequestVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         submitButton.layoutIfNeeded()
         submitButton.setDisabled()
@@ -411,7 +411,7 @@ extension InterviewRequestVC : UITableViewDelegate, UITableViewDataSource {
         if allQuestions[indexPath.row].itemCreated {
             let attributeString: NSMutableAttributedString =  NSMutableAttributedString(string: allQuestions[indexPath.row].itemTitle)
             attributeString.addAttribute(NSStrikethroughStyleAttributeName, value: 2, range: NSMakeRange(0, attributeString.length))
-            attributeString.addAttribute(NSFontAttributeName, value: UIFont.systemFont(ofSize: FontSizes.body2.rawValue, weight: UIFontWeightThin), range: NSMakeRange(0, attributeString.length))
+            attributeString.addAttribute(NSFontAttributeName, value: UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body2.rawValue), range: NSMakeRange(0, attributeString.length))
             
             cell?.accessoryType = .checkmark
             cell?.textLabel?.attributedText = attributeString

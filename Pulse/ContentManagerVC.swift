@@ -157,7 +157,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
             contentDetailVC.allItems = allItems
             contentDetailVC.view.alpha = 1.0 // to make sure view did load fires - push / add controllers does not guarantee view is loaded
             
-            contentDetailVC._isShowingIntro = true
+            contentDetailVC.isShowingIntro = true
         
             showIntro()
         } else {
@@ -277,29 +277,6 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         
         pushViewController(recordedVideoVC, animated: true)
     }
-    
-    /* check if social token available - if yes, then login and post on return, else ask user to login */
-    func askUserToLogin(_ currentVC : UIViewController) {
-        PulseDatabase.checkSocialTokens({ [weak self] result in
-            guard let `self` = self else {
-                return
-            }
-            
-            if !result {
-                let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                if let showLoginVC = storyboard.instantiateViewController(withIdentifier: "LoginVC") as? LoginVC {
-                    GlobalFunctions.addNewVC(showLoginVC, parentVC: self)
-                    showLoginVC.loginVCDelegate = self
-                    self.recordedVideoVC = currentVC as! RecordedVideoVC
-                }
-            } else {
-                if let _userAnswerVC = currentVC as? RecordedVideoVC {
-                    _userAnswerVC._post()
-                }
-            }
-        })
-    }
-
     
     func doneUploadingItem(_ currentVC: UIViewController, success: Bool) {
 

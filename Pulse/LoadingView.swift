@@ -45,7 +45,7 @@ class LoadingView: UIView {
         addSubview(messageLabel)
         messageLabel.text = _text
         messageLabel.adjustsFontSizeToFitWidth = true
-        messageLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        messageLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .center)
         messageLabel.textAlignment = .center
         
         messageLabel.translatesAutoresizingMaskIntoConstraints = false

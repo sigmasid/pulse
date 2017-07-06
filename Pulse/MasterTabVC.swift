@@ -79,9 +79,10 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
                 guard let `self` = self else { return }
                 
                 if let link = self.universalLink {
-                    self.selectedIndex = 1
                     self.exploreChannelsVC.universalLink = link
                     self.initialLoadComplete = true
+                    self.universalLink = nil
+                    self.selectedIndex = 1
                     
                 } else if self.introTab == .login {
                     self.selectedIndex = 0
@@ -216,22 +217,38 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         checkReachability()
     }
     
-    internal func handleLink(link: URL) {
-        if isLoaded, PulseUser.isLoggedIn() {
-            if !exploreChannelsVC.isRootController() {
-                exploreNavVC.popToRootViewController(animated: false)
+    internal func handleLink(universalLink: URL) {
+        
+        if let link = URLComponents(url: universalLink, resolvingAgainstBaseURL: true) {
+            
+            let urlComponents = link.path.components(separatedBy: "/").dropFirst()
+            
+            guard let linkType = urlComponents.first else { return }
+            
+            switch linkType {
+            case "u", "c", "i":
+                if isLoaded {
+                    if !exploreChannelsVC.isRootController() {
+                        exploreNavVC.popToRootViewController(animated: false)
+                    }
+                    exploreChannelsVC.universalLink = universalLink
+                    selectedIndex = 1
+                } else {
+                    self.universalLink = universalLink
+                }
+            default:
+                if isLoaded {
+                    selectedIndex = 0
+                    accountVC.showInviteAlert = true
+                    self.universalLink = universalLink
+                } else {
+                    self.universalLink = universalLink
+                }
             }
-            exploreChannelsVC.universalLink = link
-            selectedIndex = 1
-        } else if isLoaded, !PulseUser.isLoggedIn() {
-            selectedIndex = 0
-            accountVC.showInviteAlert = true
-            universalLink = link
-        } else {
-            universalLink = link
         }
     }
     
+    ///Delegate function called after user logins - show the invite after
     internal func userUpdated() {
         if let link = universalLink {
             selectedIndex = 1

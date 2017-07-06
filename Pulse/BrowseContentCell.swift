@@ -158,7 +158,7 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
         titleLabel.lineBreakMode = .byTruncatingTail
         subtitleLabel.lineBreakMode = .byTruncatingTail
         
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightBold)]
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightBold, size: titleLabel.font.pointSize)]
         let titleLableHeight = GlobalFunctions.getLabelSize(title: "label", width: contentView.frame.width, fontAttributes: fontAttributes)
         
         titleStack.translatesAutoresizingMaskIntoConstraints = false

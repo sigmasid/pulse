@@ -276,7 +276,7 @@ extension BecomeContributorVC {
         recommendButton.translatesAutoresizingMaskIntoConstraints = false
         recommendButton.topAnchor.constraint(equalTo: recommendText.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         recommendButton.centerXAnchor.constraint(equalTo: recommendView.centerXAnchor).isActive = true
-        recommendButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        recommendButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         recommendButton.widthAnchor.constraint(equalTo: recommendView.widthAnchor).isActive = true
         recommendButton.layoutIfNeeded()
         recommendButton.setDisabled()
@@ -325,7 +325,7 @@ extension BecomeContributorVC {
         applyButton.translatesAutoresizingMaskIntoConstraints = false
         applyButton.topAnchor.constraint(equalTo: applyText.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         applyButton.centerXAnchor.constraint(equalTo: applyView.centerXAnchor).isActive = true
-        applyButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        applyButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         applyButton.widthAnchor.constraint(equalTo: applyView.widthAnchor).isActive = true
         applyButton.layoutIfNeeded()
         applyButton.setDisabled()

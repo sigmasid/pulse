@@ -141,14 +141,6 @@ class ContentOverlay: UIView {
         }
     }
     
-    //Not used anymore
-    func handleExpandItemTap() {
-        if delegate != nil {
-            delegate.userClickedExpandItem()
-            hideExploreDetail()
-        }
-    }
-    
     //EXPLORE DETAIL + PAGERS
     public func highlightExploreDetail() {
         nextItemButton.isHidden = false
@@ -463,7 +455,7 @@ extension ContentOverlay {
         browseButton.heightAnchor.constraint(equalTo: footerBackground.heightAnchor).isActive = true
         browseButton.trailingAnchor.constraint(equalTo: footerBackground.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: browseButton.titleLabel!.font.pointSize, weight: UIFontWeightBold)]
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightBold, size: browseButton.titleLabel!.font.pointSize)]
         let width = GlobalFunctions.getLabelWidth(title: browseButton.titleLabel!.text!, fontAttributes: fontAttributes)
         browseButton.widthAnchor.constraint(equalToConstant: width).isActive = true
         browseButton.layoutIfNeeded()
@@ -473,7 +465,7 @@ extension ContentOverlay {
         messageButton.heightAnchor.constraint(equalTo: footerBackground.heightAnchor).isActive = true
         messageButton.leadingAnchor.constraint(equalTo: footerBackground.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
         
-        let messageAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: messageButton.titleLabel!.font.pointSize, weight: UIFontWeightBold)]
+        let messageAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightBold, size: messageButton.titleLabel!.font.pointSize)]
         let messageWidth = GlobalFunctions.getLabelWidth(title: messageButton.titleLabel!.text!, fontAttributes: messageAttributes)
         messageButton.widthAnchor.constraint(equalToConstant: messageWidth).isActive = true
         messageButton.layoutIfNeeded()

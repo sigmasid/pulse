@@ -27,7 +27,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
     var lastMessageID : String! { didSet { keepConversationUpdated() }} //to sync listener for last updated element
     
     //Layout elements
-    fileprivate var msgBody = UITextView()
+    fileprivate var msgBody = PaddingTextView()
     fileprivate var conversationHistory = UITableView()
     fileprivate var sendContainer = UIView()
     fileprivate var msgSend = UIButton()
@@ -74,8 +74,8 @@ class MessageVC: PulseVC, UITextViewDelegate{
     }
     
     deinit {
+        print("message vc deinit fired")
         if !cleanupComplete {
-            conversationHistory.removeFromSuperview()
             messages = []
             toUserImage = nil
             toUser = nil
@@ -119,10 +119,12 @@ class MessageVC: PulseVC, UITextViewDelegate{
     }
     
     fileprivate func setupConversationHistory() {
-        PulseDatabase.checkExistingConversation(to: toUser, completion: {(success, _conversationID) in
+        PulseDatabase.checkExistingConversation(to: toUser, completion: {[weak self] (success, _conversationID) in
+            guard let `self` = self else { return }
             if let conversationID = _conversationID {
                 self.conversationID = conversationID
-                PulseDatabase.getConversationMessages(user: self.toUser, conversationID: conversationID, completion: { messages, lastMessageID, error in
+                PulseDatabase.getConversationMessages(user: self.toUser, conversationID: conversationID, completion: {[weak self] messages, lastMessageID, error in
+                    guard let `self` = self else { return }
                     if error == nil {
                         self.messages = messages
                         self.lastMessageID = lastMessageID
@@ -142,7 +144,8 @@ class MessageVC: PulseVC, UITextViewDelegate{
             conversationHistory.delegate = self
             conversationHistory.reloadData()
 
-            PulseDatabase.keepConversationUpdated(conversationID: conversationID!, lastMessage: lastMessageID ?? nil, completion: { message in
+            PulseDatabase.keepConversationUpdated(conversationID: conversationID!, lastMessage: lastMessageID ?? nil, completion: {[weak self] message in
+                guard let `self` = self else { return }
                 self.messages.append(message)
                 let indexPath : IndexPath = IndexPath(row:(self.messages.count - 1), section:0)
                 self.conversationHistory.insertRows(at:[indexPath], with: .fade)
@@ -161,7 +164,8 @@ class MessageVC: PulseVC, UITextViewDelegate{
         let message = Message(from: PulseUser.currentUser, to: toUser, body: msgBody.text)
         message.mID = isExistingConversation ? conversationID! : nil
         
-        PulseDatabase.sendMessage(existing: isExistingConversation, message: message, completion: {(success, _conversationID) in
+        PulseDatabase.sendMessage(existing: isExistingConversation, message: message, completion: {[weak self](success, _conversationID) in
+            guard let `self` = self else { return }
             if success {
                 self.msgBody.text = "Type message here"
                 
@@ -216,17 +220,20 @@ class MessageVC: PulseVC, UITextViewDelegate{
         let menu = UIAlertController(title: "Congratulations!",
                                      message: "\(messageText) As a verified contributor, you can showcase your content, expertise & brand!", preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "accept Invite", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showConfirmationMenu(status: true, inviteID: messageID)
             self.toggleLoading(show: false, message: nil)
         }))
         
-        menu.addAction(UIAlertAction(title: "decline Invite", style: .destructive, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "decline Invite", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             self.showConfirmationMenu(status: false, inviteID: messageID)
             self.toggleLoading(show: false, message: nil)
         }))
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
             self.toggleLoading(show: false, message: nil)
         }))
@@ -257,6 +264,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
         conversationHistory.tableFooterView = UIView() //empty footer to hide extra empty rows
         conversationHistory.rowHeight = UITableViewAutomaticDimension
         conversationHistory.estimatedRowHeight = UIScreen.main.bounds.height / 7
+        conversationHistory.separatorStyle = .none
         
         sendContainer.addSubview(msgBody)
         sendContainer.addSubview(msgSend)
@@ -274,19 +282,15 @@ class MessageVC: PulseVC, UITextViewDelegate{
         msgBody.trailingAnchor.constraint(equalTo: msgSend.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         msgBody.heightAnchor.constraint(equalTo:sendContainer.heightAnchor).isActive = true
         msgBody.layoutIfNeeded()
-        
-        msgBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        msgBody.layer.borderColor = UIColor.lightGray.cgColor
-        msgBody.layer.borderWidth = 1.0
+        msgBody.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .left)
         msgBody.delegate = self
         
         msgBody.text = "Type message here"
-        msgBody.textColor = UIColor.lightGray
         msgBody.isScrollEnabled = false
         
         msgSend.makeRound()
         msgSend.setTitle("Send", for: UIControlState())
-        msgSend.titleLabel!.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
+        msgSend.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
         msgSend.setDisabled()
         msgSend.addTarget(self, action: #selector(sendMessage), for: .touchUpInside)
 
@@ -389,7 +393,8 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         case .channelInvite:
             
             toggleLoading(show: true, message: "loading Invite...", showIcon: true)
-            PulseDatabase.getInviteItem(message.mID, completion: { selectedItem, _, childItem, toUser, conversationID, error in
+            PulseDatabase.getInviteItem(message.mID, completion: {[weak self] selectedItem, _, childItem, toUser, conversationID, error in
+                guard let `self` = self else { return }
                 if let selectedItem = selectedItem {
                     DispatchQueue.main.async {
                         let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)

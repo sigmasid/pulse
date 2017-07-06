@@ -110,11 +110,9 @@ class NewChannelVC: PulseVC {
         cDescription.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         cDescription.layoutIfNeeded()
         
-        cTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         cTitle.placeholder = "name of channel"
         cTitle.delegate = self
         
-        cDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         cDescription.text = descriptionPlaceholder
         cDescription.delegate = self
         cDescription.textColor = UIColor.placeholderGrey
@@ -130,7 +128,7 @@ class NewChannelVC: PulseVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.topAnchor.constraint(equalTo: cDescription.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         submitButton.layoutIfNeeded()
         

@@ -225,9 +225,7 @@ class CameraOverlayView: UIView {
         titleBackground.heightAnchor.constraint(equalToConstant: titleBackgroundHeight).isActive = true
         
         titleBackground.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        titleBackground.textColor = UIColor.white
-        titleBackground.textAlignment = .center
-        titleBackground.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        titleBackground.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)        
         titleBackground.numberOfLines = 2
         titleBackground.adjustsFontSizeToFitWidth = true
         titleBackground.minimumScaleFactor = 0.3

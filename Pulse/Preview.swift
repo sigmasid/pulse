@@ -50,7 +50,12 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         removeClip()
         delegate = nil
         currentItem = nil
-        imageView.image = nil
+        
+        if imageView != nil {
+            imageView.image = nil
+            imageView = nil
+        }
+        
         NotificationCenter.default.removeObserver(self)
     }
     

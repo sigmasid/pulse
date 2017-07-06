@@ -104,7 +104,6 @@
 		BAB7CD231D4AF4050058AD9C /* SettingsTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */; };
 		BAB8393D1F0173EA006302A8 /* ImageCropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB8393C1F0173EA006302A8 /* ImageCropView.swift */; };
 		BAB9AD321F04AD0300968CA6 /* InputVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB9AD311F04AD0300968CA6 /* InputVC.swift */; };
-		BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */; };
 		BAC892D91D7A28870060A928 /* PanEdgeInteractionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */; };
 		BAC892DC1D7A291E0060A928 /* PanAnimationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */; };
 		BAC918521E73241F005772EC /* EmptyCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC918511E73241E005772EC /* EmptyCell.swift */; };
@@ -228,7 +227,6 @@
 		BAB7CD221D4AF4050058AD9C /* SettingsTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsTableCell.swift; sourceTree = "<group>"; };
 		BAB8393C1F0173EA006302A8 /* ImageCropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCropView.swift; sourceTree = "<group>"; };
 		BAB9AD311F04AD0300968CA6 /* InputVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputVC.swift; sourceTree = "<group>"; };
-		BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginHeaderView.swift; sourceTree = "<group>"; };
 		BAC892D81D7A28870060A928 /* PanEdgeInteractionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanEdgeInteractionController.swift; sourceTree = "<group>"; };
 		BAC892DB1D7A291E0060A928 /* PanAnimationController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PanAnimationController.swift; sourceTree = "<group>"; };
 		BAC918511E73241E005772EC /* EmptyCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmptyCell.swift; sourceTree = "<group>"; };
@@ -553,7 +551,6 @@
 				BA1DE1441D244D6B004F3ED2 /* LoginVC.swift */,
 				BA7D677C1D30D07400883B88 /* LoginCreateAccountVC.swift */,
 				BA7D677E1D30D0B100883B88 /* LoginAddNameVC.swift */,
-				BAC5E8661D474C3500BBFF14 /* LoginHeaderView.swift */,
 			);
 			name = Login;
 			sourceTree = "<group>";
@@ -743,7 +740,6 @@
 				BAC892D91D7A28870060A928 /* PanEdgeInteractionController.swift in Sources */,
 				BAF0FC141E66A1920069BA9A /* QuickBrowseCell.swift in Sources */,
 				BA1DE13E1D244BEB004F3ED2 /* RecordedVideoVC.swift in Sources */,
-				BAC5E8671D474C3500BBFF14 /* LoginHeaderView.swift in Sources */,
 				BA54F05A1E45591500E7640F /* PulseLayer.swift in Sources */,
 				BA5BE37E1F031174006AF3B7 /* PulseAlbumVC.swift in Sources */,
 				BA5BE3721F02EDA2006AF3B7 /* AssetTimeSelector.swift in Sources */,
@@ -964,6 +960,7 @@
 				INFOPLIST_FILE = Pulse/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				OTHER_SWIFT_FLAGS = "$(inherited) \"-D COCOAPODS\"";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "f3b5a567-f7f8-44bb-9d36-c17d818608bb";
@@ -985,6 +982,7 @@
 				INFOPLIST_FILE = Pulse/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				OTHER_SWIFT_FLAGS = "$(inherited) \"-D COCOAPODS\"";
 				PRODUCT_BUNDLE_IDENTIFIER = co.checkpulse.pulse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "f0e202ab-728a-4e76-be52-15cb373025c3";

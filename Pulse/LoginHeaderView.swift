@@ -26,7 +26,6 @@ class LoginHeaderView: UIView {
         super.init(frame: frame)
         addIcon()
         addScreenTitleLabel()
-        addAppTitleLabel()
         addScreenButton()
     }
     
@@ -43,19 +42,6 @@ class LoginHeaderView: UIView {
         }
     }
     
-    fileprivate func addAppTitleLabel() {
-        addSubview(_appTitleLabel)
-
-        _appTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        _appTitleLabel.topAnchor.constraint(equalTo: _logoView.topAnchor).isActive = true
-        _appTitleLabel.leadingAnchor.constraint(equalTo: _logoView.leadingAnchor).isActive = true
-        
-        _appTitleLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
-        _appTitleLabel.textColor = UIColor.black
-        _appTitleLabel.textAlignment = .left
-        _appTitleLabel.addTextSpacing(10)
-    }
-    
     fileprivate func addScreenTitleLabel() {
         addSubview(_screenTitleLabel)
 
@@ -63,7 +49,7 @@ class LoginHeaderView: UIView {
         _screenTitleLabel.bottomAnchor.constraint(equalTo: _logoView.bottomAnchor).isActive = true
         _screenTitleLabel.leadingAnchor.constraint(equalTo: _logoView.leadingAnchor).isActive = true
         
-        _screenTitleLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
+        _screenTitleLabel.font = UIFont.pulseFont(ofWeight: UIFontWeightRegular, size: FontSizes.caption.rawValue)
         _screenTitleLabel.textColor = UIColor.black
         _screenTitleLabel.textAlignment = .left
     }
@@ -95,16 +81,13 @@ class LoginHeaderView: UIView {
 
             
             _statusLabel.layoutIfNeeded()
-            _statusLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
+            _statusLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .white, alignment: .center)
             _statusLabel.backgroundColor = UIColor.black
-            _statusLabel.textColor = UIColor.white
             _statusLabel.layer.cornerRadius = _statusLabel.bounds.width / 2
             
             _statusLabel.lineBreakMode = .byWordWrapping
             _statusLabel.minimumScaleFactor = 0.1
-            _statusLabel.numberOfLines = 0
-            
-            _statusLabel.textAlignment = .center
+            _statusLabel.numberOfLines = 0            
             _statusLabel.layer.masksToBounds = true
         }
     }
@@ -148,11 +131,6 @@ class LoginHeaderView: UIView {
         
         _statusImage?.image = _image
         
-    }
-    
-    func setAppTitleLabel(_message : String) {
-        _appTitleLabel.text = _message
-        _appTitleLabel.addTextSpacing(2.5)
     }
     
     func setScreenTitleLabel(_message : String) {

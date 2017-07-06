@@ -185,7 +185,7 @@ class FirstLoadVC: UIViewController {
         getStartedButton.bottomAnchor.constraint(equalTo: loginButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
         getStartedButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         getStartedButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        getStartedButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/16).isActive = true
+        getStartedButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         getStartedButton.layoutIfNeeded()
         
         loginButton.translatesAutoresizingMaskIntoConstraints = false

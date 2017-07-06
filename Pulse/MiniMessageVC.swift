@@ -11,19 +11,20 @@ import UIKit
 class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     public var selectedUser : PulseUser!
-    public weak var delegate : ParentDelegate!
+    public weak var delegate : ModalDelegate?
     
-    fileprivate var isLoaded = false
-    fileprivate var observersAdded = false
+    private var isLoaded = false
+    private var observersAdded = false
     
-    fileprivate var msgContainer = UIView()
-    fileprivate var msgBody = UITextView()
-    fileprivate var sendButton = PulseButton()
+    private var msgContainer = UIView()
+    private var msgBody = UITextView()
+    private var sendButton = PulseButton()
     
-    fileprivate var msgBottomContainer : NSLayoutConstraint!
-    fileprivate var textViewHeightConstraint : NSLayoutConstraint!
-    fileprivate var containerHeightConstraint: NSLayoutConstraint!
-    fileprivate var tap: UITapGestureRecognizer!
+    private var msgBottomContainer : NSLayoutConstraint!
+    private var textViewHeightConstraint : NSLayoutConstraint!
+    private var containerHeightConstraint: NSLayoutConstraint!
+    private var tap: UITapGestureRecognizer!
+    private var backgroundView : UIView!
     
     fileprivate var hideStatusBar = false {
         didSet {
@@ -31,17 +32,34 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         }
     }
     
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        modalPresentationStyle = .overCurrentContext
+        modalTransitionStyle = .coverVertical
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         if !observersAdded {
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
-            view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+            view.backgroundColor = .clear
+            
+            backgroundView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: view.bounds.height))
+            view.addSubview(backgroundView)
             
             tap = UITapGestureRecognizer(target: self, action: #selector(dismissMsg))
             tap.cancelsTouchesInView = false
             tap.isEnabled = true
-            view.addGestureRecognizer(tap)
+            backgroundView.addGestureRecognizer(tap)
+            
+            msgBody.becomeFirstResponder()
+            
+            setupQuestionBox()
             
             observersAdded = true
         }
@@ -49,15 +67,23 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
     
     override func viewDidLayoutSubviews() {
         if !isLoaded {
-            setupQuestionBox()
-            msgBody.becomeFirstResponder()
+            //For the dismiss touches
+            
             
             isLoaded = true
         }
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        msgBody.becomeFirstResponder()
+    }
+    
     deinit {
         selectedUser = nil
+        NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillHide, object: nil)
+        backgroundView.removeGestureRecognizer(tap)
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -68,15 +94,10 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         super.didReceiveMemoryWarning()
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        view.removeGestureRecognizer(tap)
-    }
-    
-    func dismissMsg() {
+    internal func dismissMsg() {
         if delegate != nil {
             msgBody.resignFirstResponder()
-            delegate.dismissVC(self)
+            delegate?.userClosedModal(self)
         }
     }
     
@@ -92,13 +113,14 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         msgContainer.layoutIfNeeded()
     }
     
-    func sendMessage() {
+    internal func sendMessage() {
         guard PulseUser.isLoggedIn(), PulseUser.currentUser.uID! != selectedUser.uID else { return }
         
         let message = Message(from: PulseUser.currentUser, to: selectedUser, body: msgBody.text)
         PulseDatabase.checkExistingConversation(to: selectedUser, completion: { success, conversationID in
             message.mID = success ? conversationID! : nil
-            PulseDatabase.sendMessage(existing: success, message: message, completion: {(success, _conversationID) in
+            PulseDatabase.sendMessage(existing: success, message: message, completion: {[weak self] (success, _conversationID) in
+                guard let `self` = self else { return }
                 if success {
                     self.msgBody.text = "Type message here"
                     self.msgBody.textColor = UIColor.lightGray
@@ -111,7 +133,7 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         })
     }
     
-    fileprivate func setupQuestionBox() {
+    private func setupQuestionBox() {
         view.addSubview(msgContainer)
         
         msgContainer.addSubview(msgBody)
@@ -142,7 +164,8 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         textViewHeightConstraint.isActive = true
         msgBody.layoutIfNeeded()
         
-        msgBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        
+        msgBody.font = UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body.rawValue)
         msgBody.backgroundColor = .white
         msgBody.delegate = self
         msgBody.textColor = UIColor.black

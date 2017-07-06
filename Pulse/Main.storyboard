@@ -10,6 +10,12 @@
         <capability name="Constraints with non-1.0 multipliers" minToolsVersion="5.1"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
+    <customFonts key="customFonts">
+        <array key="Avenir.ttc">
+            <string>Avenir-Book</string>
+            <string>Avenir-Heavy</string>
+        </array>
+    </customFonts>
     <scenes>
         <!--LoginVC-->
         <scene sceneID="SoV-s3-On7">
@@ -29,7 +35,7 @@
                                     <constraint firstAttribute="height" constant="35" id="13h-UI-Yup"/>
                                 </constraints>
                                 <nil key="textColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
                             </textField>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="password" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="hKc-3m-q4h" customClass="PaddingTextField" customModule="Pulse" customModuleProvider="target">
@@ -38,13 +44,16 @@
                                     <constraint firstAttribute="height" constant="35" id="jEh-4S-fAV"/>
                                 </constraints>
                                 <nil key="textColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QqP-KB-Lfa" customClass="PulseButton" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="38" y="300" width="300" height="55.5"/>
+                                <rect key="frame" x="38" y="300" width="300" height="50"/>
                                 <color key="backgroundColor" red="0.22352941176470587" green="0.24705882352941178" blue="0.29411764705882354" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="50" id="Ulh-dK-tBU"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Avenir-Heavy" family="Avenir" pointSize="12"/>
                                 <state key="normal" title="login with email">
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 </state>
@@ -108,8 +117,8 @@
                                 <state key="normal" image="mail-icon"/>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1q9-za-yqB">
-                                <rect key="frame" x="188" y="380.5" width="150" height="27"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <rect key="frame" x="188" y="375" width="150" height="29"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="12"/>
                                 <state key="normal" title="Create Account">
                                     <color key="titleColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
@@ -118,8 +127,8 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" verticalCompressionResistancePriority="751" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bX0-JU-Sql">
-                                <rect key="frame" x="38" y="380.5" width="150" height="27"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <rect key="frame" x="38" y="375" width="150" height="29"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="12"/>
                                 <state key="normal" title="Forgot Password?">
                                     <color key="titleColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </state>
@@ -128,22 +137,22 @@
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="By logging in you are agreeing to our terms of service" lineBreakMode="tailTruncation" numberOfLines="3" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MIa-K1-I2C">
-                                <rect key="frame" x="77" y="584.5" width="261" height="30.5"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <rect key="frame" x="77" y="580" width="261" height="33"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="12"/>
                                 <color key="textColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="a12-5z-4fr">
-                                <rect key="frame" x="260" y="620" width="78" height="27"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <rect key="frame" x="265" y="618" width="73" height="29"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="12"/>
                                 <state key="normal" title="privacy policy"/>
                                 <connections>
                                     <action selector="handleShowPolicy:" destination="fcE-Nh-5CR" eventType="touchUpInside" id="qkd-ES-VS0"/>
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="a7F-8f-fLF">
-                                <rect key="frame" x="77" y="620" width="92" height="27"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <rect key="frame" x="77" y="618" width="85" height="29"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="12"/>
                                 <state key="normal" title="terms of service"/>
                                 <connections>
                                     <action selector="handleShowPolicy:" destination="fcE-Nh-5CR" eventType="touchUpInside" id="5Ad-lc-wiE"/>
@@ -173,7 +182,6 @@
                             <constraint firstItem="bX0-JU-Sql" firstAttribute="width" secondItem="1q9-za-yqB" secondAttribute="width" id="Vig-b9-c00"/>
                             <constraint firstItem="1q9-za-yqB" firstAttribute="leading" secondItem="bX0-JU-Sql" secondAttribute="trailing" id="XVh-48-OGS"/>
                             <constraint firstItem="a12-5z-4fr" firstAttribute="centerY" secondItem="a7F-8f-fLF" secondAttribute="centerY" id="YxL-yp-898"/>
-                            <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="QqP-KB-Lfa" secondAttribute="height" multiplier="12" id="Zrq-EX-Jle"/>
                             <constraint firstItem="MIa-K1-I2C" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" constant="20" id="aSM-KJ-uuW"/>
                             <constraint firstItem="0Xp-xB-99u" firstAttribute="centerY" secondItem="mwY-hr-A0j" secondAttribute="centerY" id="ciX-be-lGr"/>
                             <constraint firstItem="N7o-0T-LlE" firstAttribute="centerX" secondItem="apg-L9-FEx" secondAttribute="centerX" id="dWQ-jY-r8Y"/>
@@ -224,29 +232,32 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="email" textAlignment="natural" minimumFontSize="16" translatesAutoresizingMaskIntoConstraints="NO" id="ng1-cT-2tP" customClass="PaddingTextField" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="38" y="175.5" width="300" height="35"/>
+                                <rect key="frame" x="38" y="178" width="300" height="35"/>
                                 <gestureRecognizers/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="35" id="OzX-P3-WTn"/>
                                 </constraints>
                                 <nil key="textColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="emailAddress"/>
                             </textField>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="password" textAlignment="natural" minimumFontSize="16" translatesAutoresizingMaskIntoConstraints="NO" id="GqL-mv-9Sb" customClass="PaddingTextField" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="38" y="230.5" width="300" height="35"/>
+                                <rect key="frame" x="38" y="233" width="300" height="35"/>
                                 <gestureRecognizers/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="35" id="TfS-Wg-oI8"/>
                                 </constraints>
                                 <nil key="textColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" returnKeyType="join" enablesReturnKeyAutomatically="YES" secureTextEntry="YES"/>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jR9-CY-SsV" customClass="PulseButton" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="38" y="315.5" width="300" height="55.5"/>
+                                <rect key="frame" x="38" y="318" width="300" height="50"/>
                                 <color key="backgroundColor" red="0.22352941179999999" green="0.2470588235" blue="0.29411764709999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="50" id="hbS-N2-9Pq"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Avenir-Heavy" family="Avenir" pointSize="12"/>
                                 <state key="normal" title="sign up">
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 </state>
@@ -255,20 +266,20 @@
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ofe-If-wVK">
-                                <rect key="frame" x="38" y="210.5" width="300" height="0.0"/>
+                                <rect key="frame" x="38" y="213" width="300" height="0.0"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
                                 <color key="textColor" red="0.66666666666666663" green="0.66666666666666663" blue="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="oE8-do-ml8">
-                                <rect key="frame" x="38" y="265.5" width="300" height="0.0"/>
+                                <rect key="frame" x="38" y="268" width="300" height="0.0"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
                                 <color key="textColor" red="0.66666666666666663" green="0.66666666666666663" blue="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="enter your email &amp; password to signup or go back to sign in with facebook or twitter" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="3" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="36E-Xv-dCc">
-                                <rect key="frame" x="38" y="95" width="300" height="30.5"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <rect key="frame" x="38" y="95" width="300" height="33"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="12"/>
                                 <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
@@ -279,7 +290,6 @@
                             <constraint firstItem="36E-Xv-dCc" firstAttribute="trailing" secondItem="ng1-cT-2tP" secondAttribute="trailing" id="AJq-hg-8Sh"/>
                             <constraint firstItem="36E-Xv-dCc" firstAttribute="top" secondItem="wi6-8C-fsd" secondAttribute="bottom" constant="75" id="BCO-t9-4Pw"/>
                             <constraint firstItem="jR9-CY-SsV" firstAttribute="centerX" secondItem="7jd-q5-TQh" secondAttribute="centerX" id="Bjg-IO-2d9"/>
-                            <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="jR9-CY-SsV" secondAttribute="height" multiplier="12" id="CBd-em-Brl"/>
                             <constraint firstItem="ng1-cT-2tP" firstAttribute="width" secondItem="jR9-CY-SsV" secondAttribute="width" id="CNd-BO-D6q"/>
                             <constraint firstItem="GqL-mv-9Sb" firstAttribute="width" secondItem="jR9-CY-SsV" secondAttribute="width" id="FMR-Jg-Rob"/>
                             <constraint firstItem="GqL-mv-9Sb" firstAttribute="top" secondItem="ng1-cT-2tP" secondAttribute="bottom" constant="20" id="FtC-CR-Ik4"/>
@@ -321,27 +331,30 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="first name" textAlignment="natural" minimumFontSize="16" translatesAutoresizingMaskIntoConstraints="NO" id="ZWm-2n-sWa" customClass="PaddingTextField" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="38" y="279.5" width="300" height="35"/>
+                                <rect key="frame" x="38" y="281" width="300" height="35"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="35" id="QXs-1U-R67"/>
                                 </constraints>
                                 <nil key="textColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no"/>
                             </textField>
                             <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="last name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="9lq-NV-uXy" customClass="PaddingTextField" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="38" y="334.5" width="300" height="35"/>
+                                <rect key="frame" x="38" y="336" width="300" height="35"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="35" id="BhU-X0-8rY"/>
                                 </constraints>
                                 <nil key="textColor"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" enablesReturnKeyAutomatically="YES"/>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="249" verticalCompressionResistancePriority="749" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="0HN-In-4kA" customClass="PulseButton" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="38" y="419.5" width="300" height="55.5"/>
+                                <rect key="frame" x="38" y="421" width="300" height="50"/>
                                 <color key="backgroundColor" red="0.22352941179999999" green="0.2470588235" blue="0.29411764709999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="50" id="v4s-tY-Txj"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="Avenir-Heavy" family="Avenir" pointSize="12"/>
                                 <state key="normal" title="done">
                                     <color key="titleColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 </state>
@@ -350,25 +363,25 @@
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wwY-4U-2tF">
-                                <rect key="frame" x="38" y="314.5" width="300" height="0.0"/>
+                                <rect key="frame" x="38" y="316" width="300" height="0.0"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
                                 <color key="textColor" red="0.66666666666666663" green="0.66666666666666663" blue="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UDW-hT-FdP">
-                                <rect key="frame" x="38" y="369.5" width="300" height="0.0"/>
+                                <rect key="frame" x="38" y="371" width="300" height="0.0"/>
                                 <fontDescription key="fontDescription" style="UICTFontTextStyleCaption2"/>
                                 <color key="textColor" red="0.66666666666666663" green="0.66666666666666663" blue="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="add your name and tap camera to add a profile pic" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QVr-vh-lMk">
-                                <rect key="frame" x="38" y="95" width="300" height="15"/>
-                                <fontDescription key="fontDescription" style="UICTFontTextStyleCaption1"/>
+                                <rect key="frame" x="38" y="95" width="300" height="16.5"/>
+                                <fontDescription key="fontDescription" name="Avenir-Book" family="Avenir" pointSize="12"/>
                                 <color key="textColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="X4k-cX-Vza" customClass="PulseButton" customModule="Pulse" customModuleProvider="target">
-                                <rect key="frame" x="137" y="129.5" width="100" height="100"/>
+                                <rect key="frame" x="137" y="131" width="100" height="100"/>
                                 <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="100" id="1D1-Jj-ukB"/>
@@ -410,7 +423,6 @@
                             <constraint firstItem="0HN-In-4kA" firstAttribute="centerX" secondItem="Ems-AX-lPP" secondAttribute="centerX" id="ZWq-ht-Fe6"/>
                             <constraint firstItem="UDW-hT-FdP" firstAttribute="width" secondItem="9lq-NV-uXy" secondAttribute="width" id="Zcn-Db-Yzi"/>
                             <constraint firstItem="ZWm-2n-sWa" firstAttribute="width" secondItem="0HN-In-4kA" secondAttribute="width" id="ZdG-Z0-XWj"/>
-                            <constraint firstAttribute="height" relation="lessThanOrEqual" secondItem="0HN-In-4kA" secondAttribute="height" multiplier="12" id="Zpe-ev-9Ps"/>
                             <constraint firstItem="X4k-cX-Vza" firstAttribute="top" secondItem="QVr-vh-lMk" secondAttribute="bottom" constant="20" id="b07-fd-DfE"/>
                             <constraint firstItem="9lq-NV-uXy" firstAttribute="width" secondItem="0HN-In-4kA" secondAttribute="width" id="iEm-Au-60o"/>
                             <constraint firstItem="ZWm-2n-sWa" firstAttribute="top" secondItem="X4k-cX-Vza" secondAttribute="bottom" constant="50" id="kPf-dh-Esf"/>

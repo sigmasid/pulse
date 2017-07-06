@@ -15,6 +15,7 @@ enum ButtonSizes { case xxSmall, xSmall, small, medium, large, xLarge }
 @IBDesignable
 open class PulseButton: UIButton {
     
+    static var regularButtonHeight : CGFloat = IconSizes.medium.rawValue
     var size : ButtonSizes!
     @IBInspectable open var highlightedTint : UIColor! = .pulseBlue
     
@@ -134,7 +135,7 @@ open class PulseButton: UIButton {
         
         buttonCornerRadius = isRound ? 5 : 0
         backgroundColor = buttonColor
-        setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: textColor, alignment: .center)
+        setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: textColor, alignment: .center)
         
         // Shadow (for raised views) - Up:
         if hasShadow {
@@ -261,7 +262,7 @@ open class PulseButton: UIButton {
         setTitleColor(.pulseBlue, for: UIControlState.highlighted)
         setTitleColor(.pulseBlue, for: UIControlState.selected)
         
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightMedium)]
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightMedium, size:  FontSizes.caption.rawValue)]
         let labelTextWidth = GlobalFunctions.getLabelWidth(title: title,
                                                            fontAttributes: fontAttributes)
 

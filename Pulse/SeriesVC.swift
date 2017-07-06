@@ -601,12 +601,6 @@ extension SeriesVC {
         })
     }
     
-    /** Item Preview Delegate **/
-    internal func userClosedPreview(_ preview : UIView) {
-        preview.removeFromSuperview()
-        removeBlurBackground()
-    }
-    
     internal func userClickedBecomeContributor() {
         removeBlurBackground()
         

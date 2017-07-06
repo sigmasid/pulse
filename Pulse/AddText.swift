@@ -143,10 +143,9 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         textViewHeightConstraint.isActive = true
         txtBody.layoutIfNeeded()
         
-        txtBody.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        txtBody.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
         txtBody.backgroundColor = .white
         txtBody.delegate = self
-        txtBody.textColor = UIColor.black
         txtBody.isScrollEnabled = false
         txtBody.text = bodyText != "" ? bodyText : defaultBodyText
         

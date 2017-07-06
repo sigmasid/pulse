@@ -60,7 +60,7 @@ class IconContainer: UIView {
     }
     
     func setViewTitle(_ title : String) {
-        viewTitleLabel.font = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightBold)
+        viewTitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .gray, alignment: .center)
         viewTitleLabel.text = title
     }
 }

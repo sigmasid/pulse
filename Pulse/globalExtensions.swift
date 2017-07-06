@@ -18,6 +18,27 @@ extension UIColor {
     static var placeholderGrey: UIColor  { return UIColor(red: 199/255, green: 199/255, blue: 205/255, alpha: 1.0) }
 }
 
+extension UIFont {
+    static func pulseFont(ofWeight: CGFloat, size : CGFloat) -> UIFont {
+        switch ofWeight {
+        case UIFontWeightBold:
+            return UIFont(name: "Avenir-Black", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+        case UIFontWeightBlack:
+            return UIFont(name: "AvenirNext-Black", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+        case UIFontWeightHeavy:
+            return UIFont(name: "Avenir-Heavy", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+        case UIFontWeightRegular:
+            return UIFont(name: "Avenir-Roman", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+        case UIFontWeightThin:
+            return UIFont(name: "Avenir-Light", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+        case UIFontWeightMedium:
+            return UIFont(name: "Avenir-Medium", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+        default:
+            return UIFont(name: "Avenir-Book", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+        }
+    }
+}
+
 class PaddingLabel: UILabel {
     
     @IBInspectable var topInset: CGFloat = 2.5
@@ -213,6 +234,14 @@ extension UIViewController {
     }
 }
 
+extension UITextView {
+    func setFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
+        self.textAlignment = alignment
+        self.font = UIFont.pulseFont(ofWeight: weight, size: size)
+        self.textColor = color
+    }
+}
+
 class VerticallyCenteredTextView: UITextView {
     override var contentSize: CGSize {
         didSet {
@@ -226,7 +255,7 @@ class VerticallyCenteredTextView: UITextView {
 extension UILabel {
     func setFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
-        self.font = UIFont.systemFont(ofSize: size, weight: weight)
+        self.font = UIFont.pulseFont(ofWeight: weight, size: size)
         self.textColor = color
         self.numberOfLines = 0
         self.lineBreakMode = .byWordWrapping
@@ -234,7 +263,7 @@ extension UILabel {
     
     func setPreferredFont(_ color : UIColor, alignment : NSTextAlignment) {
         self.textAlignment = alignment
-        self.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption2)
+        self.font = UIFont.pulseFont(ofWeight: UIFontWeightRegular, size: FontSizes.caption2.rawValue)
         self.textColor = color
         self.numberOfLines = 0
         self.lineBreakMode = .byWordWrapping
@@ -308,7 +337,7 @@ extension UIButton {
     
     func setButtonFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
         self.titleLabel?.textAlignment = alignment
-        self.titleLabel?.font = UIFont.systemFont(ofSize: size, weight: weight)
+        self.titleLabel?.font = UIFont.pulseFont(ofWeight: weight, size: size)
         self.setTitleColor(color, for: UIControlState())
     }
     
@@ -327,20 +356,26 @@ extension UITextField {
         super.addBottomBorder(color: color, thickness: thickness)
         layer.sublayerTransform = CATransform3DMakeTranslation(7.5, 0, 0)
     }
+    
+    func setFont(_ size : CGFloat, weight : CGFloat, color : UIColor, alignment : NSTextAlignment) {
+        self.textAlignment = alignment
+        self.font = UIFont.pulseFont(ofWeight: weight, size: size)
+        self.textColor = color
+    }
 }
 
 class PaddingTextField: UITextField {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        font = UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body.rawValue)
         backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
         layer.cornerRadius = 5
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        font = UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body.rawValue)
         backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
         layer.cornerRadius = 5
     }
@@ -359,7 +394,7 @@ class PaddingTextView: UITextView {
     
     override init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
-        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        font = UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body.rawValue)
         backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
         layer.cornerRadius = 5
         textContainerInset = UIEdgeInsetsMake(7.5, 7.5, 7.5, 7.5)
@@ -367,10 +402,11 @@ class PaddingTextView: UITextView {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        font = UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body.rawValue)
         backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3)
         layer.cornerRadius = 5
     }
+    
 }
 
 extension CALayer {
@@ -865,3 +901,21 @@ struct ItemMetaData {
 }
 
 /* EXTEND CUSTOM LOADING */
+
+/** PULSE ERROR **/
+/**
+public enum PulseError: Error {
+    case invalidLogin
+    case customError
+}
+
+extension PulseError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .invalidLogin:
+            return NSLocalizedString("Please login to continue", comment: "")
+        case let .customError(msg):
+            return \(msg)
+        }
+    }
+} **/

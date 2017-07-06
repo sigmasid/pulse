@@ -198,9 +198,6 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         birthdayPicker.maximumDate = Date()
         birthdayPicker.addTarget(self, action: #selector(onDatePickerValueChanged), for: UIControlEvents.valueChanged)
         birthdayPicker.backgroundColor = .clear
-
-        shortTextField.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
-        shortTextField.textColor = UIColor.black
         
         shortTextField.attributedPlaceholder = NSAttributedString(string: getValueOrPlaceholder(), attributes: [NSForegroundColorAttributeName: UIColor.black.withAlphaComponent(0.7)])
         shortTextField.inputView = birthdayPicker
@@ -212,7 +209,7 @@ class UpdateProfileVC: PulseVC, CLLocationManagerDelegate {
         updateButton.translatesAutoresizingMaskIntoConstraints = false
         updateButton.topAnchor.constraint(equalTo: settingSection.bottomAnchor, constant: Spacing.xl.rawValue).isActive = true
         updateButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        updateButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        updateButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         updateButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         updateButton.layoutIfNeeded()
         
@@ -473,7 +470,7 @@ extension UpdateProfileVC : UITableViewDelegate, UITableViewDataSource {
         
         cell.backgroundColor = UIColor.clear
         cell.textLabel?.textColor = UIColor.black
-        cell.textLabel?.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        cell.textLabel?.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
 //        getValueOrPlaceholder((indexPath as NSIndexPath).row, cell : cell)
         
         return cell

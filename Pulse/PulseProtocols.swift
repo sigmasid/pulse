@@ -18,25 +18,15 @@ protocol SelectionDelegate: class {
     func userSelected(item : Any)
 }
 
-protocol ParentDelegate: class {
-    func dismissVC(_ viewController : UIViewController)
-}
-
 protocol ParentTextViewDelegate: class {
     func dismiss(_ view : UIView)
     func buttonClicked(_ text: String, sender: UIView)
-}
-
-protocol ItemPreviewDelegate: class {
-    func userClosedPreview(_ : UIView)
-    func userClickedButton()
 }
 
 protocol ItemDetailDelegate : class {
     func userClickedProfile()
     func userClickedBrowseItems()
     func userSelected(_ index : IndexPath)
-    func userClickedExpandItem()
     func votedItem(_ _vote : VoteType)
     func userClickedSendMessage()
     func userClosedQuickBrowse()
@@ -96,8 +86,6 @@ protocol PreviewDelegate: class {
 protocol ContentDelegate: class {
     func noItemsToShow(_ : UIViewController)
     func removeIntro()
-    func askUserToLogin(_: UIViewController)
-    func loginSuccess(_ : UIViewController)
     func doneUploadingItem(_: UIViewController, success: Bool)
     
     func userDismissedRecording(_: UIViewController, recordedItems : [Item])

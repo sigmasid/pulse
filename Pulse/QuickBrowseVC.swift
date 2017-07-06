@@ -9,7 +9,7 @@
 import UIKit
 
 class QuickBrowseVC: UIViewController {
-    public weak var delegate : ItemDetailDelegate!
+    public weak var delegate : ItemDetailDelegate?
     internal var collectionViewLayout: QuickBrowseLayout!
     internal var collectionView: UICollectionView!
     fileprivate var controlsView : UIView!
@@ -120,9 +120,7 @@ class QuickBrowseVC: UIViewController {
     }
     
     internal func close() {
-        if delegate != nil {
-            delegate.userClosedQuickBrowse()
-        }
+        delegate?.userClosedQuickBrowse()
     }
     
     internal func scrollToPage(index: Int, animated: Bool) {
@@ -136,7 +134,7 @@ class QuickBrowseVC: UIViewController {
     }
     
     internal func userClickedSeeAll() {
-        delegate.userClickedSeeAll(items: allItems)
+        delegate?.userClickedSeeAll(items: allItems)
     }
 }
 
@@ -237,7 +235,7 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
         }
         
         if indexPath.row == centerIndex {
-            delegate.userSelected(indexPath)
+            delegate?.userSelected(indexPath)
         } else {
             self.scrollToPage(index: indexPath.row, animated: true)
         }

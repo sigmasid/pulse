@@ -594,7 +594,7 @@ class PulseDatabase {
         })
     }
     
-    static func getItem(_ itemID : String, completion: @escaping (_ item : Item?, _ error : NSError?) -> Void) {
+    static func getItem(_ itemID : String, completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
         itemsRef.child(itemID).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 let _currentItem = Item(itemID: itemID, snapshot: snap)
@@ -602,13 +602,13 @@ class PulseDatabase {
             }
             else {
                 let userInfo = [ NSLocalizedDescriptionKey : "no item found" ]
-                completion(nil, NSError.init(domain: "No Item Found", code: 404, userInfo: userInfo))
+                completion(nil, NSError.init(domain: "notFound", code: 404, userInfo: userInfo))
             }
         })
     }
     
     static func getInviteItem(_ itemID : String,
-                              completion: @escaping (_ item : Item?, _ type: MessageType?, _ questions: [Item], _ toUser : PulseUser?, _ conversationID: String?, _ error : NSError?) -> Void) {
+                              completion: @escaping (_ item : Item?, _ type: MessageType?, _ questions: [Item], _ toUser : PulseUser?, _ conversationID: String?, _ error : Error?) -> Void) {
         var allItems = [Item]()
         var toUser : PulseUser? = nil
         var type : MessageType?
@@ -946,25 +946,27 @@ class PulseDatabase {
     }
     
     // Update FIR auth profile - name, profilepic
-    static func updateUserData(_ updateType: UserProfileUpdateType, value: String, completion: @escaping (_ success : Bool, _ error : NSError?) -> Void) {
-        let user = Auth.auth().currentUser
-        if let user = user {
+    static func updateUserData(_ updateType: UserProfileUpdateType, value: Any, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        if let user = Auth.auth().currentUser {
             let changeRequest = user.createProfileChangeRequest()
             
             switch updateType {
-            case .displayName: changeRequest.displayName = value
-            case .photoURL: changeRequest.photoURL = URL(string: value)
+            case .displayName: changeRequest.displayName = value as? String
+            case .photoURL: changeRequest.photoURL = value as? URL
             }
             
             changeRequest.commitChanges { error in
                 if let error = error {
-                    completion(false, error as NSError?)
+                    completion(false, error)
                 } else {
+                    
                     saveUserToDatabase(user, completion: { (success , error) in
                         error != nil ? completion(false, error) : completion(true, nil)
                     })
                 }
             }
+        } else {
+            completion(false, nil)
         }
     }
     
@@ -1029,7 +1031,6 @@ class PulseDatabase {
                 populateCurrentUser(_user, completion: { (success) in
                     if success {
                         completion(true)
-                        NotificationCenter.default.post(name: Notification.Name(rawValue: "FeedUpdateLogin"), object: self)
                     }
                 })
             } else if currentAuthState == .loggedIn {
@@ -1070,20 +1071,6 @@ class PulseDatabase {
         NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
     }
     
-    ///Get user image
-    static func getUserProfilePic() {
-        guard PulseUser.isLoggedIn() else { return }
-
-        let userPicPath = PulseUser.currentUser.profilePic != nil ? PulseUser.currentUser.profilePic : PulseUser.currentUser.thumbPic
-        
-        if let userPicPath = userPicPath {
-            if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
-                PulseUser.currentUser.thumbPicImage = UIImage(data: _userImageData)
-                NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
-            }
-        }
-    }
-    
     ///Populate current user - takes the Firebase User and uses it to populate the current user
     static func populateCurrentUser(_ user: User!, completion: @escaping (_ success: Bool) -> Void) {
         
@@ -1092,15 +1079,23 @@ class PulseDatabase {
         usersPublicSummaryRef.child(user.uid).observe(.value, with: { snap in
             if snap.hasChild(SettingTypes.name.rawValue) {
                 PulseUser.currentUser.name = snap.childSnapshot(forPath: SettingTypes.name.rawValue).value as? String
-            }
-            if snap.hasChild(SettingTypes.profilePic.rawValue) {
-                PulseUser.currentUser.profilePic = snap.childSnapshot(forPath: SettingTypes.profilePic.rawValue).value as? String
-                getUserProfilePic()
-            }
-            if snap.hasChild(SettingTypes.shortBio.rawValue) {
-                PulseUser.currentUser.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
+            } else if let name = Auth.auth().currentUser?.displayName {
+                PulseUser.currentUser.name = name
+                saveUserToDatabase(user, completion: {_ in })
+            } else {
+                PulseUser.currentUser.name = nil
             }
             
+            if snap.hasChild(SettingTypes.profilePic.rawValue) {
+                PulseUser.currentUser.profilePic = snap.childSnapshot(forPath: SettingTypes.profilePic.rawValue).value as? String
+            } else if let url = Auth.auth().currentUser?.photoURL {
+                PulseUser.currentUser.profilePic = String(describing: url)
+                saveUserToDatabase(user, completion: {_ in })
+            }
+            
+            PulseUser.currentUser.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
+            
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
             completion(true)
 
         }, withCancel: { error in
@@ -1108,15 +1103,10 @@ class PulseDatabase {
         })
         
         usersPublicDetailedRef.child(user.uid).observeSingleEvent(of: .value, with: { snap in
-            if snap.hasChild(SettingTypes.birthday.rawValue) {
-                PulseUser.currentUser.birthday = snap.childSnapshot(forPath: SettingTypes.birthday.rawValue).value as? String
-            }
-            if snap.hasChild(SettingTypes.bio.rawValue) {
-                PulseUser.currentUser.bio = snap.childSnapshot(forPath: SettingTypes.bio.rawValue).value as? String
-            }
-            if snap.hasChild(SettingTypes.gender.rawValue) {
-                PulseUser.currentUser.gender = snap.childSnapshot(forPath: SettingTypes.gender.rawValue).value as? String
-            }
+            PulseUser.currentUser.birthday = snap.childSnapshot(forPath: SettingTypes.birthday.rawValue).value as? String
+            PulseUser.currentUser.bio = snap.childSnapshot(forPath: SettingTypes.bio.rawValue).value as? String
+            PulseUser.currentUser.gender = snap.childSnapshot(forPath: SettingTypes.gender.rawValue).value as? String
+            
             if snap.hasChild("items") {
                 PulseUser.currentUser.items = []
                 for item in snap.childSnapshot(forPath: "items").children {
@@ -2186,7 +2176,7 @@ class PulseDatabase {
     }
     
     ///upload image to firebase and update current user with photoURL upon success
-    static func uploadProfileImage(_ image : UIImage, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
+    static func uploadProfileImage(_ image : UIImage, completion: @escaping (_ URL : URL?, _ error : Error?) -> Void) {
         var _downloadURL : URL?
         let _metadata = StorageMetadata()
         _metadata.contentType = "image/jpeg"
@@ -2201,7 +2191,7 @@ class PulseDatabase {
                         success ? completion(_downloadURL, nil) : completion(nil, error)
                     }
                 } else {
-                    completion(nil, error as NSError?)
+                    completion(nil, error)
                 }
             }
             

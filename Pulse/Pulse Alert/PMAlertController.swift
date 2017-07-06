@@ -66,11 +66,18 @@ import UIKit
         self.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
         self.modalTransitionStyle = UIModalTransitionStyle.coverVertical
         
-        alertView.layer.cornerRadius = 5
-        (image != nil) ? (alertImage.image = image) : (headerViewHeightConstraint.constant = 0)
-        alertTitle.text = title
-        alertDescription.text = description
+        alertView.layer.cornerRadius = buttonCornerRadius.radius(.small)
+        headerView.layer.cornerRadius = buttonCornerRadius.radius(.small)
+        alertImage.layer.cornerRadius = buttonCornerRadius.radius(.small)
+        alertImage.clipsToBounds = true
         
+        (image != nil) ? (alertImage.image = image) : (headerViewHeightConstraint.constant = 0)
+        
+        alertTitle.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: .pulseBlue, alignment: .center)
+        alertDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .center)
+        
+        alertTitle.text = title
+        alertDescription.text = description        
         
         //if alert width = 270, else width = screen width - 36
         style == .alert ? (alertViewWidthConstraint.constant = 270) : (alertViewWidthConstraint.constant = UIScreen.main.bounds.width - 36)
@@ -125,7 +132,7 @@ import UIKit
         let textField = UITextField()
         textField.delegate = self
         textField.returnKeyType = .done
-        textField.font = UIFont(name: "Avenir-Heavy", size: 17)
+        textField.font = UIFont.pulseFont(ofWeight: UIFontWeightRegular, size: FontSizes.body.rawValue)
         textField.textAlignment = .center
         configuration (textField)
         _addTextField(textField)

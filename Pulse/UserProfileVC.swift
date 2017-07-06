@@ -16,6 +16,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     fileprivate var observerAdded = false
     fileprivate var isCurrentUser = false
     private var cleanupComplete = false
+    fileprivate lazy var menuButton : PulseButton = PulseButton(size: .small, type: .ellipsis, isRound : true, background: .white, tint: .black)
     
     /** Delegate Vars **/
     public var selectedUser : PulseUser! {
@@ -54,10 +55,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
             } else if selectedUser != nil {
                 allItems = selectedUser.items
                 updateDataSource()
-            }
-            
-            if selectedUser != nil, selectedUser.thumbPicImage == nil {
-                getUserProfilePic()
             }
         }
     }
@@ -157,6 +154,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     internal func userUpdated() {
         if PulseUser.isLoggedIn() {
             selectedUser = PulseUser.currentUser
+            updateUserInfo()
             headerNav?.setNav(title: PulseUser.currentUser.name ?? "Your Profile")
         } else {
             headerNav?.setNav(title: "Profile")
@@ -199,11 +197,19 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
             if navigationController != nil {
                 isModal = false
                 addBackButton()
+                
+                menuButton.removeShadow()
+                
+                menuButton.addTarget(self, action: #selector(showMenu), for: .touchUpInside)
+                navigationItem.rightBarButtonItem = UIBarButtonItem(customView: menuButton)
+                
             } else {
+                
                 isModal = true
                 statusBarHidden = true
                 setupClose()
                 closeButton.addTarget(self, action: #selector(closeModal), for: UIControlEvents.touchUpInside)
+                
             }
         }
         
@@ -242,13 +248,17 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         })
     }
     
-    internal func getUserProfilePic() {
-        PulseDatabase.getProfilePicForUser(user: selectedUser, completion: {[weak self] profileImage in
+    internal func updateUserInfo() {
+        
+        selectedUser.getUserImage(completion: { [weak self] profileImage in
             guard let `self` = self else { return }
             self.selectedUser.thumbPicImage = profileImage
             if let collectionView = self.collectionView {
                 for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
-                    view.setNeedsDisplay()
+                    if let view = view as? UserProfileHeader {
+                        view.updateUserDetails(selectedUser: self.selectedUser, isModal: self.isModal)
+                        view.setNeedsDisplay()
+                    }
                 }
             }
         })
@@ -577,8 +587,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         switch kind {
         case UICollectionElementKindSectionHeader:
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! UserProfileHeader
+            headerView.isModal = isModal
             headerView.backgroundColor = .white
-            
             headerView.updateUserDetails(selectedUser: selectedUser, isModal : isModal)
             headerView.profileDelegate = self
             
@@ -609,21 +619,3 @@ extension UserProfileVC: UICollectionViewDelegateFlowLayout {
         return UIEdgeInsets(top: 10.0, left: 10.0, bottom: (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue, right: 10.0)
     }
 }
-
-/**
-extension UserProfileVC: UIViewControllerTransitioningDelegate {
-    func animationController(forPresented presented: UIViewController,
-                             presenting: UIViewController,
-                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        
-        if presented is ContentManagerVC {
-            let animator = ExpandAnimationController()
-            animator.initialFrame = initialFrame
-            animator.exitFrame = getRectToLeft()
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-} **/

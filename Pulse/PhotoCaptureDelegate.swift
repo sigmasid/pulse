@@ -39,9 +39,7 @@ class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
                 do {
                     try FileManager.default.removeItem(atPath: livePhotoCompanionMoviePath)
                 }
-                catch {
-                    //print("Could not remove file at url: \(livePhotoCompanionMoviePath)")
-                }
+                catch { }
             }
         }
         

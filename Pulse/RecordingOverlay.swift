@@ -168,8 +168,7 @@ class RecordingOverlay: UIView {
         addSubview(addTitleField)
         
         addTitleField.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        addTitleField.textColor = .white
-        addTitleField.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
+        addTitleField.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .white, alignment: .left)
         addTitleField.returnKeyType = .done
         
         let sizeThatFitsTextView = addTitleField.sizeThatFits(CGSize(width: addTitleField.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
@@ -243,7 +242,7 @@ class RecordingOverlay: UIView {
     public func addProgressLabel(_ label : String) {
         progressLabel.isHidden = false
         progressLabel.text = label
-        progressLabel.font = UIFont.preferredFont(forTextStyle: UIFontTextStyle.caption1)
+        progressLabel.font = UIFont.pulseFont(ofWeight: UIFontWeightRegular, size: FontSizes.caption.rawValue)
         
         progressLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .white, alignment: .center)
         progressLabel.backgroundColor = UIColor.black.withAlphaComponent(0.7)

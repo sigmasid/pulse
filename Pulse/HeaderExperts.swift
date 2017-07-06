@@ -44,7 +44,7 @@ class HeaderContributors: UICollectionReusableView {
         contributorsLabel.text = "featuring"
         contributorsLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightMedium, color: .pulseRed, alignment: .center)
 
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: contributorsLabel.font.pointSize, weight: UIFontWeightMedium)]
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightMedium, size: contributorsLabel.font.pointSize) ]
         let titleLabelHeight = GlobalFunctions.getLabelSize(title: contributorsLabel.text!, width: frame.width, fontAttributes: fontAttributes)
         contributorsLabel.frame = CGRect(x: 0, y: 10, width: frame.width, height: titleLabelHeight)
         

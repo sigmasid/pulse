@@ -14,9 +14,7 @@ import FacebookLogin
 import FacebookCore
 import SafariServices
 
-class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
-    public weak var loginVCDelegate : ContentDelegate?
-    
+class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {    
     @IBOutlet weak var emailLabelButton: UIButton!
     @IBOutlet weak var fbButton: UIButton!
     @IBOutlet weak var emailButton: UIButton!
@@ -34,6 +32,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
     
     public var _currentLoadedView : currentLoadedView?
     public var showInviteAlert : Bool = false
+    public var delegate : ModalDelegate?
     
     fileprivate var agreeTermsButton = PulseButton(size: .xxSmall, type: .check, isRound: false, background: .pulseGrey, tint: .black)
     
@@ -322,7 +321,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
         toggleLoading(show: true, message: "Signing in...", showIcon: true)
         
         guard AccessToken.current == nil else {
-            onFBProfileUpdated(token: AccessToken.current!)
+            fbLoginWithToken(token: AccessToken.current!)
             return
         }
         
@@ -338,24 +337,21 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
             case .cancelled:
                 self.toggleLoading(show: false, message: nil)
             case .success(_, _, let accessToken):
-                self.onFBProfileUpdated(token: accessToken)
+                self.fbLoginWithToken(token: accessToken)
+                return
             }
         }
     }
     
-    internal func onFBProfileUpdated(token: AccessToken) {
+    internal func fbLoginWithToken(token: AccessToken) {
         let credential = FacebookAuthProvider.credential(withAccessToken: token.authenticationToken)
         Auth.auth().signIn(with: credential) {[weak self] (aUser, error) in
             guard let `self` = self else { return }
             self.toggleLoading(show: false, message: nil)
             
-            if error != nil {
-                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription)
-            }
-            else {
-                self.headerNav?.setNav(title: aUser!.displayName)
+            error != nil ?
+                GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription) :
                 self._loggedInSuccess()
-            }
         }
     }
     
@@ -423,18 +419,13 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LoginSuccess"), object: self)
     }
     
-    internal func returnToParent(_ currentVC : UIViewController) {
-        GlobalFunctions.dismissVC(currentVC)
+    internal func returnToParent() {
+        delegate?.userClosedModal(self)
     }
     
     internal func userClosedModal(_ viewController: UIViewController) {
         removeBlurBackground()
         dismiss(animated: true, completion: nil)
-    }
-    
-    internal func userClosedPreview(_ view : UIView) {
-        view.removeFromSuperview()
-        postLoggedInNotification()
     }
     
     internal func userClickedButton() {

@@ -44,16 +44,9 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             statusBarHidden = true
             tabBarHidden = false
             
-            if PulseUser.isLoggedIn(), !initialLoadComplete {
-                
-                toggleLoading(show: true, message: "Loading feed...", showIcon: true)
-                
-            } else if !PulseUser.isLoggedIn(), !initialLoadComplete {
-                
+            if !PulseUser.isLoggedIn(), !initialLoadComplete {
                 emptyMessage = "Please login to see your feed"
                 createFeed()
-                toggleLoading(show: false, message: nil)
-                
             }
             
             setupScreenLayout()
@@ -102,7 +95,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             
         } else if PulseUser.currentUser.subscriptions.count == 0 {
             
-            toggleLoading(show: false, message: nil)
             updateDataSource()
             
             emptyMessage = "Discover & add new channels to your feed"
@@ -162,7 +154,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                     })
                 }
                 
-                self.toggleLoading(show: false, message: nil)
             })
             
             startUpdateAt = endUpdateAt
@@ -182,7 +173,17 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             startUpdateAt = Date()
             endUpdateAt = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
             
-            toggleLoading(show: false, message: nil)
+        }
+    }
+    
+    internal func updateFooter() {
+        if let collectionView = self.collectionView {
+            for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionFooter) {
+                if let view = view as? ItemHeader {
+                    view.updateLabel(footerMessage)
+                    view.setNeedsDisplay()
+                }
+            }
         }
     }
     
@@ -190,9 +191,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     internal func getMoreItems(completion: @escaping (Bool) -> Void) {
         
         PulseDatabase.fetchMoreItems(startingAt: startUpdateAt, endingAt: endUpdateAt, completion: {[weak self] items in
-            guard let `self` = self else {
-                return
-            }
+            guard let `self` = self else { return }
             
             if items.isEmpty, self.updateIncrement > -365 { //max lookback is one year
                 self.updateIncrement = self.updateIncrement * 2
@@ -200,9 +199,17 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 self.getMoreItems(completion: { success in completion(success) })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
                 self.shouldShowHeader = false
-                self.footerMessage = "that's the end!"
                 self.emptyMessage = "Discover & add new channels to your feed"
                 self.hasReachedEnd = true
+                
+                if self.allItems.isEmpty {
+                    self.footerMessage = "check back soon for new content!"
+                    self.updateFooter()
+                } else {
+                    self.footerMessage = "that's the end!"
+                    self.updateFooter()
+                }
+                
             } else {
                 var indexPaths = [IndexPath]()
                 for (index, _) in items.enumerated() {
@@ -482,6 +489,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             case 1:
                 footerView.backgroundColor = UIColor.white
                 footerView.updateLabel(footerMessage)
+                footerView.addLoadingIndicator(hide: false)
             default:
                 break
             }
@@ -855,8 +863,6 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         switch section {
         case 0:
             return CGSize(width: collectionView.frame.width, height: shouldShowHeader ? skinnyHeaderHeight : 0)
-        case 1:
-            return CGSize(width: collectionView.frame.width, height: 0)
         default:
             return CGSize(width: collectionView.frame.width, height: 0)
         }
@@ -865,9 +871,10 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         switch section {
         case 0:
-            return UIEdgeInsets(top: 0.0, left: 0.0, bottom: Spacing.xs.rawValue, right: 0.0)
+            return UIEdgeInsets(top: 0.0, left: 0.0, bottom: allItems.count > 0 ? Spacing.xs.rawValue : 0.0, right: 0.0)
         case 1:
-            return UIEdgeInsets(top: 0.0, left: 0.0, bottom: (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue, right: 0.0)
+            let bottomInset = allItems.count > 0 ? (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue : 0
+            return UIEdgeInsets(top: 0.0, left: 0.0, bottom: bottomInset, right: 0.0)
         default:
             return UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0)
         }
@@ -877,10 +884,9 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         let cellHeight : CGFloat = 125
         switch indexPath.section {
         case 0:
-            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: headerSectionHeight) : CGSize(width: collectionView.frame.width, height: headerSectionHeight)
+            return allChannels.count > 0 ? CGSize(width: collectionView.frame.width, height: headerSectionHeight) : CGSize(width: collectionView.frame.width, height: headerSectionHeight)
         case 1:
-            return allItems.count > 0 ? CGSize(width: collectionView.frame.width, height: GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)) :
-                CGSize(width: collectionView.frame.width, height: 0)
+            return CGSize(width: collectionView.frame.width, height: allItems.count > 0 ? GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type) : 0)
         default:
             return CGSize(width: collectionView.frame.width, height: cellHeight)
         }
@@ -890,21 +896,3 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         return true
     }
 }
-
-/**
-extension HomeVC: UIViewControllerTransitioningDelegate {
-    func animationController(forPresented presented: UIViewController,
-                             presenting: UIViewController,
-                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        
-        if presented is ContentManagerVC {
-            let animator = ExpandAnimationController()
-            animator.initialFrame = initialFrame
-            animator.exitFrame = getRectToLeft()
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-} **/

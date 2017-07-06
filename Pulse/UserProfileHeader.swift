@@ -20,14 +20,20 @@ class UserProfileHeader: UICollectionReusableView {
     fileprivate var longBioHeightConstraint : NSLayoutConstraint!
     fileprivate var nameHeightAnchor: NSLayoutConstraint!
     
-    public weak var profileDelegate : UserProfileDelegate!
-    
+    public weak var profileDelegate : UserProfileDelegate?
+    public var isModal : Bool = false {
+        didSet {
+            if isModal {
+                addMenu()
+            }
+        }
+    }
     ///setup order: first profile image + bio labels, then buttons + scope bar
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = UIColor.white
         addBottomBorder(color: .pulseGrey)
-        setupProfileDetails()
+        setupProfileDetails(isModal: isModal)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -41,12 +47,20 @@ class UserProfileHeader: UICollectionReusableView {
         profileImage.removeFromSuperview()
     }
     
+    public func updateUserImage(image: UIImage?) {
+        DispatchQueue.main.async {[weak self] in
+            guard let `self` = self else { return }
+            self.profileImage.image = image
+            self.profileImage.tintColor = .black
+        }
+    }
+    
     public func updateUserDetails(selectedUser: PulseUser?, isModal : Bool) {
         if let selectedUser = selectedUser {
             profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
             profileImage.tintColor = .black
             
-            let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileShortBio.font.pointSize, weight: UIFontWeightMedium)]
+            let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightMedium, size: profileShortBio.font.pointSize)]
             let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!,
                                                                                              width: profileShortBio.frame.width,
                                                                                              fontAttributes: fontAttributes) : 0
@@ -54,8 +68,8 @@ class UserProfileHeader: UICollectionReusableView {
                                                                                      width: profileName.frame.width,
                                                                                      fontAttributes: fontAttributes) : 0
             
-            let bioFontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: profileLongBio.font.pointSize,
-                                                                              weight: UIFontWeightMedium)]
+            
+            let bioFontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightMedium, size: profileLongBio.font.pointSize)]
             let longBioHeight = selectedUser.bio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.bio!,
                                                                                        width: profileLongBio.frame.width,
                                                                                        fontAttributes: bioFontAttributes) : 0
@@ -81,9 +95,7 @@ class UserProfileHeader: UICollectionReusableView {
     }
     
     internal func showMenu() {
-        if profileDelegate != nil {
-            profileDelegate.showMenu()
-        }
+        profileDelegate?.showMenu()
     }
     
     internal func addMenu() {
@@ -96,7 +108,7 @@ class UserProfileHeader: UICollectionReusableView {
         menuButton.addTarget(self, action: #selector(showMenu), for: .touchUpInside)
     }
     
-    fileprivate func setupProfileDetails() {
+    fileprivate func setupProfileDetails(isModal : Bool = false) {
         addSubview(profileImage)
         addSubview(profileName)
         addSubview(profileShortBio)
@@ -146,8 +158,6 @@ class UserProfileHeader: UICollectionReusableView {
         profileImage.layoutIfNeeded()
         profileImage.contentMode = .scaleAspectFill
         profileImage.makeRound()
-        
-        addMenu()
     }
     
 }

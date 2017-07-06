@@ -126,7 +126,8 @@ public class PulseNavBar: UINavigationBar {
         navTitle.numberOfLines = 1
         
         navSubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
-        let navSubtitlefontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: navSubtitle.font.pointSize, weight: UIFontWeightThin)]
+        
+        let navSubtitlefontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: navSubtitle.font.pointSize)]
         let navSubtitleHeight = GlobalFunctions.getLabelSize(title: "Channel Name", width: navTitle.frame.width, fontAttributes: navSubtitlefontAttributes)
         navSubtitle.frame = CGRect(x: IconSizes.large.rawValue, y: navBarSize.height - navSubtitleHeight - Spacing.xs.rawValue,
                                    width: UIScreen.main.bounds.width - ( 2 * IconSizes.large.rawValue ), height: navSubtitleHeight)

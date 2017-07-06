@@ -99,6 +99,9 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
                     delegate.panCompleted(success: true, fromVC: fromViewController)
                 }
             }
+        case .failed:
+            interactionInProgress = false
+            cancel()
             
         default: return
         }

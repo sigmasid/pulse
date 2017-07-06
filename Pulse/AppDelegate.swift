@@ -72,7 +72,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
     func application(_ application: UIApplication, open url: URL, sourceApplication: String?, annotation: Any) -> Bool {
         let dynamicLink = DynamicLinks.dynamicLinks()?.dynamicLink(fromCustomSchemeURL: url)
         if let dynamicLinkURL = dynamicLink?.url, let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-            masterTabVC.handleLink(link: dynamicLinkURL)
+            masterTabVC.handleLink(universalLink: dynamicLinkURL)
             return true
         }
         
@@ -86,7 +86,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
         
         let handled = dynamicLinks.handleUniversalLink(userActivity.webpageURL!) { (dynamiclink, error) in
             if let dynamicLinkURL = dynamiclink?.url, let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-                masterTabVC.handleLink(link: dynamicLinkURL)
+                masterTabVC.handleLink(universalLink: dynamicLinkURL)
             }
         }
         
@@ -113,7 +113,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
         // this callback will not be fired till the user taps on the notification launching the application.
         
         if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-            masterTabVC.handleLink(link: linkURL)
+            masterTabVC.handleLink(universalLink: linkURL)
         }
         
         completionHandler(UIBackgroundFetchResult.newData)
@@ -192,7 +192,7 @@ extension AppDelegate : UNUserNotificationCenterDelegate {
         let userInfo = notification.request.content.userInfo
         
         if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-            masterTabVC.handleLink(link: linkURL)
+            masterTabVC.handleLink(universalLink: linkURL)
         }
         
         // Change this to your preferred presentation option
@@ -205,7 +205,7 @@ extension AppDelegate : UNUserNotificationCenterDelegate {
         let userInfo = response.notification.request.content.userInfo
 
         if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-            masterTabVC.handleLink(link: linkURL)
+            masterTabVC.handleLink(universalLink: linkURL)
         }
         
         completionHandler()
@@ -226,7 +226,7 @@ extension AppDelegate : MessagingDelegate {
         let userInfo = remoteMessage.appData
         
         if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-            masterTabVC.handleLink(link: linkURL)
+            masterTabVC.handleLink(universalLink: linkURL)
         }
     }
     
@@ -234,7 +234,7 @@ extension AppDelegate : MessagingDelegate {
         let userInfo = remoteMessage.appData
         
         if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-            masterTabVC.handleLink(link: linkURL)
+            masterTabVC.handleLink(universalLink: linkURL)
         }
     }
     
@@ -243,7 +243,7 @@ extension AppDelegate : MessagingDelegate {
         // If you are receiving a notification message while your app is in the background,
         // this callback will not be fired till the user taps on the notification launching the application.
         if let linkString = userInfo["link"] as? String, let linkURL = URL(string: linkString), let masterTabVC = self.window?.rootViewController as? MasterTabVC {
-            masterTabVC.handleLink(link: linkURL)
+            masterTabVC.handleLink(universalLink: linkURL)
         }
         
         // With swizzling disabled you must let Messaging know about the message, for Analytics

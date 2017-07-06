@@ -71,12 +71,13 @@ class ItemCell: UICollectionViewCell {
     }
     
     func updateLabel(_ _title : String?, _subtitle : String?, _createdAt: Date?, _tag : String?) {
-
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
+        
+        
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: titleLabel.font.pointSize)]
         let labelHeight = GlobalFunctions.getLabelSize(title: _title ?? "test string", width: frame.width, fontAttributes: fontAttributes)
         let singleLineHeight = GlobalFunctions.getLabelSize(title: "test string", width: frame.width, fontAttributes: fontAttributes)
-
-        let font2Attributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: createdAtLabel.font.pointSize, weight: UIFontWeightThin)]
+        
+        let font2Attributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: createdAtLabel.font.pointSize)]
         let label2Height = GlobalFunctions.getLabelSize(title: _tag ?? "test string", width: frame.width, fontAttributes: font2Attributes)
         
         footerHeightAnchor.constant = Spacing.xxs.rawValue + min(labelHeight, singleLineHeight * 2) + Spacing.xs.rawValue + label2Height + Spacing.xs.rawValue
@@ -87,11 +88,12 @@ class ItemCell: UICollectionViewCell {
         titleLabel.minimumScaleFactor = 0.9
         
         if let _subtitle = _subtitle {
-            let subAttributes = [NSFontAttributeName: UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightBold)]
+            
+            let subAttributes = [NSFontAttributeName: UIFont.pulseFont(ofWeight: UIFontWeightBold, size: FontSizes.caption.rawValue)]
             let attributedString : NSMutableAttributedString = NSMutableAttributedString(string: _subtitle.capitalized, attributes: subAttributes)
             
             var subRestAttributes = [String : Any]()
-            subRestAttributes[NSFontAttributeName] = UIFont.systemFont(ofSize: FontSizes.caption.rawValue, weight: UIFontWeightThin)
+            subRestAttributes[NSFontAttributeName] = UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.caption.rawValue)
             subRestAttributes[NSForegroundColorAttributeName] = UIColor.gray
             
             if let itemType = itemType {

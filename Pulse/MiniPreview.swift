@@ -17,9 +17,7 @@ class MiniPreview: UIView {
     fileprivate lazy var actionButton : PulseButton = PulseButton(title: "View Profile", isRound: true)
     fileprivate var closeButton : PulseButton!
     fileprivate lazy var previewIcon : UIImageView = UIImageView()
-
-    public weak var delegate : ItemPreviewDelegate!
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -141,11 +139,11 @@ class MiniPreview: UIView {
     
     /* SETTER / PUBLIC FUNCTIONS */
     public func closeButtonClicked() {
-        delegate.userClosedPreview(self)
+        //delegate.userClosedPreview(self)
     }
     
     public func actionButtonClicked() {
-        delegate.userClickedButton()
+        //delegate.userClickedButton()
     }
     
     

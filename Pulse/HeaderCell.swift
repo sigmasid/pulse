@@ -32,7 +32,7 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
     }
     
     func updateCell(_ _title : String?, _image : UIImage?) {
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: titleLabel.font.pointSize)]
         let titleLabelHeight = GlobalFunctions.getLabelSize(title: _title ?? "", width: titleLabel.frame.width, fontAttributes: fontAttributes)
         titleHeightAnchor.constant = titleLabelHeight
         
@@ -82,8 +82,8 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
         titleLabel.topAnchor.constraint(equalTo: previewButton.bottomAnchor, constant: Spacing.xxs.rawValue).isActive = true
         titleLabel.layoutIfNeeded()
         titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .black, alignment: .center)
-
-        let fontAttributes = [ NSFontAttributeName : UIFont.systemFont(ofSize: titleLabel.font.pointSize, weight: UIFontWeightThin)]
+        
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: titleLabel.font.pointSize)]
         let titleLabelHeight = GlobalFunctions.getLabelSize(title: "Very Long Name That Goes Forever", width: titleLabel.frame.width, fontAttributes: fontAttributes)
         titleHeightAnchor = titleLabel.heightAnchor.constraint(equalToConstant: titleLabelHeight)
         titleHeightAnchor.isActive = true

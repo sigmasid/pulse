@@ -37,7 +37,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     fileprivate var channelCollection : UICollectionView!
     fileprivate var isLayoutSetup = false
     fileprivate var searchButton : PulseButton = PulseButton(size: .small, type: .search, isRound : true, background: .white, tint: .black)
-    fileprivate lazy var menuButton : PulseButton = PulseButton(size: .small, type: .ellipsis, isRound : true, hasBackground: false, tint: .black)
+    fileprivate lazy var menuButton : PulseButton = PulseButton(size: .small, type: .ellipsis, isRound : true, background: .white, tint: .black)
     fileprivate var handledLink = false
     
     override func viewDidLayoutSubviews() {
@@ -90,13 +90,12 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     }
     
     fileprivate func updateHeader() {
-        //headerNav?.followScrollView(channelCollection, delay: 25.0)
-
         if !forUser {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
-            tabBarHidden = false            
+            tabBarHidden = false
             
             menuButton.removeShadow()
+            
             menuButton.addTarget(self, action: #selector(clickedHeaderMenu), for: .touchUpInside)
             navigationItem.rightBarButtonItem = UIBarButtonItem(customView: menuButton)
             
@@ -329,23 +328,6 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         showChannel(channel: allChannels[indexPath.row])
     }
-    
-    /**
-    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        
-        switch kind {
-        case UICollectionElementKindSectionHeader:
-            let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
-            headerView.backgroundColor = .white
-            headerView.delegate = self
-            headerView.updateLabel("featured channels")
-            
-            return headerView
-            
-        default: assert(false, "Unexpected element kind")
-        }
-        return UICollectionReusableView()
-    } **/
     
     internal func updateOnscreenRows() {
         if channelCollection != nil {

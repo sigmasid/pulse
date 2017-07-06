@@ -360,9 +360,6 @@ extension NewSeriesVC {
         
         sTitle.delegate = self
         sDescription.delegate = self
-
-        sTitle.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
-        sDescription.font = UIFont.systemFont(ofSize: FontSizes.body.rawValue, weight: UIFontWeightThin)
         
         sTitle.placeholder = "short title for series"
         sDescription.placeholder = "short series description"
@@ -412,7 +409,7 @@ extension NewSeriesVC {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        submitButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/12).isActive = true
+        submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         
         submitButton.layoutIfNeeded()

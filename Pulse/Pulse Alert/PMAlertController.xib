@@ -40,7 +40,7 @@
                     <color key="backgroundColor" red="0.3333333432674408" green="0.3333333432674408" blue="0.3333333432674408" alpha="0.14999999999999999" colorSpace="custom" customColorSpace="sRGB"/>
                 </imageView>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dEl-s8-6vU">
-                    <rect key="frame" x="9" y="168.5" width="357" height="330"/>
+                    <rect key="frame" x="9" y="173.5" width="357" height="320"/>
                     <subviews>
                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="jTz-eN-yAz" userLabel="Header View">
                             <rect key="frame" x="0.0" y="0.0" width="357" height="200"/>
@@ -80,9 +80,9 @@
                             <nil key="highlightedColor"/>
                         </label>
                         <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="WJc-5g-auJ">
-                            <rect key="frame" x="0.0" y="270" width="357" height="60"/>
+                            <rect key="frame" x="0.0" y="270" width="357" height="50"/>
                             <constraints>
-                                <constraint firstAttribute="height" constant="60" id="sZH-1X-biu"/>
+                                <constraint firstAttribute="height" constant="50" id="sZH-1X-biu"/>
                             </constraints>
                         </stackView>
                     </subviews>

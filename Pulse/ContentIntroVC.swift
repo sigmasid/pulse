@@ -12,7 +12,6 @@ class ContentIntroVC: UIViewController {
     
     fileprivate let subtitleLabel = UILabel()
     fileprivate let titleLabel = UILabel()
-    fileprivate let itemCount = UIButton()
     
     fileprivate var userNameLabel = UILabel()
     fileprivate var userStack = PulseMenu(_axis: .vertical, _spacing: 0)
@@ -134,26 +133,6 @@ class ContentIntroVC: UIViewController {
         subtitleLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor).isActive = true
         subtitleLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor).isActive = true
         subtitleLabel.bottomAnchor.constraint(equalTo: titleLabel.topAnchor, constant: -Spacing.s.rawValue).isActive = true
-
-    }
-    
-    ///Add icon in top left
-    fileprivate func additemCount() {
-        view.addSubview(itemCount)
-        
-        itemCount.translatesAutoresizingMaskIntoConstraints = false
-        itemCount.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
-        itemCount.heightAnchor.constraint(equalTo: itemCount.widthAnchor).isActive = true
-        itemCount.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.m.rawValue).isActive = true
-        itemCount.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.m.rawValue).isActive = true
-        itemCount.layoutIfNeeded()
-        
-        itemCount.titleEdgeInsets = UIEdgeInsetsMake(0, 0, 10, 0)
-        itemCount.titleLabel!.font = UIFont.systemFont(ofSize: 25, weight: UIFontWeightBold)
-        itemCount.titleLabel!.textColor = UIColor.white
-        itemCount.titleLabel!.textAlignment = .center
-        itemCount.setBackgroundImage(UIImage(named: "count-label"), for: UIControlState())
-        itemCount.imageView?.contentMode = .scaleAspectFit
     }
     
     fileprivate func addSeriesCover() {
