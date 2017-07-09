@@ -160,9 +160,13 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
         let currentItem = allItems[indexPath.row]
         
         /* GET PREVIEW IMAGE FROM STORAGE */
-        if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
+        if currentItem.contentType == .postcard {
             
-            cell.updateImage(image: currentItem.content as? UIImage)
+            cell.updatePostcard(text: currentItem.itemTitle)
+            
+        } else if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
+            
+            cell.updateImage(image: currentItem.content)
             
         } else if itemStack[indexPath.row].gettingImageForPreview {
             
@@ -170,7 +174,7 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
         } else {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            PulseDatabase.getImage(channelID: selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
+            PulseDatabase.getImage(channelID: selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (_data, error) in
                 guard let `self` = self else { return }
                 if error == nil {
                     
@@ -179,7 +183,7 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
+                            cell.updateImage(image: self.allItems[indexPath.row].content)
                         }
                     }
                 } else {
@@ -206,6 +210,8 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
                     
                     item.tag = self.allItems[indexPath.row].tag
                     self.allItems[indexPath.row] = item
+                    
+                    if item.contentType == .postcard { cell.updatePostcard(text: item.itemTitle) }
                     
                     // Get the user details
                     PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
@@ -258,7 +264,7 @@ extension QuickBrowseVC: UICollectionViewDataSource, UICollectionViewDelegate {
             cell.updateLabel(user.name?.capitalized)
         }
         
-        if let image = allItems[indexPath.row].content as? UIImage {
+        if let image = allItems[indexPath.row].content {
             cell.updateImage(image: image)
         }
     }

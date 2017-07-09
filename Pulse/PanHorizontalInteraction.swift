@@ -55,6 +55,7 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
             
         case .began:
             interactionInProgress = true
+            
             if rightToLeftPan {
                 if (tabBarController.selectedIndex < tabBarController.viewControllers!.count - 1) {
                     tabBarController.selectedIndex += 1

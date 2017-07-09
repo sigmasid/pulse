@@ -71,7 +71,7 @@ public class TrimmerView: AssetTimeSelector {
     private let handleWidth: CGFloat = 15
     
     /// The maximum duration allowed for the trimming. Change it before setting the asset, as the asset preview
-    public var maxDuration: Double = 60 {
+    public var maxDuration: Double = MAX_VIDEO_LENGTH {
         didSet {
             assetPreview.maxDuration = maxDuration
         }

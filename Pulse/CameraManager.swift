@@ -133,7 +133,7 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
         }
     }
     /// Property to change video duration.
-    open var cameraVideoDuration : Double = 60 {
+    open var cameraVideoDuration : Double = MAX_VIDEO_LENGTH {
         didSet {
             if cameraIsSetup {
                 _updateMaxDuration(cameraVideoDuration)

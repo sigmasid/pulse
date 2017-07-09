@@ -59,6 +59,7 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = true
         updateHeader()
     }
     

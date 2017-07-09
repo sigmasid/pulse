@@ -50,15 +50,17 @@ public protocol VideoTrimmerDelegate: class {
     func exportedAsset(url: URL?)
 }
 
-protocol InputItemDelegate : class {
-    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
-    func dismissInput()
-    func switchInput(currentInput: InputMode)
+protocol InputItemDelegate : InputMasterDelegate {
+    func switchInput(to: InputMode, from: InputMode)
 }
 
 protocol InputMasterDelegate: class {
     func dismissInput()
-    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?)
+    func capturedItem(item : Any?, location: CLLocation?, assetType : CreatedAssetType)
+}
+
+protocol RecordedTextViewDelegate {
+    func charsRemaining(count: Int)
 }
 
 protocol AddCoverDelegate: class {

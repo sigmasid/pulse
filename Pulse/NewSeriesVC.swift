@@ -82,6 +82,7 @@ class NewSeriesVC: PulseVC  {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = true
         updateHeader()
     }
     
@@ -160,7 +161,7 @@ class NewSeriesVC: PulseVC  {
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     internal func updateCell(_ cell: BrowseContentCell, atIndexPath indexPath: IndexPath) {
-        if let image = allItems[indexPath.row].content as? UIImage  {
+        if let image = allItems[indexPath.row].content  {
             cell.updateImage(image: image)
         }
         
@@ -455,7 +456,7 @@ extension NewSeriesVC: InputMasterDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
     func createCompressedImages(image: UIImage) {
         fullImageData = image.mediumQualityJPEGNSData
-        thumbImageData = image.resizeImage(newWidth: profileThumbWidth)?.highQualityJPEGNSData
+        thumbImageData = image.resizeImage(newWidth: PROFILE_THUMB_WIDTH)?.highQualityJPEGNSData
     }
     
     func showCamera() {
@@ -472,8 +473,9 @@ extension NewSeriesVC: InputMasterDelegate {
         present(inputVC, animated: true, completion: nil)
     }
     
-    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image else {
+    func capturedItem(item: Any?, location: CLLocation?, assetType: CreatedAssetType) {
+        guard let image = item as? UIImage else {
+            GlobalFunctions.showAlertBlock("Error getting image", erMessage: "Sorry there was an error! Please try again")
             return
         }
                         

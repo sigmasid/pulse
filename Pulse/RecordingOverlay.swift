@@ -79,6 +79,26 @@ class RecordingOverlay: UIView {
         return false
     }
     
+    func updateControls(type: CreatedAssetType) {
+        switch type {
+        case .albumImage, .recordedImage, .albumVideo, .recordedVideo:
+            saveButton.isHidden = false
+            titleButton.isHidden = false
+            postButton.removeShadow()
+            addMoreButton.removeShadow()
+            closeButton.removeShadow()
+        case .postcard:
+            saveButton.isHidden = true
+            titleButton.isHidden = true
+            postButton.addShadow(cornerRadius: postButton.layer.cornerRadius)
+            addMoreButton.addShadow(cornerRadius: addMoreButton.layer.cornerRadius)
+            closeButton.addShadow(cornerRadius: closeButton.layer.cornerRadius)
+            addMoreButton.layoutIfNeeded()
+            closeButton.layoutIfNeeded()
+            postButton.layoutIfNeeded()
+        }
+    }
+    
     func getButton(_ buttonName : ControlButtons) -> UIButton {
         switch buttonName {
         case .save: return saveButton
@@ -201,7 +221,7 @@ class RecordingOverlay: UIView {
         addSubview(closeButton)
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
-        closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
+        closeButton.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + STATUS_BAR_HEIGHT).isActive = true
         closeButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.s.rawValue).isActive = true
         closeButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         closeButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
@@ -261,7 +281,7 @@ class RecordingOverlay: UIView {
         
         pagersStack.translatesAutoresizingMaskIntoConstraints = false
         pagersStack.widthAnchor.constraint(equalToConstant: Spacing.xs.rawValue).isActive = true
-        pagersStack.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + statusBarHeight).isActive = true
+        pagersStack.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + STATUS_BAR_HEIGHT).isActive = true
         pagersStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant : -Spacing.s.rawValue).isActive = true
         
         pagersStack.axis = .vertical
@@ -329,7 +349,7 @@ class RecordingOverlay: UIView {
 
         progressBar.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         progressBar.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        progressBar.heightAnchor.constraint(equalToConstant: statusBarHeight).isActive = true
+        progressBar.heightAnchor.constraint(equalToConstant: STATUS_BAR_HEIGHT).isActive = true
         progressBar.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
     }
     

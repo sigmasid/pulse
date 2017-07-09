@@ -60,7 +60,7 @@ class Item: NSObject {
     
     //Content items
     var contentURL : URL?
-    var content : Any?
+    var content : UIImage?
     var contentType : CreatedAssetType?
     var createdAt : Date?
     
@@ -82,16 +82,13 @@ class Item: NSObject {
         setType(_type: type)
     }
     
-    init(itemID: String, itemUserID: String, itemTitle: String, type: ItemTypes, contentURL: URL?, content: Any?, contentType : CreatedAssetType?, tag: Item?, cID: String) {
+    init(itemID: String, itemUserID: String, itemTitle: String, type: ItemTypes, tag: Item?, cID: String) {
         super.init()
         self.itemID = itemID
 
         self.itemUserID = itemUserID
         self.itemTitle = itemTitle
         self.type = type
-        self.contentURL = contentURL
-        self.content = content
-        self.contentType = contentType
         self.tag = tag
         self.cID = cID
     }

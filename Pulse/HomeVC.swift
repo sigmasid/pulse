@@ -322,12 +322,12 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.delegate = self
             
             //clear the cells and set the item type first
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
-                PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (data, error) in
+                PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
                     guard let `self` = self else {
                         return
                     }
@@ -337,7 +337,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         
                         DispatchQueue.main.async {
                             if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                cell.updateImage(image : self.allItems[indexPath.row].content)
                             }
                         }
                     }
@@ -421,7 +421,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle,
-                            _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+                            _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
         }
     }

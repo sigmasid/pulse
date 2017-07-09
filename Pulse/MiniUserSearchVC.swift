@@ -107,7 +107,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     internal func closeSearch() {
         if modalDelegate != nil {
             UIView.animate(withDuration: 0.2, animations: {
-                self.collectionView.frame.origin.y = self.view.bounds.maxY + searchBarHeight
+                self.collectionView.frame.origin.y = self.view.bounds.maxY + SEARCH_BAR_HEIGHT
                 self.searchContainer.frame.origin.y = self.view.bounds.maxY
                 
                 self.collectionView.alpha = 0
@@ -158,7 +158,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
             
             UIView.animate(withDuration: 0.2, animations: {
                 self.collectionView.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight - keyboardHeight
-                self.searchContainer.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight - searchBarHeight - keyboardHeight
+                self.searchContainer.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight - SEARCH_BAR_HEIGHT - keyboardHeight
             }, completion: {(value: Bool) in
                 self.collectionView.layoutIfNeeded()
                 self.searchContainer.layoutIfNeeded()
@@ -171,7 +171,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
 
         UIView.animate(withDuration: 0.2, animations: {
             self.collectionView.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight
-            self.searchContainer.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight - searchBarHeight
+            self.searchContainer.frame.origin.y = self.view.bounds.maxY - self.collectionViewHeight - SEARCH_BAR_HEIGHT
         }, completion: {(value: Bool) in
             if self.collectionView != nil {
                 self.collectionView.layoutIfNeeded()
@@ -198,7 +198,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         searchController.searchBar.barTintColor = UIColor.pulseGrey
         
         view.addSubview(searchContainer)
-        searchContainer.frame = CGRect(x: 0, y: view.bounds.maxY - collectionViewHeight - searchBarHeight, width: self.view.frame.width, height: searchBarHeight)
+        searchContainer.frame = CGRect(x: 0, y: view.bounds.maxY - collectionViewHeight - SEARCH_BAR_HEIGHT, width: self.view.frame.width, height: SEARCH_BAR_HEIGHT)
         searchContainer.backgroundColor = .white
         searchController.searchBar.frame = searchContainer.bounds
         

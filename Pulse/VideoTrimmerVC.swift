@@ -83,7 +83,7 @@ class VideoTrimmerVC: UIViewController {
     }
     
     private func loadAsset(_ asset: AVAsset) {
-        trimmerView.maxDuration = PulseDatabase.maxVideoLength
+        trimmerView.maxDuration = MAX_VIDEO_LENGTH
         trimmerView.asset = asset
         trimmerView.delegate = self
         addVideoPlayer(with: asset, playerView: playerView)
@@ -94,6 +94,7 @@ class VideoTrimmerVC: UIViewController {
             return
         }
         
+        player?.pause()
         chooseButton.isEnabled = false
         let range: CMTimeRange = CMTimeRangeMake(startTime, endTime - startTime)
         
@@ -226,7 +227,7 @@ extension VideoTrimmerVC {
         
         durationLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
         durationLabel.backgroundColor = UIColor.black.withAlphaComponent(0.7)
-        durationLabel.text = "edited:\n\(PulseDatabase.maxVideoLength.rounded()) sec"
+        durationLabel.text = "edited:\n\(MAX_VIDEO_LENGTH.rounded()) sec"
     }
     
     fileprivate func addControls() {
@@ -290,7 +291,7 @@ extension VideoTrimmerVC {
         
         progressBar.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         progressBar.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-        progressBar.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        progressBar.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue * 1.2).isActive = true
         progressBar.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
     }
 }

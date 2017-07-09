@@ -38,7 +38,7 @@ class ItemCell: UICollectionViewCell {
                 titleLabel.numberOfLines = 2
 
             case .post, .thread, .perspective, .session, .showcase:
-                itemHeightAnchor.constant = defaultPostHeight
+                itemHeightAnchor.constant = POST_HEIGHT
                 titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
                 titleLabel.numberOfLines = 2
                 itemImage.isHidden = false
@@ -209,7 +209,7 @@ class ItemCell: UICollectionViewCell {
         cellCard.addArrangedSubview(itemFooter)
         
         itemImage.translatesAutoresizingMaskIntoConstraints = false
-        itemHeightAnchor = itemImage.heightAnchor.constraint(equalToConstant: defaultPostHeight)
+        itemHeightAnchor = itemImage.heightAnchor.constraint(equalToConstant: POST_HEIGHT)
         itemHeightAnchor.priority = 100
         itemHeightAnchor.isActive = true
         

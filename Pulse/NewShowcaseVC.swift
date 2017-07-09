@@ -65,6 +65,7 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = true
         updateHeader()
     }
 

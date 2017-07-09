@@ -30,10 +30,7 @@ class AddCoverVC: PulseVC  {
     //Deinit check
     fileprivate var cleanupComplete = false
     
-    //Loading icon on Button
-    fileprivate var loading : UIView!
-    
-    //Vars to send back
+    //Delegate var
     public weak var delegate : AddCoverDelegate?
     
     override func viewDidLoad() {
@@ -82,7 +79,7 @@ class AddCoverVC: PulseVC  {
     }
     
     /** HEADER FUNCTIONS **/
-    internal func updateHeader() {
+    private func updateHeader() {
         addBackButton()
         headerNav?.setNav(title: "Add Cover")
     }
@@ -96,7 +93,7 @@ class AddCoverVC: PulseVC  {
 
 //UI Elements
 extension AddCoverVC {
-    func setupLayout() {
+    fileprivate func setupLayout() {
         view.addSubview(sAddCover)
         view.addSubview(sShowCamera)
         view.addSubview(sShowCameraLabel)
@@ -153,7 +150,7 @@ extension AddCoverVC {
         addSubmitButton()
     }
     
-    internal func addSubmitButton() {
+    fileprivate func addSubmitButton() {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
@@ -204,7 +201,7 @@ extension AddCoverVC: UITextFieldDelegate {
 
 extension AddCoverVC: InputMasterDelegate {
     /* CAMERA FUNCTIONS & DELEGATE METHODS */
-    func showCamera() {
+    internal func showCamera() {
         if inputVC == nil {
             inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
             inputVC.cameraMode = .stillImage
@@ -217,8 +214,8 @@ extension AddCoverVC: InputMasterDelegate {
         present(inputVC, animated: true, completion: nil)
     }
     
-    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image else {
+    internal func capturedItem(item: Any?, location: CLLocation?, assetType: CreatedAssetType) {
+        guard let image = item as? UIImage else {
             GlobalFunctions.showAlertBlock("Error getting image", erMessage: "Sorry there was an error! Please try again")
             return
         }
@@ -227,13 +224,14 @@ extension AddCoverVC: InputMasterDelegate {
         sAddCover.contentMode = .scaleAspectFill
         sAddCover.clipsToBounds = true
         
-        sShowCameraLabel.text = "tap image to change"
-        sShowCameraLabel.textColor = .gray
-        sShowCamera.alpha = 0.3
+        sShowCamera.removeFromSuperview()
+        sShowCameraLabel.removeFromSuperview()
         
         sShowCamera = PulseButton(size: .xSmall, type: .camera, isRound: true, background: UIColor.white.withAlphaComponent(0.7), tint: .black)
         sShowCamera.frame = CGRect(x: Spacing.xs.rawValue, y: self.sAddCover.frame.maxY - Spacing.xs.rawValue -  IconSizes.xSmall.rawValue,
                                         width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
+        view.addSubview(sShowCamera)
+        sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
         
         contentType = assetType
         contentLocation = location
@@ -246,7 +244,7 @@ extension AddCoverVC: InputMasterDelegate {
         })
     }
     
-    func dismissInput() {
+    internal func dismissInput() {
         dismiss(animated: true, completion: nil)
     }
 }

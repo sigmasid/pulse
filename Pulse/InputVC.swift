@@ -12,9 +12,11 @@ import CoreLocation
 class InputVC: UIPageViewController {
     fileprivate lazy var cameraVC : CameraVC! = CameraVC()
     fileprivate lazy var albumVC : PulseAlbumVC! = PulseAlbumVC()
+    fileprivate lazy var notecardVC : TextInputVC! = TextInputVC()
     
     /** PUBLIC SETTERS **/
     public var albumShowsVideo : Bool = true
+    public var showTextInput : Bool = false
     public var cameraMode :  CameraOutputMode = .videoWithMic {
         didSet {
             if isLoaded {
@@ -54,6 +56,10 @@ class InputVC: UIPageViewController {
         if albumVC != nil {
             albumVC.performCleanup()
         }
+        
+        if notecardVC != nil {
+            notecardVC.performCleanup()
+        }
     }
     
     override func viewDidLoad() {
@@ -67,14 +73,24 @@ class InputVC: UIPageViewController {
             cameraVC.cameraMode = cameraMode
             cameraVC.screenTitle = cameraTitle
             cameraVC.captureSize = captureSize
-            
+            cameraVC.showTextInput = showTextInput
+                
             albumVC.shouldAllowVideo = albumShowsVideo
             albumVC.delegate = self
             albumVC.captureSize = captureSize
             
+            if showTextInput {
+                notecardVC.delegate = self
+            }
+            
             setViewControllers([cameraVC], direction: .reverse, animated: true, completion: nil)
             isLoaded = true
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        scrollToViewController(viewController: cameraVC, direction: .forward, animated: false)
     }
     
     public func performCleanup() {
@@ -100,8 +116,8 @@ class InputVC: UIPageViewController {
         super.didReceiveMemoryWarning()
     }
     
-    internal func scrollToViewController(viewController: UIViewController, direction: UIPageViewControllerNavigationDirection = .forward) {
-        setViewControllers([viewController], direction: direction, animated: true, completion: { (finished) -> Void in })
+    internal func scrollToViewController(viewController: UIViewController, direction: UIPageViewControllerNavigationDirection = .forward, animated: Bool = true) {
+        setViewControllers([viewController], direction: direction, animated: animated, completion: { (finished) -> Void in })
     }
 }
 
@@ -109,7 +125,7 @@ extension InputVC: UIPageViewControllerDataSource, UIPageViewControllerDelegate 
     func pageViewController(_ pageViewController: UIPageViewController,
                             viewControllerAfter viewController: UIViewController) -> UIViewController? {
         if viewController is CameraVC {
-            return nil
+            return showTextInput ? notecardVC : nil
         } else if viewController is PulseAlbumVC {
             return cameraVC
         }
@@ -120,27 +136,31 @@ extension InputVC: UIPageViewControllerDataSource, UIPageViewControllerDelegate 
                             viewControllerBefore viewController: UIViewController) -> UIViewController? {
         if viewController is CameraVC {
             return albumVC
-        } else if viewController is PulseAlbumVC {
-            return nil
+        } else if viewController is TextInputVC {
+            return cameraVC
         }
         return nil
     }
 }
 
 extension InputVC: InputItemDelegate {
-    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        inputDelegate.capturedItem(url: url, image: image, location: location, assetType: assetType)
+    func capturedItem(item: Any?, location: CLLocation?, assetType: CreatedAssetType) {
+        inputDelegate.capturedItem(item: item, location: location, assetType: assetType)
     }
     
     func dismissInput() {
         inputDelegate.dismissInput()
     }
     
-    func switchInput(currentInput: InputMode) {
-        if currentInput == .album {
+    func switchInput(to: InputMode, from: InputMode) {
+        if from == .album, to == .camera {
             scrollToViewController(viewController: cameraVC, direction: .forward)
-        } else {
+        } else if from == .camera, to == .album {
             scrollToViewController(viewController: albumVC, direction: .reverse)
+        } else if from == .camera, to == .text {
+            scrollToViewController(viewController: notecardVC, direction: .forward)
+        } else if from == .text, to == .camera {
+            scrollToViewController(viewController: cameraVC, direction: .reverse)
         }
     }
 }

@@ -562,6 +562,35 @@ open class PulseButton: UIButton {
         layer.shadowColor = UIColor.clear.cgColor
         layer.shadowOpacity = 0
     }
+    
+    override func addShadow(cornerRadius: CGFloat) {
+        if cornerRadius > 0 {
+            shadowColor = UIColor.init(white: 0.2, alpha: 1.0)
+            
+            layer.shadowColor = shadowColor.cgColor
+            layer.shadowOpacity = 0.3
+            
+            let loweredShadowOffset  = CGSize(width: 0.5, height: 0.5)
+            let downRect = CGRect(x: bounds.origin.x - loweredShadowOffset.width,
+                                  y: bounds.origin.y + loweredShadowOffset.height,
+                                  width: bounds.size.width + loweredShadowOffset.width,
+                                  height: bounds.size.height + loweredShadowOffset.height)
+            
+            layer.shadowRadius = 0.5
+            layer.shadowPath = UIBezierPath.init(roundedRect: downRect , cornerRadius: cornerRadius).cgPath
+            layer.shadowOffset = loweredShadowOffset
+            
+        } else {
+            layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
+            
+            layer.shadowColor = UIColor.lightGray.cgColor
+            layer.shadowOffset = CGSize(width: 1, height: 2)
+            layer.shadowRadius = 2.0
+            layer.shadowOpacity = 0.5
+        }
+        
+        layer.masksToBounds = false
+    }
 
     fileprivate func setupRipple() {
         setupRippleView()

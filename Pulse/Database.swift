@@ -51,8 +51,8 @@ class PulseDatabase {
     static var masterQuestionIndex = [String : String]()
     static var masterTagIndex = [String : String]()
 
-    static let querySize : UInt = 10
-    static let maxVideoLength : Double = 20
+    static let MAX_QUERY_SIZE : UInt = 10
+    
     static var activeListeners = [DatabaseReference]()
     static var profileListenersAdded = false
     
@@ -336,7 +336,7 @@ class PulseDatabase {
     static func getConversationMessages(user: PulseUser, conversationID : String, completion: @escaping ([Message], String?, Error?) -> Void) {
         var messages = [Message]()
         
-        conversationsRef.child(conversationID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
+        conversationsRef.child(conversationID).queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snapshot in
             for messageID in snapshot.children {
                 messagesRef.child((messageID as AnyObject).key).observeSingleEvent(of: .value, with: { snap in
                     if snap.exists() {
@@ -367,7 +367,7 @@ class PulseDatabase {
     static func getConversations(completion: @escaping ([Conversation]) -> Void) {
         var conversations = [Conversation]()
         if PulseUser.isLoggedIn() {
-            usersRef.child(PulseUser.currentUser.uID!).child("conversations").queryLimited(toLast: querySize).queryOrdered(byChild: "lastMessageID").observeSingleEvent(of: .value, with: { snapshot in
+            usersRef.child(PulseUser.currentUser.uID!).child("conversations").queryLimited(toLast: MAX_QUERY_SIZE).queryOrdered(byChild: "lastMessageID").observeSingleEvent(of: .value, with: { snapshot in
                 for conversation in snapshot.children {
                     let _conversation = Conversation(snapshot: conversation as! DataSnapshot)
                     conversations.append(_conversation)
@@ -476,7 +476,7 @@ class PulseDatabase {
     static func getExploreChannels(_ completion: @escaping (_ channels : [Channel], _ error : Error?) -> Void) {
         var allChannels = [Channel]()
         
-        channelsRef.queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snapshot in
+        channelsRef.queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snapshot in
             for channel in snapshot.children {
                 let child = channel as! DataSnapshot
                 allChannels.append(Channel(cID: child.key, snapshot: child))
@@ -551,7 +551,7 @@ class PulseDatabase {
     }
     
     static func getChannelItems(channel : Channel, completion: @escaping (_ channel : Channel?) -> Void) {
-        channelItemsRef.child(channel.cID!).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        channelItemsRef.child(channel.cID!).queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snap in
             channel.updateChannel(detailedSnapshot: snap)
             completion(channel)
         }, withCancel: { error in
@@ -679,7 +679,7 @@ class PulseDatabase {
     static func getItemCollection(_ itemID : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
         var items = [Item]()
         
-        itemCollectionRef.child(itemID).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        itemCollectionRef.child(itemID).queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
                     let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
@@ -687,7 +687,7 @@ class PulseDatabase {
                 }
                 items.reverse()
                 completion(true, items)
-                items.removeAll()
+                //items.removeAll()
             } else {
                 completion(false, items)
             }
@@ -697,7 +697,7 @@ class PulseDatabase {
     static func getItemCollection(_ itemID : String, lastItem : String, completion: @escaping (_ success : Bool, _ items : [Item]) -> Void) {
         var items = [Item]()
         
-        itemCollectionRef.child(itemID).queryOrderedByKey().queryEnding(atValue: lastItem).queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        itemCollectionRef.child(itemID).queryOrderedByKey().queryEnding(atValue: lastItem).queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
                     if (child as AnyObject).key != lastItem {
@@ -784,7 +784,7 @@ class PulseDatabase {
     //items a user has created
     static func getUserItems(uID: String, completion: @escaping (_ items : [Item]) -> Void) {
         var allItems = [Item]()
-        usersPublicDetailedRef.child(uID).child("items").queryLimited(toLast: querySize).observeSingleEvent(of: .value, with: { snap in
+        usersPublicDetailedRef.child(uID).child("items").queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snap in
             if snap.exists() {
                 for child in snap.children {
                     let item = Item(itemID: (child as AnyObject).key, type:  (child as AnyObject).value)
@@ -1457,7 +1457,7 @@ class PulseDatabase {
             let feedbackItemKey = databaseRef.child("items").childByAutoId().key
 
             //duplicate the thumbnail for the item
-            if let _image = item.content as? UIImage  {
+            if let _image = item.content  {
                 PulseDatabase.uploadImage(channelID: item.cID, itemID: feedbackItemKey, image: _image,  fileType: .thumb, completion: { _ in })
             }
             
@@ -2195,7 +2195,7 @@ class PulseDatabase {
                 }
             }
             
-            if let _thumbImageData = image.resizeImage(newWidth: profileThumbWidth)?.highQualityJPEGNSData {
+            if let _thumbImageData = image.resizeImage(newWidth: PROFILE_THUMB_WIDTH)?.highQualityJPEGNSData {
                 usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: _metadata) { (metadata, error) in
                     if let url = metadata?.downloadURL() {
                         let userPost = ["thumbPic" : String(describing: url)]

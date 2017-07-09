@@ -327,8 +327,12 @@ extension InterviewRequestVC {
         contentVC.selectedChannel = Channel(cID: interviewItem.cID)
         
         //NEEDED TO TO COPY BY VALUE VS REFERENCE
-        let newItem = Item(itemID: interviewItem.itemID, itemUserID: userID, itemTitle: qItem.itemTitle, type: interviewItem.type,
-                           contentURL: nil, content: nil, contentType: nil, tag: interviewItem.tag, cID: interviewItem.cID)
+        let newItem = Item(itemID: interviewItem.itemID,
+                           itemUserID: userID,
+                           itemTitle: qItem.itemTitle,
+                           type: interviewItem.type,
+                           tag: interviewItem.tag,
+                           cID: interviewItem.cID)
         newItem.cTitle = interviewItem.cTitle
         
         contentVC.selectedItem = newItem

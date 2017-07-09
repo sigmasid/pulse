@@ -11,18 +11,6 @@ import UIKit
 import SystemConfiguration
 import UserNotifications
 
-let fullImageWidth : CGFloat = 750
-let profileThumbWidth : CGFloat = 150
-let itemThumbWidth : CGFloat = 375
-let maxImgSize : Int64 = 1242 * 2208
-
-let searchBarHeight : CGFloat = 44
-let statusBarHeight : CGFloat = UIApplication.shared.statusBarFrame.size.height
-let defaultCellHeight : CGFloat = 225
-let defaultPostHeight : CGFloat = 325
-let scopeBarHeight : CGFloat = 40
-let bottomLogoLayoutHeight : CGFloat = IconSizes.medium.rawValue + Spacing.xs.rawValue + Spacing.m.rawValue
-
 var hasAskedNotificationPermission : Bool = UserDefaults.standard.bool(forKey: "askedNotificationPermission")
 
 enum GlobalFunctions {
@@ -90,65 +78,6 @@ enum GlobalFunctions {
         return labelWidth
     }
     /** END: UIVIEW / LAYER EFFECTS **/
-
-    
-    /** START CHANGE VIEW / VCS **/
-    static func addNewVC(_ newVC: UIViewController, parentVC: UIViewController) {
-        parentVC.addChildViewController(newVC)
-        parentVC.view.addSubview(newVC.view)
-        newVC.didMove(toParentViewController: parentVC)
-    }
-    
-    static func addNewVC(_ newVC: UIViewController, toView : UIView, parentVC: UIViewController) {
-        parentVC.addChildViewController(newVC)
-        toView.addSubview(newVC.view)
-        newVC.didMove(toParentViewController: parentVC)
-    }
-
-    static func cycleBetweenVC(_ oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
-        parentVC.addChildViewController(newVC)
-        
-        parentVC.transition(from: oldVC, to: newVC, duration: 0.35, options: UIViewAnimationOptions.transitionFlipFromLeft, animations: nil, completion: { (finished) in
-            if finished {
-                oldVC.removeFromParentViewController()
-                newVC.didMove(toParentViewController: parentVC)
-            }
-        })
-    }
-
-    static func dismissVC(_ currentVC : UIViewController) {
-        currentVC.willMove(toParentViewController: nil)
-        currentVC.view.removeFromSuperview()
-        currentVC.removeFromParentViewController()
-    }
-    
-    static func dismissVC(_ currentVC : UIViewController, _animationStyle : AnimationStyle) {
-        switch _animationStyle {
-        case .verticalDown:
-            let xForm = CGAffineTransform(translationX: 0, y: currentVC.view.frame.height)
-            UIView.animate(withDuration: 0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
-                currentVC.willMove(toParentViewController: nil)
-                currentVC.view.removeFromSuperview()
-                currentVC.removeFromParentViewController()
-            })
-        default: dismissVC(currentVC)
-        }
-    }
-    
-    static func moveView(_ newView : UIView, animationStyle : AnimationStyle, parentView : UIView) {
-        switch animationStyle {
-        case .verticalUp:
-            UIView.animate(withDuration: 0.25, animations: {
-                newView.frame.origin.y = -parentView.frame.height
-            }) 
-        case .verticalDown:
-            UIView.animate(withDuration: 0.25, animations: {
-                newView.frame.origin.y = parentView.frame.origin.y
-            }) 
-        default: return
-        }
-    }
-    /** END CHANGE VIEW / VCS **/
     
     /** START: FORMAT TIME **/
     static func getFormattedTime(timeString : Date) -> String {
@@ -407,4 +336,62 @@ enum GlobalFunctions {
         return outputUrl
     }
     /** END: IMAGE FUNCTIONS **/
+    
+    /** START CHANGE VIEW / VCS **/
+    static func addNewVC(_ newVC: UIViewController, parentVC: UIViewController) {
+        parentVC.addChildViewController(newVC)
+        parentVC.view.addSubview(newVC.view)
+        newVC.didMove(toParentViewController: parentVC)
+    }
+    
+    static func addNewVC(_ newVC: UIViewController, toView : UIView, parentVC: UIViewController) {
+        parentVC.addChildViewController(newVC)
+        toView.addSubview(newVC.view)
+        newVC.didMove(toParentViewController: parentVC)
+    }
+    
+    static func cycleBetweenVC(_ oldVC: UIViewController, newVC: UIViewController, parentVC: UIViewController) {
+        parentVC.addChildViewController(newVC)
+        
+        parentVC.transition(from: oldVC, to: newVC, duration: 0.35, options: UIViewAnimationOptions.transitionFlipFromLeft, animations: nil, completion: { (finished) in
+            if finished {
+                oldVC.removeFromParentViewController()
+                newVC.didMove(toParentViewController: parentVC)
+            }
+        })
+    }
+    
+    static func dismissVC(_ currentVC : UIViewController) {
+        currentVC.willMove(toParentViewController: nil)
+        currentVC.view.removeFromSuperview()
+        currentVC.removeFromParentViewController()
+    }
+    
+    static func dismissVC(_ currentVC : UIViewController, _animationStyle : AnimationStyle) {
+        switch _animationStyle {
+        case .verticalDown:
+            let xForm = CGAffineTransform(translationX: 0, y: currentVC.view.frame.height)
+            UIView.animate(withDuration: 0.25, animations: { currentVC.view.transform = xForm } , completion: {(value: Bool) in
+                currentVC.willMove(toParentViewController: nil)
+                currentVC.view.removeFromSuperview()
+                currentVC.removeFromParentViewController()
+            })
+        default: dismissVC(currentVC)
+        }
+    }
+    
+    static func moveView(_ newView : UIView, animationStyle : AnimationStyle, parentView : UIView) {
+        switch animationStyle {
+        case .verticalUp:
+            UIView.animate(withDuration: 0.25, animations: {
+                newView.frame.origin.y = -parentView.frame.height
+            })
+        case .verticalDown:
+            UIView.animate(withDuration: 0.25, animations: {
+                newView.frame.origin.y = parentView.frame.origin.y
+            })
+        default: return
+        }
+    }
+    /** END CHANGE VIEW / VCS **/
 }

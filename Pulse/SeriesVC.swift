@@ -52,6 +52,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(false)
+        tabBarHidden = true
         updateHeader()
     }
     
@@ -260,7 +261,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
         //Already fetched this item
         if allItems[indexPath.row].itemCreated {
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
         } else {
@@ -283,14 +284,14 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     
                     //Get the image if content type is a post or perspectives thread
                     if item.content == nil, item.shouldGetImage(), !item.fetchedContent {
-                        PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (data, error) in
+                        PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
                             guard let `self` = self else { return }
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
                                 
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                        cell.updateImage(image : self.allItems[indexPath.row].content)
                                     }
                                 }
                             }
@@ -395,7 +396,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
         
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
         }
     }
     
@@ -582,7 +583,7 @@ extension SeriesVC {
         
         PulseDatabase.getItem(selectedItem.itemID, completion: {[weak self] (item, error) in
             if let item = item, let `self` = self {
-                let image = self.selectedItem.content as? UIImage ?? self.selectedChannel.cNavImage
+                let image = self.selectedItem.content ?? self.selectedChannel.cNavImage
                 let seriesPreview = PMAlertController(title: item.itemTitle, description: item.itemDescription, image: image, style: .alert)
                 
                 seriesPreview.dismissWithBackgroudTouch = true

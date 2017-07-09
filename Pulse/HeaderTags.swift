@@ -80,7 +80,7 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     internal func updateCell(_ cell: HeaderCell, atIndexPath indexPath: IndexPath) {
         if items[indexPath.row].itemCreated {
             let currentItem = items[indexPath.row]
-            cell.updateCell(currentItem.itemTitle.capitalized, _image : currentItem.content as? UIImage)
+            cell.updateCell(currentItem.itemTitle.capitalized, _image : currentItem.content)
         }
     }
 }
@@ -94,12 +94,12 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
         
         let item = items[indexPath.row]
-        cell.updateCell(item.itemTitle.capitalized, _image : item.content as? UIImage)
+        cell.updateCell(item.itemTitle.capitalized, _image : item.content)
         cell.tag = indexPath.row
         cell.delegate = self
         
         if item.content == nil, !item.fetchedContent {
-            PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] data, error in
+            PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] data, error in
                 guard let `self` = self else { return }
                 
                 if let data = data, let image = UIImage(data: data) {

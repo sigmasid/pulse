@@ -94,7 +94,7 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
     }
     
     fileprivate func setupScope() {
-        let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: scopeBarHeight)
+        let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: SCOPE_HEIGHT)
         scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Channels", "Series", "People"] , selectedItemHighlightStyle: .bottomEdge)
         scopeBar.delegate = self
         scopeBar.addBottomBorder(color: .pulseGrey)

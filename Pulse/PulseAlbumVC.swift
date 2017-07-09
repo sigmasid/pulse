@@ -73,11 +73,6 @@ class PulseAlbumVC: PulseVC, XMSegmentedControlDelegate {
             isLoaded = true
         }
     }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        //view.alpha = 1.0
-    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -88,7 +83,7 @@ class PulseAlbumVC: PulseVC, XMSegmentedControlDelegate {
     }
     
     func handleSwitchInput() {
-        delegate?.switchInput(currentInput: .album)
+        delegate?.switchInput(to: .camera, from: .album)
     }
     
     func xmSegmentedControl(_ xmSegmentedControl: XMSegmentedControl, selectedSegment: Int) {
@@ -131,7 +126,7 @@ extension PulseAlbumVC {
     
     fileprivate func setupScope() {
         if shouldAllowVideo {
-            let scopeFrame = CGRect(x: 0, y: controlsView.frame.height, width: view.bounds.width, height: scopeBarHeight)
+            let scopeFrame = CGRect(x: 0, y: controlsView.frame.height, width: view.bounds.width, height: SCOPE_HEIGHT)
             let segmentTitles : [String] = ["Images", "Videos"]
             let segmentIcons : [UIImage] = [UIImage(named: "photo")!, UIImage(named:"video")!]
             
@@ -150,7 +145,7 @@ extension PulseAlbumVC {
     }
     
     fileprivate func setupAlbum() {
-        let startY = shouldAllowVideo ? controlsView.frame.height + scopeBarHeight : controlsView.frame.height
+        let startY = shouldAllowVideo ? controlsView.frame.height + SCOPE_HEIGHT : controlsView.frame.height
         albumView = PulseAlbumView(frame: CGRect(x: 0, y: startY, width: view.frame.width, height: view.frame.height - startY))
         view.addSubview(albumView)
         albumView.layoutIfNeeded()
@@ -172,24 +167,24 @@ extension PulseAlbumVC: VideoTrimmerDelegate, ImageTrimmerDelegate {
     
     func exportedAsset(url: URL?) {
         guard let nav = self.navigationController else {
-            delegate?.capturedItem(url: url, image: nil, location: selectedMetadata?.location, assetType: .albumVideo)
+            delegate?.capturedItem(item: url, location: selectedMetadata?.location, assetType: .albumVideo)
             return
         }
         
         nav.popViewController(animated: false)
-        delegate?.capturedItem(url: url, image: nil, location: selectedMetadata?.location, assetType: .albumVideo)
+        delegate?.capturedItem(item: url, location: selectedMetadata?.location, assetType: .albumVideo)
     }
     
     func capturedItem(image: UIImage?) {
-        let resizedImage = image?.resizeImage(newWidth: fullImageWidth) ?? image
+        let resizedImage = image?.resizeImage(newWidth: FULL_IMAGE_WIDTH) ?? image
         
         guard let nav = self.navigationController else {
-            delegate?.capturedItem(url: nil, image: resizedImage, location: selectedMetadata?.location, assetType: .albumImage)
+            delegate?.capturedItem(item: resizedImage, location: selectedMetadata?.location, assetType: .albumImage)
             return
         }
         
         nav.popViewController(animated: false)
-        delegate?.capturedItem(url: nil, image: resizedImage, location: selectedMetadata?.location, assetType: .albumImage)
+        delegate?.capturedItem(item: resizedImage, location: selectedMetadata?.location, assetType: .albumImage)
     }
 }
 
@@ -197,7 +192,7 @@ extension PulseAlbumVC: AlbumViewDelegate {
     
     public func selectedImage(image : UIImage?, metaData: ImageMetadata?) {
         if captureSize == .fullScreen {
-            delegate?.capturedItem(url: nil, image: image, location: metaData?.location, assetType: self.albumView.currentMode)
+            delegate?.capturedItem(item: image, location: metaData?.location, assetType: self.albumView.currentMode)
         } else {
             guard let image = image else {
                 GlobalFunctions.showAlertBlock("Invalid Selection",
@@ -233,7 +228,7 @@ extension PulseAlbumVC: AlbumViewDelegate {
         
         let imageManager = PHImageManager()
         
-        guard asset.duration <= PulseDatabase.maxVideoLength else {
+        guard asset.duration <= MAX_VIDEO_LENGTH else {
             DispatchQueue.global(qos: .default).async(execute: {
                 imageManager.requestAVAsset(forVideo: asset, options: options, resultHandler: { asset, _ , info in
                     guard let asset = asset else { return }
@@ -261,7 +256,7 @@ extension PulseAlbumVC: AlbumViewDelegate {
         imageManager.requestPlayerItem(forVideo: asset, options: options, resultHandler: { playerItem, info in
             if let avAsset = playerItem?.asset as? AVURLAsset {
                 DispatchQueue.main.async {
-                    self.delegate?.capturedItem(url: avAsset.url, image: nil, location: metaData?.location, assetType: self.albumView.currentMode)
+                    self.delegate?.capturedItem(item: avAsset.url, location: metaData?.location, assetType: self.albumView.currentMode)
                 }
             } else {
                 imageManager.requestExportSession(forVideo: asset, options: options, exportPreset: AVAssetExportPresetMediumQuality,
@@ -279,7 +274,7 @@ extension PulseAlbumVC: AlbumViewDelegate {
                         case AVAssetExportSessionStatus.failed, AVAssetExportSessionStatus.cancelled:
                             break
                         case AVAssetExportSessionStatus.completed:
-                            self.delegate?.capturedItem(url: session.outputURL, image: nil, location: metaData?.location, assetType: self.albumView.currentMode)
+                            self.delegate?.capturedItem(item: session.outputURL, location: metaData?.location, assetType: self.albumView.currentMode)
                             break
                         case AVAssetExportSessionStatus.exporting:
                             break

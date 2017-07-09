@@ -159,8 +159,11 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
         textField.text = ""
     }
     
-    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image else { return }
+    func capturedItem(item: Any?, location: CLLocation?, assetType: CreatedAssetType) {
+        guard let image = item as? UIImage else {
+            GlobalFunctions.showAlertBlock("Error getting image", erMessage: "Sorry there was an error! Please try again")
+            return
+        }
         
         profilePicButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
         profilePicButton.clipsToBounds = true

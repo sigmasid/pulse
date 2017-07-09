@@ -51,7 +51,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             //whenever this is set - advance with this item
             advanceItem(completion: { [weak self] success in
                 guard let `self` = self else { return }
-                
                 if currentItem.itemCollection.count > 1 {
                     //set the next detail item from fullItem which adds the next item to queue
                     self.updateOverlayData(currentItem, updateUser: true)
@@ -115,8 +114,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
             guard let nextFullItem = nextFullItem else { return }
             
             if nextFullItem.itemCreated {
+                let itemID = nextFullItem.itemID
                 PulseDatabase.getItemCollection(nextFullItem.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else { return }
+                    guard let `self` = self, nextFullItem.itemID == itemID else { return }
                     nextFullItem.itemCollection = self.reorderItemDetail(parentItem: nextFullItem, itemCollection: items)
                 })
             } else {
@@ -145,10 +145,10 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     private var qPlayer = AVQueuePlayer()
     private var nextPlayerItem : AVPlayerItem?
     private var imageView : UIImageView!
+    private var textBox: RecordedTextView!
     
     /* bools to make sure can click next video and no errors from unhandled observers */
     private var isObserving = false
-    private var isImageViewShown = false
     private var shouldShowExplore = false
     private var cleanupComplete = false
     private var firstItemLoaded = false
@@ -370,26 +370,34 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     fileprivate func addNextItem(item: Item, completion: @escaping (_ success : Bool) -> Void) {
-        guard item.contentURL != nil else {
-            completion(false)
-            return
-            //should not be needed as we always fetch item first but to ensure
-        }
-        
         guard let itemType = item.contentType else {
             completion(false)
             return
         }
         
-        if itemType == .recordedVideo || itemType == .albumVideo {
-            //first time a video is added - need to add it to queue first
+        switch itemType {
+        case .recordedVideo, .albumVideo:
+            guard item.contentURL != nil else {
+                completion(false)
+                return
+            }
+            
             addVideoToQueue(itemURL: item.contentURL, completion: { success in
                 completion(success)
             })
-        } else if itemType == .recordedImage || itemType == .albumImage {
+        case .recordedImage, .albumImage:
+            guard item.contentURL != nil else {
+                completion(false)
+                return
+            }
+            
             addImageToQueue(item: item, itemURL: item.contentURL, completion: { success in
                 completion(success)
             })
+        case .postcard:
+            
+            nextItemReady = true
+            completion(true)
         }
     }
     
@@ -443,7 +451,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     //adds the first clip to the Items
-    fileprivate func advanceItem(completion: @escaping (_ success : Bool) -> Void) {
+    private func advanceItem(completion: @escaping (_ success : Bool) -> Void) {
         
         guard let item = currentItem, let itemType = item.contentType else {
             completion(false)
@@ -452,29 +460,40 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         
         switch itemType {
         case .recordedVideo, .albumVideo:
+            showMode(mode: .video)
             playItem(completion: { success in
                 completion(success)
             })
             
         case .recordedImage, .albumImage:
-            guard let image = item.content as? UIImage else {
+            guard let image = item.content else {
                 completion(false)
                 hideIntro()
                 return
             }
             
-            showImageView(image)
+            showMode(mode: .image)
+            imageView.image = image
+            
             if shouldShowExplore {
                 contentOverlay?.highlightExploreDetail()
             }
             completion(true)
+            hideIntro()
             
+        case .postcard:
+            showMode(mode: .text)
+            textBox.textToShow = item.itemTitle
+            
+            if shouldShowExplore {
+                contentOverlay?.highlightExploreDetail()
+            }
+            completion(true)
             hideIntro()
         }
     }
     
-    fileprivate func playItem(completion: @escaping (_ success : Bool) -> Void) {
-        removeImageView()
+    private func playItem(completion: @escaping (_ success : Bool) -> Void) {
         pausePlayer()
         contentOverlay?.resetTimer()
         
@@ -493,6 +512,18 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
+    private func pausePlayer() {
+        if qPlayer.currentItem != nil {
+            qPlayer.pause()
+        }
+    }
+    
+    private func restartPlayer() {
+        if qPlayer.currentItem != nil {
+            qPlayer.play()
+        }
+    }
+    
     internal func startCountdownTimer() {
         if let currentItem = qPlayer.currentItem {
             let duration = currentItem.duration
@@ -502,8 +533,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     
     fileprivate func updateOverlayData(_ item : Item, updateUser: Bool = true) {
         contentOverlay?.resetTimer()
-        contentOverlay?.setTitle(item.itemTitle)
-        contentOverlay?.clearButtons()
+        contentOverlay?.setTitle(currentItem?.contentType != .postcard ? item.itemTitle : "")
+        contentOverlay?.updateButtons(color: currentItem?.contentType != .postcard ? .white : .black )
         
         if updateUser, let user = item.user {
             contentOverlay?.setUserName(user.name)
@@ -624,35 +655,46 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         return index < itemDetail.count ? true : false
     }
     
-    //move the controls and filters to top layer
-    fileprivate func showImageView(_ image : UIImage) {
-        
-        if isImageViewShown {
-            DispatchQueue.main.async {[weak self] in
-                guard let `self` = self else { return }
-                self.imageView.image = image
-                self.tapReady = true
-            }
-        } else {
-            DispatchQueue.main.async {[weak self] in
-                guard let `self` = self else { return }
-                self.imageView = UIImageView(frame: self.view.bounds)
-                self.imageView.image = image
-                self.imageView.backgroundColor = UIColor.black
-                self.imageView.contentMode = .scaleAspectFit
-                self.view.insertSubview(self.imageView, at: 1)
-                self.isImageViewShown = true
-                self.tapReady = true
-            }
-        }
-        
+    private func addImageView() {
+        imageView = UIImageView(frame: view.bounds)
+        imageView.backgroundColor = UIColor.black
+        imageView.contentMode = .scaleAspectFill
+        view.insertSubview(imageView, at: 1)
     }
     
-    fileprivate func removeImageView() {
-        if isImageViewShown {
+    private func addTextView() {
+        textBox = RecordedTextView(frame: view.bounds)
+        textBox.isEditable = false
+        textBox.isExclusiveTouch = false
+        view.insertSubview(textBox, at: 1)
+    }
+    
+    private func showMode(mode: ContentMode) {
+        switch mode {
+        case .image:
+            pausePlayer()
+            if imageView == nil { addImageView() }
+            avPlayerLayer.isHidden = true
             imageView.image = nil
-            imageView.removeFromSuperview()
-            isImageViewShown = false
+            imageView.isHidden = false
+            if textBox != nil { textBox.isHidden = true }
+            tapReady = true
+            
+        case .video:
+            avPlayerLayer.isHidden = false
+            if imageView != nil { imageView.isHidden = true }
+            if textBox != nil { textBox.isHidden = true }
+            tapReady = false
+            
+        case .text:
+            pausePlayer()
+            if textBox == nil { addTextView() }
+            textBox.textToShow = nil
+            textBox.isHidden = false
+            avPlayerLayer.isHidden = true
+            if imageView != nil { imageView.isHidden = true }
+            tapReady = true
+            
         }
     }
     
@@ -694,18 +736,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         delegate?.userClickedProfileDetail()
     }
     
-    private func pausePlayer() {
-        if qPlayer.currentItem != nil {
-            qPlayer.pause()
-        }
-    }
-    
-    private func restartPlayer() {
-        if qPlayer.currentItem != nil {
-            qPlayer.play()
-        }
-    }
-    
     func userClickedHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         pausePlayer()
@@ -732,6 +762,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     func userClickedNextItem() {
         if shouldShowExplore, canAdvanceItemDetail(itemDetailIndex) {
             if let nextFullItem = nextFullItem {
+                qPlayer.removeAllItems()
                 addNextItem(item: nextFullItem, completion: {[unowned self] success in
                     if success {
                         self.handleTap()
@@ -769,21 +800,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         dismiss(animated: true, completion: nil)
         removeBlurBackground()
         restartPlayer()
-    }
-    
-    private func clearAllItems() {
-        removeObserverIfNeeded()
-        qPlayer.removeAllItems()
-        nextPlayerItem = nil
-        currentItem = nil
-        nextDetailItem = nil
-        nextFullItem = nil
-        canAdvanceReady = false
-        canAdvanceDetailReady = false
-        tapReady = false
-        nextItemReady = false
-        itemDetailIndex = 0
-        contentOverlay?.clearPagers()
     }
     
     /** Quick Browse Delegate **/
@@ -884,6 +900,22 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
 
             handleTap()
         }
+    }
+    
+    private func clearAllItems() {
+        removeObserverIfNeeded()
+        qPlayer.removeAllItems()
+        nextPlayerItem = nil
+        currentItem = nil
+        nextDetailItem = nil
+        nextFullItem = nil
+        canAdvanceReady = false
+        canAdvanceDetailReady = false
+        shouldShowExplore = false
+        tapReady = false
+        nextItemReady = false
+        itemDetailIndex = 0
+        contentOverlay?.clearPagers()
     }
     
     public func performCleanup() {        

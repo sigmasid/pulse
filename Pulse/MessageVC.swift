@@ -57,6 +57,7 @@ class MessageVC: PulseVC, UITextViewDelegate{
     }
     
     override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         if !isLoaded {
             setupLayout()
             updateHeader()
@@ -65,16 +66,12 @@ class MessageVC: PulseVC, UITextViewDelegate{
         }
     }
     
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        
-        if let _conversationID = conversationID {
-            PulseDatabase.removeConversationObserver(conversationID: _conversationID)
-        }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tabBarHidden = true
     }
     
     deinit {
-        print("message vc deinit fired")
         if !cleanupComplete {
             messages = []
             toUserImage = nil

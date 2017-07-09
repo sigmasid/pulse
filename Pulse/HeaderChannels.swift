@@ -83,7 +83,7 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
         cell.updateCell(channel.cTitle, _image : channel.cThumbImage)
         
         if channel.cThumbImage == nil {
-            PulseDatabase.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] data, error in
+            PulseDatabase.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] data, error in
                 if let data = data, let `self` = self {
                     self.channels[indexPath.row].cThumbImage = UIImage(data: data)
                     

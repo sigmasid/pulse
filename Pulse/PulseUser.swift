@@ -160,7 +160,7 @@ class PulseUser: User {
             completion(thumbPicImage)
             return
         } else if let profilePicURL = profilePic, let imageURL = URL(string: profilePicURL), let _imageData = try? Data(contentsOf: imageURL) {
-            thumbPicImage = UIImage(data: _imageData)?.resizeImage(newWidth: profileThumbWidth)
+            thumbPicImage = UIImage(data: _imageData)?.resizeImage(newWidth: PROFILE_THUMB_WIDTH)
             completion(thumbPicImage)
             return
         }

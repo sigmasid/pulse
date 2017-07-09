@@ -54,6 +54,7 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = true
         updateHeader()
     }
     
@@ -66,7 +67,7 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
     }
     
     fileprivate func setupScope() {
-        let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: scopeBarHeight)
+        let scopeFrame = CGRect(x: 0, y: 0, width: view.bounds.width, height: SCOPE_HEIGHT)
         scopeBar = XMSegmentedControl(frame: scopeFrame, segmentTitle: ["Apply", "Recommend"] , selectedItemHighlightStyle: .bottomEdge)
         scopeBar.delegate = self
         scopeBar.addBottomBorder(color: .pulseGrey)

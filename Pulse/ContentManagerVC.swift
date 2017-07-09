@@ -233,7 +233,11 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     }
     
     /* user finished recording video or image - send to user recorded answer to add more or post */
-    func capturedItem(url assetURL : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?){
+    func capturedItem(item newItem: Any?, location: CLLocation?, assetType: CreatedAssetType) {
+        guard let newItem = newItem else {
+            GlobalFunctions.showAlertBlock("Error retreiving Item", erMessage: "Sorry there was an error! Please try again")
+            return
+        }
         
         //in case parent provides key for first item use that (interview case) else create a new key. After creation marks the createdItemKey as nil
         let itemKey = createdItemKey != nil ? createdItemKey! : databaseRef.child("items").childByAutoId().key
@@ -243,11 +247,19 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
                         itemUserID: PulseUser.currentUser.uID!,
                         itemTitle: getRecordedItemTitle(),
                         type: selectedItem.childItemType(),
-                        contentURL: assetURL,
-                        content: image,
-                        contentType: assetType,
-                        tag: selectedItem.tag ?? selectedItem, //if its a post / feedback thread, the series item is the selected item, don't need one level up look back
+                        tag: selectedItem.tag ?? selectedItem, //if its a post / feedback thread, the series item is the selected item, don't need to look back
                         cID: selectedChannel.cID ?? selectedItem.cID)
+        
+        item.contentType = assetType
+        switch assetType {
+        case .albumImage, .recordedImage:
+            item.content = newItem as? UIImage
+        case .albumVideo, .recordedVideo:
+            item.contentURL = newItem as? URL
+        case .postcard:
+            item.itemTitle = newItem as? String ?? ""
+        }
+        
         recordedItems.append(item)
         
         recordedVideoVC.delegate = self
@@ -323,6 +335,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         if inputVC == nil {
             inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
             inputVC.cameraMode = mode
+            inputVC.showTextInput = true
             inputVC.captureSize = .fullScreen
             inputVC.inputDelegate = self
         }

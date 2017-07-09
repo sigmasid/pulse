@@ -163,6 +163,16 @@ extension UIView {
         
         CATransaction.commit()
     }
+    
+    func hideKeyboardWhenTappedAroundView() {
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        addGestureRecognizer(tap)
+    }
+    
+    func dismissKeyboard() {
+        endEditing(true)
+    }
 }
 
 // To dismiss keyboard when needed
@@ -700,23 +710,6 @@ enum FontSizes: CGFloat {
     case mammoth = 40
 }
 
-enum ZoomDirection {
-    case LEFT_DOWN
-    case LEFT_UP
-    case RIGHT_DOWN
-    case RIGHT_UP
-}
-
-enum ZoomType {
-    case IN
-    case OUT
-}
-
-enum UserErrors: Error {
-    case notLoggedIn
-    case invalidData
-}
-
 /* CORE DATABASE */
 enum SectionTypes : String {
     case activity = "activity"
@@ -801,11 +794,18 @@ enum SettingTypes : String{
     }
 }
 
+enum ContentMode {
+    case video
+    case image
+    case text
+}
+
 enum CreatedAssetType: String {
     case recordedImage
     case albumImage
     case recordedVideo
     case albumVideo
+    case postcard
     
     static func getAssetType(_ value : String?) -> CreatedAssetType? {
         if let _value = value {
@@ -814,6 +814,7 @@ enum CreatedAssetType: String {
             case "albumImage": return .albumImage
             case "recordedVideo": return .recordedVideo
             case "albumVideo": return .albumVideo
+            case "postcard": return .postcard
                 
             default: return nil
             }
@@ -891,6 +892,7 @@ enum UserTypes: String {
 enum InputMode {
     case album
     case camera
+    case text
 }
 
 struct ItemMetaData {

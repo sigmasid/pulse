@@ -28,6 +28,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             }
         }
     }
+    public var showTextInput = false
     /** END SETTERS **/
     
     fileprivate var camera = CameraManager()
@@ -36,7 +37,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     fileprivate var cameraLayer : UIView!
     
     /* duration set in milliseconds */
-    fileprivate let videoDuration : Double = PulseDatabase.maxVideoLength * 10
+    fileprivate let videoDuration : Double = MAX_VIDEO_LENGTH * 10
     fileprivate var countdownTimer : CALayer!
     
     /** GESTURE RECOGNIZERS **/
@@ -58,7 +59,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         if !isLoaded {
             camera.maxRecordingDelegate = self
             
-            cameraOverlay = CameraOverlayView(frame: view.bounds)
+            cameraOverlay = CameraOverlayView(frame: view.bounds, showTextInput: showTextInput)
             cameraLayer = UIView(frame: getCameraFrame())
             view.addSubview(cameraLayer)
             //cameraLayer.isMultipleTouchEnabled = true
@@ -80,7 +81,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         case .fullScreen:
             return view.bounds
         case .square:
-            return CGRect(x: 0, y: scopeBarHeight, width: min(view.bounds.width, view.bounds.height), height: min(view.bounds.width, view.bounds.height))
+            return CGRect(x: 0, y: SCOPE_HEIGHT, width: min(view.bounds.width, view.bounds.height), height: min(view.bounds.width, view.bounds.height))
         }
     }
     
@@ -97,25 +98,25 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             if let image = image {
                 self.sendImage(image: image)
             } else {
-                self.delegate?.capturedItem(url: nil, image: nil, location: nil, assetType: nil)
+                self.delegate?.capturedItem(item: nil, location: nil, assetType: .recordedImage)
             }
         })
     }
     
     fileprivate func sendImage(image: UIImage) {
         if captureSize == .fullScreen {
-            guard let croppedImage = image.resizeImage(newWidth: fullImageWidth) else {
-                delegate?.capturedItem(url: nil, image: image, location: self.camera.location, assetType: .recordedImage)
+            guard let croppedImage = image.resizeImage(newWidth: FULL_IMAGE_WIDTH) else {
+                delegate?.capturedItem(item: image, location: self.camera.location, assetType: .recordedImage)
                 return
             }
-            delegate?.capturedItem(url: nil, image: croppedImage, location: self.camera.location, assetType: .recordedImage)
+            delegate?.capturedItem(item: croppedImage, location: self.camera.location, assetType: .recordedImage)
         } else {
-            guard let croppedImage = image.getSquareImage(newWidth: fullImageWidth) else {
-                delegate?.capturedItem(url: nil, image: image.resizeImage(newWidth: fullImageWidth),
+            guard let croppedImage = image.getSquareImage(newWidth: FULL_IMAGE_WIDTH) else {
+                delegate?.capturedItem(item: image.resizeImage(newWidth: FULL_IMAGE_WIDTH),
                                             location: self.camera.location, assetType: .recordedImage)
                 return
             }
-            delegate?.capturedItem(url: nil, image: croppedImage, location: self.camera.location, assetType: .recordedImage)
+            delegate?.capturedItem(item: croppedImage, location: self.camera.location, assetType: .recordedImage)
         }
     }
     
@@ -137,9 +138,9 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
                 if let image = image {
                     self.sendImage(image: image)
                 } else if videoURL != nil {
-                    self.delegate?.capturedItem(url: videoURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+                    self.delegate?.capturedItem(item: videoURL, location: self.camera.location, assetType: .recordedVideo)
                 } else {
-                    self.delegate?.capturedItem(url: nil, image: nil, location: nil, assetType: nil)
+                    self.delegate?.capturedItem(item: nil, location: nil, assetType: .recordedImage)
                 }
             }
         })
@@ -162,7 +163,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
             if let errorOccured = error {
                 camera.showErrorBlock("Error occurred", errorOccured.localizedDescription)
             } else {
-                delegate?.capturedItem(url: fileURL, image: nil, location: self.camera.location, assetType: .recordedVideo)
+                delegate?.capturedItem(item: fileURL, location: self.camera.location, assetType: .recordedVideo)
             }
         }
     }
@@ -256,6 +257,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
         cameraOverlay.getButton(.flip).addTarget(self, action: #selector(flipCamera), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.flash).addTarget(self, action: #selector(cycleFlash), for: UIControlEvents.touchUpInside)
         cameraOverlay.getButton(.album).addTarget(self, action: #selector(showAlbumPicker), for: UIControlEvents.touchUpInside)
+        cameraOverlay.getButton(.text).addTarget(self, action: #selector(showNotecard), for: UIControlEvents.touchUpInside)
     }
     
     func updateOverlayTitle(title: String) {
@@ -290,7 +292,11 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     }
     
     internal func showAlbumPicker() {
-        delegate?.switchInput(currentInput: .camera)
+        delegate?.switchInput(to: .album, from: .camera)
+    }
+    
+    internal func showNotecard() {
+        delegate?.switchInput(to: .text, from: .camera)
     }
     
     internal func dismissCamera() {

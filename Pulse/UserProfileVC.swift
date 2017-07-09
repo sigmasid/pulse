@@ -411,7 +411,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
             cell.updateLabel(nil, _subtitle: allItems[indexPath.row].itemTitle)
         }
         
-        if let image = allItems[indexPath.row].content as? UIImage  {
+        if let image = allItems[indexPath.row].content  {
             cell.updateImage(image: image)
         }
     }
@@ -453,7 +453,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         /* GET PREVIEW IMAGE FROM STORAGE */
         if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
             
-            cell.updateImage(image: currentItem.content as? UIImage)
+            cell.updateImage(image: currentItem.content)
             
         } else if itemStack[indexPath.row].gettingImageForPreview {
             
@@ -462,7 +462,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         } else if currentItem.itemCreated {
             itemStack[indexPath.row].gettingImageForPreview = true
             
-            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
+            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (_data, error) in
                 guard let `self` = self else { return }
                 if error == nil {
                     let _previewImage = GlobalFunctions.createImageFromData(_data!)
@@ -470,7 +470,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
+                            cell.updateImage(image: self.allItems[indexPath.row].content)
                         }
                     }
                 } else {
@@ -505,7 +505,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         }
                     }
 
-                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
+                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (_data, error) in
                         guard let `self` = self else { return }
                         if error == nil, indexPath.row < self.allItems.count {
                             let _previewImage = GlobalFunctions.createImageFromData(_data!)
@@ -513,7 +513,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             
                             if collectionView.indexPath(for: cell)?.row == indexPath.row {
                                 DispatchQueue.main.async {
-                                    cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
+                                    cell.updateImage(image: self.allItems[indexPath.row].content)
                                 }
                             }
                         } else {

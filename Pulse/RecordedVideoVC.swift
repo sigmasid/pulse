@@ -12,22 +12,32 @@ import AVFoundation
 import Photos
 
 class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDelegate {
-    
     fileprivate var uploadTask : StorageUploadTask!
     
     // set by the delegate
     public var currentItem : Item! {
         didSet {
-            if currentItem != nil {
+            if currentItem != nil, let itemType = currentItem.contentType {
+                controlsOverlay.updateControls(type: itemType)
                 view.addSubview(controlsOverlay)
-                controlsOverlay.title = currentItem.itemTitle
-                currentItem.itemTitle != "" ? controlsOverlay.showAddTitleField(makeFirstResponder: false) : controlsOverlay.clearAddTitleField()
+                
                 setupOverlayButtons()
                 
-                if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo {
+                switch itemType {
+                case .recordedVideo, .albumVideo:
                     setupVideo()
-                } else if currentItem.contentType == .recordedImage || currentItem.contentType == .albumImage {
+                    controlsOverlay.title = currentItem.itemTitle
+                    currentItem.itemTitle != "" ? controlsOverlay.showAddTitleField(makeFirstResponder: false) : controlsOverlay.clearAddTitleField()
+                    currentMode = .video
+                case .recordedImage, .albumImage:
                     setupImageView()
+                    controlsOverlay.title = currentItem.itemTitle
+                    currentItem.itemTitle != "" ? controlsOverlay.showAddTitleField(makeFirstResponder: false) : controlsOverlay.clearAddTitleField()
+                    currentMode = .image
+                    
+                case .postcard:
+                    setupTextView(text: currentItem.itemTitle)
+                    currentMode = .text
                 }
             }
         }
@@ -35,7 +45,9 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     
     public var selectedChannelID : String! //used to upload to right folders
     public var parentItem : Item! //to add to right collection
-    public var coverAdded : Bool = false {
+    
+    //set after user returns from cover added - if set to true go straight to post
+    private var coverAdded : Bool = false {
         didSet {
             if coverAdded {
                 _post()
@@ -48,6 +60,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     public var isNewEntry = true //don't reprocess video / image if the user is returning back to prior entry
     
     private var coverItem: Item?
+    private var currentMode : ContentMode!
     fileprivate var addCoverVC: AddCoverVC?
     
     var currentItemIndex : Int = 0 {
@@ -72,16 +85,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     public weak var delegate : ContentDelegate?
     
     fileprivate lazy var controlsOverlay : RecordingOverlay = RecordingOverlay(frame: self.view.bounds)
-    fileprivate var itemFilters : FiltersOverlay?
     
-    fileprivate var isImageViewLoaded = false
     fileprivate var imageView : ImageCropView!
-    
+    fileprivate var textBox : RecordedTextView!
     fileprivate var aPlayer : AVQueuePlayer!
     fileprivate var avPlayerLayer : AVPlayerLayer!
     fileprivate var currentVideo : AVPlayerItem!
     fileprivate var looper : AVPlayerLooper!
-    fileprivate var isVideoLoaded = false
     
     fileprivate var itemCollectionPost = [ String : String ]()
     fileprivate var cleanupComplete = false
@@ -105,8 +115,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
-        if isVideoLoaded, aPlayer != nil, aPlayer.items().count > 0 {
+        restartPlayer()
+    }
+    
+    private func restartPlayer() {
+        if currentMode == .video, aPlayer != nil, aPlayer.currentItem != nil {
             aPlayer.play()
         }
     }
@@ -116,17 +129,27 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     }
     
     fileprivate func setupImageView() {
-        if !isImageViewLoaded {
+        if imageView == nil {
             imageView = ImageCropView(frame: view.frame)
             view.addSubview(imageView)
-            
-            isImageViewLoaded = true
         }
         
         view.bringSubview(toFront: imageView)
         arrangeViews()
         
-        imageView.image = currentItem.content as? UIImage
+        imageView.image = currentItem.content
+    }
+    
+    fileprivate func setupTextView(text: String) {
+        if textBox == nil {
+            textBox = RecordedTextView(frame: view.bounds, text: text)
+            view.addSubview(textBox)
+        }
+        
+        view.bringSubview(toFront: textBox)
+        arrangeViews()
+        
+        textBox.textToShow = text
     }
     
     fileprivate func setupVideo() {
@@ -135,16 +158,13 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
         
         currentVideo = AVPlayerItem(url: contentURL)
         
-        if !isVideoLoaded {
+        if avPlayerLayer == nil || aPlayer == nil {
             aPlayer = AVQueuePlayer(items: [currentVideo])
             avPlayerLayer = AVPlayerLayer(player: aPlayer)
             avPlayerLayer.frame = view.bounds
             avPlayerLayer.backgroundColor = UIColor.black.cgColor
-        
-            isVideoLoaded = true
         } else {
             arrangeViews()
-
             aPlayer.removeAllItems()
             aPlayer.insert(currentVideo, after: nil)
             aPlayer.advanceToNextItem()
@@ -158,7 +178,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
         arrangeViews()
         aPlayer.play()
         
-        if isNewEntry && currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo {
+        if isNewEntry {
             DispatchQueue.global(qos: .background).async {
                 compressVideo(contentURL, completion: {[weak self] (resultURL, thumbnailImage, error) in
                     guard let `self` = self, !self.recordedItems.isEmpty else {
@@ -183,9 +203,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     
     //move the controls and filters to top layer
     fileprivate func arrangeViews() {
-        if itemFilters != nil {
-            view.bringSubview(toFront: itemFilters!)
-        }
         view.bringSubview(toFront: controlsOverlay)
     }
     
@@ -215,20 +232,32 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     }
     
     fileprivate func updateItemImage() {
-        recordedItems[self.currentItemIndex - 1].content = imageView.getCroppedImage()?.resizeImage(newWidth: fullImageWidth)
+        recordedItems[self.currentItemIndex - 1].content = imageView.getCroppedImage()?.resizeImage(newWidth: FULL_IMAGE_WIDTH)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         controlsOverlay.endEditing(true)
     }
+    
+    internal func updateItems() {
+        guard let type = currentItem.contentType else { return }
+        switch type {
+        case .albumImage, .recordedImage:
+            updateItemImage()
+        case .postcard:
+            updateItemTitle(text: textBox.finalText)
+        default: break
+        }
+    }
 
     func _addMore() {
-        if currentItem.contentType == .albumImage || currentItem.contentType == .recordedImage {
-            updateItemImage()
+        updateItems()
+        if recordedItems.count < MAX_ITEM_COUNT {
+            delegate?.addMoreItems(self, recordedItems: recordedItems)
+        } else {
+            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Max Limit Reached", erMessage: "Sorry! You can only have 7 items for any new entry! This keeps the content short & interesting for your viewers.")
         }
-        
-        delegate?.addMoreItems(self, recordedItems: recordedItems)
     }
     
     ///close window and go back to camera
@@ -241,9 +270,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     
     ///post video to firebase
     internal func _post() {
-        if currentItem.contentType == .albumImage || currentItem.contentType == .recordedImage {
-            updateItemImage()
-        }
+        updateItems()
         
         if aPlayer != nil {
             aPlayer.pause()
@@ -270,9 +297,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                         itemUserID: PulseUser.currentUser.uID!,
                         itemTitle: "",
                         type: currentItem.type,
-                        contentURL: nil,
-                        content: nil,
-                        contentType: nil,
                         tag: currentItem.tag,
                         cID: currentItem.cID)
         
@@ -300,9 +324,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     }
     
     internal func dismissAddCover() {
-        if aPlayer != nil && (currentItem.contentType == .albumVideo || currentItem.contentType == .recordedVideo) {
-            aPlayer.play()
-        }
+        restartPlayer()
     }
     /** END ADD COVER DELEGATE **/
     
@@ -317,25 +339,25 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
         }
         guard let contentType = item.contentType else { return }
         
-        if let _image = item.content as? UIImage  {
-            let thumbImageData : Data? = _image.resizeImage(newWidth: itemThumbWidth)?.mediumQualityJPEGNSData
+        if let _image = item.content  {
+            let thumbImageData : Data? = _image.resizeImage(newWidth: ITEM_THUMB_WIDTH)?.mediumQualityJPEGNSData
             PulseDatabase.uploadImageData(channelID: selectedChannelID, itemID: item.itemID, imageData: thumbImageData, fileType: .thumb, completion: { _ in })
         }
         
-        if contentType == .recordedVideo || contentType == .albumVideo {
+        switch contentType {
+        case .recordedVideo, .albumVideo:
             uploadVideo(item, completion: {[weak self] (success, _itemID) in
                 guard let `self` = self else { return }
-
+                
                 self.itemCollectionPost[item.itemID] = item.type.rawValue
                 allItems.removeLast()
                 self.uploadItems(allItems: allItems)
             })
-        }
-        else if contentType == .recordedImage || contentType == .albumImage, let _image = item.content as? UIImage {
-            
-            PulseDatabase.uploadImage(channelID: selectedChannelID, itemID: item.itemID, image: _image, fileType: .content, completion: {[weak self] metadata, error in
+        case .recordedImage, .albumImage:
+            guard let image = item.content else { return }
+            PulseDatabase.uploadImage(channelID: selectedChannelID, itemID: item.itemID, image: image, fileType: .content, completion: {[weak self] metadata, error in
                 guard let `self` = self else { return }
-
+                
                 if (error != nil) {
                     GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
                 } else {
@@ -351,6 +373,17 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                             self.uploadItems(allItems: allItems)
                         }
                     })
+                }
+            })
+        case .postcard:
+            PulseDatabase.addItemToDatabase(item, channelID: selectedChannelID, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+                if !success {
+                    GlobalFunctions.showAlertBlock("Error Posting Item", erMessage: error!.localizedDescription)
+                } else {
+                    self.itemCollectionPost[item.itemID] = item.type.rawValue
+                    allItems.removeLast()
+                    self.uploadItems(allItems: allItems)
                 }
             })
         }
@@ -428,7 +461,8 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                 self.itemCollectionPost.removeAll()
                 self.recordedItems.removeAll()
                 self.currentVideo = nil
-                self.looper.disableLooping()
+                
+                if self.looper != nil { self.looper.disableLooping() }
                 
                 self.delegate?.doneUploadingItem(self, success: success)
             } else {
@@ -441,15 +475,16 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     
     ///User clicked save to album button
     func _save(_ sender: UIButton!) {
+        guard let type = currentItem.contentType else { return }
         controlsOverlay.addProgressLabel("Saving...")
         
-        if currentItem.contentType == .recordedVideo || currentItem.contentType == .albumVideo, let contentURL = currentItem.contentURL {
-            _saveVideoToAlbum(contentURL)
-        } else if currentItem.contentType == .recordedImage || currentItem.contentType == .albumImage, let _image = currentItem.content as? UIImage {
-            _saveImageToAlbum(_image)
-        }
-        else {
-            controlsOverlay.hideProgressLabel("Sorry error saving file")
+        switch type {
+        case .recordedVideo, .albumVideo:
+            currentItem.contentURL != nil ? _saveVideoToAlbum(currentItem.contentURL!) : controlsOverlay.hideProgressLabel("Sorry error saving file")
+        case .recordedImage, .albumImage:
+            currentItem.content != nil ? _saveImageToAlbum(currentItem.content!) : controlsOverlay.hideProgressLabel("Sorry error saving file")
+        case .postcard:
+            break
         }
     }
     
@@ -499,8 +534,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
             recordedItems.removeAll()
             recordedItems = nil
             delegate = nil
-            
-            itemFilters = nil
             
             if addCoverVC != nil {
                 addCoverVC?.performCleanup()

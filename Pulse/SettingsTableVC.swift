@@ -221,9 +221,11 @@ extension SettingsTableVC: InputMasterDelegate {
         present(inputVC, animated: true, completion: nil)
     }
     
-    func capturedItem(url _: URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image else { return }
-        
+    func capturedItem(item: Any?, location: CLLocation?, assetType: CreatedAssetType) {
+        guard let image = item as? UIImage else {
+            GlobalFunctions.showAlertBlock("Error getting image", erMessage: "Sorry there was an error! Please try again")
+            return
+        }
         
         //update the header
         dismiss(animated: true, completion: {[weak self] in

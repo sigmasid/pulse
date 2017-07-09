@@ -116,6 +116,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(false)
+        tabBarHidden = true
         updateHeader()
     }
     
@@ -250,7 +251,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             
             if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
                 
-                cell.updateImage(image: currentItem.content as? UIImage)
+                cell.updateImage(image: currentItem.content)
                 
             } else if itemStack[indexPath.row].gettingImageForPreview {
                 
@@ -259,7 +260,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             } else {
                 itemStack[indexPath.row].gettingImageForPreview = true
                 
-                PulseDatabase.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (_data, error) in
+                PulseDatabase.getImage(channelID: selectedItem.cID ?? selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (_data, error) in
                     guard let `self` = self else { return }
                     if error == nil {
                         let _previewImage = GlobalFunctions.createImageFromData(_data!)
@@ -267,7 +268,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                         
                         if collectionView.indexPath(for: cell)?.row == indexPath.row {
                             DispatchQueue.main.async {
-                                cell.updateImage(image: self.allItems[indexPath.row].content as? UIImage)
+                                cell.updateImage(image: self.allItems[indexPath.row].content)
                             }
                         }
                     } else {
@@ -345,7 +346,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self](hasDetail, itemCollection) in
+                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
                     guard let `self` = self else { return }
                     if hasDetail {
                         cell.showTapForMore = true
@@ -429,7 +430,7 @@ extension BrowseContentVC  {
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
         }
         
-        if  selectedItem.shouldGetBrowseImage(), let image = allItems[indexPath.row].content as? UIImage  {
+        if  selectedItem.shouldGetBrowseImage(), let image = allItems[indexPath.row].content  {
             cell.updateImage(image: image)
         } else if !selectedItem.shouldGetBrowseImage(), let image = allItems[indexPath.row].user?.thumbPicImage {
             cell.updateImage(image: image)
@@ -453,22 +454,3 @@ extension BrowseContentVC  {
         if !decelerate { updateOnscreenRows() }
     }
 }
-
-/**
-extension BrowseContentVC: UIViewControllerTransitioningDelegate {
-    func animationController(forPresented presented: UIViewController,
-                             presenting: UIViewController,
-                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        
-        if presented is ContentManagerVC {
-            let animator = ExpandAnimationController()
-            animator.initialFrame = initialFrame
-            animator.exitFrame = getRectToLeft()
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-} **/
-

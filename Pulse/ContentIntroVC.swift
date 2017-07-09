@@ -35,11 +35,11 @@ class ContentIntroVC: UIViewController {
                 
                 userImage.image = item.user?.thumbPicImage
                 
-                if let image = item.tag?.content as? UIImage {
+                if let image = item.tag?.content {
                     seriesTitle.text = item.tag?.itemTitle
                     seriesImage.image = image
                     seriesTitle.setBlurredBackground()
-                } else if item.tag == nil, let image = item.content as? UIImage {
+                } else if item.tag == nil, let image = item.content {
                     seriesImage.image = image
                 } else {
                     seriesTitle.text = item.tag?.itemTitle

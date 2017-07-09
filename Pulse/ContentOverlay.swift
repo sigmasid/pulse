@@ -23,6 +23,7 @@ class ContentOverlay: UIView {
     
     fileprivate let itemTitleLabel = PaddingLabel()
     
+    fileprivate var headerBackground = UIView()
     fileprivate let userTitleLabel = UILabel()
     fileprivate let userSubtitleLabel = UILabel()
     fileprivate var userImage = PulseButton(size: .small, type: .profile, isRound: true, hasBackground: false, tint: .black)
@@ -30,8 +31,6 @@ class ContentOverlay: UIView {
 
     fileprivate var browseButton = PulseButton()
     fileprivate var messageButton = PulseButton()
-
-    fileprivate let footerHeight : CGFloat = Spacing.xl.rawValue
     
     fileprivate var countdownTimerRadiusStroke : CGFloat = 3
     fileprivate let videoTimer = UIView()
@@ -157,9 +156,9 @@ class ContentOverlay: UIView {
         nextItemButton.isHidden = false
         pagersStack.isHidden = false
         
-        UIView.animate(withDuration: 0.2, animations: {
-            self.nextItemButton.alpha = 0.2
-            self.pagersStack.alpha = 0.2
+        UIView.animate(withDuration: 0.3, animations: {
+            self.nextItemButton.alpha = 0.3
+            self.pagersStack.alpha = 0.3
         })
 
     }
@@ -207,10 +206,24 @@ class ContentOverlay: UIView {
         itemTitleLabel.backgroundColor = title == "" ? UIColor.clear : UIColor.black.withAlphaComponent(0.3)
     }
     
-    func clearButtons() {
+    func updateButtons(color: UIColor) {
         upVoteButton.imageView?.tintColor = .white
         downVoteButton.imageView?.tintColor = .white
         saveButton.imageView?.tintColor = .white
+        
+        headerMenu.imageView?.tintColor = color
+        userTitleLabel.textColor = color
+        userSubtitleLabel.textColor = color
+        
+        if color == .black {
+            footerBackground.backgroundColor = .black
+            userTitleLabel.removeShadow()
+            userSubtitleLabel.removeShadow()
+        } else {
+            footerBackground.backgroundColor = .clear
+            userTitleLabel.setBlurredBackground()
+            userSubtitleLabel.setBlurredBackground()
+        }
     }
     
     /// Add clip countdown
@@ -320,7 +333,6 @@ class ContentOverlay: UIView {
             _pager.layoutIfNeeded()
             _pager.layer.cornerRadius = _pager.frame.width / 2
             _pager.layer.masksToBounds = true
-            _pager.addShadow(cornerRadius: _pager.frame.width / 2)
         }
     }
 }
@@ -357,9 +369,11 @@ extension ContentOverlay {
     }
     
     fileprivate func setupHeader() {
-        addSubview(userImage)
-        addSubview(userTitles)
-        addSubview(headerMenu)
+        headerBackground.frame = CGRect(x: 0, y: 0, width: bounds.width, height: userImage.frame.width + Spacing.s.rawValue)
+        addSubview(headerBackground)
+        headerBackground.addSubview(userImage)
+        headerBackground.addSubview(userTitles)
+        headerBackground.addSubview(headerMenu)
         
         userImage.center = CGPoint(x: userImage.frame.width / 2 + Spacing.xs.rawValue,
                                    y: userImage.frame.width / 2 + Spacing.xs.rawValue)
@@ -401,9 +415,7 @@ extension ContentOverlay {
     }
     
     fileprivate func setupNextButton() {
-        
         nextItemButton.isHidden = true
-
         addSubview(nextItemButton)
         
         nextItemButton.translatesAutoresizingMaskIntoConstraints = false
@@ -415,7 +427,6 @@ extension ContentOverlay {
         nextItemButton.layoutIfNeeded()
         nextItemButton.backgroundColor = .white
         nextItemButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .black, alignment: .center)
-        
         nextItemButton.addTarget(self, action: #selector(handleNextItemTap), for: UIControlEvents.touchUpInside)
     }
     

@@ -81,6 +81,7 @@ class NewThreadVC: PulseVC  {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tabBarHidden = true
         updateHeader()
     }
     
@@ -160,7 +161,7 @@ class NewThreadVC: PulseVC  {
     
     fileprivate func createCompressedImages(image: UIImage) {
         fullImageData = image.mediumQualityJPEGNSData
-        thumbImageData = image.resizeImage(newWidth: profileThumbWidth)?.highQualityJPEGNSData
+        thumbImageData = image.resizeImage(newWidth: PROFILE_THUMB_WIDTH)?.highQualityJPEGNSData
     }
 }
 
@@ -181,7 +182,7 @@ extension NewThreadVC {
         sAddCover.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
         sAddCover.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         sAddCover.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        sAddCover.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        sAddCover.heightAnchor.constraint(equalToConstant: 250).isActive = true
         sAddCover.layoutIfNeeded()
         
         sShowCamera.translatesAutoresizingMaskIntoConstraints = false
@@ -294,21 +295,25 @@ extension NewThreadVC: InputMasterDelegate {
         present(inputVC, animated: true, completion: nil)
     }
     
-    func capturedItem(url : URL?, image: UIImage?, location: CLLocation?, assetType : CreatedAssetType?) {
-        guard let image = image else {
+    func capturedItem(item: Any?, location: CLLocation?, assetType: CreatedAssetType) {
+        guard let image = item as? UIImage else {
             GlobalFunctions.showAlertBlock("Error getting image", erMessage: "Sorry there was an error! Please try again")
             return
         }
         
-        sShowCamera.setImage(image, for: .normal)
-        sShowCamera.imageView?.contentMode = .scaleAspectFill
-        sShowCamera.imageView?.clipsToBounds = true
+        sAddCover.image = image
+        sAddCover.contentMode = .scaleAspectFill
+        sAddCover.clipsToBounds = true
         
-        sShowCamera.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-        sShowCamera.clipsToBounds = true
+        sShowCameraLabel.removeFromSuperview()
+        sShowCamera.removeFromSuperview()
         
-        sShowCameraLabel.text = "tap image to change"
-        sShowCameraLabel.textColor = .gray
+        sShowCamera = PulseButton(size: .xSmall, type: .camera, isRound: true, background: UIColor.white.withAlphaComponent(0.7), tint: .black)
+        sShowCamera.frame = CGRect(x: Spacing.xs.rawValue, y: self.sAddCover.frame.maxY - Spacing.xs.rawValue -  IconSizes.xSmall.rawValue,
+                                   width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
+        view.addSubview(sShowCamera)
+        sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
+
         contentType = assetType
                 
         dismiss(animated: true, completion: {[weak self] in
@@ -317,7 +322,6 @@ extension NewThreadVC: InputMasterDelegate {
         })
         
         createCompressedImages(image: image)
-        
     }
     
     func dismissInput() {

@@ -825,7 +825,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.tag = indexPath.row
             
             //clear the cells and set the item type first
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
 
             //Add additional user details as needed
@@ -882,7 +882,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
-                PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: maxImgSize, completion: {[weak self] (data, error) in
+                PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
                     guard let `self` = self, self.allItems.count > indexPath.row else { return }
                     
                     if let data = data {
@@ -890,7 +890,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                         
                         DispatchQueue.main.async {
                             if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                cell.updateImage(image : self.allItems[indexPath.row].content as? UIImage)
+                                cell.updateImage(image : self.allItems[indexPath.row].content)
                             }
                         }
                     }
@@ -1010,7 +1010,7 @@ extension ChannelVC: UIScrollViewDelegate {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content as? UIImage ?? nil)
+            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
             cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
         }
     }
@@ -1033,68 +1033,3 @@ extension ChannelVC: UIScrollViewDelegate {
         if !decelerate { updateOnscreenRows() }
     }
 }
-
-/**
-extension ChannelVC {
-    
-    func animationController(forPresented presented: UIViewController,
-                             presenting: UIViewController,
-                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        
-        if presented is ContentManagerVC {            
-            let animator = ExpandAnimationController()
-            animator.initialFrame = initialFrame
-            animator.exitFrame = getRectToLeft()
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-    
-    
-    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is ContentManagerVC {
-            let animator = PanAnimationController()
-            
-            animator.initialFrame = getRectToLeft()
-            animator.exitFrame = getRectToRight()
-            animator.transitionType = .dismiss
-            return animator
-        } else {
-            return nil
-        }
-    }
-    
-    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return panPresentInteractionController.interactionInProgress ? panPresentInteractionController : nil
-    }
-    
-    func interactionControllerForDismissal(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        return panDismissInteractionController.interactionInProgress ? panDismissInteractionController : nil
-    } **/
-    
-    /**
-    internal func showNonContributorMenu(selectedItem : Item) {
-        let menu = UIAlertController(title: "Want to be a Contributor?",
-                                     message: "looks like you are not yet a verified contributor. To ensure quality, we recommend applying to be verified. You can still continue with your submission (will be reviewed for quality).",
-                                     preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "continue Submission", style: .default, handler: { (action: UIAlertAction!) in
-            self.addNewItem(selectedItem: selectedItem)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "become a Contributor", style: .default, handler: { (action: UIAlertAction!) in
-            let becomeContributorVC = BecomeContributorVC()
-            becomeContributorVC.selectedChannel = self.selectedChannel
-            
-            self.navigationController?.pushViewController(becomeContributorVC, animated: true)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-}**/

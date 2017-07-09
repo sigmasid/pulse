@@ -10,8 +10,9 @@ import UIKit
 
 class QuickBrowseCell: UICollectionViewCell {
     
-    fileprivate lazy var titleLabel = UILabel()
-    fileprivate lazy var previewImage = UIImageView()
+    fileprivate var titleLabel = UILabel()
+    fileprivate var previewImage = UIImageView()
+    fileprivate var textBox: RecordedTextView!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -30,8 +31,10 @@ class QuickBrowseCell: UICollectionViewCell {
     
     func updateImage( image : UIImage?) {
         if let image = image {
-            previewImage.image = image
+            textBox.isHidden = true
+            previewImage.isHidden = false
             
+            previewImage.image = image
             previewImage.contentMode = .scaleAspectFill
             previewImage.layer.cornerRadius = 0
             previewImage.layer.masksToBounds = true
@@ -39,18 +42,31 @@ class QuickBrowseCell: UICollectionViewCell {
         }
     }
     
+    func updatePostcard(text: String) {
+        previewImage.isHidden = true
+        textBox.isHidden = false
+        textBox.textToShow = text
+    }
+    
     override func prepareForReuse() {
         titleLabel.text = ""
         previewImage.image = nil
+        textBox.isHidden = true
         
         super.prepareForReuse()
     }
     
     fileprivate func setupPreview() {
+        textBox = RecordedTextView(frame: contentView.frame)
         addSubview(previewImage)
         addSubview(titleLabel)
+        addSubview(textBox)
         
         previewImage.frame = contentView.frame
+        textBox.isEditable = false
+        textBox.isPreview = true
+        textBox.reduceQuoteSize = true
+        textBox.isHidden = true
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true

@@ -14,19 +14,19 @@ class Preview: UIView, PreviewPlayerItemDelegate {
 
     fileprivate var _loadingIndicator : LoadingIndicatorView?
     fileprivate var imageView : UIImageView!
-    fileprivate var isImageViewShown = false
+    fileprivate var textBox: RecordedTextView!
+    fileprivate var avPlayerLayer: AVPlayerLayer!
     
     fileprivate var isTapForMoreShown = false
     fileprivate var tapForMore = UILabel()
     
     //delegate vars
     public weak var delegate : PreviewDelegate!
-    var showTapForMore = false
-    var currentItem : Item! {
+    public var showTapForMore = false
+    public var currentItem : Item! {
         didSet {
             if currentItem != nil {
                 addItem(item: currentItem)
-                addLoadingIndicator()
             }
         }
     }
@@ -36,10 +36,11 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         super.init(frame: frame)
         
         backgroundColor = UIColor.black
-        let avPlayerLayer = AVPlayerLayer(player: Preview.aPlayer)
+        avPlayerLayer = AVPlayerLayer(player: Preview.aPlayer)
         layer.addSublayer(avPlayerLayer)
         avPlayerLayer.frame = bounds
         avPlayerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
+        avPlayerLayer.isHidden = true
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -55,6 +56,9 @@ class Preview: UIView, PreviewPlayerItemDelegate {
             imageView.image = nil
             imageView = nil
         }
+        
+        textBox = nil
+        avPlayerLayer = nil
         
         NotificationCenter.default.removeObserver(self)
     }
@@ -73,50 +77,67 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         }
     }
     
-    //adds the first clip to the answers
     fileprivate func addItem(item : Item) {
         removeClip()
         
-        guard let answerType = item.contentType, let itemURL = item.contentURL else {
+        guard let type = item.contentType else {
             GlobalFunctions.showAlertBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
             return
         }
         
-        if answerType == .recordedVideo || answerType == .albumVideo {
+        // NEED TO UPDATE
+        switch type {
+        case .recordedVideo, .albumVideo:
+            showMode(mode: .video)
+            addLoadingIndicator()
             
-            removeImageView()
-
+            guard let itemURL = item.contentURL else {
+                GlobalFunctions.showAlertBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
+                return
+            }
+            
             let aPlayerItem = PreviewPlayerItem(url: itemURL)
             Preview.aPlayer.replaceCurrentItem(with: aPlayerItem)
             aPlayerItem.delegate = self
             
             NotificationCenter.default.addObserver(self, selector: #selector(self.showPreviewEndedOverlay),
                                                    name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: Preview.aPlayer.currentItem)
-
-        } else if answerType == .recordedImage || answerType == .albumImage {
+        case .recordedImage, .albumImage:
+            showMode(mode: .image)
+            addLoadingIndicator()
+            
+            guard let itemURL = item.contentURL else {
+                GlobalFunctions.showAlertBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
+                return
+            }
+            
             DispatchQueue.main.async {
                 let _userImageData = try? Data(contentsOf: itemURL)
                 DispatchQueue.main.async(execute: {
                     if let data = _userImageData, let image = UIImage(data: data) {
-                        self.showImageView(image)
+                        self.imageView.image = image
                         self.removeLoadingIndicator()
                     }
                 })
             }
+        case .postcard:
+            showMode(mode: .text)
+            textBox.textToShow = item.itemTitle
         }
     }
     
-    fileprivate func showImageView(_ image : UIImage) {
-        if isImageViewShown {
-            imageView.image = image
-        } else {
-            imageView = UIImageView(frame: bounds)
-            imageView.image = image
-            imageView.contentMode = .scaleAspectFill
-            imageView.clipsToBounds = true
-            insertSubview(imageView, at: 1)
-            isImageViewShown = true
-        }
+    private func addImageView() {
+        imageView = UIImageView(frame: bounds)
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        insertSubview(imageView, at: 1)
+    }
+    
+    private func addTextView() {
+        textBox = RecordedTextView(frame: bounds)
+        textBox.isEditable = false
+        textBox.isPreview = true
+        insertSubview(textBox, at: 1)
     }
     
     func showPreviewEndedOverlay() {
@@ -136,15 +157,28 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         }
     }
     
-    fileprivate func removeImageView() {
-        if isImageViewShown {
+    private func showMode(mode: ContentMode) {
+        switch mode {
+        case .image:
+            if imageView == nil { addImageView() }
+            avPlayerLayer.isHidden = true
             imageView.image = nil
-            imageView.removeFromSuperview()
-            isImageViewShown = false
+            imageView.isHidden = false
+            if textBox != nil { textBox.isHidden = true }
+        case .video:
+            avPlayerLayer.isHidden = false
+            if imageView != nil { imageView.isHidden = true }
+            if textBox != nil { textBox.isHidden = true }
+        case .text:
+            if textBox == nil { addTextView() }
+            textBox.textToShow = nil
+            textBox.isHidden = false
+            avPlayerLayer.isHidden = true
+            if imageView != nil { imageView.isHidden = true }
         }
     }
 
-    func addLoadingIndicator() {
+    private func addLoadingIndicator() {
         if isTapForMoreShown {
             tapForMore.removeFromSuperview()
         }
@@ -154,7 +188,7 @@ class Preview: UIView, PreviewPlayerItemDelegate {
         addSubview(_loadingIndicator!)
     }
     
-    func removeLoadingIndicator() {
+    private func removeLoadingIndicator() {
         _loadingIndicator!.removeFromSuperview()
     }
 }

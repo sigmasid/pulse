@@ -17,16 +17,19 @@ class CameraOverlayView: UIView {
             updateFlashMode(_flashMode)
         }
     }
+    
     fileprivate var shutterButton = UIButton()
     fileprivate var closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
     fileprivate var flipCameraButton = PulseButton(size: .xSmall, type: .flipCamera, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
     fileprivate var flashModeButton = PulseButton(size: .xSmall, type: .flashMode, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
     
     fileprivate var showAlbumPicker = PulseButton(size: .small, type: .showAlbum, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var showNotecard = PulseButton(size: .small, type: .text, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    
     fileprivate var titleBackground = UILabel()
     
     fileprivate var timeLeftShapeLayer : CAShapeLayer!
-    fileprivate var titleBackgroundHeight : CGFloat = scopeBarHeight
+    fileprivate var titleBackgroundHeight : CGFloat = SCOPE_HEIGHT
     fileprivate var shutterButtonRadius : CGFloat!
     fileprivate var iconSize : CGFloat = IconSizes.xSmall.rawValue
     fileprivate var elementSpacing : CGFloat = Spacing.s.rawValue
@@ -39,12 +42,15 @@ class CameraOverlayView: UIView {
     }
     
     internal enum CameraButtonSelector: Int {
-        case shutter, flash, flip, album, close
+        case shutter, flash, flip, album, close, text
     }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-
+    }
+    
+    convenience init(frame: CGRect, showTextInput: Bool) {
+        self.init(frame: frame)
         shutterButtonRadius = frame.size.width / 11
         drawShutterButton()
         drawAlbumPicker()
@@ -52,7 +58,7 @@ class CameraOverlayView: UIView {
         drawCloseButton()
         drawFlashCamera()
         drawFlipCamera()
-
+        if showTextInput { drawNotecard() }
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -115,6 +121,7 @@ class CameraOverlayView: UIView {
             case .shutter: return shutterButton
             case .album: return showAlbumPicker
             case .close: return closeButton
+            case .text: return showNotecard
         }
     }
     
@@ -212,6 +219,18 @@ class CameraOverlayView: UIView {
         showAlbumPicker.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.m.rawValue).isActive = true
         showAlbumPicker.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         showAlbumPicker.removeShadow()
+    }
+    
+    ///Icon to turn the bring up photo album
+    fileprivate func drawNotecard() {
+        addSubview(showNotecard)
+        showNotecard.alpha = CGFloat(elementOpacity)
+        showNotecard.translatesAutoresizingMaskIntoConstraints = false
+        showNotecard.bottomAnchor.constraint(equalTo: shutterButton.bottomAnchor).isActive = true
+        showNotecard.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        showNotecard.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Spacing.m.rawValue).isActive = true
+        showNotecard.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        showNotecard.removeShadow()
     }
     
     ///Adds the stripe for the question
