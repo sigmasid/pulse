@@ -29,7 +29,7 @@ class FirstLoadVC: UIViewController {
                                          "Pulse Formats"]
     fileprivate let screenDescriptions = ["home to things that matter",
                                           "discover intelligent & interactive \nprofessional content, series & channels",
-                                          "exclusive access to expert voices\n& a platform to showcase\nyour professional expertise",
+                                          "access exclusive expert voices\n& showcase your professional expertise",
                                           "bold new formats & experiences\ncreate, collaborate & contribute"]
     fileprivate let imageNames = ["launch_screen_0",
                                   "launch_screen_1",

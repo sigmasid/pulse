@@ -57,13 +57,8 @@ class PulseIntroCell: UICollectionViewCell {
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        titleLabel.topAnchor.constraint(equalTo: topImage.bottomAnchor).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: topImage.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
         titleLabel.layoutIfNeeded()
-        
-        imageDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
-        imageDescriptionLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
-        imageDescriptionLabel.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.xs.rawValue).isActive = true
-        imageDescriptionLabel.layoutIfNeeded()
         
         screenDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false
         screenDescriptionLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true

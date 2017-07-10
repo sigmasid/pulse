@@ -36,7 +36,7 @@ class AccountLoginManagerVC: PulseNavVC {
     override init(navigationBarClass: AnyClass?, toolbarClass: AnyClass?) {
         super.init(navigationBarClass: navigationBarClass, toolbarClass: toolbarClass)
         isNavigationBarHidden = false
-        NotificationCenter.default.addObserver(self, selector: #selector(updateLoginOrAccount), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLoginOrAccount), name: NSNotification.Name(rawValue: "UserSummaryUpdated"), object: nil)
         if !initialUserUpdateComplete {
             updateLoginOrAccount()
         }
@@ -65,7 +65,7 @@ class AccountLoginManagerVC: PulseNavVC {
             
             currentLoadedView = .login
         }
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserSummaryUpdated"), object: nil)
         initialUserUpdateComplete = true
     }
     

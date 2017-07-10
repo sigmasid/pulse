@@ -1068,12 +1068,11 @@ class PulseDatabase {
         currentUser.gender = nil
         
         setCurrentUserPaths()
-        NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
     }
     
     ///Populate current user - takes the Firebase User and uses it to populate the current user
     static func populateCurrentUser(_ user: User!, completion: @escaping (_ success: Bool) -> Void) {
-        
+        removeCurrentUser()
         PulseUser.currentUser.uID = user.uid
         
         usersPublicSummaryRef.child(user.uid).observe(.value, with: { snap in
@@ -1086,16 +1085,15 @@ class PulseDatabase {
                 PulseUser.currentUser.name = nil
             }
             
-            if snap.hasChild(SettingTypes.profilePic.rawValue) {
-                PulseUser.currentUser.profilePic = snap.childSnapshot(forPath: SettingTypes.profilePic.rawValue).value as? String
+            if snap.hasChild(SettingTypes.profilePic.rawValue) || snap.hasChild(SettingTypes.thumbPic.rawValue) {
+                PulseUser.currentUser.profilePic = snap.childSnapshot(forPath: SettingTypes.profilePic.rawValue).value as? String ?? snap.childSnapshot(forPath: SettingTypes.thumbPic.rawValue).value as? String
             } else if let url = Auth.auth().currentUser?.photoURL {
                 PulseUser.currentUser.profilePic = String(describing: url)
                 saveUserToDatabase(user, completion: {_ in })
             }
             
             PulseUser.currentUser.shortBio = snap.childSnapshot(forPath: SettingTypes.shortBio.rawValue).value as? String
-            
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserSummaryUpdated"), object: self)
             completion(true)
 
         }, withCancel: { error in
@@ -1144,7 +1142,7 @@ class PulseDatabase {
             }
             
             setCurrentUserPaths()
-            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "UserDetailsUpdated"), object: self)
             addUserProfileListener(uID: user.uid)
             
         }, withCancel: { error in
@@ -1190,7 +1188,7 @@ class PulseDatabase {
 
                 if !PulseUser.currentUser.items.contains(currentItem) {
                     PulseUser.currentUser.items.append(currentItem)
-                    NotificationCenter.default.post(name: Notification.Name(rawValue: "UserUpdated"), object: self)
+                    NotificationCenter.default.post(name: Notification.Name(rawValue: "UserItemsUpdated"), object: self)
                 }
             })
             activeListeners.append(usersPublicDetailedRef.child(uID).child("items"))

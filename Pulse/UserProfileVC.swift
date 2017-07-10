@@ -143,7 +143,9 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
             allItems.removeAll()
             modalDelegate = nil
             
-            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserSummaryUpdated"), object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserDetailsUpdated"), object: nil)
+            
         }
     }
     
@@ -152,6 +154,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func userUpdated() {
+        print("user updated fired")
         if PulseUser.isLoggedIn() {
             selectedUser = PulseUser.currentUser
             updateUserInfo()
@@ -161,10 +164,16 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         }
     }
     
+    internal func userDetailsUpdated() {
+        if PulseUser.isLoggedIn() {
+            selectedUser = PulseUser.currentUser
+        }
+    }
+    
     internal func addObservers() {
         if !observerAdded {
-            NotificationCenter.default.addObserver(self, selector: #selector(userUpdated),
-                                                   name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserSummaryUpdated"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(userDetailsUpdated), name: NSNotification.Name(rawValue: "UserDetailsUpdated"), object: nil)
             observerAdded = true
         }
     }
@@ -249,19 +258,20 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func updateUserInfo() {
-        
-        selectedUser.getUserImage(completion: { [weak self] profileImage in
-            guard let `self` = self else { return }
-            self.selectedUser.thumbPicImage = profileImage
-            if let collectionView = self.collectionView {
-                for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
-                    if let view = view as? UserProfileHeader {
-                        view.updateUserDetails(selectedUser: self.selectedUser, isModal: self.isModal)
+        if let collectionView = collectionView {
+            for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
+                if let view = view as? UserProfileHeader {
+                    view.updateUserDetails(selectedUser: selectedUser, isModal: isModal)
+
+                    selectedUser.getUserImage(completion: { [weak self] profileImage in
+                        guard let `self` = self else { return }
+                        self.selectedUser.thumbPicImage = profileImage
+                        view.updateUserImage(image: self.selectedUser.thumbPicImage)
                         view.setNeedsDisplay()
-                    }
+                    })
                 }
             }
-        })
+        }
     }
     
     //once allItems var is set reload the data

@@ -22,7 +22,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         if !isLoaded {
-            NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(userUpdated), name: NSNotification.Name(rawValue: "UserSummaryUpdated"), object: nil)
 
             tabBarHidden = false
             setupLayout()
@@ -47,7 +47,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
             selectedUser = nil
             tabDelegate = nil
             cleanupComplete = true
-            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserUpdated"), object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "UserSummaryUpdated"), object: nil)
             isLoaded = false
         }
     }

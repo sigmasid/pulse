@@ -50,15 +50,13 @@ class UserProfileHeader: UICollectionReusableView {
     public func updateUserImage(image: UIImage?) {
         DispatchQueue.main.async {[weak self] in
             guard let `self` = self else { return }
-            self.profileImage.image = image
+            self.profileImage.image = image ?? UIImage(named: "default-profile")
             self.profileImage.tintColor = .black
         }
     }
     
     public func updateUserDetails(selectedUser: PulseUser?, isModal : Bool) {
         if let selectedUser = selectedUser {
-            profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
-            profileImage.tintColor = .black
             
             let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightMedium, size: profileShortBio.font.pointSize)]
             let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!,
@@ -81,11 +79,15 @@ class UserProfileHeader: UICollectionReusableView {
             longBioHeightConstraint.constant = min(maxHeight, longBioHeight)
             nameHeightAnchor.constant = isModal ? nameHeight : 0
             
-            profileName.text = isModal ? selectedUser.name : ""
-            profileShortBio.text = selectedUser.shortBio
-            profileLongBio.text = selectedUser.bio
+            DispatchQueue.main.async {
+                self.profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
+                self.profileImage.tintColor = .black
+                self.profileName.text = isModal ? selectedUser.name : ""
+                self.profileShortBio.text = selectedUser.shortBio
+                self.profileLongBio.text = selectedUser.bio
+                self.layoutIfNeeded()
+            }
             
-            layoutIfNeeded()
         } else {
             profileImage.image = UIImage(named: "default-profile")
             profileName.text = ""
