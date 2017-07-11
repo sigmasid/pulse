@@ -80,11 +80,6 @@ protocol UserProfileDelegate: class {
     func showMenu()
 }
 
-//Used by Preview VC to indicate that user watched full preview -> so full screen goes to index + 1
-protocol PreviewDelegate: class {
-    var  watchedFullPreview : Bool { get set }
-}
-
 protocol ContentDelegate: class {
     func noItemsToShow(_ : UIViewController)
     func removeIntro()
@@ -98,7 +93,7 @@ protocol ContentDelegate: class {
 }
 
 protocol BrowseContentDelegate: class {
-    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool)
+    func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item)
     func addNewItem(selectedItem : Item)
 }
 

@@ -69,8 +69,7 @@ class PulseAlbumView: UIView, UICollectionViewDataSource, UICollectionViewDelega
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        setupLayout()
-        setupImages()
+        performSetup()
         
         if PHPhotoLibrary.authorizationStatus() == PHAuthorizationStatus.authorized {
             PHPhotoLibrary.shared().unregisterChangeObserver(self)
@@ -79,6 +78,11 @@ class PulseAlbumView: UIView, UICollectionViewDataSource, UICollectionViewDelega
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    fileprivate func performSetup() {
+        setupLayout()
+        setupImages()
     }
     
     fileprivate func setupLayout() {
@@ -94,14 +98,28 @@ class PulseAlbumView: UIView, UICollectionViewDataSource, UICollectionViewDelega
     
     func setupImages() {
         
-        if images != nil {
+        guard images == nil else {
             collectionView.reloadData()
             return
         }
         
         // Never load photos Unless the user allows to access to photo album
-        checkPhotoAuth()
-        
+        checkPhotoAuth {[weak self] success in
+            guard let `self` = self else { return }
+            if success {
+                self.imageManager = PHCachingImageManager()
+                DispatchQueue.main.async(execute: {[unowned self] () -> Void in
+                    self.completeImageFetch()
+                })
+            } else {
+                DispatchQueue.main.async(execute: {[unowned self] () -> Void in
+                    self.delegate?.albumViewCameraRollUnauthorized()
+                })
+            }
+        }
+    }
+    
+    private func completeImageFetch() {
         // Sorting condition
         let options = PHFetchOptions()
         options.sortDescriptors = [
@@ -319,27 +337,23 @@ internal extension IndexSet {
 private extension PulseAlbumView {
     
     // Check the status of authorization for PHPhotoLibrary
-    func checkPhotoAuth() {
+    func checkPhotoAuth(completion: @escaping (_ success: Bool) -> Void) {
         
-        PHPhotoLibrary.requestAuthorization {[weak self] (status) -> Void in
-            guard let `self` = self else { return }
+        PHPhotoLibrary.requestAuthorization { status -> Void in
             
             switch status {
                 
             case .authorized:
                 
-                self.imageManager = PHCachingImageManager()
+                completion(true)
                 
             case .restricted, .denied:
                 
-                DispatchQueue.main.async(execute: {[unowned self] () -> Void in
-                    
-                    self.delegate?.albumViewCameraRollUnauthorized()
-                })
+                completion(false)
                 
             default:
                 
-                break
+                completion(false)
             }
         }
     }

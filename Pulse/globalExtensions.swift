@@ -589,6 +589,33 @@ extension UIImage
         // something failed -- return original
         return cgImage
     }
+    
+    func applyInterviewFilter(filterName: String = "CIPhotoEffectNoir", filteredFrame: CGRect) -> UIImage? {
+        guard let resizedImage = GlobalFunctions.resizeImageHeight(image: self, newHeight: filteredFrame.height), let cgimg = resizedImage.cgImage else {
+            return nil
+        }
+        
+        let imageCenter = CIVector(cgPoint: CGPoint(x: resizedImage.size.width / 2, y: resizedImage.size.height / 2))
+        let backgroundImage = CIImage(cgImage: GlobalFunctions.imageWithColor(UIColor.black, rect: filteredFrame).cgImage!)
+        
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
+        let coreImage = CIImage(cgImage: cgimg).applyingFilter(filterName, withInputParameters: nil)
+        let vignetteImage = coreImage.applyingFilter("CIVignetteEffect",
+                                                     withInputParameters: [kCIInputCenterKey: imageCenter,
+                                                                          kCIInputRadiusKey: resizedImage.size.width / 4,
+                                                                          kCIInputIntensityKey: 1.0])
+                                     .applying(CGAffineTransform(translationX: filteredFrame.size.width * 0.33, y: 0))
+        
+        let blendedImage = backgroundImage.applyingFilter("CILightenBlendMode", withInputParameters: [kCIInputBackgroundImageKey: vignetteImage])
+        let croppedImage = blendedImage.cropping(to: filteredFrame)
+        
+        if let cgimgresult = context.createCGImage(croppedImage, from: croppedImage.extent) {
+            return UIImage(cgImage: cgimgresult)
+        } else {
+            return nil
+        }
+    }
 }
 
 extension Double {

@@ -10,6 +10,9 @@ import UIKit
 
 class PulseVC: UIViewController, PulseNavControllerDelegate {
     
+    /** Cached Images **/
+    static let userImageCache = ImageCache(name: "UserImages")
+    
     /** Loading Overlay **/
     internal var loadingView : LoadingView!
     

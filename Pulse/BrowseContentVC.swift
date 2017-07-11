@@ -8,9 +8,8 @@
 
 import UIKit
 
-class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
+class BrowseContentVC: PulseVC, HeaderDelegate {
     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
-    public var watchedFullPreview: Bool = false
     public weak var contentDelegate : BrowseContentDelegate!
     public weak var modalDelegate : ModalDelegate!
     /** End Delegate Vars **/
@@ -34,7 +33,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
                 PulseDatabase.getItemCollection(selectedItem.itemID, completion: {[weak self](success, items) in
                     guard let `self` = self else { return }
                     if success {
-                        let type = self.selectedItem.type == .question ? "answer" : "post"
+                        let type = self.selectedItem.childItemType().rawValue
                         self.allItems = items.map{ item -> Item in
                             Item(itemID: item.itemID, type: type)
                         }
@@ -51,7 +50,9 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
             }
         }
     }
-    public var forSingleUser = false //if true then shows titles in caption vs. user info
+    
+    //if true then shows titles in caption vs. user info
+    public var forSingleUser = false
     //end set by delegate
     
     /** Collection View Vars **/
@@ -151,7 +152,9 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
             //is in nav controller
             addBackButton()
             headerNav?.followScrollView(collectionView, delay: 25.0)
-            headerNav?.setNav(title: selectedItem.tag?.itemTitle, subtitle: selectedItem.cTitle)
+            
+            forSingleUser ? headerNav?.setNav(title: selectedItem.user?.name, subtitle: selectedItem.tag?.itemTitle) :
+                            headerNav?.setNav(title: selectedItem.tag?.itemTitle, subtitle: selectedItem.cTitle)
             headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         } else {
             //was shown modally
@@ -175,7 +178,7 @@ class BrowseContentVC: PulseVC, PreviewDelegate, HeaderDelegate {
     
     internal func showItemDetail(item : Item, index : Int, itemCollection: [Item]) {
         if contentDelegate != nil {
-            contentDelegate.showItemDetail(allItems: allItems, index: index, itemCollection: itemCollection, selectedItem : item, watchedPreview : watchedFullPreview)
+            contentDelegate.showItemDetail(allItems: allItems, index: index, itemCollection: itemCollection, selectedItem : item)
         }
     }
     
@@ -342,7 +345,6 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             showItemDetail(item: selectedItem, index: indexPath.row, itemCollection: itemStack[indexPath.row].itemCollection )
         } else if indexPath == selectedIndex {
             //if item has more than initial clip, show 'see more at the end'
-            watchedFullPreview = false
             
             //if interview just go directly to full screen
             if currentItem.type != .interview {
@@ -356,7 +358,6 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                     }
                 })
                 
-                cell.delegate = self
                 cell.showItemPreview(item: currentItem)
             } else {
                 toggleLoading(show: true, message: "loading interview...")
@@ -385,14 +386,7 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: headerReuseIdentifier, for: indexPath) as! ItemHeader
             headerView.backgroundColor = .white
             headerView.delegate = self
-            
-            if forSingleUser, let name = selectedItem.user?.name {
-                let headerTitle = name + " - " + selectedItem.itemTitle
-                headerView.updateLabel(headerTitle)
-            } else {
-                headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "")
-            }
-            
+            headerView.updateLabel(selectedItem != nil ? selectedItem.itemTitle : "")
             return headerView
             
         default: assert(false, "Unexpected element kind")

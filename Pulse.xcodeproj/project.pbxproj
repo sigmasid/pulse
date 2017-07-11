@@ -66,6 +66,7 @@
 		BA5BE3801F031764006AF3B7 /* AlbumCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5BE37F1F031764006AF3B7 /* AlbumCell.swift */; };
 		BA5C62D01E5D1D5F000823AB /* SeriesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5C62CF1E5D1D5F000823AB /* SeriesVC.swift */; };
 		BA5E7A241E5A7E0C00FEE34A /* ItemCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */; };
+		BA6086661F14A6E5006C6540 /* PulseUserCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6086651F14A6E5006C6540 /* PulseUserCache.swift */; };
 		BA659EFB1E8446FC004C46F9 /* NewInterviewVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA659EFA1E8446FC004C46F9 /* NewInterviewVC.swift */; };
 		BA659EFD1E844F32004C46F9 /* ItemTableHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA659EFC1E844F32004C46F9 /* ItemTableHeader.swift */; };
 		BA6B78B61D2E2620003EE992 /* RecordingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA6B78B51D2E2620003EE992 /* RecordingOverlay.swift */; };
@@ -192,6 +193,7 @@
 		BA5BE37F1F031764006AF3B7 /* AlbumCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumCell.swift; sourceTree = "<group>"; };
 		BA5C62CF1E5D1D5F000823AB /* SeriesVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SeriesVC.swift; sourceTree = "<group>"; };
 		BA5E7A231E5A7E0C00FEE34A /* ItemCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemCell.swift; sourceTree = "<group>"; };
+		BA6086651F14A6E5006C6540 /* PulseUserCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PulseUserCache.swift; sourceTree = "<group>"; };
 		BA659EFA1E8446FC004C46F9 /* NewInterviewVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewInterviewVC.swift; sourceTree = "<group>"; };
 		BA659EFC1E844F32004C46F9 /* ItemTableHeader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItemTableHeader.swift; sourceTree = "<group>"; };
 		BA6B78B51D2E2620003EE992 /* RecordingOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecordingOverlay.swift; sourceTree = "<group>"; };
@@ -315,6 +317,7 @@
 		BA03C43C1DB5A53900277382 /* Pulse Shared */ = {
 			isa = PBXGroup;
 			children = (
+				BAD93A321F1192E8009422A2 /* Constants.swift */,
 				BA79FA561E469FF2004E50EE /* Reachability.swift */,
 				BA1550C41D5554C4000EF1AA /* MiniPreview.swift */,
 				BA3BB22A1E89B4AB00F74000 /* LoadingVC.swift */,
@@ -332,6 +335,7 @@
 				BA0387071DB1B2BA00A7BB79 /* PulseNavBar.swift */,
 				BA1DE8731E6A6C5900AD5A46 /* PulseVC.swift */,
 				BA9522031E737681003DC925 /* PulseProtocols.swift */,
+				BA6086651F14A6E5006C6540 /* PulseUserCache.swift */,
 			);
 			name = "Pulse Shared";
 			sourceTree = "<group>";
@@ -420,7 +424,6 @@
 			children = (
 				BA1DE1411D244C9F004F3ED2 /* globalExtensions.swift */,
 				BA7D67801D30DEA100883B88 /* globalFunctions.swift */,
-				BAD93A321F1192E8009422A2 /* Constants.swift */,
 			);
 			name = "Global Refs";
 			sourceTree = "<group>";
@@ -838,6 +841,7 @@
 				BAB9AD321F04AD0300968CA6 /* InputVC.swift in Sources */,
 				BA5BE37C1F030D4F006AF3B7 /* PulseAlbumView.swift in Sources */,
 				BAF76D871DB026E700FB72EE /* InboxTableCell.swift in Sources */,
+				BA6086661F14A6E5006C6540 /* PulseUserCache.swift in Sources */,
 				BA722DEC1E5A4AE400E9699D /* ItemHeader.swift in Sources */,
 				BA1550C51D5554C4000EF1AA /* MiniPreview.swift in Sources */,
 				BAFA8F331D42984F00C1BB14 /* FiltersOverlay.swift in Sources */,

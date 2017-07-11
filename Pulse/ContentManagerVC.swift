@@ -171,7 +171,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     }
     
     /** Browse Content Delegate **/
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
         self.allItems = allItems
         self.itemIndex = index
         self.itemCollection = itemCollection
@@ -206,7 +206,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     
     func userClickedProfileDetail() {
         
-        let userProfileVC = UserProfileVC()        
+        let userProfileVC = UserProfileVC()
+        userProfileVC.isModal = true
         userProfileVC.selectedUser = selectedItem?.user
         userProfileVC.modalDelegate = self
 

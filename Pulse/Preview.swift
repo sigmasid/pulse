@@ -21,7 +21,6 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     fileprivate var tapForMore = UILabel()
     
     //delegate vars
-    public weak var delegate : PreviewDelegate!
     public var showTapForMore = false
     public var currentItem : Item! {
         didSet {
@@ -49,7 +48,6 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     
     deinit {
         removeClip()
-        delegate = nil
         currentItem = nil
         
         if imageView != nil {
@@ -142,9 +140,6 @@ class Preview: UIView, PreviewPlayerItemDelegate {
     
     func showPreviewEndedOverlay() {
         if showTapForMore {
-            if delegate != nil {
-                delegate.watchedFullPreview = true
-            }
             tapForMore = UILabel(frame: bounds)
             tapForMore.backgroundColor = UIColor.black.withAlphaComponent(0.7)
             tapForMore.text = "See More"

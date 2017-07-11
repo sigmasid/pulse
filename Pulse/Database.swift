@@ -1467,11 +1467,13 @@ class PulseDatabase {
         }
             
         //if any other except interview - add the actual item to the series collection, add the item to channel & update user
-        //interviews are added to separate collection & only one entry is added in the end
         else if parentItem.type != .interview {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
             collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+        } else if parentItem.type == .interview {
+            //interviews are added to collection but only one entry is added to channelItems & user records
+            collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
         }
         
         if let tagID = item.tag?.itemID {
@@ -1744,6 +1746,8 @@ class PulseDatabase {
         let _user = PulseUser.currentUser
         
         let channelPost : [String : AnyObject] = ["type" : interviewParentItem.type.rawValue as AnyObject,
+                                                  "cID" : interviewParentItem.cID as AnyObject,
+                                                  "url" : String(describing: interviewParentItem.contentURL) as AnyObject,
                                                   "tagID" : interviewParentItem.tag?.itemID as AnyObject,
                                                   "tagTitle" : interviewParentItem.tag?.itemTitle as AnyObject,
                                                   "title" : interviewParentItem.itemTitle as AnyObject,

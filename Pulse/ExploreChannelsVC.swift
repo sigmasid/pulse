@@ -244,10 +244,10 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
 
     //used for handling links
     internal func showItemDetail(item : Item, allItems: [Item]) {
-        showItemDetail(allItems: allItems, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+        showItemDetail(allItems: allItems, index: 0, itemCollection: [], selectedItem: item)
     }
     
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
         contentVC = ContentManagerVC()
         contentVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
         contentVC.selectedItem = selectedItem
@@ -411,18 +411,8 @@ extension ExploreChannelsVC {
                     if error == nil, let item = item, let type = type, userConfirmed {
                         switch type {
                         case .interviewInvite:
-                            DispatchQueue.main.async {
-                                let interviewVC = InterviewRequestVC()
-                                //need to do in this order so all items are set before itemID
-                                interviewVC.conversationID = conversationID
-                                interviewVC.allQuestions = items
-                                interviewVC.selectedUser = PulseUser.currentUser
-                                interviewVC.interviewItem = item
-                                self.navigationController?.pushViewController(interviewVC, animated: true)
-
-                                interviewVC.interviewItemID = item.itemID
-                                
-                            }
+                            self.showInterviewMenu(item: item, items: items, conversationID: conversationID)
+                            
                         case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite:
                             self.showCameraMenu(inviteItem: item)
 
@@ -457,6 +447,35 @@ extension ExploreChannelsVC {
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showInterviewMenu(item: Item, items: [Item], conversationID: String?) {
+        let menu = UIAlertController(title: "New Interview Invitation!",
+            message: "Topic: \(item.itemTitle)\nWe are excited to hear your perspectives!",
+            preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            DispatchQueue.main.async {
+                let interviewVC = InterviewRequestVC()
+                //need to do in this order so all items are set before itemID
+                interviewVC.conversationID = conversationID
+                interviewVC.allQuestions = items
+                interviewVC.selectedUser = PulseUser.currentUser
+                interviewVC.interviewItem = item
+                self.navigationController?.pushViewController(interviewVC, animated: true)
+                
+                interviewVC.interviewItemID = item.itemID
+                
+            }
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .destructive, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
         }))
         

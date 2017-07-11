@@ -237,10 +237,16 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
                     self.universalLink = universalLink
                 }
             default:
-                if isLoaded {
+                if isLoaded, !PulseUser.isLoggedIn() {
                     selectedIndex = 0
                     accountVC.showInviteAlert = true
                     self.universalLink = universalLink
+                } else if isLoaded, PulseUser.isLoggedIn() {
+                    if !exploreChannelsVC.isRootController() {
+                        exploreNavVC.popToRootViewController(animated: false)
+                    }
+                    exploreChannelsVC.universalLink = universalLink
+                    selectedIndex = 1
                 } else {
                     self.universalLink = universalLink
                 }

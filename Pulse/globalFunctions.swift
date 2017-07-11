@@ -41,19 +41,8 @@ enum GlobalFunctions {
     }
     
     static func showNotificationPermissions() {
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(
-            options: authOptions,
-            completionHandler: { success, _ in
-            
-            let defaults = UserDefaults.standard
-            defaults.setValue(true, forKey: "askedNotificationPermission")
-                
-            if !success {
-                GlobalFunctions.showAlertBlock("Error Registering",
-                                               erMessage: "you can change notifications permissions by going into the settings")
-            }
-        })
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        appDelegate.registerForNotifications(application: UIApplication.shared)
     }
     /** END: NETWORK + PERMISSIONS **/
     
@@ -118,16 +107,10 @@ enum GlobalFunctions {
     }
     
     static func getCellHeight(type : ItemTypes) -> CGFloat {
-        switch type {
-        case .question: return 145
-        case .answer: return 145
-        case .post: return 420
-        case .thread: return 420
-        case .perspective: return 420
-        case .session: return 420
-        case .showcase: return 420
-
-        default: return 145
+        if shouldGetImage(type: type) {
+            return CELL_WITH_IMAGE_HEIGHT
+        } else {
+            return CELL_NO_IMAGE_HEIGHT
         }
     }
     /** END: COLLECTION VIEW ITEMS **/
@@ -192,6 +175,10 @@ enum GlobalFunctions {
             completion(false, NSError.init(domain: "Invalid", code: 200, userInfo: userInfo))
         }
     }
+    
+    static func shouldGetImage(type: ItemTypes) -> Bool {
+        return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase || type == .interview
+    }
     /** END: VALIDATE ITEMS **/
     
     
@@ -239,8 +226,7 @@ enum GlobalFunctions {
         return normalizedImage
     }
     
-    static func imageWithColor(_ color: UIColor) -> UIImage {
-        let rect = CGRect(x: 0.0, y: 0.0, width: 1.0, height: 1.0)
+    static func imageWithColor(_ color: UIColor, rect: CGRect = CGRect(x: 0.0, y: 0.0, width: 1.0, height: 1.0)) -> UIImage {
         UIGraphicsBeginImageContext(rect.size)
         let context = UIGraphicsGetCurrentContext()
         context?.setFillColor(color.cgColor);
@@ -305,6 +291,18 @@ enum GlobalFunctions {
     static func resizeImage(image: UIImage, newWidth: CGFloat) -> UIImage? {
         let scale = newWidth / image.size.width
         let newHeight = image.size.height * scale
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
+        image.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage
+    }
+    
+    static func resizeImageHeight(image: UIImage, newHeight: CGFloat) -> UIImage? {
+        let scale = newHeight / image.size.height
+        let newWidth = image.size.width * scale
         UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
         image.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
         

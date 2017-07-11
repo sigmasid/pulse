@@ -8,9 +8,7 @@
 
 import UIKit
 
-class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
-    public weak var delegate : PreviewDelegate!
-    
+class BrowseContentCell: UICollectionViewCell {
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()
     fileprivate lazy var previewImage = UIImageView()
@@ -19,15 +17,6 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
     fileprivate lazy var preview : Preview = Preview()
     fileprivate var previewAdded = false
     fileprivate var reuseCell = false
-    
-    //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
-    var watchedFullPreview: Bool = false {
-        didSet {
-            if delegate != nil {
-                delegate.watchedFullPreview = watchedFullPreview
-            }
-        }
-    }
     
     var showTapForMore = false {
         didSet {
@@ -47,7 +36,6 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
     }
     
     deinit {
-        delegate = nil
         previewImage.image = nil
     }
     
@@ -103,7 +91,6 @@ class BrowseContentCell: UICollectionViewCell, PreviewDelegate {
     
     func showItemPreview(item : Item) {
         preview = Preview(frame: contentView.bounds)
-        preview.delegate = self
         preview.currentItem = item
         previewImage.isHidden = true
         titleStack.isHidden = true

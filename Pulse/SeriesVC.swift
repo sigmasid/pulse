@@ -509,17 +509,30 @@ extension SeriesVC {
         //can only be a question or a post that user selects since it's in a tag already
         switch item.type {
         case .post, .showcase:
-            showItemDetail(allItems: allItems, index: index, itemCollection: [], selectedItem: selectedItem, watchedPreview: false)
-        case .question, .thread, .interview:
+            showItemDetail(allItems: allItems, index: index, itemCollection: [], selectedItem: selectedItem)
+            
+        case .interview:
             toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
             PulseDatabase.getItemCollection(item.itemID, completion: {[weak self](success, items) in
                 guard let `self` = self else {
                     return
                 }
                 
-                success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) : self.showNoItemsMenu(selectedItem : item)
+                success ? self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) : self.showNoItemsMenu(selectedItem : item)
                 self.toggleLoading(show: false, message: nil)
             })
+            
+        case .question, .thread:
+            toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
+            PulseDatabase.getItemCollection(item.itemID, completion: {[weak self](success, items) in
+                guard let `self` = self else {
+                    return
+                }
+                
+                success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) : self.showNoItemsMenu(selectedItem : item)
+                self.toggleLoading(show: false, message: nil)
+            })
+            
         case .session:
             toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
             PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
@@ -534,10 +547,10 @@ extension SeriesVC {
                         let sessionSlice = items.dropLast()
                         var sessionItems = Array(sessionSlice)
                         sessionItems.insert(lastItem, at: 0)
-                        self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                        self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
                     }
                 } else if success {
-                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
                 } else {
                     //show no items menu
                     self.showNoItemsMenu(selectedItem : item)
@@ -559,7 +572,7 @@ extension SeriesVC {
         navigationController?.pushViewController(itemCollection, animated: true)
     }
     
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
         contentVC = ContentManagerVC()
         
         contentVC.selectedChannel = selectedChannel

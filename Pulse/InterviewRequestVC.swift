@@ -30,11 +30,13 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
                     self.checkPartialInterview()
                     self.updateDataSource()
                     self.updateScreen()
+                    self.createInterviewImage()
                 })
             } else {
                 self.checkPartialInterview()
                 self.updateDataSource()
                 self.updateScreen()
+                self.createInterviewImage()
             }
         }
     }
@@ -50,6 +52,8 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal var iDescription = PaddingLabel()
     internal var submitButton = PulseButton(title: "Finish Interview", isRound: true, hasShadow: false)
     
+    fileprivate var fullImageData : Data?
+    fileprivate var thumbImageData : Data?
     private var cleanupComplete = false
     
     override func viewDidLoad() {
@@ -97,7 +101,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         addBackButton()
         addMenuButton()
         
-        headerNav?.setNav(title: "Interview Request", subtitle: interviewItem.tag?.itemTitle)
+        headerNav?.setNav(title: "Interview Request", subtitle: interviewItem != nil ? interviewItem.tag?.itemTitle : nil)
         headerNav?.updateBackgroundImage(image: nil)
         headerNav?.showNavbar(animated: true)
     }
@@ -118,7 +122,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         }
     }
     
-    internal func updateScreen() {
+    private func updateScreen() {
         let interviewRequest = interviewItem.itemTitle != "" ? ": \(interviewItem.itemTitle)" : ""
         let interviewerName = interviewItem.user?.name != nil ? " from \(interviewItem.user!.name!)" : ""
         let channelName = interviewItem.cTitle != nil ? " on Channel \(interviewItem.cTitle!.capitalized)" : ""
@@ -129,6 +133,15 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         iDescription.text = "You receieved an interview request\(interviewerName.capitalized). Your interview will be featured in the\(seriesName) series\(channelName)!"
         iDescription.numberOfLines = 0
         iDescription.layoutIfNeeded()
+    }
+    
+    private func createInterviewImage() {
+        PulseDatabase.getProfilePicForUser(user: PulseUser.currentUser, completion: { image in
+            guard let image = image else { return }
+            let filteredImage = image.applyInterviewFilter(filteredFrame: CGRect(x: 0, y: 0, width: FULL_IMAGE_WIDTH, height: FULL_IMAGE_WIDTH))
+            self.fullImageData = filteredImage?.mediumQualityJPEGNSData
+            self.thumbImageData = filteredImage?.resizeImage(newWidth: ITEM_THUMB_WIDTH)?.mediumQualityJPEGNSData
+        })
     }
     
     internal func checkPartialInterview() {
@@ -353,7 +366,18 @@ extension InterviewRequestVC {
     }
     
     internal func markInterviewCompleted() {
-        PulseDatabase.addInterviewToDatabase(interviewItemID: interviewItemID, interviewParentItem: interviewItem, completion: {[weak self] (success, error) in
+        //upload image first so we can add in the URL
+        PulseDatabase.uploadImageData(channelID: interviewItem.cID, itemID: interviewItem.itemID, imageData: fullImageData, fileType: .content, completion: {[weak self] (metadata, error) in
+            guard let `self` = self else { return }
+            
+            self.interviewItem.contentURL = metadata?.downloadURL()
+            self.addInterviewToDatabase(item: self.interviewItem)
+            PulseDatabase.uploadImageData(channelID: self.interviewItem.cID, itemID: self.interviewItem.itemID, imageData: self.thumbImageData, fileType: .thumb, completion: {_ in })
+        })
+    }
+    
+    internal func addInterviewToDatabase(item: Item) {
+        PulseDatabase.addInterviewToDatabase(interviewItemID: interviewItemID, interviewParentItem: item, completion: {[weak self] (success, error) in
             guard let `self` = self else { return }
             if success {
                 self.showSuccessMenu()

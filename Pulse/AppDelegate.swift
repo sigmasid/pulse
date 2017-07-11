@@ -131,6 +131,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
     // [END refresh_token]
     
     func registerForNotifications(application: UIApplication) {
+        
         if #available(iOS 10.0, *) {
             // For iOS 10 display notification (sent via APNS)
             UNUserNotificationCenter.current().delegate = self
@@ -138,7 +139,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, FirstLaunchDelegate {
             let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
             UNUserNotificationCenter.current().requestAuthorization(
                 options: authOptions,
-                completionHandler: {_, _ in })
+                completionHandler: {success, _ in
+                    let defaults = UserDefaults.standard
+                    defaults.setValue(true, forKey: "askedNotificationPermission")
+                    
+                    if !success {
+                        GlobalFunctions.showAlertBlock("Error Registering",
+                                                       erMessage: "you can change notifications permissions by going into the settings")
+                    }
+            })
             
             // For iOS 10 data message (sent via FCM)
             Messaging.messaging().delegate = self
@@ -217,7 +226,9 @@ extension AppDelegate : UNUserNotificationCenterDelegate {
 extension AppDelegate : MessagingDelegate {
     // [START refresh_token]
     func messaging(_ messaging: Messaging, didRefreshRegistrationToken fcmToken: String) {
-        
+        if let tokenID = InstanceID.instanceID().token() {
+            PulseDatabase.updateNotificationToken(tokenID: tokenID)
+        }
     }
     
     // Receive data messages on iOS 10+ directly from FCM (bypassing APNs) when the app is in the foreground.

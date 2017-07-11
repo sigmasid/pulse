@@ -22,7 +22,7 @@ class ItemCell: UICollectionViewCell {
     fileprivate var itemHeader: UIView! = UIView()
 
     fileprivate lazy var itemTag: UILabel! = UILabel()
-    fileprivate var itemHeightAnchor : NSLayoutConstraint!
+    fileprivate var itemImageHeightAnchor : NSLayoutConstraint!
     fileprivate var footerHeightAnchor : NSLayoutConstraint!
 
     fileprivate var itemButton: PulseButton! = PulseButton(size: .xSmall, type: .logoCircle, isRound: true, hasBackground: false)
@@ -30,24 +30,24 @@ class ItemCell: UICollectionViewCell {
     
     public var itemType : ItemTypes? {
         didSet {
-            switch itemType! {
-            case .question, .answer, .interview:
-                itemImage.isHidden = true
-                itemHeightAnchor.constant = 0
-                titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
-                titleLabel.numberOfLines = 2
-
-            case .post, .thread, .perspective, .session, .showcase:
-                itemHeightAnchor.constant = POST_HEIGHT
-                titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
-                titleLabel.numberOfLines = 2
-                itemImage.isHidden = false
-
-            default:
-                itemHeightAnchor.constant = 0
+            guard let itemType = itemType else {
+                itemImageHeightAnchor.constant = 0
                 titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
                 titleLabel.numberOfLines = 1
                 itemImage.isHidden = true
+                return
+            }
+            
+            if GlobalFunctions.shouldGetImage(type: itemType) {
+                itemImageHeightAnchor.constant = POST_IMAGE_HEIGHT
+                titleLabel.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
+                titleLabel.numberOfLines = 2
+                itemImage.isHidden = false
+            } else {
+                itemImage.isHidden = true
+                itemImageHeightAnchor.constant = 0
+                titleLabel.setFont(FontSizes.headline.rawValue, weight: UIFontWeightThin, color: UIColor.black, alignment: .left)
+                titleLabel.numberOfLines = 2
             }
         }
     }
@@ -177,7 +177,7 @@ class ItemCell: UICollectionViewCell {
         titleLabel.text = ""
         subtitleLabel.text = ""
         itemImage.image = nil
-        itemHeightAnchor.constant = 0
+        itemImageHeightAnchor.constant = 0
 
         super.prepareForReuse()
     }
@@ -209,9 +209,9 @@ class ItemCell: UICollectionViewCell {
         cellCard.addArrangedSubview(itemFooter)
         
         itemImage.translatesAutoresizingMaskIntoConstraints = false
-        itemHeightAnchor = itemImage.heightAnchor.constraint(equalToConstant: POST_HEIGHT)
-        itemHeightAnchor.priority = 100
-        itemHeightAnchor.isActive = true
+        itemImageHeightAnchor = itemImage.heightAnchor.constraint(equalToConstant: POST_IMAGE_HEIGHT)
+        itemImageHeightAnchor.priority = 100
+        itemImageHeightAnchor.isActive = true
         
         itemFooter.translatesAutoresizingMaskIntoConstraints = false
         footerHeightAnchor = itemFooter.heightAnchor.constraint(greaterThanOrEqualToConstant: 54)

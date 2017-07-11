@@ -191,7 +191,7 @@ class Item: NSObject {
     }
     
     internal func shouldGetImage() -> Bool {
-        return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase
+        return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase || type == .interview
     }
     
     internal func shouldGetBrowseImage() -> Bool {

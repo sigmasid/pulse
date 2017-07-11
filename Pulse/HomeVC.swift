@@ -510,17 +510,30 @@ extension HomeVC {
             switch item.type {
             case .answer:
                 
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
                 
             case .post, .perspective, .showcase:
                 
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
                 
             case .posts, .feedback:
                 
                 showTag(selectedItem: item)
                 
-            case .interview, .question, .thread:
+            case .interview:
+                
+                //showing chron (earliest first) vs. question / thread where show newest first
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    self.toggleLoading(show: false, message: nil)
+                    success ?
+                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) :
+                        self.showNoItemsMenu(selectedItem : item)
+                })
+                
+            case .question, .thread:
                 
                 toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
                 
@@ -528,7 +541,7 @@ extension HomeVC {
                     guard let `self` = self else { return }
                     self.toggleLoading(show: false, message: nil)
                     success ?
-                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false) :
+                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
                         self.showNoItemsMenu(selectedItem : item)
                 })
             
@@ -547,10 +560,10 @@ extension HomeVC {
                             let sessionSlice = items.dropLast()
                             var sessionItems = Array(sessionSlice)
                             sessionItems.insert(lastItem, at: 0)
-                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
                         }
                     } else if success {
-                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, watchedPreview: false)
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
                     } else {
                         //show no items menu
                         self.showNoItemsMenu(selectedItem : item)
@@ -619,7 +632,7 @@ extension HomeVC {
     }
     
     /** Browse Content Delegate **/
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, watchedPreview : Bool) {
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
         contentVC = ContentManagerVC()
         contentVC.selectedChannel = Channel(cID: selectedItem.cID)
         contentVC.selectedItem = selectedItem
@@ -684,7 +697,8 @@ extension HomeVC {
         itemCollection.selectedChannel = Channel(cID: selectedItem.cID)
         itemCollection.selectedItem = selectedItem
         itemCollection.contentDelegate = self
-        
+        itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
+
         navigationController?.pushViewController(itemCollection, animated: true)
     }
     

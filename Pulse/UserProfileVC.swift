@@ -8,7 +8,7 @@
 
 import UIKit
 
-class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegate {
+class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
     
     public weak var modalDelegate : ModalDelegate!
     public var isModal = false
@@ -28,7 +28,14 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
                 headerNav?.setNav(title: "Profile")
                 updateDataSource()
             } else if PulseUser.isLoggedIn(), selectedUser.uID == PulseUser.currentUser.uID! {
-                //For current user
+                //For current user - if is modal - transfer values from current user
+                guard !isModal else {
+                    updateUserInfo()
+                    allItems = PulseUser.currentUser.items
+                    updateDataSource()
+                    return
+                }
+                
                 if  oldValue != nil {
                     guard selectedUser.uID != oldValue.uID else { return }
                 }
@@ -58,7 +65,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
             }
         }
     }
-    public var watchedFullPreview: Bool = false     //Delegate PreviewVC var - if user watches full preview then go to index 1 vs. index 0 in full screen
     /** End Delegate Vars **/
     
     /** Data Source Vars **/
@@ -112,9 +118,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
         
         if !isLayoutSetup {
             toggleLoading(show: true, message: "Loading Profile...", showIcon: true)
-
+            
             updateHeader()
             setupLayout()
+            updateDataSource()
             isLayoutSetup = true
         }
     }
@@ -154,7 +161,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func userUpdated() {
-        print("user updated fired")
         if PulseUser.isLoggedIn() {
             selectedUser = PulseUser.currentUser
             updateUserInfo()
@@ -248,9 +254,11 @@ class UserProfileVC: PulseVC, UserProfileDelegate, PreviewDelegate, ModalDelegat
     }
     
     internal func getDetailUserProfile() {
+        guard let selectedUser = selectedUser else { return }
+        
         PulseDatabase.getDetailedUserProfile(user: selectedUser, completion: {[weak self] updatedUser in
             guard let `self` = self else { return }
-            let userImage = self.selectedUser.thumbPicImage
+            let userImage = selectedUser.thumbPicImage
             
             self.selectedUser = updatedUser
             self.selectedUser.thumbPicImage = userImage
@@ -526,7 +534,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                     cell.updateImage(image: self.allItems[indexPath.row].content)
                                 }
                             }
-                        } else {
+                        } else if indexPath.row < self.allItems.count {
                             cell.updateImage(image: self.allItems[indexPath.row].defaultImage())
                         }
                     })
@@ -552,14 +560,13 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                     }
                 })
                 
-                cell.delegate = self
                 cell.showItemPreview(item: currentItem)
             } else {
                 toggleLoading(show: true, message: "Loading Interview...")
                 PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
                     guard let `self` = self else { return }
                     self.toggleLoading(show: false, message: nil)
-                    self.showItemDetail(selectedItem : currentItem, allItems: itemCollection)
+                    self.showItemDetail(selectedItem : currentItem, allItems: itemCollection.reversed())
                     self.selectedIndex = nil
                     self.deselectedIndex = nil
 
