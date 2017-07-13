@@ -81,7 +81,6 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
             if let error = error, let errorCode = AuthErrorCode(rawValue: error.code) {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loading)
-                UIApplication.shared.isNetworkActivityIndicatorVisible = false
 
                 switch errorCode {
                 case AuthErrorCode.invalidEmail: self._emailErrorLabel.text = error.localizedDescription

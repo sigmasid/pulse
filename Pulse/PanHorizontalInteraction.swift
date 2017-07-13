@@ -84,7 +84,7 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
                 finish()
             }
             
-        case .failed:
+        case .failed:            
             cancel()
         default:
             return

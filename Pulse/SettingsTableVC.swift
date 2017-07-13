@@ -103,28 +103,19 @@ class SettingsTableVC: PulseVC {
     internal func updateHeaderImage(img : UIImage) {
         //add profile pic or use default image
         DispatchQueue.main.async {
-            PulseUser.currentUser.thumbPicImage = img
+            PulseDatabase.userImageCache.store(img.highestQualityJPEGNSData, forKey: PulseUser.currentUser.uID!)
             self.profilePic.setImage(img, for: .normal)
             self.profilePic.makeRound()
         }
     }
     
     internal func addUserProfilePic() {
-        if let thumbPic = PulseUser.currentUser.thumbPicImage {
-            profilePic.setImage(thumbPic, for: .normal)
-            profilePic.makeRound()
-        } else if let _userImageURL = PulseUser.currentUser.thumbPic, let url = URL(string: _userImageURL) {
-            DispatchQueue.global().async {
-                if let _userImageData = try? Data(contentsOf: url) {
-                    PulseUser.currentUser.thumbPicImage = UIImage(data: _userImageData)
-                    DispatchQueue.main.async(execute: {
-                        self.profilePic.setImage(PulseUser.currentUser.thumbPicImage, for: .normal)
-                        self.profilePic.makeRound()
-                    })
-                }
+        PulseDatabase.getCachedUserPic(uid: PulseUser.currentUser.uID!, completion: { image in
+            DispatchQueue.main.async {
+                self.profilePic.setImage(image, for: .normal)
+                self.profilePic.makeRound()
             }
-        }
-        
+        })
     }
 }
 

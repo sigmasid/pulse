@@ -11,7 +11,7 @@ import UIKit
 class HeaderChannelsCell: UICollectionViewCell, SelectionDelegate {
     public var channels = [Channel]() {
         didSet {
-            if channels != oldValue {
+            if channels.count != oldValue.count {
                 collectionView?.delegate = self
                 collectionView?.dataSource = self
                 collectionView?.reloadData()
@@ -80,21 +80,13 @@ extension HeaderChannelsCell: UICollectionViewDataSource, UICollectionViewDelega
         cell.tag = indexPath.row
         
         let channel = channels[indexPath.row]
-        cell.updateCell(channel.cTitle, _image : channel.cThumbImage)
+        cell.updateTitle(title: channel.cTitle)
         
-        if channel.cThumbImage == nil {
-            PulseDatabase.getChannelImage(channelID: channel.cID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] data, error in
-                if let data = data, let `self` = self {
-                    self.channels[indexPath.row].cThumbImage = UIImage(data: data)
-                    
-                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                        DispatchQueue.main.async {
-                            cell.updateCell(channel.cTitle, _image : UIImage(data: data))
-                        }
-                    }
-                }
-            })
-        }
+        PulseDatabase.getCachedChannelImage(channelID: channel.cID, fileType: .thumb, completion: {image in
+            DispatchQueue.main.async {
+                cell.updateImage(image: image)
+            }
+        })
         
         return cell
     }

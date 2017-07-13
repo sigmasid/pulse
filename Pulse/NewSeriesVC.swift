@@ -137,9 +137,9 @@ class NewSeriesVC: PulseVC  {
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
+        updateChannelImage(channel: selectedChannel)
         
         headerNav?.setNav(title: "Start a New Series", subtitle: selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
     }
     

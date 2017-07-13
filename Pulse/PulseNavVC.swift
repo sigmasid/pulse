@@ -497,19 +497,27 @@ public class PulseNavVC: UINavigationController, UIGestureRecognizerDelegate {
         guard navBar != nil else { return }
         
         if let image = image {
-            navBar.setDarkNav()
-            navBar.setBackgroundImage(image, for: .default)
-            setupBlurEffect()
+            self.navBar.setDarkNav()
+
+            UIView.transition(with: navBar,
+                              duration: 0.2,
+                              options: .transitionCrossDissolve,
+                              animations: { self.navBar.setBackgroundImage(image, for: .default)  },
+                              completion: { _ in
+                                self.setupBlurEffect()
+                                
+            })
         } else {
             navBar.setBackgroundImage(nil, for: .default)
             navBar.setLightNav()
         }
     }
     
-    public func setBackgroundColor(color: UIColor) {
+    public func setBackgroundColor(color: UIColor, updateDarkNav: Bool = false) {
         guard navBar != nil else { return }
         let image = GlobalFunctions.imageWithColor(color)
         
+        if updateDarkNav { navBar.setDarkNav() }
         navBar.setBackgroundImage(image, for: .default)
     }
     

@@ -137,7 +137,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                         self.allItems.append(contentsOf: items)
                         self.collectionView?.reloadData()
                         self.collectionView?.collectionViewLayout.invalidateLayout()
-                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+                        //self.collectionView?.reloadSections(IndexSet(integer: 0))
 
                     })
                 }
@@ -147,10 +147,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 }
                 
                 if self.collectionView.contentSize.height < self.view.frame.height { //content fits the screen so fetch more
-                    self.getMoreItems(completion: {[weak self] _ in
-                        guard let `self` = self else { return }
-                        self.collectionView?.reloadData()
-                        self.collectionView?.reloadSections(IndexSet(integer: 0))
+                    self.getMoreItems(completion: { _ in
+                        //guard let `self` = self else { return }
+                        //self.collectionView?.reloadData()
+                        //print("reloading collection view data in 2")
+                        //self.collectionView?.reloadSections(IndexSet(integer: 0))
                     })
                 }
                 
@@ -248,6 +249,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
         if !notificationsSetup {
             
             NotificationCenter.default.addObserver(self, selector: #selector(createFeed), name: NSNotification.Name(rawValue: "SubscriptionsUpdated"), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(updateChannels), name: NSNotification.Name(rawValue: "SubscriptionsChanged"), object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(updateFeed), name: NSNotification.Name(rawValue: "LogoutSuccess"), object: nil)
             
             notificationsSetup = true
@@ -269,6 +271,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             
             isLayoutSetup = true
         }
+    }
+    
+    internal func updateChannels() {
+        allChannels = PulseUser.currentUser.subscriptions
+        collectionView?.reloadSections(IndexSet(integer: 0))
     }
     
     internal func showSubscriptions() {
@@ -323,14 +330,11 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //clear the cells and set the item type first
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content ?? nil)
-            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
             
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
                 PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
-                    guard let `self` = self else {
-                        return
-                    }
+                    guard let `self` = self else { return }
                     
                     if let data = data {
                         self.allItems[indexPath.row].content = UIImage(data: data)
@@ -346,28 +350,23 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 })
             }
             
+            PulseDatabase.getCachedUserPic(uid: currentItem.itemUserID, completion: { image in
+                DispatchQueue.main.async {
+                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                        cell.updateButtonImage(image: image, itemTag : indexPath.row)
+                    }
+                }
+            })
+            
             //Add additional user details as needed
             if currentItem.user == nil || !currentItem.user!.uCreated {
                 if let user = self.checkUserDownloaded(user: PulseUser(uID: currentItem.itemUserID)) {
                     self.allItems[indexPath.row].user = user
                     cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                     
-                    if user.thumbPicImage == nil {
-                        DispatchQueue.global(qos: .background).async {
-                            if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
-                                self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
-                                self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
-                                
-                                DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
-                                    }
-                                }
-                            }
-                        }
-                    }
                 } else {
                     // Get the user details
+                    
                     PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
                         if let user = user, let `self` = self {
                             self.allItems[indexPath.row].user = user
@@ -377,20 +376,6 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                                     cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                                 }
                             }
-                            
-                            DispatchQueue.global(qos: .background).async {
-                                if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL), indexPath.row < self.allItems.count {
-                                    self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
-                                    self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
-                                    
-                                    DispatchQueue.main.async {
-                                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                            cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
-                                        }
-                                    }
-                                }
-                            }
-                            
                         }
                     })
                 }
@@ -410,19 +395,12 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
         return nil
     }
     
-    internal func updateUserImageDownloaded(user: PulseUser, thumbPicImage : UIImage?) {
-        if let image = thumbPicImage , let index = allUsers.index(of: user) {
-            allUsers[index].thumbPicImage = image
-        }
-    }
-    
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     internal func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle,
                             _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
-            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
         }
     }
     

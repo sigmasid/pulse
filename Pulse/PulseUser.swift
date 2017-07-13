@@ -24,7 +24,6 @@ class PulseUser: User {
     
     var profilePic : String?
     var thumbPic : String?
-    var thumbPicImage : UIImage?
     
     lazy var contributorChannels : [Channel] = [Channel]()
     lazy var editorChannels : [Channel] = [Channel]()
@@ -148,23 +147,6 @@ class PulseUser: User {
         let firstNameArray = name?.components(separatedBy: " ")
         return firstNameArray != nil ? firstNameArray![0] : nil
     }
-    
-    func getUserImage(completion: @escaping (UIImage?) -> Void) {
-        guard thumbPicImage == nil else {
-            completion(thumbPicImage)
-            return
-        }
-        
-        if let thumbPicURL = thumbPic, let imageURL = URL(string: thumbPicURL), let _imageData = try? Data(contentsOf: imageURL) {
-            thumbPicImage = UIImage(data: _imageData)
-            completion(thumbPicImage)
-            return
-        } else if let profilePicURL = profilePic, let imageURL = URL(string: profilePicURL), let _imageData = try? Data(contentsOf: imageURL) {
-            thumbPicImage = UIImage(data: _imageData)?.resizeImage(newWidth: PROFILE_THUMB_WIDTH)
-            completion(thumbPicImage)
-            return
-        }
-    }
 
     
     func getLocation(completion: @escaping (String?) -> Void) {
@@ -228,7 +210,6 @@ class PulseUser: User {
     }
     
     deinit {
-        thumbPicImage = nil
         savedItems.removeAll()
         items.removeAll()
         contributorChannels.removeAll()

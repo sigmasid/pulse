@@ -23,6 +23,13 @@ var initialFeedUpdateComplete = false
 var currentAuthState : AuthStates = .loggedOut
 
 class PulseDatabase {
+    /** Cached Images **/
+    static let userImageCache = ImageCache(name: "UserImages")
+    static let channelImageCache = ImageCache(name: "ChannelImages")
+    static let channelNavImageCache = ImageCache(name: "NavImages")
+    static let channelThumbCache = ImageCache(name: "ChannelThumbImages")
+    static let seriesImageCache = ImageCache(name: "SeriesImages")
+    
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
     static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
     static let channelContributorsRef = databaseRef.child(Element.ChannelContributors.rawValue)
@@ -929,6 +936,7 @@ class PulseDatabase {
     static func cleanupListeners() {
         for listener in activeListeners {
             listener.removeAllObservers()
+            profileListenersAdded = false
         }
     }
     
@@ -1061,7 +1069,6 @@ class PulseDatabase {
 
         currentUser.profilePic = nil
         currentUser.thumbPic = nil
-        currentUser.thumbPicImage = nil
         currentUser.birthday = nil
         currentUser.bio = nil
         currentUser.shortBio = nil
@@ -1167,6 +1174,7 @@ class PulseDatabase {
     }
     
     static func addUserProfileListener(uID : String) {
+        
         if !profileListenersAdded {
             usersPublicDetailedRef.child(uID).child("gender").observe(.value, with: { snap in
                 PulseUser.currentUser.gender = snap.value as? String
@@ -2047,6 +2055,25 @@ class PulseDatabase {
         }
     }
     
+    static func getCachedSeriesImage(channelID: String, itemID : String, fileType : FileTypes, completion: @escaping (_ image : UIImage?) -> Void) {
+        seriesImageCache.retrieveImage(forKey: itemID, completion: { image, _ in
+            if let image = image {
+                //return image that was retreived
+                completion(image)
+            } else {
+                getImage(channelID: channelID, itemID : itemID, fileType: fileType, maxImgSize: MAX_IMAGE_FILESIZE, completion: { data, error in
+                    if let data = data {
+                        //store in DB - return UIImage
+                        seriesImageCache.store(data, forKey: itemID)
+                        completion(UIImage(data: data))
+                    } else {
+                        completion(UIImage(named: "pulse-logo"))
+                    }
+                })
+            }
+        })
+    }
+    
     static func getSeriesImage(seriesName: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = storageRef.child("seriesTypes/\(seriesName)").child(fileType.rawValue)
         path.getData(maxSize: maxImgSize) { (data, error) -> Void in
@@ -2056,10 +2083,87 @@ class PulseDatabase {
     
     static func getChannelImage(channelID: String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = storageRef.child("channelCovers/\(channelID)").child(fileType.rawValue)
-        
         path.getData(maxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
+    }
+    
+    static func getCachedChannelImage(channelID: String, fileType : FileTypes, completion: @escaping (_ image : UIImage?) -> Void) {
+        let channelCache : ImageCache! = fileType == .content ? channelImageCache : channelThumbCache
+        
+        channelCache.retrieveImage(forKey: channelID, completion: { image, _ in
+            if let image = image {
+                //return image that was retreived
+                completion(image)
+            } else {
+                getChannelImage(channelID: channelID, fileType: fileType, maxImgSize: MAX_IMAGE_FILESIZE, completion: { data, error in
+                    if let data = data {
+                        channelCache.store(data, forKey: channelID)
+                        completion(UIImage(data: data))
+                        //store in DB - return UIImage
+                    } else {
+                        completion(nil)
+                    }
+                })
+            }
+        })
+    }
+    
+    static func clearCaches() {
+        channelNavImageCache.clearMemoryCache()
+        channelImageCache.clearMemoryCache()
+        channelThumbCache.clearMemoryCache()
+        userImageCache.clearMemoryCache()
+        seriesImageCache.clearMemoryCache()
+        
+        channelNavImageCache.clearDiskCache()
+        channelImageCache.clearDiskCache()
+        channelThumbCache.clearDiskCache()
+        userImageCache.clearDiskCache()
+        seriesImageCache.clearDiskCache()
+    }
+    
+    static func getCachedChannelNavImage(channelID: String, completion: @escaping (_ image : UIImage?) -> Void) {
+        
+        channelNavImageCache.retrieveImage(forKey: channelID, completion: { image, _ in
+            
+            if let image = image {
+                //return image that was retreived
+                completion(image)
+            } else {
+                getCachedChannelImage(channelID: channelID, fileType: .content, completion: { image in
+                    
+                    guard let image = image, let filteredImage = image.applyNavImageFilter() else {
+                        completion(nil)
+                        return
+                    }
+                    
+                    completion(filteredImage)
+                    
+                    channelNavImageCache.store(filteredImage.highestQualityJPEGNSData, forKey: channelID, toDisk: false)
+                })
+            }
+        })
+    }
+    
+    static func getCachedUserPic(uid: String, completion: @escaping (_ image : UIImage?) -> Void) {
+        userImageCache.retrieveImage(forKey: uid, completion: { image, _ in
+            if let image = image {
+                //return image that was retreived
+                completion(image)
+            } else {
+                let path = storageRef.child("users/\(uid)/thumbPic")
+                path.getData(maxSize: MAX_IMAGE_FILESIZE) { (data, error) -> Void in
+                    if let data = data {
+                        userImageCache.store(data, forKey: uid)
+                        completion(UIImage(data: data))
+                        //store in DB - return UIImage
+                    } else {
+                        completion(UIImage(named: "default-profile"))
+                    }
+                }
+            }
+        })
     }
     
     static func getProfilePicForUser(user: PulseUser, completion: @escaping (_ image : UIImage?) -> Void) {
@@ -2115,7 +2219,7 @@ class PulseDatabase {
                         _path.removeAllObservers()
                     }
                 })
-                
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsChanged"), object: self)
                 databaseRef.child("channelSubscribers").child(channel.cID).child(PulseUser.currentUser.uID!).setValue(nil)
                 
             } else { //subscribe
@@ -2132,9 +2236,7 @@ class PulseDatabase {
                             PulseUser.currentUser.subscriptions.append(channel)
                         }
                         
-                        if PulseUser.currentUser.subscriptions.count == 1 { //was empty before
-                            NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsUpdated"), object: self)
-                        }
+                        NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsChanged"), object: self)
                         
                         completion(true, nil)
                     }

@@ -258,10 +258,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
         
         PulseDatabase.getDetailedUserProfile(user: selectedUser, completion: {[weak self] updatedUser in
             guard let `self` = self else { return }
-            let userImage = selectedUser.thumbPicImage
-            
             self.selectedUser = updatedUser
-            self.selectedUser.thumbPicImage = userImage
         })
     }
     
@@ -270,12 +267,12 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
             for view in collectionView.visibleSupplementaryViews(ofKind: UICollectionElementKindSectionHeader) {
                 if let view = view as? UserProfileHeader {
                     view.updateUserDetails(selectedUser: selectedUser, isModal: isModal)
-
-                    selectedUser.getUserImage(completion: { [weak self] profileImage in
-                        guard let `self` = self else { return }
-                        self.selectedUser.thumbPicImage = profileImage
-                        view.updateUserImage(image: self.selectedUser.thumbPicImage)
-                        view.setNeedsDisplay()
+                    
+                    PulseDatabase.getCachedUserPic(uid: selectedUser.uID!, completion: { image in
+                        DispatchQueue.main.async {
+                            view.updateUserImage(image: image)
+                            view.setNeedsDisplay()
+                        }
                     })
                 }
             }
@@ -286,6 +283,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
     func updateDataSource() {
         if !isLayoutSetup  {
             setupLayout()
+            isLayoutSetup = true
         }
         
         collectionView?.dataSource = self
@@ -391,10 +389,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
     internal func sendMessage() {
         let messageVC = MessageVC()
         messageVC.toUser = selectedUser
-        
-        if let selectedUserImage = selectedUser.thumbPicImage {
-            messageVC.toUserImage = selectedUserImage
-        }
         
         navigationController?.pushViewController(messageVC, animated: true)
     }

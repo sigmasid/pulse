@@ -30,11 +30,6 @@ class ContentIntroVC: UIViewController {
                 titleLabel.text = item.itemTitle.uppercased()
                 subtitleLabel.text = item.type.rawValue
                 
-                userNameLabel.text = item.user?.name
-                userBioLabel.text = item.user?.shortBio
-                
-                userImage.image = item.user?.thumbPicImage
-                
                 if let image = item.tag?.content {
                     seriesTitle.text = item.tag?.itemTitle
                     seriesImage.image = image
@@ -45,6 +40,18 @@ class ContentIntroVC: UIViewController {
                     seriesTitle.text = item.tag?.itemTitle
                     seriesTitle.removeShadow()                    
                 }
+                
+                guard let user = item.user else { return }
+                
+                userNameLabel.text = user.name
+                userBioLabel.text = user.shortBio
+                
+                PulseDatabase.getCachedUserPic(uid: user.uID!, completion: {[weak self] image in
+                    guard let `self` = self else { return }
+                    DispatchQueue.main.async {
+                        self.userImage.image = image
+                    }
+                })
             }
         }
     }

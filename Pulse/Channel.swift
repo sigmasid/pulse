@@ -21,7 +21,6 @@ class Channel : NSObject {
     
     var cNavImage: UIImage?
     var cThumbImage : UIImage?
-    var cPreviewImage : UIImage?
     
     var cImageURL : String?
     
@@ -90,23 +89,6 @@ class Channel : NSObject {
         PulseDatabase.createShareLink(item: self, linkString: "c/"+cID, completion: { link in
             completion(link)
         })
-    }
-    
-    func getNavImage() -> UIImage? {
-        guard cNavImage == nil else {
-            return cNavImage
-        }
-        
-        guard let image = cPreviewImage else {
-            return cThumbImage
-        }
-        
-        let cropRect = CGRect(x: 0, y: 30, width: image.size.width, height: 130)
-        let resizedImage = GlobalFunctions.resizeImage(image: image, newWidth: UIScreen.main.fixedCoordinateSpace.bounds.width * 1.2)
-        let croppedImage = GlobalFunctions.cropImage(image: resizedImage, toRect: cropRect)
-        cNavImage = GlobalFunctions.processImage(croppedImage)
-        
-        return cNavImage
     }
 
     override func isEqual(_ object: Any?) -> Bool {

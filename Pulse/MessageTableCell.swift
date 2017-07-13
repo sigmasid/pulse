@@ -128,7 +128,6 @@ class MessageTableCell: UITableViewCell {
         messageSenderImage.layer.masksToBounds = true
         messageSenderImage.layer.shouldRasterize = true
         messageSenderImage.layer.rasterizationScale = UIScreen.main.scale
-        messageSenderImage.backgroundColor = UIColor.lightGray
         
         messageSenderName.translatesAutoresizingMaskIntoConstraints = false
         messageSenderName.topAnchor.constraint(equalTo: messageSenderImage.bottomAnchor).isActive = true
@@ -152,7 +151,6 @@ class MessageTableCell: UITableViewCell {
         messageSenderImage.layer.masksToBounds = true
         messageSenderImage.layer.shouldRasterize = true
         messageSenderImage.layer.rasterizationScale = UIScreen.main.scale
-        messageSenderImage.backgroundColor = UIColor.lightGray
         
         messageSenderName.translatesAutoresizingMaskIntoConstraints = false
         messageSenderName.topAnchor.constraint(equalTo: messageSenderImage.bottomAnchor).isActive = true

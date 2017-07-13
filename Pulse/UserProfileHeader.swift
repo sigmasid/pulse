@@ -79,14 +79,18 @@ class UserProfileHeader: UICollectionReusableView {
             longBioHeightConstraint.constant = min(maxHeight, longBioHeight)
             nameHeightAnchor.constant = isModal ? nameHeight : 0
             
-            DispatchQueue.main.async {
-                self.profileImage.image = selectedUser.thumbPicImage ?? UIImage(named: "default-profile")
-                self.profileImage.tintColor = .black
-                self.profileName.text = isModal ? selectedUser.name : ""
-                self.profileShortBio.text = selectedUser.shortBio
-                self.profileLongBio.text = selectedUser.bio
-                self.layoutIfNeeded()
-            }
+            PulseDatabase.getCachedUserPic(uid: selectedUser.uID!, completion: {[weak self] image in
+                guard let `self` = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.profileImage.image = image
+                    self.profileImage.tintColor = .black
+                    self.profileName.text = isModal ? selectedUser.name : ""
+                    self.profileShortBio.text = selectedUser.shortBio
+                    self.profileLongBio.text = selectedUser.bio
+                    self.layoutIfNeeded()
+                }
+            })
             
         } else {
             profileImage.image = UIImage(named: "default-profile")

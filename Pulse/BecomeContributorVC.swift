@@ -60,10 +60,9 @@ class BecomeContributorVC: PulseVC, XMSegmentedControlDelegate {
     
     fileprivate func updateHeader() {
         addBackButton()
+        updateChannelImage(channel: selectedChannel)
         tabBarHidden = true
-
         headerNav?.setNav(title: "Channel Contributors", subtitle: selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
     }
     
     fileprivate func setupScope() {

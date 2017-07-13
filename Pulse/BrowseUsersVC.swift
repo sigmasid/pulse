@@ -97,8 +97,9 @@ class BrowseUsersVC: PulseVC, HeaderDelegate {
     fileprivate func updateHeader() {
         //is in nav controller
         addBackButton()
+        updateChannelImage(channel: selectedChannel)
+        
         headerNav?.setNav(title: "Featured Contributors", subtitle: selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.followScrollView(collectionView, delay: 25.0)
     }
 
@@ -158,6 +159,14 @@ extension BrowseUsersVC : UICollectionViewDelegate, UICollectionViewDataSource {
         
         let currentUser = allUsers[indexPath.row]
         
+        PulseDatabase.getCachedUserPic(uid: currentUser.uID!, completion: { image in
+            DispatchQueue.main.async {
+                if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                    cell.updateImage(image: image)
+                }
+            }
+        })
+        
         if !currentUser.uCreated {
             // Get the user details
             PulseDatabase.getUser(currentUser.uID!, completion: {[weak self] (user, error) in
@@ -170,41 +179,13 @@ extension BrowseUsersVC : UICollectionViewDelegate, UICollectionViewDataSource {
                             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
                         }
                     }
-                    
-                    DispatchQueue.global(qos: .background).async {
-                        if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
-                            self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _imageData)
-                            
-                            DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateImage(image: self.allUsers[indexPath.row].thumbPicImage)
-                                }
-                            }
-                        }
-                    }
-                    
                 }
             })
-            
-        } else if currentUser.uCreated, currentUser.thumbPicImage != nil  {
-            
-            cell.updateImage(image: currentUser.thumbPicImage)
             
         } else if currentUser.uCreated {
             
             cell.updateLabel(currentUser.name?.capitalized, _subtitle: currentUser.shortBio?.capitalized)
-
-            DispatchQueue.global(qos: .background).async {
-                if let imageString = currentUser.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
-                    self.allUsers[indexPath.row].thumbPicImage = UIImage(data: _imageData)
-                    
-                    DispatchQueue.main.async {
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            cell.updateImage(image: self.allUsers[indexPath.row].thumbPicImage)
-                        }
-                    }
-                }
-            }
+            
         }
         
         return cell
@@ -257,10 +238,6 @@ extension BrowseUsersVC  {
             let user = allUsers[indexPath.row]
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
         }
-        
-        if let image = allUsers[indexPath.row].thumbPicImage {
-            cell.updateImage(image: image)
-        }
     }
     
     func updateOnscreenRows() {
@@ -280,21 +257,3 @@ extension BrowseUsersVC  {
         if !decelerate { updateOnscreenRows() }
     }
 }
-
-/**
-extension BrowseUsersVC: UIViewControllerTransitioningDelegate {
-    func animationController(forPresented presented: UIViewController,
-                             presenting: UIViewController,
-                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        
-        if presented is ContentManagerVC {
-            let animator = ExpandAnimationController()
-            animator.initialFrame = initialFrame
-            animator.exitFrame = getRectToLeft()
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-} **/

@@ -89,13 +89,10 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
+        updateChannelImage(channel: selectedChannel)
         iImage = addRightButton(type: .profile)
-        
         headerNav?.setNav(title: "New Interview", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
-        
-        //iImage.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
     }
     
     internal func updateDataSource() {
@@ -247,11 +244,18 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
             selectedUser = user
             iNameDescription.text = "Pulse user! Invite will be sent in-app"
             iName.text = user.name?.capitalized
-            iImage?.setImage(selectedUser?.thumbPicImage, for: .normal)
-            iImage?.clipsToBounds = true
-            iImage?.contentMode = .scaleAspectFill
-            iImage?.imageView?.contentMode = .scaleAspectFill
             checkEnableButton()
+            
+            PulseDatabase.getCachedUserPic(uid: user.uID!, completion: {[weak self] image in
+                guard let `self` = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.iImage?.setImage(image, for: .normal)
+                    self.iImage?.clipsToBounds = true
+                    self.iImage?.contentMode = .scaleAspectFill
+                    self.iImage?.imageView?.contentMode = .scaleAspectFill
+                }
+            })
         }
     }
     

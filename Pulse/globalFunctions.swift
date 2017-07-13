@@ -245,28 +245,6 @@ enum GlobalFunctions {
         return recoloredImageView
     }
     
-    static func processImage(_ image : UIImage?) -> UIImage? {
-        guard let cgimg = image?.cgImage else {
-            return nil
-        }
-        
-        let openGLContext = EAGLContext(api: .openGLES2)
-        let context = CIContext(eaglContext: openGLContext!)
-        
-        let coreImage = CIImage(cgImage: cgimg)
-        
-        let filter = CIFilter(name: "CIPhotoEffectNoir")
-        filter?.setValue(coreImage, forKey: kCIInputImageKey)
-        
-        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
-            let cgimgresult = context.createCGImage(output, from: output.extent)
-            let result = UIImage(cgImage: cgimgresult!)
-            return result
-        } else {
-            return image
-        }
-    }
-    
     static func getSquareImage(image: UIImage, newWidth: CGFloat) -> UIImage? {
         var cropRect: CGRect!
         
@@ -285,6 +263,28 @@ enum GlobalFunctions {
             return image.resizeImage(newWidth: newWidth)
         } else {
             return nil
+        }
+    }
+    
+    static func processImage(_ image : UIImage?, filterName: String) -> UIImage? {
+        guard let cgimg = image?.cgImage else {
+            return nil
+        }
+        
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
+        
+        let coreImage = CIImage(cgImage: cgimg)
+        
+        let filter = CIFilter(name: filterName)
+        filter?.setValue(coreImage, forKey: kCIInputImageKey)
+        
+        if let output = filter?.value(forKey: kCIOutputImageKey) as? CIImage {
+            let cgimgresult = context.createCGImage(output, from: output.extent)
+            let result = UIImage(cgImage: cgimgresult!)
+            return result
+        } else {
+            return image
         }
     }
     

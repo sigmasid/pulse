@@ -114,18 +114,6 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
         })
     }
     
-    fileprivate func addImage(cell : InboxTableCell, url : String, index: Int) {
-        DispatchQueue.global(qos: .background).async {
-            if let _userImageData = try? Data(contentsOf: URL(string: url)!) {
-                DispatchQueue.main.async {
-                    let image = UIImage(data: _userImageData)
-                    cell.updateImage(image : image)
-                    self.conversations[index].cUser.thumbPicImage = image
-                }
-            }
-        }
-    }
-    
     internal func newConversation() {
         tabBarHidden = true
 
@@ -171,7 +159,6 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
         if !isShowingUserSearch, let user = item as? PulseUser {
             let messageVC = MessageVC()
             messageVC.toUser = user
-            messageVC.toUserImage = user.thumbPicImage
             
             navigationController?.pushViewController(messageVC, animated: true)
         } else if isShowingUserSearch {
@@ -213,21 +200,21 @@ extension InboxVC: UITableViewDelegate, UITableViewDataSource {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as! InboxTableCell
         let user = conversations[indexPath.row].cUser!
         
+        PulseDatabase.getCachedUserPic(uid: user.uID!, completion: { image in
+            DispatchQueue.main.async {
+                cell.updateImage(image : image)
+            }
+        })
+        
         if !user.uCreated {
             PulseDatabase.getUser(user.uID!, completion: { (user, error) in
                 if let user = user {
                     self.conversations[indexPath.row].cUser = user
                     cell.updateName(name: user.name)
-                    if let _uPic = user.thumbPic {
-                        self.addImage(cell: cell, url: _uPic, index: indexPath.row)
-                    }
                 }
             })
         } else {
             cell.updateName(name: user.name)
-            if let _uPic = user.thumbPic {
-                addImage(cell: cell, url: _uPic, index: indexPath.row)
-            }
         }
         
         let sentByUser : Bool? = conversations[indexPath.row].cLastMessageSender != nil ? conversations[indexPath.row].cLastMessageSender == PulseUser.currentUser : nil
@@ -241,7 +228,6 @@ extension InboxVC: UITableViewDelegate, UITableViewDataSource {
         let conversation = conversations[indexPath.row]
         let messageVC = MessageVC()
         messageVC.toUser = conversation.cUser
-        messageVC.toUserImage = conversation.cUser.thumbPicImage
         
         navigationController?.pushViewController(messageVC, animated: true)
     }

@@ -18,13 +18,14 @@ class MessageVC: PulseVC, UITextViewDelegate{
             if !isUserLoaded {
                 isUserLoaded = true
                 updateHeader()
+                updateRecipientImage()
                 setupConversationHistory()
             }
         }
     }
     fileprivate var conversationID : String? { didSet { self.isExistingConversation = true } } //set during initial load or after first message is sent
-    var toUserImage : UIImage? //set by delegate
     var lastMessageID : String! { didSet { keepConversationUpdated() }} //to sync listener for last updated element
+    fileprivate var iImage : PulseButton?
     
     //Layout elements
     fileprivate var msgBody = PaddingTextView()
@@ -74,7 +75,6 @@ class MessageVC: PulseVC, UITextViewDelegate{
     deinit {
         if !cleanupComplete {
             messages = []
-            toUserImage = nil
             toUser = nil
             
             NotificationCenter.default.removeObserver(self, name: .UIKeyboardWillShow, object: nil)
@@ -90,8 +90,22 @@ class MessageVC: PulseVC, UITextViewDelegate{
     //Update Nav Header
     fileprivate func updateHeader() {
         addBackButton()
+        iImage = addRightButton(type: .profile)
+
         headerNav?.setNav(title: toUser.name != nil ? "Message \(toUser.name!.components(separatedBy: " ")[0])" : "New Message",
                           subtitle: toUser.shortBio)
+    }
+    
+    fileprivate func updateRecipientImage() {
+        PulseDatabase.getCachedUserPic(uid: toUser.uID!, completion: {[weak self] image in
+            guard let `self` = self else { return }
+            DispatchQueue.main.async {
+                self.iImage?.setImage(image, for: .normal)
+                self.iImage?.clipsToBounds = true
+                self.iImage?.contentMode = .scaleAspectFill
+                self.iImage?.imageView?.contentMode = .scaleAspectFill
+            }
+        })
     }
     
     func keyboardWillShow(notification: NSNotification) {
@@ -334,10 +348,18 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
         
         if _currentMessage.from.uID == PulseUser.currentUser.uID {
             cell.messageType = .sent
-            cell.messageSenderImage.image = PulseUser.currentUser.thumbPicImage
+            PulseDatabase.getCachedUserPic(uid: PulseUser.currentUser.uID!, completion: { image in
+                DispatchQueue.main.async {
+                    cell.messageSenderImage.image = image
+                }
+            })
         } else {
             cell.messageType = .received
-            cell.messageSenderImage.image = toUserImage
+            PulseDatabase.getCachedUserPic(uid: toUser.uID!, completion: { image in
+                DispatchQueue.main.async {
+                    cell.messageSenderImage.image = image
+                }
+            })
         }
         
         if _currentMessage.mType != .message && cell.messageType == .received {

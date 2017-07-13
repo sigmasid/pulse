@@ -151,11 +151,12 @@ class BrowseContentVC: PulseVC, HeaderDelegate {
         if navigationController != nil {
             //is in nav controller
             addBackButton()
+            updateChannelImage(channel: selectedChannel)
+            
             headerNav?.followScrollView(collectionView, delay: 25.0)
             
             forSingleUser ? headerNav?.setNav(title: selectedItem.user?.name, subtitle: selectedItem.tag?.itemTitle) :
                             headerNav?.setNav(title: selectedItem.tag?.itemTitle, subtitle: selectedItem.cTitle)
-            headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         } else {
             //was shown modally
             statusBarHidden = true
@@ -281,18 +282,24 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
             }
         }
         
-        let hasUserImage = !selectedItem.shouldGetBrowseImage() && allItems[indexPath.row].user?.thumbPicImage != nil
+        // we have the itemUserID, so can get from cache - don't need to wait till item is created
+        if allItems[indexPath.row].itemCreated, !selectedItem.shouldGetBrowseImage() {
+            PulseDatabase.getCachedUserPic(uid: currentItem.itemUserID, completion: { image in
+                DispatchQueue.main.async {
+                    cell.updateImage(image: image)
+                }
+            })
+        }
         
         //Already fetched this item
-        if allItems[indexPath.row].itemCreated, let user = allItems[indexPath.row].user, hasUserImage  {
+        if allItems[indexPath.row].itemCreated, let user = allItems[indexPath.row].user  {
             
             cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
-            cell.updateImage(image: user.thumbPicImage)
-
 
         } else if itemStack[indexPath.row].gettingInfoForPreview {
             
-            //ignore if already fetching the image, so don't refetch if already getting
+            //ignore if already fetching the item, so don't refetch if already getting
+            
         } else {
             itemStack[indexPath.row].gettingInfoForPreview = true
 
@@ -305,35 +312,29 @@ extension BrowseContentVC : UICollectionViewDelegate, UICollectionViewDataSource
                     self.allItems[indexPath.row] = item
                     
                     if self.forSingleUser {
+                        
+                        //browsing items for a user or an interview etc.
                         cell.updateLabel(nil, _subtitle: item.itemTitle)
+                        
                     } else {
-                    // Get the user details
+                        
+                        // Get the user details
                         PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
                             guard let `self` = self else { return }
                             if let user = user {
                                 self.allItems[indexPath.row].user = user
+                                
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        
                                         cell.updateLabel(user.name?.capitalized, _subtitle: user.shortBio?.capitalized)
-
                                     }
                                 }
-                                
-                                if !self.selectedItem.shouldGetBrowseImage() {
-                                    DispatchQueue.global(qos: .background).async {
-                                        if let imageString = user.profilePic ?? user.thumbPic, let imageURL = URL(string: imageString),
-                                            let _imageData = try? Data(contentsOf: imageURL) {
-                                            if indexPath.row < self.allItems.count { //prevent crash if user navigates away
-                                                self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
-                                                
-                                                DispatchQueue.main.async {
-                                                    cell.updateImage(image: self.allItems[indexPath.row].user?.thumbPicImage)
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                            }
+                        })
+                        
+                        PulseDatabase.getCachedUserPic(uid: item.itemUserID, completion: { image in
+                            DispatchQueue.main.async {
+                                cell.updateImage(image: image)
                             }
                         })
                     }
@@ -425,8 +426,6 @@ extension BrowseContentVC  {
         }
         
         if  selectedItem.shouldGetBrowseImage(), let image = allItems[indexPath.row].content  {
-            cell.updateImage(image: image)
-        } else if !selectedItem.shouldGetBrowseImage(), let image = allItems[indexPath.row].user?.thumbPicImage {
             cell.updateImage(image: image)
         }
     }

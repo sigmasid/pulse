@@ -77,10 +77,10 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
+        updateChannelImage(channel: selectedChannel)
         
         iImage = addRightButton(type: .profile)
         headerNav?.setNav(title: "Invite to Showcase", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
     }
     
@@ -152,11 +152,18 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
             iNameDescription.text = "Pulse user! Invite will be sent in-app"
             selectedUser = user
             iName.text = user.name?.capitalized
-            iImage?.setImage(selectedUser?.thumbPicImage ?? UIImage(named: "default-profile"), for: .normal)
-            iImage?.contentMode = .scaleAspectFill
-            iImage?.imageView?.contentMode = .scaleAspectFill
-            iImage?.clipsToBounds = true
             submitButton.setEnabled()
+            
+            PulseDatabase.getCachedUserPic(uid: user.uID!, completion: {[weak self] image in
+                guard let `self` = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.iImage?.setImage(image, for: .normal)
+                    self.iImage?.clipsToBounds = true
+                    self.iImage?.contentMode = .scaleAspectFill
+                    self.iImage?.imageView?.contentMode = .scaleAspectFill
+                }
+            })
         }
     }
     

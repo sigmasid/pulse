@@ -111,7 +111,7 @@ open class ImageCache {
     {
         
         if name.isEmpty {
-            fatalError("[Kingfisher] You should specify a name for the cache. A cache with empty name is not permitted.")
+            fatalError("You should specify a name for the cache. A cache with empty name is not permitted.")
         }
         
         let cacheName = "com.checkPulse.ImageCache.\(name)"
@@ -149,15 +149,12 @@ open class ImageCache {
      - parameter toDisk:            Whether this image should be cached to disk or not. If false, the image will be only cached in memory.
      - parameter completionHandler: Called when store operation completes.
      */
-    open func store(_ image: UIImage,
-                    original: Data? = nil,
+    open func store(_ imageData: Data,
                     forKey key: String,
                     toDisk: Bool = true,
                     completionHandler: (() -> Void)? = nil)
     {
-        
-        memoryCache.setObject(image, forKey: key as NSString)
-        
+        memoryCache.setObject(imageData as AnyObject, forKey: key as NSString)
         func callHandlerInMainQueue() {
             if let handler = completionHandler {
                 DispatchQueue.main.async {
@@ -169,14 +166,13 @@ open class ImageCache {
         if toDisk {
             ioQueue.async {
                 
-                let data = image.highestQualityJPEGNSData
                 if !self.fileManager.fileExists(atPath: self.diskCachePath) {
                     do {
                         try self.fileManager.createDirectory(atPath: self.diskCachePath, withIntermediateDirectories: true, attributes: nil)
                     } catch _ {}
                 }
                     
-                self.fileManager.createFile(atPath: self.cachePath(forComputedKey: key), contents: data, attributes: nil)
+                self.fileManager.createFile(atPath: self.cachePath(forComputedKey: key), contents: imageData, attributes: nil)
                 callHandlerInMainQueue()
             }
         } else {
@@ -274,7 +270,16 @@ open class ImageCache {
      - returns: The image object if it is cached, or `nil` if there is no such key in the cache.
      */
     open func retrieveImageInMemoryCache(forKey key: String) -> UIImage? {
-        return memoryCache.object(forKey: key as NSString) as? UIImage
+        guard let data = memoryCache.object(forKey: key as NSString) else {
+            return nil
+            
+        }
+        
+        guard let image = UIImage(data: data as! Data) else {
+            return nil
+        }
+        
+        return image
     }
     
     /**
@@ -306,7 +311,8 @@ open class ImageCache {
             do {
                 try self.fileManager.removeItem(atPath: self.diskCachePath)
                 try self.fileManager.createDirectory(atPath: self.diskCachePath, withIntermediateDirectories: true, attributes: nil)
-            } catch _ { }
+            } catch _ {
+            }
             
             if let handler = handler {
                 DispatchQueue.main.async {

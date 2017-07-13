@@ -70,6 +70,11 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         reachability?.stopNotifier()
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        PulseDatabase.clearCaches()
+    }
+    
     internal func checkReachability() {
         guard let r = reachability else { return }
         if r.isReachable, !isLoaded {
@@ -151,11 +156,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
         case .home:
             selectedIndex = 3
         }
-    }
-
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
     }
     
     internal func setupControllers() {

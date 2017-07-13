@@ -90,23 +90,21 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     }
     
     fileprivate func updateHeader() {
+        headerNav?.updateBackgroundImage(image: nil)
+        
         if !forUser {
             navigationItem.leftBarButtonItem = UIBarButtonItem(customView: searchButton)
             tabBarHidden = false
-            
             menuButton.removeShadow()
-            
             menuButton.addTarget(self, action: #selector(clickedHeaderMenu), for: .touchUpInside)
             navigationItem.rightBarButtonItem = UIBarButtonItem(customView: menuButton)
-            
             headerNav?.setNav(title: "Explore")
-            headerNav?.updateBackgroundImage(image: nil)
+            
         } else {
+            
             addBackButton()
             tabBarHidden = true
-            
             headerNav?.setNav(title: "Your Subscriptions")
-            headerNav?.updateBackgroundImage(image: nil)
         }
     }
     
@@ -297,29 +295,18 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
             PulseUser.currentUser.isSubscribedToChannel(cID: channel.cID) ? cell.updateSubscribe(type: .unfollow, tag: indexPath.row) : cell.updateSubscribe(type: .follow, tag: indexPath.row)
         }
         
+        PulseDatabase.getCachedChannelImage(channelID: channel.cID, fileType: .content, completion: { image in
+            DispatchQueue.main.async {
+                cell.updateImage(image: image)
+            }
+        })
+        
         if !channel.cCreated {
             PulseDatabase.getChannel(cID: channel.cID, completion: {[weak self] (channel, error) in
                 guard let `self` = self, let channel = channel else { return }
-
-                channel.cPreviewImage = self.allChannels[indexPath.row].cPreviewImage
                 self.allChannels[indexPath.row] = channel
                 cell.updateCell(channel.cTitle, subtitle: channel.cDescription)
             })
-        }
-
-        if channel.cPreviewImage != nil {
-            cell.updateImage(image: channel.cPreviewImage)
-        } else if let urlPath = channel.cImageURL, let url = URL(string: urlPath) {
-            DispatchQueue.global().async {
-                if let channelImage = try? Data(contentsOf: url) {
-                    channel.cPreviewImage = UIImage(data: channelImage)
-                    DispatchQueue.main.async(execute: {
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            cell.updateImage(image: channel.cPreviewImage)
-                        }
-                    })
-                }
-            }
         }
         
         return cell
@@ -333,7 +320,14 @@ extension ExploreChannelsVC : UICollectionViewDataSource, UICollectionViewDelega
         if channelCollection != nil {
             let visiblePaths = channelCollection.indexPathsForVisibleItems
             for indexPath in visiblePaths {
+                
                 if let cell = channelCollection.cellForItem(at: indexPath) as? ExploreChannelsCell, PulseUser.isLoggedIn() {
+                    PulseDatabase.getCachedChannelImage(channelID: allChannels[indexPath.row].cID, fileType: .content, completion: { image in
+                        DispatchQueue.main.async {
+                            cell.updateImage(image: image)
+                        }
+                    })
+                    
                     PulseUser.currentUser.isSubscribedToChannel(cID: allChannels[indexPath.row].cID) ?
                         cell.updateSubscribe(type: .unfollow, tag: indexPath.row) :
                         cell.updateSubscribe(type: .follow, tag: indexPath.row)

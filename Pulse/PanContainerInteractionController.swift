@@ -80,7 +80,7 @@ class PanContainerInteractionController: UIPercentDrivenInteractiveTransition {
             shouldCompleteTransition = progress > percentThreshold
             update(progress)
             
-        case .cancelled:
+        case .cancelled:            
             interactionInProgress = false
             cancel()
             

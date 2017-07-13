@@ -10,9 +10,6 @@ import UIKit
 
 class PulseVC: UIViewController, PulseNavControllerDelegate {
     
-    /** Cached Images **/
-    static let userImageCache = ImageCache(name: "UserImages")
-    
     /** Loading Overlay **/
     internal var loadingView : LoadingView!
     
@@ -95,7 +92,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         headerNav = navigationController as? PulseNavVC
         
         headerNav?.navbarDelegate = self
-        headerNav?.updateBackgroundImage(image: nil)
+        //headerNav?.updateBackgroundImage(image: nil)
         
         view.backgroundColor = .white
         definesPresentationContext = true
@@ -122,15 +119,36 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     internal func addBackButton() {
         if let headerNav = headerNav, headerNav.viewControllers.count > 1 {
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: backButton)
+            DispatchQueue.main.async {
+                self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: self.backButton)
+            }
             backButton.addTarget(self, action: #selector(goBack), for: UIControlEvents.touchUpInside)
+        }
+    }
+    
+    internal func updateChannelImage(channel: Channel) {
+
+        if let image = channel.cNavImage {
+            headerNav?.updateBackgroundImage(image: image)
+        } else {
+            headerNav?.setBackgroundColor(color: UIColor.pulseDarkGrey, updateDarkNav: true)
+            
+            PulseDatabase.getCachedChannelNavImage(channelID: channel.cID, completion: {[weak self] image in
+                guard let `self` = self else { return }
+                DispatchQueue.main.async {
+                    self.headerNav?.updateBackgroundImage(image: image)
+                    channel.cNavImage = image
+                }
+            })
         }
     }
     
     internal func addRightButton(type: ButtonType) -> PulseButton {
         if headerNav != nil {
             let rightButton = PulseButton(size: .small, type: type, isRound : true, background: .white, tint: .black)
-            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: rightButton)
+            DispatchQueue.main.async {
+                self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: rightButton)
+            }
             return rightButton
         }
         return PulseButton(size: .small, type: .blank, isRound : true, background: .white, tint: .black)

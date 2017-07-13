@@ -35,11 +35,7 @@ class InboxTableCell: UITableViewCell {
     func updateImage( image : UIImage?) {
         if let image = image{
             userImage.image = image
-            
-            userImage.layer.cornerRadius = userImage.bounds.height / 2
-            userImage.layer.masksToBounds = true
-            userImage.clipsToBounds = true
-            userImage.contentMode = .scaleAspectFill
+            userImage.makeRound()
         }
     }
     
@@ -86,7 +82,9 @@ class InboxTableCell: UITableViewCell {
         userImage.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         userImage.heightAnchor.constraint(equalTo: userImage.widthAnchor).isActive = true
         userImage.layoutIfNeeded()
-        
+        userImage.tintColor = .black
+        userImage.contentMode = .scaleAspectFill
+
         contentView.addSubview(lastMessageTime)
         lastMessageTime.translatesAutoresizingMaskIntoConstraints = false
         lastMessageTime.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true

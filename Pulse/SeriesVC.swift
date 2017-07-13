@@ -38,6 +38,8 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     fileprivate var isLayoutSetup = false
     fileprivate var selectedShareItem : Item?
+    fileprivate var seriesImageButton : PulseButton?
+    
     private var cleanupComplete = false
     
     override func viewDidLoad() {
@@ -76,9 +78,22 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     //Update Nav Header
     fileprivate func updateHeader() {
         addBackButton()
+        updateChannelImage(channel: selectedChannel)
         headerNav?.followScrollView(collectionView, delay: 25.0)
         headerNav?.setNav(title: selectedItem.itemTitle, subtitle: selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
+        
+        /**
+        seriesImageButton = addRightButton(type: .blank)
+        PulseDatabase.getCachedSeriesImage(channelID: selectedChannel.cID, itemID: selectedItem.itemID, fileType: .thumb, completion: {[weak self] image in
+            guard let `self` = self else { return }
+            DispatchQueue.main.async {
+                self.seriesImageButton?.setImage(image, for: .normal)
+                self.seriesImageButton?.clipsToBounds = true
+                self.seriesImageButton?.contentMode = .scaleAspectFill
+                self.seriesImageButton?.imageView?.contentMode = .scaleAspectFill
+            }
+        })
+        **/
     }
     
     fileprivate func setupLayout() {
@@ -256,13 +271,19 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
         //clear the cells and set the item type first
         cell.updateLabel(currentItem.itemTitle != "" ? currentItem.itemTitle : "",
                          _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: nil)
-        cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
-
+        
         //Already fetched this item
         if allItems[indexPath.row].itemCreated {
             cell.itemType = currentItem.type
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
-            cell.updateButtonImage(image: allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
+            
+            PulseDatabase.getCachedUserPic(uid: currentItem.itemUserID, completion: { image in
+                DispatchQueue.main.async {
+                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                        cell.updateButtonImage(image: image, itemTag : indexPath.row)
+                    }
+                }
+            })
             
         } else {
             PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: {[weak self] (item, error) in
@@ -281,6 +302,14 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     
                     item.tag = self.allItems[indexPath.row].tag
                     self.allItems[indexPath.row] = item
+                    
+                    PulseDatabase.getCachedUserPic(uid: item.itemUserID, completion: { image in
+                        DispatchQueue.main.async {
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                cell.updateButtonImage(image: image, itemTag : indexPath.row)
+                            }
+                        }
+                    })
                     
                     //Get the image if content type is a post or perspectives thread
                     if item.content == nil, item.shouldGetImage(), !item.fetchedContent {
@@ -305,20 +334,6 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                         self.allItems[indexPath.row].user = user
                         cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: nil)
                         
-                        if user.thumbPicImage == nil {
-                            DispatchQueue.global(qos: .background).async {
-                                if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
-                                    self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
-                                    self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
-                                    
-                                    DispatchQueue.main.async {
-                                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                            cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     } else {
                         PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
                             guard let `self` = self else { return }
@@ -330,20 +345,6 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                                         cell.updateLabel(item.itemTitle, _subtitle: user.name,  _createdAt: item.createdAt, _tag: nil)
-                                    }
-                                }
-                                
-                                
-                                DispatchQueue.global(qos: .background).async {
-                                    if let imageString = user.thumbPic, let imageURL = URL(string: imageString), let _imageData = try? Data(contentsOf: imageURL) {
-                                        self.allItems[indexPath.row].user?.thumbPicImage = UIImage(data: _imageData)
-                                        self.updateUserImageDownloaded(user: user, thumbPicImage: UIImage(data: _imageData))
-
-                                        DispatchQueue.main.async {
-                                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                                cell.updateButtonImage(image: self.allItems[indexPath.row].user?.thumbPicImage, itemTag : indexPath.row)
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -380,20 +381,8 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
         return nil
     }
     
-    //Add user downloaded image for a newly downloaded user
-    func updateUserImageDownloaded(user: PulseUser, thumbPicImage : UIImage?) {
-        if let image = thumbPicImage , let index = allUsers.index(of: user) {
-            allUsers[index].thumbPicImage = image
-        }
-    }
-    
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     func updateCell(_ cell: ItemCell, atIndexPath indexPath: IndexPath) {
-        
-        if let image = allItems[indexPath.row].user?.thumbPicImage  {
-            cell.updateButtonImage(image: image, itemTag : indexPath.row)
-        }
-        
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
             cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
@@ -596,21 +585,29 @@ extension SeriesVC {
         
         PulseDatabase.getItem(selectedItem.itemID, completion: {[weak self] (item, error) in
             if let item = item, let `self` = self {
-                let image = self.selectedItem.content ?? self.selectedChannel.cNavImage
-                let seriesPreview = PMAlertController(title: item.itemTitle, description: item.itemDescription, image: image, style: .alert)
                 
-                seriesPreview.dismissWithBackgroudTouch = true
-                seriesPreview.modalDelegate = self
-                
-                seriesPreview.addAction(PMAlertAction(title: "Become Contributor", style: .cancel, action: {[weak self] () -> Void in
+                PulseDatabase.getCachedSeriesImage(channelID: self.selectedChannel.cID, itemID: self.selectedItem.itemID,
+                                                   fileType: .thumb, completion: {[weak self] image in
+                                                    
                     guard let `self` = self else { return }
-                    self.userClickedBecomeContributor()
-                    self.removeBlurBackground()
-                }))
+                    
+                    let seriesPreview = PMAlertController(title: item.itemTitle, description: item.itemDescription, image: image, style: .alert)
+                    
+                    seriesPreview.dismissWithBackgroudTouch = true
+                    seriesPreview.modalDelegate = self
+                    
+                    seriesPreview.addAction(PMAlertAction(title: "Become Contributor", style: .cancel, action: {[weak self] () -> Void in
+                        guard let `self` = self else { return }
+                        self.userClickedBecomeContributor()
+                        self.removeBlurBackground()
+                    }))
+                    
+                    DispatchQueue.main.async {
+                        self.present(seriesPreview, animated: true, completion: nil)
+                    }
+                })
                 
-                DispatchQueue.main.async {
-                    self.present(seriesPreview, animated: true, completion: nil)
-                }
+                
             }
         })
     }
@@ -824,21 +821,3 @@ extension SeriesVC {
         present(menu, animated: true, completion: nil)
     }
 }
-
-/**
-extension SeriesVC: UIViewControllerTransitioningDelegate {
-    func animationController(forPresented presented: UIViewController,
-                             presenting: UIViewController,
-                             source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        
-        if presented is ContentManagerVC {
-            let animator = ExpandAnimationController()
-            animator.initialFrame = initialFrame
-            animator.exitFrame = getRectToLeft()
-            
-            return animator
-        } else {
-            return nil
-        }
-    }
-} **/

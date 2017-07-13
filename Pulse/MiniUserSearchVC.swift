@@ -248,53 +248,24 @@ extension MiniUserSearchVC: UICollectionViewDataSource, UICollectionViewDelegate
         
         let _user = users[indexPath.row]
         
+        
+        PulseDatabase.getCachedUserPic(uid: _user.uID!, completion: { image in
+            DispatchQueue.main.async {
+                if cell.tag == indexPath.row {
+                    cell.updateImage(image: image)
+                }
+            }
+        })
+        
         if !_user.uCreated {
-            cell.updateImage(image : UIImage(named: "default-profile"))
-
             PulseDatabase.getUser(_user.uID!, completion: {[weak self] (user, error) in
                 if let user = user, let `self` = self {
-                    cell.updateCell(user.name?.capitalized, _image: nil)
+                    cell.updateTitle(title: user.name?.capitalized)
                     self.users[indexPath.row] = user
-                    
-                    if let _uPic = user.profilePic {
-                        DispatchQueue.global(qos: .background).async {
-                            if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                                
-                                DispatchQueue.main.async {[weak self] in
-                                    guard let `self` = self, !self.cleanupComplete else { return }
-                                    if  cell.tag == indexPath.row {
-                                        self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                                        cell.updateImage(image : UIImage(data: _userImageData))
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             })
         } else {
-            if _user.thumbPicImage != nil {
-                cell.updateCell(_user.name?.capitalized, _image : _user.thumbPicImage)
-            } else if let _uPic = _user.thumbPic {
-                cell.updateCell(_user.name?.capitalized, _image: UIImage(named: "default-profile"))
-                
-                DispatchQueue.global(qos: .background).async {[weak self] in
-                    if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                        guard let `self` = self, !self.cleanupComplete else { return }
-                        if self.users.count > indexPath.row {
-                            self.users[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                        }
-                        
-                        if  cell.tag == indexPath.row {
-                            DispatchQueue.main.async {
-                                cell.updateCell(_user.name?.capitalized, _image : UIImage(data: _userImageData))
-                            }
-                        }
-                    }
-                }
-            } else {
-                cell.updateCell(_user.name?.capitalized, _image: UIImage(named: "default-profile"))
-            }
+            cell.updateTitle(title: _user.name?.capitalized)
         }
         
         return cell

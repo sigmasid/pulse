@@ -249,7 +249,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     fileprivate func loadItem(index: Int) {
-        UIApplication.shared.isNetworkActivityIndicatorVisible = true
         canAdvanceReady = false
         
         guard index < allItems.count else {
@@ -536,24 +535,18 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         contentOverlay?.setTitle(currentItem?.contentType != .postcard ? item.itemTitle : "")
         contentOverlay?.updateButtons(color: currentItem?.contentType != .postcard ? .white : .black )
         
-        if updateUser, let user = item.user {
+        guard updateUser else { return }
+        
+        PulseDatabase.getCachedUserPic(uid: item.itemUserID, completion: {[weak self] image in
+            guard let `self` = self else { return }
+            DispatchQueue.main.async {
+                self.contentOverlay?.setUserImage(image)
+            }
+        })
+        
+        if let user = item.user {
             contentOverlay?.setUserName(user.name)
             contentOverlay?.setUserSubtitle(user.shortBio)
-            
-            if let userPic = user.thumbPicImage {
-                contentOverlay?.setUserImage(userPic)
-            } else if let uPicURL = user.thumbPic {
-                DispatchQueue.main.async {
-                    let _userImageData = try? Data(contentsOf: URL(string: uPicURL)!)
-                    DispatchQueue.main.async(execute: {[weak self] in
-                        guard let `self` = self else { return }
-                        if _userImageData != nil, item.user?.uID == self.currentItem?.user?.uID {
-                            self.currentItem?.user?.thumbPicImage = UIImage(data: _userImageData!)
-                            self.contentOverlay?.setUserImage(self.currentItem?.user?.thumbPicImage)
-                        }
-                    })
-                }
-            }
         } else if updateUser {
             contentOverlay?.setUserImage(UIImage(named: "default-profile"))
             
@@ -562,24 +555,9 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
                     self.currentItem?.user = user
                     self.contentOverlay?.setUserName(user.name)
                     self.contentOverlay?.setUserSubtitle(user.shortBio)
-                    
-                    if let _uPic = user.thumbPic {
-                        
-                        DispatchQueue.main.async {
-                            let _userImageData = try? Data(contentsOf: URL(string: _uPic)!)
-                            DispatchQueue.main.async(execute: {[weak self] in
-                                guard let `self` = self else { return }
-                                if _userImageData != nil, item.user?.uID == self.currentItem?.user?.uID {
-                                    self.currentItem?.user?.thumbPicImage = UIImage(data: _userImageData!)
-                                    self.contentOverlay?.setUserImage(self.currentItem?.user?.thumbPicImage)
-                                }
-                            })
-                        }
-                    }
                 }
             })
         }
-        
     }
     
     fileprivate func addObserverForStatusReady(completion: @escaping (_ success : Bool) -> Void) {
@@ -781,18 +759,25 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         pausePlayer()
         
         if let user = currentItem?.user {
-            let miniProfile = PMAlertController(title: user.name ?? "Pulse User", description: user.shortBio ?? "", image: currentItem?.user?.thumbPicImage, style: .alert)
             
-            miniProfile.dismissWithBackgroudTouch = true
-            miniProfile.modalDelegate = self
-            
-            miniProfile.addAction(PMAlertAction(title: "View Profile", style: .cancel, action: {[weak self] () -> Void in
+            PulseDatabase.getCachedUserPic(uid: user.uID!, completion: {[weak self] image in
                 guard let `self` = self else { return }
-                self.delegate?.userClickedProfileDetail()
-                self.removeBlurBackground()
-            }))
-            
-            present(miniProfile, animated: true, completion: nil)
+                
+                DispatchQueue.main.async {
+                    let miniProfile = PMAlertController(title: user.name ?? "Pulse User", description: user.shortBio ?? "", image: image, style: .alert)
+                    
+                    miniProfile.dismissWithBackgroudTouch = true
+                    miniProfile.modalDelegate = self
+                    
+                    miniProfile.addAction(PMAlertAction(title: "View Profile", style: .cancel, action: {[weak self] () -> Void in
+                        guard let `self` = self else { return }
+                        self.delegate?.userClickedProfileDetail()
+                        self.removeBlurBackground()
+                    }))
+                    
+                    self.present(miniProfile, animated: true, completion: nil)
+                }
+            })
         }
     }
     

@@ -31,6 +31,14 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
         titleLabel.removeFromSuperview()
     }
     
+    public func updateTitle(title: String? ) {
+        let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: titleLabel.font.pointSize)]
+        let titleLabelHeight = GlobalFunctions.getLabelSize(title: title ?? "", width: titleLabel.frame.width, fontAttributes: fontAttributes)
+        titleHeightAnchor.constant = titleLabelHeight
+        
+        titleLabel.text = title
+    }
+    
     func updateCell(_ _title : String?, _image : UIImage?) {
         let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: titleLabel.font.pointSize)]
         let titleLabelHeight = GlobalFunctions.getLabelSize(title: _title ?? "", width: titleLabel.frame.width, fontAttributes: fontAttributes)
@@ -40,7 +48,7 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
         previewButton.setImage(_image, for: .normal)
     }
     
-    func updateImage( image : UIImage?) {
+    func updateImage(image : UIImage?) {
         previewButton.setImage(image, for: .normal)
     }
     

@@ -77,48 +77,23 @@ extension HeaderContributors: UICollectionViewDataSource, UICollectionViewDelega
         
         let _user = contributors[indexPath.row]
         
+        PulseDatabase.getCachedUserPic(uid: _user.uID!, completion: { image in
+            DispatchQueue.main.async {
+                if cell.tag == indexPath.row {
+                    cell.updateImage(image: image)
+                }
+            }
+        })
+        
         if !_user.uCreated { //search case - get question from database
             PulseDatabase.getUser(_user.uID!, completion: {[weak self] (user, error) in
                 if let user = user, let `self` = self {
-                    cell.updateCell(user.name?.capitalized, _image: nil)
-                    
+                    cell.updateTitle(title: user.name?.capitalized)
                     self.contributors[indexPath.row] = user
-                    
-                    if let _uPic = user.profilePic {
-                        DispatchQueue.global(qos: .background).async {
-                            if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                                self.contributors[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                                
-                                DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateImage(image : UIImage(data: _userImageData))
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             })
         } else {
-            if _user.thumbPicImage != nil {
-                cell.updateCell(_user.name?.capitalized, _image : _user.thumbPicImage)
-            } else if let _uPic = _user.thumbPic {
-                cell.updateCell(_user.name?.capitalized, _image: nil)
-
-                DispatchQueue.global(qos: .background).async {
-                    if let _userImageData = try? Data(contentsOf: URL(string: _uPic)!) {
-                        self.contributors[indexPath.row].thumbPicImage = UIImage(data: _userImageData)
-                        
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            DispatchQueue.main.async {
-                                cell.updateCell(_user.name?.capitalized, _image : UIImage(data: _userImageData))
-                            }
-                        }
-                    }
-                }
-            } else {
-                cell.updateCell(_user.name?.capitalized, _image: nil)
-            }
+            cell.updateTitle(title: _user.name?.capitalized)
         }
         
         return cell

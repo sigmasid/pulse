@@ -616,6 +616,26 @@ extension UIImage
             return nil
         }
     }
+    
+    func applyNavImageFilter(filterName: String = "CIPhotoEffectNoir") -> UIImage? {
+        guard let cgImage = cgImage else {
+            return nil
+        }
+        
+        let ciImage = CIImage(cgImage: cgImage)
+        let scale = (UIScreen.main.fixedCoordinateSpace.bounds.width / size.width) * 1.2
+        let cropRect = CGRect(x: 0, y: size.height - 130, width: size.width, height: 130)
+        
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
+        let filteredImage = ciImage.cropping(to: cropRect).applying(CGAffineTransform(scaleX: scale, y: scale)).applyingFilter("CIPhotoEffectNoir", withInputParameters: nil)
+        
+        if let cgimgresult = context.createCGImage(filteredImage, from: filteredImage.extent) {
+            return UIImage(cgImage: cgimgresult)
+        } else {
+            return nil
+        }
+    }
 }
 
 extension Double {

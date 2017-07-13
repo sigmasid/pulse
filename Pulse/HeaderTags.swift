@@ -36,6 +36,7 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
         contentView.backgroundColor = UIColor.white
         addBottomBorder(color: .pulseGrey)
         setupChannelHeader()
+        
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -79,8 +80,7 @@ class HeaderTagsCell: UICollectionViewCell, SelectionDelegate {
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
     internal func updateCell(_ cell: HeaderCell, atIndexPath indexPath: IndexPath) {
         if items[indexPath.row].itemCreated {
-            let currentItem = items[indexPath.row]
-            cell.updateCell(currentItem.itemTitle.capitalized, _image : currentItem.content)
+            cell.updateTitle(title: items[indexPath.row].itemTitle.capitalized)
         }
     }
 }
@@ -94,27 +94,16 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: collectionReuseIdentifier, for: indexPath) as! HeaderCell
         
         let item = items[indexPath.row]
-        cell.updateCell(item.itemTitle.capitalized, _image : item.content)
+        cell.updateTitle(title: item.itemTitle.capitalized)
         cell.tag = indexPath.row
         cell.delegate = self
         
-        if item.content == nil, !item.fetchedContent {
-            PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] data, error in
-                guard let `self` = self else { return }
+        PulseDatabase.getCachedSeriesImage(channelID: selectedChannel.cID, itemID: item.itemID, fileType: .thumb, completion: {image in
+            DispatchQueue.main.async {
+                cell.updateImage(image : image)
+            }
+        })
                 
-                if let data = data, let image = UIImage(data: data) {
-                    self.items[indexPath.row].content = image
-                    
-                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                        DispatchQueue.main.async {
-                            cell.updateCell(item.itemTitle.capitalized, _image : image)
-                        }
-                    }
-                }
-                self.items[indexPath.row].fetchedContent = true //so we don't try to fetch again
-            })
-        }
-        
         return cell
     }
     

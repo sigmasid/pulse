@@ -105,7 +105,7 @@ class Preview: UIView, PreviewPlayerItemDelegate {
             addLoadingIndicator()
             
             guard let itemURL = item.contentURL else {
-                GlobalFunctions.showAlertBlock("error getting video", erMessage: "Sorry there was an error! Please try again")
+                GlobalFunctions.showAlertBlock("error getting image", erMessage: "Sorry there was an error! Please try another item")
                 return
             }
             

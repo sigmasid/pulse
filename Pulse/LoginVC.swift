@@ -239,6 +239,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         Auth.auth().signIn(withEmail: self.userEmail.text!, password: self.userPassword.text!) {[weak self] (aUser, blockError) in
             guard let `self` = self else { return }
+            UIApplication.shared.isNetworkActivityIndicatorVisible = false
             
             if let blockError = blockError {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
@@ -256,7 +257,6 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
                 self._loggedInSuccess()
                 self.userEmail.text = ""
                 self.userPassword.text = ""
-                UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
             sender.setEnabled()
             sender.removeLoadingIndicator(_loadingIndicator)

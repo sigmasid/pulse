@@ -88,9 +88,9 @@ class NewThreadVC: PulseVC  {
     /** HEADER FUNCTIONS **/
     internal func updateHeader() {
         addBackButton()
+        updateChannelImage(channel: selectedChannel)
         
         headerNav?.setNav(title: "Start a New Thread", subtitle: selectedItem.itemTitle != "" ? selectedItem.itemTitle : selectedChannel.cTitle)
-        headerNav?.updateBackgroundImage(image: selectedChannel.getNavImage())
         headerNav?.showNavbar(animated: true)
     }
     

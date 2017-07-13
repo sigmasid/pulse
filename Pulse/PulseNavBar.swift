@@ -95,11 +95,23 @@ public class PulseNavBar: UINavigationBar {
         return searchContainer
     }
     
-    public func setDarkNav() {
+    public func setDarkNav(animate: Bool = false ) {
         barStyle = .black
-        navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .white, alignment: .center)
-        navSubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .white, alignment: .center)
-        navTitle.setBlurredBackground()
+        
+        if animate {
+            UIView.transition(with: navTitle, duration: 0.2, options: .transitionCrossDissolve, animations: { self.navTitle.textColor = .white }, completion: {_ in
+                self.navTitle.setBlurredBackground()
+            })
+            
+            UIView.transition(with: navSubtitle, duration: 0.2, options: .transitionCrossDissolve, animations: { self.navSubtitle.textColor = .white }, completion: {_ in
+                self.navSubtitle.setBlurredBackground()
+            })
+        } else {
+            navTitle.textColor = .white
+            navSubtitle.textColor = .white
+            navTitle.setBlurredBackground()
+            navSubtitle.setBlurredBackground()
+        }
     }
     
     public func setLightNav() {
