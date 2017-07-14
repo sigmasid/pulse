@@ -56,7 +56,7 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
             tap.cancelsTouchesInView = false
             tap.isEnabled = true
             backgroundView.addGestureRecognizer(tap)
-            
+            msgBody.keyboardAppearance = .dark
             msgBody.becomeFirstResponder()
             
             setupQuestionBox()
@@ -146,7 +146,7 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         containerHeightConstraint = msgContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
         containerHeightConstraint.isActive = true
         msgContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        msgContainer.backgroundColor = .white
+        msgContainer.backgroundColor = UIColor.black.withAlphaComponent(0.7)
         
         sendButton.translatesAutoresizingMaskIntoConstraints = false
         sendButton.trailingAnchor.constraint(equalTo: msgContainer.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
@@ -164,11 +164,10 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
         textViewHeightConstraint.isActive = true
         msgBody.layoutIfNeeded()
         
-        
         msgBody.font = UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body.rawValue)
-        msgBody.backgroundColor = .white
+        msgBody.backgroundColor = .clear
         msgBody.delegate = self
-        msgBody.textColor = UIColor.black
+        msgBody.textColor = UIColor.white
         msgBody.isScrollEnabled = false
         msgBody.text = "Type your message here"
         
@@ -195,7 +194,7 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
     func textViewDidBeginEditing(_ textView: UITextView) {
         if textView.text == "Type your message here" {
             textView.text = ""
-            textView.textColor = UIColor.black
+            textView.textColor = UIColor.white
         }
     }
     
