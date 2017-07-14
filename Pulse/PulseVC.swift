@@ -267,7 +267,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
                 self.toggleLoading(show: false, message: nil)
                 return
             }
-            self.shareContent(shareType: type, shareText: selectedItem.itemTitle, shareLink: link, fullShareText: fullShareText)
+            self.shareContent(shareType: type, shareText: selectedItem.shareText(), shareLink: link, fullShareText: fullShareText)
         })
     }
     

@@ -289,6 +289,13 @@ class Item: NSObject {
         }
     }
     
+    internal func shareText() -> String {
+        switch type {
+        case .interview: return user?.name ?? itemTitle
+        default: return itemTitle
+        }
+    }
+    
     fileprivate func acceptsInput() -> UserTypes? {
         switch type {
         case .posts: return .contributor //only contributors can add a post

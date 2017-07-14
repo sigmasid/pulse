@@ -15,7 +15,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     public var selectedItem : Item! {
         didSet {
             guard selectedItem != nil else { return }
-            toggleLoading(show: true, message: "Loading Series...", showIcon: true)
+            toggleLoading(show: true, message: "loading series...", showIcon: true)
             PulseDatabase.getItemCollection(selectedItem.itemID, completion: {[weak self] (success, items) in
                 guard let `self` = self else { return }
                 

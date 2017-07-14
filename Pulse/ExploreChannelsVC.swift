@@ -188,7 +188,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
             
             case .question, .thread, .interview:
                 
-                toggleLoading(show: true, message: "Loading Item...", showIcon: true)
+                toggleLoading(show: true, message: "loading item...", showIcon: true)
                 PulseDatabase.getItemCollection(item.itemID, completion: {[weak self](success, items) in
                     guard let `self` = self else { return }
 
@@ -196,6 +196,28 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                         self.showItemDetail(item: item, allItems: items) :
                         self.showBrowse(selectedItem: item)
                     self.toggleLoading(show: false, message: nil)
+                })
+                
+            case .session:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
+                    self.toggleLoading(show: false, message: nil)
+                    
+                    if success, items.count > 1 {
+                        //since ordering is cron based - move the first 'question' item to front
+                        if let lastItem = items.last {
+                            let sessionSlice = items.dropLast()
+                            var sessionItems = Array(sessionSlice)
+                            sessionItems.insert(lastItem, at: 0)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
+                        }
+                    } else if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                    }
                 })
             default: break
             }
@@ -355,7 +377,7 @@ extension ExploreChannelsVC: UICollectionViewDelegateFlowLayout {
 /** HANDLE DYNAMIC LINKS **/
 extension ExploreChannelsVC {
      func handleLink() {
-        toggleLoading(show: true, message: "Loading Link...", showIcon: true)
+        toggleLoading(show: true, message: "loading link...", showIcon: true)
         
         if let universalLink = universalLink, let link = URLComponents(url: universalLink, resolvingAgainstBaseURL: true) {
      

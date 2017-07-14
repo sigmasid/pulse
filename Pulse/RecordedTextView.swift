@@ -224,7 +224,7 @@ extension RecordedTextView: UITextViewDelegate {
                 closeQuote.layoutIfNeeded()
             }
             
-            let remainingCount = maxLength - textView.text.count
+            let remainingCount = maxLength - textView.text.characters.count
             charsRemainingDelegate?.charsRemaining(count: remainingCount)
         }
     }

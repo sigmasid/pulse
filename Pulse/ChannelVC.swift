@@ -75,7 +75,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         super.viewDidLoad()
         if !isLoaded, allItems.isEmpty {
             
-            toggleLoading(show: true, message: "Loading Channel...", showIcon: true)
+            toggleLoading(show: true, message: "loading channel...", showIcon: true)
             statusBarStyle = .lightContent
             setupScreenLayout()
             tabBarHidden = true

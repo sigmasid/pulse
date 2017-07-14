@@ -715,15 +715,19 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
     }
     
     func userClickedHeaderMenu() {
+        guard let currentItem = currentItem else { return }
+        
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         pausePlayer()
         
         menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             self.toggleLoading(show: true, message: "loading share options", showIcon: true)
-            self.currentItem?.createShareLink(completion: {[weak self] link in
+            let shareItem = self.shareItemType(parentType: self.selectedItem.type, childType: currentItem.type) == self.selectedItem.type ?
+                self.selectedItem : currentItem
+            shareItem?.createShareLink(completion: {[weak self] link in
                 guard let link = link, let `self` = self else { return }
-                self.shareContent(shareType: "item", shareText: self.currentItem?.itemTitle ?? "", shareLink: link)
+                self.shareContent(shareType: shareItem!.type.rawValue, shareText: shareItem!.shareText(), shareLink: link)
                 self.toggleLoading(show: false, message: nil)
             })
         }))
@@ -735,6 +739,16 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }))
         
         present(menu, animated: true, completion: nil)
+    }
+    
+    private func shareItemType(parentType: ItemTypes, childType: ItemTypes) -> ItemTypes {
+        switch childType {
+        case .answer: return parentType
+        case .session: return parentType
+        case .perspective: return parentType
+            
+        default: return childType
+        }
     }
     
     func userClickedNextItem() {

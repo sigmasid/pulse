@@ -117,7 +117,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
         super.viewDidLoad()
         
         if !isLayoutSetup {
-            toggleLoading(show: true, message: "Loading Profile...", showIcon: true)
+            toggleLoading(show: true, message: "loading profile...", showIcon: true)
             
             updateHeader()
             setupLayout()
@@ -556,7 +556,7 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
                 
                 cell.showItemPreview(item: currentItem)
             } else {
-                toggleLoading(show: true, message: "Loading Interview...")
+                toggleLoading(show: true, message: "loading interview...")
                 PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
                     guard let `self` = self else { return }
                     self.toggleLoading(show: false, message: nil)
