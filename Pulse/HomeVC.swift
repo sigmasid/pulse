@@ -150,7 +150,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                     self.getMoreItems(completion: { _ in
                         //guard let `self` = self else { return }
                         //self.collectionView?.reloadData()
-                        //print("reloading collection view data in 2")
                         //self.collectionView?.reloadSections(IndexSet(integer: 0))
                     })
                 }

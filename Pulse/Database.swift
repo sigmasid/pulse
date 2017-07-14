@@ -248,7 +248,7 @@ class PulseDatabase {
 
                             let channel = Channel(cID: id, title: cTitle ?? "")
                             channel.cDescription = cDescription
-
+                            channel.cImageURL = result.childSnapshot(forPath: "fields/url/0").value as? String
                             _results.append(channel)
                         }
                     }

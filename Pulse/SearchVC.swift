@@ -24,8 +24,9 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
     fileprivate var tableView = UITableView()
     fileprivate var headerText = ""
     fileprivate var isSetupComplete = false
+    fileprivate var isSearchingPulse = false
     fileprivate var searchScope : SearchTypes! = .channels
-
+    
     var results = [Any]() {
         didSet {
             tableView.reloadData()
@@ -140,6 +141,11 @@ class SearchVC: PulseVC, XMSegmentedControlDelegate {
         
         results = []
         tableView.reloadData()
+        
+        DispatchQueue.main.async { [] in
+            self.searchController.searchBar.becomeFirstResponder()
+            self.searchController.isActive = true
+        }
     }
 }
 
@@ -150,11 +156,38 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return searchController.isActive && searchController.searchBar.text != "" ? results.count : 0
+        return searchController.isActive && searchController.searchBar.text != "" ? (results.count == 0 ? 1 : results.count) : 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier, for: indexPath) as! SearchTableCell
+        
+        if results.count == 0  {
+            cell.subtitleLabel.text = isSearchingPulse ? "" : "Try another search!"
+
+            switch searchScope! {
+                case .channels:
+                    cell.titleLabel.text = isSearchingPulse ? "Searching..." : "No channels found"
+                    cell.iconButton.setImage(UIImage(named: "channels"), for: UIControlState())
+                    cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+
+                case .items:
+                    cell.titleLabel.text = isSearchingPulse ? "Searching..." : "No series found"
+                    cell.iconButton.setImage(UIImage(named: "browse-circle"), for: UIControlState())
+                    cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+
+                case .users:
+                    cell.titleLabel.text = isSearchingPulse ? "Searching..." : "No user found"
+                    cell.iconButton.setImage(UIImage(named: "default-profile"), for: UIControlState())
+                    cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+
+            }
+            cell.iconButton.imageView?.contentMode = .scaleAspectFill
+            cell.iconButton.imageView?.tintColor = .black
+            cell.iconButton.makeRound()
+
+            return cell
+        }
         
         switch searchScope! {
         case .channels:
@@ -162,21 +195,51 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
                 cell.titleLabel.text = channel.cTitle?.capitalized
                 cell.subtitleLabel.text = channel.cDescription
                 cell.iconButton.setImage(UIImage(named: "channels"), for: UIControlState())
-                cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(5, 5, 5, 5)
+                cell.iconButton.imageView?.tintColor = .black
+                cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+                PulseDatabase.getCachedChannelImage(channelID: channel.cID, fileType: .thumb, completion: { image in
+                    if let image = image {
+                        DispatchQueue.main.async {
+                            cell.iconButton.setImage(image, for: UIControlState())
+                            cell.iconButton.imageView?.contentMode = .scaleAspectFill
+                            cell.iconButton.makeRound()
+                        }
+                    }
+                })
             }
         case .items:
             if let item = results[indexPath.row] as? Item {
-                cell.titleLabel.text = item.itemTitle
+                cell.titleLabel.text = item.itemTitle.capitalized
                 cell.subtitleLabel.text = item.itemDescription
                 cell.iconButton.setImage(UIImage(named: "browse-circle"), for: UIControlState())
+                cell.iconButton.imageView?.tintColor = .black
                 cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+                PulseDatabase.getCachedSeriesImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, completion: { image in
+                    if let image = image {
+                        DispatchQueue.main.async {
+                            cell.iconButton.setImage(image, for: UIControlState())
+                            cell.iconButton.imageView?.contentMode = .scaleAspectFill
+                            cell.iconButton.makeRound()
+                        }
+                    }
+                })
             }
         case .users:
             if let user = results[indexPath.row] as? PulseUser {
-                cell.titleLabel.text = user.name
-                cell.subtitleLabel.text = user.shortBio
+                cell.titleLabel.text = user.name?.capitalized
+                cell.subtitleLabel.text = user.shortBio?.capitalized
                 cell.iconButton.setImage(UIImage(named: "default-profile"), for: UIControlState())
+                cell.iconButton.imageView?.tintColor = .black
                 cell.iconButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+                PulseDatabase.getCachedUserPic(uid: user.uID!, completion: { image in
+                    if let image = image {
+                        DispatchQueue.main.async {
+                            cell.iconButton.setImage(image, for: UIControlState())
+                            cell.iconButton.imageView?.contentMode = .scaleAspectFill
+                            cell.iconButton.makeRound()
+                        }
+                    }
+                })
             }
         }
         
@@ -204,7 +267,7 @@ extension SearchVC: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView,
                    heightForHeaderInSection section: Int) -> CGFloat{
-        return Spacing.s.rawValue
+        return Spacing.xs.rawValue
     }
 }
 
@@ -227,36 +290,29 @@ extension SearchVC: UISearchBarDelegate, UISearchResultsUpdating, UISearchContro
         searchBar.endEditing(true)
         
         let _searchText = searchController.searchBar.text!
-        toggleLoading(show: true, message: "Searching...", showIcon: true)
-
+        
         if _searchText != "" && _searchText.characters.count > 1 {
+            isSearchingPulse = true
+            results = []
+
             switch searchScope! {
             case .channels:
-                PulseDatabase.searchChannels(searchText: _searchText.lowercased(), completion: { searchResults in
-                    if searchResults.count > 0 {
-                        self.results = searchResults
-                        self.toggleLoading(show: false, message: nil)
-                    } else {
-                        self.toggleLoading(show: true, message: "No results found!", showIcon: true)
-                    }
+                PulseDatabase.searchChannels(searchText: _searchText.lowercased(), completion: {[weak self] searchResults in
+                    guard let `self` = self else { return }
+                    self.results = searchResults
+                    self.isSearchingPulse = false
                 })
             case .users:
-                PulseDatabase.searchUsers(searchText: _searchText.lowercased(), completion:  { searchResults in
-                    if searchResults.count > 0 {
-                        self.results = searchResults
-                        self.toggleLoading(show: false, message: nil)
-                    } else {
-                        self.toggleLoading(show: true, message: "No results found!", showIcon: true)
-                    }
+                PulseDatabase.searchUsers(searchText: _searchText.lowercased(), completion:  {[weak self] searchResults in
+                    guard let `self` = self else { return }
+                    self.results = searchResults
+                    self.isSearchingPulse = false
                 })
             case .items:
-                PulseDatabase.searchItem(searchText: _searchText.lowercased(), completion:  { searchResults in
-                    if searchResults.count > 0 {
-                        self.results = searchResults
-                        self.toggleLoading(show: false, message: nil)
-                    } else {
-                        self.toggleLoading(show: true, message: "No results found!", showIcon: true)
-                    }
+                PulseDatabase.searchItem(searchText: _searchText.lowercased(), completion:  {[weak self] searchResults in
+                    guard let `self` = self else { return }
+                    self.results = searchResults
+                    self.isSearchingPulse = false
                 })
             }
         }

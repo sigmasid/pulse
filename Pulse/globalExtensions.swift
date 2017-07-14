@@ -126,6 +126,8 @@ extension UIView {
     
     func makeRound() {
         layer.cornerRadius = frame.width > frame.height ?  5 : frame.width / 2
+        layer.masksToBounds = true
+        clipsToBounds = true
     }
     
     func shrinkDismiss(duration: Double = 0.3) {

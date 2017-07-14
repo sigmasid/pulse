@@ -15,7 +15,7 @@ class SearchTableCell: UITableViewCell {
     
     var titleLabel = UILabel()
     var subtitleLabel = UILabel()
-    var iconButton = PulseButton(size: .small, type: .blank, isRound: true, background: .white, tint: .clear)
+    var iconButton = PulseButton(size: .small, type: .blank, isRound: true, hasBackground: false)
 
     override func awakeFromNib() {
         super.awakeFromNib()
