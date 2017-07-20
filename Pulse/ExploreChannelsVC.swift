@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
@@ -173,6 +174,9 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
     
     internal func userSelected(item : Any) {
         if let item = item as? Item {
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
+            
             switch item.type {
                 
             case .posts, .feedback, .perspectives, .interviews, .showcases:
@@ -226,6 +230,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
             userProfileVC.selectedUser = user
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: "user_profile" as NSObject,
+                                                                         AnalyticsParameterItemID: "\(user.uID!)" as NSObject])
             
         } else if let channel = item as? Channel {
             
@@ -260,6 +266,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         let channelVC = ChannelVC()
         channelVC.selectedChannel = channel
         navigationController?.pushViewController(channelVC, animated: true)
+        Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: "channel" as NSObject,
+                                                                     AnalyticsParameterItemID: "\(channel.cID)" as NSObject])
     }
 
     //used for handling links
@@ -500,7 +508,7 @@ extension ExploreChannelsVC {
     
     internal func showCameraMenu(inviteItem: Item) {
         let menu = UIAlertController(title: "Invitation to \(inviteItem.childActionType())\(inviteItem.childType())",
-                                     message: "Topic: \(inviteItem.itemTitle)\nWe are excited for your\(inviteItem.childType())!",
+                                     message: "Topic: \(inviteItem.itemTitle)\nWe are excited to hear your\(inviteItem.childType())!",
                                      preferredStyle: .actionSheet)
     
         menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: {[weak self] (action: UIAlertAction!) in

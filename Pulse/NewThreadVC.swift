@@ -14,9 +14,12 @@ class NewThreadVC: PulseVC  {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
+    public var delegate: BrowseContentDelegate?
     
     //UI Vars
+    fileprivate var containerView = UIView()
     fileprivate var sAddCover = UIImageView()
+    fileprivate lazy var backgroundBlurView = UIImageView()
     fileprivate var sShowCamera = PulseButton(size: .xLarge, type: .camera, isRound: true, background: .white, tint: .black)
     fileprivate var sShowCameraLabel = UILabel()
     
@@ -44,9 +47,16 @@ class NewThreadVC: PulseVC  {
         
         if !isLoaded {
             tabBarHidden = true
+            containerView.frame = view.frame
+            view.addSubview(containerView)
+            
             updateHeader()
             setupLayout()
             hideKeyboardWhenTappedAround()
+
+            
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
             
             isLoaded = true
         }
@@ -54,6 +64,16 @@ class NewThreadVC: PulseVC  {
     
     deinit {
         performCleanup()
+    }
+    
+    func keyboardWillShow(notification: NSNotification) {
+        UIView.animate(withDuration: 0.3, animations: { self.containerView.frame.origin.y = -150 })
+        containerView.layoutIfNeeded()
+    }
+    
+    func keyboardWillHide(notification: NSNotification) {
+        UIView.animate(withDuration: 0.3, animations: { self.containerView.frame.origin.y = 0 })
+        containerView.layoutIfNeeded()
     }
     
     override func goBack() {
@@ -126,7 +146,7 @@ class NewThreadVC: PulseVC  {
         PulseDatabase.addThread(channelID: selectedChannel.cID, parentItem: selectedItem, item: item, completion: {[weak self] success, error in
             guard let `self` = self else { return }
             
-            success ? self.showSuccessMenu() : self.showErrorMenu(error: error!)
+            success ? self.showSuccessMenu(item: item) : self.showErrorMenu(error: error!)
             if self.loading != nil {
                 self.loading.removeFromSuperview()
             }
@@ -135,10 +155,16 @@ class NewThreadVC: PulseVC  {
         
     }
     
-    internal func showSuccessMenu() {
+    internal func showSuccessMenu(item: Item) {
         let menu = UIAlertController(title: "Successfully Added Thread",
-                                     message: "Tap okay to return and start contributing to this thread!",
+                                     message: "Tap okay to return or start contributing to this thread!",
                                      preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "add Perspective", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self, let delegate = self.delegate else { return }
+            self.goBack()
+            delegate.addNewItem(selectedItem: item)
+        }))
         
         menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
@@ -161,27 +187,27 @@ class NewThreadVC: PulseVC  {
     
     fileprivate func createCompressedImages(image: UIImage) {
         fullImageData = image.mediumQualityJPEGNSData
-        thumbImageData = image.resizeImage(newWidth: PROFILE_THUMB_WIDTH)?.highQualityJPEGNSData
+        thumbImageData = image.resizeImage(newWidth: ITEM_THUMB_WIDTH)?.highQualityJPEGNSData
     }
 }
 
 //UI Elements
 extension NewThreadVC {
     func setupLayout() {
-        view.addSubview(sAddCover)
-        view.addSubview(sShowCamera)
-        view.addSubview(sShowCameraLabel)
+        containerView.addSubview(sAddCover)
+        containerView.addSubview(sShowCamera)
+        containerView.addSubview(sShowCameraLabel)
         
-        view.addSubview(sTitle)
-        view.addSubview(sDescription)
+        containerView.addSubview(sTitle)
+        containerView.addSubview(sDescription)
         
-        view.addSubview(sTypeDescription)
-        view.addSubview(submitButton)
+        containerView.addSubview(sTypeDescription)
+        containerView.addSubview(submitButton)
         
         sAddCover.translatesAutoresizingMaskIntoConstraints = false
-        sAddCover.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor).isActive = true
-        sAddCover.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        sAddCover.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        sAddCover.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
+        sAddCover.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
+        sAddCover.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
         sAddCover.heightAnchor.constraint(equalToConstant: 250).isActive = true
         sAddCover.layoutIfNeeded()
         
@@ -201,15 +227,15 @@ extension NewThreadVC {
         
         sTitle.translatesAutoresizingMaskIntoConstraints = false
         sTitle.topAnchor.constraint(equalTo: sAddCover.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        sTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sTitle.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
+        sTitle.widthAnchor.constraint(equalTo: containerView.widthAnchor, multiplier: 0.8).isActive = true
         sTitle.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         sTitle.layoutIfNeeded()
         
         sDescription.translatesAutoresizingMaskIntoConstraints = false
         sDescription.topAnchor.constraint(equalTo: sTitle.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
-        sDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sDescription.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
+        sDescription.widthAnchor.constraint(equalTo: containerView.widthAnchor, multiplier: 0.8).isActive = true
         sDescription.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         sDescription.layoutIfNeeded()
         
@@ -221,8 +247,8 @@ extension NewThreadVC {
         
         sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
         sTypeDescription.topAnchor.constraint(equalTo: sDescription.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sTypeDescription.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
+        sTypeDescription.widthAnchor.constraint(equalTo: containerView.widthAnchor, multiplier: 0.8).isActive = true
         sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
@@ -235,9 +261,9 @@ extension NewThreadVC {
     internal func addSubmitButton() {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
-        submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        submitButton.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
         submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
-        submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        submitButton.widthAnchor.constraint(equalTo: containerView.widthAnchor, multiplier: 0.8).isActive = true
         submitButton.layoutIfNeeded()
         
         submitButton.makeRound()
@@ -301,8 +327,18 @@ extension NewThreadVC: InputMasterDelegate {
             return
         }
         
+        backgroundBlurView.frame = sAddCover.frame
+        backgroundBlurView.backgroundColor = UIColor.init(patternImage: image)
+        backgroundBlurView.contentMode = .center
+        containerView.insertSubview(backgroundBlurView, at: 0)
+        
+        let blurBackground = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
+        blurBackground.frame = backgroundBlurView.bounds
+        backgroundBlurView.addSubview(blurBackground)
+        
         sAddCover.image = image
-        sAddCover.contentMode = .scaleAspectFill
+        sAddCover.contentMode = .scaleAspectFit
+        sAddCover.backgroundColor = .clear
         sAddCover.clipsToBounds = true
         
         sShowCameraLabel.removeFromSuperview()
@@ -311,7 +347,7 @@ extension NewThreadVC: InputMasterDelegate {
         sShowCamera = PulseButton(size: .xSmall, type: .camera, isRound: true, background: UIColor.white.withAlphaComponent(0.7), tint: .black)
         sShowCamera.frame = CGRect(x: Spacing.xs.rawValue, y: self.sAddCover.frame.maxY - Spacing.xs.rawValue -  IconSizes.xSmall.rawValue,
                                    width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
-        view.addSubview(sShowCamera)
+        containerView.addSubview(sShowCamera)
         sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
 
         contentType = assetType

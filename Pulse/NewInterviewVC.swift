@@ -200,9 +200,9 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
                 self.selectedIndex = nil
                 
             } else {
-                let newIndexPath = IndexPath(row: 0, section: 0)
+                let newIndexPath = IndexPath(row: allQuestions.count, section: 0)
 
-                allQuestions.insert(text, at: 0)
+                allQuestions.append(text)
                 tableView.insertRows(at: [newIndexPath], with: .left)
             }
             checkEnableButton()
@@ -416,6 +416,8 @@ extension NewInterviewVC {
         searchButton.addTarget(self, action: #selector(userClickedSearchUsers), for: .touchUpInside)
         
         iName.delegate = self
+        iTopic.delegate = self
+
         iName.placeholder = placeholderName
         iTopic.placeholder = placeholderDescription
         
@@ -481,6 +483,8 @@ extension NewInterviewVC: UITextFieldDelegate, UITextViewDelegate {
             iNameDescription.text = "New user! Pick how to send invite next"
             checkEnableButton()
             selectedUser = nil
+        } else {
+            checkEnableButton()
         }
     }
     

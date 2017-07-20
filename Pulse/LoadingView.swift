@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 7/19/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -14,7 +14,7 @@ class LoadingView: UIView {
     fileprivate var iconManager : Icon!
     fileprivate var textLogo : UIImageView!
 
-    fileprivate lazy var refreshButton = PulseButton(size: .small, type: .refresh, isRound: true, hasBackground: true)
+    fileprivate lazy var refreshButton = PulseButton(size: .small, type: .refresh, isRound: true, background: UIColor.white.withAlphaComponent(0.7), tint: UIColor.black)
     weak var loadingDelegate : LoadingDelegate!
     
     override init(frame: CGRect) {
@@ -62,8 +62,8 @@ class LoadingView: UIView {
     }
     
     public func addMessage(_ _text : String?, _color : UIColor) {
-        messageLabel.textColor = _color
         addMessage(_text)
+        messageLabel.textColor = _color
     }
     
     public func addTextLogo(tintColor: UIColor = .black) {

@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 10/6/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit

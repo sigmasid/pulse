@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 7/6/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -84,18 +84,34 @@ class RecordingOverlay: UIView {
         case .albumImage, .recordedImage, .albumVideo, .recordedVideo:
             saveButton.isHidden = false
             titleButton.isHidden = false
-            postButton.removeShadow()
-            addMoreButton.removeShadow()
-            closeButton.removeShadow()
+            postLabel.setBlurredBackground()
+            addMoreLabel.setBlurredBackground()
+            
+            UIView.animate(withDuration: 0.3, animations: {
+                self.saveButton.backgroundColor = UIColor.white.withAlphaComponent(0.3);
+                self.titleButton.backgroundColor = UIColor.white.withAlphaComponent(0.3);
+                self.postButton.backgroundColor = UIColor.white.withAlphaComponent(0.3);
+                self.addMoreButton.backgroundColor = UIColor.white.withAlphaComponent(0.3);
+                self.closeButton.backgroundColor = UIColor.white.withAlphaComponent(0.3);
+            }, completion: {[unowned self] _ in
+                self.layoutIfNeeded()
+            })
         case .postcard:
             saveButton.isHidden = true
             titleButton.isHidden = true
-            postButton.addShadow(cornerRadius: postButton.layer.cornerRadius)
-            addMoreButton.addShadow(cornerRadius: addMoreButton.layer.cornerRadius)
-            closeButton.addShadow(cornerRadius: closeButton.layer.cornerRadius)
-            addMoreButton.layoutIfNeeded()
-            closeButton.layoutIfNeeded()
-            postButton.layoutIfNeeded()
+            postLabel.removeShadow()
+            addMoreLabel.removeShadow()
+            
+            postLabel.textColor = .black
+            addMoreLabel.textColor = .black
+            
+            UIView.animate(withDuration: 0.3, animations: {
+                self.postButton.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3);
+                self.addMoreButton.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3);
+                self.closeButton.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.3);
+            }, completion: {[unowned self] _ in
+                self.layoutIfNeeded()
+            })
         }
     }
     
@@ -185,17 +201,19 @@ class RecordingOverlay: UIView {
     }
     
     fileprivate func setupTitleField(placeholderText : String) {
-        addSubview(addTitleField)
         
         addTitleField.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         addTitleField.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .white, alignment: .left)
         addTitleField.returnKeyType = .done
         
-        let sizeThatFitsTextView = addTitleField.sizeThatFits(CGSize(width: addTitleField.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+        let sizeThatFitsTextView = addTitleField.sizeThatFits(CGSize(width: frame.size.width, height: CGFloat.greatestFiniteMagnitude))
         let labelHeight = max(sizeThatFitsTextView.height, 33)
-        addTitleField.frame = CGRect(x: 0, y: addTitleField.frame.maxY - sizeThatFitsTextView.height, width: frame.width, height: labelHeight)
+        addTitleField.frame = CGRect(x: 0, y: frame.maxY, width: frame.width, height: labelHeight)
         addTitleField.textContainer.size = CGSize(width: addTitleField.frame.width, height: addTitleField.frame.height)
+        addTitleField.alpha = 0.0
         
+        addSubview(addTitleField)
+        UIView.animate(withDuration: 0.3, animations: { self.addTitleField.alpha = 1.0 })
         isTitleSetup = true
     }
     
@@ -227,7 +245,6 @@ class RecordingOverlay: UIView {
         closeButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
         
         closeButton.layoutIfNeeded()
-        
         closeButton.removeShadow()
     }
     
@@ -255,7 +272,6 @@ class RecordingOverlay: UIView {
         titleButton.layoutIfNeeded()
         
         titleButton.addTarget(self, action: #selector(userClickedAddTitle), for: .touchUpInside)
-        
         titleButton.removeShadow()
     }
     
@@ -281,7 +297,7 @@ class RecordingOverlay: UIView {
         
         pagersStack.translatesAutoresizingMaskIntoConstraints = false
         pagersStack.widthAnchor.constraint(equalToConstant: Spacing.xs.rawValue).isActive = true
-        pagersStack.topAnchor.constraint(equalTo: topAnchor, constant: Spacing.s.rawValue + STATUS_BAR_HEIGHT).isActive = true
+        pagersStack.topAnchor.constraint(equalTo: closeButton.centerYAnchor).isActive = true
         pagersStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant : -Spacing.s.rawValue).isActive = true
         
         pagersStack.axis = .vertical
@@ -296,7 +312,7 @@ class RecordingOverlay: UIView {
         pagerButton.backgroundColor = .pulseBlue
         
         if pagersStack.arrangedSubviews.last != nil {
-            pagersStack.arrangedSubviews.last!.backgroundColor = .white
+            pagersStack.arrangedSubviews.last!.backgroundColor = .pulseGrey
         }
         
         pagersStack.addArrangedSubview(pagerButton)

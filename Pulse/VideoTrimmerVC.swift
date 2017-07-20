@@ -10,7 +10,7 @@ import UIKit
 import AVFoundation
 import MobileCoreServices
 
-class VideoTrimmerVC: UIViewController {
+class VideoTrimmerVC: PulseVC {
     
     public var asset : AVAsset?
     public weak var delegate : VideoTrimmerDelegate?
@@ -29,9 +29,8 @@ class VideoTrimmerVC: UIViewController {
     fileprivate var player: AVPlayer?
     fileprivate var playbackTimeCheckerTimer: Timer?
     fileprivate var trimmerPositionChangedTimer: Timer?
-    fileprivate var progressBar = UIProgressView()
+    fileprivate var progressLabel = UILabel()
     
-    private var isLoaded = false
     private var assetLoaded = false
     
     override func viewDidLoad() {
@@ -109,16 +108,16 @@ class VideoTrimmerVC: UIViewController {
         export.outputFileType = AVFileTypeMPEG4
         export.shouldOptimizeForNetworkUse = true
         export.timeRange = range
+
+        progressLabel.text = "Compressing Video..."
         
         export.exportAsynchronously {[weak self] in
             guard let `self` = self else { return }
             
             switch export.status {
-            case .exporting:
-                self.updateProgressBar(export.progress)
-                
             case .completed:
                 DispatchQueue.main.async {
+                    self.progressLabel.removeFromSuperview()
                     self.chooseButton.isEnabled = true
                     self.delegate?.exportedAsset(url: export.outputURL)
                 }
@@ -126,6 +125,7 @@ class VideoTrimmerVC: UIViewController {
                 
             case .cancelled, .failed:
                 DispatchQueue.main.async {
+                    self.progressLabel.removeFromSuperview()
                     self.chooseButton.isEnabled = true
                     GlobalFunctions.showAlertBlock("Error Exporting Video", erMessage: "Sorry there was an error. Please try again or select another video")
                 }
@@ -172,12 +172,6 @@ class VideoTrimmerVC: UIViewController {
     
     internal func handleCancel() {
         delegate?.dismissedTrimmer()
-    }
-    
-    func updateProgressBar(_ percentComplete : Float) {
-        DispatchQueue.main.async {
-            self.progressBar.setProgress(percentComplete, animated: true)
-        }
     }
 }
 
@@ -281,18 +275,10 @@ extension VideoTrimmerVC {
     }
     
     fileprivate func addUploadProgressBar() {
-        progressBar.progressTintColor = UIColor.white
-        progressBar.trackTintColor = UIColor.black.withAlphaComponent(0.7)
-        progressBar.progressViewStyle = .bar
-        
-        view.addSubview(progressBar)
-        
-        progressBar.translatesAutoresizingMaskIntoConstraints = false
-        
-        progressBar.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        progressBar.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-        progressBar.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue * 1.2).isActive = true
-        progressBar.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        progressLabel.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: IconSizes.medium.rawValue * 1.2)
+        progressLabel.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+        progressLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
+        view.addSubview(progressLabel)
     }
 }
 

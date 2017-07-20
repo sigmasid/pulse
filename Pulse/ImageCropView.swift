@@ -19,15 +19,25 @@ final class ImageCropView: UIScrollView, UIScrollViewDelegate, UIGestureRecogniz
     
     var cropArea:CGRect{
         get{
-            let fullScreen = frame.height > frame.width
-            let factor = fullScreen ? image.size.height / frame.height : image.size.width / frame.width
+            let isFullScreen = frame.size.height > frame.size.width
+            let isPortrait = image.size.height > image.size.width
+            
+            var factor: CGFloat = 0.0
+            
+            if isFullScreen, isPortrait {
+                factor = image.size.height / frame.height
+            } else if isPortrait { //square image
+                factor = image.size.width / frame.width
+            } else {
+                factor = image.size.height / frame.height
+            }
+            
             let scale = 1 / zoomScale
             
             let x = contentOffset.x * scale * factor
             let y = contentOffset.y * scale * factor
             let width = frame.size.width * scale * factor
-            let height = fullScreen ? frame.size.height * scale * factor : frame.size.width * scale * factor
-                        
+            let height = isFullScreen ? frame.size.height * scale * factor : isPortrait ? frame.size.height * scale * factor : min(frame.size.width * scale * factor, image.size.height)
             return CGRect(x: x, y: y, width: width, height: height)
         }
     }
@@ -142,7 +152,6 @@ final class ImageCropView: UIScrollView, UIScrollViewDelegate, UIGestureRecogniz
     }
     
     func scrollViewDidZoom(_ scrollView: UIScrollView) {
-        
         let boundsSize = scrollView.bounds.size
         var contentsFrame = imageView.frame
         

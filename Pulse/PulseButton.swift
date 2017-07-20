@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 10/26/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -579,6 +579,7 @@ open class PulseButton: UIButton {
             layer.shadowRadius = 0.5
             layer.shadowPath = UIBezierPath.init(roundedRect: downRect , cornerRadius: cornerRadius).cgPath
             layer.shadowOffset = loweredShadowOffset
+            layoutIfNeeded()
             
         } else {
             layer.addBorder(edge: .bottom, color: .pulseGrey, thickness: 1.0)
@@ -631,7 +632,7 @@ open class PulseButton: UIButton {
         rippleView.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
         
         
-        UIView.animate(withDuration: 0.7, delay: 0, options: [UIViewAnimationOptions.curveEaseOut, UIViewAnimationOptions.allowUserInteraction],
+        UIView.animate(withDuration: 0.3, delay: 0, options: [UIViewAnimationOptions.curveEaseOut, UIViewAnimationOptions.allowUserInteraction],
                        animations: {
                         self.rippleView.transform = CGAffineTransform.identity
         }, completion: nil)
@@ -647,7 +648,7 @@ open class PulseButton: UIButton {
             opacityAnim.toValue = 1
             
             let groupAnim = CAAnimationGroup()
-            groupAnim.duration = 0.7
+            groupAnim.duration = 0.3
             groupAnim.fillMode = kCAFillModeForwards
             groupAnim.isRemovedOnCompletion = false
             groupAnim.animations = [shadowAnim, opacityAnim]
@@ -677,7 +678,7 @@ open class PulseButton: UIButton {
         })
         
         
-        UIView.animate(withDuration: 0.7, delay: 0,
+        UIView.animate(withDuration: 0.3, delay: 0,
                        options: [.curveEaseOut, .beginFromCurrentState, .allowUserInteraction],
                        animations: {
                         self.rippleView.transform = CGAffineTransform.identity
@@ -689,7 +690,7 @@ open class PulseButton: UIButton {
                         opacityAnim.toValue = self.tempShadowOpacity
                         
                         let groupAnim = CAAnimationGroup()
-                        groupAnim.duration = 0.7
+                        groupAnim.duration = 0.3
                         groupAnim.fillMode = kCAFillModeForwards
                         groupAnim.isRemovedOnCompletion = false
                         groupAnim.animations = [shadowAnim, opacityAnim]

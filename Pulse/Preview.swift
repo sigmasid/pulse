@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -83,7 +83,6 @@ class Preview: UIView, PreviewPlayerItemDelegate {
             return
         }
         
-        // NEED TO UPDATE
         switch type {
         case .recordedVideo, .albumVideo:
             showMode(mode: .video)

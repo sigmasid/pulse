@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, CompletedRecordingDelegate {
     
@@ -141,6 +142,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     internal func startThread() {
         let newThread = NewThreadVC()
+        newThread.delegate = self
         newThread.selectedChannel = selectedChannel
         newThread.selectedItem = selectedItem
         navigationController?.pushViewController(newThread, animated: true)
@@ -269,13 +271,15 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
         let currentItem = allItems[indexPath.row]
 
         //clear the cells and set the item type first
-        cell.updateLabel(currentItem.itemTitle != "" ? currentItem.itemTitle : "",
-                         _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: nil)
+        let _title = currentItem.itemDescription != "" ? "\(currentItem.itemTitle) - \(currentItem.itemDescription)" : currentItem.itemTitle
+        cell.updateLabel(_title, _subtitle: currentItem.user?.name, _createdAt: currentItem.createdAt, _tag: nil)
         
         //Already fetched this item
         if allItems[indexPath.row].itemCreated {
+            let _title = currentItem.itemDescription != "" ? "\(currentItem.itemTitle) - \(currentItem.itemDescription)" : currentItem.itemTitle
+
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
+            cell.updateCell(_title, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
             
             PulseDatabase.getCachedUserPic(uid: currentItem.itemUserID, completion: { image in
                 DispatchQueue.main.async {
@@ -290,13 +294,16 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                 guard let `self` = self else { return }
 
                 if let item = item {
-                    
+                    let _title = item.itemDescription != "" ? "\(item.itemTitle) - \(item.itemDescription)" : item.itemTitle
+
                     cell.itemType = item.type
 
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
+                            let _title = item.itemDescription != "" ? "\(item.itemTitle) - \(item.itemDescription)" : item.itemTitle
+
                             cell.itemType = item.type
-                            cell.updateLabel(item.itemTitle, _subtitle: self.allItems[indexPath.row].user?.name ?? nil,  _createdAt: item.createdAt, _tag: nil)
+                            cell.updateLabel(_title, _subtitle: self.allItems[indexPath.row].user?.name ?? nil,  _createdAt: item.createdAt, _tag: nil)
                         }
                     }
                     
@@ -332,7 +339,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     // Get the user details
                     if let user = self.checkUserDownloaded(user: PulseUser(uID: item.itemUserID)) {
                         self.allItems[indexPath.row].user = user
-                        cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: nil)
+                        cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: nil)
                         
                     } else {
                         PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
@@ -344,7 +351,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                                 
                                 DispatchQueue.main.async {
                                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateLabel(item.itemTitle, _subtitle: user.name,  _createdAt: item.createdAt, _tag: nil)
+                                        cell.updateLabel(_title, _subtitle: user.name,  _createdAt: item.createdAt, _tag: nil)
                                     }
                                 }
                             }
@@ -385,7 +392,9 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
     func updateCell(_ cell: ItemCell, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
+            let _title = allItems[indexPath.row].itemDescription != "" ? "\(allItems[indexPath.row].itemTitle) - \(allItems[indexPath.row].itemDescription)" : allItems[indexPath.row].itemTitle
+
+            cell.updateCell(_title, _subtitle: currentItem.user?.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
         }
     }
     
@@ -494,6 +503,8 @@ extension SeriesVC {
     internal func userSelected(item : Item, index : Int) {
         
         item.tag = selectedItem //since we are in tagVC
+        Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                     AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
         
         //can only be a question or a post that user selects since it's in a tag already
         switch item.type {
@@ -628,6 +639,8 @@ extension SeriesVC {
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
             userProfileVC.selectedUser = user
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: "user_profile" as NSObject,
+                                                                         AnalyticsParameterItemID: "\(user.uID!)" as NSObject])
         }
     }
     
@@ -664,6 +677,13 @@ extension SeriesVC {
         menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "report This", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            menu.dismiss(animated: true, completion: nil)
+            self.reportContent(item: currentItem)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in

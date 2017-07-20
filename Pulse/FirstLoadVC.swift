@@ -19,22 +19,22 @@ class FirstLoadVC: UIViewController {
     internal var collectionView : UICollectionView!
     internal let reuseIdentifier = "firstLoadCell"
     
-    fileprivate let screenTitles = ["Welcome to Pulse!",
-                                    "Content That Matters",
-                                    "Voices That Matter",
-                                    "Create What Matters"]
+    fileprivate let screenTitles = ["welcome to pulse!",
+                                    "content that matters",
+                                    "voices that matter",
+                                    "create what matters"]
     fileprivate let imageDescriptions = ["",
                                          "Pulse Channel: 'The Valley'",
                                          "Pulse Experts",
                                          "Pulse Formats"]
     fileprivate let screenDescriptions = ["home to things that matter",
-                                          "discover intelligent & interactive \nprofessional content, series & channels",
-                                          "access exclusive expert voices\n& showcase your professional expertise",
-                                          "bold new formats & experiences\ncreate, collaborate & contribute"]
-    fileprivate let imageNames = ["launch_screen_0",
-                                  "launch_screen_1",
-                                  "launch_screen_2",
-                                  "launch_screen_3"]
+                                          "discover bold, new & exclusive \nprofessional content, series & channels",
+                                          "platform for professionals & experts to\n& create, collaborate & showcase",
+                                          "bold new visual format for interview, panels\ndisucssions, debates, showcases & more!"]
+    fileprivate let imageNames = ["pulse-first-load-logo",
+                                  "channels",
+                                  "default-profile",
+                                  "answers"]
                               
     public var introDelegate : FirstLaunchDelegate!
     internal var pagersStack = UIStackView()
@@ -184,14 +184,14 @@ class FirstLoadVC: UIViewController {
         getStartedButton.translatesAutoresizingMaskIntoConstraints = false
         getStartedButton.bottomAnchor.constraint(equalTo: loginButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
         getStartedButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        getStartedButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
-        getStartedButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
+        getStartedButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.6).isActive = true
+        getStartedButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
         getStartedButton.layoutIfNeeded()
         
         loginButton.translatesAutoresizingMaskIntoConstraints = false
         loginButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.max.rawValue).isActive = true
         loginButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        loginButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7).isActive = true
+        loginButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.6).isActive = true
         loginButton.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 1/20).isActive = true
         loginButton.layoutIfNeeded()
         
@@ -199,7 +199,7 @@ class FirstLoadVC: UIViewController {
         loginButton.makeRound()
         
         getStartedButton.removeShadow()
-        getStartedButton.backgroundColor = .pulseRed
+        getStartedButton.backgroundColor = .black
         
         getStartedButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightMedium, color: .white, alignment: .center)
         loginButton.setButtonFont(FontSizes.body2.rawValue, weight: UIFontWeightRegular, color: .gray, alignment: .center)

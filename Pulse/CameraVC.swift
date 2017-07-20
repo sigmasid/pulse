@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -48,7 +48,7 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .black
+        view.backgroundColor = UIColor.black
     }
     
     deinit {
@@ -104,16 +104,17 @@ class CameraVC: PulseVC, UIGestureRecognizerDelegate, CameraManagerProtocol {
     }
     
     fileprivate func sendImage(image: UIImage) {
-        if captureSize == .fullScreen {
+        switch captureSize! {
+        case .fullScreen:
             guard let croppedImage = image.resizeImage(newWidth: FULL_IMAGE_WIDTH) else {
                 delegate?.capturedItem(item: image, location: self.camera.location, assetType: .recordedImage)
                 return
             }
             delegate?.capturedItem(item: croppedImage, location: self.camera.location, assetType: .recordedImage)
-        } else {
+        case .square:
             guard let croppedImage = image.getSquareImage(newWidth: FULL_IMAGE_WIDTH) else {
                 delegate?.capturedItem(item: image.resizeImage(newWidth: FULL_IMAGE_WIDTH),
-                                            location: self.camera.location, assetType: .recordedImage)
+                                       location: self.camera.location, assetType: .recordedImage)
                 return
             }
             delegate?.capturedItem(item: croppedImage, location: self.camera.location, assetType: .recordedImage)

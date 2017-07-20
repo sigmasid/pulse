@@ -131,9 +131,10 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
         
         PulseDatabase.createInviteRequest(item: item, type: item.inviteType()!, toUser: selectedUser,
                                           toName: selectedUser?.name ?? iName.text, toEmail: email, childItems: [],  parentItemID: selectedItem.itemID,
-                                          completion: {(success, error) in
-                                            
+                                          completion: {[weak self](success, error) in
+            guard let `self` = self else { return }
             success ? completion(true, item) : completion(false, nil)
+            self.toggleLoading(show: false, message: nil)
             loading.removeFromSuperview()
         })
     }

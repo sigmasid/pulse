@@ -106,6 +106,9 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
     
     internal func closeSearch() {
         if modalDelegate != nil {
+            searchController.searchBar.resignFirstResponder()
+            searchController.isActive = false
+
             UIView.animate(withDuration: 0.2, animations: {
                 self.collectionView.frame.origin.y = self.view.bounds.maxY + SEARCH_BAR_HEIGHT
                 self.searchContainer.frame.origin.y = self.view.bounds.maxY

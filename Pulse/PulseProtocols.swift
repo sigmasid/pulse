@@ -52,6 +52,8 @@ public protocol VideoTrimmerDelegate: class {
 
 protocol InputItemDelegate : InputMasterDelegate {
     func switchInput(to: InputMode, from: InputMode)
+    func dimAlpha()
+    func updateAlpha()
 }
 
 protocol InputMasterDelegate: class {

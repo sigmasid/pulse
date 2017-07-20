@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDelegate, HeaderDelegate, ParentTextViewDelegate, ModalDelegate {
     //set by delegate
@@ -293,9 +294,7 @@ extension ChannelVC {
     //clicked the image button to go to a user profile
     internal func clickedUserButton(itemRow : Int) {
         if let user = allItems[itemRow].user {
-            let userProfileVC = UserProfileVC()
-            navigationController?.pushViewController(userProfileVC, animated: true)
-            userProfileVC.selectedUser = user
+            userSelectedUser(toUser: user)
         }
     }
     
@@ -335,6 +334,13 @@ extension ChannelVC {
         menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "report This", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            menu.dismiss(animated: true, completion: nil)
+            self.reportContent(item: currentItem)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -614,6 +620,9 @@ extension ChannelVC {
     
     internal func userSelected(item : Any) {
         if let item = item as? Item {
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
+            
             switch item.type {
                 
             case .perspective, .answer, .post, .showcase:
@@ -711,6 +720,8 @@ extension ChannelVC {
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
             userProfileVC.selectedUser = toUser
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: "user_profile" as NSObject,
+                                                                         AnalyticsParameterItemID: "\(toUser.uID!)" as NSObject])
             
         }
     }
@@ -950,7 +961,7 @@ extension ChannelVC: UICollectionViewDelegateFlowLayout {
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: selectedChannel.tags.count > 0 ? Spacing.xs.rawValue : 0, right: 0.0)
+        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: (selectedChannel.tags.count > 0 && allItems.count > 0) ? Spacing.xs.rawValue : 0, right: 0.0)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

@@ -329,6 +329,16 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
                 self.navigationController?.pushViewController(SettingsTableVC(), animated: true)
             }))
             
+            menu.addAction(UIAlertAction(title: "get Support", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
+                menu.dismiss(animated: true, completion: nil)
+                let messageVC = MessageVC()
+                messageVC.toUser = PULSE_SUPPORT_USER
+                DispatchQueue.main.async {
+                    self.navigationController?.pushViewController(messageVC, animated: true)
+                }
+            }))
+            
             menu.addAction(UIAlertAction(title: "logout", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
                 guard let `self` = self else { return }
                 menu.dismiss(animated: true, completion: nil)

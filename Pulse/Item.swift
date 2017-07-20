@@ -335,6 +335,17 @@ class Item: NSObject {
         }
     }
     
+    internal func cameraButtonText() -> String {
+        switch type {
+        case .post: return "Next"
+        case .interview: return "Next"
+        case .answer: return "Done"
+        case .showcase: return "Next"
+            
+        default: return "Post"
+        }
+    }
+    
     internal func checkVerifiedInput(completion: @escaping (Bool, String?) -> Void) {
         if !PulseUser.isLoggedIn() {
             completion(false, "Please login to continue")

@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import Foundation
@@ -24,7 +24,7 @@ extension UIFont {
         case UIFontWeightBold:
             return UIFont(name: "Avenir-Black", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
         case UIFontWeightBlack:
-            return UIFont(name: "AvenirNext-Black", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
+            return UIFont(name: "AvenirNext-Heavy", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
         case UIFontWeightHeavy:
             return UIFont(name: "Avenir-Heavy", size: size) ?? UIFont.systemFont(ofSize: size, weight: ofWeight)
         case UIFontWeightRegular:
@@ -497,7 +497,7 @@ extension UIImage
         } else if size.width > size.height {
             let scale = size.width / size.height
             if let returnImage = resizeImage(newWidth: newWidth * scale) {
-                cropRect = CGRect(x: returnImage.size.width / 2 - newWidth / 2, y: 0, width: newWidth, height: newWidth)
+                cropRect = CGRect(x: (returnImage.size.width / 2) - (newWidth / 2), y: 0, width: newWidth, height: newWidth)
                 return returnImage.cropImage(toRect: cropRect)
             } else {
                 return nil
@@ -521,9 +521,21 @@ extension UIImage
         return newImage
     }
     
+    func resizeImageHeight(newHeight: CGFloat) -> UIImage? {
+        let scale = newHeight / size.height
+        let newWidth = size.width * scale
+        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
+        draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+        
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage
+    }
+    
     func cropImage(toRect: CGRect) -> UIImage? {
         if let imageRef = cgImage!.cropping(to: toRect) {
-            return UIImage(cgImage: imageRef, scale: 0, orientation: imageOrientation)
+            return UIImage(cgImage: imageRef, scale: 1.0, orientation: imageOrientation == .upMirrored ? .upMirrored : .up)
         }
         
         return nil

@@ -157,6 +157,7 @@ extension PulseAlbumVC {
 extension PulseAlbumVC: VideoTrimmerDelegate, ImageTrimmerDelegate {
     func dismissedTrimmer() {
         view.alpha = 1.0
+        delegate.updateAlpha()
 
         guard let nav = self.navigationController else {
             dismiss(animated: true, completion: nil)
@@ -236,10 +237,14 @@ extension PulseAlbumVC: AlbumViewDelegate {
                     let videoTrimmer = VideoTrimmerVC()
                     videoTrimmer.asset = asset
                     videoTrimmer.delegate = self
+                    videoTrimmer.transitioningDelegate = self
+                    self.delegate.dimAlpha()
+
                     self.selectedMetadata = metaData
                     
                     guard let nav = self.navigationController else {
                         DispatchQueue.main.async {
+                            self.view.alpha = 0.0
                             self.present(videoTrimmer, animated: false, completion: nil)
                         }
                         return

@@ -3,10 +3,11 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/30/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import Foundation
+import Firebase
 import FirebaseDatabase
 import FirebaseStorage
 import FirebaseAuth
@@ -426,8 +427,7 @@ class PulseDatabase {
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessage" : message.body,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessage" : message.body,
                  "users/\(user.uID!)/conversations/\(message.to.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
-                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
-                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : ServerValue.timestamp() as AnyObject]
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
                 completionError != nil ? completion(false, nil) : completion(true, message.mID)
@@ -447,8 +447,7 @@ class PulseDatabase {
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageSender" : user.uID!,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessage" : message.body,
                  "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageType" : message.mType.rawValue,
-                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject,
-                 "users/\(message.to.uID!)/unreadMessages/\(messageKey)" : ServerValue.timestamp() as AnyObject]
+                 "users/\(message.to.uID!)/conversations/\(user.uID!)/lastMessageTime" : ServerValue.timestamp() as AnyObject]
             
             databaseRef.updateChildValues(conversationPost, withCompletionBlock: { (completionError, ref) in
                 completionError != nil ? completion(false, nil) : completion(true, messageKey)
@@ -1081,7 +1080,6 @@ class PulseDatabase {
     static func populateCurrentUser(_ user: User!, completion: @escaping (_ success: Bool) -> Void) {
         removeCurrentUser()
         PulseUser.currentUser.uID = user.uid
-        
         usersPublicSummaryRef.child(user.uid).observe(.value, with: { snap in
             if snap.hasChild(SettingTypes.name.rawValue) {
                 PulseUser.currentUser.name = snap.childSnapshot(forPath: SettingTypes.name.rawValue).value as? String
@@ -2022,7 +2020,7 @@ class PulseDatabase {
                                          "createdAt" : ServerValue.timestamp(),
                                          "cID":channelID]
         
-        let channelItemsPost : [String : Any] = ["title" : item.itemTitle,
+        let channelItemsPost : [String : Any] = ["title" : "\(item.itemTitle) - \(item.itemDescription)",
                                                  "tagID" : parentItem.itemID,
                                                  "tagTitle" : parentItem.itemTitle,
                                                  "uID" : user.uID!,
@@ -2237,7 +2235,7 @@ class PulseDatabase {
                         }
                         
                         NotificationCenter.default.post(name: Notification.Name(rawValue: "SubscriptionsChanged"), object: self)
-                        
+                        Analytics.logEvent(AnalyticsEventJoinGroup, parameters: [ AnalyticsParameterGroupID: "\(channel.cID)" as NSObject ])
                         completion(true, nil)
                     }
                 })
@@ -2331,5 +2329,26 @@ class PulseDatabase {
         UIGraphicsEndImageContext()
         
         return UIImageJPEGRepresentation(newImage!, 0.75)
+    }
+    /** END IMAGE FUNCTIONS **/
+    
+    /** START MODERATION **/
+    static func reportContent(item: Item, reason: String, completion: @escaping (Bool, Error?) -> Void) {
+        guard PulseUser.isLoggedIn() else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to report content" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let reportKey = databaseRef.child("reportedContent").childByAutoId().key
+        let reportPost : [String : AnyObject] = ["type" : reason as AnyObject,
+                                               "cID" : item.cID as AnyObject,
+                                               "title" : item.itemTitle as AnyObject,
+                                               "uID" : PulseUser.currentUser.uID! as AnyObject,
+                                               "createdAt" : ServerValue.timestamp() as AnyObject]
+        
+        databaseRef.child("reportedContent").updateChildValues([reportKey: reportPost], withCompletionBlock: { (completionError, ref) in
+            completionError != nil ? completion(false, completionError) : completion(true, nil)
+        })
     }
 }

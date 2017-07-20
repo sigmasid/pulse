@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 class PulseVC: UIViewController, PulseNavControllerDelegate {
     
@@ -220,10 +221,11 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
+    //Used for creating invites - NEED TO REFACTOR
     internal func createShareRequest(selectedShareItem : Item, shareType: MessageType?, selectedChannel: Channel, toUser: PulseUser?, toEmail : String? = nil, showAlert : Bool = true,
                                      completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
         guard let shareType = shareType else {
-            let userInfo = [ NSLocalizedDescriptionKey : "please login to save questions" ]
+            let userInfo = [ NSLocalizedDescriptionKey : "please login to share content" ]
             completion(nil, NSError(domain: "NotLoggedIn", code: 200, userInfo: userInfo))
             return
         }
@@ -254,23 +256,25 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         })
     }
     
+    //creates the short link based on the item type (invite vs. just sharing content)
     internal func showShare(selectedItem: Item, type: String, fullShareText: String = "", inviteItemID: String? = nil) {
         toggleLoading(show: true, message: "loading share options...", showIcon: true)
         let isInvite = type == "invite" ? true : false
         
         selectedItem.createShareLink(invite: isInvite, inviteItemID: inviteItemID, completion: {[weak self] link in
-            guard let `self` = self else {
-                return
-            }
+            guard let `self` = self else { return }
             
             guard let link = link else {
                 self.toggleLoading(show: false, message: nil)
                 return
             }
             self.shareContent(shareType: type, shareText: selectedItem.shareText(), shareLink: link, fullShareText: fullShareText)
+            Analytics.logEvent(AnalyticsEventShare, parameters: [AnalyticsParameterContentType: type as NSObject,
+                                                                 AnalyticsParameterItemID: "\(selectedItem.itemID)" as NSObject])
         })
     }
     
+    //Actually displays the share screen
     internal func shareContent(shareType: String, shareText: String, shareLink: URL, fullShareText: String = "") {
         // set up activity view controller
         let textToShare = fullShareText == "" ? "Check out this \(shareType) on Pulse: " + shareText : fullShareText
@@ -285,6 +289,42 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         present(activityController, animated: true, completion: { _ in
             self.toggleLoading(show: false, message: nil)
         })
+    }
+    
+    internal func reportContent(item: Item) {
+        let detailReport = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        detailReport.addAction(UIAlertAction(title: "it's Spam", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            PulseDatabase.reportContent(item: item, reason: "spam", completion: { success, error in
+                if success {
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Thanks for reporting!", erMessage: "Our moderation team will review your complaint and remove the post promptly if it is found to be inappropriate", buttonTitle: "done")
+                } else {
+                    GlobalFunctions.showAlertBlock("Error filing complaint!", erMessage: error?.localizedDescription)
+                }
+                detailReport.dismiss(animated: true, completion: nil)
+            })
+        }))
+        
+        detailReport.addAction(UIAlertAction(title: "it's Inappropriate", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            PulseDatabase.reportContent(item: item, reason: "inappropriate", completion: { success, error in
+                if success {
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Thanks for reporting!", erMessage: "Our moderation team will review your complaint and remove the post promptly if it is found to be inappropriate", buttonTitle: "done")
+                } else {
+                    GlobalFunctions.showAlertBlock("Error filing complaint!", erMessage: error?.localizedDescription)
+                }
+                detailReport.dismiss(animated: true, completion: nil)
+            })
+        }))
+        
+        detailReport.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {(action: UIAlertAction!) in
+            detailReport.dismiss(animated: true, completion: nil)
+        }))
+        
+        DispatchQueue.main.async {
+            self.present(detailReport, animated: true, completion: nil)
+        }
     }
     
     /**
@@ -308,28 +348,30 @@ extension PulseVC: UIViewControllerTransitioningDelegate {
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         
         if presented is ContentManagerVC {
+            
             let animator = ExpandAnimationController()
             animator.initialFrame = initialFrame
             animator.exitFrame = getRectToLeft()
-            
             return animator
+            
+        } else if presented is InputVC || presented is RecordedVideoVC || presented is VideoTrimmerVC {
+            
+            let animator = FadeAnimationController()
+            animator.transitionType = .present
+            return animator
+            
         } else {
             return nil
         }
     }
     
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        if dismissed is InputVC {
+        if dismissed is InputVC || dismissed is ImageCropperVC || dismissed is VideoTrimmerVC {
             let animator = FadeAnimationController()
             animator.transitionType = .dismiss
             
             return animator
             
-        } else if dismissed is ImageCropperVC {
-            let animator = FadeAnimationController()
-            animator.transitionType = .dismiss
-            
-            return animator
         } else {
             return nil
         }

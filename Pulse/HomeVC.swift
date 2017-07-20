@@ -3,10 +3,11 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 9/14/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
+import Firebase
 
 class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate, ItemCellDelegate, ModalDelegate, ParentTextViewDelegate {
     public weak var tabDelegate : MasterTabDelegate!
@@ -106,7 +107,7 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             
             emptyMessage = "Please login to see your feed"
             shouldShowHeader = false
-
+            
             updateFeed()
             updateDataSource()
             
@@ -165,7 +166,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
             emptyMessage = "Please login to see your feed"
 
             collectionView.reloadData()
-            
             shouldShowHeader = false
             collectionView?.collectionViewLayout.invalidateLayout()
             initialLoadComplete = false
@@ -198,17 +198,16 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
                 self.endUpdateAt = Calendar.current.date(byAdding: .day, value: self.updateIncrement, to: self.startUpdateAt)!
                 self.getMoreItems(completion: { success in completion(success) })
             } else if items.isEmpty, self.updateIncrement < -365 { //reached max increment
-                self.shouldShowHeader = false
                 self.emptyMessage = "Discover & add new channels to your feed"
                 self.hasReachedEnd = true
                 
                 if self.allItems.isEmpty {
+                    self.shouldShowHeader = false
                     self.footerMessage = "check back soon for new content!"
-                    self.updateFooter()
                 } else {
                     self.footerMessage = "that's the end!"
-                    self.updateFooter()
                 }
+                self.updateFooter()
                 
             } else {
                 var indexPaths = [IndexPath]()
@@ -484,6 +483,9 @@ extension HomeVC {
         tabBarHidden = false
 
         if let item = item as? Item {
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
+            
             switch item.type {
             case .answer:
                 
@@ -577,6 +579,8 @@ extension HomeVC {
             let userProfileVC = UserProfileVC()
             navigationController?.pushViewController(userProfileVC, animated: true)
             userProfileVC.selectedUser = toUser
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: "user_profile" as NSObject,
+                                                                         AnalyticsParameterItemID: "\(toUser.uID!)" as NSObject])
         }
     }
     
@@ -708,9 +712,7 @@ extension HomeVC {
     //shows the user profile
     internal func clickedUserButton(itemRow : Int) {
         if let user = allItems[itemRow].user {
-            let userProfileVC = UserProfileVC()
-            navigationController?.pushViewController(userProfileVC, animated: true)
-            userProfileVC.selectedUser = user
+            userSelectedUser(toUser: user)
         }
     }
     
@@ -745,6 +747,13 @@ extension HomeVC {
         menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "report This", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            menu.dismiss(animated: true, completion: nil)
+            self.reportContent(item: currentItem)
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
@@ -864,7 +873,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         case 0:
             return UIEdgeInsets(top: 0.0, left: 0.0, bottom: allItems.count > 0 ? Spacing.xs.rawValue : 0.0, right: 0.0)
         case 1:
-            let bottomInset = allItems.count > 0 ? (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue : 0
+            let bottomInset = (allItems.count > 0 && collectionView.frame.height > view.frame.height) ? (tabBarController?.tabBar.frame.height ?? 0) + Spacing.s.rawValue : allItems.count > 0 ? Spacing.xs.rawValue : 0
             return UIEdgeInsets(top: 0.0, left: 0.0, bottom: bottomInset, right: 0.0)
         default:
             return UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0)

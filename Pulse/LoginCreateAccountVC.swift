@@ -3,11 +3,12 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 7/8/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
 import FirebaseAuth
+import Firebase
 
 class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
 
@@ -91,7 +92,8 @@ class LoginCreateAccountVC: PulseVC, UITextFieldDelegate {
             } else {
                 sender.setEnabled()
                 sender.removeLoadingIndicator(_loading)
-
+                Analytics.logEvent(AnalyticsEventSignUp, parameters: [AnalyticsParameterSignUpMethod: "email" as NSObject])
+                
                 if let addNameVC = self.storyboard?.instantiateViewController(withIdentifier: "LoginAddNameVC") as? LoginAddNameVC {
                     self.navigationController?.pushViewController(addNameVC, animated: true)
                 }

@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 7/5/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -17,9 +17,9 @@ class ContentOverlay: UIView {
     fileprivate lazy var nextItemButton = PulseButton(title: "Skip", isRound: true, hasShadow: false, buttonColor: UIColor.white, textColor: .black)
 
     fileprivate var menu = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
-    fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .xSmall, type: .upvote, isRound: true, hasBackground: false)
-    fileprivate lazy var downVoteButton : PulseButton = PulseButton(size: .xSmall, type: .downvote, isRound: true, hasBackground: false)
-    fileprivate lazy var saveButton : PulseButton = PulseButton(size: .xSmall, type: .favorite, isRound: true, hasBackground: false)
+    fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .xSmall, type: .upvote, isRound: false, hasBackground: false)
+    fileprivate lazy var downVoteButton : PulseButton = PulseButton(size: .xSmall, type: .downvote, isRound: false, hasBackground: false)
+    fileprivate lazy var saveButton : PulseButton = PulseButton(size: .xSmall, type: .favorite, isRound: false, hasBackground: false)
     
     fileprivate let itemTitleLabel = PaddingLabel()
     

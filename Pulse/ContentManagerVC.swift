@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -277,7 +277,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     fileprivate func getRecordedItemTitle() -> String {
         switch selectedItem.type {
         case .question, .thread, .interview, .session:
-            return selectedItem.itemTitle
+            //only add the title to the first item in the series
+            return recordedItems.count == 0 ? selectedItem.itemTitle : ""
         default:
             return ""
         }
@@ -339,6 +340,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
             inputVC.showTextInput = true
             inputVC.captureSize = .fullScreen
             inputVC.inputDelegate = self
+            inputVC.updateAlpha()
         }
         
         inputVC.cameraTitle = selectedItem.itemTitle
@@ -372,6 +374,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         recordedVideoVC = currentVC as! RecordedVideoVC
         self.recordedItems = recordedItems
         inputVC.captureSize = .fullScreen
+        inputVC.updateAlpha()
         isAddingMoreItems = true
         
         if !viewControllers.contains(inputVC) {
@@ -385,7 +388,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     //case where user closes the 'first' video
     func userDismissedRecording(_ currentVC : UIViewController, recordedItems : [Item]) {
         self.recordedItems = recordedItems
-        
+        inputVC.updateAlpha()
         popViewController(animated: true)
         isAddingMoreItems = false
         //showCamera(animated: false)

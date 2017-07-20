@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 10/14/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -65,7 +65,8 @@ public class PulseNavBar: UINavigationBar {
         navTitle.frame.origin.y = 0
         navTitle.text = title?.capitalized
         navTitle.textAlignment = .center
-        
+        navTitle.numberOfLines = 2
+
         navSubtitle.text = ""
     }
     
@@ -75,6 +76,8 @@ public class PulseNavBar: UINavigationBar {
             navTitle.frame.origin.y = -Spacing.xs.rawValue
             navTitle.text = title?.capitalized
             navTitle.textAlignment = .center
+            navTitle.numberOfLines = 1
+            navTitle.adjustsFontSizeToFitWidth = true
             
             navSubtitle.text = subtitle.capitalized
             navSubtitle.textAlignment = .center
@@ -119,6 +122,7 @@ public class PulseNavBar: UINavigationBar {
         navTitle.setFont(FontSizes.headline.rawValue, weight: UIFontWeightHeavy, color: .black, alignment: .center)
         navSubtitle.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         navTitle.removeShadow()
+        navSubtitle.removeShadow()
     }
     
     /** LAYOUT SCREEN **/

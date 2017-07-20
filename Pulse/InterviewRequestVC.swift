@@ -46,12 +46,13 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     internal var allQuestions = [Item]()
     internal var selectedIndex : Int?
     internal var completedIndex = [Bool]()
-
+    
     //UI Elements
     internal var iImage = PulseButton(size: .medium, type: .profile, isRound: true, hasBackground: false, tint: .black)
     internal var iDescription = PaddingLabel()
     internal var submitButton = PulseButton(title: "Finish Interview", isRound: true, hasShadow: false)
-    
+    internal var loading : UIView?
+
     fileprivate var fullImageData : Data?
     fileprivate var thumbImageData : Data?
     private var cleanupComplete = false
@@ -227,6 +228,9 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     }
     
     internal func showSuccessMenu() {
+        loading?.removeFromSuperview()
+        submitButton.setEnabled()
+        
         let menu = UIAlertController(title: "All Set! Interview Posted",
                                      message: "Share your interview or tap done to the go back!",
                                      preferredStyle: .actionSheet)
@@ -239,7 +243,6 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         menu.addAction(UIAlertAction(title: "done", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             menu.dismiss(animated: true, completion: nil)
-            self.submitButton.setEnabled()
             self.goBack()
         }))
         
@@ -247,12 +250,13 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     }
     
     internal func showErrorMenu(errorTitle : String, error : Error) {
+        loading?.removeFromSuperview()
+        submitButton.setEnabled()
+
         let menu = UIAlertController(title: errorTitle, message: error.localizedDescription, preferredStyle: .actionSheet)
         
-        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
+        menu.addAction(UIAlertAction(title: "cancel", style: .default, handler: {(action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
-            self.submitButton.setEnabled()
         }))
         
         present(menu, animated: true, completion: nil)
@@ -356,9 +360,14 @@ extension InterviewRequestVC {
     }
     
     internal func checkInterviewCompleted() {
+        submitButton.setDisabled()
+        loading = submitButton.addLoadingIndicator()
+        
         for item in allQuestions {
             if !item.itemCreated {
                 showIncompleteMenu()
+                submitButton.setEnabled()
+                loading?.removeFromSuperview()
             } else if item.itemID == allQuestions.last?.itemID {
                 markInterviewCompleted()
             }
@@ -438,11 +447,13 @@ extension InterviewRequestVC : UITableViewDelegate, UITableViewDataSource {
         
         if allQuestions[indexPath.row].itemCreated {
             let attributeString: NSMutableAttributedString =  NSMutableAttributedString(string: allQuestions[indexPath.row].itemTitle)
-            attributeString.addAttribute(NSStrikethroughStyleAttributeName, value: 2, range: NSMakeRange(0, attributeString.length))
+            //attributeString.addAttribute(NSStrikethroughStyleAttributeName, value: 2, range: NSMakeRange(0, attributeString.length))
             attributeString.addAttribute(NSFontAttributeName, value: UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body2.rawValue), range: NSMakeRange(0, attributeString.length))
             
             cell?.accessoryType = .checkmark
+            cell?.tintColor = .black
             cell?.textLabel?.attributedText = attributeString
+            cell?.textLabel?.textColor = UIColor.placeholderGrey
 
         } else {
             cell?.accessoryType = .disclosureIndicator

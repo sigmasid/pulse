@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -852,6 +852,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         else if canAdvanceReady {
             
             shouldShowExplore = false
+            canAdvanceDetailReady = false
             showItemDetail(show: false)
             
             self.checkNextItem(detail: false, completion: {[weak self] success in

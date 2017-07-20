@@ -20,6 +20,8 @@ class RecordedTextView: UIView {
             textBox.textColor = UIColor.black
         }
     }
+    
+    //getter for the final text that is in the
     public var finalText : String! {
         get {
             return textBox.text != placeholderText ? textBox.text : ""
@@ -34,12 +36,16 @@ class RecordedTextView: UIView {
                 if textBoxTopAnchor != nil {
                     textBoxTopAnchor.isActive = false
                 }
+                
                 if textBoxCenterYAnchor != nil {
                     textBoxCenterYAnchor.isActive = true
                 }
+                textBox.layoutIfNeeded()
             }
         }
     }
+    
+    //Preview frame in browse contentVC or similar - show smaller quotes
     public var isPreview: Bool = false {
         didSet {
             if isPreview {

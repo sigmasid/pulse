@@ -45,19 +45,20 @@ class PulseIntroCell: UICollectionViewCell {
         addSubview(screenDescriptionLabel)
         
         topImage.translatesAutoresizingMaskIntoConstraints  = false
-        topImage.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        topImage.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        topImage.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
-        topImage.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.425).isActive = true
+        topImage.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -Spacing.max.rawValue * 1.25).isActive = true
+        topImage.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        topImage.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        topImage.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
 
         topImage.layoutIfNeeded()
         topImage.contentMode = .scaleAspectFill
         topImage.backgroundColor = .clear
         topImage.clipsToBounds = true
+        topImage.tintColor = .black
         
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        titleLabel.topAnchor.constraint(equalTo: topImage.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: topImage.bottomAnchor, constant: Spacing.xxl.rawValue).isActive = true
         titleLabel.layoutIfNeeded()
         
         screenDescriptionLabel.translatesAutoresizingMaskIntoConstraints = false

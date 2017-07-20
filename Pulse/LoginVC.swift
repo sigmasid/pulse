@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -13,6 +13,7 @@ import TwitterKit
 import FacebookLogin
 import FacebookCore
 import SafariServices
+import Firebase
 
 class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {    
     @IBOutlet weak var emailLabelButton: UIButton!
@@ -260,6 +261,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
             }
             sender.setEnabled()
             sender.removeLoadingIndicator(_loadingIndicator)
+            Analytics.logEvent(AnalyticsEventLogin, parameters: [AnalyticsParameterSignUpMethod: "email" as NSObject])
         }
     }
     
@@ -348,7 +350,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
         Auth.auth().signIn(with: credential) {[weak self] (aUser, error) in
             guard let `self` = self else { return }
             self.toggleLoading(show: false, message: nil)
-            
+            Analytics.logEvent(AnalyticsEventLogin, parameters: [AnalyticsParameterSignUpMethod: "facebook" as NSObject])
             error != nil ?
                 GlobalFunctions.showAlertBlock("Facebook Login Failed", erMessage: error!.localizedDescription) :
                 self._loggedInSuccess()
@@ -376,6 +378,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
                         self.headerNav?.setNav(title: blockError.localizedDescription)
                     } else {
                         self.toggleLoading(show: false, message: nil)
+                        Analytics.logEvent(AnalyticsEventLogin, parameters: [AnalyticsParameterSignUpMethod: "twitter" as NSObject])
                         self._loggedInSuccess()
                     }
                 }

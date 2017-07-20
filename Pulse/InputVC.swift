@@ -93,6 +93,11 @@ class InputVC: UIPageViewController {
         scrollToViewController(viewController: cameraVC, direction: .forward, animated: false)
     }
     
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        //updateAlpha()
+    }
+    
     public func performCleanup() {
         if !cleanupComplete {
             cameraVC.performCleanup()
@@ -110,6 +115,11 @@ class InputVC: UIPageViewController {
     public func updateAlpha() {
         albumVC.view.alpha = 1.0
         cameraVC.view.alpha = 1.0
+    }
+    
+    internal func dimAlpha() {
+        albumVC.view.alpha = 0.0
+        cameraVC.view.alpha = 0.0
     }
 
     override func didReceiveMemoryWarning() {

@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 6/29/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -37,6 +37,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                     
                 case .postcard:
                     setupTextView(text: currentItem.itemTitle)
+                    controlsOverlay.clearAddTitleField()
                     currentMode = .text
                 }
             }
@@ -146,10 +147,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
             view.addSubview(textBox)
         }
         
+        textBox.textToShow = text
+        textBox.isEditable = false
+        
         view.bringSubview(toFront: textBox)
         arrangeViews()
-        
-        textBox.textToShow = text
     }
     
     fileprivate func setupVideo() {
@@ -221,9 +223,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
         controlsOverlay.getButton(.addMore).addTarget(self, action: #selector(_addMore), for: UIControlEvents.touchUpInside)
         
         controlsOverlay.getTitleField().delegate = self
-        
-        let postButtonTitle = currentItem.needsCover() ? "Next" : "Post"
-        controlsOverlay.updatePostLabel(text: postButtonTitle)
+        controlsOverlay.updatePostLabel(text: currentItem.cameraButtonText())
     }
     
     //takes the title from the text box and adds it to the last time
@@ -465,6 +465,9 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                 if self.looper != nil { self.looper.disableLooping() }
                 
                 self.delegate?.doneUploadingItem(self, success: success)
+                Analytics.logEvent("created_content", parameters: ["type": self.parentItem.type.rawValue as NSObject,
+                                                                   "item_id": firstItem.itemID as NSObject,
+                                                                   "item_title": self.parentItem.itemTitle as NSObject ])
             } else {
                 DispatchQueue.main.async {
                     GlobalFunctions.showAlertBlock("Error Posting", erMessage: error?.localizedDescription)

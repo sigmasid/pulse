@@ -3,7 +3,7 @@
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 9/12/16.
-//  Copyright © 2016 Think Apart. All rights reserved.
+//  Copyright © 2016 - Present Think Apart. All rights reserved.
 //
 
 import UIKit
@@ -56,7 +56,6 @@ class MasterTabVC: UITabBarController, UITabBarControllerDelegate, LoadingDelega
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
         if showAppIntro {
             let appIntro = FirstLoadVC()
             appIntro.introDelegate = self

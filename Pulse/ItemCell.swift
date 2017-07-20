@@ -80,7 +80,7 @@ class ItemCell: UICollectionViewCell {
         let font2Attributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightThin, size: createdAtLabel.font.pointSize)]
         let label2Height = GlobalFunctions.getLabelSize(title: _tag ?? "test string", width: frame.width, fontAttributes: font2Attributes)
         
-        footerHeightAnchor.constant = Spacing.xxs.rawValue + min(labelHeight, singleLineHeight * 2) + Spacing.xs.rawValue + label2Height + Spacing.xs.rawValue
+        footerHeightAnchor.constant = max(54, Spacing.xxs.rawValue + min(labelHeight, singleLineHeight * 2) + Spacing.xs.rawValue + label2Height + Spacing.xs.rawValue)
         titleLabel.text = _title
         
         titleLabel.adjustsFontSizeToFitWidth = true
@@ -215,6 +215,7 @@ class ItemCell: UICollectionViewCell {
         
         itemFooter.translatesAutoresizingMaskIntoConstraints = false
         footerHeightAnchor = itemFooter.heightAnchor.constraint(greaterThanOrEqualToConstant: 54)
+        footerHeightAnchor.priority = 150
         footerHeightAnchor.isActive = true
         itemFooter.backgroundColor = .white
         
