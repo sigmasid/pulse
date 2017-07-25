@@ -97,7 +97,8 @@ extension HeaderTagsCell: UICollectionViewDataSource, UICollectionViewDelegate, 
         cell.updateTitle(title: item.itemTitle.capitalized)
         cell.tag = indexPath.row
         cell.delegate = self
-        
+        cell.updateImage(image : nil)
+
         PulseDatabase.getCachedSeriesImage(channelID: selectedChannel.cID, itemID: item.itemID, fileType: .thumb, completion: {image in
             DispatchQueue.main.async {
                 cell.updateImage(image : image)

@@ -464,7 +464,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                 
                 if self.looper != nil { self.looper.disableLooping() }
                 
-                self.delegate?.doneUploadingItem(self, success: success)
+                self.delegate?.doneUploadingItem(self, item: firstItem, success: success)
                 Analytics.logEvent("created_content", parameters: ["type": self.parentItem.type.rawValue as NSObject,
                                                                    "item_id": firstItem.itemID as NSObject,
                                                                    "item_title": self.parentItem.itemTitle as NSObject ])

@@ -482,7 +482,7 @@ class PulseDatabase {
     static func getExploreChannels(_ completion: @escaping (_ channels : [Channel], _ error : Error?) -> Void) {
         var allChannels = [Channel]()
         
-        channelsRef.queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snapshot in
+        channelsRef.queryLimited(toLast: MAX_QUERY_SIZE).queryOrdered(byChild: "order").observeSingleEvent(of: .value, with: { snapshot in
             for channel in snapshot.children {
                 let child = channel as! DataSnapshot
                 allChannels.append(Channel(cID: child.key, snapshot: child))
@@ -2007,7 +2007,7 @@ class PulseDatabase {
             return
         }
         
-        guard user.isVerified(for: Channel(cID: channelID)) else {
+        guard user.isContributor(for: Channel(cID: channelID)) else {
             let errorInfo = [ NSLocalizedDescriptionKey : "only verified contributors can start a thread" ]
             completion(false, NSError.init(domain: "NotContributor", code: 404, userInfo: errorInfo))
             return
@@ -2020,7 +2020,8 @@ class PulseDatabase {
                                          "createdAt" : ServerValue.timestamp(),
                                          "cID":channelID]
         
-        let channelItemsPost : [String : Any] = ["title" : "\(item.itemTitle) - \(item.itemDescription)",
+        let channelItemsPost : [String : Any] = ["title" : item.itemTitle,
+                                                 "description" : item.itemDescription,
                                                  "tagID" : parentItem.itemID,
                                                  "tagTitle" : parentItem.itemTitle,
                                                  "uID" : user.uID!,
@@ -2144,6 +2145,46 @@ class PulseDatabase {
         })
     }
     
+    static func getCachedCurrentUserPic(completion: @escaping (_ image : UIImage?) -> Void) {
+        guard PulseUser.isLoggedIn() else {
+            completion(nil)
+            return
+        }
+        
+        userImageCache.retrieveImage(forKey: PulseUser.currentUser.uID!, completion: { image, _ in
+            if let image = image {
+                //return image that was retreived
+                completion(image)
+            } else {
+                let path = storageRef.child("users/\(PulseUser.currentUser.uID!)/thumbPic")
+                path.getData(maxSize: MAX_IMAGE_FILESIZE) { (data, error) -> Void in
+                    if let data = data {
+                        userImageCache.store(data, forKey: PulseUser.currentUser.uID!)
+                        completion(UIImage(data: data))
+                        //store in DB - return UIImage
+                    } else {
+                        let _userPicPath = PulseUser.currentUser.profilePic != nil ? PulseUser.currentUser.profilePic : PulseUser.currentUser.thumbPic
+                        
+                        guard let urlString = _userPicPath, let imageURL = URL(string: urlString), let _imageData = try? Data(contentsOf: imageURL) else {
+                            completion(UIImage(named: "default-profile"))
+                            return
+                        }
+                        
+                        userImageCache.store(_imageData, forKey: PulseUser.currentUser.uID!)
+                        completion(UIImage(data: _imageData))
+                        
+                        uploadProfileImageData(data: _imageData, type: "thumb", completion: { url, error in
+                            if let url = url {
+                                PulseUser.currentUser.thumbPic = String(describing: url)
+                                updateUserData(.photoURL, value: url, completion: { _ , _ in })
+                            }
+                        })
+                    }
+                }
+            }
+        })
+    }
+    
     static func getCachedUserPic(uid: String, completion: @escaping (_ image : UIImage?) -> Void) {
         userImageCache.retrieveImage(forKey: uid, completion: { image, _ in
             if let image = image {
@@ -2165,14 +2206,17 @@ class PulseDatabase {
     }
     
     static func getProfilePicForUser(user: PulseUser, completion: @escaping (_ image : UIImage?) -> Void) {
-        let userPicPath = user.profilePic != nil ? user.profilePic : user.thumbPic
+        let _userPicPath = user.profilePic != nil ? user.profilePic : user.thumbPic
         
-        if let userPicPath = userPicPath {
-            if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
-                completion(UIImage(data: _userImageData))
-            } else {
-                completion(nil)
-            }
+        guard let userPicPath = _userPicPath else {
+            completion(nil)
+            return
+        }
+        
+        if let userPicURL = URL(string: userPicPath), let _userImageData = try? Data(contentsOf: userPicURL) {
+            completion(UIImage(data: _userImageData))
+        } else {
+            completion(nil)
         }
     }
     
@@ -2277,32 +2321,52 @@ class PulseDatabase {
         }
     }
     
+    static func uploadProfileImageData(data: Data, type: String, completion: @escaping (_ URL : URL?, _ error : Error?) -> Void) {
+        var _downloadURL : URL?
+        let _metadata = StorageMetadata()
+        _metadata.contentType = "image/jpeg"
+        
+        usersStorageRef.child(PulseUser.currentUser.uID!).child(type).putData(data, metadata: _metadata) { (metadata, error) in
+            if let metadata = metadata {
+                _downloadURL = metadata.downloadURL()
+                completion(_downloadURL, nil)
+            } else {
+                completion(nil, error)
+            }
+        }
+    }
+
+    
     ///upload image to firebase and update current user with photoURL upon success
     static func uploadProfileImage(_ image : UIImage, completion: @escaping (_ URL : URL?, _ error : Error?) -> Void) {
+        guard PulseUser.isLoggedIn() else {
+            let userInfo = [ NSLocalizedDescriptionKey : "not logged in" ]
+            completion(nil, NSError(domain: "InvalidUser", code: 404, userInfo: userInfo))
+            return
+        }
+        
         var _downloadURL : URL?
         let _metadata = StorageMetadata()
         _metadata.contentType = "image/jpeg"
         
         let imgData = image.mediumQualityJPEGNSData
         
-        if PulseUser.isLoggedIn() {
-            usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(imgData, metadata: _metadata) { (metadata, error) in
-                if let metadata = metadata {
-                    _downloadURL = metadata.downloadURL()
-                    updateUserData(.photoURL, value: String(describing: _downloadURL!)) { success, error in
-                        success ? completion(_downloadURL, nil) : completion(nil, error)
-                    }
-                } else {
-                    completion(nil, error)
+        usersStorageRef.child(PulseUser.currentUser.uID!).child("profilePic").putData(imgData, metadata: _metadata) { (metadata, error) in
+            if let metadata = metadata {
+                _downloadURL = metadata.downloadURL()
+                updateUserData(.photoURL, value: String(describing: _downloadURL!)) { success, error in
+                    success ? completion(_downloadURL, nil) : completion(nil, error)
                 }
+            } else {
+                completion(nil, error)
             }
-            
-            if let _thumbImageData = image.resizeImage(newWidth: PROFILE_THUMB_WIDTH)?.highQualityJPEGNSData {
-                usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: _metadata) { (metadata, error) in
-                    if let url = metadata?.downloadURL() {
-                        let userPost = ["thumbPic" : String(describing: url)]
-                        usersPublicSummaryRef.child(PulseUser.currentUser.uID!).updateChildValues(userPost)
-                    }
+        }
+        
+        if let _thumbImageData = image.resizeImage(newWidth: PROFILE_THUMB_WIDTH)?.highQualityJPEGNSData {
+            usersStorageRef.child(PulseUser.currentUser.uID!).child("thumbPic").putData(_thumbImageData, metadata: _metadata) { (metadata, error) in
+                if let url = metadata?.downloadURL() {
+                    let userPost = ["thumbPic" : String(describing: url)]
+                    usersPublicSummaryRef.child(PulseUser.currentUser.uID!).updateChildValues(userPost)
                 }
             }
         }

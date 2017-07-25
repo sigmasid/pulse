@@ -135,10 +135,14 @@ class PulseUser: User {
         return Auth.auth().currentUser?.email
     }
     
-    func isVerified(for channel : Channel) -> Bool {
+    //Check if user is Contributor
+    //Contributors can invite guests, add answers, start new items
+    func isContributor(for channel : Channel) -> Bool {
         return contributorChannels.contains(channel) ? true : false
     }
     
+    //Check if user is Editor
+    //Editors can invite new contributors, invite guests, and all other permissions that contributors have
     func isEditor(for channel : Channel) -> Bool {
         return editorChannels.contains(channel) ? true : false
     }

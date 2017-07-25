@@ -395,7 +395,7 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
                                                      description: "So we can remind you of requests to share your perspectives, ideas & expertise!",
                                                      image: UIImage(named: "notifications-popup") , style: .walkthrough)
             
-            permissionsPopup.dismissWithBackgroudTouch = true
+            permissionsPopup.dismissWithBackgroudTouch = false
             permissionsPopup.modalDelegate = self
             
             permissionsPopup.addAction(PMAlertAction(title: "Allow", style: .default, action: {[weak self] () -> Void in

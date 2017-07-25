@@ -268,12 +268,21 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
                 if let view = view as? UserProfileHeader {
                     view.updateUserDetails(selectedUser: selectedUser, isModal: isModal)
                     
-                    PulseDatabase.getCachedUserPic(uid: selectedUser.uID!, completion: { image in
-                        DispatchQueue.main.async {
-                            view.updateUserImage(image: image)
-                            view.setNeedsDisplay()
-                        }
-                    })
+                    if selectedUser.uID! == PulseUser.currentUser.uID {
+                        PulseDatabase.getCachedCurrentUserPic(completion: { image in
+                            DispatchQueue.main.async {
+                                view.updateUserImage(image: image)
+                                view.setNeedsDisplay()
+                            }
+                        })
+                    } else {
+                        PulseDatabase.getCachedUserPic(uid: selectedUser.uID!, completion: { image in
+                            DispatchQueue.main.async {
+                                view.updateUserImage(image: image)
+                                view.setNeedsDisplay()
+                            }
+                        })
+                    }
                 }
             }
         }

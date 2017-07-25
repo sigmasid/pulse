@@ -327,7 +327,8 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.delegate = self
             
             //clear the cells and set the item type first
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content ?? nil)
+            let _title = currentItem.itemDescription != "" ? "\(currentItem.itemTitle) - \(currentItem.itemDescription)" : currentItem.itemTitle
+            cell.updateCell(_title, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle, _createdAt: currentItem.createdAt, _image: self.allItems[indexPath.row].content ?? nil)
             
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
@@ -360,7 +361,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if currentItem.user == nil || !currentItem.user!.uCreated {
                 if let user = self.checkUserDownloaded(user: PulseUser(uID: currentItem.itemUserID)) {
                     self.allItems[indexPath.row].user = user
-                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
+                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                     
                 } else {
                     // Get the user details
@@ -371,7 +372,7 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             self.allUsers.append(user)
                             DispatchQueue.main.async {
                                 if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
+                                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                                 }
                             }
                         }
@@ -397,7 +398,9 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
     internal func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle,
+            let _title = currentItem.itemDescription != "" ? "\(currentItem.itemTitle) - \(currentItem.itemDescription)" : currentItem.itemTitle
+
+            cell.updateCell(_title, _subtitle: currentItem.user?.name, _tag: currentItem.cTitle,
                             _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
         }
     }
@@ -824,7 +827,7 @@ extension HomeVC {
                 guard let `self` = self else { return }
 
                 if error == nil, let selectedShareItem = selectedShareItem {
-                    let shareText = "Can you add \(currentItem.childActionType())\(currentItem.childType()) on '\(currentItem.itemTitle)'"
+                    let shareText = "Can you add \(currentItem.childActionType())\(currentItem.childType()) - '\(currentItem.itemTitle)'"
                     self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
                 }
             })

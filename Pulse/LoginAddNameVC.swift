@@ -79,16 +79,17 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
         
         GlobalFunctions.validateName(firstName.text, completion: {[weak self] (verified, error) in
             guard let `self` = self else { return }
-            loading.removeFromSuperview()
             if !verified {
                 self._firstNameError.text = error!.localizedDescription
                 sender.setEnabled()
+                loading.removeFromSuperview()
             } else {
                 GlobalFunctions.validateName(self.lastName.text, completion: {[weak self] (verified, error) in
                     guard let `self` = self else { return }
                     if !verified {
                         self._lastNameError.text = error!.localizedDescription
                         sender.setEnabled()
+                        loading.removeFromSuperview()
                     } else {
                         let fullName = self.firstName.text! + " " + self.lastName.text!
                         PulseDatabase.updateUserData(UserProfileUpdateType.displayName, value: fullName, completion: {[weak self] (success, error) in
@@ -100,6 +101,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
                             else {
                                 self.checkPremissions()
                             }
+                            loading.removeFromSuperview()
                         })
                     }
                 })
@@ -113,7 +115,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
                                                      description: "So we can remind you of requests to share your perspectives, ideas & expertise!",
                                                      image: UIImage(named: "notifications-popup") , style: .walkthrough)
             
-            permissionsPopup.dismissWithBackgroudTouch = true
+            permissionsPopup.dismissWithBackgroudTouch = false
             permissionsPopup.modalDelegate = self
             
             permissionsPopup.addAction(PMAlertAction(title: "Allow", style: .default, action: {[weak self] () -> Void in
@@ -165,12 +167,13 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
             return
         }
         
-        profilePicButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
-        profilePicButton.clipsToBounds = true
-        
-        profilePicButton.setImage(image, for: .normal)
-        profilePicButton.imageView?.contentMode = .scaleAspectFill
-        profilePicButton.imageView?.clipsToBounds = true
+        DispatchQueue.main.async {[unowned self] in
+            self.profilePicButton.setImage(nil, for: .normal)
+            self.profilePicButton.setBackgroundImage(image, for: .normal)
+            self.profilePicButton.contentMode = .scaleAspectFill
+            self.profilePicButton.clipsToBounds = true
+            self.profilePicButton.layoutIfNeeded()
+        }
         
         dismiss(animated: true, completion: {[weak self] in
             guard let `self` = self else { return }

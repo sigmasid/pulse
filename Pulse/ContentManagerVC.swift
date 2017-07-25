@@ -10,6 +10,7 @@ import UIKit
 import MobileCoreServices
 import CoreLocation
 import AVFoundation
+import Firebase
 
 class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, BrowseContentDelegate, ModalDelegate, UINavigationControllerDelegate, PanAnimationDelegate  {
     //set by delegate - questions or posts
@@ -292,18 +293,46 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         pushViewController(recordedVideoVC, animated: true)
     }
     
-    func doneUploadingItem(_ currentVC: UIViewController, success: Bool) {
-
+    func doneUploadingItem(_ currentVC: UIViewController, item: Item, success: Bool) {
+        
+        guard completedRecordingDelegate == nil else {
+            completedRecordingDelegate.doneRecording(success: success)
+            performCleanup()
+            dismiss(animated: true, completion: nil)
+            return
+        }
+        
         let doneRecordingMenu = UIAlertController(title: "Success!",
-                                                message: "You are all done. Thanks for your post!",
+                                                message: "You are all done. Thanks for contributing!",
                                                 preferredStyle: .actionSheet)
+        
+        doneRecordingMenu.addAction(UIAlertAction(title: "share This", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            if self.loadingVC != nil {
+                self.popToViewController(self.loadingVC!, animated: false)
+            } else {
+                self.pushViewController(self.loadingVC!, animated: false)
+            }
+            
+            let shareItem = Item.shareItemType(parentType: self.selectedItem.type, childType: item.type) == self.selectedItem.type ?
+                self.selectedItem : item
+            
+            shareItem!.createShareLink(invite: false, completion: {[weak self] link in
+                guard let `self` = self else { return }
+                
+                guard let link = link else {
+                    return
+                }
+                
+                self.shareContent(item: shareItem!, shareLink: link)
+                Analytics.logEvent(AnalyticsEventShare, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                     AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
+            })
+        }))
         
         doneRecordingMenu.addAction(UIAlertAction(title: "done", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
-            
-            if self.completedRecordingDelegate != nil {
-                self.completedRecordingDelegate.doneRecording(success: success)
-            }
             
             self.performCleanup()
             self.dismiss(animated: true, completion: nil)
@@ -311,6 +340,27 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         }))
         
         present(doneRecordingMenu, animated: true, completion: nil)
+    }
+    
+    
+    //Actually displays the share screen
+    internal func shareContent(item: Item, shareLink: URL) {
+        // set up activity view controller
+        let textToShare = "Check out this \(item.type.rawValue) on Pulse: " + item.itemTitle
+        let shareItems = [textToShare, shareLink] as [Any]
+        let activityController = UIActivityViewController(activityItems: shareItems, applicationActivities: nil)
+        activityController.popoverPresentationController?.sourceView = view // so that iPads won't crash
+        activityController.completionWithItemsHandler = {[weak self] _, _, _, _ in
+            guard let `self` = self else { return }
+            self.performCleanup()
+            self.dismiss(animated: true, completion: nil)
+        }
+        
+        // exclude some activity types from the list (optional)
+        activityController.excludedActivityTypes = [ UIActivityType.airDrop, UIActivityType.postToFlickr, UIActivityType.saveToCameraRoll, UIActivityType.print, UIActivityType.addToReadingList ]
+        
+        // present the view controller
+        present(activityController, animated: true, completion: { _ in })
     }
     
     func noItemsToShow(_ currentVC : UIViewController) {
@@ -428,6 +478,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         popViewController(animated: true)
     }
     
+    /** ANIMATION CONTROLLERS **/
     func navigationController(_ navigationController: UINavigationController,
                               animationControllerFor operation: UINavigationControllerOperation,
                               from fromVC: UIViewController,

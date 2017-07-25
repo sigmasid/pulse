@@ -723,7 +723,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         menu.addAction(UIAlertAction(title: "share \(selectedItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             self.toggleLoading(show: true, message: "loading share options", showIcon: true)
-            let shareItem = self.shareItemType(parentType: self.selectedItem.type, childType: currentItem.type) == self.selectedItem.type ?
+            let shareItem = Item.shareItemType(parentType: self.selectedItem.type, childType: currentItem.type) == self.selectedItem.type ?
                 self.selectedItem : currentItem
             shareItem?.createShareLink(completion: {[weak self] link in
                 guard let link = link, let `self` = self else { return }
@@ -739,16 +739,6 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }))
         
         present(menu, animated: true, completion: nil)
-    }
-    
-    private func shareItemType(parentType: ItemTypes, childType: ItemTypes) -> ItemTypes {
-        switch childType {
-        case .answer: return parentType
-        case .session: return parentType
-        case .perspective: return parentType
-            
-        default: return childType
-        }
     }
     
     func userClickedNextItem() {

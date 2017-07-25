@@ -85,7 +85,7 @@ protocol UserProfileDelegate: class {
 protocol ContentDelegate: class {
     func noItemsToShow(_ : UIViewController)
     func removeIntro()
-    func doneUploadingItem(_: UIViewController, success: Bool)
+    func doneUploadingItem(_: UIViewController, item: Item, success: Bool)
     
     func userDismissedRecording(_: UIViewController, recordedItems : [Item])
     func loadMoreFromTag()

@@ -361,7 +361,7 @@ class Item: NSObject {
             switch inputOpenToUser {
             case .contributor:
                 //check if user is verified
-                user.isVerified(for: Channel(cID: self.cID)) ?
+                user.isContributor(for: Channel(cID: self.cID)) ?
                     completion(true, nil) :
                     completion(false, "Sorry you have to be a verified contributor. You can apply on the prior screen")
 
@@ -423,5 +423,15 @@ class Item: NSObject {
         contentURL = nil
         contentType = nil
         createdAt = nil
+    }
+    
+    static func shareItemType(parentType: ItemTypes, childType: ItemTypes) -> ItemTypes {
+        switch childType {
+        case .answer: return parentType
+        case .session: return parentType
+        case .perspective: return parentType
+            
+        default: return childType
+        }
     }
 }

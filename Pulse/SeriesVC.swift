@@ -117,8 +117,12 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     internal func doneRecording(success: Bool) {
         success ?
-            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Feedback Request Submitted", erMessage: "Stay tuned for updates & responses from experts!", buttonTitle: "done") :
-            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Feedback Request", erMessage: "Sorry there was an error adding the feedback request. Please try again")
+            GlobalFunctions.showAlertBlock(viewController: self,
+                                           erTitle: "Feedback Request Submitted",
+                                           erMessage: "Stay tuned for updates & responses from experts!", buttonTitle: "done") :
+            GlobalFunctions.showAlertBlock(viewController: self,
+                                           erTitle: "Error Sending Feedback Request",
+                                           erMessage: "Sorry there was an error adding the feedback request. Please try again")
     }
     /** END DELEGATE FUNCTIONS **/
     

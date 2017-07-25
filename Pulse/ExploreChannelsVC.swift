@@ -449,7 +449,9 @@ extension ExploreChannelsVC {
                     self.toggleLoading(show: false, message: nil)
                 })
                 
-            default: break
+            default:
+                self.toggleLoading(show: false, message: nil)
+                break
             }
         
             self.universalLink = nil

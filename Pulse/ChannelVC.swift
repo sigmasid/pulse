@@ -385,7 +385,7 @@ extension ChannelVC {
             return
         }
         
-        PulseUser.currentUser.isVerified(for: selectedChannel) ? showContributorHeaderMenu() : showSubscriberHeaderMenu()
+        PulseUser.currentUser.isContributor(for: selectedChannel) ? showContributorHeaderMenu() : showSubscriberHeaderMenu()
     }
     
     //close modal - e.g. mini search
@@ -536,15 +536,15 @@ extension ChannelVC {
                 guard let `self` = self else { return }
                 self.startSeries()
             }))
+            
+            //editors can invite contributors
+            menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
+                self.showInviteMenu(currentItem: self.selectedChannel,
+                                    inviteTitle: "invite Contributors",
+                                    inviteMessage: "contributors can add posts, answer questions and share their perspecives. To ensure quality, please only invite qualified contributors. All new contributor requests are reviewed.", inviteType: .contributorInvite)
+            }))
         }
-        
-        //contributors & editors can invite contributors
-        menu.addAction(UIAlertAction(title: "invite Contributors", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.showInviteMenu(currentItem: self.selectedChannel,
-                                inviteTitle: "invite Contributors",
-                                inviteMessage: "contributors can add posts, answer questions and share their perspecives. To ensure quality, please only invite qualified contributors. All new contributor requests are reviewed.", inviteType: .contributorInvite)
-        }))
         
         //anyone can share
         menu.addAction(UIAlertAction(title: "share Channel", style: .default, handler: {[weak self] (action: UIAlertAction!) in
@@ -829,7 +829,8 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             cell.tag = indexPath.row
             
             //clear the cells and set the item type first
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
+            let _title = currentItem.itemDescription != "" ? "\(currentItem.itemTitle) - \(currentItem.itemDescription)" : currentItem.itemTitle
+            cell.updateCell(_title, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
             
             PulseDatabase.getCachedUserPic(uid: currentItem.itemUserID, completion: { image in
                 DispatchQueue.main.async {
@@ -843,7 +844,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             if currentItem.user == nil || !currentItem.user!.uCreated {
                 if let user = checkUserDownloaded(user: PulseUser(uID: currentItem.itemUserID)) {
                     allItems[indexPath.row].user = user
-                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
+                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
                     
                 } else {
                     // Get the user details
@@ -855,7 +856,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
                             self.allUsers.append(user)
                             DispatchQueue.main.async {
                                 if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(currentItem.itemTitle, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
+                                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
                                 }
                             }
                         }
@@ -986,8 +987,9 @@ extension ChannelVC: UIScrollViewDelegate {
     func updateCell(_ cell: ItemCell, inCollectionView collectionView: UICollectionView, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated {
             let currentItem = allItems[indexPath.row]
+            let _title = currentItem.itemDescription != "" ? "\(currentItem.itemTitle) - \(currentItem.itemDescription)" : currentItem.itemTitle
             cell.itemType = currentItem.type
-            cell.updateCell(currentItem.itemTitle, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
+            cell.updateCell(_title, _subtitle: currentItem.user?.name, _tag: currentItem.tag?.itemTitle, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
         }
     }
     
