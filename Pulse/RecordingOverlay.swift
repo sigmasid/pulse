@@ -12,6 +12,10 @@ class RecordingOverlay: UIView {
     fileprivate var saveButton = PulseButton(size: .xSmall, type: .save, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
     fileprivate var closeButton = PulseButton(size: .xSmall, type: .close, isRound : true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
     fileprivate var titleButton = PulseButton(size: .xSmall, type: .text, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    
+    fileprivate var upButton = PulseButton(size: .xSmall, type: .upArrow, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    fileprivate var downButton = PulseButton(size: .xSmall, type: .downArrow, isRound: true, background: UIColor.white.withAlphaComponent(0.3), tint: .black)
+    
     fileprivate var addMoreStack = PulseMenu(_axis: .vertical, _spacing: Spacing.xs.rawValue)
     fileprivate var addMoreLabel = UILabel()
     fileprivate var addMoreButton = PulseButton(size: .small, type: .add, isRound: true, background: UIColor.white.withAlphaComponent(0.6), tint: .black)
@@ -32,7 +36,7 @@ class RecordingOverlay: UIView {
     fileprivate var observersAdded = false
     
     internal enum ControlButtons: Int {
-        case save, post, close, addMore
+        case save, post, close, addMore, goUp, goDown
     }
     
     deinit {
@@ -53,6 +57,7 @@ class RecordingOverlay: UIView {
         addTitleButton()
         
         setupPagers()
+        setupNavigators()
         
         if !observersAdded {
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
@@ -121,6 +126,8 @@ class RecordingOverlay: UIView {
         case .post: return postButton
         case .close: return closeButton
         case .addMore: return addMoreButton
+        case .goUp: return upButton
+        case .goDown: return downButton
         }
     }
     
@@ -305,11 +312,42 @@ class RecordingOverlay: UIView {
         pagersStack.spacing = Spacing.s.rawValue
     }
     
+    public func setupNavigators() {
+        addSubview(upButton)
+        addSubview(downButton)
+        
+        upButton.translatesAutoresizingMaskIntoConstraints = false
+        downButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        upButton.topAnchor.constraint(equalTo: pagersStack.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        upButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        upButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        upButton.centerXAnchor.constraint(equalTo: pagersStack.centerXAnchor).isActive = true
+        upButton.layoutIfNeeded()
+
+        downButton.topAnchor.constraint(equalTo: upButton.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        downButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        downButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        downButton.centerXAnchor.constraint(equalTo: pagersStack.centerXAnchor).isActive = true
+        downButton.layoutIfNeeded()
+        
+        upButton.removeShadow()
+        downButton.removeShadow()
+        
+        upButton.isHidden = true
+        downButton.isHidden = true
+    }
+    
+    public func selectPager(at index: Int, prior oldIndex: Int) {
+        pagersStack.arrangedSubviews[index].backgroundColor = .black
+        pagersStack.arrangedSubviews[oldIndex].backgroundColor = .pulseGrey
+    }
+    
     public func addPagers() {
         let pagerButton = UIView()
         pagerButton.translatesAutoresizingMaskIntoConstraints = false
         pagerButton.heightAnchor.constraint(equalTo: pagerButton.widthAnchor).isActive = true
-        pagerButton.backgroundColor = .pulseBlue
+        pagerButton.backgroundColor = .black
         
         if pagersStack.arrangedSubviews.last != nil {
             pagersStack.arrangedSubviews.last!.backgroundColor = .pulseGrey
@@ -320,18 +358,36 @@ class RecordingOverlay: UIView {
         pagerButton.layoutIfNeeded()
         pagerButton.layer.cornerRadius = pagerButton.frame.width / 2
         pagerButton.layer.masksToBounds = true
+        
+        if pagersStack.arrangedSubviews.count > 1 {
+            upButton.isHidden = false
+            downButton.isHidden = false
+        }
+
+        upButton.layoutIfNeeded()
+        downButton.layoutIfNeeded()
     }
     
-    public func removePager() {
-        if pagersStack.arrangedSubviews.last != nil {
-            let lastView = pagersStack.arrangedSubviews.last!
-            pagersStack.removeArrangedSubview(lastView)
-            lastView.removeFromSuperview()
+    public func removePager(at index: Int) {
+        if index == 0, pagersStack.arrangedSubviews.count > 1 {
+            //removed first item so next item becomes 1
+            pagersStack.arrangedSubviews[1].backgroundColor = .black
+        } else if pagersStack.arrangedSubviews.count > 1 {
+            //make previous item the current selected item
+            pagersStack.arrangedSubviews[index - 1].backgroundColor = .black
         }
         
-        if pagersStack.arrangedSubviews.last != nil {
-            pagersStack.arrangedSubviews.last!.backgroundColor = .pulseBlue
+        let lastView = pagersStack.arrangedSubviews[index]
+        pagersStack.removeArrangedSubview(lastView)
+        lastView.removeFromSuperview()
+        
+        if pagersStack.arrangedSubviews.count == 1 {
+            upButton.isHidden = true
+            downButton.isHidden = true
         }
+
+        upButton.layoutIfNeeded()
+        downButton.layoutIfNeeded()
     }
     
     public func hideProgressLabel(_ label : String) {

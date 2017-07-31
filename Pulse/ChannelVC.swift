@@ -530,7 +530,7 @@ extension ChannelVC {
     func showContributorHeaderMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
-        //only editors can start series
+        //only editors can start series or add contributors
         if PulseUser.isLoggedIn(), PulseUser.currentUser.isEditor(for: selectedChannel) {
             menu.addAction(UIAlertAction(title: "start New Series", style: .default, handler: {[weak self] (action: UIAlertAction!) in
                 guard let `self` = self else { return }

@@ -114,15 +114,15 @@ open class ImageCache {
             fatalError("You should specify a name for the cache. A cache with empty name is not permitted.")
         }
         
-        let cacheName = "com.checkPulse.ImageCache.\(name)"
+        let cacheName = "com.pulse.ImageCache.\(name)"
         memoryCache.name = cacheName
         
         diskCachePath = diskCachePathClosure(path, cacheName)
         
-        let ioQueueName = "com.checkPulse.ImageCache.ImageCache.ioQueue.\(name)"
+        let ioQueueName = "com.pulse.ImageCache.ImageCache.ioQueue.\(name)"
         ioQueue = DispatchQueue(label: ioQueueName)
         
-        let processQueueName = "com.checkPulse.ImageCache.processQueue.\(name)"
+        let processQueueName = "com.pulse.ImageCache.processQueue.\(name)"
         processQueue = DispatchQueue(label: processQueueName, attributes: .concurrent)
         
         ioQueue.sync { fileManager = FileManager() }

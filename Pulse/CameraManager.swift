@@ -236,7 +236,8 @@ open class CameraManager: NSObject, AVCaptureFileOutputRecordingDelegate, UIGest
     fileprivate var maxZoomScale    = CGFloat(1.0)
     
     fileprivate var tempFilePath: URL = {
-        let tempPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("tempMovie").appendingPathExtension("mp4").absoluteString
+        let saveFileName = "tempFile-\(Int(Date().timeIntervalSince1970))"
+        let tempPath = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(saveFileName).appendingPathExtension("mp4").absoluteString
         if FileManager.default.fileExists(atPath: tempPath) {
             do {
                 try FileManager.default.removeItem(atPath: tempPath)

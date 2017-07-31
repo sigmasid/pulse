@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical, play, flashMode, flipCamera, showAlbum}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical, play, flashMode, flipCamera, showAlbum, upArrow, downArrow}
 enum ButtonSizes { case xxSmall, xSmall, small, medium, large, xLarge }
 
 @IBDesignable
@@ -477,6 +477,12 @@ open class PulseButton: UIButton {
             let tintedTimage = UIImage(named: "post-circle")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
             imageEdgeInsets = UIEdgeInsetsMake(0, 0, 0, 0)
+            
+        case .upArrow:
+            setImage(UIImage(named: "up-arrow"), for: UIControlState.normal)
+            
+        case .downArrow:
+            setImage(UIImage(named: "down-arrow"), for: UIControlState.normal)
             
         case .upvote:
             let tintedTimage = UIImage(named: "upvote")?.withRenderingMode(.alwaysTemplate)

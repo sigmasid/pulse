@@ -322,6 +322,17 @@ class Item: NSObject {
         }
     }
     
+    internal func allowGuestSubmissions() -> Bool {
+        switch type {
+        case .posts: return true
+        case .thread: return true
+        case .question: return true
+        case .showcases: return true
+            
+        default: return false
+        }
+    }
+    
     internal func needsCover() -> Bool {
         switch type {
         case .post: return true

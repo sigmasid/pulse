@@ -161,9 +161,9 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
         var url : URL?
         
         if sender == showTermsButton {
-            url = URL(string: "https://checkpulse.co/terms")
+            url = URL(string: "https://getpulse.tv/terms")
         } else if sender == showPrivacyButton {
-            url = URL(string: "https://checkpulse.co/privacy")
+            url = URL(string: "https://getpulse.tv/privacy")
         }
         
         if let url = url {

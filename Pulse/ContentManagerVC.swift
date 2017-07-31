@@ -263,14 +263,13 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         }
         
         recordedItems.append(item)
-        
         recordedVideoVC.delegate = self
         
         recordedVideoVC.selectedChannelID = selectedChannel.cID
         recordedVideoVC.parentItem = selectedItem
         recordedVideoVC.recordedItems = recordedItems
         recordedVideoVC.isNewEntry = true
-        recordedVideoVC.currentItemIndex += 1
+        recordedVideoVC.currentItemIndex = recordedItems.count - 1
         
         pushViewController(recordedVideoVC, animated: true)
     }

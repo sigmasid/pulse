@@ -74,7 +74,7 @@ class PulseDatabase {
     
     static func createShareLink(item: Any, linkString : String, imageURL : URL? = nil, completion: @escaping (URL?) -> Void) {
         
-        guard let deepLink = URL(string: "https://checkpulse.co/"+linkString) else { return }
+        guard let deepLink = URL(string: "https://getpulse.tv/"+linkString) else { return }
         
         let components = DynamicLinkComponents(link: deepLink, domain: "tc237.app.goo.gl")
         
@@ -83,7 +83,7 @@ class PulseDatabase {
         iOSParams.appStoreID = "1200702658"
         
         //setting fallback URL makes it not go to appstore and instead open in mobile browser
-        /** iOSParams.fallbackURL = URL(string: "https://checkpulse.co/"+linkString) **/
+        /** iOSParams.fallbackURL = URL(string: "https://getpulse.tv/"+linkString) **/
         
         let socialParams = DynamicLinkSocialMetaTagParameters()
         let analyticsParams = DynamicLinkGoogleAnalyticsParameters()

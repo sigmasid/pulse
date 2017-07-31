@@ -21,7 +21,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                 controlsOverlay.updateControls(type: itemType)
                 view.addSubview(controlsOverlay)
                 
-                setupOverlayButtons()
+                addButtonTargets()
                 
                 switch itemType {
                 case .recordedVideo, .albumVideo:
@@ -58,27 +58,26 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     
     //includes currentItem - set by delegate - the image / video is replaced after processing when uploading file or adding more
     public var recordedItems : [Item]! = [Item]()
-    public var isNewEntry = true //don't reprocess video / image if the user is returning back to prior entry
     
+    //don't reprocess video / image if the user is returning back to prior entry
+    public var isNewEntry = false {
+        didSet {
+            if isNewEntry {
+                controlsOverlay.addPagers()
+            }
+        }
+    }
     private var coverItem: Item?
     private var currentMode : ContentMode!
     fileprivate var addCoverVC: AddCoverVC?
     
     var currentItemIndex : Int = 0 {
         didSet {
-            if currentItemIndex == 0 {
-                if let delegate = delegate {
-                    delegate.userDismissedRecording(self, recordedItems : recordedItems)
-                }
+            if recordedItems.count == 0 {
+                //no other items in stack so dismiss recording
+                delegate?.userDismissedRecording(self, recordedItems : recordedItems)
             } else {
-                currentItem = recordedItems[currentItemIndex - 1] // adjust for array index vs. count
-            }
-        }
-        willSet {
-            if newValue <= currentItemIndex {
-                isNewEntry = false //return after user dismissed camera with existing videos to show
-            } else {
-                controlsOverlay.addPagers()
+                currentItem = recordedItems[currentItemIndex] // adjust for array index vs. count
             }
         }
     }
@@ -157,7 +156,6 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     fileprivate func setupVideo() {
         //don't create new AVPlayer if it already exists
         guard let contentURL = currentItem.contentURL else { return }
-        
         currentVideo = AVPlayerItem(url: contentURL)
         
         if avPlayerLayer == nil || aPlayer == nil {
@@ -190,14 +188,16 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
                     if let resultURL = resultURL {
                         self.currentItem.contentURL = resultURL
                         self.currentItem.content = thumbnailImage
-                        self.recordedItems[self.currentItemIndex - 1] = self.currentItem
+                        self.recordedItems[self.currentItemIndex] = self.currentItem
                     } else {
                         let videoAsset = AVAsset(url: contentURL)
                         let thumbImage = thumbnailForVideoAtURL(videoAsset, orientation: .left)
 
                         self.currentItem.content = thumbImage
-                        self.recordedItems[self.currentItemIndex - 1] = self.currentItem
+                        self.recordedItems[self.currentItemIndex] = self.currentItem
                     }
+                    
+                    self.isNewEntry = false
                 })
             }
         }
@@ -216,11 +216,14 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
         super.didReceiveMemoryWarning()
     }
     
-    fileprivate func setupOverlayButtons() {
+    fileprivate func addButtonTargets() {
         controlsOverlay.getButton(.post).addTarget(self, action: #selector(_post), for: UIControlEvents.touchUpInside)
         controlsOverlay.getButton(.save).addTarget(self, action: #selector(_save), for: UIControlEvents.touchUpInside)
         controlsOverlay.getButton(.close).addTarget(self, action: #selector(_close), for: UIControlEvents.touchUpInside)
         controlsOverlay.getButton(.addMore).addTarget(self, action: #selector(_addMore), for: UIControlEvents.touchUpInside)
+        
+        controlsOverlay.getButton(.goUp).addTarget(self, action: #selector(_goUp), for: UIControlEvents.touchUpInside)
+        controlsOverlay.getButton(.goDown).addTarget(self, action: #selector(_goDown), for: UIControlEvents.touchUpInside)
         
         controlsOverlay.getTitleField().delegate = self
         controlsOverlay.updatePostLabel(text: currentItem.cameraButtonText())
@@ -228,11 +231,11 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     
     //takes the title from the text box and adds it to the last time
     fileprivate func updateItemTitle(text : String) {
-        recordedItems[self.currentItemIndex - 1].itemTitle = text
+        recordedItems[currentItemIndex].itemTitle = text
     }
     
     fileprivate func updateItemImage() {
-        recordedItems[self.currentItemIndex - 1].content = imageView.getCroppedImage()?.resizeImage(newWidth: FULL_IMAGE_WIDTH)
+        recordedItems[currentItemIndex].content = imageView.getCroppedImage()?.resizeImage(newWidth: FULL_IMAGE_WIDTH)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -250,22 +253,47 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
         default: break
         }
     }
+    
+    internal func _goUp() {
+        guard currentItemIndex > 0 else {
+            //check if can go up - if not then ignore
+            return
+        }
+        
+        controlsOverlay.selectPager(at: currentItemIndex - 1, prior: currentItemIndex)
+        currentItemIndex = currentItemIndex - 1
+    }
+    
+    internal func _goDown() {
+        guard currentItemIndex < recordedItems.count - 1 else {
+            //check if can go down - if not then ignore
+            return
+        }
+        
+        controlsOverlay.selectPager(at: currentItemIndex + 1, prior: currentItemIndex)
+        currentItemIndex = currentItemIndex + 1
+    }
 
     func _addMore() {
         updateItems()
         if recordedItems.count < MAX_ITEM_COUNT {
             delegate?.addMoreItems(self, recordedItems: recordedItems)
         } else {
-            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Max Limit Reached", erMessage: "Sorry! You can only have 7 items for any new entry! This keeps the content short & interesting for your viewers.")
+            GlobalFunctions.showAlertBlock(viewController: self,
+                                           erTitle: "Max Limit Reached",
+                                           erMessage: "Sorry! You can only have 7 items for any new entry! This keeps the content short & interesting for your viewers.")
         }
     }
     
     ///close window and go back to camera
     internal func _close() {
-        // need to check if it was first item -> if yes, go to camera else stay in RecordedVideoVC and go back to last question, remove the current item value from recordedItems
-        controlsOverlay.removePager()
-        recordedItems.remove(at: currentItemIndex - 1)
-        currentItemIndex = currentItemIndex - 1
+        // need to check if it was first item -> if yes, go to camera else stay in RecordedVideoVC and 
+        // go back to last question, remove the current item value from recordedItems
+        controlsOverlay.removePager(at: currentItemIndex)
+        recordedItems.remove(at: currentItemIndex)
+        
+        //if more than 1 total items then go back one else go to the only item 0
+        currentItemIndex = currentItemIndex > 0 ? currentItemIndex - 1 : 0
     }
     
     ///post video to firebase
