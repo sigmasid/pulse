@@ -635,7 +635,7 @@ extension ChannelVC {
             
             case .session:
                 
-                toggleLoading(show: true, message: "loading session...", showIcon: true)
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
                 
                 PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
                     guard let `self` = self else { return }
