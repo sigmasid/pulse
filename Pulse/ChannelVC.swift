@@ -34,9 +34,7 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     }
     //end set by delegate
     
-    //used to cache users downloaded
-    fileprivate var allUsers = [PulseUser]()
-    
+    //used to cache users downloaded    
     fileprivate var subscribeButton = PulseButton(size: .medium, type: .add, isRound : true, background: .white, tint: .black)
     fileprivate var isSubscribed : Bool = false {
         didSet {
@@ -95,7 +93,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
         if !cleanupComplete {
             selectedChannel = nil
             allItems = []
-            allUsers = []
             collectionView = nil
             isLoaded = false
             isLayoutSetup = false
@@ -631,7 +628,7 @@ extension ChannelVC {
                 
             case .posts, .feedback, .perspectives, .interviews, .questions, .showcases:
                 
-                showTag(selectedItem: item)
+                showSeries(selectedItem: item)
             
             case .session:
                 
@@ -684,6 +681,10 @@ extension ChannelVC {
                         self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
                         self.showNoItemsMenu(selectedItem : item)
                 })
+                
+            case .forum:
+                
+                showForum(selectedItem: item)
                 
             default: break
             }
@@ -762,13 +763,20 @@ extension ChannelVC {
         navigationController?.pushViewController(itemCollection, animated: true)
     }
     
-    internal func showTag(selectedItem : Item) {
+    internal func showSeries(selectedItem : Item) {
         let seriesVC = SeriesVC()
         seriesVC.selectedChannel = selectedChannel
         
         navigationController?.pushViewController(seriesVC, animated: true)
         seriesVC.selectedItem = selectedItem
+    }
+    
+    internal func showForum(selectedItem: Item) {
+        let forumVC = ForumVC()
+        forumVC.selectedChannel = selectedChannel
         
+        navigationController?.pushViewController(forumVC, animated: true)
+        forumVC.selectedItem = selectedItem
     }
     
     internal func createContributorInvite(selectedChannel: Channel, toUser: PulseUser?, toEmail: String?  = nil, showAlert: Bool = true,
@@ -842,26 +850,20 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Add additional user details as needed
             if currentItem.user == nil || !currentItem.user!.uCreated {
-                if let user = checkUserDownloaded(user: PulseUser(uID: currentItem.itemUserID)) {
-                    allItems[indexPath.row].user = user
-                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
+                // Get the user details
+                PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
+                    guard let `self` = self, self.allItems.count > indexPath.row else { return }
                     
-                } else {
-                    // Get the user details
-                    PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
-                        guard let `self` = self, self.allItems.count > indexPath.row else { return }
+                    if let user = user {
+                        self.allItems[indexPath.row].user = user
                         
-                        if let user = user {
-                            self.allItems[indexPath.row].user = user
-                            self.allUsers.append(user)
-                            DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
-                                }
+                        DispatchQueue.main.async {
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.tag?.itemTitle)
                             }
                         }
-                    })
-                }
+                    }
+                })
             }
             
             //Get the image if content type is a post
@@ -888,13 +890,6 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
             return cell
         }
-    }
-    
-    func checkUserDownloaded(user: PulseUser) -> PulseUser? {
-        if let index = allUsers.index(of: user) {
-            return allUsers[index]
-        }
-        return nil
     }
     
     //Did select item at index path

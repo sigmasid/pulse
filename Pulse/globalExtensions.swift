@@ -125,7 +125,7 @@ extension UIView {
     }
     
     func makeRound() {
-        layer.cornerRadius = frame.width > frame.height ?  5 : frame.width / 2
+        layer.cornerRadius = frame.width > frame.height ?  buttonCornerRadius.small.rawValue : frame.width / 2
         layer.masksToBounds = true
         clipsToBounds = true
     }
@@ -801,6 +801,7 @@ enum Element : String {
     case ChannelItems = "channelItems"
     case ChannelContributors = "channelContributors"
 
+    case ForumItems = "forumItems"
     case Items = "items"
     case ItemThumbs = "itemThumbnails"
     case ItemCollection = "itemCollection"

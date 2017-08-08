@@ -1,5 +1,5 @@
 //
-//  AnswerCell.swift
+//  BrowseContentCell.swift
 //  Pulse
 //
 //  Created by Sidharth Tiwari on 2/19/17.
@@ -9,6 +9,8 @@
 import UIKit
 
 class BrowseContentCell: UICollectionViewCell {
+    fileprivate lazy var overlayTitleLabel = UILabel()
+
     fileprivate lazy var titleLabel = UILabel()
     fileprivate lazy var subtitleLabel = UILabel()
     fileprivate lazy var previewImage = UIImageView()
@@ -17,6 +19,9 @@ class BrowseContentCell: UICollectionViewCell {
     fileprivate lazy var preview : Preview = Preview()
     fileprivate var previewAdded = false
     fileprivate var reuseCell = false
+    private var titleStackHeight : NSLayoutConstraint!
+    private var previewBottomConstraint: NSLayoutConstraint!
+    private var titleStackBottom : NSLayoutConstraint!
     
     var showTapForMore = false {
         didSet {
@@ -28,7 +33,7 @@ class BrowseContentCell: UICollectionViewCell {
         super.init(frame: frame)
         backgroundColor = .white
         addShadow()
-        setupAnswerPreview()
+        setupLabels()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -77,6 +82,16 @@ class BrowseContentCell: UICollectionViewCell {
         previewImage.image = _image
         
         titleStack.layoutIfNeeded()
+    }
+    
+    func updateOverlayLabel(title: String?) {
+        titleStackHeight.constant = 0
+        previewBottomConstraint.constant = 0
+        titleStackBottom.constant = 0
+        titleStack.isHidden = true
+        
+        overlayTitleLabel.text = title
+        overlayTitleLabel.isHidden = false
     }
     
     func updateImage( image : UIImage?) {
@@ -132,13 +147,15 @@ class BrowseContentCell: UICollectionViewCell {
         subtitleLabel.numberOfLines = subTitleNum
     }
     
-    fileprivate func setupAnswerPreview() {
+    fileprivate func setupLabels() {
         addSubview(previewImage)
         addSubview(titleStack)
-        
+        addSubview(overlayTitleLabel)
+
         titleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
         subtitleLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightRegular, color: .black, alignment: .left)
-        
+        overlayTitleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
+
         titleLabel.numberOfLines = 1
         subtitleLabel.numberOfLines = 1
         
@@ -150,18 +167,29 @@ class BrowseContentCell: UICollectionViewCell {
         
         titleStack.translatesAutoresizingMaskIntoConstraints = false
         titleStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
-        titleStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        titleStackBottom = titleStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Spacing.xxs.rawValue)
+        titleStackBottom.isActive = true
         titleStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
-        titleStack.heightAnchor.constraint(equalToConstant: titleLableHeight * 2).isActive = true
+        titleStackHeight = titleStack.heightAnchor.constraint(equalToConstant: titleLableHeight * 2)
+        titleStackHeight.isActive = true
         
         titleStack.addArrangedSubview(titleLabel)
         titleStack.addArrangedSubview(subtitleLabel)
         
         previewImage.translatesAutoresizingMaskIntoConstraints = false
-        previewImage.bottomAnchor.constraint(equalTo: titleStack.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        previewBottomConstraint = previewImage.bottomAnchor.constraint(equalTo: titleStack.topAnchor, constant: -Spacing.xxs.rawValue)
+        previewBottomConstraint.isActive = true
         previewImage.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
         previewImage.widthAnchor.constraint(equalTo: contentView.widthAnchor).isActive = true
         previewImage.leadingAnchor.constraint(equalTo: contentView.leadingAnchor).isActive = true
+        
+        overlayTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        overlayTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        overlayTitleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        overlayTitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        overlayTitleLabel.heightAnchor.constraint(equalToConstant: titleLableHeight).isActive = true
+        overlayTitleLabel.isHidden = true
+        //overlayTitleLabel.setBlurredBackground()
         
         previewImage.contentMode = UIViewContentMode.scaleAspectFill
         previewImage.clipsToBounds = true

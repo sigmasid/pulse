@@ -116,6 +116,14 @@ class PulseUser: User {
             }
         }
         
+        if detailedSnapshot.hasChild("editorChannels") {
+            for child in detailedSnapshot.childSnapshot(forPath: "editorChannels").children {
+                let channel = Channel(cID: (child as AnyObject).key)
+                channel.cTitle = (child as! DataSnapshot).value as? String
+                editorChannels.append(channel)
+            }
+        }
+        
         uDetailedCreated = true
     }
     
@@ -138,7 +146,7 @@ class PulseUser: User {
     //Check if user is Contributor
     //Contributors can invite guests, add answers, start new items
     func isContributor(for channel : Channel) -> Bool {
-        return contributorChannels.contains(channel) ? true : false
+        return contributorChannels.contains(channel) || editorChannels.contains(channel) ? true : false
     }
     
     //Check if user is Editor

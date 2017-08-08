@@ -31,7 +31,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     
     /** main datasource var **/
     fileprivate var allItems = [Item]()
-    fileprivate var allUsers = [PulseUser]() //caches user image / user for reuse
     fileprivate var hasReachedEnd = false
     
     /** Collection View Vars **/
@@ -66,7 +65,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     private func performCleanup() {
         if !cleanupComplete {
             allItems = []
-            allUsers = []
             selectedChannel = nil
             selectedItem = nil
             collectionView = nil
@@ -341,26 +339,19 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     }
                     
                     // Get the user details
-                    if let user = self.checkUserDownloaded(user: PulseUser(uID: item.itemUserID)) {
-                        self.allItems[indexPath.row].user = user
-                        cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: nil)
-                        
-                    } else {
-                        PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
-                            guard let `self` = self else { return }
+                    PulseDatabase.getUser(item.itemUserID, completion: {[weak self] (user, error) in
+                        guard let `self` = self else { return }
 
-                            if let user = user {
-                                self.allItems[indexPath.row].user = user
-                                self.allUsers.append(user)
-                                
-                                DispatchQueue.main.async {
-                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                        cell.updateLabel(_title, _subtitle: user.name,  _createdAt: item.createdAt, _tag: nil)
-                                    }
+                        if let user = user {
+                            self.allItems[indexPath.row].user = user
+                            
+                            DispatchQueue.main.async {
+                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                    cell.updateLabel(_title, _subtitle: user.name,  _createdAt: item.createdAt, _tag: nil)
                                 }
                             }
-                        })
-                    }
+                        }
+                    })
                 }
             })
         }
@@ -382,14 +373,6 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
         default: assert(false, "Unexpected element kind")
         }
         return UICollectionReusableView()
-    }
-    
-    //Find the index of downloaded user and return that user
-    func checkUserDownloaded(user: PulseUser) -> PulseUser? {
-        if let index = allUsers.index(of: user) {
-            return allUsers[index]
-        }
-        return nil
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them

@@ -176,6 +176,15 @@ enum GlobalFunctions {
         }
     }
     
+    static func validateURL(urlString: String?) -> Bool {
+        if let urlString = urlString {
+            if let url = URL(string: urlString) {
+                return UIApplication.shared.canOpenURL(url)
+            }
+        }
+        return false
+    }
+    
     static func shouldGetImage(type: ItemTypes) -> Bool {
         return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase || type == .interview
     }

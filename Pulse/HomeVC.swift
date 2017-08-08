@@ -15,7 +15,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     //Main data source vars
     var allItems = [Item]()
     var allChannels = [Channel]()
-    var allUsers = [PulseUser]() //to keep user data cached
     
     fileprivate var isLayoutSetup = false
     
@@ -359,25 +358,16 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Add additional user details as needed
             if currentItem.user == nil || !currentItem.user!.uCreated {
-                if let user = self.checkUserDownloaded(user: PulseUser(uID: currentItem.itemUserID)) {
-                    self.allItems[indexPath.row].user = user
-                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
-                    
-                } else {
-                    // Get the user details
-                    
-                    PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
-                        if let user = user, let `self` = self {
-                            self.allItems[indexPath.row].user = user
-                            self.allUsers.append(user)
-                            DispatchQueue.main.async {
-                                if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                                    cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
-                                }
+                PulseDatabase.getUser(currentItem.itemUserID, completion: {[weak self] (user, error) in
+                    if let user = user, let `self` = self {
+                        self.allItems[indexPath.row].user = user
+                        DispatchQueue.main.async {
+                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                cell.updateLabel(_title, _subtitle: user.name, _createdAt: currentItem.createdAt, _tag: currentItem.cTitle)
                             }
                         }
-                    })
-                }
+                    }
+                })
             }
             
             return cell
@@ -385,13 +375,6 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
             return cell
         }
-    }
-    
-    internal func checkUserDownloaded(user: PulseUser) -> PulseUser? {
-        if let index = allUsers.index(of: user) {
-            return allUsers[index]
-        }
-        return nil
     }
     
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them

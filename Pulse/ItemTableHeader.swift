@@ -11,17 +11,13 @@ import UIKit
 class ItemTableHeader: UITableViewHeaderFooterView {
     public weak var delegate : HeaderDelegate!
     
-    fileprivate var titleLabel = UILabel()
-    lazy var addButton = PulseButton(size: .small, type: .add, isRound: true, background: .white, tint: .black)
-    
-    fileprivate var reuseCell = false
+    private var titleLabel = UILabel()
+    lazy var headerMenu = PulseButton(size: .small, type: .ellipsis, isRound: true, background: .white, tint: .black)
+    private var reuseCell = false
+    private var isSetup = false
     
     override init(reuseIdentifier: String?) {
         super.init(reuseIdentifier: reuseIdentifier)
-        
-        addBottomBorder()
-        setupPreview()
-        addButton.removeShadow()
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -49,22 +45,37 @@ class ItemTableHeader: UITableViewHeaderFooterView {
         }
     }
     
-    fileprivate func setupPreview() {
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(addButton)
-        
-        addButton.addTarget(self, action: #selector(clickedMenu), for: .touchUpInside)
-        addButton.frame = CGRect(x: Spacing.s.rawValue,
-                                  y: contentView.bounds.height / 2 - addButton.bounds.height / 2,
-                                  width: addButton.bounds.width,
-                                  height: addButton.bounds.height)
-        
-        titleLabel.frame = CGRect(x: Spacing.m.rawValue + addButton.bounds.width,
-                                  y: 0,
-                                  width: contentView.bounds.width - Spacing.m.rawValue - addButton.bounds.width,
-                                  height: contentView.bounds.height)
-        
-        titleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .left)
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        setupCell()
+    }
+    
+    fileprivate func setupCell() {
+        if !isSetup {
+            contentView.backgroundColor = .white
+            contentView.addSubview(titleLabel)
+            contentView.addSubview(headerMenu)
+            
+            headerMenu.addTarget(self, action: #selector(clickedMenu), for: .touchUpInside)
+            headerMenu.translatesAutoresizingMaskIntoConstraints = false
+            headerMenu.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+            headerMenu.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+            headerMenu.widthAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+            headerMenu.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+            headerMenu.layoutIfNeeded()
+            headerMenu.removeShadow()
+            
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+            titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor).isActive = true
+            titleLabel.trailingAnchor.constraint(equalTo: headerMenu.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
+            titleLabel.heightAnchor.constraint(equalTo: contentView.heightAnchor).isActive = true
+            titleLabel.layoutIfNeeded()
+
+            titleLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .left)
+            contentView.addBottomBorder(color: .pulseGrey)
+            isSetup = true
+        }
     }
 
 }

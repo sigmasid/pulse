@@ -30,11 +30,14 @@ class PulseDatabase {
     static let channelNavImageCache = ImageCache(name: "NavImages")
     static let channelThumbCache = ImageCache(name: "ChannelThumbImages")
     static let seriesImageCache = ImageCache(name: "SeriesImages")
+    static var cachedUsers = [PulseUser]()
     
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
     static let channelItemsRef = databaseRef.child(Element.ChannelItems.rawValue)
     static let channelContributorsRef = databaseRef.child(Element.ChannelContributors.rawValue)
 
+    static let forumItemsRef = databaseRef.child(Element.ForumItems.rawValue)
+    
     static let itemsRef = databaseRef.child(Element.Items.rawValue)
     static let itemStatsRef = databaseRef.child(Element.ItemStats.rawValue)
     static let itemCollectionRef = databaseRef.child(Element.ItemCollection.rawValue)
@@ -79,7 +82,7 @@ class PulseDatabase {
         let components = DynamicLinkComponents(link: deepLink, domain: "tc237.app.goo.gl")
         
         let iOSParams = DynamicLinkIOSParameters(bundleID: "co.checkpulse.pulse")
-        iOSParams.minimumAppVersion = "0.1"
+        iOSParams.minimumAppVersion = "0.3"
         iOSParams.appStoreID = "1200702658"
         
         //setting fallback URL makes it not go to appstore and instead open in mobile browser
@@ -670,6 +673,44 @@ class PulseDatabase {
         })
     }
     
+    //Retrieve forum items in conversation
+    static func getForumItems(threadID : String, completion: @escaping ([Item], Error?) -> Void) {
+        var items = [Item]()
+        
+        forumItemsRef.child(threadID).queryLimited(toLast: MAX_QUERY_SIZE).observeSingleEvent(of: .value, with: { snapshot in
+            for itemSnap in snapshot.children {
+                let currentItem = Item(itemID: (itemSnap as AnyObject).key, snapshot: itemSnap as! DataSnapshot)
+                items.append(currentItem)
+            }
+            completion(items, nil)
+        }, withCancel: { error in
+            completion(items, error)
+        })
+    }
+    
+    //Keep conversation updated
+    static func keepForumUpdated(forumID : String, lastMessage : String?, completion: @escaping (Item) -> Void) {
+        let startingValue = lastMessage ?? ""
+        
+        activeListeners.append(forumItemsRef.child(forumID))
+        forumItemsRef.child(forumID).queryOrderedByKey().queryStarting(atValue: startingValue).observe(.childAdded, with: { snapshot in
+            guard (snapshot as AnyObject).key != startingValue else { return } //ignore if it's the last value - child added fires once for the last value
+            let item = Item(itemID: (snapshot as AnyObject).key, snapshot: snapshot)
+            completion(item)
+        })
+    }
+    
+    //Remove listener
+    static func removeForumObserver(forumID : String) {
+        forumItemsRef.child(forumID).removeAllObservers()
+    }
+    
+    static func removeForumItem(itemID: String, forumID: String, completion: @escaping (Bool) -> Void) {
+        forumItemsRef.child(forumID).child(itemID).setValue(nil, withCompletionBlock: { error, _ in
+            error != nil ? completion(false) : completion(true)
+        })
+    }
+    
     static func getSeriesTypes(completion: @escaping (_ allItems : [Item]) -> Void) {
         var allItems = [Item]()
         
@@ -724,15 +765,20 @@ class PulseDatabase {
     /*** MARK START : GET USER ***/
     ///Returns the shortest public profile
     static func getUser(_ uID : String, completion: @escaping (_ user : PulseUser?, _ error : NSError?) -> Void) {
-        usersPublicSummaryRef.child(uID).observeSingleEvent(of: .value, with: { snap in
-            if snap.exists() {
-                let _returnUser = PulseUser(uID: uID, snapshot: snap)
-                completion(_returnUser, nil)
-            } else {
-                let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
-                completion(nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
-            }
-        })
+        if let index = cachedUsers.index(of: PulseUser(uID: uID)) {
+            completion(cachedUsers[index], nil)
+        } else {
+            usersPublicSummaryRef.child(uID).observeSingleEvent(of: .value, with: { snap in
+                if snap.exists() {
+                    let _returnUser = PulseUser(uID: uID, snapshot: snap)
+                    cachedUsers.append(_returnUser)
+                    completion(_returnUser, nil)
+                } else {
+                    let userInfo = [ NSLocalizedDescriptionKey : "no user found" ]
+                    completion(nil, NSError.init(domain: "NoUserFound", code: 404, userInfo: userInfo))
+                }
+            })
+        }
     }
     
     static func getUserPublicProperty(_ uID : String, property: String, completion: @escaping (_ property : String?) -> Void) {
@@ -1378,6 +1424,33 @@ class PulseDatabase {
         usersPublicSummaryRef.child(user.uid).updateChildValues(userPost, withCompletionBlock: { (blockError, ref) in
             blockError != nil ? completion(false, blockError as NSError?) : completion(true, nil)
         })
+    }
+    
+    static func postToForum(threadID : String, text : String, channelID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        if PulseUser.isLoggedIn() {
+            let userID = PulseUser.currentUser.uID!
+            let itemPost : [ String : AnyObject] = ["title": text as AnyObject,
+                                                    "uID": userID as AnyObject,
+                                                    "createdAt" : ServerValue.timestamp() as AnyObject,
+                                                    "type" : "comment" as AnyObject,
+                                                    "cID": channelID as AnyObject]
+            
+            var userPost : [String : AnyObject] = [:]
+            let commentKey = forumItemsRef.child(threadID).childByAutoId().key
+            
+            userPost[commentKey] = threadID as AnyObject
+            
+            var collectionPost : [String : AnyObject] = [:]
+            collectionPost["forumItems/\(threadID)/\(commentKey)"] = itemPost as AnyObject
+            collectionPost["userDetailedPublicSummary/\(userID)/comments/\(commentKey)"] = threadID as AnyObject
+            
+            databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (blockError, ref) in
+                blockError != nil ? completion(false, blockError as Error?) : completion(true, nil)
+            })
+        } else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+        }
     }
     
     ///Save individual item to Pulse database after Auth
@@ -2037,6 +2110,61 @@ class PulseDatabase {
         })
     }
     
+    static func addForumThread(channelID: String, parentItem: Item, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard PulseUser.isLoggedIn() else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to start a thread" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        let user = PulseUser.currentUser
+        
+        guard item.type != .unknown else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "sorry this thread is not valid" ]
+            completion(false, NSError.init(domain: "Invalidtag", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard user.isSubscribedToChannel(cID: channelID) else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "only subscribers can start a thread" ]
+            completion(false, NSError.init(domain: "NotContributor", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        var itemPost : [String : Any] = ["title" : item.itemTitle,
+                                         "description" : item.itemDescription,
+                                         "type" : item.type.rawValue,
+                                         "uID" : user.uID!,
+                                         "createdAt" : ServerValue.timestamp(),
+                                         "cID":channelID]
+        
+        let forumItemPost : [ String : Any] = ["title": item.itemDescription,
+                                                "uID": user.uID!,
+                                                "createdAt" : ServerValue.timestamp() as AnyObject,
+                                                "type" : "comment",
+                                                "cID": channelID as AnyObject]
+        
+        let forumItemKey = forumItemsRef.child(item.itemID).childByAutoId().key
+        
+        if let url = item.contentURL {
+            let urlString = String(describing: url)
+            itemPost["url"] = urlString
+        }
+        
+        if let url = item.linkedURL {
+            let urlString = String(describing: url)
+            itemPost["linkedurl"] = urlString
+        }
+        
+        let collectionPost = ["items/\(item.itemID)" : itemPost,
+                              "forumItems/\(item.itemID)/\(forumItemKey)":forumItemPost,
+                              "itemCollection/\(parentItem.itemID)/\(item.itemID)": item.type.rawValue] as [String : Any]
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
+            error != nil ? completion(false, error) : completion(true, nil)
+        })
+    }
+    
     /* STORAGE METHODS */
     static func getItemStorageURL(channelID: String, type: String = "content", fileID : String, completion: @escaping (_ URL : URL?, _ error : NSError?) -> Void) {
         let path = storageRef.child("channels/\(channelID)").child(fileID).child(type)
@@ -2173,7 +2301,7 @@ class PulseDatabase {
                         userImageCache.store(_imageData, forKey: PulseUser.currentUser.uID!)
                         completion(UIImage(data: _imageData))
                         
-                        uploadProfileImageData(data: _imageData, type: "thumb", completion: { url, error in
+                        uploadProfileImageData(data: _imageData, type: "thumbPic", completion: { url, error in
                             if let url = url {
                                 PulseUser.currentUser.thumbPic = String(describing: url)
                                 updateUserData(.photoURL, value: url, completion: { _ , _ in })

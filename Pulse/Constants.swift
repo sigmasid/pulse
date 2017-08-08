@@ -19,6 +19,7 @@ let STATUS_BAR_HEIGHT : CGFloat = UIApplication.shared.statusBarFrame.size.heigh
 let POST_IMAGE_HEIGHT : CGFloat = 325
 let CELL_WITH_IMAGE_HEIGHT : CGFloat = 420
 let CELL_NO_IMAGE_HEIGHT : CGFloat = 145
+let FORUM_CELL_HEIGHT : CGFloat = 100
 
 let SCOPE_HEIGHT : CGFloat = 40
 let MAX_VIDEO_LENGTH : Double = 20

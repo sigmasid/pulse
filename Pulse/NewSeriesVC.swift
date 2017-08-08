@@ -144,6 +144,7 @@ class NewSeriesVC: PulseVC  {
     }
     
     internal func updateDescription(index: Int) {
+        sType.text = "selected: \(allItems[centerIndex].itemTitle)"
         sTypeDescription.text = allItems[index].itemDescription
     }
     
@@ -154,7 +155,7 @@ class NewSeriesVC: PulseVC  {
             
             collectionView?.layoutIfNeeded()
             collectionView?.reloadData()
-            
+
             updateDescription(index: centerIndex)
         }
     }
@@ -165,11 +166,7 @@ class NewSeriesVC: PulseVC  {
             cell.updateImage(image: image)
         }
         
-        if indexPath.row == centerIndex {
-            cell.updateLabel("\u{2714}   \(allItems[indexPath.row].itemTitle)", _subtitle: nil)
-        } else {
-            cell.updateLabel(allItems[indexPath.row].itemTitle, _subtitle: nil)
-        }
+        cell.updateOverlayLabel(title: allItems[indexPath.row].itemTitle)
     }
     
     internal func updateOnscreenRows() {
@@ -276,12 +273,7 @@ extension NewSeriesVC: UICollectionViewDataSource, UICollectionViewDelegate {
         
         let currentItem = allItems[indexPath.row]
         
-        
-        if indexPath.row == centerIndex {
-            cell.updateLabel("\u{2714}   \(currentItem.itemTitle)", _subtitle: nil)
-        } else {
-            cell.updateLabel(currentItem.itemTitle, _subtitle: nil)
-        }
+        cell.updateOverlayLabel(title: currentItem.itemTitle)
         cell.updateImage(image: UIImage(named: self.allItems[indexPath.row].itemID))
         
         return cell
@@ -386,7 +378,7 @@ extension NewSeriesVC {
         collectionView.topAnchor.constraint(equalTo: sType.bottomAnchor).isActive = true
         collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        collectionView.heightAnchor.constraint(equalToConstant: 125).isActive = true
+        collectionView.heightAnchor.constraint(equalToConstant: 150).isActive = true
         collectionView.layoutIfNeeded()
         
         collectionViewLayout = QuickBrowseLayout.configureLayout(collectionView: collectionView,

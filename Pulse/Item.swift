@@ -37,6 +37,9 @@ enum ItemTypes: String {
     case showcases
     case showcase
     
+    //Interviews
+    case forum
+    
     //The rest to come
     case unknown
 }
@@ -60,6 +63,8 @@ class Item: NSObject {
     
     //Content items
     var contentURL : URL?
+    var linkedURL : URL?
+
     var content : UIImage?
     var contentType : CreatedAssetType?
     var createdAt : Date?
@@ -132,6 +137,10 @@ class Item: NSObject {
             contentType = CreatedAssetType.getAssetType(assetType)
         }
         
+        if let url = snapshot.childSnapshot(forPath: "linkedurl").value as? String, let _linkedURL = URL(string: url) {
+            linkedURL = _linkedURL
+        }
+        
         if let _createdAt = snapshot.childSnapshot(forPath: "createdAt").value as? Double {
             let convertedDate = Date(timeIntervalSince1970: _createdAt / 1000)
             createdAt = convertedDate
@@ -167,6 +176,8 @@ class Item: NSObject {
             type = .interviews
         case "interview":
             type = .interview
+        case "forum":
+            type = .forum
         case "thread":
             type = .thread
         case "session":
@@ -237,6 +248,8 @@ class Item: NSObject {
         case .interview: return UIImage(named: "interview")
         case .interviews: return UIImage(named: "interview")
             
+        case .forum: return UIImage(named: "forum")
+            
         default: return nil
         }
     }
@@ -258,6 +271,8 @@ class Item: NSObject {
             
         case .showcases: return plural ? " showcases" : " showcase"
         case .showcase: return plural ? " showcase" : " showcase"
+
+        case .forum: return plural ? " threads" : " thread"
 
         default: return " entry"
         }
@@ -318,6 +333,8 @@ class Item: NSObject {
         case .showcases: return .contributor
         case .showcase: return nil
 
+        case .forum: return .subscriber
+            
         default: return nil
         }
     }
@@ -400,8 +417,8 @@ class Item: NSObject {
         }
     }
     
-    internal func getCreatedAt() -> String? {
-        return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt!) : nil
+    internal func getCreatedAt(style: DateFormatter.Style = .medium) -> String? {
+        return self.createdAt != nil ? GlobalFunctions.getFormattedTime(timeString: self.createdAt!, style: style) : nil
     }
     
     internal func createShareLink(invite: Bool = false, inviteItemID: String? = nil, completion: @escaping (URL?) -> Void) {

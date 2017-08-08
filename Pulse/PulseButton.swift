@@ -9,7 +9,7 @@
 import UIKit
 import QuartzCore
 
-enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical, play, flashMode, flipCamera, showAlbum, upArrow, downArrow}
+enum ButtonType { case back, add, remove, close, settings, login, check, search, message, menu, save, blank, profile, browse, tabExplore, tabHome, tabProfile, addCircle, browseCircle, messageCircle, removeCircle, questionCircle, question, upvote, downvote, favorite, post, postCircle, fbCircle, inCircle, twtrCircle, checkCircle, searchCircle, shareCircle, refresh, answerCount, text, logo, logoCircle, ellipsis, camera, channels, ellipsisVertical, play, flashMode, flipCamera, showAlbum, upArrow, downArrow, related}
 enum ButtonSizes { case xxSmall, xSmall, small, medium, large, xLarge }
 
 @IBDesignable
@@ -536,6 +536,9 @@ open class PulseButton: UIButton {
         case .ellipsisVertical:
             let tintedTimage = UIImage(named: "ellipsis-vertical")?.withRenderingMode(.alwaysTemplate)
             setImage(tintedTimage, for: UIControlState.normal)
+            
+        case .related:
+            setImage(UIImage(named: "related"), for: UIControlState.normal)
             
         case .logo:
             setBackgroundImage(UIImage(named: "pulse-logo"), for: .normal)
