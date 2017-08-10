@@ -868,7 +868,7 @@ extension ChannelVC : UICollectionViewDataSource, UICollectionViewDelegate {
             
             //Get the image if content type is a post
             if currentItem.content == nil, currentItem.shouldGetImage(), !currentItem.fetchedContent {
-                PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
+                PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .content, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
                     guard let `self` = self, self.allItems.count > indexPath.row else { return }
                     
                     if let data = data {

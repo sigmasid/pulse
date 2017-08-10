@@ -322,7 +322,7 @@ extension SeriesVC : UICollectionViewDelegate, UICollectionViewDataSource {
                     
                     //Get the image if content type is a post or perspectives thread
                     if item.content == nil, item.shouldGetImage(), !item.fetchedContent {
-                        PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
+                        PulseDatabase.getImage(channelID: self.selectedChannel.cID, itemID: currentItem.itemID, fileType: .content, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
                             guard let `self` = self else { return }
                             if let data = data {
                                 self.allItems[indexPath.row].content = UIImage(data: data)
