@@ -80,6 +80,8 @@ protocol CompletedRecordingDelegate : class {
 
 protocol UserProfileDelegate: class {
     func showMenu()
+    func editProfile()
+    
 }
 
 protocol ContentDelegate: class {

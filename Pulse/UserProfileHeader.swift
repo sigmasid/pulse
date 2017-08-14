@@ -19,7 +19,8 @@ class UserProfileHeader: UICollectionReusableView {
     fileprivate var shortBioHeightConstraint: NSLayoutConstraint!
     fileprivate var longBioHeightConstraint : NSLayoutConstraint!
     fileprivate var nameHeightAnchor: NSLayoutConstraint!
-    
+    fileprivate var tapGesture : UITapGestureRecognizer?
+
     public weak var profileDelegate : UserProfileDelegate?
     public var isModal : Bool = false {
         didSet {
@@ -59,9 +60,6 @@ class UserProfileHeader: UICollectionReusableView {
         if let selectedUser = selectedUser {
             
             let fontAttributes = [ NSFontAttributeName : UIFont.pulseFont(ofWeight: UIFontWeightMedium, size: profileShortBio.font.pointSize)]
-            let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!,
-                                                                                             width: profileShortBio.frame.width,
-                                                                                             fontAttributes: fontAttributes) : 0
             let nameHeight = selectedUser.name != nil ? GlobalFunctions.getLabelSize(title: selectedUser.name!,
                                                                                      width: profileName.frame.width,
                                                                                      fontAttributes: fontAttributes) : 0
@@ -75,9 +73,38 @@ class UserProfileHeader: UICollectionReusableView {
             let maxHeight = GlobalFunctions.getLabelSize(title: "here is the bio", width: profileLongBio.frame.width,
                                                          fontAttributes: bioFontAttributes) * 3
             
-            shortBioHeightConstraint.constant = shortBioHeight
             longBioHeightConstraint.constant = min(maxHeight, longBioHeight)
             nameHeightAnchor.constant = isModal ? nameHeight : 0
+            
+            DispatchQueue.main.async {
+                self.profileName.text = isModal ? selectedUser.name : ""
+                self.profileLongBio.text = selectedUser.bio
+                
+                if selectedUser.uid == PulseUser.currentUser.uid, selectedUser.shortBio == nil {
+                    let shortBioHeight = GlobalFunctions.getLabelSize(title: "Tap to edit bio",
+                                                                      width: self.profileShortBio.frame.width, fontAttributes: fontAttributes)
+                    self.shortBioHeightConstraint.constant = shortBioHeight
+                    
+                    self.profileShortBio.text = "Tap to edit profile"
+                    self.tapGesture = UITapGestureRecognizer()
+                    self.tapGesture?.addTarget(self, action: #selector(self.editProfileTapped))
+                    self.profileShortBio.addGestureRecognizer(self.tapGesture!)
+                    self.profileShortBio.isUserInteractionEnabled = true
+                    
+                } else {
+                    let shortBioHeight = selectedUser.shortBio != nil ? GlobalFunctions.getLabelSize(title: selectedUser.shortBio!,
+                                                                                                     width: self.profileShortBio.frame.width,
+                                                                                                     fontAttributes: fontAttributes) : 0
+                    self.profileShortBio.text = selectedUser.shortBio
+                    self.shortBioHeightConstraint.constant = shortBioHeight
+                    if self.tapGesture != nil {
+                        self.profileShortBio.removeGestureRecognizer(self.tapGesture!)
+                        self.tapGesture = nil
+                    }
+                }
+                
+                self.layoutIfNeeded()
+            }
             
             PulseDatabase.getCachedUserPic(uid: selectedUser.uID!, completion: {[weak self] image in
                 guard let `self` = self else { return }
@@ -85,10 +112,8 @@ class UserProfileHeader: UICollectionReusableView {
                 DispatchQueue.main.async {
                     self.profileImage.image = image
                     self.profileImage.tintColor = .black
-                    self.profileName.text = isModal ? selectedUser.name : ""
-                    self.profileShortBio.text = selectedUser.shortBio
-                    self.profileLongBio.text = selectedUser.bio
-                    self.layoutIfNeeded()
+                    
+                    self.profileImage.layoutIfNeeded()
                 }
             })
             
@@ -102,6 +127,10 @@ class UserProfileHeader: UICollectionReusableView {
     
     internal func showMenu() {
         profileDelegate?.showMenu()
+    }
+    
+    internal func editProfileTapped() {
+        profileDelegate?.editProfile()
     }
     
     internal func addMenu() {
@@ -131,7 +160,7 @@ class UserProfileHeader: UICollectionReusableView {
         profileName.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         profileName.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7)
         
-        nameHeightAnchor = profileShortBio.heightAnchor.constraint(equalToConstant: 0)
+        nameHeightAnchor = profileName.heightAnchor.constraint(equalToConstant: 0)
         nameHeightAnchor.priority = 900
         nameHeightAnchor.isActive = true
         

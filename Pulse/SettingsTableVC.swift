@@ -288,6 +288,7 @@ extension SettingsTableVC {
         
         profilePic.imageView?.contentMode = .scaleAspectFill
         profilePic.imageView?.frame = profilePicButton.bounds
+        profilePic.imageView?.tintColor = .black
         profilePic.imageView?.clipsToBounds = true
         profilePic.clipsToBounds = true
 

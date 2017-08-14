@@ -976,8 +976,6 @@ class PulseDatabase {
         }
     }
     
-    
-    
     static func cleanupListeners() {
         for listener in activeListeners {
             listener.removeAllObservers()
@@ -1084,6 +1082,8 @@ class PulseDatabase {
                 populateCurrentUser(_user, completion: { (success) in
                     if success {
                         completion(true)
+                    } else {
+                        completion(false)
                     }
                 })
             } else if currentAuthState == .loggedIn {
@@ -1126,7 +1126,13 @@ class PulseDatabase {
     static func populateCurrentUser(_ user: User!, completion: @escaping (_ success: Bool) -> Void) {
         removeCurrentUser()
         PulseUser.currentUser.uID = user.uid
+        
         usersPublicSummaryRef.child(user.uid).observe(.value, with: { snap in
+            guard snap.exists() else {
+                completion(false)
+                return
+            }
+            
             if snap.hasChild(SettingTypes.name.rawValue) {
                 PulseUser.currentUser.name = snap.childSnapshot(forPath: SettingTypes.name.rawValue).value as? String
             } else if let name = Auth.auth().currentUser?.displayName {

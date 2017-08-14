@@ -308,6 +308,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
         isCurrentUser ? showCurrentUserMenu() : showUserMenu()
     }
     
+    func editProfile() {
+        navigationController?.pushViewController(SettingsTableVC(), animated: true)
+    }
+    
     func showUserMenu() {
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         

@@ -58,7 +58,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
         checkButton.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: checkButton)
-        headerNav?.setNav(title: "Add Name")
+        headerNav?.setNav(title: "Complete Profile", subtitle: "Add Name & Profile Pic")
     }
     
     @IBAction func addPic(_ sender: UIButton) {
