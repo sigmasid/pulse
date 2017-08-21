@@ -1989,6 +1989,7 @@ class PulseDatabase {
             itemPost["toUserName"] = toName ?? toUser?.name
             userPost["toUserName"] = toName ?? toUser?.name
         }
+        userPost["cID"] = item.cID
         
         if let toEmail = toEmail {
             itemPost["toUserEmail"] = toEmail

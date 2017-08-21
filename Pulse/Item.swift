@@ -422,6 +422,11 @@ class Item: NSObject {
     }
     
     internal func createShareLink(invite: Bool = false, inviteItemID: String? = nil, completion: @escaping (URL?) -> Void) {
+        guard cID != nil else {
+            completion(nil)
+            return
+        }
+        
         PulseDatabase.getItemStorageURL(channelID: cID, type: "thumb", fileID : inviteItemID != nil ? inviteItemID! : itemID, completion: { url, error in
             if !invite {
                 PulseDatabase.createShareLink(item: self, linkString: "i/"+self.itemID, imageURL: url, completion: { link in

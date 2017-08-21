@@ -221,7 +221,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
-    //Used for creating invites - NEED TO REFACTOR
+    //Used for creating invites
     internal func createShareRequest(selectedShareItem : Item, shareType: MessageType?, selectedChannel: Channel, toUser: PulseUser?, toEmail : String? = nil, showAlert : Bool = true,
                                      completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
         guard let shareType = shareType else {

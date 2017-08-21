@@ -126,12 +126,12 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     private func updateScreen() {
         let interviewRequest = interviewItem.itemTitle != "" ? ": \(interviewItem.itemTitle)" : ""
         let interviewerName = interviewItem.user?.name != nil ? " from \(interviewItem.user!.name!)" : ""
-        let channelName = interviewItem.cTitle != nil ? " on Channel \(interviewItem.cTitle!.capitalized)" : ""
+        let channelName = interviewItem.cTitle != nil ? " on \(interviewItem.cTitle!.capitalized) Channel" : ""
         let seriesName = interviewItem.tag?.itemTitle != nil ? " \(interviewItem.tag!.itemTitle)" : " interview"
 
         headerNav?.setNav(title: "Interview Request", subtitle: "Topic\(interviewRequest)")
 
-        iDescription.text = "You receieved an interview request\(interviewerName.capitalized). Your interview will be featured in the\(seriesName) series\(channelName)!"
+        iDescription.text = "You receieved an interview request\(interviewerName.capitalized). Your interview will be featured in the\(seriesName) series\(channelName)! You can answer any or all questions."
         iDescription.numberOfLines = 0
         iDescription.layoutIfNeeded()
     }
@@ -269,7 +269,7 @@ extension InterviewRequestVC {
         view.addSubview(iDescription)
 
         iDescription.translatesAutoresizingMaskIntoConstraints = false
-        iDescription.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xxl.rawValue).isActive = true
+        iDescription.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xl.rawValue).isActive = true
         iDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         iDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         iDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
@@ -287,7 +287,7 @@ extension InterviewRequestVC {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.topAnchor.constraint(equalTo: iDescription.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        tableView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
+        tableView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -IconSizes.xLarge.rawValue).isActive = true
         tableView.layoutIfNeeded()
         
@@ -302,6 +302,9 @@ extension InterviewRequestVC {
         tableView?.showsVerticalScrollIndicator = false
         tableView?.layoutIfNeeded()
         tableView?.tableFooterView = UIView()
+        
+        tableView.separatorInset = .zero
+        tableView.layoutMargins = .zero
         
         addSubmitButton()
     }
@@ -427,7 +430,8 @@ extension InterviewRequestVC : UITableViewDelegate, UITableViewDataSource {
         if let cell = cell {
             cell.contentView.addBottomBorder()
             cell.contentView.backgroundColor = .clear
-            cell.textLabel?.text = "Select a question to answer"
+            //need to add space since we want the separators to be full screen
+            cell.textLabel?.text = "    Select a question to answer"
         }
         
         return cell
