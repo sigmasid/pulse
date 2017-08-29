@@ -11,7 +11,6 @@ import UIKit
 class RecordedTextView: UIView {
     
     public var placeholderText : String! = "What's Happening?"
-    public var maxLength: Int = 140
     public var charsRemainingDelegate : RecordedTextViewDelegate!
     
     public var textToShow : String! {
@@ -230,7 +229,7 @@ extension RecordedTextView: UITextViewDelegate {
                 closeQuote.layoutIfNeeded()
             }
             
-            let remainingCount = maxLength - textView.text.characters.count
+            let remainingCount = POST_TITLE_CHARACTER_COUNT - textView.text.characters.count
             charsRemainingDelegate?.charsRemaining(count: remainingCount)
         }
     }
@@ -246,6 +245,6 @@ extension RecordedTextView: UITextViewDelegate {
             return false
         }
         
-        return textView.text.characters.count + (text.characters.count - range.length) <= maxLength
+        return (textView.text.characters.count + text.characters.count) <= POST_TITLE_CHARACTER_COUNT
     }
 }

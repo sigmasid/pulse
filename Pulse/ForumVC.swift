@@ -36,7 +36,6 @@ class ForumVC: PulseVC, HeaderDelegate {
     internal var tableView : UITableView!
     
     fileprivate var isLayoutSetup = false
-    fileprivate var selectedShareItem : Item?
     fileprivate var seriesImageButton : PulseButton?
     
     private var cleanupComplete = false

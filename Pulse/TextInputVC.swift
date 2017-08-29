@@ -23,7 +23,6 @@ class TextInputVC: PulseVC, RecordedTextViewDelegate {
     fileprivate var placeholderText = "What's Happening?"
     fileprivate var remainingChars = UILabel()
     fileprivate var cleanupComplete = false
-    private var maxLength: Int = 140
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -96,7 +95,6 @@ class TextInputVC: PulseVC, RecordedTextViewDelegate {
         textBox = RecordedTextView(frame: CGRect(x: 0, y: headerHeight,
                                                  width: view.bounds.width, height: view.bounds.height - headerHeight), text: placeholderText)
         textBox.charsRemainingDelegate = self
-        textBox.maxLength = maxLength
         view.addSubview(textBox)
         
         /** addRemainingChars message **/
@@ -105,7 +103,7 @@ class TextInputVC: PulseVC, RecordedTextViewDelegate {
         remainingChars.topAnchor.constraint(equalTo: controlsView.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
         remainingChars.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.s.rawValue).isActive = true
         remainingChars.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: UIColor.placeholderGrey, alignment: .right)
-        charsRemaining(count: maxLength)
+        charsRemaining(count: POST_TITLE_CHARACTER_COUNT)
     }
     
     internal func charsRemaining(count: Int) {

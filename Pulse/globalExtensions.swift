@@ -650,6 +650,37 @@ extension UIImage
             return nil
         }
     }
+        
+    func applyImageFilter(filterName: String = "CIPhotoEffectNoir") -> UIImage? {
+        guard let cgImage = cgImage else {
+            return nil
+        }
+        
+        let screenWidth = UIScreen.main.fixedCoordinateSpace.bounds.width
+        let ciImage = CIImage(cgImage: cgImage)
+        let scale = (screenWidth / size.width)
+        
+        let openGLContext = EAGLContext(api: .openGLES2)
+        let context = CIContext(eaglContext: openGLContext!)
+        let paramsColor = [kCIInputColorKey: CIColor(cgColor: UIColor.pulseDarkGrey.cgColor),
+                           kCIInputIntensityKey: 0.8] as [String : Any]
+        let paramsBlur = [kCIInputRadiusKey: 10]  as [String : Any]
+
+        let stripes = CIFilter(name: "CIStripesGenerator", withInputParameters: [
+                                    "inputColor0" : CIColor(red: 0.000, green: 0.000, blue: 0.000),
+                                    "inputColor1" : CIColor(red: 1.0, green: 1.0, blue: 1.0),
+                                    "inputWidth" : NSNumber(value: 2.0),
+                                    "inputSharpness" : NSNumber(value: 0.0)])!.outputImage!.cropping(to: CGRect(x: 0, y: 0, width: screenWidth, height: screenWidth))
+
+
+        let filteredImage = ciImage.applying(CGAffineTransform(scaleX: scale, y: scale)).applyingFilter("CIColorMonochrome", withInputParameters: paramsColor).applyingFilter("CIMultiplyBlendMode", withInputParameters: [kCIInputBackgroundImageKey: stripes]).applyingFilter("CIBoxBlur", withInputParameters: paramsBlur)
+        
+        if let cgimgresult = context.createCGImage(filteredImage, from: filteredImage.extent) {
+            return UIImage(cgImage: cgimgresult)
+        } else {
+            return nil
+        }
+    }
 }
 
 extension Double {
@@ -665,6 +696,23 @@ extension TimeInterval {
 }
 
 /** START ENUMS **/
+struct List {
+    var userID : String!
+    var listID: String!
+    
+    init(userID: String, listID: String) {
+        self.userID = userID
+        self.listID = listID
+    }
+}
+
+enum AddMode {
+    case title
+    case description
+    case link
+    case image
+    case none
+}
 
 enum AuthStates {
     case loggedIn
@@ -800,6 +848,10 @@ enum Element : String {
     case Channels = "channels"
     case ChannelItems = "channelItems"
     case ChannelContributors = "channelContributors"
+
+    case Lists = "lists"
+    case ListItems = "listItems"
+    case ListCollection = "listCollection"
 
     case ForumItems = "forumItems"
     case Items = "items"

@@ -8,7 +8,7 @@
 
 import UIKit
 
-class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
+class InboxVC: PulseVC {
     public weak var tabDelegate : MasterTabDelegate!
     
     internal var tableView : UITableView!
@@ -141,7 +141,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     }
     
     //close modal - e.g. mini search
-    internal func userClosedModal(_ viewController: UIViewController) {
+    override func userClosedModal(_ viewController: UIViewController) {
         tabBarHidden = false
 
         dismiss(animated: true, completion: { _ in
@@ -153,7 +153,7 @@ class InboxVC: PulseVC, ModalDelegate, SelectionDelegate {
     }
     
     //delegate for mini user search - start new conversation with user
-    internal func userSelected(item: Any) {
+    override func userSelected(item: Any) {
         //check if the modal is still showing - needed because need to fully dismiss first before pushing on nav stack
         //start new conversation with user
         if !isShowingUserSearch, let user = item as? PulseUser {

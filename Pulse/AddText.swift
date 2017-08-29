@@ -24,7 +24,8 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     fileprivate var containerHeightConstraint: NSLayoutConstraint!
     fileprivate var tap: UITapGestureRecognizer!
     
-    fileprivate var bodyText : String = ""
+    fileprivate var buttonText : String?
+    fileprivate var bodyText : String?
     fileprivate var defaultBodyText : String = "type here"
     fileprivate var tabBarHeightAdjustment : CGFloat = 0
     
@@ -32,15 +33,16 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         super.init(frame: frame)
     }
     
-    convenience init(frame: CGRect, buttonText: String, bodyText: String, defaultBodyText: String = "type here", keyboardType: UIKeyboardType = .alphabet, tabBarHeightAdjustment: CGFloat = 0) {
+    convenience init(frame: CGRect, buttonText: String, bodyText: String?, defaultBodyText: String = "type here", keyboardType: UIKeyboardType = .alphabet, tabBarHeightAdjustment: CGFloat = 0) {
         self.init(frame: frame)
         addObservers()
         
+        self.buttonText = buttonText
         self.bodyText = bodyText
         self.defaultBodyText = defaultBodyText
         self.tabBarHeightAdjustment = tabBarHeightAdjustment
         
-        setupLayout(buttonText: buttonText, bodyText: bodyText)
+        setupLayout()
         txtBody.becomeFirstResponder()
         txtBody.keyboardType = keyboardType
         
@@ -52,6 +54,24 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    public func setText(bodyText: String?, defaultBodyText: String = "type here", keyboardType: UIKeyboardType = .alphabet) {
+        self.bodyText = bodyText
+        self.defaultBodyText = defaultBodyText
+        txtBody.text = bodyText ?? defaultBodyText
+        
+        let sizeThatFitsTextView = txtBody.sizeThatFits(CGSize(width: txtBody.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+        textViewHeightConstraint.constant = sizeThatFitsTextView.height
+        containerHeightConstraint.constant = max(IconSizes.medium.rawValue, sizeThatFitsTextView.height)
+        
+        txtBody.becomeFirstResponder()
+        txtBody.keyboardType = keyboardType
+        
+        if keyboardType != .alphabet {
+            txtBody.autocapitalizationType = .none
+            txtBody.autocorrectionType = .no
+        }
     }
     
     deinit {
@@ -111,7 +131,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         txtContainer.layoutIfNeeded()
     }
     
-    fileprivate func setupLayout(buttonText : String, bodyText: String) {
+    fileprivate func setupLayout() {
         addSubview(txtContainer)
         
         txtContainer.addSubview(txtBody)
@@ -121,11 +141,8 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         txtBottomConstraint = txtContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0)
         txtBottomConstraint.isActive = true
         txtContainer.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
-        containerHeightConstraint = txtContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
-        containerHeightConstraint.isActive = true
         txtContainer.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         txtContainer.backgroundColor = .white
-        txtContainer.layoutIfNeeded()
         
         txtButton.translatesAutoresizingMaskIntoConstraints = false
         txtButton.trailingAnchor.constraint(equalTo: txtContainer.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
@@ -139,16 +156,21 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         txtBody.leadingAnchor.constraint(equalTo: txtContainer.leadingAnchor).isActive = true
         txtBody.trailingAnchor.constraint(equalTo: txtButton.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
-        textViewHeightConstraint = txtBody.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
-        textViewHeightConstraint.isActive = true
-        txtBody.layoutIfNeeded()
-        
         txtBody.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
         txtBody.backgroundColor = .white
         txtBody.delegate = self
         txtBody.isScrollEnabled = false
-        txtBody.text = bodyText != "" ? bodyText : defaultBodyText
+        txtBody.text = bodyText != nil ? bodyText : defaultBodyText
         
+        let sizeThatFitsTextView = txtBody.sizeThatFits(CGSize(width: txtBody.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+        textViewHeightConstraint = txtBody.heightAnchor.constraint(equalToConstant: sizeThatFitsTextView.height)
+        containerHeightConstraint = txtContainer.heightAnchor.constraint(equalToConstant: max(IconSizes.medium.rawValue, sizeThatFitsTextView.height))
+        textViewHeightConstraint.isActive = true
+        containerHeightConstraint.isActive = true
+
+        txtContainer.layoutIfNeeded()
+        txtBody.layoutIfNeeded()
+
         txtButton.makeRound()
         txtButton.setTitle(buttonText, for: UIControlState())
         txtButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
@@ -193,11 +215,11 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
         let  char = text.cString(using: String.Encoding.utf8)!
         let isBackSpace = strcmp(char, "\\b")
         
-        if isBackSpace == -92, textView.text == bodyText {
+        if isBackSpace == -92, textView.text == defaultBodyText {
             textView.text = ""
             return true
         }
         
-        return textView.text.characters.count + (text.characters.count - range.length) <= 140
+        return textView.text.characters.count + text.characters.count <= POST_TITLE_CHARACTER_COUNT
     }
 }

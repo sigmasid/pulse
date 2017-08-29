@@ -11,7 +11,7 @@ import FirebaseDatabase
 import FirebaseStorage
 import AVFoundation
 
-class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate, ModalDelegate {
+class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate {
     public var selectedChannel : Channel!
     public var selectedItem : Item! //parentItem
     public weak var delegate : ContentDelegate?
@@ -785,7 +785,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate,
         }
     }
     
-    func userClosedModal(_ viewController: UIViewController) {
+    /** Modal Delegate **/
+    override func userClosedModal(_ viewController: UIViewController) {
         dismiss(animated: true, completion: nil)
         removeBlurBackground()
         restartPlayer()

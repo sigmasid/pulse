@@ -10,7 +10,7 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDelegate  {
+class NewInterviewVC: PulseVC  {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
@@ -182,15 +182,15 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
     }
     
     /** Delegate Functions **/
-    internal func userClosedModal(_ viewController : UIViewController) {
+    override func userClosedModal(_ viewController : UIViewController) {
         dismiss(animated: true, completion: { _ in })
     }
     
-    internal func dismiss(_ view : UIView) {
+    override func dismiss(_ view : UIView) {
         view.removeFromSuperview()
     }
     
-    internal func buttonClicked(_ text: String, sender: UIView) {
+    override func buttonClicked(_ text: String, sender: UIView) {
         if addQuestion != nil, sender == addQuestion {
             if let selectedIndex = selectedIndex {
                 let newIndexPath = IndexPath(row: selectedIndex, section: 0)
@@ -210,7 +210,7 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
             GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
                 guard let `self` = self else { return }
                 if !success {
-                    self.showAddEmail(bodyText: "invalid email - try again")
+                    self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "invalid email - try again")
                 } else {
                     self.createInterviewRequest(email: text, completion: {[weak self] success, item in
                         guard let `self` = self else { return }
@@ -239,7 +239,7 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
         view.addSubview(addQuestion)
     }
     
-    internal func userSelected(item : Any) {
+    override func userSelected(item : Any) {
         if let user = item as? PulseUser {
             selectedUser = user
             iNameDescription.text = "Pulse user! Invite will be sent in-app"
@@ -257,14 +257,6 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
                 }
             })
         }
-    }
-    
-    internal func showAddEmail(bodyText: String) {
-        addEmail = AddText(frame: view.bounds, buttonText: "Send",
-                           bodyText: bodyText, keyboardType: .emailAddress)
-        
-        addEmail.delegate = self
-        view.addSubview(addEmail)
     }
     
     internal func showNewUserInterviewMenu() {
@@ -292,7 +284,7 @@ class NewInterviewVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionD
         
         menu.addAction(UIAlertAction(title: "send Interview Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
-            self.showAddEmail(bodyText: "enter interviewee email")
+            self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "enter interviewee email")
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {[weak self] (action: UIAlertAction!) in

@@ -15,7 +15,7 @@ import FacebookCore
 import SafariServices
 import Firebase
 
-class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {    
+class LoginVC: PulseVC, UITextFieldDelegate {
     @IBOutlet weak var emailLabelButton: UIButton!
     @IBOutlet weak var fbButton: UIButton!
     @IBOutlet weak var emailButton: UIButton!
@@ -426,7 +426,8 @@ class LoginVC: PulseVC, UITextFieldDelegate, ModalDelegate {
         delegate?.userClosedModal(self)
     }
     
-    internal func userClosedModal(_ viewController: UIViewController) {
+    /** Modal Delegate **/
+    override func userClosedModal(_ viewController: UIViewController) {
         removeBlurBackground()
         dismiss(animated: true, completion: nil)
     }

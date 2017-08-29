@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate, ItemCellDelegate, ModalDelegate, ParentTextViewDelegate {
+class HomeVC: PulseVC, BrowseContentDelegate, HeaderDelegate, ItemCellDelegate {
     public weak var tabDelegate : MasterTabDelegate!
 
     //Main data source vars
@@ -33,9 +33,6 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
     /** Sync Vars **/
     fileprivate var startUpdateAt : Date = Date()
     fileprivate var endUpdateAt : Date = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-    
-    /** Set which var user has selected to share **/
-    fileprivate var selectedShareItem : Item?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -282,6 +279,135 @@ class HomeVC: PulseVC, BrowseContentDelegate, SelectionDelegate, HeaderDelegate,
         navigationController?.pushViewController(subscriptionVC, animated: true)
         subscriptionVC.allChannels = self.allChannels
     }
+    
+    /** START - Delegate Functions **/
+
+    
+    /** ParentTextItem - Delegate Function **/
+    override func dismiss(_ view : UIView) {
+        tabBarHidden = false
+        view.removeFromSuperview()
+    }
+    
+    /** Modal Delegate **/
+    //close modal - e.g. mini search
+    override func userClosedModal(_ viewController: UIViewController) {
+        tabBarHidden = false
+        dismiss(animated: true, completion: { _ in })
+    }
+    
+    //EMAIL INVITE - user submitted the text
+    override func buttonClicked(_ text: String, sender: UIView) {
+        tabBarHidden = false
+        GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
+            guard let `self` = self else { return }
+            if !success {
+                self.showAddText(bodyText: nil, defaultBodyText: "invalid email - try again", tabBarHeightAdjustment: self.tabBarController?.tabBar.frame.height ?? 0)
+            } else {
+                if let selectedShareItem = self.selectedShareItem as? Item {
+                    let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
+                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
+                        guard let `self` = self else { return }
+                        self.selectedShareItem = nil
+                    })
+                    
+                }
+            }
+        })
+    }
+    
+    override func userSelected(item : Any) {
+        tabBarHidden = false
+        
+        if let item = item as? Item {
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
+            
+            switch item.type {
+            case .answer:
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                
+            case .post, .perspective, .showcase:
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                
+            case .posts, .feedback:
+                
+                showTag(selectedItem: item)
+                
+            case .interview:
+                
+                //showing chron (earliest first) vs. question / thread where show newest first
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    self.toggleLoading(show: false, message: nil)
+                    success ?
+                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) :
+                        self.showNoItemsMenu(selectedItem : item)
+                })
+                
+            case .question, .thread:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    self.toggleLoading(show: false, message: nil)
+                    success ?
+                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
+                        self.showNoItemsMenu(selectedItem : item)
+                })
+                
+            case .session:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
+                    self.toggleLoading(show: false, message: nil)
+                    
+                    if success, items.count > 1 {
+                        //since ordering is cron based - move the first 'question' item to front
+                        if let lastItem = items.last {
+                            let sessionSlice = items.dropLast()
+                            var sessionItems = Array(sessionSlice)
+                            sessionItems.insert(lastItem, at: 0)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
+                        }
+                    } else if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                    } else {
+                        //show no items menu
+                        self.showNoItemsMenu(selectedItem : item)
+                    }
+                })
+                
+            case .collection:
+                
+                let browseCollectionVC = BrowseCollectionVC()
+                browseCollectionVC.selectedChannel = Channel(cID: item.cID, title: item.cTitle)
+                
+                navigationController?.pushViewController(browseCollectionVC, animated: true)
+                browseCollectionVC.selectedItem = item
+                
+            default: break
+            }
+        } else if let user = item as? PulseUser {
+            
+            userSelectedUser(toUser: user)
+            
+        } else if let channel = item as? Channel {
+            let channelVC = ChannelVC()
+            channelVC.selectedChannel = channel
+            
+            navigationController?.pushViewController(channelVC, animated: true)
+        }
+    }
+    /** End Delegate Functions **/
 }
 
 
@@ -464,96 +590,11 @@ extension HomeVC : UICollectionViewDataSource, UICollectionViewDelegate {
 
 extension HomeVC {
     
-    /** Delegate Functions **/
-    func userSelected(item : Any) {
-        tabBarHidden = false
-
-        if let item = item as? Item {
-            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
-                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
-            
-            switch item.type {
-            case .answer:
-                
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
-                
-            case .post, .perspective, .showcase:
-                
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
-                
-            case .posts, .feedback:
-                
-                showTag(selectedItem: item)
-                
-            case .interview:
-                
-                //showing chron (earliest first) vs. question / thread where show newest first
-                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-                
-                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else { return }
-                    self.toggleLoading(show: false, message: nil)
-                    success ?
-                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) :
-                        self.showNoItemsMenu(selectedItem : item)
-                })
-                
-            case .question, .thread:
-                
-                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-                
-                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else { return }
-                    self.toggleLoading(show: false, message: nil)
-                    success ?
-                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
-                        self.showNoItemsMenu(selectedItem : item)
-                })
-            
-            case .session:
-                
-                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-
-                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else { return }
-                    
-                    self.toggleLoading(show: false, message: nil)
-
-                    if success, items.count > 1 {
-                        //since ordering is cron based - move the first 'question' item to front
-                        if let lastItem = items.last {
-                            let sessionSlice = items.dropLast()
-                            var sessionItems = Array(sessionSlice)
-                            sessionItems.insert(lastItem, at: 0)
-                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
-                        }
-                    } else if success {
-                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
-                    } else {
-                        //show no items menu
-                        self.showNoItemsMenu(selectedItem : item)
-                    }
-                })
-                
-            default: break
-            }
-        } else if let user = item as? PulseUser {
-            
-            userSelectedUser(toUser: user)
-            
-        } else if let channel = item as? Channel {
-            let channelVC = ChannelVC()
-            channelVC.selectedChannel = channel
-            
-            navigationController?.pushViewController(channelVC, animated: true)
-        }
-    }
-    
     //PULSE USER INVITE or SELECTED USER PROFILE
     //checks to make sure we are not in mini search case
     internal func userSelectedUser(toUser: PulseUser) {
         
-        if let selectedShareItem = selectedShareItem {
+        if let selectedShareItem = selectedShareItem as? Item {
             
             let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
             self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: toUser, completion: {[weak self] _ , _ in
@@ -614,50 +655,24 @@ extension HomeVC {
     }
     
     internal func addNewItem(selectedItem: Item) {
-        contentVC = ContentManagerVC()
-        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
-        contentVC.selectedItem = selectedItem
-        contentVC.openingScreen = .camera
-        
-        contentVC.transitioningDelegate = self
-        
-        present(contentVC, animated: true, completion: nil)
+        switch selectedItem.type {
+        case .collection:
+            let editCollectionVC = EditCollectionVC()
+            editCollectionVC.selectedChannel = Channel(cID: selectedItem.cID)
+            editCollectionVC.selectedItem = selectedItem
+            navigationController?.pushViewController(editCollectionVC, animated: true)
+        default:
+            contentVC = ContentManagerVC()
+            contentVC.selectedChannel = Channel(cID: selectedItem.cID)
+            contentVC.selectedItem = selectedItem
+            contentVC.openingScreen = .camera
+            
+            contentVC.transitioningDelegate = self
+            present(contentVC, animated: true, completion: nil)
+        }
     }
     
     /** End Browse Content Delegate **/
-    
-    /** ParentTextItem - Delegate Function **/
-    internal func dismiss(_ view : UIView) {
-        tabBarHidden = false
-        view.removeFromSuperview()
-    }
-    
-    //close modal - e.g. mini search
-    internal func userClosedModal(_ viewController: UIViewController) {
-        tabBarHidden = false
-        dismiss(animated: true, completion: { _ in })
-    }
-    
-    //EMAIL INVITE - user submitted the text
-    internal func buttonClicked(_ text: String, sender: UIView) {
-        tabBarHidden = false
-        GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
-            guard let `self` = self else { return }
-            if !success {
-                self.showAddEmail(bodyText: "invalid email - try again")
-            } else {
-                if let selectedShareItem = self.selectedShareItem {
-                    let selectedChannel = Channel(cID: selectedShareItem.cID, title: selectedShareItem.cTitle)
-                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
-                        guard let `self` = self else { return }
-                        self.selectedShareItem = nil
-                    })
-                    
-                }
-            }
-        })
-    }
-    /** End Delegate Functions **/
     
     internal func showBrowse(selectedItem: Item) {
         let itemCollection = BrowseContentVC()
@@ -716,10 +731,16 @@ extension HomeVC {
                     self.addNewItem(selectedItem: currentItem)
                 }))
                 
-                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-                    guard let `self` = self else { return }
-                    self.showInviteMenu(currentItem: currentItem)
-                }))
+                if let inviteType = currentItem.inviteType() {
+                    menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
+                        
+                        self.showInviteMenu(currentItem: currentItem,
+                                            inviteTitle: "Invite Guests",
+                                            inviteMessage: "know an expert who can \(currentItem.childActionType())\(currentItem.childType())?\nInvite them below!",
+                                            inviteType: inviteType)
+                    }))
+                }
             }
         })
         
@@ -774,7 +795,7 @@ extension HomeVC {
         present(menu, animated: true, completion: nil)
     }
     
-    /** Menu Options **/
+    /** Menu Options
     internal func showInviteMenu(currentItem : Item) {
         tabBarHidden = true
         
@@ -823,15 +844,7 @@ extension HomeVC {
         }))
         
         present(menu, animated: true, completion: nil)
-    }
-    
-    internal func showAddEmail(bodyText: String) {
-        addText = AddText(frame: view.bounds, buttonText: "Send",
-                          bodyText: bodyText, keyboardType: .emailAddress, tabBarHeightAdjustment: tabBarController?.tabBar.frame.height ?? 0)
-        
-        addText.delegate = self
-        view.addSubview(addText)
-    }
+    } **/
 }
 
 
@@ -870,7 +883,7 @@ extension HomeVC: UICollectionViewDelegateFlowLayout {
         let cellHeight : CGFloat = 125
         switch indexPath.section {
         case 0:
-            return allChannels.count > 0 ? CGSize(width: collectionView.frame.width, height: headerSectionHeight) : CGSize(width: collectionView.frame.width, height: headerSectionHeight)
+            return CGSize(width: collectionView.frame.width, height: headerSectionHeight)
         case 1:
             return CGSize(width: collectionView.frame.width, height: allItems.count > 0 ? GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type) : 0)
         default:

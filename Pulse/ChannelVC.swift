@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDelegate, HeaderDelegate, ParentTextViewDelegate, ModalDelegate {
+class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
@@ -60,7 +60,6 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
     /** Collection View Vars **/
     fileprivate var collectionView : UICollectionView!
     fileprivate var footerMessage = "Fetching More..."
-    fileprivate var selectedShareItem : Any?
     
     override init() {
         super.init()
@@ -278,15 +277,135 @@ class ChannelVC: PulseVC, SelectionDelegate, ItemCellDelegate, BrowseContentDele
             isLayoutSetup = true
         }
     }
+    
+    /** Delegate Function **/
+    override func dismiss(_ view : UIView) {
+        view.removeFromSuperview()
+    }
+    
+    //close modal - e.g. mini search
+    override func userClosedModal(_ viewController: UIViewController) {
+        dismiss(animated: true, completion: { _ in })
+    }
+    
+    //after email - user submitted the text
+    override func buttonClicked(_ text: String, sender: UIView) {
+        GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
+            guard let `self` = self else { return }
+            
+            if !success {
+                self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "invalid email - try again")
+            } else {
+                if let selectedShareItem = self.selectedShareItem as? Item {
+                    
+                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
+                        guard let `self` = self else { return }
+                        self.selectedShareItem = nil
+                    })
+                    
+                } else if let selectedShareItem = self.selectedShareItem as? Channel {
+                    self.createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
+                        guard let `self` = self else { return }
+                        self.selectedShareItem = nil
+                    })
+                    
+                }
+            }
+        })
+    }
+    
+    /** Selection Delegate **/
+    override func userSelected(item : Any) {
+        if let item = item as? Item {
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
+            
+            switch item.type {
+                
+            case .perspective, .answer, .post, .showcase:
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                
+            case .posts, .feedback, .perspectives, .interviews, .questions, .showcases, .collections:
+                
+                showSeries(selectedItem: item)
+                
+            case .session:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
+                    self.toggleLoading(show: false, message: nil)
+                    
+                    if success, items.count > 1 {
+                        //since ordering is cron based - move the first 'question' item to front
+                        if let lastItem = items.last {
+                            let sessionSlice = items.dropLast()
+                            var sessionItems = Array(sessionSlice)
+                            sessionItems.insert(lastItem, at: 0)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
+                        }
+                    } else if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                    } else {
+                        //show no items menu
+                        GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Loading session", erMessage: "Sorry! There was an error getting the session!")
+                    }
+                })
+                
+            case .interview:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
+                    self.toggleLoading(show: false, message: nil)
+                    success ?
+                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) :
+                        self.showNoItemsMenu(selectedItem : item)
+                })
+                
+                
+            case .question, .thread:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
+                    self.toggleLoading(show: false, message: nil)
+                    success ?
+                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
+                        self.showNoItemsMenu(selectedItem : item)
+                })
+                
+            case .forum:
+                
+                showForum(selectedItem: item)
+                
+            default: break
+            }
+            
+            //user selected from mini user search for invite or clicked the user profile button
+        } else if let user = item as? PulseUser {
+            
+            userSelectedUser(toUser: user)
+            
+            //user invalid selection
+        } else {
+            
+            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invalid Selection", erMessage: "Sorry! That selection is not valid")
+            
+        }
+    }
+    /** End Delegate Functions **/
 }
 
 /** Protocols **/
 extension ChannelVC {
-    
-    /** Delegate Function **/
-    internal func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
     
     //clicked the image button to go to a user profile
     internal func clickedUserButton(itemRow : Int) {
@@ -298,6 +417,9 @@ extension ChannelVC {
     //main menu for each individual item
     internal func clickedMenuButton(itemRow: Int) {
         let currentItem = allItems[itemRow]
+        currentItem.cID = selectedChannel.cID
+        currentItem.cTitle = selectedChannel.cTitle
+        
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
         currentItem.checkVerifiedInput(completion: {[weak self] success, error in
@@ -383,143 +505,6 @@ extension ChannelVC {
         }
         
         PulseUser.currentUser.isContributor(for: selectedChannel) ? showContributorHeaderMenu() : showSubscriberHeaderMenu()
-    }
-    
-    //close modal - e.g. mini search
-    internal func userClosedModal(_ viewController: UIViewController) {
-        dismiss(animated: true, completion: { _ in })
-    }
-    
-    //after email - user submitted the text
-    internal func buttonClicked(_ text: String, sender: UIView) {
-        GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
-            guard let `self` = self else { return }
-            
-            if !success {
-                self.showAddEmail(bodyText: "invalid email - try again")
-            } else {
-                if let selectedShareItem = self.selectedShareItem as? Item {
-                    
-                    self.createShareRequest(selectedShareItem: selectedShareItem, shareType: selectedShareItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
-                        guard let `self` = self else { return }
-                        self.selectedShareItem = nil
-                    })
-                    
-                } else if let selectedShareItem = self.selectedShareItem as? Channel {
-                    self.createContributorInvite(selectedChannel: selectedShareItem, toUser: nil, toEmail: text, completion: {[weak self] _ , _ in
-                        guard let `self` = self else { return }
-                        self.selectedShareItem = nil
-                    })
-                    
-                }
-            }
-        })
-    }
-    /** End Delegate Functions **/
-    
-    /** Menu Options **/
-    internal func showInviteMenu(currentItem : Any?, inviteTitle: String, inviteMessage: String, inviteType: MessageType) {
-        let menu = UIAlertController(title: inviteTitle, message: inviteMessage, preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.selectedShareItem = currentItem
-            
-            let browseUsers = MiniUserSearchVC()
-            browseUsers.modalPresentationStyle = .overCurrentContext
-            browseUsers.modalTransitionStyle = .crossDissolve
-            
-            browseUsers.modalDelegate = self
-            browseUsers.selectionDelegate = self
-            browseUsers.selectedChannel = self.selectedChannel
-            self.navigationController?.present(browseUsers, animated: true, completion: nil)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.selectedShareItem = currentItem
-            self.showAddEmail(bodyText: "enter email")
-        }))
-        
-        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            switch inviteType {
-            case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite:
-                if let currentItem = currentItem as? Item {
-                    self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: self.selectedChannel, toUser: nil, showAlert: false, completion: {[unowned self] selectedShareItem , error in
-                        //using the share item returned from the request
-                        if error == nil, let selectedShareItem = selectedShareItem {
-                            let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) on \(currentItem.itemTitle)"
-                            self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
-                        }
-                    })
-                    
-                }
-            case .contributorInvite:
-                if let shareChannel = currentItem as? Channel {
-                    self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
-                    
-                    self.createContributorInvite(selectedChannel: shareChannel, toUser: nil, toEmail: nil, showAlert: true, completion: {[unowned self] inviteID , error in
-                        
-                        if error == nil, let inviteID = inviteID {
-                            let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
-                            let shareText = "You are invited to be a contributor on \(channelTitle)"
-                            
-                            PulseDatabase.createShareLink(item: shareChannel, linkString: "invites/"+inviteID, completion: {[unowned self] link in
-                                guard let link = link else {
-                                    self.toggleLoading(show: false, message: nil)
-                                    return
-                                }
-                                
-                                self.toggleLoading(show: false, message: nil)
-                                self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
-                            })
-                        }
-                        
-                    })
-                }
-            case .channelInvite:
-                if let shareChannel = currentItem as? Channel {
-                    self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
-                    
-                    let shareItem = Item(itemID: "")
-                    shareItem.itemTitle = "Check out \(shareChannel.cTitle ?? " this channel")" //send blank item since we are inviting users to come to channel
-                    
-                    self.createShareRequest(selectedShareItem: shareItem, shareType: .channelInvite, selectedChannel: shareChannel, toUser: nil, completion: { [unowned self] item, error in
-                        
-                        if error == nil, let inviteID = item?.itemID {
-                            let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
-                            let shareText = "\(PulseUser.currentUser.name ?? "Your friend") invited you to \(channelTitle)"
-                            
-                            PulseDatabase.createShareLink(item: shareChannel, linkString: "invites/"+inviteID, completion: {[unowned self] link in
-                                guard let link = link else {
-                                    self.toggleLoading(show: false, message: nil)
-                                    return
-                                }
-                                
-                                self.toggleLoading(show: false, message: nil)
-                                self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
-                            })
-                        }
-                    })
-                }
-            default: break
-            }
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
-    internal func showAddEmail(bodyText: String) {
-        addText = AddText(frame: view.bounds, buttonText: "Send",
-                           bodyText: bodyText, keyboardType: .emailAddress)
-        
-        addText.delegate = self
-        view.addSubview(addText)
     }
     
     /*** HEADER MENUS ***/
@@ -615,93 +600,6 @@ extension ChannelVC {
         navigationController?.pushViewController(newSeries, animated: true)
     }
     
-    internal func userSelected(item : Any) {
-        if let item = item as? Item {
-            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
-                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
-            
-            switch item.type {
-                
-            case .perspective, .answer, .post, .showcase:
-                
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
-                
-            case .posts, .feedback, .perspectives, .interviews, .questions, .showcases:
-                
-                showSeries(selectedItem: item)
-            
-            case .session:
-                
-                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-                
-                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else { return }
-                    
-                    self.toggleLoading(show: false, message: nil)
-
-                    if success, items.count > 1 {
-                        //since ordering is cron based - move the first 'question' item to front
-                        if let lastItem = items.last {
-                            let sessionSlice = items.dropLast()
-                            var sessionItems = Array(sessionSlice)
-                            sessionItems.insert(lastItem, at: 0)
-                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
-                        }
-                    } else if success {
-                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
-                    } else {
-                        //show no items menu
-                        GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Loading session", erMessage: "Sorry! There was an error getting the session!")
-                    }
-                })
-                
-            case .interview:
-                
-                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-                
-                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else { return }
-                    
-                    self.toggleLoading(show: false, message: nil)
-                    success ?
-                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) :
-                        self.showNoItemsMenu(selectedItem : item)
-                })
-                
-            
-            case .question, .thread:
-                
-                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
-                
-                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
-                    guard let `self` = self else { return }
-                    
-                    self.toggleLoading(show: false, message: nil)
-                    success ?
-                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
-                        self.showNoItemsMenu(selectedItem : item)
-                })
-                
-            case .forum:
-                
-                showForum(selectedItem: item)
-                
-            default: break
-            }
-            
-        //user selected from mini user search for invite or clicked the user profile button
-        } else if let user = item as? PulseUser {
-    
-            userSelectedUser(toUser: user)
-        
-        //user invalid selection
-        } else {
-            
-            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invalid Selection", erMessage: "Sorry! That selection is not valid")
-            
-        }
-    }
-    
     //checks to make sure we are not in mini search case
     internal func userSelectedUser(toUser: PulseUser) {
         
@@ -777,25 +675,6 @@ extension ChannelVC {
         
         navigationController?.pushViewController(forumVC, animated: true)
         forumVC.selectedItem = selectedItem
-    }
-    
-    internal func createContributorInvite(selectedChannel: Channel, toUser: PulseUser?, toEmail: String?  = nil, showAlert: Bool = true,
-                                          completion: @escaping (String?, Error?) -> Void) {
-        
-        toggleLoading(show: true, message: "creating invite...", showIcon: true)
-        PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, toUser: toUser, toName: toUser?.name,
-                                         toEmail: toEmail, completion: {[unowned self] (inviteID, error) in
-                                        
-            self.toggleLoading(show: false, message: nil)
-
-            if error == nil, showAlert {
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
-                completion(inviteID, nil)
-            } else if showAlert {
-                GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
-                completion(nil, error)
-            }
-        })
     }
 }
 

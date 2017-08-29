@@ -8,7 +8,7 @@
 
 import UIKit
 
-class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
+class UserProfileVC: PulseVC, UserProfileDelegate {
     
     public weak var modalDelegate : ModalDelegate!
     public var isModal = false
@@ -461,7 +461,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate, ModalDelegate {
     }
     
     //Delegate Function - Used for Mini Search, Ask Question
-    internal func userClosedModal(_ viewController: UIViewController) {
+    override func userClosedModal(_ viewController: UIViewController) {
         dismiss(animated: true, completion: { _ in })
     }
 }

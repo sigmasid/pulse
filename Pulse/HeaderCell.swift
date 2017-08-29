@@ -65,6 +65,14 @@ class HeaderCell: UICollectionViewCell, UIScrollViewDelegate {
         }
     }
     
+    public func showImageBorder(show: Bool) {
+        if show {
+            previewButton.addBorder(color: .pulseBlue, thickness: 3.0)
+        } else {
+            previewButton.layer.borderWidth = 0
+        }
+    }
+    
     fileprivate func setupCell() {
         addSubview(previewButton)
         addSubview(titleLabel)

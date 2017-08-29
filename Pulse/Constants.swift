@@ -25,5 +25,9 @@ let SCOPE_HEIGHT : CGFloat = 40
 let MAX_VIDEO_LENGTH : Double = 20
 let MAX_ITEM_COUNT : Int = 7
 
+let POST_TITLE_CHARACTER_COUNT = 140
+let SERIES_TITLE_CHARACTER_COUNT = 50
+let FORUM_ITEM_CHARACTER_COUNT = 250
+
 let PULSE_SUPPORT_USER : PulseUser! = PulseUser(uID: "LT9hnpE5DkObRlSjckMfYg34tR52", name: "Pulse Support")
 

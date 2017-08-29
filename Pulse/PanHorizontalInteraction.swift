@@ -8,7 +8,7 @@
 
 import UIKit
 
-class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
+class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition, UIGestureRecognizerDelegate {
     var interactionInProgress = false
     fileprivate var shouldCompleteTransition = false
     fileprivate var tabBarController : UITabBarController!
@@ -26,6 +26,8 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
     
     fileprivate func prepareGestureRecognizerInView(_ view: UIView) {
         panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+        panGesture.cancelsTouchesInView = false
+        panGesture.delegate = self
         view.addGestureRecognizer(panGesture)
     }
     
@@ -35,6 +37,17 @@ class PanHorizonInteractionController: UIPercentDrivenInteractiveTransition {
         panGesture = nil
     }
     
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard let view = touch.view?.superview else {
+            return true
+        }
+        
+        if view.isKind(of: UITableView.self) || view.isKind(of: UITableViewCell.self) {
+            return false
+        }
+        
+        return true
+    }
     
     func handleGesture(_ gestureRecognizer: UIScreenEdgePanGestureRecognizer) {        
         //Represents the percentage of the transition that must be completed before allowing to complete.

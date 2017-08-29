@@ -117,14 +117,7 @@ import UIKit
             return
         }
         
-        //self.animateDismissWithGravity(.cancel)
         modalDelegate?.userClosedModal(self)
-        
-        /**
-        self.dismiss(animated: true, completion: {[weak self] in
-            guard let `self` = self else { return }
-            self.modalDelegate?.userClosedModal(self)
-        }) **/
     }
 
     //MARK: - Text Fields

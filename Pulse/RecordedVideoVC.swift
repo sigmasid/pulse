@@ -632,6 +632,6 @@ extension RecordedVideoVC: UITextViewDelegate {
             return false
         }
         
-        return textView.text.characters.count + (text.characters.count - range.length) <= 120
+        return textView.text.characters.count + text.characters.count <= POST_TITLE_CHARACTER_COUNT
     }
 }

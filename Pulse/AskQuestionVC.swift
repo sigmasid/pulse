@@ -199,8 +199,6 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         questionBottomConstraint = questionContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
         questionBottomConstraint.isActive = true
         questionContainer.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        containerHeightConstraint = questionContainer.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
-        containerHeightConstraint.isActive = true
         questionContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         questionContainer.backgroundColor = .white
         
@@ -216,15 +214,20 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
         questionBody.leadingAnchor.constraint(equalTo: questionContainer.leadingAnchor).isActive = true
         questionBody.trailingAnchor.constraint(equalTo: askButton.leadingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         
-        textViewHeightConstraint = questionBody.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue)
-        textViewHeightConstraint.isActive = true
-        questionBody.layoutIfNeeded()
-        
         questionBody.setFont(FontSizes.body.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
         questionBody.backgroundColor = .white
         questionBody.delegate = self
         questionBody.isScrollEnabled = false
         questionBody.text = "Type your question here"
+        
+        let sizeThatFitsTextView = questionBody.sizeThatFits(CGSize(width: questionBody.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+        textViewHeightConstraint = questionBody.heightAnchor.constraint(equalToConstant: sizeThatFitsTextView.height)
+        containerHeightConstraint = questionContainer.heightAnchor.constraint(equalToConstant: max(IconSizes.medium.rawValue, sizeThatFitsTextView.height))
+        textViewHeightConstraint.isActive = true
+        containerHeightConstraint.isActive = true
+        
+        questionContainer.layoutIfNeeded()
+        questionBody.layoutIfNeeded()
 
         askButton.makeRound()
         askButton.setTitle("Ask", for: UIControlState())
@@ -268,6 +271,6 @@ class AskQuestionVC: PulseVC, UITextViewDelegate, UIGestureRecognizerDelegate {
             return false
         }
         
-        return textView.text.characters.count + (text.characters.count - range.length) <= 140
+        return textView.text.characters.count + text.characters.count <= POST_TITLE_CHARACTER_COUNT
     }
 }

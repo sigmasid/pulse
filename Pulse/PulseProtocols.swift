@@ -81,7 +81,11 @@ protocol CompletedRecordingDelegate : class {
 protocol UserProfileDelegate: class {
     func showMenu()
     func editProfile()
-    
+}
+
+protocol ListDelegate : class {
+    func addListItem(title : String)
+    func showMenuFor(itemID: String)
 }
 
 protocol ContentDelegate: class {

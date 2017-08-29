@@ -13,7 +13,7 @@ protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
 }
 
-class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, SelectionDelegate, BrowseContentDelegate, HeaderDelegate {
+class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, BrowseContentDelegate, HeaderDelegate {
     public weak var tabDelegate : MasterTabDelegate!
 
     // Set by MasterTabVC
@@ -145,7 +145,8 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         navigationController?.present(searchNavVC, animated: true, completion: nil)
     }
     
-    internal func userClosedModal(_ viewController : UIViewController) {
+    /** Delegate Functions **/
+    override func userClosedModal(_ viewController : UIViewController) {
         dismiss(animated: true, completion: { _ in })
     }
     
@@ -172,7 +173,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
         })
     }
     
-    internal func userSelected(item : Any) {
+    override func userSelected(item : Any) {
         if let item = item as? Item {
             Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
                                                                          AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
@@ -223,6 +224,14 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, ModalDelegate, Select
                         self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
                     }
                 })
+            case .collection:
+                
+                let browseCollectionVC = BrowseCollectionVC()
+                browseCollectionVC.selectedChannel = Channel(cID: item.cID, title: item.cTitle)
+                
+                navigationController?.pushViewController(browseCollectionVC, animated: true)
+                browseCollectionVC.selectedItem = item
+                
             default: break
             }
         } else if let user = item as? PulseUser {

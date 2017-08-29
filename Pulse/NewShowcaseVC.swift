@@ -8,7 +8,7 @@
 
 import UIKit
 
-class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDelegate {
+class NewShowcaseVC: PulseVC {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
@@ -140,15 +140,15 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
     }
     
     /** Delegate Functions **/
-    internal func userClosedModal(_ viewController : UIViewController) {
+    override func userClosedModal(_ viewController : UIViewController) {
         dismiss(animated: true, completion: { _ in })
     }
     
-    internal func dismiss(_ view : UIView) {
+    override func dismiss(_ view : UIView) {
         view.removeFromSuperview()
     }
     
-    internal func userSelected(item : Any) {
+    override func userSelected(item : Any) {
         if let user = item as? PulseUser {
             iNameDescription.text = "Pulse user! Invite will be sent in-app"
             selectedUser = user
@@ -169,12 +169,12 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
     }
     
     //Button clicked delegate for after adding in email
-    internal func buttonClicked(_ text: String, sender: UIView) {
+    override func buttonClicked(_ text: String, sender: UIView) {
         if addEmail != nil, sender == addEmail {
             GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
                 guard let `self` = self else { return }
                 if !success {
-                    self.showAddEmail(bodyText: "invalid email - try again")
+                    self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "invalid email - try again")
                 } else {
                     self.createInvite(email: text, completion: {[weak self] success, item in
                         guard let `self` = self else { return }
@@ -211,7 +211,7 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
         
         menu.addAction(UIAlertAction(title: "send Invite Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
-            self.showAddEmail(bodyText: "enter recipient email")
+            self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "enter email")
         }))
         
         menu.addAction(UIAlertAction(title: "more Share Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
@@ -237,14 +237,6 @@ class NewShowcaseVC: PulseVC, ParentTextViewDelegate, ModalDelegate, SelectionDe
         }))
         
         present(menu, animated: true, completion: nil)
-    }
-    
-    internal func showAddEmail(bodyText: String) {
-        addEmail = AddText(frame: view.bounds, buttonText: "Send",
-                           bodyText: bodyText, keyboardType: .emailAddress)
-        
-        addEmail.delegate = self
-        view.addSubview(addEmail)
     }
     
     internal func showSuccessMenu(message: String) {

@@ -30,6 +30,8 @@ class PulseDatabase {
     static let channelNavImageCache = ImageCache(name: "NavImages")
     static let channelThumbCache = ImageCache(name: "ChannelThumbImages")
     static let seriesImageCache = ImageCache(name: "SeriesImages")
+    static let itemImageCache = ImageCache(name: "ItemImages")
+
     static var cachedUsers = [PulseUser]()
     
     static let channelsRef = databaseRef.child(Element.Channels.rawValue)
@@ -37,7 +39,10 @@ class PulseDatabase {
     static let channelContributorsRef = databaseRef.child(Element.ChannelContributors.rawValue)
 
     static let forumItemsRef = databaseRef.child(Element.ForumItems.rawValue)
-    
+    static let listItemsRef = databaseRef.child(Element.ListItems.rawValue) //individual items in a list
+    static let listCollectionRef = databaseRef.child(Element.ListCollection.rawValue) //master lists and each new list created by a user
+    static let listsRef = databaseRef.child(Element.Lists.rawValue) //collections of lists on any given topic - i.e. all different lists for top stock picks holds ListIDs & UserIDs
+
     static let itemsRef = databaseRef.child(Element.Items.rawValue)
     static let itemStatsRef = databaseRef.child(Element.ItemStats.rawValue)
     static let itemCollectionRef = databaseRef.child(Element.ItemCollection.rawValue)
@@ -1855,6 +1860,128 @@ class PulseDatabase {
         })
     }
     
+    /** START LIST FUNCTIONS **/
+    static func createList(selectedItem: Item, listItems : [Item], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        guard PulseUser.isLoggedIn() else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        var listsPost : [String : Any] = [ : ] //for individual list items
+        var collectionPost : [String : Any] = [ : ] //master post that is added to collections
+
+        let newListCollectionID = listCollectionRef.childByAutoId().key
+        
+        //add image for the item to storage and then upload item to storage
+        for listItem in listItems {
+            
+            //get new listItemID - each list item > [itemTitle, itemDescription, createdAt]
+            let newListItemID = listItemsRef.childByAutoId().key
+            var post : [ String : Any ] = ["title" : listItem.itemTitle,
+                                           "createdAt" : ServerValue.timestamp()]
+            
+            if listItem.linkedURL != nil {
+                post["linkedurl"] = String(describing: listItem.linkedURL!)
+            }
+            
+            if listItem.contentURL != nil {
+                post["url"] = String(describing: listItem.contentURL!)
+            }
+            
+            //listItems are stored individually as well as in the master list collection
+            listsPost[newListItemID] = post
+            collectionPost["listItems/\(newListItemID)"] = post
+            
+            if let image = listItem.content {
+                PulseDatabase.uploadListImage(itemID: newListItemID, image: image, completion: { metadata , eror in
+                    if let url = metadata?.downloadURL() {
+                        let urlPost : [ String : Any ] = ["url" : url]
+                        listCollectionRef.child(newListCollectionID).child(newListItemID).updateChildValues(urlPost)
+                    }
+                })
+            }
+        }
+        
+        let itemPost : [String : Any] = ["type" : selectedItem.type.rawValue as AnyObject,
+                                         "cID" : selectedItem.cID as AnyObject,
+                                         "tagID" : selectedItem.tag?.itemID as AnyObject,
+                                         "tagTitle" : selectedItem.tag?.itemTitle as AnyObject,
+                                         "title" : selectedItem.itemTitle as AnyObject,
+                                         "description" : selectedItem.itemDescription as AnyObject,
+                                         "uID" : PulseUser.currentUser.uID! as AnyObject,
+                                         "createdAt" : ServerValue.timestamp() as AnyObject]
+        
+        collectionPost["listCollection/\(newListCollectionID)"] = listsPost
+        collectionPost["items/\(newListCollectionID)"] = itemPost
+        collectionPost["channelItems/\(selectedItem.cID!)/\(newListCollectionID)"] = itemPost
+        
+        if let tagID = selectedItem.tag?.itemID {
+            collectionPost["itemCollection/\(tagID)/\(newListCollectionID)"] = "collection"
+        }
+
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
+            blockError != nil ? completion(false, blockError) : completion(true, nil)
+        })
+    }
+    
+    static func addNewList(cID: String, parentListItem: Item, listItems : [Item], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+        //in that new listID save all the listItems
+        guard PulseUser.isLoggedIn() else {
+            let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
+            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            return
+        }
+        
+        //in listCollection > childByAutoID to get new listID
+        let newListID = listCollectionRef.childByAutoId().key
+        var listsPost : [String : Any] = [ : ]
+
+        for (index, listItem) in listItems.enumerated() {
+            //each listItemID is same as masterListCollection - listItemsID > [itemTitle, itemDescription, createdAt]
+            listsPost[listItem.itemID] = ["title" : listItem.itemTitle,
+                                          "description" : listItem.itemDescription,
+                                          "createdAt" : ServerValue.timestamp(),
+                                          "order": index]
+        }
+        
+        //in parentCollection > add new ListID & UserID
+        let collectionPost = ["lists/\(parentListItem.itemID)/\(newListID)": PulseUser.currentUser.uID! as AnyObject,
+                              "listCollection/\(newListID)" : listsPost] as [String : Any]
+        
+        databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
+            blockError != nil ? completion(false, blockError) : completion(true, nil)
+        })
+    }
+    
+    static func getListItems(listID: String, completion: @escaping (_ items : [Item]) -> Void) {
+        var allItems = [Item]()
+        
+        listCollectionRef.child(listID).observeSingleEvent(of: .value, with: { snap in
+            for childSnap in snap.children {
+                if let childSnap = childSnap as? DataSnapshot {
+                    let currentItem = Item(itemID: childSnap.key, snapshot: childSnap)
+                    allItems.append(currentItem)
+                }
+            }
+            completion(allItems)
+        })
+    }
+    
+    static func getLists(parentListID: String, completion: @escaping (_ lists: [List]) -> Void) {
+        var lists = [List]()
+        listsRef.child(parentListID).observeSingleEvent(of: .value, with: { snap in
+            for childSnap in snap.children {
+                if let childSnap = childSnap as? DataSnapshot, let value = childSnap.value as? String {
+                    let currentListItem = List(userID: value, listID: childSnap.key)
+                    lists.append(currentListItem)
+                }
+            }
+            completion(lists)
+        })
+    }
+    /** END LIST FUNCTIONS **/
+    
     static func createContributorInvite(channel: Channel, type: MessageType, description: String = "", toUser: PulseUser?, toName: String?, toEmail: String? = nil,                                          								completion: @escaping (_ inviteID : String?, _ error : Error?) -> Void) {
         
         guard PulseUser.isLoggedIn()  else {
@@ -1954,7 +2081,7 @@ class PulseDatabase {
                                          "fromUserName" : PulseUser.currentUser.name ?? "",
                                          "createdAt" : ServerValue.timestamp(),
                                          "cID": item.cID,
-                                         "cTitle": item.cTitle,
+                                         "cTitle": item.cTitle ?? "",
                                          "tagID": item.tag?.itemID ?? "",
                                          "tagTitle": item.tag?.itemTitle ?? ""]
         
@@ -2181,6 +2308,27 @@ class PulseDatabase {
         }
     }
     
+    static func getCachedListItemImage(itemID : String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ image : UIImage?) -> Void) {
+        itemImageCache.retrieveImage(forKey: itemID, completion: { image, _ in
+            if let image = image {
+                //return image that was retreived
+                completion(image)
+                
+            } else {
+                let path = storageRef.child("listItems/\(itemID)").child(fileType.rawValue)
+                
+                path.getData(maxSize: maxImgSize) { (data, error) -> Void in
+                    if let data = data {
+                        itemImageCache.store(data, forKey: itemID)
+                        completion(UIImage(data: data))
+                    } else {
+                        completion(nil)
+                    }
+                }
+            }
+        })
+    }
+    
     static func getImage(channelID: String, itemID : String, fileType : FileTypes, maxImgSize : Int64, completion: @escaping (_ data : Data?, _ error : NSError?) -> Void) {
         let path = storageRef.child("channels/\(channelID)").child(itemID).child(fileType.rawValue)
         
@@ -2249,12 +2397,14 @@ class PulseDatabase {
         channelThumbCache.clearMemoryCache()
         userImageCache.clearMemoryCache()
         seriesImageCache.clearMemoryCache()
-        
+        itemImageCache.clearMemoryCache()
+
         channelNavImageCache.clearDiskCache()
         channelImageCache.clearDiskCache()
         channelThumbCache.clearDiskCache()
         userImageCache.clearDiskCache()
         seriesImageCache.clearDiskCache()
+        itemImageCache.clearDiskCache()
     }
     
     static func getCachedChannelNavImage(channelID: String, completion: @escaping (_ image : UIImage?) -> Void) {
@@ -2440,6 +2590,17 @@ class PulseDatabase {
         } else {
             let userInfo = [ NSLocalizedDescriptionKey : "invalid image format" ]
             completion(nil, NSError(domain: "InvalidImage", code: 200, userInfo: userInfo))            
+        }
+    }
+    
+    static func uploadListImage(itemID : String, image : UIImage, completion: @escaping (_ metadata : StorageMetadata?, _ error : Error?) -> Void) {
+        let path = storageRef.child("listItems").child(itemID).child("content")
+        let data = image.mediumQualityJPEGNSData
+        let _metadata = StorageMetadata()
+        _metadata.contentType = "image/jpeg"
+        
+        path.putData(data, metadata: _metadata) { (metadata, error) in
+            completion(metadata, error)
         }
     }
     

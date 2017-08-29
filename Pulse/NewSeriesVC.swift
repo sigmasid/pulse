@@ -435,9 +435,9 @@ extension NewSeriesVC: UITextFieldDelegate {
         }
         
         if textField == sTitle, let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 50
+            return text.characters.count + (text.characters.count - range.length) <= SERIES_TITLE_CHARACTER_COUNT
         } else if textField == sDescription, let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 140
+            return text.characters.count + text.characters.count <= POST_TITLE_CHARACTER_COUNT
         }
         
         return true

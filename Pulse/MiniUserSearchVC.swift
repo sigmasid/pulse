@@ -8,7 +8,7 @@
 
 import UIKit
 
-class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate {
+class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate {
     
     public var selectedChannel : Channel! {
         didSet {
@@ -63,6 +63,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
             setupCollectionView()
             setupSearch()
             oldTabBarVisible = tabBarHidden
+            tabBarHidden = true
 
             isSetupComplete = true
         }
@@ -231,7 +232,7 @@ class MiniUserSearchVC: PulseVC, UIGestureRecognizerDelegate, SelectionDelegate 
         collectionView.delegate = self
     }
     
-    internal func userSelected(item : Any) {
+    override func userSelected(item : Any) {
         if selectionDelegate != nil, let index = item as? Int {
             selectionDelegate.userSelected(item: users[index])
             closeSearch()

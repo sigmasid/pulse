@@ -37,7 +37,11 @@ enum ItemTypes: String {
     case showcases
     case showcase
     
-    //Interviews
+    //Collections
+    case collections
+    case collection
+    
+    //Forum
     case forum
     
     //The rest to come
@@ -59,7 +63,7 @@ class Item: NSObject {
     
     //Channel items
     var cID : String!
-    var cTitle : String!
+    var cTitle : String?
     
     //Content items
     var contentURL : URL?
@@ -168,6 +172,10 @@ class Item: NSObject {
             type = .posts
         case "feedback":
             type = .feedback
+        case "collections":
+            type = .collections
+        case "collection":
+            type = .collection
         case "perspectives":
             type = .perspectives
         case "perspective":
@@ -220,6 +228,9 @@ class Item: NSObject {
         case .question: return "add an"
         case .questions: return "ask"
             
+        case .collections: return "start a"
+        case .collection: return "create a"
+
         case .showcases: return "add a"
         case .interviews: return "start an"
             
@@ -247,7 +258,10 @@ class Item: NSObject {
             
         case .interview: return UIImage(named: "interview")
         case .interviews: return UIImage(named: "interview")
-            
+
+        case .collections: return UIImage(named: "collections")
+        case .collection: return UIImage(named: "collections")
+
         case .forum: return UIImage(named: "forum")
             
         default: return nil
@@ -271,6 +285,9 @@ class Item: NSObject {
             
         case .showcases: return plural ? " showcases" : " showcase"
         case .showcase: return plural ? " showcase" : " showcase"
+            
+        case .collections: return plural ? " collections" : " collection"
+        case .collection: return plural ? " collections" : " collection"
 
         case .forum: return plural ? " threads" : " thread"
 
@@ -288,6 +305,8 @@ class Item: NSObject {
         case .feedback: return .session
         case .session: return .session
         case .showcases: return .showcase
+        case .collections: return .collection
+        case .collection: return .collection
 
         default: return .unknown
         }
@@ -332,6 +351,9 @@ class Item: NSObject {
             
         case .showcases: return .contributor
         case .showcase: return nil
+            
+        case .collections: return .contributor
+        case .collection: return .contributor
 
         case .forum: return .subscriber
             
@@ -458,6 +480,7 @@ class Item: NSObject {
         createdAt = nil
     }
     
+    //used to make sure we are sharing the full thread vs. one individual item
     static func shareItemType(parentType: ItemTypes, childType: ItemTypes) -> ItemTypes {
         switch childType {
         case .answer: return parentType

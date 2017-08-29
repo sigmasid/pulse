@@ -313,7 +313,7 @@ extension NewForumThreadVC: UITextViewDelegate {
         }
         
         if textView == sTitle, let text = textView.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 250
+            return text.characters.count + (text.characters.count - range.length) <= FORUM_ITEM_CHARACTER_COUNT
         }
         
         return true

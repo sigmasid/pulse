@@ -9,13 +9,14 @@
 import UIKit
 import Firebase
 
-class PulseVC: UIViewController, PulseNavControllerDelegate {
+class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, SelectionDelegate, ParentTextViewDelegate {
     
     /** Loading Overlay **/
     internal var loadingView : LoadingView!
     
     /** Share content **/
     internal var activityController: UIActivityViewController!
+    internal var selectedShareItem : Any?
     
     /** Transition Vars **/
     internal var initialFrame = CGRect.zero
@@ -35,7 +36,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
     
     /** Adds a popup text view **/
     internal var addText : AddText!
-    
+
     /** General Setup Var **/
     internal var isLoaded : Bool = false
     
@@ -221,6 +222,144 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
+    /** Menu Options **/
+    internal func showInviteMenu(currentItem : Any?, inviteTitle: String, inviteMessage: String, inviteType: MessageType) {
+        let menu = UIAlertController(title: inviteTitle, message: inviteMessage, preferredStyle: .actionSheet)
+        var selectedChannel : Channel!
+        
+        if let currentChannel = currentItem as? Channel {
+            selectedChannel = currentChannel
+        } else if let currentItem = currentItem as? Item {
+            selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
+        }
+        
+        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            self.selectedShareItem = currentItem
+            
+            let browseUsers = MiniUserSearchVC()
+            browseUsers.modalPresentationStyle = .overCurrentContext
+            browseUsers.modalTransitionStyle = .crossDissolve
+            
+            browseUsers.modalDelegate = self
+            browseUsers.selectionDelegate = self
+            browseUsers.selectedChannel = selectedChannel
+            self.tabBarHidden = true
+
+            self.navigationController?.present(browseUsers, animated: true, completion: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            self.selectedShareItem = currentItem
+            self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "enter email", tabBarHeightAdjustment: self.tabBarHidden ? 0 : self.tabBarController?.tabBar.frame.height ?? 0)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            switch inviteType {
+            case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite:
+                if let currentItem = currentItem as? Item {
+                    self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: {[unowned self] selectedShareItem , error in
+                        //using the share item returned from the request
+                        if error == nil, let selectedShareItem = selectedShareItem {
+                            let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) on \(currentItem.itemTitle)"
+                            self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
+                        }
+                    })
+                    
+                }
+            case .contributorInvite:
+                if let shareChannel = currentItem as? Channel {
+                    self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
+                    
+                    self.createContributorInvite(selectedChannel: shareChannel, toUser: nil, toEmail: nil, showAlert: true, completion: {[unowned self] inviteID , error in
+                        
+                        if error == nil, let inviteID = inviteID {
+                            let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
+                            let shareText = "You are invited to be a contributor on \(channelTitle)"
+                            
+                            PulseDatabase.createShareLink(item: shareChannel, linkString: "invites/"+inviteID, completion: {[unowned self] link in
+                                guard let link = link else {
+                                    self.toggleLoading(show: false, message: nil)
+                                    return
+                                }
+                                
+                                self.toggleLoading(show: false, message: nil)
+                                self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
+                            })
+                        }
+                        
+                    })
+                }
+            case .channelInvite:
+                if let shareChannel = currentItem as? Channel {
+                    self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
+                    
+                    let shareItem = Item(itemID: "")
+                    shareItem.itemTitle = "Check out \(shareChannel.cTitle ?? " this channel")" //send blank item since we are inviting users to come to channel
+                    
+                    self.createShareRequest(selectedShareItem: shareItem, shareType: .channelInvite, selectedChannel: shareChannel, toUser: nil, completion: { [unowned self] item, error in
+                        
+                        if error == nil, let inviteID = item?.itemID {
+                            let channelTitle = shareChannel.cTitle ?? "a Pulse channel"
+                            let shareText = "\(PulseUser.currentUser.name ?? "Your friend") invited you to \(channelTitle)"
+                            
+                            PulseDatabase.createShareLink(item: shareChannel, linkString: "invites/"+inviteID, completion: {[unowned self] link in
+                                guard let link = link else {
+                                    self.toggleLoading(show: false, message: nil)
+                                    return
+                                }
+                                
+                                self.toggleLoading(show: false, message: nil)
+                                self.shareContent(shareType: "", shareText: "", shareLink: link, fullShareText: shareText)
+                            })
+                        }
+                    })
+                }
+            default: break
+            }
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    
+    internal func createContributorInvite(selectedChannel: Channel, toUser: PulseUser?, toEmail: String?  = nil, showAlert: Bool = true,
+                                          completion: @escaping (String?, Error?) -> Void) {
+        
+        toggleLoading(show: true, message: "creating invite...", showIcon: true)
+        PulseDatabase.createContributorInvite(channel: selectedChannel, type: .contributorInvite, toUser: toUser, toName: toUser?.name,
+                                              toEmail: toEmail, completion: {[unowned self] (inviteID, error) in
+                                                
+                                                self.toggleLoading(show: false, message: nil)
+                                                
+                                                if error == nil, showAlert {
+                                                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay")
+                                                    completion(inviteID, nil)
+                                                } else if showAlert {
+                                                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                                                    completion(nil, error)
+                                                }
+        })
+    }
+    
+    internal func showAddText(buttonText: String = "Done", bodyText: String?, defaultBodyText: String = "type here", keyboardType: UIKeyboardType = .emailAddress, tabBarHeightAdjustment: CGFloat = 0) {
+        if addText == nil {
+            addText = AddText(frame: view.bounds, buttonText: buttonText, bodyText: bodyText,
+                              defaultBodyText: defaultBodyText, keyboardType: keyboardType, tabBarHeightAdjustment: tabBarHeightAdjustment)
+        } else {
+            addText.setText(bodyText: bodyText, keyboardType: keyboardType)
+        }
+        
+        addText.delegate = self
+        view.addSubview(addText)
+    }
+    
     //Used for creating invites
     internal func createShareRequest(selectedShareItem : Item, shareType: MessageType?, selectedChannel: Channel, toUser: PulseUser?, toEmail : String? = nil, showAlert : Bool = true,
                                      completion: @escaping (_ item : Item?, _ error : Error?) -> Void) {
@@ -327,6 +466,8 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
         }
     }
     
+    /** Delegate Functions **/
+    
     /**
      Called when the state of the navigation bar changes
      */
@@ -339,6 +480,23 @@ class PulseVC: UIViewController, PulseNavControllerDelegate {
      */
     func scrollingNavigationController(_ controller: PulseNavVC, willChangeState state: NavigationBarState) {
 
+    }
+    
+    //Must be implemented by the child inheriting controllers
+    internal func userClosedModal(_ viewController : UIViewController) {
+        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+    }
+    
+    internal func userSelected(item : Any) {
+        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+    }
+    
+    internal func dismiss(_ view : UIView) {
+        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+    }
+    
+    internal func buttonClicked(_ text: String, sender: UIView) {
+        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
     }
 }
 

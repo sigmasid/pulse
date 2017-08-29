@@ -213,6 +213,6 @@ class MiniMessageVC: UIViewController, UITextViewDelegate, UIGestureRecognizerDe
             return false
         }
         
-        return textView.text.characters.count + (text.characters.count - range.length) <= 140
+        return textView.text.characters.count + text.characters.count <= POST_TITLE_CHARACTER_COUNT
     }
 }

@@ -33,7 +33,6 @@ class ForumDetailVC: PulseVC, UITextViewDelegate {
     fileprivate var hasForumObserver = false
     fileprivate var canEdit : Bool = false
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         

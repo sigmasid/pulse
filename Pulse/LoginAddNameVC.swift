@@ -11,7 +11,7 @@ import FirebaseAuth
 import MobileCoreServices
 import CoreLocation
 
-class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
+class LoginAddNameVC: PulseVC, InputMasterDelegate {
 
     @IBOutlet weak var lastName: UITextField!
     @IBOutlet weak var firstName: UITextField!
@@ -25,7 +25,6 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         hideKeyboardWhenTappedAround()
-
     }
     
     override func viewDidLayoutSubviews() {
@@ -138,7 +137,7 @@ class LoginAddNameVC: PulseVC, InputMasterDelegate, ModalDelegate {
         }
     }
     
-    internal func userClosedModal(_ viewController: UIViewController) {
+    override func userClosedModal(_ viewController: UIViewController) {
         postCompletedNotification()
         removeBlurBackground()
         dismiss(animated: true, completion: nil)

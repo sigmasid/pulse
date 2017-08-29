@@ -16,11 +16,13 @@ class AddCoverVC: PulseVC  {
     fileprivate var sShowCamera = PulseButton(size: .large, type: .camera, isRound: true, background: .white, tint: .black)
     fileprivate var sShowCameraLabel = UILabel()
     
-    fileprivate var sTitle = PaddingTextField()
+    fileprivate var sTitle = PaddingTextView()
     fileprivate var submitButton = UIButton()
     
     fileprivate var sType = PaddingLabel()
     fileprivate var sTypeDescription = PaddingLabel()
+    
+    fileprivate var placeholderText = "add a short title"
     
     //Capture Image
     fileprivate var inputVC : InputVC!
@@ -108,8 +110,6 @@ extension AddCoverVC {
         sAddCover.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         sAddCover.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         sAddCover.heightAnchor.constraint(equalToConstant: 250).isActive = true
-        sAddCover.layoutIfNeeded()
-        
         sAddCover.backgroundColor = UIColor.pulseGrey.withAlphaComponent(0.1)
         
         sShowCamera.translatesAutoresizingMaskIntoConstraints = false
@@ -127,32 +127,8 @@ extension AddCoverVC {
         sShowCameraLabel.text = "add a cover image"
         sShowCameraLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .black, alignment: .center)
         
-        sTitle.translatesAutoresizingMaskIntoConstraints = false
-        sTitle.topAnchor.constraint(equalTo: sAddCover.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
-        sTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        sTitle.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
-        sTitle.layoutIfNeeded()
-        
-        sTitle.delegate = self
-        sTitle.placeholder = "add a short title"
-        
-        sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
-        sTypeDescription.topAnchor.constraint(equalTo: sTitle.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
-        sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
-        sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
-        
-        sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "All done? Click post to finish up."
-        
-        addSubmitButton()
-    }
-    
-    fileprivate func addSubmitButton() {
         submitButton.translatesAutoresizingMaskIntoConstraints = false
-        submitButton.topAnchor.constraint(equalTo: sTypeDescription.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        submitButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Spacing.max.rawValue).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
@@ -162,6 +138,26 @@ extension AddCoverVC {
         submitButton.setDisabled()
         
         submitButton.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
+        
+        sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
+        sTypeDescription.bottomAnchor.constraint(equalTo: submitButton.topAnchor, constant: -Spacing.m.rawValue).isActive = true
+        sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
+        sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
+        sTypeDescription.text = "All done? Click post to finish up."
+        
+        sTitle.translatesAutoresizingMaskIntoConstraints = false
+        sTitle.bottomAnchor.constraint(equalTo: sTypeDescription.topAnchor, constant: -Spacing.l.rawValue).isActive = true
+        sTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        sTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        let titleConstraint : NSLayoutConstraint = sTitle.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue)
+        titleConstraint.priority = 900
+        titleConstraint.isActive = true
+        
+        sTitle.delegate = self
+        sTitle.text = placeholderText
+        sTitle.textColor = UIColor.placeholderGrey
     }
     
     fileprivate func checkEnabled() {
@@ -173,29 +169,54 @@ extension AddCoverVC {
     }
 }
 
-extension AddCoverVC: UITextFieldDelegate {
-    func textFieldDidEndEditing(_ textField: UITextField) {
+extension AddCoverVC: UITextViewDelegate {
+    func textViewDidEndEditing(_ textView: UITextView) {
         checkEnabled()
+        
+        if textView.text == "" {
+            textView.text = placeholderText
+            textView.textColor = UIColor.placeholderGrey
+        }
     }
     
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        if string == "\n" {
-            textField.resignFirstResponder()
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        if textView.text == placeholderText {
+            textView.text = ""
+            textView.textColor = UIColor.black
+        }
+    }
+    
+    func textViewDidChange(_ textView: UITextView) {
+        if textView.text != "" {
+            let currentHeight = textView.frame.height
+            let sizeThatFitsTextView = textView.sizeThatFits(CGSize(width: textView.frame.size.width, height: CGFloat.greatestFiniteMagnitude))
+            
+            if currentHeight != sizeThatFitsTextView.height {
+                //if new height is bigger, move the text view up and increase height
+                sTitle.translatesAutoresizingMaskIntoConstraints = true
+
+                textView.frame = CGRect(x: textView.frame.origin.x, y: textView.frame.origin.y - (sizeThatFitsTextView.height - currentHeight),
+                                        width: textView.frame.width, height: sizeThatFitsTextView.height)
+                textView.textContainer.size = CGSize(width: textView.frame.width, height: textView.frame.height)
+            }
+        }
+    }
+    
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            textView.resignFirstResponder()
             return false
         }
         
-        let  char = string.cString(using: String.Encoding.utf8)!
+        let  char = text.cString(using: String.Encoding.utf8)!
         let isBackSpace = strcmp(char, "\\b")
         
-        if isBackSpace == -92, textField.text != "" {
+        if isBackSpace == -92, text != "" {
             return true
         }
         
-        if let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= 140
-        }
-        
-        return true
+        let _text = text.lowercased()
+        return (textView.text.characters.count + _text.characters.count) <= POST_TITLE_CHARACTER_COUNT
     }
 }
 
@@ -211,6 +232,7 @@ extension AddCoverVC: InputMasterDelegate {
             inputVC.transitioningDelegate = self
             inputVC.cameraTitle = "snap a pic to use as cover!"
         }
+        
         present(inputVC, animated: true, completion: nil)
     }
     
@@ -228,8 +250,9 @@ extension AddCoverVC: InputMasterDelegate {
         sShowCameraLabel.removeFromSuperview()
         
         sShowCamera = PulseButton(size: .xSmall, type: .camera, isRound: true, background: UIColor.white.withAlphaComponent(0.7), tint: .black)
-        sShowCamera.frame = CGRect(x: Spacing.xs.rawValue, y: self.sAddCover.frame.maxY - Spacing.xs.rawValue -  IconSizes.xSmall.rawValue,
+        sShowCamera.frame = CGRect(x: Spacing.xs.rawValue, y: sAddCover.frame.maxY - Spacing.xs.rawValue - IconSizes.xSmall.rawValue,
                                         width: IconSizes.xSmall.rawValue, height: IconSizes.xSmall.rawValue)
+        
         view.addSubview(sShowCamera)
         sShowCamera.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
         

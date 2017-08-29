@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, BrowseContentDelegate, SelectionDelegate, ParentTextViewDelegate, CompletedRecordingDelegate {
+class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, BrowseContentDelegate, CompletedRecordingDelegate {
     
     //set by delegate - selected item is a collection - type questions / posts / perspectives etc. since its a series
     public var selectedChannel: Channel!
@@ -37,7 +37,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     internal var collectionView : UICollectionView!
     
     fileprivate var isLayoutSetup = false
-    fileprivate var selectedShareItem : Item?
     fileprivate var seriesImageButton : PulseButton?
     
     private var cleanupComplete = false
@@ -106,7 +105,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     }
     
     /** DELEGATE FUNCTIONS **/
-    internal func userClosedModal(_ viewController: UIViewController) {
+    override func userClosedModal(_ viewController: UIViewController) {
         dismiss(animated: true, completion: {[weak self] _ in
             guard let `self` = self else { return }
             self.removeBlurBackground()
@@ -174,7 +173,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
     }
     
     internal func getFeedback() {
-        //CONFIRM IF CORRECT
         contentVC = ContentManagerVC()
         
         //NEEDED TO TO COPY BY VALUE VS REFERENCE
@@ -185,14 +183,29 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         present(contentVC, animated: true, completion: nil)
     }
     
+    internal func addNewCollection() {
+        let newCollectionVC = NewCollectionVC()
+        newCollectionVC.selectedChannel = selectedChannel
+        newCollectionVC.selectedItem = selectedItem
+        navigationController?.pushViewController(newCollectionVC, animated: true)
+    }
+    
     internal func addNewItem(selectedItem: Item) {
-        contentVC = ContentManagerVC()
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.openingScreen = .camera
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
+        switch selectedItem.type {
+        case .collection:
+            let editCollectionVC = EditCollectionVC()
+            editCollectionVC.selectedChannel = selectedChannel
+            editCollectionVC.selectedItem = selectedItem
+            navigationController?.pushViewController(editCollectionVC, animated: true)
+        default:
+            contentVC = ContentManagerVC()
+            contentVC.selectedChannel = selectedChannel
+            contentVC.selectedItem = selectedItem
+            contentVC.openingScreen = .camera
+            
+            contentVC.transitioningDelegate = self
+            present(contentVC, animated: true, completion: nil)
+        }
     }
 
     //once allItems var is set reload the data
@@ -231,12 +244,68 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, ModalDelegate, Browse
         }
     }
     
-    internal func showAddEmail(bodyText: String) {
-        addText = AddText(frame: view.bounds, buttonText: "Send",
-                           bodyText: bodyText, keyboardType: .emailAddress)
+    //parent text view delegate
+    override func dismiss(_ view : UIView) {
+        view.removeFromSuperview()
+    }
+    
+    override func buttonClicked(_ text: String, sender: UIView) {
+        GlobalFunctions.validateEmail(text, completion: {[unowned self] (success, error) in
+            if !success {
+                self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "invalid email - try again")
+            } else {
+                if let selectedShareItem = self.selectedShareItem as? Item {
+                    let itemKey = databaseRef.child("items").childByAutoId().key
+                    let parentItemID = selectedShareItem.itemID
+                    
+                    selectedShareItem.itemID = itemKey
+                    selectedShareItem.cID = self.selectedChannel.cID
+                    selectedShareItem.cTitle = self.selectedChannel.cTitle
+                    selectedShareItem.tag = self.selectedItem
+                    
+                    self.toggleLoading(show: true, message: "sending invite...", showIcon: true)
+                    PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: nil, toName: nil, toEmail: text,
+                                                      childItems: [], parentItemID: parentItemID, completion: {[weak self](success, error) in
+                                                        guard let `self` = self else { return }
+                                                        
+                                                        success ?
+                                                            GlobalFunctions.showAlertBlock(viewController: self,
+                                                                                           erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
+                                                            GlobalFunctions.showAlertBlock(viewController: self,
+                                                                                           erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                                                        self.toggleLoading(show: false, message: nil)
+                    })
+                }
+            }
+        })
+    }
+    
+    //delegate for mini user search - send the invite
+    override func userSelected(item: Any) {
+        guard let toUser = item as? PulseUser else {
+            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invalid User Selected", erMessage: "Sorry! The user you selected is not valid")
+            return
+        }
         
-        addText.delegate = self
-        view.addSubview(addText)
+        if let selectedShareItem = selectedShareItem as? Item {
+            let itemKey = databaseRef.child("items").childByAutoId().key
+            let parentItemID = selectedShareItem.itemID
+            
+            selectedShareItem.itemID = itemKey
+            selectedShareItem.cID = selectedChannel.cID
+            selectedShareItem.cTitle = selectedChannel.cTitle
+            selectedShareItem.tag = selectedItem
+            
+            toggleLoading(show: true, message: "sending invite...", showIcon: true)
+            PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {[weak self] (success, error) in
+                guard let `self` = self else { return }
+                
+                success ?
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
+                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
+                self.toggleLoading(show: false, message: nil)
+            })
+        }
     }
 }
 
@@ -421,71 +490,6 @@ extension SeriesVC: UICollectionViewDelegateFlowLayout {
 
 //menus
 extension SeriesVC {
-    
-    //parent text view delegate
-    internal func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
-    
-    internal func buttonClicked(_ text: String, sender: UIView) {
-        GlobalFunctions.validateEmail(text, completion: {[unowned self] (success, error) in
-            if !success {
-                self.showAddEmail(bodyText: "invalid email - try again")
-            } else {
-                if let selectedShareItem = self.selectedShareItem {
-                    let itemKey = databaseRef.child("items").childByAutoId().key
-                    let parentItemID = selectedShareItem.itemID
-                    
-                    selectedShareItem.itemID = itemKey
-                    selectedShareItem.cID = self.selectedChannel.cID
-                    selectedShareItem.cTitle = self.selectedChannel.cTitle
-                    selectedShareItem.tag = self.selectedItem
-                    
-                    self.toggleLoading(show: true, message: "sending invite...", showIcon: true)
-                    PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: nil, toName: nil, toEmail: text,
-                                                 childItems: [], parentItemID: parentItemID, completion: {[weak self](success, error) in
-                            guard let `self` = self else { return }
-
-                            success ?
-                            GlobalFunctions.showAlertBlock(viewController: self,
-                                                           erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
-                            GlobalFunctions.showAlertBlock(viewController: self,
-                                                           erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
-                        self.toggleLoading(show: false, message: nil)
-                    })
-                }
-            }
-        })
-    }
-    
-    //delegate for mini user search - send the invite
-    internal func userSelected(item: Any) {
-        guard let toUser = item as? PulseUser else {
-            GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invalid User Selected", erMessage: "Sorry! The user you selected is not valid")
-            return
-        }
-        
-        if let selectedShareItem = selectedShareItem {
-            let itemKey = databaseRef.child("items").childByAutoId().key
-            let parentItemID = selectedShareItem.itemID
-            
-            selectedShareItem.itemID = itemKey
-            selectedShareItem.cID = selectedChannel.cID
-            selectedShareItem.cTitle = selectedChannel.cTitle
-            selectedShareItem.tag = selectedItem
-            
-            toggleLoading(show: true, message: "sending invite...", showIcon: true)
-            PulseDatabase.createInviteRequest(item: selectedShareItem, type: selectedShareItem.inviteType()!, toUser: toUser, toName: toUser.name, childItems: [], parentItemID: parentItemID, completion: {[weak self] (success, error) in
-                guard let `self` = self else { return }
-
-                success ?
-                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Invite Sent", erMessage: "Thanks for your recommendation!", buttonTitle: "okay") :
-                    GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Sending Request", erMessage: "Sorry there was an error sending the invite")
-                self.toggleLoading(show: false, message: nil)
-            })
-        }
-    }
-    
     //for collection view items
     internal func userSelected(item : Item, index : Int) {
         
@@ -635,6 +639,8 @@ extension SeriesVC {
     internal func clickedMenuButton(itemRow: Int) {
         let currentItem = allItems[itemRow]
         currentItem.tag = selectedItem
+        currentItem.cID = selectedChannel.cID
+        currentItem.cTitle = selectedChannel.cTitle
         
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
@@ -646,11 +652,17 @@ extension SeriesVC {
                     guard let `self` = self else { return }
                     self.addNewItem(selectedItem: currentItem)
                 }))
-            
-                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-                    guard let `self` = self else { return }
-                    self.showInviteMenu(currentItem: currentItem)
-                }))
+                
+                if let inviteType = currentItem.inviteType() {
+                    menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                        guard let `self` = self else { return }
+                        
+                        self.showInviteMenu(currentItem: currentItem,
+                                            inviteTitle: "Invite Guests",
+                                            inviteMessage: "know an expert who can \(currentItem.childActionType())\(currentItem.childType())?\nInvite them below!",
+                                            inviteType: inviteType)
+                    }))
+                }
             }
         })
         
@@ -706,6 +718,8 @@ extension SeriesVC {
                         self.getFeedback()
                     case .posts:
                         self.addNewItem(selectedItem: self.selectedItem)
+                    case .collections:
+                        self.addNewCollection()
                     case .showcases:
                         menu.dismiss(animated: false, completion: nil)
                         self.startShowcase()
@@ -776,49 +790,6 @@ extension SeriesVC {
             becomeContributorVC.selectedChannel = self.selectedChannel
             
             self.navigationController?.pushViewController(becomeContributorVC, animated: true)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    }
-    
-    internal func showInviteMenu(currentItem : Item) {
-        let menu = UIAlertController(title: "invite Guests",
-                                     message: "know an expert who can \(currentItem.childActionType())\(currentItem.childType())?\nInvite them below!",
-                                     preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.selectedShareItem = currentItem
-            
-            let browseUsers = MiniUserSearchVC()
-            browseUsers.modalPresentationStyle = .overCurrentContext
-            browseUsers.modalTransitionStyle = .crossDissolve
-            
-            browseUsers.modalDelegate = self
-            browseUsers.selectionDelegate = self
-            browseUsers.selectedChannel = self.selectedChannel
-            self.navigationController?.present(browseUsers, animated: true, completion: nil)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.selectedShareItem = currentItem
-            self.showAddEmail(bodyText: "enter email")
-        }))
-        
-        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: self.selectedChannel, toUser: nil, showAlert: false, completion: {[weak self] selectedShareItem , error in
-                guard let `self` = self else { return }
-                if error == nil, let selectedShareItem = selectedShareItem {
-                    let shareText = "Can you \(currentItem.childActionType())\(currentItem.childType()) - \(currentItem.itemTitle)"
-                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
-                }
-            })
         }))
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
