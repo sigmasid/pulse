@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SafariServices
 
 class EditCollectionVC: PulseVC, ListDelegate {
     /** Set by parent **/
@@ -124,6 +125,22 @@ class EditCollectionVC: PulseVC, ListDelegate {
         }
     }
     
+    internal func userClickedListItem(itemID: String) {
+        //check the listID - if it has url - open the URL
+        guard let _selectedItemTag = allItems.index(of: Item(itemID: itemID)) else {
+            return
+        }
+        
+        let currentItem = allItems[_selectedItemTag]
+        
+        guard let url = currentItem.linkedURL else {
+            return
+        }
+        
+        let svc = SFSafariViewController(url: url)
+        present(svc, animated: true, completion: nil)
+    }
+    
     internal func showSuccessMenu() {
         //offer to go to editCollectionVC -> to rank items
         
@@ -160,7 +177,7 @@ class EditCollectionVC: PulseVC, ListDelegate {
             //add link option only for items a user adds
             menu.addAction(UIAlertAction(title: currentItem.linkedURL != nil ? "edit Link" : "add Link", style: .default, handler: {[weak self] (action: UIAlertAction!) in
                 guard let `self` = self else { return }
-                self.showAddText(buttonText: "Done", bodyText: currentItem.linkedURL != nil ? String(describing: currentItem.linkedURL!) : nil, defaultBodyText: "enter link URL", keyboardType: UIKeyboardType.URL)
+                self.showAddText(buttonText: "Done", bodyText: currentItem.linkedURL != nil ? String(describing: currentItem.linkedURL!) : "http://", keyboardType: UIKeyboardType.URL)
                 
                 self.addMode = .link
                 menu.dismiss(animated: true, completion: nil)
@@ -190,12 +207,7 @@ class EditCollectionVC: PulseVC, ListDelegate {
         present(menu, animated: true, completion: nil)
     }
     
-    //ParentTextView Delegate
-    override func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
-    
-    override func buttonClicked(_ text: String, sender: UIView) {
+    override func addTextDone(_ text: String, sender: UIView) {
         guard let _selectedItemTag = selectedItemTag else {
             return
         }
@@ -204,6 +216,12 @@ class EditCollectionVC: PulseVC, ListDelegate {
         case .title:
             allItems[_selectedItemTag].itemTitle = text
         case .link:
+            guard GlobalFunctions.validateURL(urlString: text), text != "http://" else {
+                DispatchQueue.main.async {
+                    self.showAddText(buttonText: "Done", bodyText: "http://", keyboardType: .URL)
+                }
+                return
+            }
             allItems[_selectedItemTag].linkedURL = URL(string: text)
         case .description:
             allItems[_selectedItemTag].itemDescription = text
@@ -250,15 +268,16 @@ extension EditCollectionVC : UITableViewDelegate, UITableViewDataSource {
         cell.updateItemDetails(title: currentItem.itemTitle, subtitle: currentItem.itemDescription)
         cell.showItemMenu()
         cell.itemID = currentItem.itemID
-        
+        cell.showImageBorder(show: currentItem.linkedURL != nil ? true : false)
+
         if let image = currentItem.content {
-            cell.updateImage(image: image, showSmallPreview: false)
+            cell.updateImage(image: image)
         } else if currentItem.contentURL != nil {
             PulseDatabase.getCachedListItemImage(itemID: currentItem.itemID, fileType: FileTypes.content, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] image in
                 guard let `self` = self else { return }
                 self.allItems[indexPath.row].content = image
                 DispatchQueue.main.async {
-                    cell.updateImage(image: image, showSmallPreview: false)
+                    cell.updateImage(image: image)
                 }
             })
         }

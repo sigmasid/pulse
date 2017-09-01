@@ -145,11 +145,7 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, BrowseContentDelegate
         navigationController?.present(searchNavVC, animated: true, completion: nil)
     }
     
-    /** Delegate Functions **/
-    override func userClosedModal(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in })
-    }
-    
+    /** Delegate Functions **/    
     internal func userClickedSubscribe(senderTag: Int) {
         let selectedChannel = allChannels[senderTag]
         toggleLoading(show: true, message: "Updating Subscriptions...", showIcon: true)
@@ -452,6 +448,9 @@ extension ExploreChannelsVC {
                         case .contributorInvite:
                             self.showContributorMenu(inviteItem: item)
                             
+                        case .collectionInvite:
+                            self.showCollectionMenu(inviteItem: item)
+                            
                         default: break
                         }
                     }
@@ -532,6 +531,30 @@ extension ExploreChannelsVC {
                 self.contentVC.selectedItem = inviteItem
                 self.contentVC.openingScreen = .camera
                 self.present(self.contentVC, animated: true, completion: nil)
+            }
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .destructive, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showCollectionMenu(inviteItem: Item) {
+        let menu = UIAlertController(title: "Invitation to \(inviteItem.childActionType())\(inviteItem.childType())",
+            message: "Topic: \(inviteItem.itemTitle)\nRank 'em, move 'em around & tell us why you placed each item in each spot!",
+            preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "get Started", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            DispatchQueue.main.async {
+                let editCollectionVC = EditCollectionVC()
+                let selectedChannel = Channel(cID: inviteItem.cID, title: inviteItem.cTitle)
+                editCollectionVC.selectedChannel = selectedChannel
+                editCollectionVC.selectedItem = inviteItem
+                self.navigationController?.pushViewController(editCollectionVC, animated: true)
             }
         }))
         

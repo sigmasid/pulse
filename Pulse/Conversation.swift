@@ -53,6 +53,8 @@ class Conversation : NSObject {
                 self.cLastMessageType = .showcaseInvite
             case "contributorInvite":
                 self.cLastMessageType = .contributorInvite
+            case "collectionInvite":
+                self.cLastMessageType = .collectionInvite
             default:
                 self.cLastMessageType = .message
             }

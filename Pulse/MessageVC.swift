@@ -423,6 +423,24 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
                 self.toggleLoading(show: false, message: nil)
             })
             
+        case .collectionInvite:
+            
+            toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+            PulseDatabase.getInviteItem(message.mID, completion: {[weak self] selectedItem, _, childItem, toUser, conversationID, error in
+                guard let `self` = self else { return }
+                if let selectedItem = selectedItem {
+                    DispatchQueue.main.async {
+                        let editCollectionVC = EditCollectionVC()
+                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                        editCollectionVC.selectedChannel = selectedChannel
+                        editCollectionVC.selectedItem = selectedItem
+                        self.navigationController?.pushViewController(editCollectionVC, animated: true)
+                    }
+                }
+                self.toggleLoading(show: false, message: nil)
+            })
+            
+            
         default: break
         }
     }

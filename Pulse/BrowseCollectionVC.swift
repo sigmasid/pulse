@@ -7,8 +7,9 @@
 //
 
 import UIKit
+import SafariServices
 
-class BrowseCollectionVC: PulseVC {
+class BrowseCollectionVC: PulseVC, ListItemDelegate {
 
     /** Set by parent **/
     public var selectedChannel : Channel!
@@ -18,6 +19,16 @@ class BrowseCollectionVC: PulseVC {
         didSet {
             //get the child lists
             guard selectedItem != nil else { return }
+            
+            if selectedItem.content == nil {
+                PulseDatabase.getImage(channelID: selectedChannel.cID, itemID: selectedItem.itemID, fileType: .content, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] data, error in
+                    guard let `self` = self else { return }
+                    if let data = data, let image = UIImage(data: data) {
+                        self.selectedItem.content = image
+                    }
+                })
+            }
+
             PulseDatabase.getLists(parentListID: selectedItem.itemID, completion: {[weak self] lists in
                 guard let `self` = self else { return }
                 self.allLists = lists
@@ -47,9 +58,11 @@ class BrowseCollectionVC: PulseVC {
     fileprivate var allListItems = [String : [Item]]() //after items pulled use this dictionary to store them
     fileprivate var selectedListIndex : Int? = nil {
         didSet {
-            guard let oldValue = oldValue else { return }
+            guard let oldValue = oldValue, selectedListIndex != nil else { return }
             let oldIndexPath = IndexPath(row: oldValue, section: 0)
-            collectionView.reloadItems(at: [oldIndexPath])
+            let newIndexPath = IndexPath(row: selectedListIndex!, section: 0)
+
+            collectionView.reloadItems(at: [oldIndexPath, newIndexPath])
         }
     }
     
@@ -152,11 +165,45 @@ class BrowseCollectionVC: PulseVC {
         }
     }
     
+    
+    internal func userClickedListItem(itemID: String) {
+        //check the listID - if it has url - open the URL
+        guard let _selectedItemTag = allItems.index(of: Item(itemID: itemID)) else {
+            return
+        }
+        
+        let currentItem = allItems[_selectedItemTag]
+        
+        guard let url = currentItem.linkedURL else {
+            return
+        }
+        
+        let svc = SFSafariViewController(url: url)
+        present(svc, animated: true, completion: nil)
+    }
+    
     internal func clickedHeaderMenu() {
         //show menu when user clicks header
         let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         
+        menu.addAction(UIAlertAction(title: "about Collection", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            self.blurViewBackground()
+            
+            let seriesPreview = PMAlertController(title: self.selectedItem.itemTitle, description: self.selectedItem.itemDescription, image: self.selectedItem.content, style: .alert)
+            
+            seriesPreview.dismissWithBackgroudTouch = true
+            seriesPreview.modalDelegate = self
+            
+            DispatchQueue.main.async {
+                self.present(seriesPreview, animated: true, completion: nil)
+            }
+        }))
+        
         selectedItem.checkVerifiedInput(completion: {[weak self] success, error in
+            guard let `self` = self else { return }
+
             menu.addAction(UIAlertAction(title: "create Collection", style: .default, handler: {[weak self] (action: UIAlertAction!) in
                 guard let `self` = self else { return }
                 let editCollectionVC = EditCollectionVC()
@@ -165,26 +212,34 @@ class BrowseCollectionVC: PulseVC {
                 self.navigationController?.pushViewController(editCollectionVC, animated: true)
             }))
             
-            menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-                guard let `self` = self else { return }
-                if let inviteType = self.selectedItem.inviteType() {
-                    menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-                        guard let `self` = self else { return }
-                        self.showInviteMenu(currentItem: self.selectedItem,
-                                            inviteTitle: "Invite Guests",
-                                            inviteMessage: "know an expert who can \(self.selectedItem.childActionType())\(self.selectedItem.childType())?\nInvite them below!",
-                            inviteType: inviteType)
-                    }))
-                }
-            }))
+            if let inviteType = self.selectedItem.inviteType() {
+                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
+                    self.showInviteMenu(currentItem: self.selectedItem,
+                                        inviteTitle: "Invite Guests",
+                                        inviteMessage: "know an expert who can \(self.selectedItem.childActionType())\(self.selectedItem.childType())?\nInvite them below!",
+                                        inviteType: inviteType)
+                }))
+            }
         })
         
-        menu.addAction(UIAlertAction(title: "share Collection", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+        menu.addAction(UIAlertAction(title: "share Collection", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             self.showShare(selectedItem: self.selectedItem, type: self.selectedItem.type.rawValue)
         }))
         
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {(action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
         present(menu, animated: true, completion: nil)
+    }
+    
+    override func userClosedModal(_ viewController: UIViewController) {
+        dismiss(animated: true, completion: {[weak self] _ in
+            guard let `self` = self else { return }
+            self.removeBlurBackground()
+        })
     }
 }
 
@@ -205,9 +260,12 @@ extension BrowseCollectionVC : UITableViewDelegate, UITableViewDataSource {
         }
         
         let currentItem = allItems[indexPath.row]
+        cell.itemID = currentItem.itemID
         cell.updateItemDetails(title: currentItem.itemTitle, subtitle: currentItem.itemDescription, countText: String(indexPath.row + 1))
         cell.showItemMenu(show: false)
         cell.showImageBorder(show: currentItem.linkedURL != nil ? true : false)
+        
+        cell.listItemDelegate = self
         
         PulseDatabase.getCachedListItemImage(itemID: currentItem.itemID, fileType: FileTypes.content, maxImgSize: MAX_IMAGE_FILESIZE, completion: { image in
             DispatchQueue.main.async {
@@ -219,7 +277,7 @@ extension BrowseCollectionVC : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return IconSizes.large.rawValue * 1.05
+        return IconSizes.large.rawValue * 1.075
     }
 }
 

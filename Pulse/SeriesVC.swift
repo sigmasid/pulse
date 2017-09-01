@@ -79,19 +79,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, BrowseContentDelegate
         updateChannelImage(channel: selectedChannel)
         headerNav?.followScrollView(collectionView, delay: 25.0)
         headerNav?.setNav(title: selectedItem.itemTitle, subtitle: selectedChannel.cTitle)
-        
-        /**
-        seriesImageButton = addRightButton(type: .blank)
-        PulseDatabase.getCachedSeriesImage(channelID: selectedChannel.cID, itemID: selectedItem.itemID, fileType: .thumb, completion: {[weak self] image in
-            guard let `self` = self else { return }
-            DispatchQueue.main.async {
-                self.seriesImageButton?.setImage(image, for: .normal)
-                self.seriesImageButton?.clipsToBounds = true
-                self.seriesImageButton?.contentMode = .scaleAspectFill
-                self.seriesImageButton?.imageView?.contentMode = .scaleAspectFill
-            }
-        })
-        **/
     }
     
     fileprivate func setupLayout() {
@@ -244,12 +231,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, BrowseContentDelegate
         }
     }
     
-    //parent text view delegate
-    override func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
-    
-    override func buttonClicked(_ text: String, sender: UIView) {
+    override func addTextDone(_ text: String, sender: UIView) {
         GlobalFunctions.validateEmail(text, completion: {[unowned self] (success, error) in
             if !success {
                 self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "invalid email - try again")
@@ -494,6 +476,9 @@ extension SeriesVC {
     internal func userSelected(item : Item, index : Int) {
         
         item.tag = selectedItem //since we are in tagVC
+        item.cID = selectedChannel.cID
+        item.cTitle = selectedChannel.cTitle
+        
         Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
                                                                      AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
         
@@ -547,6 +532,15 @@ extension SeriesVC {
                     self.showNoItemsMenu(selectedItem : item)
                 }
             })
+            
+        case .collection:
+            
+            let browseCollectionVC = BrowseCollectionVC()
+            browseCollectionVC.selectedChannel = selectedChannel
+            
+            navigationController?.pushViewController(browseCollectionVC, animated: true)
+            browseCollectionVC.selectedItem = item
+            
         default: break
         }
     }
@@ -554,13 +548,25 @@ extension SeriesVC {
     
     internal func showBrowse(selectedItem: Item) {
         selectedItem.cID = selectedChannel.cID
+        selectedItem.cTitle = selectedChannel.cTitle
         
-        let itemCollection = BrowseContentVC()
-        itemCollection.selectedChannel = selectedChannel
-        itemCollection.selectedItem = selectedItem
-        itemCollection.contentDelegate = self
-        itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
-        navigationController?.pushViewController(itemCollection, animated: true)
+        switch selectedItem.type {
+        case .collection:
+            let browseCollectionVC = BrowseCollectionVC()
+            browseCollectionVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+            
+            navigationController?.pushViewController(browseCollectionVC, animated: true)
+            browseCollectionVC.selectedItem = selectedItem
+            
+        default:
+            let itemCollection = BrowseContentVC()
+            itemCollection.selectedChannel = selectedChannel
+            itemCollection.selectedItem = selectedItem
+            itemCollection.contentDelegate = self
+            itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
+            
+            navigationController?.pushViewController(itemCollection, animated: true)
+        }
     }
     
     internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {

@@ -139,15 +139,7 @@ class NewShowcaseVC: PulseVC {
         })
     }
     
-    /** Delegate Functions **/
-    override func userClosedModal(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in })
-    }
-    
-    override func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
-    
+    /** Delegate Functions **/    
     override func userSelected(item : Any) {
         if let user = item as? PulseUser {
             iNameDescription.text = "Pulse user! Invite will be sent in-app"
@@ -169,7 +161,7 @@ class NewShowcaseVC: PulseVC {
     }
     
     //Button clicked delegate for after adding in email
-    override func buttonClicked(_ text: String, sender: UIView) {
+    override func addTextDone(_ text: String, sender: UIView) {
         if addEmail != nil, sender == addEmail {
             GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
                 guard let `self` = self else { return }

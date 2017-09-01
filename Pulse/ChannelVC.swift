@@ -279,17 +279,9 @@ class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegat
     }
     
     /** Delegate Function **/
-    override func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
-    
-    //close modal - e.g. mini search
-    override func userClosedModal(_ viewController: UIViewController) {
-        dismiss(animated: true, completion: { _ in })
-    }
     
     //after email - user submitted the text
-    override func buttonClicked(_ text: String, sender: UIView) {
+    override func addTextDone(_ text: String, sender: UIView) {
         GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
             guard let `self` = self else { return }
             
@@ -385,6 +377,14 @@ class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegat
             case .forum:
                 
                 showForum(selectedItem: item)
+                
+            case .collection:
+                
+                let browseCollectionVC = BrowseCollectionVC()
+                browseCollectionVC.selectedChannel = selectedChannel
+                
+                navigationController?.pushViewController(browseCollectionVC, animated: true)
+                browseCollectionVC.selectedItem = item
                 
             default: break
             }
@@ -640,25 +640,44 @@ extension ChannelVC {
     }
     
     internal func addNewItem(selectedItem: Item) {
-        contentVC = ContentManagerVC()
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.openingScreen = .camera
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
+        switch selectedItem.type {
+        case .collection:
+            let editCollectionVC = EditCollectionVC()
+            editCollectionVC.selectedChannel = selectedChannel
+            editCollectionVC.selectedItem = selectedItem
+            navigationController?.pushViewController(editCollectionVC, animated: true)
+        default:
+            contentVC = ContentManagerVC()
+            contentVC.selectedChannel = selectedChannel
+            contentVC.selectedItem = selectedItem
+            contentVC.openingScreen = .camera
+            
+            contentVC.transitioningDelegate = self
+            present(contentVC, animated: true, completion: nil)
+        }
     }
     
     internal func showBrowse(selectedItem: Item) {
         selectedItem.cID = selectedChannel.cID
-        
-        let itemCollection = BrowseContentVC()
-        itemCollection.selectedChannel = selectedChannel
-        itemCollection.selectedItem = selectedItem
-        itemCollection.contentDelegate = self
-        itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
-        
-        navigationController?.pushViewController(itemCollection, animated: true)
+        selectedItem.cTitle = selectedChannel.cTitle
+
+        switch selectedItem.type {
+        case .collection:
+            let browseCollectionVC = BrowseCollectionVC()
+            browseCollectionVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+            
+            navigationController?.pushViewController(browseCollectionVC, animated: true)
+            browseCollectionVC.selectedItem = selectedItem
+            
+        default:
+            let itemCollection = BrowseContentVC()
+            itemCollection.selectedChannel = selectedChannel
+            itemCollection.selectedItem = selectedItem
+            itemCollection.contentDelegate = self
+            itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
+            
+            navigationController?.pushViewController(itemCollection, animated: true)
+        }
     }
     
     internal func showSeries(selectedItem : Item) {

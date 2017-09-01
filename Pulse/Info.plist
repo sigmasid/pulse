@@ -39,6 +39,18 @@
 				<string>co.checkpulse.pulse</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLIconFile</key>
+			<string></string>
+			<key>CFBundleURLName</key>
+			<string>tv.getpulse.ios</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>pulsetv</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>

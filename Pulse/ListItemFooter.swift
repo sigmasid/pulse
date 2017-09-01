@@ -19,7 +19,8 @@ class ListItemFooter: UITableViewHeaderFooterView, UITextFieldDelegate {
 
     private lazy var addTitle : PaddingTextField! = PaddingTextField()
     private lazy var doneButton = PulseButton(title: "Add", isRound: true, hasShadow: false, buttonColor: UIColor.pulseRed, textColor: .white)
-    
+    private lazy var closeButton = PulseButton(size: .xSmall, type: .close, isRound: true, hasBackground: false, tint: .black)
+
     private var isSetup = false
     private var textBoxAdded = false
     
@@ -58,6 +59,10 @@ class ListItemFooter: UITableViewHeaderFooterView, UITextFieldDelegate {
         setupCell()
     }
     
+    public func hideTextBox() {
+        showTextBox(show: false)
+    }
+    
     public func showAddItem() {
         showTextBox(show: true)
     }
@@ -70,12 +75,14 @@ class ListItemFooter: UITableViewHeaderFooterView, UITextFieldDelegate {
         UIView.animate(withDuration: 0.3, animations: {
             self.addTitle.alpha = show ? 1.0 : 0.0
             self.doneButton.alpha = show ? 1.0 : 0.0
+            self.closeButton.alpha = show ? 1.0 : 0.0
             self.addButton.alpha = show ? 0.0 : 1.0
             self.titleLabel.alpha = show ? 0.0 : 1.0
             self.subtitleLabel.alpha = show ? 0.0 : 1.0
         }, completion: { _ in
             self.addTitle.isHidden = !show
             self.doneButton.isHidden = !show
+            self.closeButton.isHidden = !show
             self.addButton.isHidden = show
             self.titleLabel.isHidden = show
             self.subtitleLabel.isHidden = show
@@ -86,7 +93,6 @@ class ListItemFooter: UITableViewHeaderFooterView, UITextFieldDelegate {
                 self.addTitle.resignFirstResponder()
             }
         })
-
     }
     
     public func addNewItem() {
@@ -102,7 +108,8 @@ class ListItemFooter: UITableViewHeaderFooterView, UITextFieldDelegate {
     public func addTextBox() {
         contentView.addSubview(addTitle)
         contentView.addSubview(doneButton)
-        
+        contentView.addSubview(closeButton)
+
         doneButton.translatesAutoresizingMaskIntoConstraints = false
         doneButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Spacing.xs.rawValue).isActive = true
         doneButton.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
@@ -119,10 +126,20 @@ class ListItemFooter: UITableViewHeaderFooterView, UITextFieldDelegate {
         addTitle.delegate = self
         addTitle.placeholder = placeholderText
         
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.centerYAnchor.constraint(equalTo: addTitle.centerYAnchor).isActive = true
+        closeButton.trailingAnchor.constraint(equalTo: addTitle.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
+        closeButton.widthAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: IconSizes.xSmall.rawValue).isActive = true
+        closeButton.layoutIfNeeded()
+        closeButton.removeShadow()
+
         doneButton.makeRound()
         doneButton.setTitle("Add", for: UIControlState())
         doneButton.setButtonFont(FontSizes.caption2.rawValue, weight: UIFontWeightBold, color: .white, alignment: .center)
         doneButton.backgroundColor = .pulseRed
+        
+        closeButton.addTarget(self, action: #selector(hideTextBox), for: .touchUpInside)
         doneButton.addTarget(self, action: #selector(addNewItem), for: .touchUpInside)
         
         textBoxAdded = true

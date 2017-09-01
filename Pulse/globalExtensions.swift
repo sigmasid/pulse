@@ -972,7 +972,8 @@ enum MessageType: String {
     case perspectiveInvite
     case questionInvite
     case feedbackInvite
-    
+    case collectionInvite
+
     static func getMessageType(type : String) -> MessageType {
         switch type {
         case "interviewInvite":
@@ -989,6 +990,8 @@ enum MessageType: String {
             return .showcaseInvite
         case "feedbackInvite":
             return .feedbackInvite
+        case "collectionInvite":
+            return .collectionInvite
         default:
             return .message
         }

@@ -20,7 +20,7 @@ protocol SelectionDelegate: class {
 
 protocol ParentTextViewDelegate: class {
     func dismiss(_ view : UIView)
-    func buttonClicked(_ text: String, sender: UIView)
+    func addTextDone(_ text: String, sender: UIView)
 }
 
 protocol ItemDetailDelegate : class {
@@ -83,7 +83,11 @@ protocol UserProfileDelegate: class {
     func editProfile()
 }
 
-protocol ListDelegate : class {
+protocol ListItemDelegate {
+    func userClickedListItem(itemID: String)
+}
+
+protocol ListDelegate : ListItemDelegate {
     func addListItem(title : String)
     func showMenuFor(itemID: String)
 }

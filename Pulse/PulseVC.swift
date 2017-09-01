@@ -258,7 +258,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, Sele
         menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
             switch inviteType {
-            case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite:
+            case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite, .collectionInvite:
                 if let currentItem = currentItem as? Item {
                     self.createShareRequest(selectedShareItem: currentItem, shareType: inviteType, selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: {[unowned self] selectedShareItem , error in
                         //using the share item returned from the request
@@ -484,7 +484,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, Sele
     
     //Must be implemented by the child inheriting controllers
     internal func userClosedModal(_ viewController : UIViewController) {
-        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+        dismiss(animated: true, completion: nil)
     }
     
     internal func userSelected(item : Any) {
@@ -492,10 +492,10 @@ class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, Sele
     }
     
     internal func dismiss(_ view : UIView) {
-        NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
+        view.removeFromSuperview()
     }
     
-    internal func buttonClicked(_ text: String, sender: UIView) {
+    internal func addTextDone(_ text: String, sender: UIView) {
         NSException(name:NSExceptionName.internalInconsistencyException, reason:"\(#function) must be overridden in a subclass/category", userInfo:nil).raise()
     }
 }

@@ -182,15 +182,7 @@ class NewInterviewVC: PulseVC  {
     }
     
     /** Delegate Functions **/
-    override func userClosedModal(_ viewController : UIViewController) {
-        dismiss(animated: true, completion: { _ in })
-    }
-    
-    override func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
-    
-    override func buttonClicked(_ text: String, sender: UIView) {
+    override func addTextDone(_ text: String, sender: UIView) {
         if addQuestion != nil, sender == addQuestion {
             if let selectedIndex = selectedIndex {
                 let newIndexPath = IndexPath(row: selectedIndex, section: 0)

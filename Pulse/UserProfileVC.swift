@@ -459,11 +459,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
             }
         }
     }
-    
-    //Delegate Function - Used for Mini Search, Ask Question
-    override func userClosedModal(_ viewController: UIViewController) {
-        dismiss(animated: true, completion: { _ in })
-    }
 }
 
 extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {

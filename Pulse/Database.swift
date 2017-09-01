@@ -1861,10 +1861,10 @@ class PulseDatabase {
     }
     
     /** START LIST FUNCTIONS **/
-    static func createList(selectedItem: Item, listItems : [Item], completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func createList(selectedItem: Item, listItems : [Item], completion: @escaping (_ listCollectionID : String?, _ error : Error?) -> Void) {
         guard PulseUser.isLoggedIn() else {
             let userInfo = [ NSLocalizedDescriptionKey : "please login" ]
-            completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
+            completion(nil, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: userInfo))
             return
         }
         
@@ -1896,7 +1896,7 @@ class PulseDatabase {
             if let image = listItem.content {
                 PulseDatabase.uploadListImage(itemID: newListItemID, image: image, completion: { metadata , eror in
                     if let url = metadata?.downloadURL() {
-                        let urlPost : [ String : Any ] = ["url" : url]
+                        let urlPost : [ String : Any ] = ["url" : String(describing: url)]
                         listCollectionRef.child(newListCollectionID).child(newListItemID).updateChildValues(urlPost)
                     }
                 })
@@ -1921,7 +1921,7 @@ class PulseDatabase {
         }
 
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
-            blockError != nil ? completion(false, blockError) : completion(true, nil)
+            blockError != nil ? completion(nil, blockError) : completion(newListCollectionID, nil)
         })
     }
     
@@ -1939,14 +1939,21 @@ class PulseDatabase {
 
         for (index, listItem) in listItems.enumerated() {
             //each listItemID is same as masterListCollection - listItemsID > [itemTitle, itemDescription, createdAt]
-            listsPost[listItem.itemID] = ["title" : listItem.itemTitle,
-                                          "description" : listItem.itemDescription,
-                                          "createdAt" : ServerValue.timestamp(),
-                                          "order": index]
+            var listPost : [String : Any] = ["title" : listItem.itemTitle,
+                                             "description" : listItem.itemDescription,
+                                             "createdAt" : ServerValue.timestamp(),
+                                             "order": index]
+            
+            if let linkedURL = listItem.linkedURL {
+                listPost["linkedURL"] = String(describing: linkedURL)
+            }
+            
+            listsPost[listItem.itemID] = listPost
         }
         
         //in parentCollection > add new ListID & UserID
         let collectionPost = ["lists/\(parentListItem.itemID)/\(newListID)": PulseUser.currentUser.uID! as AnyObject,
+                              "userDetailedPublicSummary/\(PulseUser.currentUser.uID!)/lists/\(newListID)": "collection",
                               "listCollection/\(newListID)" : listsPost] as [String : Any]
         
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in

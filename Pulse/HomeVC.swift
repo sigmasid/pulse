@@ -293,11 +293,11 @@ class HomeVC: PulseVC, BrowseContentDelegate, HeaderDelegate, ItemCellDelegate {
     //close modal - e.g. mini search
     override func userClosedModal(_ viewController: UIViewController) {
         tabBarHidden = false
-        dismiss(animated: true, completion: { _ in })
+        dismiss(animated: true, completion: nil)
     }
     
     //EMAIL INVITE - user submitted the text
-    override func buttonClicked(_ text: String, sender: UIView) {
+    override func addTextDone(_ text: String, sender: UIView) {
         tabBarHidden = false
         GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
             guard let `self` = self else { return }
@@ -675,13 +675,24 @@ extension HomeVC {
     /** End Browse Content Delegate **/
     
     internal func showBrowse(selectedItem: Item) {
-        let itemCollection = BrowseContentVC()
-        itemCollection.selectedChannel = Channel(cID: selectedItem.cID)
-        itemCollection.selectedItem = selectedItem
-        itemCollection.contentDelegate = self
-        itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
-
-        navigationController?.pushViewController(itemCollection, animated: true)
+        
+        switch selectedItem.type {
+        case .collection:
+            let browseCollectionVC = BrowseCollectionVC()
+            browseCollectionVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+            
+            navigationController?.pushViewController(browseCollectionVC, animated: true)
+            browseCollectionVC.selectedItem = selectedItem
+            
+        default:
+            let itemCollection = BrowseContentVC()
+            itemCollection.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+            itemCollection.selectedItem = selectedItem
+            itemCollection.contentDelegate = self
+            itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
+            
+            navigationController?.pushViewController(itemCollection, animated: true)
+        }
     }
     
     func userClosedBrowse(_ viewController : UIViewController) {
@@ -794,57 +805,6 @@ extension HomeVC {
         
         present(menu, animated: true, completion: nil)
     }
-    
-    /** Menu Options
-    internal func showInviteMenu(currentItem : Item) {
-        tabBarHidden = true
-        
-        let menu = UIAlertController(title: "Invite Guests",
-                                     message: "know an expert who can \(currentItem.childActionType())\(currentItem.childType())?\nInvite them below!",
-                                     preferredStyle: .actionSheet)
-        
-        menu.addAction(UIAlertAction(title: "invite Pulse Users", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.selectedShareItem = currentItem
-            
-            let browseUsers = MiniUserSearchVC()
-            browseUsers.modalPresentationStyle = .overCurrentContext
-            browseUsers.modalTransitionStyle = .crossDissolve
-            
-            browseUsers.modalDelegate = self
-            browseUsers.selectionDelegate = self
-            browseUsers.selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
-            self.navigationController?.present(browseUsers, animated: true, completion: nil)
-        }))
-        
-        menu.addAction(UIAlertAction(title: "invite via Email", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.selectedShareItem = currentItem
-            self.showAddEmail(bodyText: "enter email")
-        }))
-        
-        menu.addAction(UIAlertAction(title: "more invite Options", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-
-            let selectedChannel = Channel(cID: currentItem.cID, title: currentItem.cTitle)
-            self.createShareRequest(selectedShareItem: currentItem, shareType: currentItem.inviteType(), selectedChannel: selectedChannel, toUser: nil, showAlert: false, completion: {[weak self] selectedShareItem , error in
-                guard let `self` = self else { return }
-
-                if error == nil, let selectedShareItem = selectedShareItem {
-                    let shareText = "Can you add \(currentItem.childActionType())\(currentItem.childType()) - '\(currentItem.itemTitle)'"
-                    self.showShare(selectedItem: selectedShareItem, type: "invite", fullShareText: shareText, inviteItemID: currentItem.itemID)
-                }
-            })
-        }))
-        
-        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            self.tabBarHidden = false
-            menu.dismiss(animated: true, completion: nil)
-        }))
-        
-        present(menu, animated: true, completion: nil)
-    } **/
 }
 
 

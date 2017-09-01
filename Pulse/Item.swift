@@ -204,13 +204,15 @@ class Item: NSObject {
             type = .showcases
         case "feedbackInvite":
             type = .session
+        case "collectionInvite":
+            type = .collection
         default:
             type = .unknown
         }
     }
     
     internal func shouldGetImage() -> Bool {
-        return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase || type == .interview
+        return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase || type == .interview || type ==  .collection
     }
     
     internal func shouldGetBrowseImage() -> Bool {
@@ -319,6 +321,8 @@ class Item: NSObject {
         case .interviews: return .interviewInvite
         case .showcases: return .showcaseInvite
         case .session: return .feedbackInvite
+        case .collection: return .collectionInvite
+
         default: return nil
         }
     }

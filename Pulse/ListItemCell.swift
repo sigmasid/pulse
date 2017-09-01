@@ -10,6 +10,8 @@ import UIKit
 
 class ListItemCell: UITableViewCell {
     public var listDelegate : ListDelegate?
+    public var listItemDelegate : ListItemDelegate?
+    
     public var itemID : String?
     
     private var backgroundImage = UIImageView()
@@ -61,6 +63,7 @@ class ListItemCell: UITableViewCell {
             itemImage.isHidden = !showSmallPreview
             itemImage.layoutIfNeeded()
             itemImage.makeRound()
+            itemImage.imageEdgeInsets = UIEdgeInsets.zero
 
             if showBackground {
                 backgroundImage.image = image.applyImageFilter()
@@ -68,6 +71,7 @@ class ListItemCell: UITableViewCell {
                 backgroundImage.clipsToBounds = true
             }
         } else {
+            itemImage.setImage(nil, for: .normal)
             itemImage.isHidden = true
             backgroundImage.image = nil
             backgroundImage.backgroundColor = UIColor.pulseDarkGrey
@@ -90,13 +94,19 @@ class ListItemCell: UITableViewCell {
         itemLink.isHidden = false
     }
     
+    //For items that have a link - adds a rounded border around it
     public func showImageBorder(show: Bool) {
         if show {
             itemImage.isHidden = false
             if itemImage.image(for: .normal) == nil {
                 itemImage.setImage(UIImage(named: "related"), for: .normal)
+                itemImage.imageEdgeInsets = UIEdgeInsetsMake(10, 10, 10, 10)
             }
+            
             itemImage.layer.addBorder(color: .white, thickness: 3.0)
+            itemImage.addTarget(self, action: #selector(itemImageClick), for: .touchUpInside)
+            itemImage.isEnabled = true
+
         } else {
             itemImage.isEnabled = false
             itemImage.layer.borderWidth = 0
@@ -119,6 +129,14 @@ class ListItemCell: UITableViewCell {
     internal func menuClick() {
         if let itemID = itemID {
             listDelegate?.showMenuFor(itemID: itemID)
+        }
+    }
+    
+    internal func itemImageClick() {
+        if let itemID = itemID, let listDelegate = listDelegate {
+            listDelegate.userClickedListItem(itemID: itemID)
+        } else if let itemID = itemID, let listItemDelegate = listItemDelegate {
+            listItemDelegate.userClickedListItem(itemID: itemID)
         }
     }
     

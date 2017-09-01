@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreLocation
+import SafariServices
 
 class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
     /** Set by parent **/
@@ -18,12 +19,15 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
     fileprivate var listTitle = PaddingTextField()
     fileprivate var listDescription = PaddingTextField()
 
+    fileprivate var showCameraButton = PulseButton(size: .large, type: .camera, isRound: true, background: .white, tint: .black)
+    fileprivate var showCameraLabel = PaddingLabel()
     fileprivate var submitButton = PulseButton(title: "Submit", isRound: false, hasShadow: false)
     
     fileprivate var placeholderName = "short title for the list"
     fileprivate var placeholderDescription = "short description for list"
     
     fileprivate var listInstructions = PaddingLabel()
+    fileprivate var listCoverImage : UIImage?
     
     /** Table View Vars **/
     fileprivate var tableView : UITableView!
@@ -101,11 +105,29 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
             return
         }
         
+        submitButton.setDisabled()
+        
         let listItem : Item = Item(itemID: "tempID", itemUserID: PulseUser.currentUser.uID!,
                                    itemTitle: listTitle.text!, type: ItemTypes.collection, tag: selectedItem, cID: selectedChannel.cID)
         listItem.itemDescription = listDescription.text!
         
-        PulseDatabase.createList(selectedItem: listItem, listItems: allItems, completion: { success, error in
+        PulseDatabase.createList(selectedItem: listItem, listItems: allItems, completion: {[weak self] listCollectionID, error in
+            guard let `self` = self else { return }
+            if let listCollectionID = listCollectionID, let listCoverImage = self.listCoverImage {
+                //upload image but successfully added image - so show success after uploading image
+                PulseDatabase.uploadImage(channelID: self.selectedChannel.cID, itemID: listCollectionID, image: listCoverImage, fileType: .content, completion: {[weak self] _ , _ in
+                    guard let `self` = self else { return }
+                    self.showSuccessMenu()
+                    self.submitButton.setEnabled()
+                })
+            } else if let _ = listCollectionID {
+                //no image but successfully added image - so show success
+                self.showSuccessMenu()
+                self.submitButton.setEnabled()
+            } else {
+                GlobalFunctions.showAlertBlock("Sorry Error Creating Collection", erMessage: error?.localizedDescription)
+                self.submitButton.setEnabled()
+            }
         })
     }
     
@@ -132,10 +154,41 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
         }
     }
     
+    internal func showCamera() {
+        if self.inputVC == nil {
+            self.inputVC = InputVC(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
+            self.inputVC.cameraMode = .stillImage
+            self.inputVC.captureSize = .square
+            self.inputVC.albumShowsVideo = false
+            self.inputVC.inputDelegate = self
+            self.inputVC.transitioningDelegate = self
+        }
+        
+        self.inputVC.cameraTitle = "add a cover image for the list"
+        self.present(self.inputVC, animated: true, completion: nil)
+    }
+    
+    internal func userClickedListItem(itemID: String) {
+        //check the listID - if it has url - open the URL
+        guard let _selectedItemTag = allItems.index(of: Item(itemID: itemID)) else {
+            return
+        }
+        
+        let currentItem = allItems[_selectedItemTag]
+        
+        guard let url = currentItem.linkedURL else {
+            return
+        }
+        
+        let svc = SFSafariViewController(url: url)
+        present(svc, animated: true, completion: nil)
+    }
+
+    
     internal func showSuccessMenu() {
         //offer to go to editCollectionVC -> to rank items
         
-        let menu = UIAlertController(title: "Successfully Create Collection Template!", message: "Create your unique version of the collection or invite others next", preferredStyle: .actionSheet)
+        let menu = UIAlertController(title: "Successfully Started Collection!", message: "Create your unique version or invite guests next", preferredStyle: .actionSheet)
         
         menu.addAction(UIAlertAction(title: "create Collection", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
@@ -145,18 +198,15 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
             self.navigationController?.pushViewController(editCollectionVC, animated: true)
         }))
         
-        menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-            guard let `self` = self else { return }
-            if let inviteType = self.selectedItem.inviteType() {
-                menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
-                    guard let `self` = self else { return }
-                    self.showInviteMenu(currentItem: self.selectedItem,
-                                        inviteTitle: "Invite Guests",
-                                        inviteMessage: "know an expert who can \(self.selectedItem.childActionType())\(self.selectedItem.childType())?\nInvite them below!",
-                        inviteType: inviteType)
-                }))
-            }
-        }))
+        if let inviteType = selectedItem.inviteType() {
+            menu.addAction(UIAlertAction(title: "invite Guests", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
+                self.showInviteMenu(currentItem: self.selectedItem,
+                                    inviteTitle: "Invite Guests",
+                                    inviteMessage: "know an expert who can \(self.selectedItem.childActionType())\(self.selectedItem.childType())?\nInvite them below!",
+                    inviteType: inviteType)
+            }))
+        }
         
         menu.addAction(UIAlertAction(title: "done", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
@@ -192,18 +242,30 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
                 self.inputVC.captureSize = .square
                 self.inputVC.albumShowsVideo = false
                 self.inputVC.inputDelegate = self
-                self.inputVC.cameraTitle = "add a picture for list item"
                 self.inputVC.transitioningDelegate = self
             }
+            
+            self.inputVC.cameraTitle = "add a picture for list item"
+            self.addMode = .image
             self.present(self.inputVC, animated: true, completion: nil)
         }))
         
         menu.addAction(UIAlertAction(title: currentItem.linkedURL != nil ? "edit Link" : "add Link", style: .default, handler: {[weak self] (action: UIAlertAction!) in
             guard let `self` = self else { return }
-            self.showAddText(buttonText: "Done", bodyText: currentItem.linkedURL != nil ? String(describing: currentItem.linkedURL!) : nil, defaultBodyText: "enter link url", keyboardType: .URL)
+            self.showAddText(buttonText: "Done", bodyText: currentItem.linkedURL != nil ? String(describing: currentItem.linkedURL!) : "http://", keyboardType: .URL)
             self.addMode = .link
             menu.dismiss(animated: true, completion: nil)
         }))
+        
+        menu.addAction(UIAlertAction(title: "remove Item", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            let indexPath = IndexPath(row: _selectedItemTag, section: 0)
+            self.allItems.remove(at: _selectedItemTag)
+            self.tableView.deleteRows(at: [indexPath], with: .fade)
+            self.selectedItemTag = nil
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
         
         menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
             menu.dismiss(animated: true, completion: nil)
@@ -212,12 +274,7 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
         present(menu, animated: true, completion: nil)
     }
     
-    //ParentTextView Delegate
-    override func dismiss(_ view : UIView) {
-        view.removeFromSuperview()
-    }
-    
-    override func buttonClicked(_ text: String, sender: UIView) {
+    override func addTextDone(_ text: String, sender: UIView) {
         guard let _selectedItemTag = selectedItemTag else {
             return
         }
@@ -226,7 +283,12 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
         case .title:
             allItems[_selectedItemTag].itemTitle = text
         case .link:
+            guard GlobalFunctions.validateURL(urlString: text), text != "http://" else {
+                showAddText(buttonText: "Done", bodyText: "http://", keyboardType: .URL)
+                return
+            }
             allItems[_selectedItemTag].linkedURL = URL(string: text)
+
         default: break
         }
         
@@ -245,16 +307,21 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
             GlobalFunctions.showAlertBlock("Error getting image", erMessage: "Sorry there was an error! Please try again")
             return
         }
+    
         
-        guard let _selectedItemTag = selectedItemTag else {
-            return
+        if let _selectedItemTag = selectedItemTag, addMode == .image {
+            //adding for a list item vs. for the full series
+            allItems[_selectedItemTag].content = image
+            let reloadIndexPath = IndexPath(row: _selectedItemTag, section: 0)
+            tableView.reloadRows(at: [reloadIndexPath], with: .fade)
+            addMode = .none
+            selectedItemTag = nil
+        } else {
+            //is for the full list vs. for individual list item
+            listCoverImage = image
+            showCameraButton.setImage(image, for: .normal)
+            showCameraButton.imageEdgeInsets = UIEdgeInsets.zero
         }
-        
-        allItems[_selectedItemTag].content = image
-        let reloadIndexPath = IndexPath(row: _selectedItemTag, section: 0)
-        tableView.reloadRows(at: [reloadIndexPath], with: .fade)
-        addMode = .none
-        selectedItemTag = nil
         
         dismiss(animated: true, completion: {[weak self] in
             guard let `self` = self else { return }
@@ -299,12 +366,7 @@ extension NewCollectionVC : UITableViewDelegate, UITableViewDataSource {
         let currentItem = allItems[indexPath.row]
         cell.updateItemDetails(title: currentItem.itemTitle, subtitle: currentItem.itemDescription)
         cell.showItemMenu()
-        
-        if currentItem.linkedURL != nil {
-            DispatchQueue.main.async {
-                cell.addLinkButton()
-            }
-        }
+        cell.showImageBorder(show: currentItem.linkedURL != nil ? true : false)
         
         if currentItem.content != nil {
             DispatchQueue.main.async {
@@ -312,7 +374,7 @@ extension NewCollectionVC : UITableViewDelegate, UITableViewDataSource {
             }
         }
         
-        cell.tag = indexPath.row
+        cell.itemID = String(indexPath.row)
         cell.listDelegate = self
         
         return cell
@@ -333,17 +395,30 @@ extension NewCollectionVC {
     fileprivate func setupLayout() {
         view.addSubview(listTitle)
         view.addSubview(listDescription)
+        view.addSubview(showCameraButton)
+        view.addSubview(showCameraLabel)
+
+        showCameraButton.translatesAutoresizingMaskIntoConstraints = false
+        showCameraButton.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        showCameraButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Spacing.xxs.rawValue).isActive = true
+        showCameraButton.widthAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        showCameraButton.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
         
+        showCameraLabel.translatesAutoresizingMaskIntoConstraints = false
+        showCameraLabel.topAnchor.constraint(equalTo: showCameraButton.bottomAnchor).isActive = true
+        showCameraLabel.leadingAnchor.constraint(equalTo: showCameraButton.leadingAnchor).isActive = true
+        showCameraLabel.trailingAnchor.constraint(equalTo: showCameraButton.trailingAnchor).isActive = true
+
         listTitle.translatesAutoresizingMaskIntoConstraints = false
         listTitle.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
-        listTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        listTitle.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
+        listTitle.leadingAnchor.constraint(equalTo: showCameraButton.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        listTitle.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         listTitle.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         
         listDescription.translatesAutoresizingMaskIntoConstraints = false
         listDescription.topAnchor.constraint(equalTo: listTitle.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
-        listDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        listDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
+        listDescription.leadingAnchor.constraint(equalTo: showCameraButton.trailingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        listDescription.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         listDescription.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         
         listTitle.delegate = self
@@ -351,6 +426,12 @@ extension NewCollectionVC {
         
         listTitle.placeholder = placeholderName
         listDescription.placeholder = placeholderDescription
+        
+        showCameraButton.addTarget(self, action: #selector(showCamera), for: .touchUpInside)
+        showCameraLabel.setFont(FontSizes.caption.rawValue, weight: UIFontWeightThin, color: .placeholderGrey, alignment: .center)
+        showCameraLabel.text = "collection cover image"
+        showCameraLabel.lineBreakMode = .byWordWrapping
+        showCameraLabel.numberOfLines = 2
         
         addNextButton()
         addTableView()
@@ -362,7 +443,7 @@ extension NewCollectionVC {
         view.addSubview(listInstructions)
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.topAnchor.constraint(equalTo: listDescription.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
+        tableView.topAnchor.constraint(equalTo: showCameraLabel.bottomAnchor, constant: Spacing.xs.rawValue).isActive = true
         tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         tableView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         tableView.bottomAnchor.constraint(equalTo: listInstructions.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
@@ -384,7 +465,7 @@ extension NewCollectionVC {
         listInstructions.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         listInstructions.numberOfLines = 3
-        listInstructions.text = "You can rank / arrange items for your list and invite contributors, guests & subscribers to share their lists. Leave this blank if you want users to create only new items"
+        listInstructions.text = "Create a template with item choices - you can rank / arrange items for your unique list & invite guests to create lists next. Leave items blank if you want users to add new items"
         
         updateDataSource()
     }

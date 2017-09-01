@@ -99,7 +99,7 @@ class AddText: UIView, UITextViewDelegate, UIGestureRecognizerDelegate {
     
     func clickedDone() {
         if delegate != nil, let text = txtBody.text {
-            delegate.buttonClicked(text, sender: self)
+            delegate.addTextDone(text, sender: self)
             delegate.dismiss(self)
         }
     }
