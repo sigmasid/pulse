@@ -27,18 +27,17 @@ class ContentIntroVC: UIViewController {
     public var item : Item! {
         didSet {
             if item != nil {
-                titleLabel.text = item.itemTitle.uppercased()
+                titleLabel.text = getItemTitle().uppercased()
                 subtitleLabel.text = item.type.rawValue
-                
+                seriesTitle.text = getSeriesTitle()
+
                 if let image = item.tag?.content {
-                    seriesTitle.text = item.tag?.itemTitle
                     seriesImage.image = image
                     seriesTitle.setBlurredBackground()
                 } else if item.tag == nil, let image = item.content {
                     seriesImage.image = image
                 } else {
-                    seriesTitle.text = item.tag?.itemTitle
-                    seriesTitle.removeShadow()                    
+                    seriesTitle.removeShadow()
                 }
                 
                 guard let user = item.user else { return }
@@ -89,6 +88,26 @@ class ContentIntroVC: UIViewController {
     
     override var prefersStatusBarHidden : Bool {
         return true
+    }
+    
+    fileprivate func getItemTitle() -> String {
+        switch item.type {
+        case .perspective, .collection, .feedback, .answer:
+            return item.tag?.itemTitle ?? item.itemTitle
+        default:
+            return item.itemTitle
+        }
+    }
+    
+    fileprivate func getSeriesTitle() -> String? {
+        switch item.type {
+        case .collections, .interviews, .perspectives, .posts, .showcases:
+            return item.itemTitle
+        case .collection, .thread, .session, .showcase, .post:
+            return item.tag?.itemTitle
+        default:
+            return nil
+        }
     }
     
     fileprivate func addUserData() {

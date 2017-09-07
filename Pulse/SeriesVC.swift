@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, BrowseContentDelegate, CompletedRecordingDelegate {
+class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, CompletedRecordingDelegate {
     
     //set by delegate - selected item is a collection - type questions / posts / perspectives etc. since its a series
     public var selectedChannel: Channel!
@@ -176,24 +176,6 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, BrowseContentDelegate
         newCollectionVC.selectedItem = selectedItem
         navigationController?.pushViewController(newCollectionVC, animated: true)
     }
-    
-    internal func addNewItem(selectedItem: Item) {
-        switch selectedItem.type {
-        case .collection:
-            let editCollectionVC = EditCollectionVC()
-            editCollectionVC.selectedChannel = selectedChannel
-            editCollectionVC.selectedItem = selectedItem
-            navigationController?.pushViewController(editCollectionVC, animated: true)
-        default:
-            contentVC = ContentManagerVC()
-            contentVC.selectedChannel = selectedChannel
-            contentVC.selectedItem = selectedItem
-            contentVC.openingScreen = .camera
-            
-            contentVC.transitioningDelegate = self
-            present(contentVC, animated: true, completion: nil)
-        }
-    }
 
     //once allItems var is set reload the data
     internal func updateDataSource() {
@@ -237,7 +219,8 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, BrowseContentDelegate
                 self.showAddText(buttonText: "Send", bodyText: nil, defaultBodyText: "invalid email - try again")
             } else {
                 if let selectedShareItem = self.selectedShareItem as? Item {
-                    let itemKey = databaseRef.child("items").childByAutoId().key
+                    
+                    let itemKey = PulseDatabase.getKey(forPath: "items")
                     let parentItemID = selectedShareItem.itemID
                     
                     selectedShareItem.itemID = itemKey
@@ -270,7 +253,7 @@ class SeriesVC: PulseVC, HeaderDelegate, ItemCellDelegate, BrowseContentDelegate
         }
         
         if let selectedShareItem = selectedShareItem as? Item {
-            let itemKey = databaseRef.child("items").childByAutoId().key
+            let itemKey = PulseDatabase.getKey(forPath: "items")
             let parentItemID = selectedShareItem.itemID
             
             selectedShareItem.itemID = itemKey
@@ -485,7 +468,7 @@ extension SeriesVC {
         //can only be a question or a post that user selects since it's in a tag already
         switch item.type {
         case .post, .showcase:
-            showItemDetail(allItems: allItems, index: index, itemCollection: [], selectedItem: selectedItem)
+            showItemDetail(allItems: allItems, index: index, itemCollection: [], selectedItem: selectedItem, selectedChannel: selectedChannel)
             
         case .interview:
             toggleLoading(show: true, message: "loading \(item.type.rawValue)...")
@@ -494,7 +477,7 @@ extension SeriesVC {
                     return
                 }
                 
-                success ? self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) : self.showNoItemsMenu(selectedItem : item)
+                success ? self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item,  selectedChannel: self.selectedChannel) : self.showNoItemsMenu(selectedItem : item)
                 self.toggleLoading(show: false, message: nil)
             })
             
@@ -505,7 +488,7 @@ extension SeriesVC {
                     return
                 }
                 
-                success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) : self.showNoItemsMenu(selectedItem : item)
+                success ? self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, selectedChannel: self.selectedChannel) : self.showNoItemsMenu(selectedItem : item)
                 self.toggleLoading(show: false, message: nil)
             })
             
@@ -523,10 +506,10 @@ extension SeriesVC {
                         let sessionSlice = items.dropLast()
                         var sessionItems = Array(sessionSlice)
                         sessionItems.insert(lastItem, at: 0)
-                        self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
+                        self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item, selectedChannel: self.selectedChannel)
                     }
                 } else if success {
-                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                    self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, selectedChannel: self.selectedChannel)
                 } else {
                     //show no items menu
                     self.showNoItemsMenu(selectedItem : item)
@@ -567,20 +550,6 @@ extension SeriesVC {
             
             navigationController?.pushViewController(itemCollection, animated: true)
         }
-    }
-    
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
-        contentVC = ContentManagerVC()
-        
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.itemCollection = itemCollection
-        contentVC.itemIndex = index
-        contentVC.allItems = allItems
-        contentVC.openingScreen = .item
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
     }
     
     internal func userClosedBrowse(_ viewController : UIViewController) {

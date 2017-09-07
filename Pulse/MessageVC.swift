@@ -330,6 +330,27 @@ class MessageVC: PulseVC, UITextViewDelegate{
             textView.textColor = UIColor.lightGray
         }
     }
+    
+    internal func showPerspectiveChoicesMenu(inviteItem: Item) {
+        
+        let menu = UIAlertController(title: "Invitation to \(inviteItem.childActionType())\(inviteItem.childType())",
+            message: "First pick a side - Next you will be able to explain your choice & share your perspectives!", preferredStyle: .actionSheet)
+        
+        for choice in inviteItem.choices {
+            menu.addAction(UIAlertAction(title: choice.itemTitle, style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
+                let selectedChannel = Channel(cID: inviteItem.cID, title: inviteItem.cTitle)
+                self.showContentManager(selectedItem: inviteItem, selectedChannel: selectedChannel, selectedChoice: choice)
+            }))
+        }
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+        
+    }
 }
 
 extension MessageVC: UITableViewDataSource, UITableViewDelegate {
@@ -381,21 +402,21 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let message = messages[indexPath.row]
         switch message.mType {
-        case .perspectiveInvite, .questionInvite, .showcaseInvite:
-            contentVC = ContentManagerVC()
+        case .questionInvite, .showcaseInvite:
+            
             toggleLoading(show: true, message: "loading Invite...", showIcon: true)
-            PulseDatabase.getInviteItem(message.mID, completion: {[weak self] selectedItem, _, childItem, toUser, conversationID, error in
+            PulseDatabase.getInviteItem(message.mID, completion: {[weak self] selectedItem, type, childItem, toUser, conversationID, error in
                 guard let `self` = self else { return }
-                if let selectedItem = selectedItem {
-                    DispatchQueue.main.async {
-                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
-                        self.contentVC.selectedChannel = selectedChannel
-                        self.contentVC.selectedItem = selectedItem
-                        self.contentVC.openingScreen = .camera
-                        self.present(self.contentVC, animated: true, completion: nil)
-                    }
+                
+                guard let selectedItem = selectedItem else {
+                    self.toggleLoading(show: false, message: nil)
+                    return
                 }
-                self.toggleLoading(show: false, message: nil)
+
+                DispatchQueue.main.async {
+                    let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                    self.showContentManager(selectedItem: selectedItem, selectedChannel: selectedChannel)
+                }
             })
             
         case .interviewInvite:
@@ -404,6 +425,22 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
             interviewVC.interviewItemID = message.mID
             
             navigationController?.pushViewController(interviewVC, animated: true)
+            
+        case .perspectiveInvite:
+            
+            toggleLoading(show: true, message: "loading Invite...", showIcon: true)
+            PulseDatabase.getInviteItem(message.mID, completion: {[weak self] selectedItem, type, childItem, toUser, conversationID, error in
+                guard let `self` = self else { return }
+                
+                guard let selectedItem = selectedItem else {
+                    self.toggleLoading(show: false, message: nil)
+                    return
+                }
+                
+                let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                self.showPerspectivesMenu(selectedItem: selectedItem, selectedChannel: selectedChannel)
+
+            })
         
         case .contributorInvite:
             
@@ -429,11 +466,11 @@ extension MessageVC: UITableViewDataSource, UITableViewDelegate {
             PulseDatabase.getInviteItem(message.mID, completion: {[weak self] selectedItem, _, childItem, toUser, conversationID, error in
                 guard let `self` = self else { return }
                 if let selectedItem = selectedItem {
+                    let editCollectionVC = EditCollectionVC()
+                    let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+                    editCollectionVC.selectedChannel = selectedChannel
+                    editCollectionVC.selectedItem = selectedItem
                     DispatchQueue.main.async {
-                        let editCollectionVC = EditCollectionVC()
-                        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
-                        editCollectionVC.selectedChannel = selectedChannel
-                        editCollectionVC.selectedItem = selectedItem
                         self.navigationController?.pushViewController(editCollectionVC, animated: true)
                     }
                 }

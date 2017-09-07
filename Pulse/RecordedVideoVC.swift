@@ -7,9 +7,9 @@
 //
 
 import UIKit
-import Firebase
 import AVFoundation
 import Photos
+import Firebase
 
 class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDelegate {
     fileprivate var uploadTask : StorageUploadTask!
@@ -319,7 +319,7 @@ class RecordedVideoVC: UIViewController, UIGestureRecognizerDelegate, AddCoverDe
     internal func createCoverItem() {
         guard coverItem == nil else { return }
         
-        let itemKey = databaseRef.child("items").childByAutoId().key
+        let itemKey = PulseDatabase.getKey(forPath: "items")
         
         coverItem = Item(itemID: itemKey,
                         itemUserID: PulseUser.currentUser.uID!,
@@ -594,6 +594,7 @@ extension RecordedVideoVC: UITextViewDelegate {
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text != "" {
             updateItemTitle(text: textView.text)
+            controlsOverlay.title = textView.text
             textView.resignFirstResponder()
         } else {
             textView.resignFirstResponder()
@@ -616,6 +617,7 @@ extension RecordedVideoVC: UITextViewDelegate {
     
     func textViewShouldReturn(_ textView: UITextView) -> Bool {
         updateItemTitle(text: textView.text)
+        controlsOverlay.title = textView.text
         textView.resignFirstResponder()
         return true
     }

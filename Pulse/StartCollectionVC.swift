@@ -27,7 +27,9 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
     fileprivate var placeholderDescription = "short description for list"
     
     fileprivate var listInstructions = PaddingLabel()
-    fileprivate var listCoverImage : UIImage?
+    
+    fileprivate var fullImageData : Data?
+    fileprivate var thumbImageData : Data?
     
     /** Table View Vars **/
     fileprivate var tableView : UITableView!
@@ -113,12 +115,13 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
         
         PulseDatabase.createList(selectedItem: listItem, listItems: allItems, completion: {[weak self] listCollectionID, error in
             guard let `self` = self else { return }
-            if let listCollectionID = listCollectionID, let listCoverImage = self.listCoverImage {
+            if let listCollectionID = listCollectionID, let fullImageData = self.fullImageData {
                 //upload image but successfully added image - so show success after uploading image
-                PulseDatabase.uploadImage(channelID: self.selectedChannel.cID, itemID: listCollectionID, image: listCoverImage, fileType: .content, completion: {[weak self] _ , _ in
+                PulseDatabase.uploadImageData(channelID: self.selectedChannel.cID, itemID: listCollectionID, imageData: fullImageData, fileType: .content, completion: {[weak self] _ , _ in
                     guard let `self` = self else { return }
                     self.showSuccessMenu()
                     self.submitButton.setEnabled()
+                    PulseDatabase.uploadImageData(channelID: self.selectedChannel.cID, itemID: listCollectionID, imageData: self.thumbImageData, fileType: .thumb, completion: { _, _ in })
                 })
             } else if let _ = listCollectionID {
                 //no image but successfully added image - so show success
@@ -149,8 +152,9 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
         startedCollection = true
         
         if allItems.count == 1 {
-            //so it reloads the header
-            tableView.reloadData()
+            tableView.reloadData() //so it reloads the header
+        } else {
+            tableView.scrollToRow(at: newIndexPath, at: .bottom, animated: true)
         }
     }
     
@@ -318,7 +322,7 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
             selectedItemTag = nil
         } else {
             //is for the full list vs. for individual list item
-            listCoverImage = image
+            createCompressedImages(image: image)
             showCameraButton.setImage(image, for: .normal)
             showCameraButton.imageEdgeInsets = UIEdgeInsets.zero
         }
@@ -327,6 +331,11 @@ class NewCollectionVC: PulseVC, ListDelegate, InputMasterDelegate {
             guard let `self` = self else { return }
             self.inputVC.updateAlpha()
         })
+    }
+    
+    fileprivate func createCompressedImages(image: UIImage) {
+        fullImageData = image.mediumQualityJPEGNSData
+        thumbImageData = image.resizeImage(newWidth: ITEM_THUMB_WIDTH)?.highQualityJPEGNSData
     }
 }
 
@@ -381,11 +390,15 @@ extension NewCollectionVC : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return IconSizes.medium.rawValue * 1.2
+        return IconSizes.medium.rawValue * 1.1 //don't have subtitle so can be smaller
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return IconSizes.medium.rawValue * 1.2
+        return IconSizes.medium.rawValue * 1.2 //only adding titles so doesn't need to be as big
+    }
+    
+    func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        return false
     }
 }
 

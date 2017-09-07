@@ -59,6 +59,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate 
                     self.showItemDetail(show: true)
                     self.contentOverlay?.updateSelectedPager(num: self.itemDetailIndex)
                     self.shouldShowExplore = true
+                    self.contentOverlay?.showChoices(image: self.currentItem?.choices.first?.content)
+                    
                 } else if self.shouldShowExplore {
                     //is a detail item so just update the overlay
                     currentItem.user = oldValue?.user
@@ -69,6 +71,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate 
                     self.showItemDetail(show: false)
                     self.updateOverlayData(currentItem, updateUser: true)
                     self.shouldShowExplore = false
+                    self.contentOverlay?.showChoices(image: self.currentItem?.choices.first?.content)
                 }
                 
                 if self.shouldShowExplore {
@@ -119,6 +122,15 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate 
                     guard let `self` = self, nextFullItem.itemID == itemID else { return }
                     nextFullItem.itemCollection = self.reorderItemDetail(parentItem: nextFullItem, itemCollection: items)
                 })
+                
+                if nextFullItem.choices.count > 0 {
+                    //always the first and only choice -> currently user can only select on
+                    PulseDatabase.getCachedChoiceImage(channelID: nextFullItem.cID, parentItemID: selectedItem.itemID, itemID: nextFullItem.choices.first!.itemID, completion: { image in
+                        if let image = image {
+                            nextFullItem.choices.first!.content = image
+                        }
+                    })
+                }
             } else {
                 PulseDatabase.getItem(nextFullItem.itemID, completion: {[weak self] item, error in
                     guard let `self` = self else { return }
@@ -267,6 +279,14 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate 
         }
         
         let item = allItems[index]
+        
+        if item.choices.count > 0 {
+            PulseDatabase.getCachedChoiceImage(channelID: item.cID, parentItemID: selectedItem.itemID, itemID: item.choices.first!.itemID, completion: {[weak self] image in
+                if let image = image, let `self` = self {
+                    self.allItems[index].choices.first!.content = image
+                }
+            })
+        }
                 
         addNextItem(item: item, completion: {[weak self] success in
             guard let `self` = self else { return }
@@ -374,6 +394,8 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate 
             return
         }
         
+        nextItemReady = false
+        
         switch itemType {
         case .recordedVideo, .albumVideo:
             guard item.contentURL != nil else {
@@ -442,6 +464,7 @@ class ContentDetailVC: PulseVC, ItemDetailDelegate, UIGestureRecognizerDelegate 
             if let _imageData = try? Data(contentsOf: itemURL), let image = UIImage(data: _imageData) {
                 item.content = image
                 self.nextItemReady = true
+                self.tapReady = true
                 completion(true)
             } else {
                 completion(false)

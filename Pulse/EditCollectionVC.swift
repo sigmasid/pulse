@@ -122,6 +122,8 @@ class EditCollectionVC: PulseVC, ListDelegate {
         if allItems.count == 1 {
             //so it reloads the header
             tableView.reloadData()
+        } else {
+            tableView.scrollToRow(at: newIndexPath, at: .bottom, animated: true)
         }
     }
     
@@ -312,6 +314,10 @@ extension EditCollectionVC : UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, shouldIndentWhileEditingRowAt indexPath: IndexPath) -> Bool {
         return false
     }
+    
+    func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        return false
+    }
 }
 
 
@@ -324,7 +330,7 @@ extension EditCollectionVC {
         view.addSubview(submitButton)
         
         listInstructions.translatesAutoresizingMaskIntoConstraints = false
-        listInstructions.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.m.rawValue).isActive = true
+        listInstructions.topAnchor.constraint(equalTo: view.topAnchor, constant: Spacing.s.rawValue).isActive = true
         listInstructions.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         listInstructions.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
         listInstructions.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
@@ -352,7 +358,7 @@ extension EditCollectionVC {
         tableView?.showsVerticalScrollIndicator = false
         tableView?.tableFooterView = UIView()
         
-        listInstructions.text = "You can rank / arrange items by dragging & dropping and add an explanation by clicking the text edit button for each"
+        listInstructions.text = "You can rank / arrange items by dragging & dropping and add an explanation by clicking the menu button"
         
         updateDataSource()
     }

@@ -125,7 +125,7 @@ class NewForumThreadVC: PulseVC {
         loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
-        let itemKey = databaseRef.child("items").childByAutoId().key
+        let itemKey = PulseDatabase.getKey(forPath: "items")
         let item = Item(itemID: itemKey, type: "thread")
         
         item.itemTitle = sTitle.text

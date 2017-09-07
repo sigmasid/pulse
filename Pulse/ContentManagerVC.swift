@@ -20,6 +20,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     var itemIndex = 0
     var itemCollection = [Item]()
     var createdItemKey : String?
+    var selectedChoice: Item? //for new items (threads) - if user has selected an option then show in title & with final upload
     
     var openingScreen : OpeningScreenOptions = .item
     enum OpeningScreenOptions { case camera, item }
@@ -150,7 +151,7 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         contentDetailVC.itemDetail = itemCollection
         contentDetailVC.selectedChannel = selectedChannel != nil ? selectedChannel : Channel(cID: selectedItem.cID, title: selectedItem.cTitle ?? "")
         contentDetailVC.selectedItem = selectedItem
-        contentDetailVC.itemIndex = itemIndex
+        contentDetailVC.itemIndex = itemIndex //set first - if not 0 then DetailVC uses this as the index
         
         if shouldShowIntro {
             pushViewController(contentDetailVC, animated: false)
@@ -242,7 +243,8 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
         }
         
         //in case parent provides key for first item use that (interview case) else create a new key. After creation marks the createdItemKey as nil
-        let itemKey = createdItemKey != nil ? createdItemKey! : databaseRef.child("items").childByAutoId().key
+        let itemKey = createdItemKey != nil ? createdItemKey! :  PulseDatabase.getKey(forPath: "items")
+
         createdItemKey = nil
         
         let item = Item(itemID: itemKey,
@@ -262,6 +264,10 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
             item.itemTitle = newItem as? String ?? ""
         }
         
+        if let selectedChoice = selectedChoice {
+            item.choices.append(selectedChoice)
+        }
+        
         recordedItems.append(item)
         recordedVideoVC.delegate = self
         
@@ -276,9 +282,13 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
     
     fileprivate func getRecordedItemTitle() -> String {
         switch selectedItem.type {
-        case .question, .thread, .interview, .session:
+        case .question, .interview, .session:
             //only add the title to the first item in the series
-            return recordedItems.count == 0 ? selectedItem.itemTitle : ""
+            return recordedItems.count == 0 ? selectedItem.itemTitle : ""            
+        case .thread:
+            //only add the title to the first item in the series - for threads if there is a choice & add the selected choice in there
+            let choiceTitle = selectedChoice?.itemTitle ?? ""
+            return recordedItems.count == 0 ? "\(selectedItem.itemTitle) \(choiceTitle)" : ""
         default:
             return ""
         }
@@ -392,7 +402,9 @@ class ContentManagerVC: PulseNavVC, ContentDelegate, InputMasterDelegate, Browse
             inputVC.updateAlpha()
         }
         
-        inputVC.cameraTitle = selectedItem.itemTitle
+        let screenTitle = selectedChoice != nil ? "\(selectedItem.itemTitle) - \(selectedChoice!.itemTitle)" : selectedItem.itemTitle
+        inputVC.cameraTitle = screenTitle
+        
         isNavigationBarHidden = true
         
         pushViewController(inputVC, animated: animated)

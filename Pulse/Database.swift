@@ -1468,15 +1468,15 @@ class PulseDatabase {
     static func addItemToDatabase( _ item : Item, channelID: String, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
         if PulseUser.isLoggedIn() {
-            var itemPost : [ String : AnyObject] = ["title": item.itemTitle as AnyObject,
-                                                   "uID": PulseUser.currentUser.uID! as AnyObject,
-                                                   "createdAt" : ServerValue.timestamp() as AnyObject,
-                                                   "type" : item.type.rawValue as AnyObject,
-                                                   "cID": channelID as AnyObject]
+            var itemPost : [ String : Any] = ["title": item.itemTitle,
+                                                   "uID": PulseUser.currentUser.uID!,
+                                                   "createdAt" : ServerValue.timestamp(),
+                                                   "type" : item.type.rawValue,
+                                                   "cID": channelID]
             
-            let itemStatsPost : [ String : AnyObject] = ["downVoteCount": 0 as AnyObject,
-                                                         "upVoteCount": 0 as AnyObject,
-                                                         "views" : 0 as AnyObject]
+            let itemStatsPost : [ String : Any] = ["downVoteCount": 0 as AnyObject,
+                                                   "upVoteCount": 0 as AnyObject,
+                                                   "views" : 0 as AnyObject]
             
             if let url = item.contentURL?.absoluteString {
                 itemPost["url"] = url as AnyObject?
@@ -1484,6 +1484,21 @@ class PulseDatabase {
             
             if let contentType = item.contentType {
                 itemPost["contentType"] = contentType.rawValue as AnyObject?
+            }
+            
+            if let tag = item.tag {
+                itemPost["tagID"] = tag.itemID
+                itemPost["tagTitle"] = tag.itemTitle
+            }
+            
+            if item.choices.count > 0 {
+                var choicesPost : [String : Any] = [ : ]
+                
+                for choice in item.choices {
+                    choicesPost[choice.itemID] = choice.itemTitle
+                }
+                
+                itemPost["choices"] = choicesPost
             }
             
             let post : [String: Any] = ["items/\(item.itemID)": itemPost,
@@ -1499,7 +1514,7 @@ class PulseDatabase {
         }
     }
     
-    ///Save collection into question / user
+    ///Save collection into master / user
     static func addItemCollectionToDatabase(_ item : Item, parentItem : Item, channelID : String, post : [String : String],
                                             completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         
@@ -1513,7 +1528,7 @@ class PulseDatabase {
         
         var collectionPost : [AnyHashable: Any]! = [:]
         
-        var channelPost : [String : AnyObject] = ["type" : item.type.rawValue as AnyObject,
+        var channelPost : [String : Any] = ["type" : item.type.rawValue as AnyObject,
                                                 "tagID" : item.tag?.itemID as AnyObject,
                                                 "tagTitle" : item.tag?.itemTitle as AnyObject,
                                                 "title" : item.itemTitle as AnyObject,
@@ -1532,12 +1547,24 @@ class PulseDatabase {
             collectionPost["itemCollection/\(item.itemID)"] = post
         }
         
+        if item.choices.count > 0 {
+            var choicesPost : [String : Any] = [ : ]
+            
+            for choice in item.choices {
+                choicesPost[choice.itemID] = choice.itemTitle
+            }
+            
+            channelPost["choices"] = choicesPost
+        }
+        
         //if it's an item in response to a feedback request, thread or question - add the new item and update the created at for channelItems -
         //keeps only one post for each feedback request
         if (parentItem.type == .session && item.type == .session) || (parentItem.type == .question && item.type == .answer) || (parentItem.type == .thread && item.type == .perspective) {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["channelItems/\(channelID)/\(parentItem.itemID)/createdAt"] = ServerValue.timestamp() as AnyObject
             collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+            collectionPost["items/\(item.itemID)/tagID"] = parentItem.itemID
+            collectionPost["items/\(item.itemID)/tagTitle"] = parentItem.itemTitle
         }
             
         //if it's new feedback session then add it to channel items & series but with the new key
@@ -1561,6 +1588,7 @@ class PulseDatabase {
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
             collectionPost["channelItems/\(channelID)/\(item.itemID)"] = channelPost
             collectionPost["userDetailedPublicSummary/\(_user.uID!)/items/\(item.itemID)"] = item.type.rawValue as AnyObject
+            
         } else if parentItem.type == .interview {
             //interviews are added to collection but only one entry is added to channelItems & user records
             collectionPost["itemCollection/\(parentItem.itemID)/\(item.itemID)"] = item.type.rawValue as AnyObject
@@ -1569,7 +1597,6 @@ class PulseDatabase {
         if let tagID = item.tag?.itemID {
             collectionPost["channels/\(channelID)/tags/\(tagID)/lastCreatedAt"] = ServerValue.timestamp() as AnyObject
         }
-
         
         databaseRef.updateChildValues(collectionPost, withCompletionBlock: { (blockError, ref) in
             blockError != nil ? completion(false, blockError) : completion(true, nil)
@@ -1953,7 +1980,7 @@ class PulseDatabase {
         
         //in parentCollection > add new ListID & UserID
         let collectionPost = ["lists/\(parentListItem.itemID)/\(newListID)": PulseUser.currentUser.uID! as AnyObject,
-                              "userDetailedPublicSummary/\(PulseUser.currentUser.uID!)/lists/\(newListID)": "collection",
+                              "userDetailedPublicSummary/\(PulseUser.currentUser.uID!)/items/\(parentListItem.itemID)": "collection",
                               "listCollection/\(newListID)" : listsPost] as [String : Any]
         
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (blockError, ref) in
@@ -2072,7 +2099,7 @@ class PulseDatabase {
         })
     }
     
-    static func createInviteRequest(item: Item, type: MessageType, toUser: PulseUser?, toName: String?, toEmail: String? = nil, childItems: [String],
+    static func createInviteRequest(item: Item, type: MessageType, toUser: PulseUser?, toName: String?, toEmail: String? = nil, childItems: [Item],
                                     parentItemID: String?, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to apply" ]
@@ -2105,7 +2132,7 @@ class PulseDatabase {
             var childItemDetail : [ String : String ] = [:]
             for child in childItems {
                 let itemID = databaseRef.child("invites").child(item.itemID).child("items").childByAutoId().key
-                childItemDetail[itemID] = child
+                childItemDetail[itemID] = child.itemTitle
             }
             
             itemPost["items"] = childItemDetail
@@ -2206,10 +2233,16 @@ class PulseDatabase {
     }
     
     /** ADD NEW THREAD TO SERIES **/
-    static func addThread(channelID: String, parentItem: Item, item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
+    static func addThread(item : Item, completion: @escaping (_ success : Bool, _ error : Error?) -> Void) {
         guard PulseUser.isLoggedIn() else {
             let errorInfo = [ NSLocalizedDescriptionKey : "you must be logged in to start a thread" ]
             completion(false, NSError.init(domain: "NotLoggedIn", code: 404, userInfo: errorInfo))
+            return
+        }
+        
+        guard item.tag != nil else {
+            let errorInfo = [ NSLocalizedDescriptionKey : "invalid series selected" ]
+            completion(false, NSError.init(domain: "IncorrectSeries", code: 404, userInfo: errorInfo))
             return
         }
         
@@ -2221,30 +2254,46 @@ class PulseDatabase {
             return
         }
         
-        guard user.isContributor(for: Channel(cID: channelID)) else {
+        guard user.isContributor(for: Channel(cID: item.cID)) else {
             let errorInfo = [ NSLocalizedDescriptionKey : "only verified contributors can start a thread" ]
             completion(false, NSError.init(domain: "NotContributor", code: 404, userInfo: errorInfo))
             return
         }
         
-        let itemPost : [String : Any] = ["title" : item.itemTitle,
+        var itemPost : [String : Any] = ["title" : item.itemTitle,
                                          "description" : item.itemDescription,
                                          "type" : item.type.rawValue,
                                          "uID" : user.uID!,
                                          "createdAt" : ServerValue.timestamp(),
-                                         "cID":channelID]
+                                         "cID":item.cID]
         
-        let channelItemsPost : [String : Any] = ["title" : item.itemTitle,
+        var channelItemsPost : [String : Any] = ["title" : item.itemTitle,
                                                  "description" : item.itemDescription,
-                                                 "tagID" : parentItem.itemID,
-                                                 "tagTitle" : parentItem.itemTitle,
+                                                 "tagID" : item.tag!.itemID,
+                                                 "tagTitle" : item.tag!.itemTitle,
                                                  "uID" : user.uID!,
                                                  "createdAt" : ServerValue.timestamp(),
                                                  "type" : item.type.rawValue]
         
-        let collectionPost = ["channelItems/\(channelID)/\(item.itemID)": channelItemsPost,
+        
+        if item.choices.count > 0 {
+            var choicesPost : [String : Any] = [ : ]
+            
+            for choice in item.choices {
+                choicesPost[choice.itemID] = choice.itemTitle
+                
+                if let image = choice.content {
+                    PulseDatabase.uploadChoiceImage(channelID: item.cID, itemID: item.itemID, filename: choice.itemID, image: image, completion: {_, _ in })
+                }
+            }
+            
+            itemPost["choices"] = choicesPost
+            channelItemsPost["choices"] = choicesPost
+        }
+        
+        let collectionPost = ["channelItems/\(item.cID!)/\(item.itemID)": channelItemsPost,
                               "items/\(item.itemID)" : itemPost,
-                              "itemCollection/\(parentItem.itemID)/\(item.itemID)": item.type.rawValue] as [String : Any]
+                              "itemCollection/\(item.tag!.itemID)/\(item.itemID)": item.type.rawValue] as [String : Any]
         
         databaseRef.updateChildValues(collectionPost , withCompletionBlock: { (error, ref) in
             error != nil ? completion(false, error) : completion(true, nil)
@@ -2342,6 +2391,27 @@ class PulseDatabase {
         path.getData(maxSize: maxImgSize) { (data, error) -> Void in
             error != nil ? completion(nil, error! as NSError?) : completion(data, nil)
         }
+    }
+    
+    static func getCachedChoiceImage(channelID: String, parentItemID : String, itemID: String, completion: @escaping (_ image : UIImage?) -> Void) {
+        itemImageCache.retrieveImage(forKey: itemID, completion: { image, _ in
+            if let image = image {
+                //return image that was retreived
+                completion(image)
+            } else {
+                let path = storageRef.child("channels/\(channelID)").child(parentItemID).child(itemID)
+                
+                path.getData(maxSize: MAX_IMAGE_FILESIZE) { (data, error) -> Void in
+                    
+                    if let data = data {
+                        itemImageCache.store(data, forKey: itemID)
+                        completion(UIImage(data: data))
+                    } else {
+                        completion(nil)
+                    }
+                }
+            }
+        })
     }
     
     static func getCachedSeriesImage(channelID: String, itemID : String, fileType : FileTypes, completion: @escaping (_ image : UIImage?) -> Void) {
@@ -2600,6 +2670,17 @@ class PulseDatabase {
         }
     }
     
+    static func uploadChoiceImage(channelID: String, itemID : String, filename: String, image : UIImage, completion: @escaping (_ metadata : StorageMetadata?, _ error : Error?) -> Void) {
+        let path = storageRef.child("channels").child(channelID).child(itemID).child(filename)
+        let data = image.mediumQualityJPEGNSData
+        let _metadata = StorageMetadata()
+        _metadata.contentType = "image/jpeg"
+        
+        path.putData(data, metadata: _metadata) { (metadata, error) in
+            completion(metadata, error)
+        }
+    }
+    
     static func uploadListImage(itemID : String, image : UIImage, completion: @escaping (_ metadata : StorageMetadata?, _ error : Error?) -> Void) {
         let path = storageRef.child("listItems").child(itemID).child("content")
         let data = image.mediumQualityJPEGNSData
@@ -2717,5 +2798,10 @@ class PulseDatabase {
         databaseRef.child("reportedContent").updateChildValues([reportKey: reportPost], withCompletionBlock: { (completionError, ref) in
             completionError != nil ? completion(false, completionError) : completion(true, nil)
         })
+    }
+    
+    /** GET KEY **/
+    static func getKey(forPath: String) -> String {
+        return databaseRef.child(forPath).childByAutoId().key
     }
 }

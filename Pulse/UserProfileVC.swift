@@ -7,8 +7,9 @@
 //
 
 import UIKit
+import Firebase
 
-class UserProfileVC: PulseVC, UserProfileDelegate {
+class UserProfileVC: PulseVC, UserProfileDelegate, ItemCellDelegate {
     
     public weak var modalDelegate : ModalDelegate!
     public var isModal = false
@@ -68,50 +69,15 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
     /** End Delegate Vars **/
     
     /** Data Source Vars **/
-    public var allItems = [Item]() {
-        didSet {
-            itemStack.removeAll()
-            itemStack = [ItemMetaData](repeating: ItemMetaData(), count: allItems.count)
-        }
-    }
-    
-    struct ItemMetaData {
-        var itemCollection = [Item]()
-        
-        var gettingImageForPreview : Bool = false
-        var gettingInfoForPreview : Bool = false
-    }
-    internal var itemStack = [ItemMetaData]()
+    public var allItems = [Item]()
+    fileprivate var selectedUserPic : UIImage?
     /** End Data Source Vars **/
     
     fileprivate var isLayoutSetup = false
     
     /** Collection View Vars **/
     internal var collectionView : UICollectionView!
-    fileprivate let minCellHeight : CGFloat = 225
     fileprivate let headerHeight : CGFloat = 220
-    
-    fileprivate var selectedIndex : IndexPath? {
-        didSet {
-            if selectedIndex != nil {
-                collectionView?.reloadItems(at: [selectedIndex!])
-                if deselectedIndex != nil && deselectedIndex != selectedIndex {
-                    collectionView?.reloadItems(at: [deselectedIndex!])
-                }
-            }
-        }
-        willSet {
-            if selectedIndex != nil {
-                deselectedIndex = selectedIndex
-            }
-            
-            if newValue == nil, let selectedIndex = selectedIndex {
-                let cell = collectionView?.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: selectedIndex) as! BrowseContentCell
-                cell.removePreview()
-            }
-        }
-    }
-    fileprivate var deselectedIndex : IndexPath?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -145,7 +111,6 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
         if !cleanupComplete {
             cleanupComplete = true
             selectedUser = nil
-            itemStack.removeAll()
             collectionView = nil
             allItems.removeAll()
             modalDelegate = nil
@@ -188,13 +153,9 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UICollectionViewFlowLayout())
         let _ = PulseFlowLayout.configureLayout(collectionView: collectionView, minimumLineSpacing: 10, itemSpacing: 10, stickyHeader: false)
         
-        collectionView?.register(EmptyCell.self,
-                                 forCellWithReuseIdentifier: emptyReuseIdentifier)
-        collectionView?.register(BrowseContentCell.self,
-                                 forCellWithReuseIdentifier: reuseIdentifier)
-        collectionView?.register(UserProfileHeader.self,
-                                 forSupplementaryViewOfKind: UICollectionElementKindSectionHeader ,
-                                 withReuseIdentifier: headerReuseIdentifier)
+        collectionView?.register(EmptyCell.self, forCellWithReuseIdentifier: emptyReuseIdentifier)
+        collectionView?.register(ItemCell.self, forCellWithReuseIdentifier: reuseIdentifier)
+        collectionView?.register(UserProfileHeader.self, forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, withReuseIdentifier: headerReuseIdentifier)
         
         view.addSubview(collectionView)
     }
@@ -290,16 +251,11 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
     
     //once allItems var is set reload the data
     func updateDataSource() {
-        if !isLayoutSetup  {
-            setupLayout()
-            isLayoutSetup = true
-        }
-        
         collectionView?.dataSource = self
         collectionView?.delegate = self
         collectionView?.reloadData()
-        
         collectionView?.collectionViewLayout.invalidateLayout()
+        
         toggleLoading(show: false, message: nil)
     }
     
@@ -371,6 +327,35 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
         present(menu, animated: true, completion: nil)
     }
     
+    //shows the user profile
+    internal func clickedUserButton(itemRow : Int) {
+        //ignore as we are already in user profile
+    }
+    
+    //menu for each individual item
+    internal func clickedMenuButton(itemRow: Int) {
+        let currentItem = allItems[itemRow]
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "share \(currentItem.type.rawValue.capitalized)", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            self.showShare(selectedItem: currentItem, type: currentItem.type.rawValue)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "report This", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            
+            menu.dismiss(animated: true, completion: nil)
+            self.reportContent(item: currentItem)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
     internal func clickedLogout() {
         let confirmLogout = UIAlertController(title: "Logout", message: "Are you sure you want to logout?", preferredStyle: .actionSheet)
         
@@ -392,14 +377,89 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
         present(confirmLogout, animated: true, completion: nil)
     }
     
-    /** Start Delegate Functions **/
-    internal func askQuestion() {
-        let questionVC = AskQuestionVC()
-        questionVC.selectedUser = selectedUser
-        questionVC.modalDelegate = self
-        navigationController?.pushViewController(questionVC, animated: true)
+    override func userSelected(item : Any) {
+        
+        if let item = item as? Item {
+            
+            item.user = selectedUser
+            
+            Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: item.type.rawValue as NSObject,
+                                                                         AnalyticsParameterItemID: "\(item.itemID)" as NSObject])
+            
+            switch item.type {
+            case .answer:
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                
+            case .post, .perspective, .showcase:
+                
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                
+            case .interview:
+                
+                //showing chron (earliest first) vs. question / thread where show newest first
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    self.toggleLoading(show: false, message: nil)
+                    success ?
+                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) :
+                        GlobalFunctions.showAlertBlock("Error Fetching Interview", erMessage: "Sorry there was an error - please try another item")
+                })
+                
+            case .question, .thread:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    self.toggleLoading(show: false, message: nil)
+                    success ?
+                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
+                        GlobalFunctions.showAlertBlock("Error Fetching Interview", erMessage: "Sorry there was an error - please try another item")
+                })
+                
+            case .session:
+                
+                toggleLoading(show: true, message: "loading \(item.type.rawValue)...", showIcon: true)
+                
+                PulseDatabase.getItemCollection(item.itemID, completion: {[weak self] (success, items) in
+                    guard let `self` = self else { return }
+                    
+                    self.toggleLoading(show: false, message: nil)
+                    
+                    if success, items.count > 1 {
+                        //since ordering is cron based - move the first 'question' item to front
+                        if let lastItem = items.last {
+                            let sessionSlice = items.dropLast()
+                            var sessionItems = Array(sessionSlice)
+                            sessionItems.insert(lastItem, at: 0)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
+                        }
+                    } else if success {
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                    } else {
+                        //show no items menu
+                        GlobalFunctions.showAlertBlock("Error Fetching Interview", erMessage: "Sorry there was an error - please try another item")
+                    }
+                })
+                
+            case .collection:
+                
+                let browseCollectionVC = BrowseCollectionVC()
+                browseCollectionVC.selectedChannel = Channel(cID: item.cID, title: item.cTitle)
+                
+                navigationController?.pushViewController(browseCollectionVC, animated: true)
+                browseCollectionVC.selectedItem = item
+                
+            default: break
+            }
+        }
     }
+    /** End Delegate Functions **/
     
+    /** Start Delegate Functions **/
     internal func shareProfile() {
         self.toggleLoading(show: true, message: "loading share options...", showIcon: true)
 
@@ -417,33 +477,10 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
     }
     /** End Delegate Functions **/
     
-    internal func showItemDetail(selectedItem : Item?, allItems: [Item]) {
-        contentVC = ContentManagerVC()
-        
-        if let selectedItem = selectedItem {
-            contentVC.selectedItem = selectedItem
-            contentVC.allItems = allItems
-            contentVC.selectedChannel = Channel(cID: selectedItem.cID)
-        } else {
-            contentVC.allItems = allItems
-            contentVC.selectedChannel = Channel(cID: allItems.first!.cID)
-        }
-        
-        contentVC.openingScreen = .item
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    internal func showItemDetail(selectedItem : Item) {
-        //need to be set first
-        showItemDetail(selectedItem: nil, allItems: [selectedItem])
-    }
-    
     //reload data isn't called on existing cells so this makes sure visible cells always have data in them
-    func updateCurrentCell(_ cell: BrowseContentCell, atIndexPath indexPath: IndexPath) {
+    func updateCurrentCell(_ cell: ItemCell, atIndexPath indexPath: IndexPath) {
         if allItems[indexPath.row].itemCreated  {
-            cell.updateLabel(nil, _subtitle: allItems[indexPath.row].itemTitle)
+            cell.updateLabel(getTitleForItem(item: allItems[indexPath.row]), _subtitle: selectedUser.name, _createdAt: allItems[indexPath.row].createdAt, _tag: nil)
         }
         
         if let image = allItems[indexPath.row].content  {
@@ -454,7 +491,7 @@ class UserProfileVC: PulseVC, UserProfileDelegate {
     func updateOnscreenRows() {
         if let visiblePaths = collectionView?.indexPathsForVisibleItems {
             for indexPath in visiblePaths {
-                let cell = collectionView?.cellForItem(at: indexPath) as! BrowseContentCell
+                let cell = collectionView?.cellForItem(at: indexPath) as! ItemCell
                 updateCurrentCell(cell, atIndexPath: indexPath)
             }
         }
@@ -473,120 +510,70 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
             return cell
         }
         
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! BrowseContentCell
-        
-        cell.contentView.backgroundColor = .white
-        cell.setNumberOfLines(titleNum: 0, subTitleNum: 2)
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! ItemCell
+        cell.delegate = self
+        cell.tag = indexPath.row
         
         let currentItem = allItems[indexPath.row]
         
-        /* GET PREVIEW IMAGE FROM STORAGE */
-        if currentItem.content != nil && !itemStack[indexPath.row].gettingImageForPreview {
+        //clear the cells and set the item type first
+        cell.updateLabel(nil, _subtitle: selectedUser.name, _createdAt: currentItem.createdAt, _tag: nil)
+        
+        if let selectedUserImage = selectedUserPic {
+            cell.updateButtonImage(image: selectedUserImage, itemTag : indexPath.row)
+        } else {
+            PulseDatabase.getCachedUserPic(uid: selectedUser.uID!, completion: { image in
+                DispatchQueue.main.async {
+                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                        cell.updateButtonImage(image: image, itemTag : indexPath.row)
+                        self.selectedUserPic = image
+                    }
+                }
+            })
+        }
+        
+        //Already fetched this item
+        if allItems[indexPath.row].itemCreated {
             
-            cell.updateImage(image: currentItem.content)
+            cell.itemType = currentItem.type
+            cell.updateCell(getTitleForItem(item: allItems[indexPath.row]), _subtitle: selectedUser.name, _tag: nil, _createdAt: currentItem.createdAt, _image: allItems[indexPath.row].content ?? nil)
             
-        } else if itemStack[indexPath.row].gettingImageForPreview {
-            
-            //ignore if already fetching the image, so don't refetch if already getting
-            
-        } else if currentItem.itemCreated {
-            itemStack[indexPath.row].gettingImageForPreview = true
-            
-            PulseDatabase.getImage(channelID: currentItem.cID, itemID: currentItem.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (_data, error) in
+        } else {
+            PulseDatabase.getItem(allItems[indexPath.row].itemID, completion: {[weak self] (item, error) in
                 guard let `self` = self else { return }
-                if error == nil {
-                    let _previewImage = GlobalFunctions.createImageFromData(_data!)
-                    self.allItems[indexPath.row].content = _previewImage
+                
+                if let item = item {
+                    cell.itemType = item.type
                     
                     if collectionView.indexPath(for: cell)?.row == indexPath.row {
                         DispatchQueue.main.async {
-                            cell.updateImage(image: self.allItems[indexPath.row].content)
-                        }
-                    }
-                } else {
-                    cell.updateImage(image: nil)
-                }
-            })
-        }
-        
-        if currentItem.itemCreated, itemStack[indexPath.row].gettingInfoForPreview {
-            
-            cell.updateLabel(nil, _subtitle: currentItem.itemTitle)
-            
-        } else if itemStack[indexPath.row].gettingInfoForPreview {
-            
-            //ignore if already fetching the image, so don't refetch if already getting
-        } else {
-            cell.updateLabel(nil, _subtitle: nil, _image : nil)
-
-            itemStack[indexPath.row].gettingInfoForPreview = true
-            
-            // Get the user details
-            PulseDatabase.getItem(currentItem.itemID, completion: {[weak self] (item, error) in
-                guard let `self` = self else { return }
-                if let item = item, indexPath.row < self.allItems.count {
-                    let tempImage = self.allItems[indexPath.row].content
-                    self.allItems[indexPath.row] = item
-                    self.allItems[indexPath.row].content = tempImage
-                    
-                    DispatchQueue.main.async {
-                        if collectionView.indexPath(for: cell)?.row == indexPath.row {
-                            cell.updateLabel(nil, _subtitle: self.allItems[indexPath.row].itemTitle)
-                        }
-                    }
-
-                    PulseDatabase.getImage(channelID: item.cID, itemID: item.itemID, fileType: .thumb, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (_data, error) in
-                        guard let `self` = self else { return }
-                        if error == nil, indexPath.row < self.allItems.count {
-                            let _previewImage = GlobalFunctions.createImageFromData(_data!)
-                            self.allItems[indexPath.row].content = _previewImage
                             
-                            if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                            cell.itemType = item.type
+                            cell.updateLabel(self.getTitleForItem(item: item), _subtitle: self.selectedUser.name,  _createdAt: item.createdAt, _tag: nil)
+                        }
+                    }
+                    
+                    self.allItems[indexPath.row] = item
+                    
+                    //Get the image if content type is a post or perspectives thread
+                    if item.content == nil, item.shouldGetImage(), !item.fetchedContent, let imageID = self.filePathForImage(item: item) {
+                        PulseDatabase.getImage(channelID: item.cID, itemID: imageID, fileType: .content, maxImgSize: MAX_IMAGE_FILESIZE, completion: {[weak self] (data, error) in
+                            guard let `self` = self else { return }
+                            if let data = data {
+                                self.allItems[indexPath.row].content = UIImage(data: data)
+                                
                                 DispatchQueue.main.async {
-                                    cell.updateImage(image: self.allItems[indexPath.row].content)
+                                    if collectionView.indexPath(for: cell)?.row == indexPath.row {
+                                        cell.updateImage(image : self.allItems[indexPath.row].content)
+                                    }
                                 }
                             }
-                        } else if indexPath.row < self.allItems.count {
-                            cell.updateImage(image: self.allItems[indexPath.row].defaultImage())
-                        }
-                    })
+                            
+                            self.allItems[indexPath.row].fetchedContent = true
+                        })
+                    }
                 }
             })
-        }
-        
-        if indexPath == selectedIndex && indexPath == deselectedIndex {
-            
-            showItemDetail(selectedItem: currentItem)
-            
-        } else if indexPath == selectedIndex {
-            
-            //if interview just go directly to full screen
-            if currentItem.type != .interview {
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
-                    guard let `self` = self else { return }
-                    if hasDetail {
-                        cell.showTapForMore = true
-                        self.itemStack[indexPath.row].itemCollection = itemCollection
-                    } else {
-                        cell.showTapForMore = false
-                    }
-                })
-                
-                cell.showItemPreview(item: currentItem)
-            } else {
-                toggleLoading(show: true, message: "loading interview...")
-                PulseDatabase.getItemCollection(currentItem.itemID, completion: {[weak self] (hasDetail, itemCollection) in
-                    guard let `self` = self else { return }
-                    self.toggleLoading(show: false, message: nil)
-                    self.showItemDetail(selectedItem : currentItem, allItems: itemCollection.reversed())
-                    self.selectedIndex = nil
-                    self.deselectedIndex = nil
-
-                })
-            }
-            
-        } else if indexPath == deselectedIndex {
-            cell.removePreview()
         }
         
         return cell
@@ -602,11 +589,8 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
     
     //Did select item at index path
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if allItems.count > 0, let attributes = collectionView.layoutAttributesForItem(at: indexPath) {
-            let cellRect = attributes.frame
-            initialFrame = collectionView.convert(cellRect, to: collectionView.superview)
-            
-            selectedIndex = indexPath
+        if allItems.count > 0, indexPath.row < allItems.count {
+            userSelected(item: allItems[indexPath.row])
         }
     }
     
@@ -627,24 +611,49 @@ extension UserProfileVC : UICollectionViewDataSource, UICollectionViewDelegate {
         }
         return UICollectionReusableView()
     }
+    
+    //Individual items like perspective / collection are saved so need to get the parent itemID to grab the image
+    func filePathForImage(item: Item) -> String? {
+        switch item.type {
+        case .collection, .perspective, .feedback:
+            return item.tag?.itemID
+        default:
+            return item.itemID
+        }
+    }
+    
+    //Individual items like perspective / collection are saved so need to get the parent itemID to grab the title
+    func getTitleForItem(item: Item) -> String {
+        switch item.type {
+        case .collection, .perspective, .feedback:
+            let _title = item.tag?.itemTitle != nil ? "\(item.tag!.itemTitle)" : item.itemTitle
+            return _title
+        default:
+            let _title = item.itemDescription != "" ? "\(item.itemTitle) - \(item.itemDescription)" : item.itemTitle
+            return _title
+        }
+    }
 }
 
 extension UserProfileVC: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 0.0, left: 0.0, bottom: allItems.count > 0 ? (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue : 0, right: 0.0)
+    }
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         if allItems.count == 0 {
             return CGSize(width: view.frame.width, height: view.frame.height - headerHeight)
         }
-        return CGSize(width: (view.frame.width - 30) / 2, height: minCellHeight)
+        
+        let cellHeight = GlobalFunctions.getCellHeight(type: allItems[indexPath.row].type)
+        return CGSize(width: collectionView.frame.width, height: allItems.count > 0 ? cellHeight : 0)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         return CGSize(width: collectionView.frame.width, height: headerHeight)
     }
     
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-        if allItems.count == 0 {
-            return UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0, right: 0.0)
-        }
-        return UIEdgeInsets(top: 10.0, left: 10.0, bottom: (tabBarController?.tabBar.frame.height ?? 0) + Spacing.xs.rawValue, right: 10.0)
+    func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        return true
     }
 }

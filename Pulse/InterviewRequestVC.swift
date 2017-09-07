@@ -7,21 +7,20 @@
 
 import UIKit
 
-class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
-    
+class InterviewRequestVC: PulseVC, CompletedRecordingDelegate, ListDelegate {
     public var selectedUser : PulseUser!
     public var interviewItem : Item!
     public var conversationID : String?
     
     public var interviewItemID : String! {
         didSet {
-            if interviewItem == nil || allQuestions.isEmpty || selectedUser == nil {
+            if interviewItem == nil || allItems.isEmpty || selectedUser == nil {
                 PulseDatabase.getInviteItem(interviewItemID, completion: {[weak self] interviewItem, _, questions, toUser, conversationID, error in
                     guard let `self` = self else { return }
 
                     self.selectedUser = toUser
                     self.interviewItem = interviewItem
-                    self.allQuestions = questions
+                    self.allItems = questions
                     
                     if self.conversationID == nil, let cID = conversationID {
                         self.conversationID = cID
@@ -43,7 +42,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     
     //Table View Vars
     internal var tableView : UITableView!
-    internal var allQuestions = [Item]()
+    internal var allItems = [Item]()
     internal var selectedIndex : Int?
     internal var completedIndex = [Bool]()
     
@@ -90,7 +89,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
         if !cleanupComplete {
             selectedUser = nil
             interviewItem = nil
-            allQuestions.removeAll()
+            allItems.removeAll()
             completedIndex.removeAll()
             cleanupComplete = true
         }
@@ -117,7 +116,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
     
     internal func doneRecording(success: Bool) {
         if success, let selectedIndex = selectedIndex {
-            allQuestions[selectedIndex].itemCreated = true
+            allItems[selectedIndex].itemCreated = true
             tableView.reloadRows(at: [IndexPath(item: selectedIndex, section: 0)], with: .middle)
             submitButton.setEnabled()
         }
@@ -131,7 +130,7 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
 
         headerNav?.setNav(title: "Interview Request", subtitle: "Topic\(interviewRequest)")
 
-        iDescription.text = "You receieved an interview request\(interviewerName.capitalized). Your interview will be featured in the\(seriesName) series\(channelName)! You can answer any or all questions."
+        iDescription.text = "You got an interview request\(interviewerName.capitalized). Your interview will be featured in the\(seriesName) series\(channelName)! Completed Qs have a check mark & drafts are saved until you are ready to publish"
         iDescription.numberOfLines = 0
         iDescription.layoutIfNeeded()
     }
@@ -150,9 +149,10 @@ class InterviewRequestVC: PulseVC, CompletedRecordingDelegate {
             guard let `self` = self else { return }
             if success {
                 for item in items {
-                    if let itemIndex = self.allQuestions.index(of: item) {
-                        self.allQuestions[itemIndex].itemCreated = true
+                    if let itemIndex = self.allItems.index(of: item) {
+                        self.allItems[itemIndex].itemCreated = true
                         self.tableView.reloadRows(at: [IndexPath(item: itemIndex, section: 0)], with: .middle)
+                        self.submitButton.setEnabled()
                     }
                 }
             }
@@ -269,9 +269,9 @@ extension InterviewRequestVC {
         view.addSubview(iDescription)
 
         iDescription.translatesAutoresizingMaskIntoConstraints = false
-        iDescription.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.xl.rawValue).isActive = true
+        iDescription.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         iDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        iDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        iDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
         iDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         iDescription.numberOfLines = 4
@@ -283,16 +283,16 @@ extension InterviewRequestVC {
     internal func addTableView() {
         tableView = UITableView(frame: CGRect.zero, style: .plain)
         view.addSubview(tableView)
-        
+        view.addSubview(submitButton)
+
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.topAnchor.constraint(equalTo: iDescription.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         tableView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -IconSizes.xLarge.rawValue).isActive = true
-        tableView.layoutIfNeeded()
+        tableView.bottomAnchor.constraint(equalTo: submitButton.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         
-        tableView?.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
-        tableView?.register(UITableViewHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: headerReuseIdentifier)
+        tableView?.register(ListItemCell.self, forCellReuseIdentifier: reuseIdentifier)
+        tableView?.register(ListItemFooter.self, forHeaderFooterViewReuseIdentifier: headerReuseIdentifier)
         
         tableView?.backgroundView = nil
         tableView?.backgroundColor = UIColor.clear
@@ -300,24 +300,17 @@ extension InterviewRequestVC {
         tableView?.separatorColor = UIColor.pulseGrey.withAlphaComponent(0.7)
         
         tableView?.showsVerticalScrollIndicator = false
-        tableView?.layoutIfNeeded()
         tableView?.tableFooterView = UIView()
         
         tableView.separatorInset = .zero
         tableView.layoutMargins = .zero
-        
-        addSubmitButton()
-    }
-    
-    internal func addSubmitButton() {
-        view.addSubview(submitButton)
         
         submitButton.translatesAutoresizingMaskIntoConstraints = false
         submitButton.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         submitButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         submitButton.heightAnchor.constraint(equalToConstant: PulseButton.regularButtonHeight).isActive = true
         submitButton.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        submitButton.layoutIfNeeded()
+
         submitButton.setDisabled()
         submitButton.addTarget(self, action: #selector(checkInterviewCompleted), for: .touchUpInside)
     }
@@ -366,12 +359,12 @@ extension InterviewRequestVC {
         submitButton.setDisabled()
         loading = submitButton.addLoadingIndicator()
         
-        for item in allQuestions {
+        for item in allItems {
             if !item.itemCreated {
                 showIncompleteMenu()
                 submitButton.setEnabled()
                 loading?.removeFromSuperview()
-            } else if item.itemID == allQuestions.last?.itemID {
+            } else if item.itemID == allItems.last?.itemID {
                 markInterviewCompleted()
             }
         }
@@ -412,6 +405,24 @@ extension InterviewRequestVC {
             }
         })
     }
+    
+    internal func addListItem(title : String) {
+        let newItem = Item(itemID: PulseDatabase.getKey(forPath: "items"))
+        newItem.itemTitle = title
+        
+        let newIndexPath = IndexPath(row: allItems.count, section: 0)
+        allItems.append(newItem)
+        tableView.insertRows(at: [newIndexPath], with: .left)
+        tableView.scrollToRow(at: newIndexPath, at: .bottom, animated: true)
+    }
+    
+    func userClickedListItem(itemID: String) {
+        //ignore - supposed to be for clicking the image link which we don't use
+    }
+    
+    func showMenuFor(itemID: String) {
+        //not showing menu
+    }
 }
 
 extension InterviewRequestVC : UITableViewDelegate, UITableViewDataSource {
@@ -421,70 +432,66 @@ extension InterviewRequestVC : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return allQuestions.count
+        return allItems.count
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let cell = tableView.dequeueReusableHeaderFooterView(withIdentifier: headerReuseIdentifier)
-        
-        if let cell = cell {
-            cell.contentView.addBottomBorder()
-            cell.contentView.backgroundColor = .clear
-            //need to add space since we want the separators to be full screen
-            cell.textLabel?.text = "    Select a question to answer"
+        guard let cell = tableView.dequeueReusableHeaderFooterView(withIdentifier: headerReuseIdentifier) as? ListItemFooter else {
+            return UITableViewHeaderFooterView()
         }
+        
+        cell.listDelegate = self
+        cell.contentView.backgroundColor = UIColor.white
+        cell.contentView.layer.cornerRadius = 5
+        cell.updateLabels(title: "select / add Question", subtitle: "you can answer any / all questions or add new ones!")
         
         return cell
     }
     
-    func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
-        if let header = view as? UITableViewHeaderFooterView {
-            header.backgroundView?.backgroundColor = .white
-            header.textLabel!.setFont(FontSizes.body.rawValue, weight: UIFontWeightBold, color: .black, alignment: .left)
-        }
-    }
-    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier)
-        cell?.textLabel?.numberOfLines = 3
-        cell?.textLabel?.lineBreakMode = .byTruncatingTail
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as? ListItemCell else {
+            return UITableViewCell()
+        }
+        cell.showItemMenu(show: false)
+        let currentItem = allItems[indexPath.row]
         
-        if allQuestions[indexPath.row].itemCreated {
-            let attributeString: NSMutableAttributedString =  NSMutableAttributedString(string: allQuestions[indexPath.row].itemTitle)
-            //attributeString.addAttribute(NSStrikethroughStyleAttributeName, value: 2, range: NSMakeRange(0, attributeString.length))
+        if currentItem.itemCreated {
+            cell.updateImage(image: UIImage(named: "check"), showBackground: false, showSmallPreview: true, addBorder: true, addInsets: true)
+            let attributeString: NSMutableAttributedString =  NSMutableAttributedString(string: currentItem.itemTitle)
+            attributeString.addAttribute(NSStrikethroughStyleAttributeName, value: 2, range: NSMakeRange(0, attributeString.length))
             attributeString.addAttribute(NSFontAttributeName, value: UIFont.pulseFont(ofWeight: UIFontWeightThin, size: FontSizes.body2.rawValue), range: NSMakeRange(0, attributeString.length))
-            
-            cell?.accessoryType = .checkmark
-            cell?.tintColor = .black
-            cell?.textLabel?.attributedText = attributeString
-            cell?.textLabel?.textColor = UIColor.placeholderGrey
+            cell.updateAttributedItemDetails(title: nil, subtitle: attributeString, countText: String(indexPath.row + 1))
 
         } else {
-            cell?.accessoryType = .disclosureIndicator
-            cell?.textLabel?.text = allQuestions[indexPath.row].itemTitle
-            cell?.textLabel?.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
+            cell.updateItemDetails(title: nil, subtitle: allItems[indexPath.row].itemTitle, countText: String(indexPath.row + 1))
         }
         
-        return cell!
+        cell.itemID = String(indexPath.row)
+        return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if indexPath.row < allQuestions.count {
+        if indexPath.row < allItems.count {
             selectedIndex = indexPath.row
             
-            if allQuestions[indexPath.row].itemCreated {
-                confirmOverwriteAnswer(qItem: allQuestions[indexPath.row])
+            if allItems[indexPath.row].itemCreated {
+                confirmOverwriteAnswer(qItem: allItems[indexPath.row])
             } else {
-                askQuestion(qItem: allQuestions[indexPath.row])
+                askQuestion(qItem: allItems[indexPath.row])
             }
         }
+        tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    func tableView(_ tableView: UITableView, didHighlightRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return IconSizes.medium.rawValue
+        return IconSizes.large.rawValue
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return skinnyHeaderHeight
+        return IconSizes.medium.rawValue * 1.2
     }
 }

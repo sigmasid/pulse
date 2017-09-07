@@ -13,7 +13,7 @@ protocol ExploreChannelsDelegate: class {
     func userClickedSubscribe(senderTag: Int)
 }
 
-class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, BrowseContentDelegate, HeaderDelegate {
+class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, HeaderDelegate {
     public weak var tabDelegate : MasterTabDelegate!
 
     // Set by MasterTabVC
@@ -245,16 +245,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, BrowseContentDelegate
         }
     }
     
-    internal func addNewItem(selectedItem: Item) {
-        contentVC = ContentManagerVC()
-        contentVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
-        contentVC.selectedItem = selectedItem
-        contentVC.openingScreen = .camera
-        
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    //
     internal func showBrowse(selectedItem: Item) {
         let _selectedItem = selectedItem
         
@@ -273,23 +263,6 @@ class ExploreChannelsVC: PulseVC, ExploreChannelsDelegate, BrowseContentDelegate
         navigationController?.pushViewController(channelVC, animated: true)
         Analytics.logEvent(AnalyticsEventSelectContent, parameters: [AnalyticsParameterContentType: "channel" as NSObject,
                                                                      AnalyticsParameterItemID: "\(channel.cID)" as NSObject])
-    }
-
-    //used for handling links
-    internal func showItemDetail(item : Item, allItems: [Item]) {
-        showItemDetail(allItems: allItems, index: 0, itemCollection: [], selectedItem: item)
-    }
-    
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
-        contentVC = ContentManagerVC()
-        contentVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
-        contentVC.selectedItem = selectedItem
-        contentVC.itemCollection = itemCollection
-        contentVC.itemIndex = index
-        contentVC.allItems = allItems
-        contentVC.openingScreen = .item
-        
-        present(contentVC, animated: true, completion: nil)
     }
     
     internal func startChannel() {
@@ -442,9 +415,13 @@ extension ExploreChannelsVC {
                         case .interviewInvite:
                             self.showInterviewMenu(item: item, items: items, conversationID: conversationID)
                             
-                        case .perspectiveInvite, .questionInvite, .showcaseInvite, .feedbackInvite:
+                        case .questionInvite, .showcaseInvite, .feedbackInvite:
                             self.showCameraMenu(inviteItem: item)
-
+                            
+                        case .perspectiveInvite:
+                            
+                            item.choices.count > 0 ? self.showPerspectiveChoicesMenu(inviteItem: item) : self.showCameraMenu(inviteItem: item)
+                            
                         case .contributorInvite:
                             self.showContributorMenu(inviteItem: item)
                             
@@ -499,7 +476,7 @@ extension ExploreChannelsVC {
                 let interviewVC = InterviewRequestVC()
                 //need to do in this order so all items are set before itemID
                 interviewVC.conversationID = conversationID
-                interviewVC.allQuestions = items
+                interviewVC.allItems = items
                 interviewVC.selectedUser = PulseUser.currentUser
                 interviewVC.interviewItem = item
                 self.navigationController?.pushViewController(interviewVC, animated: true)
@@ -526,11 +503,7 @@ extension ExploreChannelsVC {
 
             DispatchQueue.main.async {
                 let selectedChannel = Channel(cID: inviteItem.cID, title: inviteItem.cTitle)
-                self.contentVC = ContentManagerVC()
-                self.contentVC.selectedChannel = selectedChannel
-                self.contentVC.selectedItem = inviteItem
-                self.contentVC.openingScreen = .camera
-                self.present(self.contentVC, animated: true, completion: nil)
+                self.showContentManager(selectedItem: inviteItem, selectedChannel: selectedChannel)
             }
         }))
         
@@ -539,6 +512,27 @@ extension ExploreChannelsVC {
         }))
         
         present(menu, animated: true, completion: nil)
+    }
+    
+    internal func showPerspectiveChoicesMenu(inviteItem: Item) {
+
+        let menu = UIAlertController(title: "Invitation to \(inviteItem.childActionType())\(inviteItem.childType())",
+                                     message: "First pick a side - Next you will be able to explain your choice & share your perspectives!", preferredStyle: .actionSheet)
+        
+        for choice in inviteItem.choices {
+            menu.addAction(UIAlertAction(title: choice.itemTitle, style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                guard let `self` = self else { return }
+                let selectedChannel = Channel(cID: inviteItem.cID, title: inviteItem.cTitle)
+                self.showContentManager(selectedItem: inviteItem, selectedChannel: selectedChannel, selectedChoice: choice)
+            }))
+        }
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+        
     }
     
     internal func showCollectionMenu(inviteItem: Item) {

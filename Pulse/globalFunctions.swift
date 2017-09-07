@@ -186,7 +186,7 @@ enum GlobalFunctions {
     }
     
     static func shouldGetImage(type: ItemTypes) -> Bool {
-        return type == .post || type == .thread || type == .perspective || type == .session || type == .showcase || type == .interview || type == .collection
+        return type == .post || type == .perspective || type == .thread || type == .session || type == .showcase || type == .interview || type == .collection
     }
     /** END: VALIDATE ITEMS **/
     

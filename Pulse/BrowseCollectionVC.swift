@@ -33,6 +33,17 @@ class BrowseCollectionVC: PulseVC, ListItemDelegate {
                 guard let `self` = self else { return }
                 self.allLists = lists
                 self.updateCollectionDataSource()
+                
+                if self.allLists.count == 0 {
+                    if self.sectionLabel != nil {
+                        self.sectionLabel.text = "coming soon!"
+                    }
+                } else {
+                    if self.collectionView != nil {
+                        self.sectionLabel.text = "featured collections"
+                        self.collectionView.addBottomBorder(color: .pulseGrey, thickness: 1.0)
+                    }
+                }
             })
         }
     }
@@ -42,6 +53,7 @@ class BrowseCollectionVC: PulseVC, ListItemDelegate {
     fileprivate var tableView : UITableView!
     fileprivate var collectionViewHeader : UIView!
     fileprivate var headerButton : PulseButton = PulseButton(size: .small, type: .ellipsis, isRound: true, hasBackground: false, tint: .black)
+    fileprivate var sectionLabel : UILabel!
     
     //items for the current table view
     fileprivate var allItems = [Item]()
@@ -277,7 +289,11 @@ extension BrowseCollectionVC : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return IconSizes.large.rawValue * 1.075
+        return IconSizes.large.rawValue * 1.05
+    }
+    
+    func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        return false
     }
 }
 
@@ -314,7 +330,7 @@ extension BrowseCollectionVC: UICollectionViewDataSource, UICollectionViewDelega
     }
     
     func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return 1
+        return allLists.count > 0 ? 1 : 0
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -331,9 +347,10 @@ extension BrowseCollectionVC {
     fileprivate func setupCollectionHeader() {
         collectionViewHeader = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.width, height: skinnyHeaderHeight))
         view.addSubview(collectionViewHeader)
+        
         collectionViewHeader.addBottomBorder(color: .pulseGrey, thickness: 1.0)
         
-        let sectionLabel = UILabel(frame: CGRect(x: Spacing.s.rawValue, y: 0, width: collectionViewHeader.frame.width - IconSizes.small.rawValue - Spacing.xs.rawValue,
+        sectionLabel = UILabel(frame: CGRect(x: Spacing.s.rawValue, y: 0, width: collectionViewHeader.frame.width - IconSizes.small.rawValue - Spacing.xs.rawValue,
                                                       height: skinnyHeaderHeight))
         headerButton.frame = CGRect(x: view.bounds.width - headerButton.bounds.width - Spacing.xs.rawValue,
                                     y: sectionLabel.frame.midY - (headerButton.bounds.height / 2),
@@ -347,7 +364,7 @@ extension BrowseCollectionVC {
         headerButton.removeShadow()
         
         sectionLabel.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .left)
-        sectionLabel.text = "featured collections"
+        sectionLabel.text = allLists.count > 0 ? "featured collections" : "coming soon!"
     }
     
     fileprivate func setupTableView() {
@@ -387,7 +404,6 @@ extension BrowseCollectionVC {
         
         collectionView.backgroundColor = .white
         collectionView.showsHorizontalScrollIndicator = false
-        collectionView.addBottomBorder(color: .pulseGrey, thickness: 1.0)
         
         updateCollectionDataSource()
     }

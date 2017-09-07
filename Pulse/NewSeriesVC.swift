@@ -192,7 +192,7 @@ class NewSeriesVC: PulseVC  {
         loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
-        let itemKey = databaseRef.child("items").childByAutoId().key
+        let itemKey = PulseDatabase.getKey(forPath: "items")
         let item = Item(itemID: itemKey, type: getSelectedType())
         
         item.itemTitle = sTitle.text ?? ""
@@ -435,9 +435,9 @@ extension NewSeriesVC: UITextFieldDelegate {
         }
         
         if textField == sTitle, let text = textField.text?.lowercased() {
-            return text.characters.count + (text.characters.count - range.length) <= SERIES_TITLE_CHARACTER_COUNT
+            return text.characters.count + string.characters.count <= SERIES_TITLE_CHARACTER_COUNT
         } else if textField == sDescription, let text = textField.text?.lowercased() {
-            return text.characters.count + text.characters.count <= POST_TITLE_CHARACTER_COUNT
+            return text.characters.count + string.characters.count <= POST_TITLE_CHARACTER_COUNT
         }
         
         return true

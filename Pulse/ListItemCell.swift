@@ -57,7 +57,7 @@ class ListItemCell: UITableViewCell {
         updateImage(image: nil)
     }
     
-    public func updateImage(image : UIImage?, showBackground: Bool = true, showSmallPreview : Bool = true, addBorder: Bool = false) {
+    public func updateImage(image : UIImage?, showBackground: Bool = true, showSmallPreview : Bool = true, addBorder: Bool = false, addInsets: Bool = false) {
         if let image = image{
             itemImage.setImage(image, for: .normal)
             itemImage.isHidden = !showSmallPreview
@@ -70,6 +70,12 @@ class ListItemCell: UITableViewCell {
                 backgroundImage.contentMode = .center
                 backgroundImage.clipsToBounds = true
             }
+            
+            if addBorder {
+                itemImage.layer.addBorder(color: .white, thickness: 3.0)
+                itemImage.imageEdgeInsets = addInsets ? UIEdgeInsetsMake(7.5, 7.5, 7.5, 7.5) : UIEdgeInsets.zero
+            }
+            
         } else {
             itemImage.setImage(nil, for: .normal)
             itemImage.isHidden = true
@@ -118,6 +124,17 @@ class ListItemCell: UITableViewCell {
         itemDescription.text = subtitle
         itemTitle.textColor = .white
         itemDescription.textColor = .white
+        
+        if countText != nil {
+            itemCount.text = countText
+            itemCountWidth.constant = IconSizes.small.rawValue
+            contentView.layoutIfNeeded()
+        }
+    }
+    
+    public func updateAttributedItemDetails(title: NSAttributedString?, subtitle: NSAttributedString?, countText: String? = nil) {
+        itemTitle.attributedText = title
+        itemDescription.attributedText = subtitle
         
         if countText != nil {
             itemCount.text = countText
@@ -224,7 +241,8 @@ class ListItemCell: UITableViewCell {
             
             itemDescription.lineBreakMode = .byTruncatingTail
             itemDescription.numberOfLines = 3
-            
+            itemDescription.sizeToFit()
+
             isLayoutSetup = true
         }
     }

@@ -120,7 +120,7 @@ class NewShowcaseVC: PulseVC {
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
-        let itemKey = databaseRef.child("items").childByAutoId().key
+        let itemKey = PulseDatabase.getKey(forPath: "items")
         let item = Item(itemID: itemKey, type: "showcases")
         
         item.itemTitle = iTopic.text ?? ""

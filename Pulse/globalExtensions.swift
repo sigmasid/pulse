@@ -651,7 +651,7 @@ extension UIImage
         }
     }
         
-    func applyImageFilter(filterName: String = "CIPhotoEffectNoir") -> UIImage? {
+    func applyImageFilter() -> UIImage? {
         guard let cgImage = cgImage else {
             return nil
         }

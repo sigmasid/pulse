@@ -28,6 +28,7 @@ class RecordingOverlay: UIView {
     fileprivate var progressBar = UIProgressView()
     
     fileprivate lazy var addTitleField = UITextView()
+    
     public var title : String = ""
     
     fileprivate var pagers = [UIView]()
@@ -189,6 +190,7 @@ class RecordingOverlay: UIView {
     
     public func showAddTitleField(makeFirstResponder: Bool, placeholderText: String) {
         if !isTitleSetup {
+            
             setupTitleField(placeholderText: placeholderText)
         }
         addTitleField.text = placeholderText

@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegate {
+class ChannelVC: PulseVC, ItemCellDelegate, HeaderDelegate {
     //set by delegate
     public var selectedChannel : Channel! {
         didSet {
@@ -316,7 +316,7 @@ class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegat
                 
             case .perspective, .answer, .post, .showcase:
                 
-                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, selectedChannel: selectedChannel)
                 
             case .posts, .feedback, .perspectives, .interviews, .questions, .showcases, .collections:
                 
@@ -337,10 +337,10 @@ class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegat
                             let sessionSlice = items.dropLast()
                             var sessionItems = Array(sessionSlice)
                             sessionItems.insert(lastItem, at: 0)
-                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item)
+                            self.showItemDetail(allItems: sessionItems, index: 0, itemCollection: [], selectedItem: item, selectedChannel: self.selectedChannel)
                         }
                     } else if success {
-                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item)
+                        self.showItemDetail(allItems: [item], index: 0, itemCollection: [], selectedItem: item, selectedChannel: self.selectedChannel)
                     } else {
                         //show no items menu
                         GlobalFunctions.showAlertBlock(viewController: self, erTitle: "Error Loading session", erMessage: "Sorry! There was an error getting the session!")
@@ -356,7 +356,7 @@ class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegat
                     
                     self.toggleLoading(show: false, message: nil)
                     success ?
-                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item) :
+                        self.showItemDetail(allItems: items.reversed(), index: 0, itemCollection: [], selectedItem: item, selectedChannel: self.selectedChannel) :
                         self.showNoItemsMenu(selectedItem : item)
                 })
                 
@@ -370,7 +370,7 @@ class ChannelVC: PulseVC, ItemCellDelegate, BrowseContentDelegate, HeaderDelegat
                     
                     self.toggleLoading(show: false, message: nil)
                     success ?
-                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item) :
+                        self.showItemDetail(allItems: items, index: 0, itemCollection: [], selectedItem: item, selectedChannel: self.selectedChannel) :
                         self.showNoItemsMenu(selectedItem : item)
                 })
                 
@@ -625,38 +625,6 @@ extension ChannelVC {
         }
     }
     
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
-        contentVC = ContentManagerVC()
-        
-        contentVC.selectedChannel = selectedChannel
-        contentVC.selectedItem = selectedItem
-        contentVC.itemCollection = itemCollection
-        contentVC.itemIndex = index
-        contentVC.allItems = allItems
-        contentVC.openingScreen = .item
-        
-        contentVC.transitioningDelegate = self
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    internal func addNewItem(selectedItem: Item) {
-        switch selectedItem.type {
-        case .collection:
-            let editCollectionVC = EditCollectionVC()
-            editCollectionVC.selectedChannel = selectedChannel
-            editCollectionVC.selectedItem = selectedItem
-            navigationController?.pushViewController(editCollectionVC, animated: true)
-        default:
-            contentVC = ContentManagerVC()
-            contentVC.selectedChannel = selectedChannel
-            contentVC.selectedItem = selectedItem
-            contentVC.openingScreen = .camera
-            
-            contentVC.transitioningDelegate = self
-            present(contentVC, animated: true, completion: nil)
-        }
-    }
-    
     internal func showBrowse(selectedItem: Item) {
         selectedItem.cID = selectedChannel.cID
         selectedItem.cTitle = selectedChannel.cTitle
@@ -664,7 +632,7 @@ extension ChannelVC {
         switch selectedItem.type {
         case .collection:
             let browseCollectionVC = BrowseCollectionVC()
-            browseCollectionVC.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+            browseCollectionVC.selectedChannel = selectedChannel
             
             navigationController?.pushViewController(browseCollectionVC, animated: true)
             browseCollectionVC.selectedItem = selectedItem
@@ -674,7 +642,7 @@ extension ChannelVC {
             itemCollection.selectedChannel = selectedChannel
             itemCollection.selectedItem = selectedItem
             itemCollection.contentDelegate = self
-            itemCollection.forSingleUser = selectedItem.type == .interview ? true : false
+            itemCollection.forSingleUser = selectedItem.type == .interview ? true : false //to set the correct captions for each item
             
             navigationController?.pushViewController(itemCollection, animated: true)
         }

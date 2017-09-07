@@ -10,13 +10,12 @@ import UIKit
 import CoreLocation
 import MobileCoreServices
 
-class NewInterviewVC: PulseVC  {
+class NewInterviewVC: PulseVC, ListDelegate {
     //Set by parent
     public var selectedChannel : Channel!
     public var selectedItem : Item!
     
     fileprivate var selectedUser : PulseUser?
-    fileprivate var addEmail : AddText!
     fileprivate var interviewID: String!
 
     fileprivate var iImage : PulseButton?
@@ -29,11 +28,11 @@ class NewInterviewVC: PulseVC  {
     fileprivate var placeholderDescription = "brief description for interview"
 
     fileprivate var sTypeDescription = PaddingLabel()
-    fileprivate var addQuestion : AddText!
-    
+    fileprivate var selectedItemTag : Int?
+
     //Table View Vars
     fileprivate var tableView : UITableView!
-    fileprivate var allQuestions = [String]()
+    fileprivate var allItems = [Item]()
     
     fileprivate var headerSetup = false
     fileprivate let addButton = PulseButton(size: .xSmall, type: .add, isRound: true, background: .white, tint: .black)
@@ -69,17 +68,13 @@ class NewInterviewVC: PulseVC  {
     
     public func performCleanup() {
         if !cleanupComplete {
-            allQuestions = []
+            allItems = []
             selectedUser = nil
             selectedChannel = nil
             selectedItem = nil
             
             if tableView != nil {
                 tableView = nil
-            }
-            
-            if addQuestion != nil {
-                addQuestion = nil
             }
             
             cleanupComplete = true
@@ -137,7 +132,7 @@ class NewInterviewVC: PulseVC  {
         let loading = submitButton.addLoadingIndicator()
         submitButton.setDisabled()
         
-        let itemKey = databaseRef.child("items").childByAutoId().key
+        let itemKey = PulseDatabase.getKey(forPath: "items")
         let item = Item(itemID: itemKey)
         
         item.itemTitle = iTopic.text ?? ""
@@ -146,7 +141,7 @@ class NewInterviewVC: PulseVC  {
         item.cTitle = selectedChannel.cTitle
         item.tag = selectedItem
 
-        PulseDatabase.createInviteRequest(item: item, type: .interviewInvite, toUser: selectedUser, toName: iName.text!, toEmail: email, childItems: allQuestions, parentItemID: nil, completion: {[weak self] success, error in
+        PulseDatabase.createInviteRequest(item: item, type: .interviewInvite, toUser: selectedUser, toName: iName.text!, toEmail: email, childItems: allItems, parentItemID: nil, completion: {[weak self] success, error in
             guard let `self` = self else { return }
             success ? completion(true, item) : completion(false, nil)
             self.toggleLoading(show: false, message: nil)
@@ -174,7 +169,7 @@ class NewInterviewVC: PulseVC  {
     }
     
     internal func checkEnableButton() {
-        if iName.text != "", iTopic.text != "", allQuestions.count > 0 {
+        if iName.text != "", iTopic.text != "", allItems.count > 0 {
             submitButton.setEnabled()
         } else {
             submitButton.setDisabled()
@@ -183,22 +178,16 @@ class NewInterviewVC: PulseVC  {
     
     /** Delegate Functions **/
     override func addTextDone(_ text: String, sender: UIView) {
-        if addQuestion != nil, sender == addQuestion {
-            if let selectedIndex = selectedIndex {
-                let newIndexPath = IndexPath(row: selectedIndex, section: 0)
-
-                allQuestions[selectedIndex] = text
-                tableView.reloadRows(at: [newIndexPath], with: .fade)
-                self.selectedIndex = nil
-                
-            } else {
-                let newIndexPath = IndexPath(row: allQuestions.count, section: 0)
-
-                allQuestions.append(text)
-                tableView.insertRows(at: [newIndexPath], with: .left)
-            }
+        
+        if let _selectedItemTag = selectedItemTag {
+            allItems[_selectedItemTag].itemTitle = text
+            
+            let reloadIndexPath = IndexPath(row: _selectedItemTag, section: 0)
+            tableView.reloadRows(at: [reloadIndexPath], with: .fade)
+            selectedItemTag = nil
             checkEnableButton()
-        } else if addEmail != nil, sender == addEmail {
+            
+        } else {
             GlobalFunctions.validateEmail(text, completion: {[weak self] (success, error) in
                 guard let `self` = self else { return }
                 if !success {
@@ -219,16 +208,6 @@ class NewInterviewVC: PulseVC  {
                 }
             })
         }
-    }
-    
-    internal func userClickedMenu() {
-        userClickedMenu(bodyText: "")
-    }
-    
-    internal func userClickedMenu(bodyText: String, defaultBodyText: String = "type question") {
-        addQuestion = AddText(frame: view.bounds, buttonText: "Add", bodyText: bodyText, defaultBodyText: defaultBodyText)
-        addQuestion.delegate = self
-        view.addSubview(addQuestion)
     }
     
     override func userSelected(item : Any) {
@@ -306,6 +285,51 @@ class NewInterviewVC: PulseVC  {
         
         present(menu, animated: true, completion: nil)
     }
+    
+    func addListItem(title : String) {
+        let newItem = Item(itemID: String(allItems.count))
+        newItem.itemTitle = title
+        
+        let newIndexPath = IndexPath(row: allItems.count, section: 0)
+        allItems.append(newItem)
+        tableView.insertRows(at: [newIndexPath], with: .left)
+        tableView.scrollToRow(at: newIndexPath, at: .bottom, animated: true)
+    }
+    
+    func showMenuFor(itemID: String) {
+        guard let _selectedItemTag = allItems.index(of: Item(itemID: itemID)) else {
+            return
+        }
+        
+        selectedItemTag = _selectedItemTag
+        let currentItem = allItems[_selectedItemTag]
+        let menu = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        menu.addAction(UIAlertAction(title: "edit Question", style: .default, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            self.showAddText(buttonText: "Done", bodyText: currentItem.itemTitle, keyboardType: .default)
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "remove Question", style: .destructive, handler: {[weak self] (action: UIAlertAction!) in
+            guard let `self` = self else { return }
+            let indexPath = IndexPath(row: _selectedItemTag, section: 0)
+            self.allItems.remove(at: _selectedItemTag)
+            self.tableView.deleteRows(at: [indexPath], with: .fade)
+            self.selectedItemTag = nil
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+            menu.dismiss(animated: true, completion: nil)
+        }))
+        
+        present(menu, animated: true, completion: nil)
+    }
+    
+    func userClickedListItem(itemID: String) {
+        //ignore - supposed to be for clicking the image link which we don't use
+    }
 }
 
 
@@ -316,46 +340,47 @@ extension NewInterviewVC : UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return allQuestions.count
+        return allItems.count
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let cell = tableView.dequeueReusableHeaderFooterView(withIdentifier: headerReuseIdentifier)
-        
-        if !headerSetup, let cell = cell {
-            addButton.frame.origin = CGPoint(x: 2, y: cell.contentView.bounds.height / 2 - addButton.frame.height / 2)
-            
-            cell.contentView.addSubview(addButton)
-            cell.contentView.backgroundColor = UIColor.white
-            addButton.addTarget(self, action: #selector(userClickedMenu as () -> Void), for: .touchUpInside)
-            
-            cell.textLabel?.text = "add interview questions"
-            cell.textLabel?.setFont(FontSizes.body2.rawValue, weight: UIFontWeightBold, color: UIColor.black, alignment: .center)
+        guard let cell = tableView.dequeueReusableHeaderFooterView(withIdentifier: headerReuseIdentifier) as? ListItemFooter else {
+            return UITableViewHeaderFooterView()
         }
+        
+        cell.listDelegate = self
+        cell.contentView.backgroundColor = UIColor.white
+        cell.contentView.layer.cornerRadius = 5
+        cell.updateLabels(title: "add Interview Questions", subtitle: "interviewee can answer any or all of your questions - keep them short & specific!")
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier)
-        cell?.accessoryType = .disclosureIndicator
-        cell?.textLabel?.text = allQuestions[indexPath.row]
-        cell?.textLabel?.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .black, alignment: .left)
-        return cell!
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let selectedText = allQuestions[indexPath.row]
-        selectedIndex = indexPath.row
-        userClickedMenu(bodyText: selectedText)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: reuseIdentifier) as? ListItemCell else {
+            return UITableViewCell()
+        }
+        
+        let currentItem = allItems[indexPath.row]
+        cell.updateItemDetails(title: nil, subtitle: allItems[indexPath.row].itemTitle)
+        cell.showItemMenu()
+        cell.itemID = currentItem.itemID
+        
+        cell.listDelegate = self
+        
+        return cell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return IconSizes.medium.rawValue
+        return IconSizes.medium.rawValue * 1.1
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return IconSizes.medium.rawValue * 1.2
+        return IconSizes.medium.rawValue * 1.25
+    }
+    
+    func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        return false
     }
 }
 
@@ -370,9 +395,9 @@ extension NewInterviewVC {
         view.addSubview(submitButton)
         
         iName.translatesAutoresizingMaskIntoConstraints = false
-        iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.l.rawValue).isActive = true
+        iName.topAnchor.constraint(equalTo: topLayoutGuide.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         iName.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        iName.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
         iName.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         iName.layoutIfNeeded()
         
@@ -385,7 +410,7 @@ extension NewInterviewVC {
         iTopic.translatesAutoresizingMaskIntoConstraints = false
         iTopic.topAnchor.constraint(equalTo: iName.bottomAnchor, constant: Spacing.m.rawValue).isActive = true
         iTopic.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
+        iTopic.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
         iTopic.heightAnchor.constraint(equalToConstant: IconSizes.small.rawValue).isActive = true
         iTopic.layoutIfNeeded()
         
@@ -417,21 +442,20 @@ extension NewInterviewVC {
         view.addSubview(sTypeDescription)
         
         sTypeDescription.translatesAutoresizingMaskIntoConstraints = false
-        sTypeDescription.bottomAnchor.constraint(equalTo: submitButton.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        sTypeDescription.bottomAnchor.constraint(equalTo: submitButton.topAnchor).isActive = true
         sTypeDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        sTypeDescription.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
+        sTypeDescription.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.9).isActive = true
         sTypeDescription.setFont(FontSizes.body2.rawValue, weight: UIFontWeightThin, color: .gray, alignment: .center)
         
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.topAnchor.constraint(equalTo: iTopic.bottomAnchor, constant: Spacing.s.rawValue).isActive = true
         tableView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        tableView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        tableView.bottomAnchor.constraint(equalTo: sTypeDescription.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        tableView.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
+        tableView.bottomAnchor.constraint(equalTo: sTypeDescription.topAnchor, constant: -Spacing.xxs.rawValue).isActive = true
         tableView.layoutIfNeeded()
         
-        tableView?.register(UITableViewCell.self, forCellReuseIdentifier: reuseIdentifier)
-        tableView?.register(UITableViewHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: headerReuseIdentifier)
+        tableView?.register(ListItemCell.self, forCellReuseIdentifier: reuseIdentifier)
+        tableView?.register(ListItemFooter.self, forHeaderFooterViewReuseIdentifier: headerReuseIdentifier)
 
         tableView?.backgroundView = nil
         tableView?.backgroundColor = UIColor.clear
@@ -443,7 +467,7 @@ extension NewInterviewVC {
         tableView?.tableFooterView = UIView()
         
         sTypeDescription.numberOfLines = 3
-        sTypeDescription.text = "the interviewee can answer any or all suggested questions. Requests are sent directly in-app to Pulse users or send via email or text message on the next screen."
+        sTypeDescription.text = "Requests are sent directly in-app to Pulse users or choose to send via email or text message on the next screen."
         
         updateDataSource()
     }

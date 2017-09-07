@@ -77,6 +77,7 @@ class Item: NSObject {
     var tag : Item?
     
     lazy var itemCreated = false
+    lazy var choices = [Item]()
     lazy var itemCollection = [Item]()
     lazy var fetchedContent = false
     
@@ -135,6 +136,16 @@ class Item: NSObject {
         
         if let url = snapshot.childSnapshot(forPath: "url").value as? String, let _contentURL = URL(string: url) {
             contentURL = _contentURL
+        }
+        
+        if snapshot.childSnapshot(forPath: "choices").exists() {
+            for choice in snapshot.childSnapshot(forPath: "choices").children {
+                if let choice = choice as? DataSnapshot, let itemTitle = choice.value as? String {
+                    let _choice = Item(itemID: choice.key)
+                    _choice.itemTitle = itemTitle
+                    choices.append(_choice)
+                }
+            }
         }
         
         if let assetType = snapshot.childSnapshot(forPath: "contentType").value as? String {
@@ -231,7 +242,7 @@ class Item: NSObject {
         case .questions: return "ask"
             
         case .collections: return "start a"
-        case .collection: return "create a"
+        case .collection: return "add a"
 
         case .showcases: return "add a"
         case .interviews: return "start an"
@@ -482,6 +493,7 @@ class Item: NSObject {
         contentURL = nil
         contentType = nil
         createdAt = nil
+        choices = []
     }
     
     //used to make sure we are sharing the full thread vs. one individual item

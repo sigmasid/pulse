@@ -14,13 +14,14 @@ class ContentOverlay: UIView {
     
     fileprivate var footerBackground = UIView()
     fileprivate var userTitles = PulseMenu(_axis: .vertical, _spacing: 0)
-    fileprivate lazy var nextItemButton = PulseButton(title: "Skip", isRound: true, hasShadow: false, buttonColor: UIColor.white, textColor: .black)
+    fileprivate lazy var nextItemButton = PulseButton(title: "Skip", isRound: false, hasShadow: false, buttonColor: UIColor.white, textColor: .black)
 
     fileprivate var menu = PulseMenu(_axis: .horizontal, _spacing: Spacing.s.rawValue)
     fileprivate lazy var upVoteButton : PulseButton = PulseButton(size: .xSmall, type: .upvote, isRound: false, hasBackground: false)
     fileprivate lazy var downVoteButton : PulseButton = PulseButton(size: .xSmall, type: .downvote, isRound: false, hasBackground: false)
     fileprivate lazy var saveButton : PulseButton = PulseButton(size: .xSmall, type: .favorite, isRound: false, hasBackground: false)
     
+    fileprivate var sticker : PulseButton = PulseButton(size: .large, type: .blank, isRound: false, hasBackground: false)
     fileprivate let itemTitleLabel = PaddingLabel()
     
     fileprivate var headerBackground = UIView()
@@ -57,7 +58,7 @@ class ContentOverlay: UIView {
         setupFooter()
         setupNextButton()
         setupPagers()
-        
+        setupChoices()
     }
     
     deinit {
@@ -141,13 +142,23 @@ class ContentOverlay: UIView {
     }
     
     //EXPLORE DETAIL + PAGERS
+    public func showChoices(image: UIImage?) {
+        if let image = image {
+            sticker.setImage(image, for: .normal)
+            sticker.isHidden = false
+        } else {
+            sticker.isHidden = true
+            sticker.setImage(nil, for: .normal)
+        }
+    }
+    
     public func highlightExploreDetail() {
         nextItemButton.isHidden = false
         pagersStack.isHidden = false
         
         UIView.animate(withDuration: 0.2, animations: {
             self.nextItemButton.alpha = 0.7
-            self.pagersStack.alpha = 0.7
+            self.pagersStack.alpha = 1.0
         })
     }
 
@@ -158,9 +169,7 @@ class ContentOverlay: UIView {
         
         UIView.animate(withDuration: 0.3, animations: {
             self.nextItemButton.alpha = 0.3
-            self.pagersStack.alpha = 0.3
         })
-
     }
     
     public func hideExploreDetail() {
@@ -177,10 +186,12 @@ class ContentOverlay: UIView {
     }
     
     public func updateSelectedPager(num: Int) {
-        pagersStack.arrangedSubviews[num].backgroundColor = .pulseBlue
+        pagersStack.arrangedSubviews[num].backgroundColor = UIColor.white
+        pagersStack.arrangedSubviews[num].addShadow()
         
         if num > 0 {
-            pagersStack.arrangedSubviews[num - 1].backgroundColor = .pulseBlue
+            pagersStack.arrangedSubviews[num - 1].backgroundColor = UIColor.white
+            pagersStack.arrangedSubviews[num - 1].addShadow()
         }
     }
     
@@ -324,15 +335,8 @@ class ContentOverlay: UIView {
     public func addPagers(num: Int) {
         for _ in 1...num {
             let _pager = UIView()
-            _pager.translatesAutoresizingMaskIntoConstraints = false
-            _pager.heightAnchor.constraint(equalTo: _pager.widthAnchor).isActive = true
-            _pager.backgroundColor = .white
-            
+            _pager.backgroundColor = UIColor.white.withAlphaComponent(0.5)
             pagersStack.addArrangedSubview(_pager)
-            
-            _pager.layoutIfNeeded()
-            _pager.layer.cornerRadius = _pager.frame.width / 2
-            _pager.layer.masksToBounds = true
         }
     }
 }
@@ -343,13 +347,14 @@ extension ContentOverlay {
         addSubview(pagersStack)
         
         pagersStack.translatesAutoresizingMaskIntoConstraints = false
-        pagersStack.widthAnchor.constraint(equalToConstant: 7.5).isActive = true
-        pagersStack.bottomAnchor.constraint(equalTo: nextItemButton.topAnchor, constant: -Spacing.s.rawValue).isActive = true
-        pagersStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant : -Spacing.xs.rawValue).isActive = true
+        pagersStack.heightAnchor.constraint(equalToConstant: 2.5).isActive = true
+        pagersStack.topAnchor.constraint(equalTo: topAnchor, constant: 2.5).isActive = true
+        pagersStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2.5).isActive = true
+        pagersStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2.5).isActive = true
         
-        pagersStack.axis = .vertical
+        pagersStack.axis = .horizontal
         pagersStack.distribution = .fillEqually
-        pagersStack.spacing = Spacing.xs.rawValue
+        pagersStack.spacing = Spacing.xxs.rawValue
         
         pagersStack.isHidden = true
     }
@@ -512,5 +517,21 @@ extension ContentOverlay {
         saveButton.addTarget(self, action: #selector(handleFavorite), for: UIControlEvents.touchDown)
         
         menu.alpha = 0.7
+    }
+    
+    fileprivate func setupChoices() {
+        addSubview(sticker)
+        
+        sticker.translatesAutoresizingMaskIntoConstraints = false
+        sticker.bottomAnchor.constraint(equalTo: itemTitleLabel.topAnchor, constant: -Spacing.xs.rawValue).isActive = true
+        sticker.leadingAnchor.constraint(equalTo: itemTitleLabel.leadingAnchor, constant: Spacing.xs.rawValue).isActive = true
+        sticker.heightAnchor.constraint(equalToConstant: IconSizes.large.rawValue).isActive = true
+        sticker.widthAnchor.constraint(equalTo: sticker.heightAnchor).isActive = true
+        sticker.layoutIfNeeded()
+        sticker.makeRound()
+        sticker.addBorder(color: .white, thickness: 2.0)
+        
+        sticker.isHidden = true
+        sticker.isEnabled = false
     }
 }

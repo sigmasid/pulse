@@ -130,6 +130,10 @@ class ItemCell: UICollectionViewCell {
                     let restAttributedString = NSAttributedString(string: " added a showcase", attributes: subRestAttributes)
                     attributedString.append(restAttributedString)
                     
+                case .collection:
+                    let restAttributedString = NSAttributedString(string: " added a collection", attributes: subRestAttributes)
+                    attributedString.append(restAttributedString)
+                    
                 default:
                     break
                 }

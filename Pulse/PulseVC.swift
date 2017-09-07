@@ -9,8 +9,7 @@
 import UIKit
 import Firebase
 
-class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, SelectionDelegate, ParentTextViewDelegate {
-    
+class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, SelectionDelegate, ParentTextViewDelegate, BrowseContentDelegate {
     /** Loading Overlay **/
     internal var loadingView : LoadingView!
     
@@ -185,6 +184,86 @@ class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, Sele
         button.widthAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         button.heightAnchor.constraint(equalToConstant: IconSizes.medium.rawValue).isActive = true
         button.layoutIfNeeded()
+    }
+    
+    internal func showContentManager(selectedItem: Item, selectedChannel: Channel, selectedChoice: Item? = nil) {
+        contentVC = ContentManagerVC()
+        contentVC.selectedChannel = selectedChannel
+        contentVC.selectedItem = selectedItem
+        contentVC.selectedChoice = selectedChoice
+        
+        contentVC.openingScreen = .camera
+        contentVC.transitioningDelegate = self
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    internal func showPerspectivesMenu(selectedItem: Item, selectedChannel: Channel) {
+        if selectedItem.choices.count > 0 {
+            let menu = UIAlertController(title: selectedItem.itemTitle,
+                                         message: "Pick a side - You will be able to explain your choice & add your perspectives next!",
+                                         preferredStyle: .actionSheet)
+            
+            for choice in selectedItem.choices {
+                menu.addAction(UIAlertAction(title: choice.itemTitle, style: .default, handler: {[weak self] (action: UIAlertAction!) in
+                    guard let `self` = self else { return }
+                    self.showContentManager(selectedItem: selectedItem, selectedChannel: selectedChannel, selectedChoice: choice)
+                }))
+            }
+            
+            menu.addAction(UIAlertAction(title: "cancel", style: .cancel, handler: { (action: UIAlertAction!) in
+                menu.dismiss(animated: true, completion: nil)
+            }))
+            
+            present(menu, animated: true, completion: nil)
+            
+        } else {
+            //just go to the camera
+            showContentManager(selectedItem: selectedItem, selectedChannel: selectedChannel)
+        }
+    }
+    
+    //Shorter versions
+    internal func showItemDetail(item : Item, allItems: [Item]) {
+        showItemDetail(allItems: allItems, index: 0, itemCollection: [], selectedItem: item)
+    }
+    
+    //Shorter versions
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
+        showItemDetail(allItems: allItems, index: index, itemCollection: itemCollection, selectedItem: selectedItem, selectedChannel: Channel(cID: selectedItem.cID, title: selectedItem.cTitle))
+    }
+    
+    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item, selectedChannel: Channel?) {
+        contentVC = ContentManagerVC()
+        contentVC.selectedChannel = selectedChannel ?? Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+        contentVC.selectedItem = selectedItem
+        contentVC.itemCollection = itemCollection
+        contentVC.itemIndex = index
+        contentVC.allItems = allItems
+        contentVC.openingScreen = .item
+        
+        contentVC.transitioningDelegate = self
+        
+        present(contentVC, animated: true, completion: nil)
+    }
+    
+    func addNewItem(selectedItem : Item) {
+        let selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
+        
+        switch selectedItem.type {
+        case .collection:
+            
+            let editCollectionVC = EditCollectionVC()
+            editCollectionVC.selectedChannel = selectedChannel
+            editCollectionVC.selectedItem = selectedItem
+            navigationController?.pushViewController(editCollectionVC, animated: true)
+            
+        case .thread:
+            //check if there are choices > if yes, prompt user, else go directly to camera
+            showPerspectivesMenu(selectedItem: selectedItem, selectedChannel: selectedChannel)
+            
+        default:
+            showContentManager(selectedItem: selectedItem, selectedChannel: selectedChannel)
+        }
     }
     
     internal func toggleLoading(show: Bool, message: String?, showIcon: Bool = false, backgroundOpacity : CGFloat = 0.9) {
@@ -371,7 +450,7 @@ class PulseVC: UIViewController, PulseNavControllerDelegate, ModalDelegate, Sele
         
         toggleLoading(show: true, message: "creating invite...", showIcon: true)
         
-        let itemKey = databaseRef.child("items").childByAutoId().key        
+        let itemKey = PulseDatabase.getKey(forPath: "items")
         let newShareItem = Item(itemID: itemKey)
         newShareItem.itemID = itemKey
         newShareItem.cID = selectedChannel.cID

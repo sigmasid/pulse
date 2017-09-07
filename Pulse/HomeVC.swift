@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class HomeVC: PulseVC, BrowseContentDelegate, HeaderDelegate, ItemCellDelegate {
+class HomeVC: PulseVC, HeaderDelegate, ItemCellDelegate {
     public weak var tabDelegate : MasterTabDelegate!
 
     //Main data source vars
@@ -638,40 +638,6 @@ extension HomeVC {
             }
         })
     }
-    
-    /** Browse Content Delegate **/
-    internal func showItemDetail(allItems: [Item], index: Int, itemCollection: [Item], selectedItem : Item) {
-        contentVC = ContentManagerVC()
-        contentVC.selectedChannel = Channel(cID: selectedItem.cID)
-        contentVC.selectedItem = selectedItem
-        contentVC.itemCollection = itemCollection
-        contentVC.itemIndex = index
-        contentVC.allItems = allItems
-        contentVC.openingScreen = .item
-        
-        contentVC.transitioningDelegate = self
-        
-        present(contentVC, animated: true, completion: nil)
-    }
-    
-    internal func addNewItem(selectedItem: Item) {
-        switch selectedItem.type {
-        case .collection:
-            let editCollectionVC = EditCollectionVC()
-            editCollectionVC.selectedChannel = Channel(cID: selectedItem.cID)
-            editCollectionVC.selectedItem = selectedItem
-            navigationController?.pushViewController(editCollectionVC, animated: true)
-        default:
-            contentVC = ContentManagerVC()
-            contentVC.selectedChannel = Channel(cID: selectedItem.cID)
-            contentVC.selectedItem = selectedItem
-            contentVC.openingScreen = .camera
-            
-            contentVC.transitioningDelegate = self
-            present(contentVC, animated: true, completion: nil)
-        }
-    }
-    
     /** End Browse Content Delegate **/
     
     internal func showBrowse(selectedItem: Item) {
@@ -683,7 +649,7 @@ extension HomeVC {
             
             navigationController?.pushViewController(browseCollectionVC, animated: true)
             browseCollectionVC.selectedItem = selectedItem
-            
+        
         default:
             let itemCollection = BrowseContentVC()
             itemCollection.selectedChannel = Channel(cID: selectedItem.cID, title: selectedItem.cTitle)
